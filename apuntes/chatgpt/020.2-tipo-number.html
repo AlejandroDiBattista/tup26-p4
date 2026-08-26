@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<!-- saved from url=(0125)file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>Laboratorio de números en JavaScript</title>
+  <style>
+    :root {
+      --paper: oklch(96% 0.025 83);
+      --paper-deep: oklch(91% 0.04 82);
+      --ink: oklch(23% 0.035 255);
+      --ink-soft: oklch(43% 0.035 255);
+      --line: oklch(76% 0.035 82);
+      --grid: oklch(84% 0.035 225);
+      --blue: oklch(48% 0.13 245);
+      --blue-deep: oklch(31% 0.10 245);
+      --blue-pale: oklch(91% 0.045 240);
+      --red: oklch(53% 0.16 28);
+      --red-deep: oklch(34% 0.12 28);
+      --red-pale: oklch(91% 0.045 28);
+      --green: oklch(48% 0.11 150);
+      --green-pale: oklch(91% 0.05 150);
+      --yellow: oklch(84% 0.13 88);
+      --shadow: 0 1rem 2.8rem oklch(27% 0.035 255 / 0.12);
+      --sans: "Avenir Next", Avenir, "Century Gothic", Futura, sans-serif;
+      --serif: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --radius-sm: 0.45rem;
+      --radius-md: 0.85rem;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 19rem;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 1.5rem 1.5rem;
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.5;
+      font-kerning: normal;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    button, input, textarea { font: inherit; }
+    button, input, textarea, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    code, pre, output, .mono { font-family: var(--mono); font-variant-ligatures: none; }
+    a { color: inherit; }
+
+    :focus-visible {
+      outline: 3px solid var(--red);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 20;
+      top: 0.75rem;
+      left: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--ink);
+      color: var(--paper);
+      transform: translateY(-160%);
+      transition: transform 180ms var(--ease-out);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .masthead {
+      position: relative;
+      overflow: hidden;
+      min-height: 41rem;
+      padding: max(1.5rem, env(safe-area-inset-top)) clamp(1rem, 5vw, 5rem) 4.5rem;
+      background: var(--yellow);
+      border-bottom: 2px solid var(--ink);
+    }
+    .masthead::before {
+      content: "0.1 + 0.2";
+      position: absolute;
+      right: -0.07em;
+      bottom: -0.26em;
+      color: oklch(23% 0.035 255 / 0.09);
+      font: 700 clamp(5.5rem, 17vw, 15rem)/1 var(--serif);
+      letter-spacing: -0.08em;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      max-width: 88rem;
+      margin-inline: auto;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--ink);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .topline .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      letter-spacing: 0.03em;
+      text-transform: none;
+    }
+    .status::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      background: var(--green);
+      border: 1px solid var(--ink);
+      border-radius: 50%;
+    }
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      max-width: 88rem;
+      margin: 4.5rem auto 0;
+      gap: 2rem;
+      align-items: end;
+    }
+    .kicker {
+      display: inline-block;
+      margin: 0 0 1rem;
+      padding: 0.28rem 0.55rem;
+      background: var(--red);
+      color: var(--paper);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transform: rotate(-1.5deg);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 10ch;
+      margin-bottom: 1.5rem;
+      font: 700 clamp(3.2rem, 10vw, 8.4rem)/0.82 var(--serif);
+      letter-spacing: -0.075em;
+    }
+    .hero-copy {
+      max-width: 42rem;
+      margin-bottom: 2rem;
+      font: 1.16rem/1.6 var(--serif);
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .button {
+      min-height: 2.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1rem;
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--ink);
+      color: var(--paper);
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0.22rem 0.22rem 0 var(--red);
+      transition: transform 130ms var(--ease-out), box-shadow 130ms var(--ease-out), background 130ms var(--ease-out);
+    }
+    .button.secondary { background: transparent; color: var(--ink); box-shadow: none; }
+    .button.ghost { background: transparent; color: var(--ink); border-color: var(--line); box-shadow: none; }
+    .button.small { min-height: 2.75rem; padding: 0.55rem 0.8rem; font-size: 0.86rem; }
+    .button:active { transform: translate(0.18rem, 0.18rem); box-shadow: 0 0 0 var(--red); }
+    .hero-note {
+      justify-self: start;
+      max-width: 25rem;
+      padding: 1.4rem 1.5rem 1.5rem;
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      box-shadow: 0.5rem 0.5rem 0 var(--blue);
+      transform: rotate(1.2deg);
+    }
+    .hero-note strong {
+      display: block;
+      margin-bottom: 0.75rem;
+      color: var(--red-deep);
+      font: 700 1.4rem/1.15 var(--serif);
+    }
+    .hero-note code { font-size: 0.88em; }
+
+    .fact-strip {
+      border-bottom: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .facts {
+      display: grid;
+      max-width: 88rem;
+      margin: 0 auto;
+      padding: 1.25rem clamp(1rem, 5vw, 5rem);
+      gap: 1px;
+      background: oklch(91% 0.025 83 / 0.28);
+    }
+    .fact { padding: 0.8rem 0; background: var(--ink); }
+    .fact b { display: block; color: var(--yellow); font-size: 1.5rem; }
+    .fact span { color: oklch(89% 0.02 83); font-size: 0.86rem; }
+
+    .workspace {
+      display: grid;
+      max-width: 88rem;
+      margin: 0 auto;
+      padding: clamp(2rem, 5vw, 5rem) clamp(1rem, 5vw, 5rem) 6rem;
+      gap: clamp(2.5rem, 6vw, 6rem);
+    }
+    .lab-nav {
+      align-self: start;
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      box-shadow: 0.35rem 0.35rem 0 var(--paper-deep);
+    }
+    .lab-nav h2 {
+      margin: 0;
+      padding: 1rem;
+      background: var(--blue);
+      color: var(--paper);
+      font-size: 0.78rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+    .lab-nav ol { margin: 0; padding: 0; list-style: none; counter-reset: lab; }
+    .lab-nav li { counter-increment: lab; border-top: 1px solid var(--line); }
+    .lab-nav a {
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      align-items: center;
+      min-height: 3.2rem;
+      padding: 0.55rem 0.8rem;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .lab-nav a::before {
+      content: counter(lab, decimal-leading-zero);
+      color: var(--red);
+      font: 700 0.75rem var(--mono);
+    }
+
+    .labs { min-width: 0; }
+    .lab-section {
+      scroll-margin-top: 1rem;
+      margin-bottom: clamp(5rem, 10vw, 9rem);
+    }
+    .section-heading {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: start;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--ink);
+    }
+    .section-number {
+      min-width: 3.2rem;
+      padding: 0.4rem;
+      background: var(--red);
+      color: var(--paper);
+      text-align: center;
+      font: 700 1rem var(--mono);
+      transform: rotate(-2deg);
+    }
+    .section-heading h2 {
+      margin: 0 0 0.35rem;
+      font: 700 clamp(2.1rem, 6vw, 4.3rem)/0.95 var(--serif);
+      letter-spacing: -0.045em;
+    }
+    .section-heading p { max-width: 57ch; margin: 0; color: var(--ink-soft); }
+
+    .experiment {
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      box-shadow: var(--shadow);
+    }
+    .experiment-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 3rem;
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--ink);
+      background: var(--blue-pale);
+    }
+    .experiment-bar strong { font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .dots { display: flex; gap: 0.35rem; }
+    .dots i { width: 0.65rem; height: 0.65rem; border: 1px solid var(--ink); border-radius: 50%; background: var(--red); }
+    .dots i:nth-child(2) { background: var(--yellow); }
+    .dots i:nth-child(3) { background: var(--green); }
+    .experiment-body { padding: clamp(1rem, 4vw, 2rem); }
+
+    label, legend { font-weight: 800; }
+    .field-label { display: block; margin-bottom: 0.55rem; font-size: 0.86rem; }
+    .input-row { display: grid; gap: 0.75rem; }
+    input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      min-height: 3.25rem;
+      padding: 0.8rem 0.9rem;
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: oklch(99% 0.012 82);
+      color: var(--ink);
+      font-family: var(--mono);
+    }
+    textarea { min-height: 11rem; resize: vertical; line-height: 1.65; tab-size: 2; }
+    input::placeholder, textarea::placeholder { color: oklch(48% 0.025 255); opacity: 1; }
+    .hint { margin: 0.55rem 0 0; color: var(--ink-soft); font-size: 0.82rem; }
+
+    .microscope-grid { display: grid; gap: 1.5rem; }
+    .value-stage {
+      position: relative;
+      min-height: 11rem;
+      display: grid;
+      place-content: center;
+      padding: 1.5rem;
+      overflow: hidden;
+      background: var(--ink);
+      color: var(--paper);
+      text-align: center;
+    }
+    .value-stage::after {
+      content: "";
+      position: absolute;
+      width: 8rem;
+      height: 8rem;
+      border: 1.5rem solid oklch(96% 0.025 83 / 0.08);
+      border-radius: 50%;
+    }
+    .value-stage output { position: relative; z-index: 1; font-size: clamp(1.8rem, 7vw, 4.6rem); font-weight: 800; overflow-wrap: anywhere; }
+    .value-stage small { position: relative; z-index: 1; color: var(--yellow); }
+    .property-list { margin: 0; border-top: 1px solid var(--line); }
+    .property-list > div {
+      display: grid;
+      grid-template-columns: minmax(7.5rem, 0.8fr) 1.2fr;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .property-list dt { color: var(--ink-soft); }
+    .property-list dd { margin: 0; text-align: right; font-family: var(--mono); font-weight: 700; overflow-wrap: anywhere; }
+    .error-text { color: var(--red-deep); font-weight: 800; }
+
+    .preset-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
+    .preset-row.after-input { margin-top: 1rem; }
+    .chip {
+      min-height: 2.75rem;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .chip[aria-pressed="true"] { background: var(--yellow); box-shadow: inset 0 0 0 1px var(--ink); }
+    .comparison {
+      display: grid;
+      margin-top: 1.5rem;
+      border: 1px solid var(--ink);
+    }
+    .comparison > div { padding: 1rem; }
+    .comparison > div + div { border-top: 1px solid var(--ink); }
+    .comparison small { display: block; margin-bottom: 0.55rem; color: var(--ink-soft); font-weight: 800; text-transform: uppercase; }
+    .comparison output { font-size: clamp(1.3rem, 4vw, 2rem); font-weight: 800; overflow-wrap: anywhere; }
+
+    .console-output {
+      min-height: 9rem;
+      margin-top: 1rem;
+      padding: 1rem;
+      overflow: auto;
+      border-radius: var(--radius-sm);
+      background: var(--ink);
+      color: var(--paper);
+      white-space: pre-wrap;
+    }
+    .console-output .prompt { color: var(--yellow); }
+    .console-output .muted { color: oklch(74% 0.03 83); }
+    .console-output .console-error { color: oklch(79% 0.11 28); }
+    .runner-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; align-items: center; }
+    kbd { padding: 0.15rem 0.38rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 0.25rem; background: var(--paper-deep); font: 0.75rem var(--mono); }
+
+    .bit-controls { display: grid; gap: 1rem; }
+    .operator-switcher {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin: 1.2rem 0;
+      padding: 0;
+      border: 0;
+    }
+    .operator-switcher legend { grid-column: 1 / -1; margin-bottom: 0.25rem; }
+    .operator-switcher label { position: relative; }
+    .operator-switcher input { position: absolute; opacity: 0; pointer-events: none; }
+    .operator-switcher span {
+      min-height: 2.9rem;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-sm);
+      font: 800 1.1rem var(--mono);
+    }
+    .operator-switcher input:checked + span { background: var(--blue); color: var(--paper); }
+    .operator-switcher input:focus-visible + span { outline: 3px solid var(--red); outline-offset: 3px; }
+    .bit-board { padding: 1rem; background: var(--ink); color: var(--paper); overflow-x: auto; }
+    .bit-line {
+      display: grid;
+      grid-template-columns: 5rem minmax(32ch, 1fr) 6rem;
+      gap: 1rem;
+      min-width: 46rem;
+      align-items: center;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid oklch(96% 0.025 83 / 0.13);
+    }
+    .bit-line:last-child { border-bottom: 0; color: var(--yellow); font-weight: 800; }
+    .bits { letter-spacing: 0.16em; white-space: nowrap; }
+    .bit-note { margin: 1rem 0 0; color: var(--ink-soft); font-size: 0.86rem; }
+
+    .permissions-board { display: grid; gap: 1.5rem; }
+    .permission-list { display: grid; gap: 0.65rem; }
+    .permission-toggle {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.75rem;
+      align-items: center;
+      min-height: 3.7rem;
+      padding: 0.65rem 0.8rem;
+      border: 1px solid var(--ink);
+      background: oklch(99% 0.012 82);
+      cursor: pointer;
+    }
+    .permission-toggle input { width: 1.3rem; height: 1.3rem; accent-color: var(--blue); }
+    .permission-toggle code { color: var(--red-deep); font-size: 0.78rem; }
+    .permission-result {
+      display: grid;
+      align-content: center;
+      min-height: 14rem;
+      padding: 1.5rem;
+      background: var(--blue);
+      color: var(--paper);
+      text-align: center;
+    }
+    .permission-result output { display: block; margin: 0.4rem 0; color: var(--yellow); font-size: clamp(3rem, 10vw, 6rem); font-weight: 800; line-height: 1; }
+    .permission-result .bits { display: block; margin-top: 0.75rem; font-size: 1.2rem; }
+
+    .quiz-list { display: grid; gap: 1.5rem; }
+    .question { margin: 0; padding: 0 0 1.5rem; border: 0; border-bottom: 1px solid var(--line); }
+    .question legend { margin-bottom: 0.9rem; font-family: var(--serif); font-size: 1.2rem; }
+    .answer-option { display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.52rem 0; cursor: pointer; }
+    .answer-option input { flex: 0 0 auto; width: 1.15rem; height: 1.15rem; margin-top: 0.15rem; accent-color: var(--blue); }
+    .quiz-result {
+      display: none;
+      margin-top: 1.25rem;
+      padding: 1rem;
+      border: 2px solid var(--ink);
+      background: var(--green-pale);
+      font-weight: 800;
+    }
+    .quiz-result.visible { display: block; }
+    .question.correct { background: linear-gradient(90deg, var(--green-pale), transparent); }
+    .question.incorrect { background: linear-gradient(90deg, var(--red-pale), transparent); }
+    .question-note { display: none; margin: 0.5rem 0 0 1.8rem; color: var(--ink-soft); font-size: 0.86rem; }
+    .question.graded .question-note { display: block; }
+
+    .cheatsheet { margin-top: 2rem; border-top: 2px solid var(--ink); }
+    details { border-bottom: 1px solid var(--ink); background: oklch(97% 0.02 82 / 0.88); }
+    summary { min-height: 3.3rem; padding: 0.8rem 0; font-weight: 800; cursor: pointer; }
+    details > div { padding: 0 0 1.2rem; }
+    .memory-grid { display: grid; gap: 0.5rem; }
+    .memory-row { display: grid; grid-template-columns: 5rem 1fr; gap: 0.75rem; padding: 0.5rem 0; }
+    .memory-row code { color: var(--red-deep); font-weight: 800; }
+
+    footer {
+      padding: 2.5rem clamp(1rem, 5vw, 5rem) max(2.5rem, env(safe-area-inset-bottom));
+      border-top: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .footer-inner { max-width: 88rem; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+    footer p { margin: 0; }
+    footer code { color: var(--yellow); }
+
+    @media (hover: hover) {
+      .button:hover { transform: translate(-0.1rem, -0.1rem); box-shadow: 0.32rem 0.32rem 0 var(--red); }
+      .button.secondary:hover, .button.ghost:hover { background: var(--paper-deep); box-shadow: none; }
+      .lab-nav a:hover { background: var(--yellow); }
+      .chip:hover { background: var(--paper-deep); }
+      .permission-toggle:hover { background: var(--blue-pale); }
+    }
+
+    @media (min-width: 42rem) {
+      .hero-grid { grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.55fr); }
+      .facts { grid-template-columns: repeat(3, 1fr); }
+      .fact { padding: 0.8rem 1.5rem; }
+      .fact + .fact { border-left: 1px solid oklch(91% 0.025 83 / 0.28); }
+      .input-row { grid-template-columns: 1fr auto; align-items: end; }
+      .comparison { grid-template-columns: 1fr 1fr; }
+      .comparison > div + div { border-top: 0; border-left: 1px solid var(--ink); }
+      .bit-controls { grid-template-columns: 1fr 1fr; }
+      .permissions-board { grid-template-columns: minmax(15rem, 1fr) minmax(15rem, 0.8fr); }
+    }
+
+    @media (min-width: 62rem) {
+      .workspace { grid-template-columns: 14rem minmax(0, 1fr); }
+      .lab-nav { position: sticky; top: 1rem; }
+      .microscope-grid { grid-template-columns: minmax(15rem, 0.8fr) minmax(18rem, 1.2fr); align-items: start; }
+    }
+
+    @media (pointer: coarse) {
+      .chip, .lab-nav a, summary { min-height: 3rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#contenido">Saltar al laboratorio</a>
+
+  <header class="masthead">
+    <div class="topline">
+      <span>Apunte 20.2 · JavaScript</span>
+      <span class="status">Listo para experimentar</span>
+    </div>
+    <div class="hero-grid">
+      <div>
+        <span class="kicker">Laboratorio interactivo</span>
+        <h1>Números bajo la lupa.</h1>
+        <p class="hero-copy">Tocá, cambiá y rompé expresiones para descubrir cómo piensa JavaScript cuando encuentra números, textos, operadores y bits.</p>
+        <div class="hero-actions">
+          <a class="button" href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#microscopio">Empezar a probar <span aria-hidden="true">↓</span></a>
+          <a class="button secondary" href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#chuleta">Ver la chuleta</a>
+        </div>
+      </div>
+      <aside class="hero-note" aria-label="Idea fundamental">
+        <strong>Una sola palabra, muchos comportamientos.</strong>
+        <p>En JavaScript, enteros y decimales comparten el tipo <code>number</code>. Al usar operadores bitwise, pasan temporalmente al mundo de los enteros de 32 bits.</p>
+      </aside>
+    </div>
+  </header>
+
+  <section class="fact-strip" aria-label="Tres datos clave">
+    <div class="facts">
+      <div class="fact"><b>64 bits</b><span>IEEE 754 para los valores <code>number</code></span></div>
+      <div class="fact"><b>32 bits</b><span>al operar bit a bit</span></div>
+      <div class="fact"><b>1 tipo</b><span>para enteros y decimales</span></div>
+    </div>
+  </section>
+
+  <main id="contenido" class="workspace">
+    <nav class="lab-nav" aria-label="Mesas del laboratorio">
+      <h2>Mesas de trabajo</h2>
+      <ol>
+        <li><a href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#microscopio">Microscopio</a></li>
+        <li><a href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#coercion">Coerción</a></li>
+        <li><a href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#consola">Consola libre</a></li>
+        <li><a href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#bits">Bits</a></li>
+        <li><a href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#permisos">Permisos</a></li>
+        <li><a href="file:///Users/adibattista/Documents/Codex/2026-08-15/ah-me-hazme-apuntes-sobre-el/outputs/laboratorio-numeros-javascript.html#desafio">Desafío</a></li>
+      </ol>
+    </nav>
+
+    <div class="labs">
+      <section id="microscopio" class="lab-section" aria-labelledby="titulo-microscopio">
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <div>
+            <h2 id="titulo-microscopio">Microscopio numérico</h2>
+            <p>Escribí cualquier expresión. El microscopio revela su valor, su tipo y varias propiedades que normalmente quedan escondidas.</p>
+          </div>
+        </div>
+        <div class="experiment">
+          <div class="experiment-bar"><strong>Muestra activa</strong><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="experiment-body">
+            <div class="input-row">
+              <div>
+                <label class="field-label" for="number-expression">Expresión JavaScript</label>
+                <input id="number-expression" name="number-expression" type="text" value="0.1 + 0.2" spellcheck="false" autocomplete="off">
+              </div>
+              <button id="inspect-button" class="button" type="button">Inspeccionar valor</button>
+            </div>
+            <div class="preset-row after-input" aria-label="Expresiones sugeridas">
+              <button class="chip inspect-preset" type="button" data-value="0.1 + 0.2">0.1 + 0.2</button>
+              <button class="chip inspect-preset" type="button" data-value="Number(&#39;hola&#39;)">Number('hola')</button>
+              <button class="chip inspect-preset" type="button" data-value="2 ** 53">2 ** 53</button>
+              <button class="chip inspect-preset" type="button" data-value="0xFF">0xFF</button>
+              <button class="chip inspect-preset" type="button" data-value="3e-3">3e-3</button>
+            </div>
+            <div class="microscope-grid">
+              <div class="value-stage" aria-live="polite">
+                <small>valor observado</small>
+                <output id="main-value">0.30000000000000004</output>
+              </div>
+              <dl class="property-list">
+                <div><dt><code>typeof</code></dt><dd id="prop-type">number</dd></div>
+                <div><dt><code>Number.isNaN()</code></dt><dd id="prop-nan">false</dd></div>
+                <div><dt><code>Number.isFinite()</code></dt><dd id="prop-finite">true</dd></div>
+                <div><dt><code>Number.isInteger()</code></dt><dd id="prop-integer">false</dd></div>
+                <div><dt><code>Number.isSafeInteger()</code></dt><dd id="prop-safe">false</dd></div>
+                <div><dt>base 2</dt><dd id="prop-binary">0.0100110011001100110011001100110011001100110011001101</dd></div>
+                <div><dt>base 16</dt><dd id="prop-hex">0.4cccccccccccd</dd></div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="coercion" class="lab-section" aria-labelledby="titulo-coercion">
+        <div class="section-heading">
+          <span class="section-number">02</span>
+          <div>
+            <h2 id="titulo-coercion">Cámara de coerción</h2>
+            <p>El mismo dato puede producir resultados muy distintos. El operador <code>+</code> también concatena textos; los demás operadores intentan convertirlos a número.</p>
+          </div>
+        </div>
+        <div class="experiment">
+          <div class="experiment-bar"><strong>Comparador de conversiones</strong><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="experiment-body">
+            <div class="preset-row" aria-label="Ejemplos de coerción">
+              <button class="chip coercion-preset" type="button" data-expr="&#39;10&#39; + 2">'10' + 2</button>
+              <button class="chip coercion-preset" type="button" data-expr="&#39;10&#39; * 2">'10' * 2</button>
+              <button class="chip coercion-preset" type="button" data-expr="Number(&#39;123px&#39;)">Number('123px')</button>
+              <button class="chip coercion-preset" type="button" data-expr="parseInt(&#39;123px&#39;)">parseInt('123px')</button>
+              <button class="chip coercion-preset" type="button" data-expr="10 == &#39;10&#39;">10 == '10'</button>
+              <button class="chip coercion-preset" type="button" data-expr="10 === &#39;10&#39;">10 === '10'</button>
+            </div>
+            <label class="field-label" for="coercion-expression">Expresión para comparar</label>
+            <input id="coercion-expression" name="coercion-expression" type="text" value="&#39;10&#39; + 2" spellcheck="false" autocomplete="off">
+            <div class="comparison" aria-live="polite">
+              <div><small>Resultado</small><output id="coercion-value">"102"</output></div>
+              <div><small>Tipo resultante</small><output id="coercion-type">string</output></div>
+            </div>
+            <p id="coercion-explanation" class="hint">Como uno de los operandos es texto, + concatena en lugar de sumar.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="consola" class="lab-section" aria-labelledby="titulo-consola">
+        <div class="section-heading">
+          <span class="section-number">03</span>
+          <div>
+            <h2 id="titulo-consola">Consola sin rueditas</h2>
+            <p>Acá mandás vos. Probá precedencia, incrementos, conversiones o cualquier fragmento corto de JavaScript.</p>
+          </div>
+        </div>
+        <div class="experiment">
+          <div class="experiment-bar"><strong>Área de pruebas local</strong><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="experiment-body">
+            <label class="field-label" for="code-editor">Código JavaScript</label>
+            <textarea id="code-editor" name="code-editor" spellcheck="false">let x = 10;
+const a = x++;
+
+console.log({ a, x });
+console.log((2 + 3) * 4);</textarea>
+            <div class="runner-actions">
+              <button id="run-code" class="button" type="button">Ejecutar código</button>
+              <button id="clear-console" class="button ghost small" type="button">Limpiar salida</button>
+              <span class="hint">Atajo: <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Enter</kbd></span>
+            </div>
+            <pre id="console-output" class="console-output" tabindex="0" aria-live="polite"><span class="muted">La salida aparecerá acá.</span></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="bits" class="lab-section" aria-labelledby="titulo-bits">
+        <div class="section-heading">
+          <span class="section-number">04</span>
+          <div>
+            <h2 id="titulo-bits">Mesa de operaciones bit a bit</h2>
+            <p>Compará dos números como enteros de 32 bits. Los espacios separan grupos de cuatro bits para poder leerlos sin perderse.</p>
+          </div>
+        </div>
+        <div class="experiment">
+          <div class="experiment-bar"><strong>Visor binario · 32 bits</strong><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="experiment-body">
+            <div class="bit-controls">
+              <div><label class="field-label" for="bit-a">Operando A</label><input id="bit-a" name="bit-a" type="number" value="12" step="1"></div>
+              <div><label class="field-label" for="bit-b">Operando B</label><input id="bit-b" name="bit-b" type="number" value="10" step="1"></div>
+            </div>
+            <fieldset class="operator-switcher">
+              <legend>Operación</legend>
+              <label><input type="radio" name="bit-operation" value="and" checked=""><span>A &amp; B</span></label>
+              <label><input type="radio" name="bit-operation" value="or"><span>A | B</span></label>
+              <label><input type="radio" name="bit-operation" value="xor"><span>A ^ B</span></label>
+            </fieldset>
+            <div class="bit-board" aria-live="polite">
+              <div class="bit-line"><span>A</span><span id="bits-a" class="bits">0000 0000 0000 0000 0000 0000 0000 1100</span><span id="bits-a-dec">12</span></div>
+              <div class="bit-line"><span id="bit-op-symbol">&amp; B</span><span id="bits-b" class="bits">0000 0000 0000 0000 0000 0000 0000 1010</span><span id="bits-b-dec">10</span></div>
+              <div class="bit-line"><span>=</span><span id="bits-result" class="bits">0000 0000 0000 0000 0000 0000 0000 1000</span><span id="bits-result-dec">8</span></div>
+            </div>
+            <p class="bit-note">Antes de operar, JavaScript convierte ambos valores al dominio de los enteros de 32 bits. Por eso <code>5.8 | 0</code> produce <code>5</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="permisos" class="lab-section" aria-labelledby="titulo-permisos">
+        <div class="section-heading">
+          <span class="section-number">05</span>
+          <div>
+            <h2 id="titulo-permisos">Un número, cuatro permisos</h2>
+            <p>Cada interruptor ocupa un bit distinto. Al combinarlos con OR, un único entero puede recordar varias opciones al mismo tiempo.</p>
+          </div>
+        </div>
+        <div class="experiment">
+          <div class="experiment-bar"><strong>Simulador de máscara</strong><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="experiment-body permissions-board">
+            <div class="permission-list">
+              <label class="permission-toggle"><input class="permission-check" type="checkbox" value="1" checked=""><span>Leer</span><code>1 &lt;&lt; 0 · 0001</code></label>
+              <label class="permission-toggle"><input class="permission-check" type="checkbox" value="2" checked=""><span>Escribir</span><code>1 &lt;&lt; 1 · 0010</code></label>
+              <label class="permission-toggle"><input class="permission-check" type="checkbox" value="4"><span>Borrar</span><code>1 &lt;&lt; 2 · 0100</code></label>
+              <label class="permission-toggle"><input class="permission-check" type="checkbox" value="8"><span>Administrar</span><code>1 &lt;&lt; 3 · 1000</code></label>
+              <button id="toggle-admin" class="button ghost small" type="button">Alternar ADMIN con XOR</button>
+            </div>
+            <div class="permission-result" aria-live="polite">
+              <span>permisos =</span>
+              <output id="permission-number">3</output>
+              <span id="permission-bits" class="bits">0011</span>
+              <small id="permission-code">LEER | ESCRIBIR</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="desafio" class="lab-section" aria-labelledby="titulo-desafio">
+        <div class="section-heading">
+          <span class="section-number">06</span>
+          <div>
+            <h2 id="titulo-desafio">Desafío de salida</h2>
+            <p>Seis preguntas cortas para comprobar si ya podés anticipar el resultado antes de ejecutar el código.</p>
+          </div>
+        </div>
+        <div class="experiment">
+          <div class="experiment-bar"><strong>Control de comprensión</strong><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <form id="quiz-form" class="experiment-body">
+            <div class="quiz-list">
+              <fieldset class="question" data-answer="b">
+                <legend>1. ¿Qué produce <code>"10" + 2</code>?</legend>
+                <label class="answer-option"><input type="radio" name="q1" value="a"><span><code>12</code>, porque convierte el texto.</span></label>
+                <label class="answer-option"><input type="radio" name="q1" value="b"><span><code>"102"</code>, porque concatena.</span></label>
+                <label class="answer-option"><input type="radio" name="q1" value="c"><span><code>NaN</code>.</span></label>
+                <p class="question-note">El operador <code>+</code> también concatena strings.</p>
+              </fieldset>
+              <fieldset class="question" data-answer="c">
+                <legend>2. ¿Cuál detecta correctamente a <code>NaN</code>?</legend>
+                <label class="answer-option"><input type="radio" name="q2" value="a"><span><code>x === NaN</code></span></label>
+                <label class="answer-option"><input type="radio" name="q2" value="b"><span><code>typeof x === "NaN"</code></span></label>
+                <label class="answer-option"><input type="radio" name="q2" value="c"><span><code>Number.isNaN(x)</code></span></label>
+                <p class="question-note"><code>NaN</code> no es igual ni siquiera a sí mismo; usá <code>Number.isNaN()</code>.</p>
+              </fieldset>
+              <fieldset class="question" data-answer="a">
+                <legend>3. ¿Qué devuelve <code>parseInt("123px")</code>?</legend>
+                <label class="answer-option"><input type="radio" name="q3" value="a"><span><code>123</code></span></label>
+                <label class="answer-option"><input type="radio" name="q3" value="b"><span><code>NaN</code></span></label>
+                <label class="answer-option"><input type="radio" name="q3" value="c"><span><code>"123"</code></span></label>
+                <p class="question-note"><code>parseInt()</code> lee la parte inicial que puede interpretar como entero.</p>
+              </fieldset>
+              <fieldset class="question" data-answer="c">
+                <legend>4. ¿Qué produce <code>(2 + 3) * 4</code>?</legend>
+                <label class="answer-option"><input type="radio" name="q4" value="a"><span><code>14</code></span></label>
+                <label class="answer-option"><input type="radio" name="q4" value="b"><span><code>18</code></span></label>
+                <label class="answer-option"><input type="radio" name="q4" value="c"><span><code>20</code></span></label>
+                <p class="question-note">Los paréntesis fuerzan a sumar antes de multiplicar.</p>
+              </fieldset>
+              <fieldset class="question" data-answer="b">
+                <legend>5. Si <code>permisos = 0011</code>, ¿cómo se apaga ESCRIBIR?</legend>
+                <label class="answer-option"><input type="radio" name="q5" value="a"><span><code>permisos |= ESCRIBIR</code></span></label>
+                <label class="answer-option"><input type="radio" name="q5" value="b"><span><code>permisos &amp;= ~ESCRIBIR</code></span></label>
+                <label class="answer-option"><input type="radio" name="q5" value="c"><span><code>permisos ^= LEER</code></span></label>
+                <p class="question-note">AND con la máscara negada conserva todos los bits salvo el que queremos apagar.</p>
+              </fieldset>
+              <fieldset class="question" data-answer="a">
+                <legend>6. ¿Por qué <code>-12.9 | 0</code> no equivale a <code>Math.floor(-12.9)</code>?</legend>
+                <label class="answer-option"><input type="radio" name="q6" value="a"><span>Bitwise trunca hacia cero; <code>floor</code> baja al entero menor.</span></label>
+                <label class="answer-option"><input type="radio" name="q6" value="b"><span>Bitwise siempre redondea hacia arriba.</span></label>
+                <label class="answer-option"><input type="radio" name="q6" value="c"><span>En realidad producen lo mismo.</span></label>
+                <p class="question-note"><code>-12.9 | 0</code> da <code>-12</code>; <code>Math.floor(-12.9)</code> da <code>-13</code>.</p>
+              </fieldset>
+            </div>
+            <div class="runner-actions">
+              <button class="button" type="submit">Corregir respuestas</button>
+              <button id="reset-quiz" class="button ghost small" type="button">Reiniciar desafío</button>
+            </div>
+            <output id="quiz-result" class="quiz-result" tabindex="-1" aria-live="polite"></output>
+          </form>
+        </div>
+
+        <div id="chuleta" class="cheatsheet">
+          <h3>Chuleta para volver cuando te trabes</h3>
+          <details open="">
+            <summary>Conversiones: <code>Number</code>, <code>parseInt</code> y <code>parseFloat</code></summary>
+            <div><p><code>Number()</code> exige que todo el valor pueda convertirse. <code>parseInt()</code> y <code>parseFloat()</code> leen desde el comienzo hasta donde pueden.</p></div>
+          </details>
+          <details>
+            <summary>Precedencia simplificada</summary>
+            <div><p><code>() → ** → * / % → + - → comparaciones → igualdades → operadores lógicos</code></p></div>
+          </details>
+          <details>
+            <summary>Mapa mental de operadores bitwise</summary>
+            <div class="memory-grid">
+              <div class="memory-row"><code>|</code><span>prender o combinar bits</span></div>
+              <div class="memory-row"><code>&amp;</code><span>consultar o filtrar bits</span></div>
+              <div class="memory-row"><code>&amp; ~</code><span>apagar bits</span></div>
+              <div class="memory-row"><code>^</code><span>alternar bits</span></div>
+              <div class="memory-row"><code>&lt;&lt;</code><span>colocar o desplazar bits a la izquierda</span></div>
+              <div class="memory-row"><code>&gt;&gt;</code><span>desplazar a la derecha conservando signo</span></div>
+              <div class="memory-row"><code>&gt;&gt;&gt;</code><span>desplazar a la derecha rellenando con ceros</span></div>
+            </div>
+          </details>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <p>Laboratorio autocontenido · funciona sin conexión</p>
+      <p>Idea para recordar: <code>cada bit puede guardar una decisión</code>.</p>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+      const displayValue = (value) => {
+        if (typeof value === 'string') return JSON.stringify(value);
+        if (typeof value === 'number' && Object.is(value, -0)) return '-0';
+        if (typeof value === 'number' && Number.isNaN(value)) return 'NaN';
+        if (value === Infinity) return 'Infinity';
+        if (value === -Infinity) return '-Infinity';
+        if (typeof value === 'bigint') return `${value}n`;
+        if (typeof value === 'undefined') return 'undefined';
+        if (typeof value === 'function') return `[Function ${value.name || 'anónima'}]`;
+        try {
+          const json = JSON.stringify(value, (_, nested) => typeof nested === 'bigint' ? `${nested}n` : nested);
+          return json ?? String(value);
+        } catch {
+          return String(value);
+        }
+      };
+
+      const evaluateExpression = (expression) => Function(`"use strict"; return (${expression});`)();
+
+      const inspectExpression = () => {
+        const expression = $('#number-expression').value.trim();
+        const stage = $('#main-value');
+        if (!expression) {
+          stage.textContent = '—';
+          stage.classList.add('error-text');
+          return;
+        }
+        try {
+          const value = evaluateExpression(expression);
+          stage.textContent = displayValue(value);
+          stage.classList.remove('error-text');
+          $('#prop-type').textContent = typeof value;
+          $('#prop-nan').textContent = String(Number.isNaN(value));
+          $('#prop-finite').textContent = String(Number.isFinite(value));
+          $('#prop-integer').textContent = String(Number.isInteger(value));
+          $('#prop-safe').textContent = String(Number.isSafeInteger(value));
+          $('#prop-binary').textContent = typeof value === 'number' && Number.isFinite(value) ? value.toString(2) : 'no aplica';
+          $('#prop-hex').textContent = typeof value === 'number' && Number.isFinite(value) ? value.toString(16) : 'no aplica';
+        } catch (error) {
+          stage.textContent = 'No se pudo evaluar';
+          stage.classList.add('error-text');
+          ['#prop-type', '#prop-nan', '#prop-finite', '#prop-integer', '#prop-safe', '#prop-binary', '#prop-hex']
+            .forEach(selector => $(selector).textContent = '—');
+          $('#prop-type').textContent = error.name;
+        }
+      };
+
+      $('#inspect-button').addEventListener('click', inspectExpression);
+      $('#number-expression').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') inspectExpression();
+      });
+      $$('.inspect-preset').forEach(button => button.addEventListener('click', () => {
+        $('#number-expression').value = button.dataset.value;
+        inspectExpression();
+      }));
+
+      const coercionMessages = new Map([
+        ["'10' + 2", 'Como uno de los operandos es texto, + concatena en lugar de sumar.'],
+        ["'10' * 2", 'La multiplicación necesita números, así que JavaScript convierte el texto automáticamente.'],
+        ["Number('123px')", 'Number() intenta convertir todo el texto; al encontrar “px”, devuelve NaN.'],
+        ["parseInt('123px')", 'parseInt() aprovecha la parte inicial que puede leer como entero.'],
+        ["10 == '10'", 'La igualdad no estricta convierte tipos antes de comparar.'],
+        ["10 === '10'", 'La igualdad estricta compara valor y tipo: number no es string.']
+      ]);
+
+      const updateCoercion = () => {
+        const expression = $('#coercion-expression').value.trim();
+        try {
+          const value = evaluateExpression(expression);
+          $('#coercion-value').textContent = displayValue(value);
+          $('#coercion-type').textContent = typeof value;
+          $('#coercion-explanation').textContent = coercionMessages.get(expression) || 'Cambiá el operador o los tipos y observá cómo se transforma el resultado.';
+        } catch (error) {
+          $('#coercion-value').textContent = error.name;
+          $('#coercion-type').textContent = 'error';
+          $('#coercion-explanation').textContent = 'La expresión no se pudo evaluar. Revisá comillas, paréntesis y operadores.';
+        }
+      };
+
+      $('#coercion-expression').addEventListener('input', updateCoercion);
+      $$('.coercion-preset').forEach(button => button.addEventListener('click', () => {
+        $('#coercion-expression').value = button.dataset.expr;
+        $$('.coercion-preset').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        updateCoercion();
+      }));
+
+      const safeConsoleValue = (value) => {
+        if (typeof value === 'string') return value;
+        if (typeof value === 'undefined') return 'undefined';
+        if (typeof value === 'number' && Number.isNaN(value)) return 'NaN';
+        if (value === Infinity) return 'Infinity';
+        if (value === -Infinity) return '-Infinity';
+        try {
+          return JSON.stringify(value, (_, nested) => typeof nested === 'bigint' ? `${nested}n` : nested, 2) ?? String(value);
+        } catch {
+          return String(value);
+        }
+      };
+
+      const runCode = () => {
+        const code = $('#code-editor').value;
+        const output = $('#console-output');
+        const lines = [];
+        const localConsole = {
+          log: (...values) => lines.push(values.map(safeConsoleValue).join(' ')),
+          warn: (...values) => lines.push(`⚠ ${values.map(safeConsoleValue).join(' ')}`),
+          error: (...values) => lines.push(`Error: ${values.map(safeConsoleValue).join(' ')}`)
+        };
+        try {
+          Function('console', `"use strict";\n${code}`)(localConsole);
+          output.textContent = lines.length ? lines.join('\n') : '✓ Código ejecutado sin mensajes en console.log().';
+          output.classList.remove('console-error');
+        } catch (error) {
+          const prefix = lines.length ? `${lines.join('\n')}\n\n` : '';
+          output.textContent = `${prefix}${error.name}: ${error.message}`;
+          output.classList.add('console-error');
+        }
+      };
+
+      $('#run-code').addEventListener('click', runCode);
+      $('#clear-console').addEventListener('click', () => {
+        $('#console-output').textContent = 'La salida aparecerá acá.';
+        $('#console-output').classList.remove('console-error');
+      });
+      $('#code-editor').addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault();
+          runCode();
+        }
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          const start = event.currentTarget.selectionStart;
+          const end = event.currentTarget.selectionEnd;
+          event.currentTarget.setRangeText('  ', start, end, 'end');
+        }
+      });
+
+      const toBits = (number, width = 32) => {
+        const bits = (number >>> 0).toString(2).padStart(width, '0').slice(-width);
+        return bits.replace(/(.{4})(?=.)/g, '$1 ');
+      };
+
+      const updateBits = () => {
+        const a = Number($('#bit-a').value) || 0;
+        const b = Number($('#bit-b').value) || 0;
+        const operation = $('input[name="bit-operation"]:checked').value;
+        const operations = {
+          and: { value: a & b, symbol: '& B' },
+          or: { value: a | b, symbol: '| B' },
+          xor: { value: a ^ b, symbol: '^ B' }
+        };
+        const result = operations[operation];
+        $('#bits-a').textContent = toBits(a);
+        $('#bits-b').textContent = toBits(b);
+        $('#bits-result').textContent = toBits(result.value);
+        $('#bits-a-dec').textContent = a | 0;
+        $('#bits-b-dec').textContent = b | 0;
+        $('#bits-result-dec').textContent = result.value;
+        $('#bit-op-symbol').textContent = result.symbol;
+      };
+
+      $('#bit-a').addEventListener('input', updateBits);
+      $('#bit-b').addEventListener('input', updateBits);
+      $$('input[name="bit-operation"]').forEach(input => input.addEventListener('change', updateBits));
+
+      const permissionNames = new Map([[1, 'LEER'], [2, 'ESCRIBIR'], [4, 'BORRAR'], [8, 'ADMIN']]);
+      const updatePermissions = () => {
+        const active = $$('.permission-check:checked');
+        const value = active.reduce((total, input) => total | Number(input.value), 0);
+        $('#permission-number').textContent = value;
+        $('#permission-bits').textContent = (value >>> 0).toString(2).padStart(4, '0');
+        $('#permission-code').textContent = active.length
+          ? active.map(input => permissionNames.get(Number(input.value))).join(' | ')
+          : 'NINGÚN PERMISO';
+      };
+
+      $$('.permission-check').forEach(input => input.addEventListener('change', updatePermissions));
+      $('#toggle-admin').addEventListener('click', () => {
+        const admin = $('.permission-check[value="8"]');
+        admin.checked = !admin.checked;
+        updatePermissions();
+      });
+
+      $('#quiz-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const questions = $$('.question', event.currentTarget);
+        let score = 0;
+        let answered = 0;
+        questions.forEach(question => {
+          const selected = $('input:checked', question);
+          question.classList.remove('correct', 'incorrect');
+          question.classList.add('graded');
+          if (selected) {
+            answered += 1;
+            const correct = selected.value === question.dataset.answer;
+            question.classList.add(correct ? 'correct' : 'incorrect');
+            if (correct) score += 1;
+          } else {
+            question.classList.add('incorrect');
+          }
+        });
+        const result = $('#quiz-result');
+        const messages = score === questions.length
+          ? 'Perfecto: ya dominás las ideas centrales.'
+          : score >= 4
+            ? 'Muy bien. Revisá las explicaciones marcadas y volvé a intentar.'
+            : 'Todavía hay material para experimentar. Usá las mesas de arriba y probá otra vez.';
+        result.textContent = `Resultado: ${score} de ${questions.length}. Respondidas: ${answered}. ${messages}`;
+        result.classList.add('visible');
+        result.focus({ preventScroll: true });
+      });
+
+      $('#reset-quiz').addEventListener('click', () => {
+        $('#quiz-form').reset();
+        $$('.question').forEach(question => question.classList.remove('graded', 'correct', 'incorrect'));
+        $('#quiz-result').classList.remove('visible');
+        $('#quiz-result').textContent = '';
+      });
+
+      inspectExpression();
+      updateCoercion();
+      updateBits();
+      updatePermissions();
+    })();
+  </script>
+
+
+</body></html>

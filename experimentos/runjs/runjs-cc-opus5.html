@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pizarra JS</title>
+<style>
+  :root{
+    --fs: 22px;
+    --lh: 34px;
+    --pad: 14px;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    --split: 58%;
+    --splitRow: 62%;
+  }
+
+  /* ── Tema Pizarrón: pizarra de aula, tiza tibia ───────────── */
+  html[data-tema="pizarron"]{
+    --bg:#0E1D19; --paper:#132723; --panel:#16302A;
+    --ink:#E9F2ED; --dim:#8AA79C; --rule:#2A4A41; --ruleSoft:#1F3B34;
+    --accent:#8FD1FF; --accentInk:#0E1D19; --accentSoft:#1B3A44;
+    --err:#FF9E92; --warn:#FFCE73; --ok:#8CE0A8;
+    --band:#1B3630; --caret:#8FD1FF;
+    --kw:#F0A6FF; --str:#8CE0A8; --num:#FFCB7A; --com:#7E9B92;
+    --fn:#95CBFF; --lit:#FFCB7A; --re:#FFB39B; --pun:#A9C4BB;
+    --sombra: 0 10px 30px rgba(0,0,0,.45);
+  }
+  /* ── Tema Aula clara: para salas con luz encendida ────────── */
+  html[data-tema="aula"]{
+    --bg:#E7EAEF; --paper:#FFFFFF; --panel:#F4F6F9;
+    --ink:#0C1420; --dim:#525C6B; --rule:#B9C2CE; --ruleSoft:#DCE2EA;
+    --accent:#123FCC; --accentInk:#FFFFFF; --accentSoft:#DEE7FF;
+    --err:#B3121B; --warn:#8A5200; --ok:#0A6B3D;
+    --band:#EEF2F9; --caret:#123FCC;
+    --kw:#7B1FA2; --str:#0A6B3D; --num:#8A4B00; --com:#5F6C7B;
+    --fn:#123FCC; --lit:#8A4B00; --re:#B3121B; --pun:#3C4654;
+    --sombra: 0 10px 30px rgba(12,20,32,.14);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:var(--mono); font-size:15px;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  button, select, input{ font-family:inherit; }
+
+  /* ── Barra superior ───────────────────────────────────────── */
+  .barra{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:8px 12px; background:var(--panel);
+    border-bottom:2px solid var(--rule);
+  }
+  .marca{ display:flex; align-items:baseline; gap:8px; margin-right:4px; }
+  .marca b{ font-size:16px; letter-spacing:.02em; }
+  .marca span{ font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.14em; }
+  .sep{ width:2px; align-self:stretch; background:var(--ruleSoft); margin:2px 2px; }
+  .crece{ flex:1; }
+
+  .btn{
+    appearance:none; cursor:pointer;
+    background:var(--paper); color:var(--ink);
+    border:2px solid var(--rule); border-radius:4px;
+    padding:7px 11px; font-size:12px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.08em;
+    line-height:1;
+  }
+  .btn:hover{ border-color:var(--accent); }
+  .btn:active{ transform:translateY(1px); }
+  .btn--main{ background:var(--accent); color:var(--accentInk); border-color:var(--accent); }
+  .btn--on{ background:var(--accentSoft); border-color:var(--accent); }
+  .btn[disabled]{ opacity:.45; cursor:default; }
+  select.btn{ padding-right:8px; text-transform:none; letter-spacing:.02em; font-weight:600; }
+  :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+
+  /* ── Zona principal ───────────────────────────────────────── */
+  .main{ flex:1; min-height:0; display:grid; }
+  body[data-vista="lado"] .main{ grid-template-columns: var(--split) 8px 1fr; grid-template-rows:100%; }
+  body[data-vista="abajo"] .main{ grid-template-rows: var(--splitRow) 8px 1fr; grid-template-columns:100%; }
+
+  .barrita{ background:var(--rule); cursor:col-resize; border:0; padding:0; }
+  body[data-vista="abajo"] .barrita{ cursor:row-resize; }
+  .barrita:hover{ background:var(--accent); }
+
+  .panel{ min-width:0; min-height:0; display:flex; flex-direction:column; background:var(--paper); }
+  .panel__cab{
+    height:30px; flex:0 0 30px; display:flex; align-items:center; gap:10px;
+    padding:0 12px; background:var(--panel); border-bottom:2px solid var(--ruleSoft);
+    font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--dim);
+  }
+  .panel__cab b{ color:var(--ink); font-weight:700; letter-spacing:.16em; }
+
+  /* ── Editor ───────────────────────────────────────────────── */
+  .editor{ flex:1; min-height:0; display:flex; }
+  .renglones{
+    flex:0 0 auto; overflow:hidden; background:var(--paper);
+    border-right:2px solid var(--ruleSoft); position:relative;
+  }
+  .renglones__int{ padding:var(--pad) 10px var(--pad) 12px; will-change:transform; }
+  .renglones i{
+    display:block; height:var(--lh); line-height:var(--lh);
+    font-size:calc(var(--fs) * .78); font-style:normal; color:var(--dim);
+    text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .renglones i.act{ color:var(--accent); font-weight:700; }
+
+  .scroll{ flex:1; min-width:0; overflow:auto; position:relative; }
+  .pila{ position:relative; min-height:100%; }
+  .banda{
+    position:absolute; left:0; right:0; height:var(--lh);
+    background:var(--band); pointer-events:none;
+  }
+  .hl, .editor textarea{
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    margin:0; padding:var(--pad) 16px;
+    font-family:var(--mono); font-size:var(--fs); line-height:var(--lh);
+    letter-spacing:0; white-space:pre; tab-size:2; border:0;
+  }
+  .hl{ pointer-events:none; overflow:hidden; }
+  .editor textarea{
+    background:transparent; color:transparent; caret-color:var(--caret);
+    resize:none; overflow:hidden; outline:0;
+  }
+  .editor textarea::selection{ background:var(--accentSoft); color:transparent; }
+
+  .c-kw{ color:var(--kw); font-weight:700; }
+  .c-str{ color:var(--str); }
+  .c-num,.c-lit{ color:var(--num); }
+  .c-com{ color:var(--com); font-style:italic; }
+  .c-fn{ color:var(--fn); }
+  .c-re{ color:var(--re); }
+  .c-pun{ color:var(--pun); }
+
+  /* ── Resultados: anotaciones al margen ────────────────────── */
+  #salida{ flex:1; min-height:0; position:relative; overflow:hidden; }
+  body[data-vista="abajo"] #salida{ overflow:auto; }
+  .salida__int{ position:relative; will-change:transform; }
+  body[data-vista="abajo"] .salida__int{ padding:6px 0; }
+
+  .res{
+    position:absolute; left:0; right:0; display:flex; align-items:flex-start; gap:0;
+    max-height:var(--lh); overflow:hidden;
+  }
+  body[data-vista="abajo"] .res{ position:static; max-height:none; margin-bottom:2px; }
+  .res.abierta{ max-height:none; z-index:6; background:var(--paper); box-shadow:var(--sombra); }
+  .res:hover{ z-index:5; }
+
+  .res__ln{
+    flex:0 0 auto; min-width:3.2em; padding:0 10px 0 8px;
+    height:var(--lh); line-height:var(--lh);
+    font-size:calc(var(--fs) * .68); color:var(--dim);
+    text-align:right; font-variant-numeric:tabular-nums;
+    border-left:3px solid var(--ruleSoft);
+  }
+  .res__tick{
+    flex:0 0 auto; width:12px; height:var(--lh);
+    background:linear-gradient(to bottom, transparent calc(50% - 1px), var(--ruleSoft) calc(50% - 1px), var(--ruleSoft) calc(50% + 1px), transparent calc(50% + 1px));
+  }
+  .res__cont{ flex:1; min-width:0; padding-right:12px; }
+
+  .chip{
+    display:block; font-size:var(--fs); line-height:var(--lh);
+    white-space:pre; overflow:hidden; text-overflow:ellipsis;
+    cursor:default;
+  }
+  .chip.tiene-mas{ cursor:pointer; }
+  .chip--valor{ color:var(--ink); }
+  .chip--log{ color:var(--dim); }
+  .chip--warn{ color:var(--warn); }
+  .chip--error{ color:var(--err); font-weight:700; }
+  .chip--sis{ color:var(--dim); font-style:italic; }
+  .chip--log::before{ content:"› "; color:var(--ruleSoft); }
+  .chip--warn::before{ content:"▲ "; }
+  .chip--error::before{ content:"■ "; }
+  .chip pre{ margin:0; font:inherit; white-space:pre; }
+  .res.abierta .chip{ white-space:pre; overflow:visible; }
+
+  .v-str{ color:var(--str); }
+  .v-num{ color:var(--num); }
+  .v-lit{ color:var(--kw); }
+  .v-cls{ color:var(--fn); }
+
+  @keyframes latir{ from{ background:var(--accentSoft); } to{ background:transparent; } }
+  .res--nueva{ animation:latir .5s ease-out; }
+  @media (prefers-reduced-motion: reduce){ .res--nueva{ animation:none; } }
+
+  .vacio{
+    padding:var(--pad) 20px; color:var(--dim); font-size:calc(var(--fs) * .8);
+    line-height:1.5; max-width:38ch;
+  }
+  .apagado .salida__int{ opacity:.38; }
+
+  /* ── Barra de estado ──────────────────────────────────────── */
+  .estado{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:6px 12px; background:var(--panel); border-top:2px solid var(--rule);
+    font-size:12px; color:var(--dim);
+  }
+  .estado b{ color:var(--ink); font-weight:700; }
+  .estado .mal{ color:var(--err); font-weight:700; }
+  .insignia{
+    border:2px solid var(--ruleSoft); border-radius:3px; padding:2px 7px;
+    font-size:10px; text-transform:uppercase; letter-spacing:.12em;
+  }
+
+  /* ── Ayuda ────────────────────────────────────────────────── */
+  dialog{
+    border:3px solid var(--accent); border-radius:6px; padding:0;
+    background:var(--paper); color:var(--ink); max-width:min(620px, 92vw);
+    box-shadow:var(--sombra);
+  }
+  dialog::backdrop{ background:rgba(0,0,0,.55); }
+  .ayuda{ padding:22px 26px; }
+  .ayuda h2{ margin:0 0 4px; font-size:20px; letter-spacing:.02em; }
+  .ayuda p{ color:var(--dim); margin:0 0 18px; font-size:13px; line-height:1.5; }
+  .ayuda table{ width:100%; border-collapse:collapse; font-size:14px; }
+  .ayuda td{ padding:7px 0; border-bottom:2px solid var(--ruleSoft); vertical-align:top; }
+  .ayuda td:first-child{ width:11em; color:var(--accent); font-weight:700; }
+  .ayuda .cierre{ margin-top:20px; display:flex; justify-content:flex-end; }
+
+  dialog.ancho{ max-width:min(920px, 94vw); }
+  .md-fila{ display:flex; align-items:center; gap:10px; margin:0 0 14px; }
+  .md-fila label{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--dim); cursor:pointer; }
+  .md-fila input[type=checkbox]{ width:17px; height:17px; accent-color:var(--accent); }
+  .md-prev{
+    width:100%; height:46vh; min-height:200px; resize:vertical;
+    font-family:var(--mono); font-size:13px; line-height:1.55; padding:12px;
+    border:2px solid var(--rule); border-radius:4px;
+    background:var(--panel); color:var(--ink);
+  }
+
+  .medidor{ position:absolute; visibility:hidden; white-space:pre; font-family:var(--mono); font-size:var(--fs); letter-spacing:0; top:-9999px; }
+
+  @media (max-width: 760px){
+    .marca span{ display:none; }
+    .btn{ padding:7px 8px; }
+  }
+</style>
+</head>
+<body data-vista="lado">
+
+<header class="barra">
+  <div class="marca"><b>Pizarra JS</b><span>consola de clase</span></div>
+  <button class="btn btn--main" id="bEjec" title="Ctrl + Enter">Ejecutar</button>
+  <button class="btn btn--on" id="bAuto" aria-pressed="true" title="Ejecutar solo mientras escribís">Auto</button>
+  <button class="btn" id="bDet" title="Cortar la ejecución">Detener</button>
+  <div class="sep"></div>
+  <button class="btn" id="bMenos" title="Ctrl + -" aria-label="Achicar letra">A−</button>
+  <select class="btn" id="selTam" aria-label="Tamaño de letra">
+    <option value="16">Escritorio</option>
+    <option value="22" selected>Clase</option>
+    <option value="28">Fila del fondo</option>
+    <option value="36">Máximo</option>
+    <option value="">Personalizado</option>
+  </select>
+  <button class="btn" id="bMas" title="Ctrl + +" aria-label="Agrandar letra">A+</button>
+  <button class="btn" id="bTema">Aula clara</button>
+  <button class="btn" id="bVista">Poner debajo</button>
+  <div class="sep"></div>
+  <select class="btn" id="selEj" aria-label="Cargar un ejemplo">
+    <option value="">Ejemplos…</option>
+  </select>
+  <div class="crece"></div>
+  <button class="btn" id="bAbrir">Abrir .js</button>
+  <button class="btn" id="bGuardar" title="Ctrl + S">Guardar .js</button>
+  <button class="btn" id="bMd" title="Ctrl + M">Markdown</button>
+  <button class="btn" id="bLimpiar">Limpiar</button>
+  <button class="btn" id="bPantalla">Pantalla completa</button>
+  <button class="btn" id="bAyuda" title="Atajos">?</button>
+  <input type="file" id="fileIn" accept=".js,.txt,text/javascript" hidden>
+</header>
+
+<div class="main">
+  <section class="panel" id="panelCod">
+    <div class="panel__cab"><b>Código</b></div>
+    <div class="editor">
+      <div class="renglones" id="renglones"><div class="renglones__int" id="renglonesInt"></div></div>
+      <div class="scroll" id="scroll">
+        <div class="pila" id="pila">
+          <div class="banda" id="banda"></div>
+          <pre class="hl" id="hl" aria-hidden="true"></pre>
+          <textarea id="ta" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Editor de JavaScript"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="barrita" id="barrita" role="separator" aria-label="Mover la división"></div>
+
+  <section class="panel" id="panelSal">
+    <div class="panel__cab"><b>Resultados</b><span id="cabInfo"></span></div>
+    <div id="salida"><div class="salida__int" id="salidaInt"></div></div>
+  </section>
+</div>
+
+<footer class="estado">
+  <span id="posCur">Lín 1, Col 1</span>
+  <span class="insignia" id="insModo">preparando…</span>
+  <span class="crece"></span>
+  <span id="msj">Ctrl + Enter para ejecutar</span>
+</footer>
+
+<dialog id="dlgAyuda">
+  <div class="ayuda">
+    <h2>Atajos</h2>
+    <p>Pensada para dar clase: letra grande, resultados pegados a su línea y nada que distraiga.</p>
+    <table>
+      <tr><td>Ctrl + Enter</td><td>Ejecutar el código</td></tr>
+      <tr><td>Ctrl + /</td><td>Comentar o descomentar las líneas seleccionadas</td></tr>
+      <tr><td>Tab / Shift + Tab</td><td>Indentar o sacar indentación</td></tr>
+      <tr><td>Ctrl + + / Ctrl + −</td><td>Agrandar o achicar la letra</td></tr>
+      <tr><td>Ctrl + 0</td><td>Volver al tamaño de clase</td></tr>
+      <tr><td>Ctrl + S</td><td>Guardar el código como archivo .js</td></tr>
+      <tr><td>Ctrl + M</td><td>Pasar el código a Markdown</td></tr>
+      <tr><td>Clic en un resultado</td><td>Desplegarlo completo</td></tr>
+      <tr><td>Arrastrar un .js</td><td>Cargarlo en el editor</td></tr>
+    </table>
+    <p style="margin-top:18px">El código corre aislado, sin acceso a esta página. Podés usar <b>await</b> arriba de todo, promesas y <b>setTimeout</b>. No hay <b>document</b> ni <b>window</b>.</p>
+    <div class="cierre"><button class="btn btn--main" id="bCerrarAyuda">Cerrar</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlgMd" class="ancho">
+  <div class="ayuda">
+    <h2>Pasar a Markdown</h2>
+    <p>Los comentarios que están solos en su línea pasan a ser texto; el resto queda en bloques de código. Un comentario que arranca con <b>#</b> queda como título.</p>
+    <div class="md-fila">
+      <label><input type="checkbox" id="mdRes"> Incluir los resultados</label>
+      <span class="crece"></span>
+      <button class="btn" id="mdCopiar">Copiar</button>
+      <button class="btn btn--main" id="mdBajar">Guardar .md</button>
+      <button class="btn" id="mdCerrar">Cerrar</button>
+    </div>
+    <textarea class="md-prev" id="mdPrev" readonly spellcheck="false" aria-label="Markdown generado"></textarea>
+  </div>
+</dialog>
+
+<span class="medidor" id="medidor">0000000000000000000000000000000000000000</span>
+
+<script type="text/plain" id="fuenteCorredor">
+(function () {
+  var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  var seq = 0, cur = 1, posts = 0, flooded = false;
+  var TOPE = 400;
+  var timers = {}, cuentas = {};
+
+  function send(m) {
+    if (posts >= TOPE) { if (!flooded) { flooded = true; POST({ t: 'flood' }); } return; }
+    posts++; POST(m);
+  }
+  function cut(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+  function q(s) {
+    return "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\t/g, '\\t') + "'";
+  }
+  function wrap(o, parts, c, pretty, ind) {
+    if (!parts.length) return o + c;
+    var una = o + ' ' + parts.join(', ') + ' ' + c;
+    if (!pretty || (una.length <= 72 && una.indexOf('\n') === -1)) return una;
+    var pad = new Array(ind + 2).join('  ');
+    return o + '\n' + pad + parts.join(',\n' + pad) + '\n' + new Array(ind + 1).join('  ') + c;
+  }
+
+  function str(v, d, pretty, top, seen, ind) {
+    seen = seen || []; ind = ind || 0;
+    var t = typeof v;
+    if (v === null) return 'null';
+    if (t === 'undefined') return 'undefined';
+    if (t === 'number') return Object.is(v, -0) ? '-0' : String(v);
+    if (t === 'boolean') return String(v);
+    if (t === 'bigint') return String(v) + 'n';
+    if (t === 'symbol') return v.toString();
+    if (t === 'string') return top ? v : q(cut(v, pretty ? 5000 : 140));
+    if (t === 'function') {
+      var src = '';
+      try { src = Function.prototype.toString.call(v); } catch (e) {}
+      if (/^\s*class[\s{]/.test(src)) return 'class ' + (v.name || '(anónima)');
+      return 'ƒ ' + (v.name || '(anónima)') + '()';
+    }
+    if (seen.indexOf(v) !== -1) return '[referencia circular]';
+    if (v instanceof Error) return v.name + ': ' + v.message;
+    if (v instanceof Date) return isNaN(v.getTime()) ? 'Invalid Date' : v.toISOString();
+    if (v instanceof RegExp) return String(v);
+    if (typeof Promise !== 'undefined' && v instanceof Promise) return 'Promise { <pendiente> }';
+    if (d <= 0) return Array.isArray(v) ? '[…]' : '{…}';
+    var seen2 = seen.concat([v]);
+    var max = pretty ? 200 : 25;
+    var i, arr = [];
+    if (Array.isArray(v) || (ArrayBuffer.isView(v) && !(v instanceof DataView))) {
+      var n = v.length;
+      for (i = 0; i < Math.min(n, max); i++) arr.push(str(v[i], d - 1, pretty, false, seen2, ind + 1));
+      if (n > max) arr.push('… +' + (n - max));
+      var pre = Array.isArray(v) ? '' : ((v.constructor ? v.constructor.name : '') + ' ');
+      return pre + wrap('[', arr, ']', pretty, ind);
+    }
+    if (typeof Map !== 'undefined' && v instanceof Map) {
+      i = 0;
+      v.forEach(function (val, k) {
+        if (i++ < max) arr.push(str(k, d - 1, pretty, false, seen2, ind + 1) + ' => ' + str(val, d - 1, pretty, false, seen2, ind + 1));
+      });
+      if (v.size > max) arr.push('… +' + (v.size - max));
+      return 'Map(' + v.size + ') ' + wrap('{', arr, '}', pretty, ind);
+    }
+    if (typeof Set !== 'undefined' && v instanceof Set) {
+      i = 0;
+      v.forEach(function (val) { if (i++ < max) arr.push(str(val, d - 1, pretty, false, seen2, ind + 1)); });
+      if (v.size > max) arr.push('… +' + (v.size - max));
+      return 'Set(' + v.size + ') ' + wrap('{', arr, '}', pretty, ind);
+    }
+    var keys;
+    try { keys = Object.keys(v); } catch (e) { keys = []; }
+    for (i = 0; i < Math.min(keys.length, max); i++) {
+      var k = keys[i];
+      arr.push((/^[A-Za-z_$][\w$]*$/.test(k) ? k : q(k)) + ': ' + str(v[k], d - 1, pretty, false, seen2, ind + 1));
+    }
+    if (keys.length > max) arr.push('… +' + (keys.length - max));
+    var cn = v.constructor && v.constructor.name;
+    var prefijo = cn && cn !== 'Object' ? cn + ' ' : '';
+    return prefijo + wrap('{', arr, '}', pretty, ind);
+  }
+
+  function args2(a, pretty) {
+    var out = [];
+    for (var i = 0; i < a.length; i++) out.push(str(a[i], pretty ? 5 : 2, pretty, typeof a[i] === 'string', null, 0));
+    return out.join(' ');
+  }
+  function emit(kind, line, corto, largo) {
+    var id = ++seq;
+    send({ t: 'out', id: id, line: line, kind: kind, corto: corto, largo: largo && largo !== corto ? largo : null });
+    return id;
+  }
+  function errTxt(e) {
+    if (e && e.name && e.message) return e.name + ': ' + e.message;
+    try { return str(e, 2, false, false, null, 0); } catch (x) { return String(e); }
+  }
+
+  function tabla(datos) {
+    try {
+      var filas = [], etiquetas = [], i;
+      if (Array.isArray(datos)) {
+        for (i = 0; i < datos.length; i++) { etiquetas.push(String(i)); filas.push(datos[i]); }
+      } else if (datos && typeof datos === 'object') {
+        var ks = Object.keys(datos);
+        for (i = 0; i < ks.length; i++) { etiquetas.push(ks[i]); filas.push(datos[ks[i]]); }
+      } else { return null; }
+      var cols = [], simples = false;
+      for (i = 0; i < filas.length; i++) {
+        var f = filas[i];
+        if (f && typeof f === 'object' && !Array.isArray(f)) {
+          var kk = Object.keys(f);
+          for (var j = 0; j < kk.length; j++) if (cols.indexOf(kk[j]) === -1) cols.push(kk[j]);
+        } else { simples = true; }
+      }
+      if (simples) cols.push('valor');
+      var cab = ['(índice)'].concat(cols);
+      var cuerpo = [];
+      for (i = 0; i < filas.length; i++) {
+        var fila = [etiquetas[i]];
+        for (var c = 0; c < cols.length; c++) {
+          var v2 = filas[i];
+          var celda = (v2 && typeof v2 === 'object' && !Array.isArray(v2))
+            ? (cols[c] in v2 ? str(v2[cols[c]], 1, false, false, null, 0) : '')
+            : (cols[c] === 'valor' ? str(v2, 1, false, false, null, 0) : '');
+          fila.push(celda);
+        }
+        cuerpo.push(fila);
+      }
+      var anchos = cab.map(function (h, ix) {
+        var w = h.length;
+        for (var r = 0; r < cuerpo.length; r++) w = Math.max(w, String(cuerpo[r][ix] || '').length);
+        return w;
+      });
+      function linea(f) {
+        return f.map(function (celda, ix) {
+          celda = String(celda === undefined ? '' : celda);
+          return celda + new Array(anchos[ix] - celda.length + 1).join(' ');
+        }).join('  │  ');
+      }
+      var sep = anchos.map(function (w) { return new Array(w + 1).join('─'); }).join('──┼──');
+      return [linea(cab), sep].concat(cuerpo.map(linea)).join('\n');
+    } catch (e) { return null; }
+  }
+
+  function mk(kind) {
+    return function () {
+      var a = [].slice.call(arguments);
+      emit(kind, cur, args2(a, false), args2(a, true));
+    };
+  }
+  var konsole = {
+    log: mk('log'), info: mk('log'), debug: mk('log'), dir: mk('log'),
+    warn: mk('warn'), trace: mk('warn'), error: mk('error'),
+    group: mk('log'), groupCollapsed: mk('log'), groupEnd: function () {},
+    clear: function () { send({ t: 'clear' }); },
+    assert: function (c) {
+      if (!c) { var a = [].slice.call(arguments, 1); emit('error', cur, 'Falló la afirmación' + (a.length ? ': ' + args2(a, false) : ''), null); }
+    },
+    table: function (d) {
+      var txt = tabla(d);
+      if (txt === null) { emit('log', cur, args2([d], false), args2([d], true)); return; }
+      emit('log', cur, args2([d], false), txt);
+    },
+    time: function (l) { timers[l || 'default'] = Date.now(); },
+    timeEnd: function (l) {
+      l = l || 'default';
+      var t0 = timers[l];
+      emit('log', cur, l + ': ' + (t0 === undefined ? 'sin iniciar' : (Date.now() - t0) + ' ms'), null);
+      delete timers[l];
+    },
+    count: function (l) { l = l || 'default'; cuentas[l] = (cuentas[l] || 0) + 1; emit('log', cur, l + ': ' + cuentas[l], null); }
+  };
+
+  function L(n) { cur = n; POST({ t: 'line', n: n }); }
+  function R(line, v) {
+    cur = line;
+    if (v && (typeof v === 'object' || typeof v === 'function') && typeof v.then === 'function') {
+      var id = emit('valor', line, 'Promise { <pendiente> }', null);
+      Promise.resolve(v).then(function (x) {
+        send({ t: 'patch', id: id, kind: 'valor', corto: 'Promise { ' + str(x, 2, false, false, null, 0) + ' }', largo: 'Promise { ' + str(x, 5, true, false, null, 0) + ' }' });
+      }, function (e) {
+        send({ t: 'patch', id: id, kind: 'error', corto: 'Promise rechazada · ' + errTxt(e), largo: null });
+      });
+      return v;
+    }
+    emit('valor', line, str(v, 2, false, false, null, 0), str(v, 5, true, false, null, 0));
+    return v;
+  }
+
+  try {
+    self.addEventListener('error', function (ev) { try { ev.preventDefault(); } catch (x) {} emit('error', cur, errTxt(ev.error || ev.message), null); });
+    self.addEventListener('unhandledrejection', function (ev) { emit('error', cur, 'Promise sin capturar · ' + errTxt(ev.reason), null); });
+  } catch (e) {}
+
+  ON(function (data) {
+    if (!data || data.t !== 'run') return;
+    posts = 0; flooded = false; seq = 0; cur = 1; timers = {}; cuentas = {};
+    var f;
+    try { f = new AsyncFunction('__L', '__r', 'console', data.programa); }
+    catch (err) { emit('error', 1, errTxt(err), null); POST({ t: 'done', ms: 0 }); return; }
+    var t0 = Date.now(), listo = false;
+    function fin() { if (!listo) { listo = true; POST({ t: 'done', ms: Date.now() - t0 }); } }
+    try {
+      f(L, R, konsole).then(fin, function (err) { emit('error', cur, errTxt(err), err && err.stack ? String(err.stack) : null); fin(); });
+    } catch (err) { emit('error', cur, errTxt(err), null); fin(); }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (s) { return document.querySelector(s); };
+  var ta = $('#ta'), hl = $('#hl'), pila = $('#pila'), scroll = $('#scroll');
+  var renglonesInt = $('#renglonesInt'), renglones = $('#renglones');
+  var salida = $('#salida'), salidaInt = $('#salidaInt'), banda = $('#banda');
+  var medidor = $('#medidor'), msj = $('#msj'), posCur = $('#posCur'), insModo = $('#insModo'), cabInfo = $('#cabInfo');
+  var PAD = 14, LH = 34, anchoChar = 12;
+  var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+  /* ── Guardado tolerante: window.storage, localStorage o nada ─ */
+  var Guardar = {
+    get: async function (k) {
+      try {
+        if (window.storage && window.storage.get) { var r = await window.storage.get(k); return r ? r.value : null; }
+        return localStorage.getItem(k);
+      } catch (e) { return null; }
+    },
+    set: async function (k, v) {
+      try {
+        if (window.storage && window.storage.set) { await window.storage.set(k, v); return; }
+        localStorage.setItem(k, v);
+      } catch (e) {}
+    }
+  };
+
+  /* ══ 1. Analizador léxico compartido ═══════════════════════ */
+  var CLAVES = {};
+  'await break case catch class const continue debugger default delete do else export extends finally for function if import in instanceof let new of return static super switch this throw try typeof var void while with yield async get set'.split(' ').forEach(function (k) { CLAVES[k] = 1; });
+  var LITS = { 'true': 1, 'false': 1, 'null': 1, 'undefined': 1, 'NaN': 1, 'Infinity': 1 };
+
+  function leerPlantilla(src, i) {
+    var j = i + 1, prof = 0, n = src.length;
+    while (j < n) {
+      var ch = src[j];
+      if (ch === '\\') { j += 2; continue; }
+      if (prof === 0) {
+        if (ch === '`') { return j + 1; }
+        if (ch === '$' && src[j + 1] === '{') { prof = 1; j += 2; continue; }
+        j++; continue;
+      }
+      if (ch === '{') { prof++; j++; continue; }
+      if (ch === '}') { prof--; j++; continue; }
+      if (ch === '`') { j = leerPlantilla(src, j); continue; }
+      if (ch === '"' || ch === "'") { j = leerTexto(src, j); continue; }
+      j++;
+    }
+    return n;
+  }
+  function leerTexto(src, i) {
+    var c = src[i], j = i + 1, n = src.length;
+    while (j < n) {
+      if (src[j] === '\\') { j += 2; continue; }
+      if (src[j] === c) return j + 1;
+      if (src[j] === '\n') return j;
+      j++;
+    }
+    return n;
+  }
+  function leerRegex(src, i) {
+    var j = i + 1, clase = false, n = src.length;
+    while (j < n) {
+      var ch = src[j];
+      if (ch === '\\') { j += 2; continue; }
+      if (ch === '\n') return i;
+      if (clase) { if (ch === ']') clase = false; }
+      else if (ch === '[') clase = true;
+      else if (ch === '/') { j++; while (j < n && /[a-z]/.test(src[j])) j++; return j; }
+      j++;
+    }
+    return i;
+  }
+  function regexOk(prev) {
+    if (!prev) return true;
+    if (prev.t === 'num' || prev.t === 'str' || prev.t === 'tpl' || prev.t === 're') return false;
+    if (prev.t === 'ident') return !!CLAVES[prev.v] && prev.v !== 'this' && prev.v !== 'super';
+    if (prev.t === 'punct') return !(prev.v === ')' || prev.v === ']');
+    return true;
+  }
+
+  function analizar(src) {
+    var toks = [], n = src.length, i = 0, linea = 1, prev = null;
+    function push(t, v, start, l) {
+      var tok = { t: t, v: v, start: start, end: start + v.length, line: l };
+      toks.push(tok);
+      if (t !== 'ws' && t !== 'nl' && t !== 'com') prev = tok;
+      return tok;
+    }
+    function cuenta(s) { var c = 0, k = -1; while ((k = s.indexOf('\n', k + 1)) !== -1) c++; return c; }
+    while (i < n) {
+      var c = src[i], start = i, l = linea, j;
+      if (c === '\n') { push('nl', '\n', start, l); i++; linea++; continue; }
+      if (c === ' ' || c === '\t' || c === '\r') {
+        j = i; while (j < n && (src[j] === ' ' || src[j] === '\t' || src[j] === '\r')) j++;
+        push('ws', src.slice(i, j), start, l); i = j; continue;
+      }
+      if (c === '/' && src[i + 1] === '/') {
+        j = i + 2; while (j < n && src[j] !== '\n') j++;
+        push('com', src.slice(i, j), start, l); i = j; continue;
+      }
+      if (c === '/' && src[i + 1] === '*') {
+        j = i + 2; while (j < n && !(src[j] === '*' && src[j + 1] === '/')) j++;
+        j = Math.min(n, j + 2);
+        var vc = src.slice(i, j); push('com', vc, start, l); linea += cuenta(vc); i = j; continue;
+      }
+      if (c === '"' || c === "'") { j = leerTexto(src, i); push('str', src.slice(i, j), start, l); i = j; continue; }
+      if (c === '`') { j = leerPlantilla(src, i); var vt = src.slice(i, j); push('tpl', vt, start, l); linea += cuenta(vt); i = j; continue; }
+      if (c === '/' && regexOk(prev)) {
+        j = leerRegex(src, i);
+        if (j > i) { push('re', src.slice(i, j), start, l); i = j; continue; }
+      }
+      if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] || ''))) {
+        j = i;
+        while (j < n && (/[0-9a-zA-Z_.]/.test(src[j]) || ((src[j] === '+' || src[j] === '-') && /[eE]/.test(src[j - 1])))) j++;
+        push('num', src.slice(i, j), start, l); i = j; continue;
+      }
+      if (/[A-Za-z_$]/.test(c)) {
+        j = i; while (j < n && /[A-Za-z0-9_$]/.test(src[j])) j++;
+        push('ident', src.slice(i, j), start, l); i = j; continue;
+      }
+      push('punct', c, start, i === start ? l : l); i++;
+    }
+    return toks;
+  }
+
+  /* ══ 2. Coloreado ══════════════════════════════════════════ */
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function sigSig(toks, i) { for (var k = i + 1; k < toks.length; k++) { var t = toks[k]; if (t.t !== 'ws' && t.t !== 'nl' && t.t !== 'com') return t; } return null; }
+  function antSig(toks, i) { for (var k = i - 1; k >= 0; k--) { var t = toks[k]; if (t.t !== 'ws' && t.t !== 'nl' && t.t !== 'com') return t; } return null; }
+
+  function colorear(src) {
+    var toks = analizar(src), out = [], i;
+    for (i = 0; i < toks.length; i++) {
+      var t = toks[i], cls = '';
+      if (t.t === 'com') cls = 'c-com';
+      else if (t.t === 'str' || t.t === 'tpl') cls = 'c-str';
+      else if (t.t === 're') cls = 'c-re';
+      else if (t.t === 'num') cls = 'c-num';
+      else if (t.t === 'punct') cls = 'c-pun';
+      else if (t.t === 'ident') {
+        if (LITS[t.v]) cls = 'c-lit';
+        else if (CLAVES[t.v]) cls = 'c-kw';
+        else {
+          var nx = sigSig(toks, i), pv = antSig(toks, i);
+          if (nx && nx.v === '(') cls = 'c-fn';
+          else if (pv && pv.v === '.') cls = '';
+          else cls = '';
+        }
+      }
+      out.push(cls ? '<span class="' + cls + '">' + esc(t.v) + '</span>' : esc(t.v));
+    }
+    return out.join('');
+  }
+
+  /* ══ 3. Partir en sentencias de primer nivel ═══════════════ */
+  var CIERRA_CONT = { 'else': 1, 'catch': 1, 'finally': 1 };
+  var ABRE_BLOQUE = { 'if': 1, 'for': 1, 'while': 1, 'switch': 1, 'try': 1, 'do': 1, 'function': 1, 'class': 1 };
+  var CORRE_SOLO = { 'if': 1, 'for': 1, 'while': 1, 'do': 1, 'switch': 1, 'try': 1, 'throw': 1, 'return': 1, 'break': 1, 'continue': 1, 'import': 1, 'export': 1, 'debugger': 1, 'case': 1, 'default': 1, 'with': 1, 'else': 1 };
+  var NO_TERMINA = { 'return': 1, 'typeof': 1, 'new': 1, 'delete': 1, 'void': 1, 'in': 1, 'of': 1, 'instanceof': 1, 'await': 1, 'yield': 1, 'case': 1, 'else': 1, 'do': 1, 'try': 1, 'extends': 1, 'const': 1, 'let': 1, 'var': 1, 'class': 1, 'function': 1, 'async': 1 };
+  var SIGUE_LINEA = '.?:)]}=<>+-*/%&|^,([';
+  var CIERRA_OP = '+-*/%&|^!~=<>,.?:([{';
+
+  function puedeCerrar(cur, sig) {
+    var last = cur[cur.length - 1];
+    if (!last) return false;
+    if (last.t === 'punct' && CIERRA_OP.indexOf(last.v) !== -1) return false;
+    if (last.t === 'ident' && NO_TERMINA[last.v]) return false;
+    if (!sig) return true;
+    if (sig.t === 'tpl') return false;
+    if (sig.t === 'punct' && SIGUE_LINEA.indexOf(sig.v) !== -1) return false;
+    if (sig.t === 'ident' && (CIERRA_CONT[sig.v] || sig.v === 'in' || sig.v === 'of' || sig.v === 'instanceof')) return false;
+    return true;
+  }
+
+  function sentencias(src) {
+    var toks = analizar(src).filter(function (t) { return t.t !== 'ws' && t.t !== 'com'; });
+    var res = [], cur = [], prof = 0, i;
+    function cerrar() {
+      if (!cur.length) return;
+      var a = cur[0], ultimo = cur[cur.length - 1];
+      var sinPyc = cur.length > 1 && ultimo.t === 'punct' && ultimo.v === ';' ? cur[cur.length - 2] : ultimo;
+      if (cur.length === 1 && ultimo.t === 'punct' && ultimo.v === ';') { cur = []; return; }
+      res.push({
+        texto: src.slice(a.start, ultimo.end),
+        expr: src.slice(a.start, sinPyc.end),
+        start: a.start, end: ultimo.end, line: a.line, toks: cur.slice()
+      });
+      cur = [];
+    }
+    function sigDe(k) { for (var m = k + 1; m < toks.length; m++) { if (toks[m].t !== 'nl') return toks[m]; } return null; }
+
+    for (i = 0; i < toks.length; i++) {
+      var t = toks[i];
+      if (t.t === 'nl') {
+        if (prof === 0 && cur.length && puedeCerrar(cur, sigDe(i))) cerrar();
+        continue;
+      }
+      if (t.t === 'punct') {
+        if (t.v === '(' || t.v === '[' || t.v === '{') prof++;
+        else if (t.v === ')' || t.v === ']' || t.v === '}') { prof--; if (prof < 0) prof = 0; }
+      }
+      cur.push(t);
+      if (prof === 0 && t.t === 'punct') {
+        if (t.v === ';') { cerrar(); continue; }
+        if (t.v === '}') {
+          var pri = cur[0];
+          var abre = pri.t === 'ident' && (ABRE_BLOQUE[pri.v] || (pri.v === 'async' && cur[1] && cur[1].v === 'function'));
+          if (abre) {
+            var sg = sigDe(i);
+            var sigue = sg && sg.t === 'ident' && (CIERRA_CONT[sg.v] || (sg.v === 'while' && pri.v === 'do'));
+            if (!sigue) cerrar();
+          }
+        }
+      }
+    }
+    cerrar();
+    return res;
+  }
+
+  function valida(txt) {
+    try { new AsyncFunction('__L', '__r', 'console', txt); return true; }
+    catch (e) { return false; }
+  }
+
+  function sanear(src, lista) {
+    var out = [], i = 0;
+    while (i < lista.length) {
+      var j = i, actual = lista[i];
+      while (!valida(actual.texto) && j + 1 < lista.length) {
+        j++;
+        actual = {
+          texto: src.slice(lista[i].start, lista[j].end),
+          expr: src.slice(lista[i].start, lista[j].end),
+          start: lista[i].start, end: lista[j].end, line: lista[i].line,
+          toks: lista[i].toks, fusion: true
+        };
+      }
+      if (!valida(actual.texto)) return null;
+      out.push(actual);
+      i = j + 1;
+    }
+    return out;
+  }
+
+  function clasificar(s) {
+    if (s.fusion) return { modo: 'correr' };
+    var t = s.toks, p = t[0];
+    if (!p) return { modo: 'correr' };
+    if (p.t === 'punct') return { modo: 'correr' };
+    if (p.t === 'ident') {
+      if (p.v === 'console' && t[1] && t[1].v === '.') return { modo: 'correr' };
+      if (p.v === 'let' || p.v === 'const' || p.v === 'var') {
+        var n1 = t[1];
+        if (n1 && n1.t === 'ident') return { modo: 'nombre', nombre: n1.v };
+        return { modo: 'correr' };
+      }
+      if (p.v === 'function' || p.v === 'class') {
+        var n2 = t[1];
+        if (n2 && n2.t === 'ident') return { modo: 'nombre', nombre: n2.v };
+        return { modo: 'correr' };
+      }
+      if (p.v === 'async' && t[1] && t[1].v === 'function') {
+        var n3 = t[2];
+        if (n3 && n3.t === 'ident') return { modo: 'nombre', nombre: n3.v };
+        return { modo: 'correr' };
+      }
+      if (CORRE_SOLO[p.v]) return { modo: 'correr' };
+    }
+    return { modo: 'expr' };
+  }
+
+  function instrumentar(src) {
+    var lista = sanear(src, sentencias(src));
+    if (!lista) return null;
+    var prog = '';
+    for (var i = 0; i < lista.length; i++) {
+      var s = lista[i], c = clasificar(s);
+      prog += '__L(' + s.line + ');\n';
+      if (c.modo === 'nombre') prog += s.texto + '\n__r(' + s.line + ', ' + c.nombre + ');\n';
+      else if (c.modo === 'expr') prog += '__r(' + s.line + ', (\n' + s.expr + '\n));\n';
+      else prog += s.texto + '\n';
+    }
+    if (!valida(prog)) return null;
+    return prog;
+  }
+
+  /* ══ 4. Corredor aislado (worker, con respaldo en iframe) ══ */
+  var FUENTE = document.getElementById('fuenteCorredor').textContent;
+  var PRE_W = 'var POST=function(m){self.postMessage(m)};var ON=function(h){self.onmessage=function(e){h(e.data)}};';
+  var PRE_F = 'var POST=function(m){parent.postMessage(m,"*")};var ON=function(h){window.addEventListener("message",function(e){h(e.data)})};parent.postMessage({t:"ready"},"*");';
+  var modoCorredor = 'worker', corredor = null;
+
+  function nuevoCorredor(alRecibir) {
+    if (modoCorredor === 'worker') {
+      try {
+        var url = URL.createObjectURL(new Blob([PRE_W + FUENTE], { type: 'text/javascript' }));
+        var w = new Worker(url);
+        var vivo = true, hablo = false;
+        w.onmessage = function (e) { hablo = true; alRecibir(e.data); };
+        w.onerror = function () {
+          if (!vivo || hablo) return;
+          vivo = false;
+          modoCorredor = 'iframe';
+          alRecibir({ t: 'degradar' });
+        };
+        return { post: function (m) { w.postMessage(m); }, matar: function () { vivo = false; try { w.terminate(); } catch (e) {} URL.revokeObjectURL(url); }, duro: true };
+      } catch (e) { modoCorredor = 'iframe'; }
+    }
+    var f = document.createElement('iframe');
+    f.setAttribute('sandbox', 'allow-scripts');
+    f.style.display = 'none';
+    f.srcdoc = '<scr' + 'ipt>' + PRE_F + FUENTE + '</scr' + 'ipt>';
+    var cola = [], listo = false;
+    var oir = function (e) {
+      if (e.source !== f.contentWindow) return;
+      if (e.data && e.data.t === 'ready') {
+        listo = true;
+        while (cola.length) f.contentWindow.postMessage(cola.shift(), '*');
+        return;
+      }
+      alRecibir(e.data);
+    };
+    window.addEventListener('message', oir);
+    document.body.appendChild(f);
+    return {
+      post: function (m) { if (listo) f.contentWindow.postMessage(m, '*'); else cola.push(m); },
+      matar: function () { window.removeEventListener('message', oir); f.remove(); },
+      duro: false
+    };
+  }
+
+  /* ══ 5. Estado y dibujo de resultados ═════════════════════ */
+  var entradas = new Map(), abiertas = new Set(), vistas = new Set();
+  var lineaActual = 1, corriendo = false, guardia = null, desborde = false, pendiente = null;
+
+  function pintarValor(txt) {
+    return esc(txt).replace(
+      /('(?:[^'\\]|\\.)*')|(\b\d+(?:\.\d+)?(?:e[+-]?\d+)?n?\b)|\b(true|false|null|undefined|NaN|Infinity)\b|\b(ƒ|class|Map|Set|Promise)\b/g,
+      function (m, s, n, l, c) {
+        if (s) return '<span class="v-str">' + s + '</span>';
+        if (n) return '<span class="v-num">' + n + '</span>';
+        if (l) return '<span class="v-lit">' + l + '</span>';
+        if (c) return '<span class="v-cls">' + c + '</span>';
+        return m;
+      });
+  }
+
+  var pedido = null;
+  function programar() { if (pedido) return; pedido = requestAnimationFrame(function () { pedido = null; dibujarSalida(); }); }
+
+  function dibujarSalida() {
+    var apilado = document.body.dataset.vista === 'abajo';
+    if (!entradas.size) {
+      salidaInt.innerHTML = '<div class="vacio">Escribí código al lado. Cada resultado aparece acá, a la altura de su línea.</div>';
+      cabInfo.textContent = '';
+      return;
+    }
+    var porLinea = new Map(), e;
+    entradas.forEach(function (en) {
+      if (!porLinea.has(en.line)) porLinea.set(en.line, []);
+      porLinea.get(en.line).push(en);
+    });
+    var lineas = Array.from(porLinea.keys()).sort(function (a, b) { return a - b; });
+    var html = [], errores = 0;
+    lineas.forEach(function (ln) {
+      var lista = porLinea.get(ln), chips = [], nueva = false, abierta = false;
+      lista.forEach(function (en) {
+        if (en.kind === 'error') errores++;
+        if (!vistas.has(en.id)) nueva = true;
+        var mas = !!en.largo;
+        var esta = abiertas.has(en.id);
+        if (esta) abierta = true;
+        var cuerpo = esta && mas ? en.largo : en.corto;
+        chips.push('<span class="chip chip--' + en.kind + (mas ? ' tiene-mas' : '') + '" data-id="' + en.id + '"' +
+          (mas ? ' title="Clic para ver todo"' : '') + '>' + pintarValor(cuerpo) + '</span>');
+      });
+      var pos = apilado ? '' : ' style="top:' + ((ln - 1) * LH + PAD) + 'px"';
+      html.push('<div class="res' + (abierta ? ' abierta' : '') + (nueva ? ' res--nueva' : '') + '" data-linea="' + ln + '"' + pos + '>' +
+        '<span class="res__ln">' + ln + '</span><span class="res__tick"></span>' +
+        '<span class="res__cont">' + chips.join('') + '</span></div>');
+    });
+    if (desborde) html.push('<div class="res" ' + (apilado ? '' : 'style="top:' + (lineas[lineas.length - 1] * LH + PAD) + 'px"') + '>' +
+      '<span class="res__ln"></span><span class="res__tick"></span><span class="res__cont">' +
+      '<span class="chip chip--sis">Se cortó la salida: demasiados mensajes</span></span></div>');
+    salidaInt.innerHTML = html.join('');
+    entradas.forEach(function (en) { vistas.add(en.id); });
+    cabInfo.textContent = errores ? errores + (errores === 1 ? ' error' : ' errores') : '';
+    cabInfo.className = errores ? 'mal' : '';
+  }
+
+  salidaInt.addEventListener('click', function (ev) {
+    var chip = ev.target.closest ? ev.target.closest('.chip') : null;
+    if (!chip || !chip.classList.contains('tiene-mas')) return;
+    var id = Number(chip.dataset.id);
+    if (abiertas.has(id)) abiertas.delete(id); else abiertas.add(id);
+    dibujarSalida();
+  });
+  salidaInt.addEventListener('mouseover', function (ev) {
+    var fila = ev.target.closest ? ev.target.closest('.res') : null;
+    if (!fila || !fila.dataset.linea) return;
+    marcarBanda(Number(fila.dataset.linea));
+  });
+  salida.addEventListener('mouseleave', function () { marcarBanda(null); });
+
+  function marcarBanda(ln) {
+    var l = ln === null ? lineaCursor() : ln;
+    banda.style.top = ((l - 1) * LH + PAD) + 'px';
+  }
+
+  /* ══ 6. Ejecutar ══════════════════════════════════════════ */
+  function recibir(m) {
+    if (!m) return;
+    if (m.t === 'degradar') { matarCorredor(); ejecutar(true); return; }
+    if (m.t === 'line') { lineaActual = m.n; return; }
+    if (m.t === 'out') { entradas.set(m.id, m); programar(); return; }
+    if (m.t === 'patch') {
+      var e = entradas.get(m.id);
+      if (e) { e.kind = m.kind; e.corto = m.corto; e.largo = m.largo; programar(); }
+      return;
+    }
+    if (m.t === 'clear') { entradas.clear(); abiertas.clear(); programar(); return; }
+    if (m.t === 'flood') { desborde = true; programar(); return; }
+    if (m.t === 'done') {
+      clearTimeout(guardia); guardia = null; corriendo = false;
+      salida.classList.remove('apagado');
+      estado(m.ms + ' ms', false);
+      programar();
+      return;
+    }
+  }
+
+  function matarCorredor() { if (corredor) { corredor.matar(); corredor = null; } clearTimeout(guardia); guardia = null; }
+
+  function estado(txt, mal) {
+    msj.innerHTML = mal ? '<span class="mal">' + esc(txt) + '</span>' : esc(txt);
+  }
+
+  function ejecutar(silencioso) {
+    var src = ta.value;
+    if (!src.trim()) { matarCorredor(); entradas.clear(); desborde = false; programar(); estado('Sin código todavía', false); return; }
+    var prog = null, errSintaxis = null;
+    try { new AsyncFunction('__L', '__r', 'console', src); }
+    catch (e) { errSintaxis = e.message; }
+    if (errSintaxis) {
+      salida.classList.add('apagado');
+      estado('Falta algo: ' + errSintaxis, true);
+      return;
+    }
+    prog = instrumentar(src) || src;
+    matarCorredor();
+    entradas.clear(); abiertas.clear(); vistas.clear(); desborde = false;
+    corriendo = true; lineaActual = 1;
+    salida.classList.remove('apagado');
+    programar();
+    corredor = nuevoCorredor(recibir);
+    corredor.post({ t: 'run', programa: prog });
+    if (corredor.duro) {
+      guardia = setTimeout(function () {
+        matarCorredor();
+        entradas.set(-1, { id: -1, line: lineaActual, kind: 'error', corto: 'Se cortó en la línea ' + lineaActual + ': parece un bucle infinito', largo: null });
+        corriendo = false;
+        estado('Cortado a los 3 segundos', true);
+        programar();
+      }, 3000);
+    }
+    if (!silencioso) estado('Ejecutando…', false);
+  }
+
+  var reloj = null;
+  function programarEjecucion() {
+    if (!autoOn) { salida.classList.add('apagado'); estado('Cambió el código · Ctrl + Enter para ejecutar', false); return; }
+    clearTimeout(reloj);
+    reloj = setTimeout(function () { ejecutar(true); }, 450);
+  }
+
+  /* ══ 7. Editor ════════════════════════════════════════════ */
+  function medir() {
+    anchoChar = medidor.getBoundingClientRect().width / 40 || 12;
+  }
+  function lineaCursor() { return ta.value.slice(0, ta.selectionStart).split('\n').length; }
+
+  function acomodar() {
+    var v = ta.value, lineas = v.split('\n'), n = lineas.length;
+    pila.style.height = (n * LH + PAD * 2) + 'px';
+    var max = 0;
+    for (var i = 0; i < n; i++) if (lineas[i].length > max) max = lineas[i].length;
+    pila.style.width = Math.max(scroll.clientWidth, Math.ceil(max * anchoChar) + 48) + 'px';
+    var act = lineaCursor(), nums = [];
+    for (var k = 1; k <= n; k++) nums.push('<i' + (k === act ? ' class="act"' : '') + '>' + k + '</i>');
+    renglonesInt.innerHTML = nums.join('');
+    renglones.style.flexBasis = (String(n).length * anchoChar * 0.78 + 24) + 'px';
+    marcarBanda(null);
+  }
+  function repintar() {
+    hl.innerHTML = colorear(ta.value) + '\n ';
+    acomodar();
+  }
+  function aLaVista(linea, col) {
+    var arriba = (linea - 1) * LH + PAD, abajo = arriba + LH;
+    if (arriba < scroll.scrollTop + 4) scroll.scrollTop = Math.max(0, arriba - 4);
+    else if (abajo > scroll.scrollTop + scroll.clientHeight - 4) scroll.scrollTop = abajo - scroll.clientHeight + 4;
+    var x = col * anchoChar + 16;
+    if (x < scroll.scrollLeft + 20) scroll.scrollLeft = Math.max(0, x - 60);
+    else if (x > scroll.scrollLeft + scroll.clientWidth - 20) scroll.scrollLeft = x - scroll.clientWidth + 60;
+  }
+  function posicion() {
+    var s = ta.value.slice(0, ta.selectionStart), p = s.split('\n');
+    posCur.textContent = 'Lín ' + p.length + ', Col ' + (p[p.length - 1].length + 1);
+    aLaVista(p.length, p[p.length - 1].length);
+    marcarBanda(null);
+    var act = lineaCursor(), hijos = renglonesInt.children;
+    for (var i = 0; i < hijos.length; i++) hijos[i].className = (i + 1 === act) ? 'act' : '';
+  }
+
+  scroll.addEventListener('scroll', function () {
+    var y = scroll.scrollTop;
+    renglonesInt.style.transform = 'translateY(' + (-y) + 'px)';
+    if (document.body.dataset.vista !== 'abajo') salidaInt.style.transform = 'translateY(' + (-y) + 'px)';
+  });
+
+  function insertar(txt) {
+    ta.focus();
+    var ok = false;
+    try { ok = document.execCommand('insertText', false, txt); } catch (e) { ok = false; }
+    if (!ok) {
+      var s = ta.selectionStart, e2 = ta.selectionEnd;
+      ta.setRangeText(txt, s, e2, 'end');
+    }
+    trasEditar();
+  }
+  function trasEditar() { repintar(); posicion(); programarEjecucion(); guardarBorrador(); }
+
+  ta.addEventListener('input', trasEditar);
+  ta.addEventListener('click', posicion);
+  ta.addEventListener('keyup', posicion);
+  ta.addEventListener('scroll', function () { ta.scrollTop = 0; ta.scrollLeft = 0; });
+
+  var PARES = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
+  ta.addEventListener('keydown', function (e) {
+    var ctrl = e.ctrlKey || e.metaKey;
+    var v = ta.value, s = ta.selectionStart, f = ta.selectionEnd;
+
+    if (ctrl && e.key === 'Enter') { e.preventDefault(); ejecutar(false); return; }
+    if (ctrl && e.key === '/') { e.preventDefault(); comentar(); return; }
+    if (ctrl && (e.key === '+' || e.key === '=')) { e.preventDefault(); cambiarTam(+2); return; }
+    if (ctrl && e.key === '-') { e.preventDefault(); cambiarTam(-2); return; }
+    if (ctrl && e.key === '0') { e.preventDefault(); ponerTam(22); return; }
+    if (ctrl && e.key.toLowerCase() === 's') { e.preventDefault(); descargar(); return; }
+    if (ctrl && e.key.toLowerCase() === 'm') { e.preventDefault(); abrirMd(); return; }
+    if (ctrl) return;
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      if (s !== f || e.shiftKey) indentar(e.shiftKey); else insertar('  ');
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var ini = v.lastIndexOf('\n', s - 1) + 1;
+      var actual = v.slice(ini, s);
+      var sangria = (actual.match(/^[ \t]*/) || [''])[0];
+      var abre = /[\{\(\[]\s*$/.test(actual);
+      var cierraYa = /^\s*[\}\)\]]/.test(v.slice(f));
+      if (abre && cierraYa) {
+        insertar('\n' + sangria + '  \n' + sangria);
+        var pos = s + 1 + sangria.length + 2;
+        ta.selectionStart = ta.selectionEnd = pos;
+        posicion();
+      } else {
+        insertar('\n' + sangria + (abre ? '  ' : ''));
+      }
+      return;
+    }
+    if (e.key === 'Backspace' && s === f && s > 0) {
+      var a = v[s - 1], b = v[s];
+      if (PARES[a] && PARES[a] === b) {
+        e.preventDefault();
+        ta.selectionStart = s - 1; ta.selectionEnd = s + 1;
+        insertar('');
+        return;
+      }
+    }
+    if (PARES[e.key]) {
+      var cierre = PARES[e.key];
+      if (s !== f) { e.preventDefault(); var sel = v.slice(s, f); insertar(e.key + sel + cierre); return; }
+      if ((e.key === '"' || e.key === "'" || e.key === '`') && v[s] === e.key) { e.preventDefault(); ta.selectionStart = ta.selectionEnd = s + 1; return; }
+      var sig = v[s] || '';
+      if (sig === '' || /[\s\)\]\},;]/.test(sig)) {
+        e.preventDefault(); insertar(e.key + cierre);
+        ta.selectionStart = ta.selectionEnd = s + 1; posicion();
+        return;
+      }
+    }
+    if (')]}'.indexOf(e.key) !== -1 && s === f && v[s] === e.key) {
+      e.preventDefault(); ta.selectionStart = ta.selectionEnd = s + 1; posicion(); return;
+    }
+  });
+
+  function rangoLineas() {
+    var v = ta.value, s = ta.selectionStart, f = ta.selectionEnd;
+    var ini = v.lastIndexOf('\n', s - 1) + 1;
+    var fin = v.indexOf('\n', f); if (fin === -1) fin = v.length;
+    return { ini: ini, fin: fin, txt: v.slice(ini, fin) };
+  }
+  function reemplazar(r, nuevo) {
+    ta.setRangeText(nuevo, r.ini, r.fin, 'select');
+    trasEditar();
+  }
+  function indentar(sacar) {
+    var r = rangoLineas();
+    var nuevo = r.txt.split('\n').map(function (l) {
+      return sacar ? l.replace(/^ {1,2}/, '') : '  ' + l;
+    }).join('\n');
+    reemplazar(r, nuevo);
+  }
+  function comentar() {
+    var r = rangoLineas(), lineas = r.txt.split('\n');
+    var todas = lineas.every(function (l) { return !l.trim() || /^\s*\/\//.test(l); });
+    var nuevo = lineas.map(function (l) {
+      if (!l.trim()) return l;
+      return todas ? l.replace(/^(\s*)\/\/ ?/, '$1') : l.replace(/^(\s*)/, '$1// ');
+    }).join('\n');
+    reemplazar(r, nuevo);
+  }
+
+  function ponerCodigo(txt) {
+    ta.focus(); ta.select();
+    var ok = false;
+    if (txt !== '') { try { ok = document.execCommand('insertText', false, txt); } catch (e) { ok = false; } }
+    if (!ok) ta.value = txt;
+    ta.selectionStart = ta.selectionEnd = 0;
+    scroll.scrollTop = 0;
+    repintar(); posicion(); guardarBorrador();
+    ejecutar(true);
+  }
+
+  /* ══ 8. Preferencias y controles ══════════════════════════ */
+  var autoOn = true, tam = 22;
+
+  function ponerTam(n) {
+    tam = Math.max(12, Math.min(60, n));
+    LH = Math.round(tam * 1.55);
+    document.documentElement.style.setProperty('--fs', tam + 'px');
+    document.documentElement.style.setProperty('--lh', LH + 'px');
+    $('#selTam').value = [16, 22, 28, 36].indexOf(tam) !== -1 ? String(tam) : '';
+    requestAnimationFrame(function () { medir(); repintar(); programar(); });
+    Guardar.set('pizarra.tam', String(tam));
+  }
+  function cambiarTam(d) { ponerTam(tam + d); }
+
+  function ponerTema(t) {
+    document.documentElement.dataset.tema = t;
+    $('#bTema').textContent = t === 'pizarron' ? 'Aula clara' : 'Pizarrón';
+    Guardar.set('pizarra.tema', t);
+  }
+  function ponerVista(v) {
+    document.body.dataset.vista = v;
+    $('#bVista').textContent = v === 'lado' ? 'Poner debajo' : 'Poner al lado';
+    salidaInt.style.transform = v === 'abajo' ? 'none' : 'translateY(' + (-scroll.scrollTop) + 'px)';
+    Guardar.set('pizarra.vista', v);
+    programar();
+  }
+
+  $('#bEjec').addEventListener('click', function () { ejecutar(false); });
+  $('#bDet').addEventListener('click', function () {
+    matarCorredor(); corriendo = false;
+    estado('Ejecución detenida', false);
+  });
+  $('#bAuto').addEventListener('click', function () {
+    autoOn = !autoOn;
+    this.classList.toggle('btn--on', autoOn);
+    this.setAttribute('aria-pressed', String(autoOn));
+    estado(autoOn ? 'Se ejecuta solo mientras escribís' : 'Ejecución manual · Ctrl + Enter', false);
+    Guardar.set('pizarra.auto', autoOn ? '1' : '0');
+    if (autoOn) ejecutar(true);
+  });
+  $('#bMas').addEventListener('click', function () { cambiarTam(+2); });
+  $('#bMenos').addEventListener('click', function () { cambiarTam(-2); });
+  $('#selTam').addEventListener('change', function () { ponerTam(Number(this.value)); });
+  $('#bTema').addEventListener('click', function () { ponerTema(document.documentElement.dataset.tema === 'pizarron' ? 'aula' : 'pizarron'); });
+  $('#bVista').addEventListener('click', function () { ponerVista(document.body.dataset.vista === 'lado' ? 'abajo' : 'lado'); });
+  $('#bLimpiar').addEventListener('click', function () { ponerCodigo(''); ta.focus(); });
+  $('#bPantalla').addEventListener('click', function () {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+  });
+  $('#bAyuda').addEventListener('click', function () { $('#dlgAyuda').showModal(); });
+  $('#bCerrarAyuda').addEventListener('click', function () { $('#dlgAyuda').close(); });
+
+  function descargar() {
+    var blob = new Blob([ta.value], { type: 'text/javascript' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'clase.js';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    estado('Guardado como clase.js', false);
+  }
+  $('#bGuardar').addEventListener('click', descargar);
+  $('#bAbrir').addEventListener('click', function () { $('#fileIn').click(); });
+  $('#fileIn').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    f.text().then(function (t) { ponerCodigo(t); });
+    this.value = '';
+  });
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) {
+    e.preventDefault();
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) f.text().then(function (t) { ponerCodigo(t); });
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (e.target === ta) return;
+    if (e.key === 'Enter') { e.preventDefault(); ejecutar(false); }
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); cambiarTam(+2); }
+    if (e.key === '-') { e.preventDefault(); cambiarTam(-2); }
+    if (e.key === '0') { e.preventDefault(); ponerTam(22); }
+    if (e.key.toLowerCase() === 'm') { e.preventDefault(); abrirMd(); }
+  });
+
+  /* ── División arrastrable ── */
+  (function () {
+    var barra = $('#barrita'), arrastrando = false;
+    barra.addEventListener('pointerdown', function (e) {
+      arrastrando = true; barra.setPointerCapture(e.pointerId);
+    });
+    barra.addEventListener('pointermove', function (e) {
+      if (!arrastrando) return;
+      var caja = document.querySelector('.main').getBoundingClientRect();
+      if (document.body.dataset.vista === 'lado') {
+        var pct = ((e.clientX - caja.left) / caja.width) * 100;
+        pct = Math.max(20, Math.min(85, pct));
+        document.documentElement.style.setProperty('--split', pct + '%');
+      } else {
+        var pr = ((e.clientY - caja.top) / caja.height) * 100;
+        pr = Math.max(20, Math.min(85, pr));
+        document.documentElement.style.setProperty('--splitRow', pr + '%');
+      }
+      acomodar();
+    });
+    barra.addEventListener('pointerup', function () { arrastrando = false; });
+  })();
+
+  window.addEventListener('resize', function () { medir(); acomodar(); });
+
+  /* ══ 8bis. Pasar el código a Markdown ═════════════════════ */
+  function textoComentario(v) {
+    if (v.slice(0, 2) === '//') return [v.slice(2).replace(/^ /, '')];
+    var cuerpo = v.replace(/^\/\*+/, '').replace(/\*+\/$/, '');
+    var ls = cuerpo.split('\n').map(function (l) { return l.replace(/^\s*\*+ ?/, ''); });
+    while (ls.length && !ls[0].trim()) ls.shift();
+    while (ls.length && !ls[ls.length - 1].trim()) ls.pop();
+    var min = Infinity;
+    ls.forEach(function (l) { if (l.trim()) { var m = l.match(/^ */)[0].length; if (m < min) min = m; } });
+    if (min === Infinity) min = 0;
+    return ls.map(function (l) { return l.slice(min); });
+  }
+
+  function anotaciones() {
+    var mapa = new Map();
+    entradas.forEach(function (en) {
+      if (!en.corto || en.corto.indexOf('\n') !== -1) return;
+      var marca = en.kind === 'valor' ? '→ ' : (en.kind === 'error' ? '■ ' : (en.kind === 'warn' ? '▲ ' : '› '));
+      var txt = en.corto.length > 66 ? en.corto.slice(0, 66) + '…' : en.corto;
+      if (!mapa.has(en.line)) mapa.set(en.line, []);
+      mapa.get(en.line).push(marca + txt);
+    });
+    return mapa;
+  }
+
+  function aMarkdown(src, conRes) {
+    var lineas = src.split('\n'), n = lineas.length;
+    var inicios = [], acc = 0, i;
+    for (i = 0; i < n; i++) { inicios.push(acc); acc += lineas[i].length + 1; }
+    var tipo = [], prosa = [];
+    for (i = 0; i < n; i++) { tipo.push(lineas[i].trim() ? 'code' : 'blank'); prosa.push(null); }
+
+    analizar(src).forEach(function (t) {
+      if (t.t !== 'com') return;
+      var l1 = t.line, l2 = t.line + (t.v.split('\n').length - 1);
+      if (l2 > n) return;
+      var antes = src.slice(inicios[l1 - 1], t.start);
+      var finLinea = inicios[l2 - 1] + lineas[l2 - 1].length;
+      var despues = src.slice(t.end, finLinea);
+      if (antes.trim() || despues.trim()) return;
+      tipo[l1 - 1] = 'prosa';
+      prosa[l1 - 1] = textoComentario(t.v);
+      for (var k = l1; k < l2; k++) tipo[k] = 'saltar';
+    });
+
+    var notas = conRes ? anotaciones() : null;
+    var bloques = [], modo = null, buf = [];
+    function volcar() {
+      while (buf.length && !buf[0].trim()) buf.shift();
+      while (buf.length && !buf[buf.length - 1].trim()) buf.pop();
+      if (buf.length) bloques.push(modo === 'code' ? '```js\n' + buf.join('\n') + '\n```' : buf.join('\n'));
+      buf = [];
+    }
+    for (i = 0; i < n; i++) {
+      var t2 = tipo[i];
+      if (t2 === 'saltar') continue;
+      if (t2 === 'blank') { if (modo) buf.push(''); continue; }
+      if (t2 !== modo) { volcar(); modo = t2; }
+      if (t2 === 'prosa') { prosa[i].forEach(function (l) { buf.push(l); }); }
+      else {
+        var linea = lineas[i];
+        if (notas && notas.has(i + 1)) linea += '  // ' + notas.get(i + 1).join(' · ');
+        buf.push(linea);
+      }
+    }
+    volcar();
+    return bloques.join('\n\n') + '\n';
+  }
+
+  function refrescarMd() { $('#mdPrev').value = aMarkdown(ta.value, $('#mdRes').checked); }
+  function abrirMd() { refrescarMd(); $('#dlgMd').showModal(); }
+
+  $('#bMd').addEventListener('click', abrirMd);
+  $('#mdRes').addEventListener('change', refrescarMd);
+  $('#mdCerrar').addEventListener('click', function () { $('#dlgMd').close(); });
+  $('#mdCopiar').addEventListener('click', function () {
+    var b = this, txt = $('#mdPrev').value;
+    function ok() { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar'; }, 1400); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(ok, function () { $('#mdPrev').select(); document.execCommand('copy'); ok(); });
+    } else { $('#mdPrev').select(); document.execCommand('copy'); ok(); }
+  });
+  $('#mdBajar').addEventListener('click', function () {
+    var blob = new Blob([$('#mdPrev').value], { type: 'text/markdown' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'clase.md';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  /* ══ 9. Ejemplos de clase ═════════════════════════════════ */
+  var EJEMPLOS = [
+    ['Variables y tipos', [
+      'let nombre = "Ada"',
+      'const edad = 36',
+      'let activa = true',
+      '',
+      'typeof nombre',
+      'typeof edad',
+      'edad + 1',
+      'nombre + " tiene " + edad',
+      '`${nombre} tiene ${edad} años`'
+    ].join('\n')],
+    ['Funciones', [
+      'function saludar(nombre) {',
+      '  return "Hola, " + nombre',
+      '}',
+      '',
+      'const doble = n => n * 2',
+      '',
+      'saludar("comisión 1")',
+      'doble(21)',
+      '',
+      '// Una función también es un valor',
+      'doble'
+    ].join('\n')],
+    ['Arrays: map, filter, reduce', [
+      'const notas = [8, 4, 10, 6, 2, 9]',
+      '',
+      'notas.length',
+      'notas.filter(n => n >= 6)',
+      'notas.map(n => n * 10)',
+      'notas.reduce((a, b) => a + b, 0)',
+      'notas.reduce((a, b) => a + b, 0) / notas.length',
+      '',
+      'notas.sort((a, b) => b - a)'
+    ].join('\n')],
+    ['Objetos y desestructuración', [
+      'const alumno = {',
+      '  legajo: 63174,',
+      '  nombre: "Lucía",',
+      '  materias: ["Programación III", "Bases de datos"]',
+      '}',
+      '',
+      'alumno.nombre',
+      'alumno.materias.length',
+      '',
+      'const { nombre, materias } = alumno',
+      'nombre',
+      '',
+      'const conNota = { ...alumno, nota: 9 }',
+      'conNota'
+    ].join('\n')],
+    ['Recorrer con for', [
+      'const palabras = ["uno", "dos", "tres"]',
+      '',
+      'for (const p of palabras) {',
+      '  console.log(p, p.length)',
+      '}',
+      '',
+      'for (let i = 0; i < 3; i++) {',
+      '  console.log("vuelta", i)',
+      '}'
+    ].join('\n')],
+    ['Clases', [
+      'class Contacto {',
+      '  constructor(nombre, telefono) {',
+      '    this.nombre = nombre',
+      '    this.telefono = telefono',
+      '  }',
+      '  etiqueta() {',
+      '    return `${this.nombre} <${this.telefono}>`',
+      '  }',
+      '}',
+      '',
+      'const c = new Contacto("Ana", "381-555-0000")',
+      'c',
+      'c.etiqueta()',
+      'c instanceof Contacto'
+    ].join('\n')],
+    ['Promesas y await', [
+      'function esperar(ms) {',
+      '  return new Promise(ok => setTimeout(() => ok("listo tras " + ms + " ms"), ms))',
+      '}',
+      '',
+      'esperar(300)',
+      '',
+      'const r = await esperar(600)',
+      'r',
+      '',
+      'setTimeout(() => console.log("esto llega después"), 900)'
+    ].join('\n')],
+    ['Errores y try/catch', [
+      'function dividir(a, b) {',
+      '  if (b === 0) throw new Error("No se puede dividir por cero")',
+      '  return a / b',
+      '}',
+      '',
+      'dividir(10, 2)',
+      '',
+      'try {',
+      '  dividir(10, 0)',
+      '} catch (e) {',
+      '  console.error(e.message)',
+      '}'
+    ].join('\n')],
+    ['Tabla de datos', [
+      'const cursada = [',
+      '  { alumno: "Ana", parcial1: 8, parcial2: 9 },',
+      '  { alumno: "Beto", parcial1: 4, parcial2: 7 },',
+      '  { alumno: "Cami", parcial1: 10, parcial2: 6 }',
+      ']',
+      '',
+      'console.table(cursada)',
+      '',
+      'cursada.map(a => ({ alumno: a.alumno, promedio: (a.parcial1 + a.parcial2) / 2 }))'
+    ].join('\n')],
+    ['Closures', [
+      'function contador() {',
+      '  let n = 0',
+      '  return () => ++n',
+      '}',
+      '',
+      'const sumar = contador()',
+      'sumar()',
+      'sumar()',
+      'sumar()',
+      '',
+      'const otro = contador()',
+      'otro()'
+    ].join('\n')]
+  ];
+  (function () {
+    var sel = $('#selEj');
+    EJEMPLOS.forEach(function (e, i) {
+      var o = document.createElement('option');
+      o.value = String(i); o.textContent = e[0];
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () {
+      if (this.value === '') return;
+      ponerCodigo(EJEMPLOS[Number(this.value)][1]);
+      this.value = '';
+    });
+  })();
+
+  /* ══ 10. Arranque ═════════════════════════════════════════ */
+  var relojGuardar = null;
+  function guardarBorrador() {
+    clearTimeout(relojGuardar);
+    relojGuardar = setTimeout(function () { Guardar.set('pizarra.codigo', ta.value); }, 800);
+  }
+
+  var INICIAL = [
+    '// Pizarra JS · escribí y mirá el resultado a la derecha',
+    '',
+    'const materia = "Programación IV"',
+    'const clases = 64',
+    '',
+    '`${materia}: ${clases} clases de 2 horas`',
+    '',
+    'const horas = clases * 2',
+    'horas',
+    '',
+    'console.log("Arrancamos")'
+  ].join('\n');
+
+  (async function iniciar() {
+    var tema = await Guardar.get('pizarra.tema');
+    var vista = await Guardar.get('pizarra.vista');
+    var t = await Guardar.get('pizarra.tam');
+    var auto = await Guardar.get('pizarra.auto');
+    var codigo = await Guardar.get('pizarra.codigo');
+
+    ponerTema(tema === 'aula' ? 'aula' : 'pizarron');
+    ponerVista(vista === 'abajo' ? 'abajo' : 'lado');
+    ponerTam(t ? Number(t) : 22);
+    if (auto === '0') {
+      autoOn = false;
+      $('#bAuto').classList.remove('btn--on');
+      $('#bAuto').setAttribute('aria-pressed', 'false');
+    }
+    ta.value = codigo !== null && codigo !== undefined && codigo !== '' ? codigo : INICIAL;
+
+    medir(); repintar(); posicion();
+    insModo.textContent = 'corte de bucles: probando';
+    ejecutar(true);
+    setTimeout(function () {
+      insModo.textContent = modoCorredor === 'worker'
+        ? 'corte de bucles: activo'
+        : 'corte de bucles: no disponible';
+      insModo.title = modoCorredor === 'worker'
+        ? 'Un bucle infinito se corta solo a los 3 segundos.'
+        : 'Abierta como archivo local: si un bucle no termina, recargá la página. Servila por http para tener el corte automático.';
+    }, 1200);
+    ta.focus();
+  })();
+})();
+</script>
+</body>
+</html>

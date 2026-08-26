@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="papel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pizarra JS</title>
+<style>
+:root{
+  --fs: 20px;
+  --lh: 1.55;
+  --editor-lh: 1.68;
+  --padx: 18px;
+  --pady: 14px;
+  --code: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --ui: "Avenir Next", "Segoe UI Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ui-xs:.75rem;
+  --ui-sm:.875rem;
+  --ui-control:.9375rem;
+  --ui-brand:1rem;
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+  --weight-bold:700;
+  --space-1:.25rem;
+  --space-2:.5rem;
+  --space-3:.75rem;
+  --space-4:1rem;
+  --space-5:1.25rem;
+  --radius-control:.625rem;
+  --radius-panel:1rem;
+  --border-thin:1px;
+  --border-strong:1px;
+  --focus-ring:3px;
+  --control-size:2.25rem;
+  --compact-control-size:1.5rem;
+  --pane-head-size:2.25rem;
+  --motion-fast:140ms;
+  --ease-out-quart:cubic-bezier(.25,1,.5,1);
+}
+html[data-theme="papel"]{
+  --bg:#f3f5f8; --panel:#fcfcfd; --panel2:#f7f8fa; --ink:#172033; --muted:#626d80;
+  --rule:#e1e5eb; --rule-strong:#060809; --accent:#4f46e5; --sel:rgba(79,70,229,.18); --linehl:#eff0ff;
+  --k:#7138c7; --s:#087f5b; --n:#1bda97a4; --c:#318451; --f:#2563c8; --p:#176781; --b:#5f6b7a;
+  --err:#c92a20; --warn:#996000; --success:#16794b; --accent-ink:#fff; --accent-hover:#4338ca;
+  --control-hover:#f0f2f6; --control-selected:#ecebff; --type-bg:#f0f2f6;
+  --shadow-panel:0 1px 2px rgba(20,29,45,.05), 0 12px 32px rgba(20,29,45,.07);
+  --shadow-control:0 1px 2px rgba(20,29,45,.08);
+  --accent-shadow:0 6px 16px rgba(79,70,229,.22);
+  color-scheme:light;
+}
+html[data-theme="pizarron"]{
+  --bg:#080c12; --panel:#0d131b; --panel2:#111923; --ink:#e6ebf2; --muted:#8793a4;
+  --rule:#232d3a; --rule-strong:#354152; --accent:#918aff; --sel:rgba(145,138,255,.24); --linehl:#181d33;
+  --k:#c99cff; --s:#73d5a8; --n:#ffac72; --c:#72c98f; --f:#7eb9ff; --p:#8fcbdc; --b:#a8b3c2;
+  --err:#ff8e86; --warn:#efc26a; --success:#75d7a7; --accent-ink:#0a0d16; --accent-hover:#aaa5ff;
+  --control-hover:#171f2a; --control-selected:#242342; --type-bg:#171f2a;
+  --shadow-panel:0 1px 2px rgba(0,0,0,.26), 0 16px 38px rgba(0,0,0,.26);
+  --shadow-control:0 1px 2px rgba(0,0,0,.25);
+  --accent-shadow:0 6px 18px rgba(102,93,255,.22);
+  color-scheme:dark;
+}
+*, *::before, *::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:var(--ui);
+  display:grid; grid-template-rows:auto minmax(0,1fr); gap:var(--space-3);
+  height:100dvh; padding:var(--space-3); overflow:hidden;
+}
+
+/* ---------- barra ---------- */
+.bar{
+  position:relative; z-index:3;
+  display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap;
+  padding:var(--space-2); border:var(--border-thin) solid var(--rule);
+  border-radius:var(--radius-panel); background:var(--panel); box-shadow:var(--shadow-panel);
+}
+.brand{
+  display:flex; align-items:center; gap:var(--space-2); margin-inline:var(--space-1) auto;
+  color:var(--ink); font-size:var(--ui-brand); font-weight:var(--weight-bold); letter-spacing:-.02em
+}
+.brand em{
+  display:grid; place-items:center; min-inline-size:1.75rem; block-size:1.75rem;
+  border-radius:.5rem; background:var(--accent); color:var(--accent-ink);
+  font:var(--weight-bold) .6875rem/1 var(--code); font-style:normal; letter-spacing:.04em;
+  box-shadow:var(--accent-shadow); transition:transform var(--motion-fast) var(--ease-out-quart)
+}
+.bar button, .bar label{
+  min-block-size:var(--control-size);
+  font:var(--weight-semibold) var(--ui-control)/1 var(--ui); color:var(--ink); background:transparent;
+  border:var(--border-thin) solid var(--rule); border-radius:var(--radius-control); padding:var(--space-2) var(--space-3); cursor:pointer;
+  transition:transform var(--motion-fast) var(--ease-out-quart), opacity var(--motion-fast) var(--ease-out-quart);
+}
+.bar button:focus-visible, .bar label:has(input:focus-visible), .mini:focus-visible{outline:var(--focus-ring) solid var(--accent); outline-offset:2px}
+.bar label input:focus-visible{outline:none}
+.bar button:active, .bar label:active{transform:translateY(1px); opacity:.78}
+#run{
+  padding-inline:var(--space-4); background:var(--accent); border-color:var(--accent);
+  color:var(--accent-ink); box-shadow:var(--accent-shadow)
+}
+.run-icon{
+  display:inline-block; margin-right:.4rem; font-size:.68em; opacity:.72;
+  transform:translateX(0); transition:transform var(--motion-fast) var(--ease-out-quart), opacity var(--motion-fast) var(--ease-out-quart)
+}
+#run.is-running .run-icon{transform:translateX(2px); opacity:.4}
+#run.just-ran .run-icon{animation:run-confirm 480ms var(--ease-out-quart)}
+#run small{
+  display:inline-block; margin-left:var(--space-2); padding:.25rem .4rem;
+  border-radius:.35rem; background:rgba(0,0,0,.13);
+  font:var(--weight-semibold) .6875rem/1 var(--code); opacity:.78
+}
+.toggle{
+  display:flex; align-items:center; gap:var(--space-2); user-select:none;
+  border-color:transparent; color:var(--muted)
+}
+.toggle input{
+  appearance:none; position:relative; inline-size:1.75rem; block-size:1rem; flex:0 0 auto;
+  margin:0; border:0; border-radius:999px; background:var(--rule-strong); cursor:pointer
+}
+.toggle input::before{
+  content:""; position:absolute; inset-block-start:.125rem; inset-inline-start:.125rem;
+  inline-size:.75rem; block-size:.75rem; border-radius:50%; background:var(--panel);
+  box-shadow:var(--shadow-control); transition:transform var(--motion-fast) var(--ease-out-quart)
+}
+.toggle input:checked{background:var(--accent)}
+.toggle input:checked::before{transform:translateX(.75rem)}
+.toggle:has(input:checked){background:var(--control-selected); border-color:transparent; color:var(--ink)}
+.grp{display:flex; gap:0}
+.grp button{border-radius:0}
+.grp button:first-child{border-radius:var(--radius-control) 0 0 var(--radius-control)}
+.grp button:last-child{border-radius:0 var(--radius-control) var(--radius-control) 0; border-left-width:0}
+.save-check{
+  display:inline-block; margin-left:.3rem; color:var(--success); opacity:0;
+  transform:scale(.55); transition:transform var(--motion-fast) var(--ease-out-quart), opacity var(--motion-fast) var(--ease-out-quart)
+}
+.grp button.saved{color:var(--success); border-color:var(--success)}
+.grp button.saved .save-check{opacity:1; transform:scale(1)}
+#theme{
+  display:grid; place-items:center; inline-size:var(--control-size); padding:0;
+  margin-inline-start:auto;
+}
+.theme-icon{
+  inline-size:1.125rem; block-size:1.125rem; fill:none; stroke:currentColor;
+  stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+}
+.theme-icon-sun{display:none}
+html[data-theme="pizarron"] .theme-icon-moon{display:none}
+html[data-theme="pizarron"] .theme-icon-sun{display:block}
+
+/* ---------- layout ---------- */
+.split{
+  display:grid; grid-template-columns:var(--colsplit,58%) var(--space-2) 1fr;
+  min-height:0; overflow:hidden; border:var(--border-thin) solid var(--rule);
+  border-radius:var(--radius-panel); background:var(--bg); box-shadow:var(--shadow-panel)
+}
+.divider{
+  position:relative; background:var(--bg); cursor:col-resize;
+  transition:opacity var(--motion-fast) var(--ease-out-quart)
+}
+.divider::after{
+  content:""; position:absolute; inset-block:50% auto; inset-inline:50% auto;
+  inline-size:2px; block-size:2rem; border-radius:999px; background:var(--rule-strong);
+  transform:translate(-50%,-50%); transition:transform var(--motion-fast) var(--ease-out-quart), opacity var(--motion-fast) var(--ease-out-quart)
+}
+.divider:focus-visible{outline:var(--focus-ring) solid var(--accent); outline-offset:-3px}
+.divider:focus-visible::after{background:var(--accent); transform:translate(-50%,-50%) scaleY(1.18)}
+.pane{display:grid; grid-template-rows:auto 1fr; min-height:0; min-width:0; background:var(--panel)}
+.head{
+  display:flex; align-items:center; gap:var(--space-3); padding-inline:var(--space-4);
+  border-bottom:var(--border-thin) solid var(--rule); background:var(--panel2);
+  font-size:.6875rem; font-weight:var(--weight-bold); letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+  min-block-size:var(--pane-head-size);
+}
+.head .right{margin-left:auto; display:flex; align-items:center; gap:var(--space-3); text-transform:none; letter-spacing:0}
+.mini{
+  min-inline-size:var(--compact-control-size); min-block-size:var(--compact-control-size);
+  font:var(--weight-semibold) .75rem/1 var(--ui); color:var(--muted); background:none;
+  border:0; border-radius:.375rem; padding:0 var(--space-2); cursor:pointer; text-decoration:none;
+  transition:opacity var(--motion-fast) var(--ease-out-quart)
+}
+.mini:active{opacity:.55}
+
+/* ---------- editor ---------- */
+.editor{display:grid; grid-template-columns:auto 1fr; min-height:0; overflow:hidden}
+.gutter{
+  overflow:hidden; text-align:right; user-select:none; color:var(--muted);
+  font:var(--fs)/var(--editor-lh) var(--code);
+  padding:var(--pady) var(--space-3) calc(var(--fs) * 6) var(--space-4);
+  border-right:var(--border-thin) solid var(--rule); background:var(--panel2);
+}
+.gutter b{display:block; font-weight:var(--weight-regular)}
+.gutter b.on{color:var(--accent); font-weight:var(--weight-semibold)}
+.wrap{position:relative; min-width:0; overflow:hidden}
+#band{position:absolute; left:0; right:0; top:0; background:var(--linehl); z-index:0; pointer-events:none}
+.editor-welcome{
+  position:absolute; z-index:1; inset-inline:var(--padx); inset-block-start:calc(var(--pady) + var(--fs) * var(--editor-lh) * 1.45);
+  display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:var(--space-3);
+  max-inline-size:31rem; color:var(--muted); pointer-events:none;
+  opacity:1; transform:translateY(0);
+  transition:opacity 220ms var(--ease-out-quart), transform 220ms var(--ease-out-quart)
+}
+.editor-welcome.is-hidden{opacity:0; transform:translateY(4px)}
+.welcome-mark{
+  display:grid; place-items:center; inline-size:2rem; block-size:2rem;
+  border:var(--border-thin) solid var(--rule); border-radius:.55rem;
+  background:var(--type-bg); color:var(--accent); font:var(--weight-bold) .72rem/1 var(--code)
+}
+.editor-welcome strong{display:block; margin-block:.05rem .2rem; color:var(--ink); font:var(--weight-semibold) .9rem/1.4 var(--ui)}
+.editor-welcome span:last-child{display:block; font:var(--weight-regular) .78rem/1.55 var(--ui)}
+.editor-welcome code{
+  padding:.08rem .3rem; border-radius:.3rem; background:var(--type-bg);
+  color:var(--accent); font:var(--weight-semibold) .92em/1 var(--code)
+}
+#hl, #lineProbe, #ta{
+  position:absolute; inset:0; margin:0; border:0; tab-size:2;
+  font:var(--fs)/var(--editor-lh) var(--code);
+  padding:var(--pady) var(--padx) calc(var(--fs) * 6);
+  white-space:pre; overflow:hidden;
+}
+#lineProbe{visibility:hidden; pointer-events:none}
+#hl{z-index:1; pointer-events:none; color:var(--ink)}
+#ta{
+  z-index:2; overflow:auto; resize:none; outline:none;
+  color:transparent; background:transparent; caret-color:var(--accent);
+}
+#ta, .out{scrollbar-color:var(--rule-strong) transparent; scrollbar-width:thin}
+#ta::selection{background:var(--sel)}
+#hl i{font-style:normal}
+#hl .k{color:var(--k); font-weight:var(--weight-semibold)}
+#hl .s{color:var(--s)}
+#hl .n{color:var(--n)}
+#hl .c{color:var(--c); font-style:italic}
+#hl .f{color:var(--f)}
+#hl .p{color:var(--p)}
+#hl .b{color:var(--b)}
+#hl .l{color:var(--n); font-weight:var(--weight-semibold)}
+#hl .pr{color:var(--accent); font-weight:var(--weight-bold)}
+/* Comentarios renderizados como Markdown: los marcadores desaparecen, así que
+   el ancho ya no coincide con la fuente. El margen y la altura de los títulos
+   caben dentro del ritmo fijo para conservar alineados cursor y numeración. */
+#hl .mdrow{
+  display:inline-block; width:100%; line-height:1;
+  margin-block:2px; vertical-align:middle
+}
+#hl .mk{color:var(--c); opacity:.08}
+#hl .mt{color:var(--c); font-weight:100}
+#hl .mh1, #hl .mh2, #hl .mh3{color:var(--c); line-height:0}
+#hl .mh1{font-size:1.45em; font-weight:900}
+#hl .mh2{font-size:1.1em; font-weight:var(--weight-semibold)}
+#hl .mh3{font-size:1em; font-weight:var(--weight-regular)}
+#hl .mb{font-weight:var(--weight-bold); color:var(--c)}
+#hl .mi{font-style:italic; color:var(--c)}
+#hl .mc{color:var(--s); background:var(--type-bg); padding:0 .3em; border-radius:.3em}
+#hl .ms{text-decoration:line-through; opacity:.6}
+#hl .ml{color:var(--c); text-decoration:underline}
+#hl .mq{font-style:italic; color:var(--c); font-weight:100; opacity:.85}
+#hl .mqb{color:var(--c); opacity:.3}
+#hl .mu{color:var(--c); font-weight:var(--weight-bold)}
+#hl .mr{
+  display:inline-block; width:calc(100% - 4ch); height:0;
+  border-top:1px solid currentColor; color:var(--c); opacity:.35;
+  vertical-align:middle
+}
+
+/* ---------- salida ---------- */
+.out{overflow:auto; font:var(--fs)/var(--lh) var(--code); padding:var(--pady) var(--padx) calc(var(--fs) * 4)}
+.entry{
+  display:grid; grid-template-columns:2.6em minmax(0,1fr) auto; gap:var(--space-3);
+  padding:.4rem 0
+}
+.entry:not(:last-child){border-bottom:var(--border-thin) solid var(--rule)}
+.entry .ln{color:var(--muted); font-size:.75em; text-align:right; padding-top:.45em}
+.entry pre{min-width:0; margin:0; white-space:pre-wrap; word-break:break-word}
+.entry .value-type{
+  align-self:start; color:var(--muted); font-size:.68em; letter-spacing:.025em;
+  line-height:1.5; text-align:right; white-space:nowrap; margin-top:.32em; padding:.05em .55em;
+  border:var(--border-thin) solid var(--rule); border-radius:999px; background:var(--type-bg);
+  user-select:none
+}
+.entry pre i{font-style:normal}
+.entry .k{color:var(--k)} .entry .s{color:var(--s)} .entry .n{color:var(--n)}
+.entry .b{color:var(--b)} .entry .l{color:var(--n)} .entry .p{color:var(--p)} .entry .f{color:var(--f)}
+.e-error{color:var(--err)} .e-error .ln{color:var(--err)}
+.e-warn{color:var(--warn)} .e-warn .ln{color:var(--warn)}
+.e-result{color:var(--accent)} .e-result .ln{color:var(--accent); font-weight:var(--weight-bold)}
+.e-stop{color:var(--warn); font-style:italic}
+.empty{
+  display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:var(--space-3);
+  max-width:32rem; color:var(--muted); padding:var(--space-3) 0; line-height:1.55
+}
+.empty-mark{
+  display:grid; place-items:center; inline-size:2rem; block-size:2rem;
+  border:var(--border-thin) solid var(--rule); border-radius:.55rem;
+  background:var(--type-bg); color:var(--accent); font:var(--weight-bold) .72rem/1 var(--code)
+}
+.empty strong{display:block; margin-bottom:.15rem; color:var(--ink); font:var(--weight-semibold) .88rem/1.4 var(--ui)}
+.empty span:last-child{display:block; font-size:.78em}
+.status{font-size:var(--ui-sm); color:var(--muted); font-family:var(--code)}
+.status.bad{color:var(--err)}
+#status{display:inline-flex; align-items:center; gap:.42rem}
+#status::before{
+  content:""; inline-size:.4rem; block-size:.4rem; flex:0 0 auto;
+  border-radius:50%; background:var(--rule-strong); opacity:.8
+}
+#status[data-state="running"]::before{background:var(--accent); animation:status-pulse 900ms var(--ease-out-quart) infinite alternate}
+#status[data-state="success"]::before{background:var(--success); animation:status-arrive 280ms var(--ease-out-quart)}
+#status[data-state="error"]::before{background:var(--err)}
+
+@keyframes status-pulse{
+  to{opacity:.3; transform:scale(.72)}
+}
+@keyframes status-arrive{
+  from{opacity:0; transform:scale(.55)}
+  to{opacity:.8; transform:scale(1)}
+}
+@keyframes run-confirm{
+  0%{opacity:.25; transform:scale(.65)}
+  100%{opacity:1; transform:scale(1)}
+}
+
+body.dragging{user-select:none}
+body.dragging .divider::after{background:var(--accent); transform:translate(-50%,-50%) scaleY(1.18)}
+
+@media (hover:hover) and (pointer:fine){
+  .bar button:hover, .bar label:hover{border-color:var(--accent); background:var(--control-hover)}
+  #run:hover{background:var(--accent-hover); border-color:var(--accent-hover)}
+  .mini:hover{color:var(--accent)}
+  .divider:hover::after{background:var(--accent); transform:translate(-50%,-50%) scaleY(1.18)}
+  .brand:hover em{transform:translateY(-1px) rotate(-3deg)}
+  #run:hover .run-icon{transform:translateX(1px)}
+}
+
+@media (pointer:coarse){
+  .bar button, .bar label, .mini{min-block-size:44px}
+  .mini{min-inline-size:44px}
+  .divider::before{content:""; position:absolute; inset-block:0; inset-inline:-18px}
+}
+
+@media (max-width:860px){
+  .split{grid-template-columns:none; grid-template-rows:var(--rowsplit,55%) var(--space-2) 1fr}
+  .divider{cursor:row-resize}
+  .divider::after{inline-size:2rem; block-size:2px}
+  .divider:focus-visible::after{transform:translate(-50%,-50%) scaleX(1.18)}
+  body.dragging .divider::after{transform:translate(-50%,-50%) scaleX(1.18)}
+  @media (hover:hover) and (pointer:fine){
+    .divider:hover::after{transform:translate(-50%,-50%) scaleX(1.18)}
+  }
+  @media (pointer:coarse){
+    .divider::before{inset-block:-18px; inset-inline:0}
+  }
+}
+
+@media (max-width:520px){
+  body{gap:var(--space-2); padding:var(--space-2)}
+  .bar{border-radius:.875rem; padding:var(--space-2)}
+  .bar button, .bar label{padding-inline:.625rem}
+  .split{border-radius:.875rem}
+  #run{padding-inline:var(--space-3)}
+  #run small{margin-left:var(--space-1)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .bar button, .bar label, .mini, .divider, .divider::after, .toggle input::before, .brand em, .run-icon, .save-check, .editor-welcome{transition:none}
+  .bar button:active, .bar label:active{transform:none}
+  #status[data-state]::before, #run.just-ran .run-icon{animation:none}
+}
+
+@media (forced-colors:active){
+  .bar, .split, .brand em, #run{box-shadow:none}
+  .toggle input{appearance:auto; inline-size:1.125rem; block-size:1.125rem}
+  .toggle input::before{display:none}
+  .divider::after{background:CanvasText}
+  #status[data-state]::before{background:CanvasText}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">Pizarra <em>JS</em></div>
+  <button id="run" aria-keyshortcuts="Meta+Enter Control+Enter"><span class="run-icon" aria-hidden="true">▶</span>Ejecutar <small>Ctrl/⌘ + ↵</small></button>
+  <label class="toggle" for="auto" title="Ejecutar el código después de cada cambio"><input type="checkbox" id="auto" checked> Autoejecutar</label>
+  <label class="toggle" for="md" title="Mostrar los comentarios con formato Markdown"><input type="checkbox" id="md" checked> Markdown</label>
+  <div class="grp">
+    <button id="fsDown" title="Reducir el tamaño del texto" aria-label="Reducir el tamaño del texto">A−</button>
+    <button id="fsUp" title="Aumentar el tamaño del texto" aria-label="Aumentar el tamaño del texto">A+</button>
+  </div>
+  <div class="grp">
+    <button id="load" title="Cargar un archivo JavaScript o Markdown">Cargar</button>
+    <button id="saveJS" title="Descargar el código como archivo JavaScript (.js); los atajos &gt; se convierten en console.log(…)" aria-keyshortcuts="Meta+S Control+S">Guardar .js <span class="save-check" aria-hidden="true">✓</span></button>
+    <button id="saveMD" title="Descargar una guía Markdown (.md): comentarios como texto y código en bloques">Guardar .md <span class="save-check" aria-hidden="true">✓</span></button>
+  </div>
+  <input id="fileInput" type="file" accept=".js,.mjs,.cjs,.md,.markdown,text/javascript,text/markdown" hidden>
+  <button id="theme" title="Cambiar al modo oscuro" aria-label="Modo oscuro" aria-pressed="false">
+    <svg class="theme-icon theme-icon-moon" aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M20.4 14.5A8.5 8.5 0 0 1 9.5 3.6 8.5 8.5 0 1 0 20.4 14.5Z"/>
+    </svg>
+    <svg class="theme-icon theme-icon-sun" aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.5"/>
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+    </svg>
+  </button>
+</header>
+
+<main class="split" id="split">
+  <section class="pane">
+    <div class="head">
+      código
+      <div class="right"><span class="status" id="pos">L1 · C1</span></div>
+    </div>
+    <div class="editor">
+      <div class="gutter" id="gutter"></div>
+      <div class="wrap">
+        <div id="band"></div>
+        <pre id="lineProbe" aria-hidden="true"><span>M</span>
+<span>M</span></pre>
+        <pre id="hl" aria-hidden="true"></pre>
+        <div class="editor-welcome" id="editorHint">
+          <span class="welcome-mark" aria-hidden="true">&gt;_</span>
+          <span><strong>Empezá con una idea pequeña.</strong><span>Probá <code>&gt; 2 + 2</code> y ejecutá con Ctrl/⌘ + Enter.</span></span>
+        </div>
+        <textarea id="ta" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" autocorrect="off" data-gramm="false" aria-label="Editor de código JavaScript" aria-describedby="editorHint"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" id="divider" role="separator" tabindex="0" aria-label="Cambiar el tamaño del editor y la salida" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="85" aria-valuenow="58" aria-valuetext="Editor 58%; salida 42%"></div>
+
+  <section class="pane">
+    <div class="head">
+      salida
+      <div class="right">
+        <span class="status" id="status" role="status">Sin ejecutar</span>
+        <button class="mini" id="clear">Limpiar salida</button>
+      </div>
+    </div>
+    <div class="out" id="out"></div>
+  </section>
+</main>
+
+<!-- Motor de ejecución: se usa como fuente del Web Worker y como respaldo en el hilo principal -->
+<script type="text/plain" id="runtimeSrc">
+function createRuntime(post){
+  var count = 0, LIMIT = 800, stopped = false;
+
+  function rep(s, n){ var r = ''; for (var i = 0; i < n; i++) r += s; return r; }
+  function quote(s){ try { return JSON.stringify(s); } catch (e) { return "'" + s + "'"; } }
+  function keyName(k){ return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(k) ? k : quote(k); }
+
+  function join(open, items, close, pad, padEnd){
+    var multi = false, i;
+    for (i = 0; i < items.length; i++) if (items[i].indexOf('\n') !== -1) multi = true;
+    var sp = open === '{' ? ' ' : '';
+    var one = open + sp + items.join(', ') + sp + close;
+    if (!multi && one.length <= 64) return one;
+    var body = [];
+    for (i = 0; i < items.length; i++) body.push(pad + items[i]);
+    return open + '\n' + body.join(',\n') + '\n' + padEnd + close;
+  }
+
+  function fmt(v, depth, seen){
+    depth = depth || 0; seen = seen || [];
+    var t = typeof v, i;
+    if (v === null) return 'null';
+    if (t === 'undefined') return 'undefined';
+    if (t === 'number') return Object.is(v, -0) ? '-0' : String(v);
+    if (t === 'boolean') return String(v);
+    if (t === 'bigint') return String(v) + 'n';
+    if (t === 'symbol') return v.toString();
+    if (t === 'string') return depth === 0 ? v : quote(v);
+    if (t === 'function') return (v.name ? 'ƒ ' + v.name + '()' : 'ƒ ()');
+    if (v instanceof Error) return (v.name || 'Error') + ': ' + v.message;
+    if (v instanceof Date) return isNaN(v.getTime()) ? 'Invalid Date' : v.toISOString();
+    if (v instanceof RegExp) return String(v);
+    if (seen.indexOf(v) !== -1) return '[referencia circular]';
+    if (depth > 3) return Array.isArray(v) ? '[…]' : '{…}';
+
+    var s2 = seen.concat([v]);
+    var pad = rep('  ', depth + 1), padEnd = rep('  ', depth), items = [];
+
+    if (Array.isArray(v)){
+      if (v.length === 0) return '[]';
+      for (i = 0; i < v.length && i < 100; i++) items.push(fmt(v[i], depth + 1, s2));
+      if (v.length > 100) items.push('… ' + (v.length - 100) + ' más');
+      return join('[', items, ']', pad, padEnd);
+    }
+    if (typeof Map !== 'undefined' && v instanceof Map){
+      if (v.size === 0) return 'Map(0) {}';
+      v.forEach(function(val, key){
+        if (items.length < 100) items.push(fmt(key, depth + 1, s2) + ' => ' + fmt(val, depth + 1, s2));
+      });
+      return 'Map(' + v.size + ') ' + join('{', items, '}', pad, padEnd);
+    }
+    if (typeof Set !== 'undefined' && v instanceof Set){
+      if (v.size === 0) return 'Set(0) {}';
+      v.forEach(function(val){ if (items.length < 100) items.push(fmt(val, depth + 1, s2)); });
+      return 'Set(' + v.size + ') ' + join('{', items, '}', pad, padEnd);
+    }
+
+    var keys;
+    try { keys = Object.keys(v); } catch (e) { return String(v); }
+    var name = '';
+    try {
+      if (v.constructor && v.constructor.name && v.constructor.name !== 'Object') name = v.constructor.name + ' ';
+    } catch (e) {}
+    if (keys.length === 0) return name + '{}';
+    for (i = 0; i < keys.length && i < 100; i++) items.push(keyName(keys[i]) + ': ' + fmt(v[keys[i]], depth + 1, s2));
+    if (keys.length > 100) items.push('… ' + (keys.length - 100) + ' más');
+    return name + join('{', items, '}', pad, padEnd);
+  }
+
+  function frames(stack){
+    var lines = String(stack || '').split('\n'), res = [], i;
+    for (i = 0; i < lines.length; i++) if (/:\d+:\d+/.test(lines[i])) res.push(lines[i]);
+    return res;
+  }
+
+  // skip = cuántos cuadros internos del motor hay que descartar antes de llegar
+  // al código del usuario (here + el método de console que lo llamó).
+  function lineFromStack(stack, skip){
+    var f = frames(stack);
+    for (var i = skip || 0; i < f.length; i++){
+      var m = f[i].match(/<anonymous>:(\d+):\d+/) || f[i].match(/eval[^\n]*?:(\d+):\d+/);
+      if (m) return +m[1];
+    }
+    return null;
+  }
+
+  function here(){
+    try { throw new Error(); } catch (e) { return lineFromStack(e.stack, 2); }
+  }
+
+  function send(kind, text, line, valueType){
+    if (stopped) return;
+    count++;
+    if (count > LIMIT){ stopped = true; post({ t: 'limit' }); return; }
+    post({ t: 'entry', kind: kind, text: text, line: line, valueType: valueType || null });
+  }
+
+  function args(list){
+    var parts = [];
+    for (var i = 0; i < list.length; i++) parts.push(fmt(list[i], 0, []));
+    return parts.join(' ');
+  }
+
+  // Clasificación pedagógica: corrige los casos confusos de typeof y muestra
+  // la clase concreta de las instancias (Map, Date, Alumno, etc.).
+  function typeName(v){
+    if (v === null) return 'null';
+    if (Array.isArray(v)) return 'array';
+    if (typeof v === 'object'){
+      try {
+        var proto = Object.getPrototypeOf(v);
+        var ctor = proto && proto.constructor;
+        if (typeof ctor === 'function' && ctor.name && ctor.name !== 'Object') return ctor.name;
+      } catch (e) {}
+      return 'object';
+    }
+    return typeof v;
+  }
+
+  function make(kind){
+    return function(){ send(kind, args(arguments), here()); };
+  }
+
+  var api = {
+    log: make('log'), info: make('log'), debug: make('log'), dir: make('log'),
+    table: make('log'), trace: make('log'), warn: make('warn'), error: make('error'),
+    group: make('log'), groupEnd: function(){}, time: function(){}, timeEnd: function(){},
+    clear: function(){ post({ t: 'clear' }); }
+  };
+
+  // Ayudante siempre disponible: p(x) envía el valor y su tipo por separado.
+  // La interfaz se encarga de alinearlos sin convertir ambos datos en una sola
+  // cadena. Va por send() para conservar el número de línea de console.log.
+  function helperP(x){
+    var s;
+    try { s = typeof x === 'string' ? quote(x) : fmt(x, 0, []); }
+    catch (e) { s = '[no se puede convertir a texto]'; }
+    send('log', s, here(), typeName(x));
+  }
+
+  function errText(e){
+    if (e instanceof Error) return (e.name || 'Error') + ': ' + e.message;
+    return 'Error sin capturar: ' + fmt(e, 1, []);
+  }
+
+  function run(code, isolate, restore){
+    var g = (typeof self !== 'undefined') ? self : this;
+    var real = g.console, realP = g.p;
+    g.console = api;
+    g.p = helperP;
+    var t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    try {
+      var src = code;
+      if (isolate) src = '(function(){' + code + '\n})()';
+      else if (/\bawait\b/.test(code)) src = '(async()=>{' + code + '\n})()';
+      var val = (0, eval)(src);
+      if (val && typeof val.then === 'function'){
+        val.then(function(v){ if (v !== undefined) send('result', fmt(v, 0, []), null); },
+                 function(err){ send('error', errText(err), lineFromStack(err && err.stack)); });
+      } else if (val !== undefined && !isolate){
+        send('result', fmt(val, 0, []), null);
+      }
+    } catch (e){
+      send('error', errText(e), lineFromStack(e && e.stack));
+    } finally {
+      if (restore){ g.console = real; g.p = realP; }
+    }
+    return (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
+  }
+
+  return { run: run, fmt: fmt };
+}
+</script>
+
+<script>
+(function(){
+'use strict';
+
+// ============ referencias ============
+var ta = document.getElementById('ta');
+var hl = document.getElementById('hl');
+var editorHint = document.getElementById('editorHint');
+var lineProbe = document.getElementById('lineProbe');
+var gutter = document.getElementById('gutter');
+var band = document.getElementById('band');
+var out = document.getElementById('out');
+var statusEl = document.getElementById('status');
+var runBtn = document.getElementById('run');
+var runIcon = runBtn.querySelector('.run-icon');
+var posEl = document.getElementById('pos');
+var autoEl = document.getElementById('auto');
+var splitEl = document.getElementById('split');
+
+var INDENT = '  ';
+var SIZE = 2;
+var mdOn = true, actFrom = 0, actTo = -1;
+
+// ============ código inicial ============
+ta.value = '';
+
+// ============ coloreado ============
+var KW = ('await break case catch class const continue debugger default delete do else export extends finally for from function ' +
+          'if import in instanceof let new of return static super switch this throw try typeof var void while with yield async').split(' ');
+var LIT = ['true','false','null','undefined','NaN','Infinity'];
+var KWs = {}, LITs = {}, i;
+for (i = 0; i < KW.length; i++) KWs[KW[i]] = 1;
+for (i = 0; i < LIT.length; i++) LITs[LIT[i]] = 1;
+
+var TOK = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|('(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`)|(\b0[xXbBoO][0-9a-fA-F_]+n?\b|\b\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d+)?n?\b)|([A-Za-z_$][\w$]*)|([{}()[\];,.])/g;
+
+function esc(s){ return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ---- comentarios como markdown ----
+// En modo lectura los marcadores no se emiten. Aparecen de nuevo, y con el
+// ancho real, en cuanto el cursor entra en la línea.
+var MDI = /(\*\*|__)([^\n]+?)\1|(`)([^`\n]+?)`|(~~)([^\n]+?)~~|(\*|_)([^*_\n]+?)\7|\[([^\]\n]*)\]\(([^)\n]*)\)/g;
+
+function inline(text){
+  var res = '', last = 0, m;
+  MDI.lastIndex = 0;
+  while ((m = MDI.exec(text)) !== null){
+    res += esc(text.slice(last, m.index));
+    if (m[1] !== undefined) res += '<i class="mb">' + esc(m[2]) + '</i>';
+    else if (m[3] !== undefined) res += '<i class="mc">' + esc(m[4]) + '</i>';
+    else if (m[5] !== undefined) res += '<i class="ms">' + esc(m[6]) + '</i>';
+    else if (m[7] !== undefined) res += '<i class="mi">' + esc(m[8]) + '</i>';
+    else res += '<i class="ml">' + esc(m[9]) + '</i>';
+    last = m.index + m[0].length;
+  }
+  return res + esc(text.slice(last));
+}
+
+// Marcadores de markdown que la línea puede traer por su cuenta.
+var BLOCK = /^([-*+][ \t]|#{1,6}[ \t]|>|\d+[.)][ \t]|([-*_=])\2{2,}[ \t]*$)/;
+
+function mdRow(html){ return '<i class="mdrow">' + html + '</i>'; }
+
+function mdLine(raw){
+  var head = '', rest = raw;
+  var m = /^([ \t]*)(\/\/+|\/\*+|\*\/|\*)([ \t]?)/.exec(raw);
+  if (m){
+    rest = raw.slice(m[0].length);
+    // El '*' con el que se continúa un bloque /* */ hace de viñeta, salvo que
+    // la línea esté vacía o traiga su propio marcador.
+    if (m[2] === '*' && rest !== '' && !BLOCK.test(rest))
+      head = '<i class="mk">' + esc(m[1]) + '</i><i class="mu">•</i><i class="mk">' + esc(m[3]) + '</i>';
+    else
+      head = '<i class="mk">' + esc(m[0]) + '</i>';
+  }
+  if (rest === '') return mdRow(head);
+
+  var h = /^(#{1,6})([ \t]+)([\s\S]*)$/.exec(rest);
+  if (h) return mdRow(head + '<i class="mh' + Math.min(3, h[1].length) + '">' + inline(h[3]) + '</i>');
+
+  if (/^([-*_=])\1{2,}[ \t]*$/.test(rest))
+    return mdRow(head + '<i class="mr"></i>');
+
+  var b = /^([-*+])([ \t]+)([\s\S]*)$/.exec(rest);
+  if (b) return mdRow(head + '<i class="mu">•</i><i class="mt">' + esc(b[2]) + inline(b[3]) + '</i>');
+
+  var n = /^(\d+[.)])([ \t]+)([\s\S]*)$/.exec(rest);
+  if (n) return mdRow(head + '<i class="mu">' + n[1] + '</i><i class="mt">' + esc(n[2]) + inline(n[3]) + '</i>');
+
+  var q = /^(>)([ \t]?)([\s\S]*)$/.exec(rest);
+  if (q) return mdRow(head + '<i class="mqb">│ </i><i class="mq">' + inline(q[3]) + '</i>');
+
+  return mdRow(head + '<i class="mt">' + inline(rest) + '</i>');
+}
+
+// La línea que se está editando se muestra tal cual, con sus marcadores.
+function mdComment(text, from){
+  var lines = text.split('\n'), res = [];
+  for (var i = 0; i < lines.length; i++){
+    var n = from + i;
+    res.push(n >= actFrom && n <= actTo ? '<i class="c">' + esc(lines[i]) + '</i>' : mdLine(lines[i]));
+  }
+  return res.join('\n');
+}
+
+function startsLine(src, i){
+  for (var j = i - 1; j >= 0; j--){
+    var c = src.charAt(j);
+    if (c === '\n') return true;
+    if (c !== ' ' && c !== '\t') return false;
+  }
+  return true;
+}
+
+function newlines(s){
+  var n = 0, i = -1;
+  while ((i = s.indexOf('\n', i + 1)) !== -1) n++;
+  return n;
+}
+
+// El '>' nunca es un token, así que aparece en el texto suelto entre tokens.
+function gapHtml(gap, off, src){
+  if (gap.indexOf('>') === -1) return esc(gap);
+  var res = '', last = 0, m, re = />(?![=>])/g;
+  while ((m = re.exec(gap)) !== null){
+    if (!startsLine(src, off + m.index)) continue;
+    res += esc(gap.slice(last, m.index)) + '<i class="pr">&gt;</i>';
+    last = m.index + 1;
+  }
+  return res + esc(gap.slice(last));
+}
+
+function color(src, md){
+  var res = '', last = 0, m, line = 1;
+  TOK.lastIndex = 0;
+  while ((m = TOK.exec(src)) !== null){
+    var gap = src.slice(last, m.index);
+    res += gapHtml(gap, last, src);
+    line += newlines(gap);
+    var t = m[0];
+    if (m[1]){
+      res += (md && startsLine(src, m.index)) ? mdComment(t, line) : '<i class="c">' + esc(t) + '</i>';
+    }
+    else if (m[2]) res += '<i class="s">' + esc(t) + '</i>';
+    else if (m[3]) res += '<i class="n">' + esc(t) + '</i>';
+    else if (m[4]){
+      if (KWs[t]) res += '<i class="k">' + t + '</i>';
+      else if (LITs[t]) res += '<i class="l">' + t + '</i>';
+      else if (/^\s*\(/.test(src.slice(m.index + t.length))) res += '<i class="f">' + t + '</i>';
+      else if (src.charAt(m.index - 1) === '.') res += '<i class="p">' + t + '</i>';
+      else res += t;
+    }
+    else res += '<i class="b">' + esc(t) + '</i>';
+    line += newlines(t);
+    last = m.index + t.length;
+  }
+  res += gapHtml(src.slice(last), last, src);
+  return res;
+}
+
+// ============ métricas y sincronización ============
+var lh = 30, padTop = 10, lastLines = -1;
+var paintFrame = null, fullPaintPending = false;
+
+// Edición, selección y foco pueden disparar varios eventos en un mismo frame.
+// Se conserva solamente el trabajo más completo que esté pendiente.
+function schedulePaint(full){
+  if (full) fullPaintPending = true;
+  if (paintFrame !== null) return;
+  paintFrame = requestAnimationFrame(function(){
+    paintFrame = null;
+    var fullPaint = fullPaintPending;
+    fullPaintPending = false;
+    if (fullPaint) paint();
+    else repaint();
+  });
+}
+
+function metrics(){
+  var cs = getComputedStyle(ta);
+  var probeLines = lineProbe.querySelectorAll('span');
+  lh = probeLines[1].getBoundingClientRect().top - probeLines[0].getBoundingClientRect().top;
+  if (!isFinite(lh) || lh <= 0) lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.55);
+  if (!isFinite(lh) || lh <= 0) lh = 30;
+  padTop = parseFloat(cs.paddingTop) || 0;
+  band.style.height = lh + 'px';
+}
+
+function paint(){
+  var v = ta.value;
+  var r = activeRange();
+  actFrom = r[0]; actTo = r[1];
+  repaint();
+  var n = v.split('\n').length;
+  if (n !== lastLines){
+    var s = '';
+    for (var j = 1; j <= n; j++) s += '<b>' + j + '</b>';
+    gutter.innerHTML = s;
+    lastLines = n;
+  }
+  sync();
+  caret();
+}
+
+function repaint(){
+  hl.innerHTML = color(ta.value, mdOn) + '\n ';
+  hl.scrollTop = ta.scrollTop;
+  hl.scrollLeft = ta.scrollLeft;
+}
+
+// Líneas que se muestran sin renderizar: las que toca la selección. Sin foco o
+// con el modo apagado no hay ninguna, así que se ve todo como markdown.
+function activeRange(){
+  if (!mdOn || document.activeElement !== ta) return [0, -1];
+  var v = ta.value;
+  var a = v.slice(0, ta.selectionStart).split('\n').length;
+  var b = ta.selectionStart === ta.selectionEnd ? a : v.slice(0, ta.selectionEnd).split('\n').length;
+  return [a, b];
+}
+
+function sync(){
+  hl.scrollTop = ta.scrollTop;
+  hl.scrollLeft = ta.scrollLeft;
+  gutter.scrollTop = ta.scrollTop;
+  band.style.transform = 'translateY(' + (padTop + (curLine() - 1) * lh - ta.scrollTop) + 'px)';
+}
+
+function curLine(){
+  return ta.value.slice(0, ta.selectionStart).split('\n').length;
+}
+
+var activeNum = null;
+function caret(){
+  var before = ta.value.slice(0, ta.selectionStart);
+  var line = before.split('\n').length;
+  var col = before.length - before.lastIndexOf('\n');
+  posEl.textContent = 'L' + line + ' · C' + col;
+  band.style.transform = 'translateY(' + (padTop + (line - 1) * lh - ta.scrollTop) + 'px)';
+  var el = gutter.children[line - 1];
+  if (activeNum !== el){
+    if (activeNum) activeNum.className = '';
+    if (el) el.className = 'on';
+    activeNum = el || null;
+  }
+  var r = activeRange();
+  if (r[0] !== actFrom || r[1] !== actTo){
+    actFrom = r[0]; actTo = r[1];
+    schedulePaint(false);
+  }
+}
+
+// ============ utilidades de texto ============
+function lineStart(pos){ return ta.value.lastIndexOf('\n', pos - 1) + 1; }
+function lineEnd(pos){ var i = ta.value.indexOf('\n', pos); return i === -1 ? ta.value.length : i; }
+function indentAt(pos){ var m = /^[ \t]*/.exec(ta.value.slice(lineStart(pos), lineEnd(pos))); return m ? m[0] : ''; }
+
+function type(text){
+  var ok = false;
+  try { ok = document.execCommand('insertText', false, text); } catch (e) { ok = false; }
+  if (!ok){
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + text.length;
+    onInput();
+  }
+}
+
+function replace(from, to, text, selA, selB){
+  ta.setSelectionRange(from, to);
+  type(text);
+  if (selA !== undefined) ta.setSelectionRange(selA, selB === undefined ? selA : selB);
+}
+
+// ============ indentación ============
+function shiftBlock(dedent){
+  var v = ta.value;
+  var s = lineStart(ta.selectionStart), e = lineEnd(ta.selectionEnd);
+  var selA = ta.selectionStart, selB = ta.selectionEnd;
+  var lines = v.slice(s, e).split('\n');
+  var re = new RegExp('^(\\t| {1,' + SIZE + '})');
+  var first = 0, total = 0;
+  var res = lines.map(function(ln, idx){
+    var nl;
+    if (dedent){ var m = re.exec(ln); nl = m ? ln.slice(m[0].length) : ln; }
+    else nl = ln.length ? INDENT + ln : ln;
+    var d = nl.length - ln.length;
+    if (idx === 0) first = d;
+    total += d;
+    return nl;
+  }).join('\n');
+  replace(s, e, res, Math.max(s, selA + first), selB + total);
+}
+
+function smartEnter(){
+  var v = ta.value, pos = ta.selectionStart;
+  var ind = indentAt(pos);
+  var before = v.slice(lineStart(pos), pos);
+  var comment = /^([ \t]*)\/\//.exec(before);
+  if (comment){
+    type('\n' + comment[1] + '// ');
+    return;
+  }
+  var prev = before.replace(/\s+$/, '').slice(-1);
+  var prev2 = before.replace(/\s+$/, '').slice(-2);
+  var next = v.charAt(ta.selectionEnd);
+  var opens = prev === '{' || prev === '[' || prev === '(' || prev2 === '=>' || prev === ':';
+  var pairs = { '{': '}', '[': ']', '(': ')' };
+  if (pairs[prev] && next === pairs[prev]){
+    var text = '\n' + ind + INDENT + '\n' + ind;
+    var caretPos = ta.selectionStart + 1 + ind.length + INDENT.length;
+    replace(ta.selectionStart, ta.selectionEnd, text, caretPos, caretPos);
+    return;
+  }
+  type('\n' + ind + (opens ? INDENT : ''));
+}
+
+// Busca la llave de apertura que corresponde y devuelve la sangría de esa línea.
+function openerIndent(pos){
+  var v = ta.value, depth = 1;
+  for (var i = pos - 1; i >= 0; i--){
+    var c = v.charAt(i);
+    if (c === '}') depth++;
+    else if (c === '{'){
+      depth--;
+      if (depth === 0) return indentAt(i);
+    }
+  }
+  return null;
+}
+
+function closeBrace(ch){
+  var pos = ta.selectionStart, ls = lineStart(pos);
+  var before = ta.value.slice(ls, pos);
+  if (!/^[ \t]*$/.test(before)) return false;
+  var target = openerIndent(pos);
+  if (target === null){
+    var m = new RegExp('(\\t| {1,' + SIZE + '})$').exec(before);
+    if (!m) return false;
+    replace(pos - m[0].length, pos, ch);
+    return true;
+  }
+  if (target === before) return false;
+  replace(ls, pos, target + ch);
+  return true;
+}
+
+function toggleComment(){
+  var s = lineStart(ta.selectionStart), e = lineEnd(ta.selectionEnd);
+  var selA = ta.selectionStart, selB = ta.selectionEnd;
+  var lines = ta.value.slice(s, e).split('\n');
+  var real = lines.filter(function(l){ return l.trim() !== ''; });
+  var off = true;
+  for (var j = 0; j < real.length; j++) if (!/^\s*\/\//.test(real[j])) off = false;
+  var min = 1e9;
+  real.forEach(function(l){ min = Math.min(min, /^[ \t]*/.exec(l)[0].length); });
+  if (min === 1e9) min = 0;
+  var first = 0, total = 0;
+  var res = lines.map(function(ln, idx){
+    var nl = ln;
+    if (ln.trim() !== ''){
+      nl = off ? ln.replace(/^(\s*)\/\/ ?/, '$1') : ln.slice(0, min) + '// ' + ln.slice(min);
+    }
+    var d = nl.length - ln.length;
+    if (idx === 0) first = d;
+    total += d;
+    return nl;
+  }).join('\n');
+  replace(s, e, res, Math.max(s, selA + first), selB + total);
+}
+
+function moveLines(dir){
+  var v = ta.value;
+  var s = lineStart(ta.selectionStart), e = lineEnd(ta.selectionEnd);
+  var selA = ta.selectionStart, selB = ta.selectionEnd;
+  if (dir < 0){
+    if (s === 0) return;
+    var ps = lineStart(s - 1);
+    var block = v.slice(s, e), prev = v.slice(ps, s - 1);
+    replace(ps, e, block + '\n' + prev, selA - (s - ps), selB - (s - ps));
+  } else {
+    if (e >= v.length) return;
+    var ne = lineEnd(e + 1);
+    var blk = v.slice(s, e), nxt = v.slice(e + 1, ne);
+    replace(s, ne, nxt + '\n' + blk, selA + nxt.length + 1, selB + nxt.length + 1);
+  }
+}
+
+function duplicate(){
+  var s = lineStart(ta.selectionStart), e = lineEnd(ta.selectionEnd);
+  var block = ta.value.slice(s, e);
+  var selA = ta.selectionStart, selB = ta.selectionEnd;
+  replace(e, e, '\n' + block, selA + block.length + 1, selB + block.length + 1);
+}
+
+// ============ teclado ============
+var OPEN = { '(': ')', '[': ']', '{': '}' };
+var QUOTE = { '"': '"', "'": "'", '`': '`' };
+
+ta.addEventListener('keydown', function(ev){
+  var mod = ev.ctrlKey || ev.metaKey;
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  var v = ta.value;
+
+  if (mod && ev.key === 'Enter'){ ev.preventDefault(); execute(true); return; }
+  if (mod && ev.key.toLowerCase() === 's'){ ev.preventDefault(); saveJS(); return; }
+
+  // Cortar la línea entera cuando no hay nada seleccionado: ampliamos la
+  // selección y dejamos que el navegador haga el corte (mantiene el portapapeles
+  // y el historial de deshacer nativos).
+  if (mod && ev.key.toLowerCase() === 'x' && s === e && !ev.shiftKey){
+    var cls = lineStart(s), cle = lineEnd(s);
+    if (cle < v.length) ta.setSelectionRange(cls, cle + 1);
+    else if (cls > 0) ta.setSelectionRange(cls - 1, cle);
+    else ta.setSelectionRange(cls, cle);
+    return;
+  }
+  if (mod && ev.key === '/'){ ev.preventDefault(); toggleComment(); return; }
+  if (mod && ev.key.toLowerCase() === 'd'){ ev.preventDefault(); duplicate(); return; }
+  if (ev.altKey && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')){
+    ev.preventDefault(); moveLines(ev.key === 'ArrowUp' ? -1 : 1); return;
+  }
+
+  if (ev.key === 'Tab'){
+    ev.preventDefault();
+    var multi = v.slice(s, e).indexOf('\n') !== -1;
+    if (ev.shiftKey || multi) shiftBlock(ev.shiftKey);
+    else {
+      var col = s - lineStart(s);
+      type(new Array(SIZE - (col % SIZE) + 1).join(' '));
+    }
+    return;
+  }
+
+  if (ev.key === 'Enter' && !ev.shiftKey && !mod){ ev.preventDefault(); smartEnter(); return; }
+
+  if (ev.key === 'Home' && !mod){
+    var ls = lineStart(s);
+    var ind = indentAt(s).length;
+    var target = (s === ls + ind) ? ls : ls + ind;
+    ev.preventDefault();
+    if (ev.shiftKey) ta.setSelectionRange(Math.min(target, e), Math.max(target, e));
+    else ta.setSelectionRange(target, target);
+    caret();
+    return;
+  }
+
+  if (ev.key === 'Backspace' && s === e && !mod){
+    var pc = v.charAt(s - 1), nc = v.charAt(s);
+    if ((OPEN[pc] && OPEN[pc] === nc) || (QUOTE[pc] && pc === nc)){
+      ev.preventDefault(); replace(s - 1, s + 1, ''); return;
+    }
+    var pre = v.slice(lineStart(s), s);
+    if (pre.length && /^[ ]+$/.test(pre) && pre.length % SIZE === 0){
+      ev.preventDefault(); replace(s - SIZE, s, ''); return;
+    }
+    return;
+  }
+
+  if (ev.key.length !== 1 || mod || ev.altKey) return;
+
+  var ch = ev.key;
+  var sel = v.slice(s, e);
+
+  // Al completar // al comienzo de una línea, deja listo el espacio del
+  // comentario. Se limita a esa posición para no modificar URLs ni strings.
+  if (!sel && ch === '/' && /^[ \t]*\/$/.test(v.slice(lineStart(s), s))){
+    ev.preventDefault();
+    type(v.charAt(s) === ' ' ? '/' : '/ ');
+    return;
+  }
+
+  if (sel && (OPEN[ch] || QUOTE[ch])){
+    ev.preventDefault();
+    var close = OPEN[ch] || QUOTE[ch];
+    replace(s, e, ch + sel + close, s + 1, s + 1 + sel.length);
+    return;
+  }
+  if (!sel && (ch === ')' || ch === ']' || ch === '}') && v.charAt(s) === ch){
+    ev.preventDefault(); ta.setSelectionRange(s + 1, s + 1); caret(); return;
+  }
+  if (!sel && QUOTE[ch] && v.charAt(s) === ch){
+    ev.preventDefault(); ta.setSelectionRange(s + 1, s + 1); caret(); return;
+  }
+  if (!sel && ch === '}'){
+    if (closeBrace(ch)) { ev.preventDefault(); return; }
+  }
+  if (!sel && OPEN[ch]){
+    ev.preventDefault(); replace(s, e, ch + OPEN[ch], s + 1, s + 1); return;
+  }
+  if (!sel && QUOTE[ch]){
+    var pc2 = v.charAt(s - 1), nc2 = v.charAt(s);
+    if (!/[\w$]/.test(pc2) && !/[\w$"'`]/.test(nc2)){
+      ev.preventDefault(); replace(s, e, ch + ch, s + 1, s + 1); return;
+    }
+  }
+});
+
+// ============ eventos del editor ============
+var autoTimer = null;
+function syncWelcome(){
+  var hidden = ta.value.length > 0;
+  editorHint.classList.toggle('is-hidden', hidden);
+  editorHint.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+}
+function onInput(){
+  syncWelcome();
+  schedulePaint(true);
+  if (autoEl.checked){
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(execute, 700);
+  }
+}
+ta.addEventListener('input', onInput);
+ta.addEventListener('scroll', sync);
+ta.addEventListener('click', caret);
+ta.addEventListener('keyup', caret);
+ta.addEventListener('focus', caret);
+ta.addEventListener('blur', caret);
+document.addEventListener('selectionchange', function(){
+  if (document.activeElement === ta) caret();
+});
+window.addEventListener('resize', function(){ metrics(); sync(); });
+
+// ============ ejecución ============
+var runtimeSrc = document.getElementById('runtimeSrc').textContent;
+var glue = 'self.onmessage=function(e){' +
+  'var rt=createRuntime(function(m){self.postMessage(m);});' +
+  'self.onerror=function(msg){self.postMessage({t:"entry",kind:"error",text:String(msg),line:null});};' +
+  'var ms=rt.run(e.data,false,false);' +
+  'self.postMessage({t:"done",ms:ms});};';
+
+var blobUrl = null, fallback = null, warnedFallback = false;
+try {
+  blobUrl = URL.createObjectURL(new Blob([runtimeSrc + '\n' + glue], { type: 'text/javascript' }));
+} catch (e) { blobUrl = null; }
+
+var worker = null, hardTimer = null, idleTimer = null, started = 0, entries = 0, currentRunHadError = false;
+var outputQueue = [], outputFrame = null;
+
+function stopWorker(){
+  if (worker){ worker.terminate(); worker = null; }
+  clearTimeout(hardTimer); clearTimeout(idleTimer);
+}
+
+function flushOutput(){
+  outputFrame = null;
+  if (!outputQueue.length) return;
+  var fragment = document.createDocumentFragment();
+  for (var i = 0; i < outputQueue.length; i++) fragment.appendChild(outputQueue[i]);
+  outputQueue = [];
+  out.appendChild(fragment);
+  out.scrollTop = out.scrollHeight;
+}
+
+function scheduleOutput(row){
+  outputQueue.push(row);
+  if (outputFrame === null) outputFrame = requestAnimationFrame(flushOutput);
+}
+
+function clearOut(){
+  if (outputFrame !== null) cancelAnimationFrame(outputFrame);
+  outputFrame = null;
+  outputQueue = [];
+  out.textContent = '';
+  entries = 0;
+}
+
+function showEmpty(executed){
+  var mark = executed ? '✓' : '›_';
+  var title = executed ? 'Todo salió bien, sin resultados.' : 'Tu salida aparecerá acá.';
+  var copy = executed
+    ? 'El código terminó sin imprimir valores. Agregá console.log(…) o dejá una expresión en la última línea.'
+    : 'Probá &gt; 2 + 2 o usá console.log(…) para mostrar valores.';
+  out.innerHTML = '<div class="empty"><span class="empty-mark" aria-hidden="true">' + mark + '</span><span><strong>' + title + '</strong><span>' + copy + '</span></span></div>';
+}
+
+function addEntry(kind, text, line, valueType){
+  if (entries === 0) out.textContent = '';
+  if (kind === 'error') currentRunHadError = true;
+  entries++;
+  var row = document.createElement('div');
+  row.className = 'entry e-' + kind;
+  var mark = line ? String(line) : (kind === 'result' ? '→' : (kind === 'error' ? '!' : ''));
+  var pre = document.createElement('pre');
+  var structured = /^[[{]/.test(text) || text.indexOf('\n') !== -1;
+  var rich = valueType || structured;
+  if (rich && kind !== 'error' && kind !== 'stop') pre.innerHTML = color(text);
+  else pre.textContent = text;
+  var ln = document.createElement('span');
+  ln.className = 'ln';
+  ln.textContent = mark;
+  row.appendChild(ln);
+  row.appendChild(pre);
+  if (valueType){
+    var typeEl = document.createElement('span');
+    typeEl.className = 'value-type';
+    typeEl.textContent = valueType;
+    typeEl.setAttribute('aria-label', 'Tipo: ' + valueType);
+    row.appendChild(typeEl);
+  }
+  scheduleOutput(row);
+}
+
+function setStatus(text, bad){
+  var state = bad ? 'error' : (/^ejecutando/i.test(text) ? 'running' : (/^(listo|guardado|cargado)/i.test(text) ? 'success' : 'idle'));
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (bad ? ' bad' : '');
+  statusEl.setAttribute('data-state', state);
+  runBtn.classList.toggle('is-running', state === 'running');
+}
+
+function celebrateRun(){
+  clearTimeout(runBtn.celebrationTimer);
+  runBtn.classList.remove('just-ran');
+  runIcon.textContent = '✓';
+  void runIcon.offsetWidth;
+  runBtn.classList.add('just-ran');
+  runBtn.celebrationTimer = setTimeout(function(){
+    runBtn.classList.remove('just-ran');
+    runIcon.textContent = '▶';
+  }, 650);
+}
+
+function finishExecution(ms, manual){
+  if (entries === 0) showEmpty(true);
+  if (currentRunHadError){
+    setStatus('Revisá el error', true);
+    return;
+  }
+  setStatus('Listo · ' + Math.max(1, Math.round(ms)) + ' ms', false);
+  if (manual) celebrateRun();
+}
+
+// ============ atajo del prompt ============
+// Una línea que abre con '>' se convierte en p(resto). Se reemplaza en la misma
+// línea, sin agregar ni sacar renglones, para que los números de línea de la
+// salida y de los errores sigan siendo los que ve el alumno en el editor.
+function expand(src, call){
+  call = call || 'p';
+  var spans = [], m;
+  TOK.lastIndex = 0;
+  while ((m = TOK.exec(src)) !== null){
+    if (m[1]) spans.push([m.index, m.index + m[0].length, true]);
+    else if (m[2]) spans.push([m.index, m.index + m[0].length, false]);
+  }
+  function inSpan(i){
+    for (var k = 0; k < spans.length; k++) if (i >= spans[k][0] && i < spans[k][1]) return true;
+    return false;
+  }
+  function commentIn(a, b){
+    for (var k = 0; k < spans.length; k++) if (spans[k][2] && spans[k][0] >= a && spans[k][0] < b) return spans[k][0];
+    return -1;
+  }
+
+  var lines = src.split('\n'), res = [], pos = 0;
+  for (var j = 0; j < lines.length; j++){
+    var ln = lines[j], outLn = ln;
+    var mm = /^([ \t]*)>(?![=>])/.exec(ln);
+    if (mm && !inSpan(pos + mm[1].length)){
+      var from = pos + mm[0].length, to = pos + ln.length;
+      var c = commentIn(from, to);
+      var body = (c === -1 ? src.slice(from, to) : src.slice(from, c)).trim().replace(/;+[ \t]*$/, '');
+      var tail = c === -1 ? '' : ' ' + src.slice(c, to);
+      outLn = body ? mm[1] + call + '(' + body + ');' + tail : mm[1] + tail;
+    }
+    res.push(outLn);
+    pos += ln.length + 1;
+  }
+  return res.join('\n');
+}
+
+function execute(manual){
+  manual = manual === true;
+  clearTimeout(autoTimer);
+  clearTimeout(runBtn.celebrationTimer);
+  runBtn.classList.remove('just-ran');
+  runIcon.textContent = '▶';
+  stopWorker();
+  clearOut();
+  currentRunHadError = false;
+  var code = ta.value;
+  if (!code.trim()){ showEmpty(); setStatus('Sin código', false); return; }
+  code = expand(code, 'p');
+  setStatus('Ejecutando…', false);
+  started = Date.now();
+
+  if (!blobUrl) return runInline(code, manual);
+  try {
+    worker = new Worker(blobUrl);
+  } catch (e) { worker = null; }
+  if (!worker) return runInline(code, manual);
+
+  worker.onmessage = function(ev){
+    var m = ev.data;
+    clearTimeout(idleTimer);
+    if (m.t === 'entry'){
+      addEntry(m.kind, m.text, m.line, m.valueType);
+      idleTimer = setTimeout(stopWorker, 1500);
+    } else if (m.t === 'clear'){
+      clearOut();
+    } else if (m.t === 'limit'){
+      addEntry('stop', 'La salida se detuvo después de 800 líneas. Revisá si el código imprime dentro de un bucle.', null);
+      setStatus('Salida limitada', true);
+      stopWorker();
+    } else if (m.t === 'done'){
+      finishExecution(m.ms, manual);
+      idleTimer = setTimeout(stopWorker, 1500);
+    }
+  };
+  worker.onerror = function(){
+    addEntry('error', 'No se pudo ejecutar el código. Probá ejecutarlo de nuevo.', null);
+    setStatus('No se pudo ejecutar', true);
+    stopWorker();
+  };
+  hardTimer = setTimeout(function(){
+    stopWorker();
+    addEntry('stop', 'La ejecución se detuvo después de 5 segundos. Revisá si hay un bucle infinito o una tarea que no termina.', null);
+    setStatus('Tiempo agotado', true);
+  }, 5000);
+
+  worker.postMessage(code);
+}
+
+function runInline(code, manual){
+  if (!fallback){
+    try {
+      fallback = new Function(runtimeSrc + '\nreturn createRuntime;')();
+    } catch (e) {
+      addEntry('error', 'No se pudo iniciar el motor de JavaScript. Recargá la página y volvé a intentarlo.', null);
+      setStatus('Motor no disponible', true);
+      return;
+    }
+  }
+  if (!warnedFallback){
+    warnedFallback = true;
+    addEntry('stop', 'Modo compatible: los bucles infinitos no se detienen y no se muestra el valor de la última expresión. Usá console.log(…) para ver resultados.', null);
+  }
+  var rt = fallback(function(m){
+    if (m.t === 'entry') addEntry(m.kind, m.text, m.line, m.valueType);
+    else if (m.t === 'clear') clearOut();
+  });
+  var ms = rt.run(code, true, true);
+  finishExecution(ms, manual);
+}
+
+// ============ guardar ============
+function stamp(){
+  var d = new Date(), p = function(n){ return (n < 10 ? '0' : '') + n; };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+function download(name, text, mime){
+  try {
+    var url = URL.createObjectURL(new Blob([text], { type: mime + ';charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.parentNode.removeChild(a); }, 1000);
+    setStatus('Guardado: ' + name, false);
+    return true;
+  } catch (e) {
+    setStatus('No se pudo guardar el archivo', true);
+    return false;
+  }
+}
+
+function celebrateSave(button){
+  button.classList.add('saved');
+  clearTimeout(button.savedTimer);
+  button.savedTimer = setTimeout(function(){ button.classList.remove('saved'); }, 900);
+}
+
+// Convierte el código a Markdown: los comentarios de línea completa pasan a
+// texto y todo lo demás queda en bloques ```js.
+function toMarkdown(code){
+  var lines = code.split('\n'), blocks = [], inComment = false, i;
+
+  function push(type, line){
+    var last = blocks[blocks.length - 1];
+    if (last && last.type === type) last.lines.push(line);
+    else blocks.push({ type: type, lines: [line] });
+  }
+
+  for (i = 0; i < lines.length; i++){
+    var raw = lines[i], t = raw.trim();
+    if (inComment){
+      if (t.indexOf('*/') !== -1) inComment = false;
+      push('text', t.replace(/\*\/\s*$/, '').replace(/^\*+ ?/, '').replace(/\s+$/, ''));
+      continue;
+    }
+    if (t === ''){
+      if (blocks.length) push(blocks[blocks.length - 1].type, '');
+      continue;
+    }
+    if (t.slice(0, 2) === '/*'){
+      if (t.indexOf('*/', 2) === -1) inComment = true;
+      push('text', t.replace(/^\/\*+ ?/, '').replace(/\*\/\s*$/, '').replace(/\s+$/, ''));
+      continue;
+    }
+    if (t.slice(0, 2) === '//'){
+      push('text', t.replace(/^\/+ ?/, ''));
+      continue;
+    }
+    push('code', raw);
+  }
+
+  var parts = [];
+  for (i = 0; i < blocks.length; i++){
+    var body = blocks[i].lines.slice();
+    while (body.length && body[0].trim() === '') body.shift();
+    while (body.length && body[body.length - 1].trim() === '') body.pop();
+    if (!body.length) continue;
+    parts.push(blocks[i].type === 'code' ? '```js\n' + body.join('\n') + '\n```' : body.join('\n'));
+  }
+  return parts.join('\n\n') + '\n';
+}
+
+// Hace el recorrido inverso para volver a editar una guía en la pizarra:
+// el texto pasa a comentarios y los bloques JS recuperan su código.
+function fromMarkdown(markdown){
+  var lines = String(markdown).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
+  var blocks = [], textLines = [], codeLines = [], fenceMode = '';
+  var fenceChar = '', fenceLength = 0, opening = '', i;
+
+  function addBlock(type, body){
+    while (body.length && body[0].trim() === '') body.shift();
+    while (body.length && body[body.length - 1].trim() === '') body.pop();
+    if (body.length) blocks.push({ type: type, lines: body.slice() });
+  }
+
+  for (i = 0; i < lines.length; i++){
+    var line = lines[i];
+    if (!fenceMode){
+      var open = /^\s*(`{3,}|~{3,})\s*([\w-]*)\s*$/i.exec(line);
+      if (open){
+        var language = open[2].toLowerCase();
+        fenceChar = open[1].charAt(0); fenceLength = open[1].length;
+        if (!language || language === 'js' || language === 'javascript'){
+          addBlock('text', textLines); textLines = [];
+          fenceMode = 'code'; opening = line;
+        } else {
+          fenceMode = 'text'; textLines.push(line);
+        }
+      } else {
+        textLines.push(line);
+      }
+      continue;
+    }
+
+    var close = new RegExp('^\\s*' + (fenceChar === '`' ? '`' : '~') + '{' + fenceLength + ',}\\s*$');
+    if (close.test(line)){
+      if (fenceMode === 'code'){
+        addBlock('code', codeLines); codeLines = [];
+      } else {
+        textLines.push(line);
+      }
+      fenceMode = '';
+    } else {
+      if (fenceMode === 'code') codeLines.push(line);
+      else textLines.push(line);
+    }
+  }
+
+  // Un bloque sin cierre se conserva como Markdown comentado: no se ejecuta
+  // código que el archivo no marcó de forma completa.
+  if (fenceMode === 'code') textLines = [opening].concat(codeLines);
+  addBlock('text', textLines);
+
+  var out = [];
+  for (i = 0; i < blocks.length; i++){
+    if (out.length) out.push('');
+    var block = blocks[i];
+    if (block.type === 'code'){
+      out = out.concat(block.lines);
+    } else {
+      for (var j = 0; j < block.lines.length; j++){
+        out.push(block.lines[j] === '' ? '//' : '// ' + block.lines[j]);
+      }
+    }
+  }
+  return out.join('\n');
+}
+
+function loadFile(file){
+  if (!file) return;
+  var markdown = /\.(?:md|markdown)$/i.test(file.name) || file.type === 'text/markdown';
+  var reader = new FileReader();
+  reader.onload = function(){
+    var text = String(reader.result || '').replace(/^\uFEFF/, '');
+    ta.value = markdown ? fromMarkdown(text) : text.replace(/\r\n?/g, '\n');
+    ta.setSelectionRange(0, 0);
+    syncWelcome(); schedulePaint(true); metrics(); sync(); caret();
+    clearOut(); showEmpty();
+    setStatus('Cargado: ' + file.name, false);
+    if (autoEl.checked) execute();
+    else ta.focus();
+  };
+  reader.onerror = function(){
+    setStatus('No se pudo leer el archivo', true);
+    ta.focus();
+  };
+  reader.readAsText(file);
+}
+
+function saveJS(){
+  var code = expand(ta.value, 'console.log');
+  if (download('pizarra-' + stamp() + '.js', code, 'text/javascript')) celebrateSave(document.getElementById('saveJS'));
+}
+function saveMD(){ if (download('pizarra-' + stamp() + '.md', toMarkdown(ta.value), 'text/markdown')) celebrateSave(document.getElementById('saveMD')); }
+
+// ============ controles ============
+document.getElementById('run').addEventListener('click', function(){ execute(true); ta.focus(); });
+document.getElementById('clear').addEventListener('click', function(){ clearOut(); showEmpty(); setStatus('Salida limpia', false); ta.focus(); });
+
+document.getElementById('saveJS').addEventListener('click', function(){ saveJS(); ta.focus(); });
+document.getElementById('saveMD').addEventListener('click', function(){ saveMD(); ta.focus(); });
+
+var fileInput = document.getElementById('fileInput');
+document.getElementById('load').addEventListener('click', function(){ fileInput.click(); });
+fileInput.addEventListener('change', function(){
+  var file = fileInput.files && fileInput.files[0];
+  fileInput.value = '';
+  loadFile(file);
+});
+
+autoEl.addEventListener('change', function(){ if (autoEl.checked) execute(); });
+
+var mdEl = document.getElementById('md');
+mdOn = mdEl.checked;
+mdEl.addEventListener('change', function(){ mdOn = mdEl.checked; schedulePaint(true); ta.focus(); });
+
+var fs = 20;
+function setFont(n){
+  fs = Math.max(14, Math.min(38, n));
+  document.documentElement.style.setProperty('--fs', fs + 'px');
+  metrics(); sync(); caret();
+}
+document.getElementById('fsUp').addEventListener('click', function(){ setFont(fs + 2); });
+document.getElementById('fsDown').addEventListener('click', function(){ setFont(fs - 2); });
+
+var themeBtn = document.getElementById('theme');
+themeBtn.addEventListener('click', function(){
+  var dark = document.documentElement.getAttribute('data-theme') === 'pizarron';
+  document.documentElement.setAttribute('data-theme', dark ? 'papel' : 'pizarron');
+  themeBtn.setAttribute('aria-pressed', dark ? 'false' : 'true');
+  themeBtn.title = dark ? 'Cambiar al modo oscuro' : 'Cambiar al modo claro';
+});
+
+// ============ divisor ============
+var divider = document.getElementById('divider');
+var splitMedia = window.matchMedia('(max-width: 860px)');
+var colSplit = 58, rowSplit = 55;
+
+function setSplit(stacked, pct){
+  pct = Math.max(15, Math.min(85, Math.round(pct * 10) / 10));
+  if (stacked){
+    rowSplit = pct;
+    splitEl.style.setProperty('--rowsplit', pct + '%');
+  } else {
+    colSplit = pct;
+    splitEl.style.setProperty('--colsplit', pct + '%');
+  }
+  divider.setAttribute('aria-orientation', stacked ? 'horizontal' : 'vertical');
+  divider.setAttribute('aria-valuenow', String(Math.round(pct)));
+  divider.setAttribute('aria-valuetext', 'Editor ' + Math.round(pct) + '%; salida ' + Math.round(100 - pct) + '%');
+  sync();
+}
+
+function syncDivider(){ setSplit(splitMedia.matches, splitMedia.matches ? rowSplit : colSplit); }
+
+divider.addEventListener('pointerdown', function(ev){
+  ev.preventDefault();
+  divider.setPointerCapture(ev.pointerId);
+  var stacked = splitMedia.matches;
+  var rect = splitEl.getBoundingClientRect();
+  document.body.classList.add('dragging');
+  function move(e){
+    var pct = stacked ? (e.clientY - rect.top) / rect.height * 100 : (e.clientX - rect.left) / rect.width * 100;
+    setSplit(stacked, pct);
+  }
+  function up(){
+    divider.removeEventListener('pointermove', move);
+    divider.removeEventListener('pointerup', up);
+    divider.removeEventListener('pointercancel', up);
+    document.body.classList.remove('dragging');
+  }
+  divider.addEventListener('pointermove', move);
+  divider.addEventListener('pointerup', up);
+  divider.addEventListener('pointercancel', up);
+});
+
+divider.addEventListener('keydown', function(ev){
+  var stacked = splitMedia.matches;
+  var pct = stacked ? rowSplit : colSplit;
+  var delta = ev.shiftKey ? 10 : 5;
+  if ((!stacked && ev.key === 'ArrowLeft') || (stacked && ev.key === 'ArrowUp')) pct -= delta;
+  else if ((!stacked && ev.key === 'ArrowRight') || (stacked && ev.key === 'ArrowDown')) pct += delta;
+  else if (ev.key === 'Home') pct = 15;
+  else if (ev.key === 'End') pct = 85;
+  else return;
+  ev.preventDefault();
+  setSplit(stacked, pct);
+});
+
+splitMedia.addEventListener('change', syncDivider);
+syncDivider();
+
+// ============ arranque ============
+syncWelcome();
+metrics();
+paint();
+showEmpty();
+ta.focus();
+ta.setSelectionRange(ta.value.length, ta.value.length);
+caret();
+execute();
+
+})();
+</script>
+</body>
+</html>
