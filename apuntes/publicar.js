@@ -6,19 +6,20 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { spawn, spawnSync } = require("node:child_process");
+const { spawnSync } = require("node:child_process");
 
-const WORKDIR = path.resolve(process.cwd());
-const SOURCE_DIR = path.join(WORKDIR, "apuntes", "chatgpt");
-const OUTPUT = path.join(WORKDIR, "Apuntes-Tup26-P4.epub");
+const NOTES_DIR = path.resolve(__dirname);
+const WORKDIR = path.resolve(NOTES_DIR, "..");
+const PDF_TEMP_ROOT = path.join(WORKDIR, "tmp", "pdfs");
 const BOOK_ID = "Apuntes-TUP26-P4";
+const BOOK_FILENAME = "Apuntes-Tup26-P4";
 const BOOK_TITLE = "Apuntes de Programación IV";
 const BOOK_LANGUAGE = "es";
 const BOOK_SUBTITLE = "JavaScript, Node.js y desarrollo web";
 const BOOK_AUTHOR = "Ing. Alejandro Di Battista";
-const BOOK_COVER = path.join(WORKDIR, "output", "imagegen", "portada-programacion-iv.png");
-const COVER_FILENAME = "portada.png";
-const COVER_MEDIA_TYPE = "image/png";
+const BOOK_COVER = path.join(NOTES_DIR, "portada.jpg");
+const COVER_FILENAME = "portada.jpg";
+const COVER_MEDIA_TYPE = "image/jpeg";
 const EXCLUDED = [
   "00.*.md",
   "09.*.md",
@@ -28,6 +29,20 @@ const EXCLUDED = [
   "examen*.md",
 ];
 const MERMAID_TIMEOUT_SECONDS = 120;
+const SOURCES = {
+  chatgpt: "ChatGPT",
+  claude: "Claude",
+};
+
+function parseSource(argument) {
+  const source = (argument ?? "chatgpt").trim().toLowerCase();
+  if (Object.hasOwn(SOURCES, source)) {
+    return { directory: source, label: SOURCES[source] };
+  }
+  throw new Error(
+    `Origen invalido: ${argument}. Use "chatgpt" o "claude".`,
+  );
+}
 
 function globToRegExp(pattern) {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&");
@@ -36,7 +51,14 @@ function globToRegExp(pattern) {
 
 function isExcluded(filePath) {
   const name = path.basename(filePath);
-  return EXCLUDED.some((pattern) => globToRegExp(pattern).test(name));
+  return (
+    name.toLowerCase().includes("(no)") ||
+    EXCLUDED.some((pattern) => globToRegExp(pattern).test(name))
+  );
+}
+
+function bookOutputPath(sourceDirectory, extension) {
+  return path.join(NOTES_DIR, `${BOOK_FILENAME}-${sourceDirectory}.${extension}`);
 }
 
 function escapeHtml(value, quote = false) {
@@ -354,6 +376,20 @@ function findExecutable(command) {
     }
   }
   return null;
+}
+
+function findChromium() {
+  const commands = ["google-chrome", "chromium", "chromium-browser", "microsoft-edge"];
+  for (const command of commands) {
+    const executable = findExecutable(command);
+    if (executable) return executable;
+  }
+
+  const applicationPaths = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+  ];
+  return applicationPaths.find((candidate) => fs.existsSync(candidate)) ?? null;
 }
 
 function mermaidCommand() {
@@ -850,14 +886,15 @@ function writeStoredZip(outputPath, entries) {
   fs.writeFileSync(outputPath, Buffer.concat([...localParts, centralDirectory, end]));
 }
 
-function buildEpub(markdownFiles) {
+function buildEpub(markdownFiles, outputPath = bookOutputPath("chatgpt", "epub")) {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
   const chapters = [];
   const assets = new Map();
   markdownFiles.forEach((filePath, zeroBasedIndex) => {
     const index = zeroBasedIndex + 1;
     const source = fs.readFileSync(filePath, "utf8");
-    const title = firstHeading(source, path.basename(filePath, path.extname(filePath)));
+    const baseTitle = firstHeading(source, path.basename(filePath, path.extname(filePath)));
+    const title = baseTitle;
     const chapterFile = `chapter-${String(index).padStart(2, "0")}.xhtml`;
     const [xhtml, chapterAssets] = markdownToXhtml(source, title, index);
     chapters.push([chapterFile, title, xhtml]);
@@ -943,7 +980,105 @@ ${spineItems.join("\n")}
   ];
   chapters.forEach(([filename, _title, xhtml]) => entries.push([`OEBPS/${filename}`, xhtml]));
   assets.forEach((content, href) => entries.push([`OEBPS/${href}`, content]));
-  writeStoredZip(OUTPUT, entries);
+  writeStoredZip(outputPath, entries);
+}
+
+function bodyFromXhtml(xhtml) {
+  const match = xhtml.match(/<body>\s*([\s\S]*?)\s*<\/body>/i);
+  if (!match) throw new Error("No se pudo extraer el contenido XHTML para generar el PDF.");
+  return match[1];
+}
+
+function buildPdf(markdownFiles, outputPath = bookOutputPath("chatgpt", "pdf")) {
+  const chromium = findChromium();
+  if (!chromium) {
+    throw new Error(
+      "No se encontro Google Chrome, Chromium o Microsoft Edge para generar el PDF.",
+    );
+  }
+
+  fs.mkdirSync(PDF_TEMP_ROOT, { recursive: true });
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  const tempDirectory = fs.mkdtempSync(path.join(PDF_TEMP_ROOT, "publicar-"));
+  const imagesDirectory = path.join(tempDirectory, "images");
+  fs.mkdirSync(imagesDirectory, { recursive: true });
+
+  try {
+    fs.copyFileSync(BOOK_COVER, path.join(tempDirectory, COVER_FILENAME));
+    const chapters = markdownFiles.map((filePath, zeroBasedIndex) => {
+      const chapterNumber = zeroBasedIndex + 1;
+      const markdown = fs.readFileSync(filePath, "utf8");
+      const baseTitle = firstHeading(
+        markdown,
+        path.basename(filePath, path.extname(filePath)),
+      );
+      const title = baseTitle;
+      const [xhtml, assets] = markdownToXhtml(markdown, title, chapterNumber);
+      for (const [href, content] of assets) {
+        const assetPath = path.join(tempDirectory, href);
+        fs.mkdirSync(path.dirname(assetPath), { recursive: true });
+        fs.writeFileSync(assetPath, content);
+      }
+      return bodyFromXhtml(xhtml);
+    });
+
+    const html = `<!doctype html>
+<html lang="${BOOK_LANGUAGE}">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(BOOK_TITLE)}</title>
+  <style>
+${CSS}
+@page {
+  size: A4;
+  margin: 18mm 17mm 20mm;
+  @bottom-center {
+    color: #68707c;
+    content: counter(page);
+    font-family: Arial, sans-serif;
+    font-size: 9pt;
+  }
+}
+@page:first { margin: 0; }
+html, body { margin: 0; padding: 0; }
+body { font-size: 10.5pt; }
+.pdf-cover { break-after: page; height: 297mm; margin: 0; overflow: hidden; }
+.pdf-cover img { height: 100%; object-fit: cover; width: 100%; }
+section[epub\\:type="chapter"] { break-before: page; }
+.chapter-header { break-after: avoid; }
+pre, table, blockquote, figure { break-inside: avoid; }
+thead { display: table-header-group; }
+a { color: inherit; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <section class="pdf-cover"><img src="${COVER_FILENAME}" alt="Portada" /></section>
+  ${chapters.join("\n")}
+</body>
+</html>`;
+    const htmlPath = path.join(tempDirectory, "libro.html");
+    fs.writeFileSync(htmlPath, html, "utf8");
+
+    const result = spawnSync(
+      chromium,
+      [
+        "--headless=new",
+        "--disable-gpu",
+        "--allow-file-access-from-files",
+        "--no-pdf-header-footer",
+        `--print-to-pdf=${outputPath}`,
+        new URL(`file://${htmlPath}`).href,
+      ],
+      { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
+    );
+    if (result.error) throw result.error;
+    if (result.status !== 0 || !fs.existsSync(outputPath)) {
+      const details = String(result.stderr || result.stdout || "").trim();
+      throw new Error(`No se pudo generar el PDF: ${details}`);
+    }
+  } finally {
+    fs.rmSync(tempDirectory, { force: true, recursive: true });
+  }
 }
 
 function markdownRaiz(root) {
@@ -962,6 +1097,7 @@ function renumerar(root) {
   const pattern = /^(?<seccion>\d{2,})\.(?<orden>\d{2,})-(?<nombre>.+)\.md$/;
   const files = [];
   for (const filePath of markdownRaiz(root)) {
+    if (isExcluded(filePath)) continue;
     const match = path.basename(filePath).match(pattern);
     if (match) {
       files.push([
@@ -991,16 +1127,37 @@ function renumerar(root) {
   }
 }
 
-function main() {
-  console.log("\n\nIniciando proceso de publicacion...\n");
-  if (!fs.existsSync(SOURCE_DIR)) {
-    console.error(`No se encontro la carpeta de apuntes: ${path.relative(WORKDIR, SOURCE_DIR)}`);
+function main(args = process.argv.slice(2)) {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("Uso: node apuntes/publicar.js [chatgpt|claude]");
+    return 0;
+  }
+  if (args.length > 1) {
+    console.error("Se admite un unico parametro: chatgpt o claude.");
     return 1;
   }
 
-  console.log("- Paso 1: Renumerar archivos Markdown en apuntes/chatgpt...");
-  renumerar(SOURCE_DIR);
-  const markdownFiles = markdownRaiz(SOURCE_DIR).filter((filePath) => !isExcluded(filePath));
+  let source;
+  try {
+    source = parseSource(args[0]);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    return 1;
+  }
+  const sourceDir = path.join(NOTES_DIR, source.directory);
+  const epubOutput = bookOutputPath(source.directory, "epub");
+  const pdfOutput = bookOutputPath(source.directory, "pdf");
+
+  console.log("\n\nIniciando proceso de publicacion...\n");
+  if (!fs.existsSync(sourceDir)) {
+    console.error(`No se encontro la carpeta de apuntes: ${path.relative(WORKDIR, sourceDir)}`);
+    return 1;
+  }
+
+  console.log(`- Origen: ${source.label} (${path.relative(WORKDIR, sourceDir)})`);
+  console.log(`- Paso 1: Renumerar archivos Markdown en apuntes/${source.directory}...`);
+  renumerar(sourceDir);
+  const markdownFiles = markdownRaiz(sourceDir).filter((filePath) => !isExcluded(filePath));
   if (markdownFiles.length === 0) {
     console.error("No se encontraron archivos Markdown para incluir.");
     return 1;
@@ -1011,22 +1168,23 @@ function main() {
   }
 
   console.log("- Paso 2: Construir el archivo EPUB...");
-  buildEpub(markdownFiles);
-  console.log(`     Salida: ${path.basename(OUTPUT)}\n`);
-  console.log("- Paso 3: Abrir el libro en Apple Books...");
-  spawnSync("osascript", ["-e", 'tell application "Books" to quit'], { stdio: "ignore" });
-  const books = spawn("open", ["-a", "Books", OUTPUT], { detached: true, stdio: "ignore" });
-  books.unref();
+  buildEpub(markdownFiles, epubOutput);
+  console.log(`     Salida: ${path.basename(epubOutput)}\n`);
+  console.log("- Paso 3: Construir el archivo PDF...");
+  buildPdf(markdownFiles, pdfOutput);
+  console.log(`     Salida: ${path.relative(WORKDIR, pdfOutput)}\n`);
   console.log("\nProceso de publicacion completado.\n");
   return 0;
 }
 
 module.exports = {
   buildEpub,
+  buildPdf,
   firstHeading,
   inlineMarkdown,
   isExcluded,
   markdownToXhtml,
+  parseSource,
   renumerar,
   renderCodeBlock,
   renderTable,
