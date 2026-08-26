@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="./apuntes/portada.jpg" alt="Portada de Programación IV — Programación Web" width="420">
-</p>
-
 <h1 align="center">Programación IV</h1>
 
 <p align="center">
