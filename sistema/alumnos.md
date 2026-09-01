@@ -2,80 +2,92 @@
 
 ## C1
 ```text
-Legajo  Nombre y Apellido               Teléfono        GitHub                     Prácticos    Exm   Prs   Ast  Nta  Recuperación      Observaciones
-------  ------------------------------  -------------   -------------------------  ----------   ----  ---   ---  ---  ----------------  ------------------------
-63456   Ávila Lahr, Joaquín             (381)527-6836   joacoavila9                🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  01/07/2026 10:00
-63415   Chávez, Lucas Francisco         (381)301-3490   lucaschavez10lc-ai         🔴🔴🔴🔴🔴🔴   🟢⚪   No    17    8  —                 R2
-63268   Condori, Karina Edith           (381)412-4723   kariiedith9315             🟢🟢🟢🟢🟢🟢   🟢⚪   No     9    1  01/07/2026 12:00
-63402   Condori, Nahuel Ariel           (381)341-9689   nahuelc19                  🟢🟢🟢🟢🟢🟢   🟢⚪   No    30   10  01/07/2026 10:00
-63419   Coronel, Tomás                  (381)678-0335   tomicor979-lgtm            🟢🟢🟢🟢🟢🟢   🟢⚪   No    31   10  01/07/2026 10:20
-63241   Cortez, Josías                  (381)665-0808   josias57455                🟢🟢🟢🟢🟢🟢   🟢⚪   No    29   10  01/07/2026 10:20
-63776   Fuensalida, Ulises Nahuel       (381)334-9851   ulisesfuensalida-ui        🟢🟢🔴🔴🟢🟢   🟢⚪   No    18    8  01/07/2026 10:40
-63396   Gil Garau, Atalía Trinidad      (381)456-4405   ataliagg                   🟢🟢🟢🟢🟢🟢   🟢⚪   No    29   10  01/07/2026 10:40
-63457   González Dupuy, Ignacio         (381)683-1233   ignas11                    🟢🟢🟢🟢🟢🟢   🟢⚪   No    29   10  01/07/2026 11:00
-61577   González, Lucas Alfredo         (381)669-4386   lucasgonzaa                🟢🔴🔴🔴🟡🔴   🟢⚪   No    26   10  —                 R2
-63174   Jerez, Luciano Germán           (381)550-7143   luchex1525                 🟢🟢🟢🟢🟢🟢   🟢⚪   No    33    9  01/07/2026 11:00
-63700   Jiménez, Nelson Maximiliano     (381)639-2861   maximilianojimnez          🟢🟢🟢🟢🟢🟢   🟢⚪   No    27    8  01/07/2026 11:20
-63399   Lazarte, Gonzalo Romeo          (381)576-0069   tutu-04                    🟢🟢🟢🟢🟢🟢   🟢⚪   No    25   10  01/07/2026 11:20
-63211   Montero, Luca                   (381)528-7848   monteroluca007             🟢🟢🔴🔴🟡🔴   🟢⚪   No    19   10  —                 R2
-63350   Páez Carabajal, Santiago        (381)572-4096   santiagopaez-2             🟢🟢🟢🟢🟢🟢   🟢⚪   No    21    9  01/07/2026 11:40
-61581   Paz, Naim Federico              (381)353-0060   naimp074                   🟢🟢🟢🟢🟢🟢   🟢⚪   No    26   10  01/07/2026 11:40
-63647   Paz, Valentina                  (381)599-6422   valepaz11                  🟢🟢🟢🟢🟢🟢   🟢⚪   No    26   10  02/07/2026 10:00
-63389   Pereyra Petroni, Nicolas        (381)332-4401   nicopereyra255-ship-it     🟢🟢🟢🟢🟢🟢   🟢⚪   No    19    8  02/07/2026 10:00
-63420   Pereyra, Valentina Nazaret      (381)552-8065   valentinapereyra03         🔴🟢🔴🔴🟢🟢   🟢⚪   No    13    5  —
-63354   Perondi, Luciano                (381)350-0777   lucho-bot                  🟢🟢🟢🟢🟢🟢   🟢⚪   No    23   10  02/07/2026 10:20
-63393   Ritorto, Lucca                  (381)627-2271   luccardp                   🟢🟢🟢🟢🟢🟢   🟢⚪   No    21   10  02/07/2026 10:20
-63208   Rosconi, Ignacio Federico       (381)533-1344   ignaciorosconi             🔴🟢🔴🔴🟢🟢   🟢⚪   No    16    4  —
-63387   Sosa Gonella, Luca              (381)355-5126   lucasosag1                 🟢🟢🟢🟢🟢🟢   🟢⚪   No    23    9  02/07/2026 10:40
-63546   Sosa Paz, Jeremías              (381)200-7473   jeerepazz                  🟢🟢🟢🟢🟢🟢   🟢⚪   No    31   10  02/07/2026 10:40
-63547   Sosa Paz, José Lisandro         (381)675-3624   lisandropaz                🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  02/07/2026 11:00
-63447   Suárez, Sofía Celeste           (381)246-3725   suarezsofia541-alt         🟢🟢🟢🟢🟢🟢   🟢⚪   No    30   10  02/07/2026 11:00
-61490   Valdez Bustamante, Tomás        (381)303-1034   tomas-valdez-bustamante    🟢🟢🔴🟢🟢🔴   🟢⚪   No    35    6  02/07/2026 11:20
-63397   Vercellone, Tomás               (381)676-6267   xtomi2456                  🟢🟢🟢🟢🟢🟢   🟢⚪   No    25    9  02/07/2026 11:20
+Legajo  Nombre y Apellido                         Teléfono        GitHub
+------  ----------------------------------------  --------------  -------------------------
+63409   Acosta, Ulices Mateo                      (381)236-4228   AcostaUlices
+63428   Albornoz, Tomás Emilio                    (381)548-4231   -
+63392   Andina, Juan Ignacio                      (381)688-1813   juanandina-san
+61543   Andrada, María José                       (381)597-3350   MajoAndrada18
+63633   Barroca, Nahu                             (381)522-9389   nacopa999
+54652   Cabrera, Fernando Sebastián               (381)524-8576   -
+63310   Carobbio Bestani, Leonidas Tiziano        (381)566-5305   tiziano-design
+54865   Cequi, Sofía                              (381)467-0231   sofceq
+63407   Chirieleison Bonkosky, Rocco              (381)480-3869   -
+63243   Civili de la Vega, Lisandro               (381)617-4315   lisandroCivili
+63143   Collante, Pablo Augusto                   (381)550-7067   PabloCollante
+58755   Cuéllar, Elías Eduardo                    (381)443-6425   Elias-E-Cuellar
+61673   Delgado, Augusto Emanuel                  (381)575-3214   EmanuelDel
+63259   Delgado Ojeda, Francisco Agustín          (381)692-5554   delgadocorp-ctrl
+63137   Díaz, José Simón                          (381)617-9958   JoseSimonDiaz
+63404   Echavarría Pacios, Facundo                (381)303-5352   FacundoEchavarria
+61851   Gaiser, Lorenzo                           (381)465-8983   Lorenz890
+63142   Galarze Albornoz, Alejandro Gabriel       (381)346-5628   AleGalarze21
+61540   García Mc Guiness, Gonzalo                (381)606-4655   Gonz4McGuiness
+63630   González, Pablo Hernán                    (381)534-7683   hernangoonzalez1
+63660   Gordillo, Oriana Daniela                  (381)342-7785   -
+61343   Gómez Asat, Tomás                         (381)324-1333   totogomezasat-svg
+63146   Ibáñez, Lucas Gabriel                     (381)201-8090   LucasIbanez13
+63357   Konevky, David                            (381)616-0573   dakoderdev
+62523   Ledesma, Cristian Germán                  (381)339-2464   cristian767-bit
+55656   Lombardo Ríos, Benjamín                   (381)597-1973   LomBenja726
+63448   López Ávila, Eduardo Benjamín             (381)575-3666   benlopez00
+63408   Medina Oliva, Hernán Matías               (381)580-4566   HernanDev11
+61124   Medina Rodríguez, José Agustín            (381)530-3077   agustinmed13
+54273   Menéndez, Valentín José                   (381)219-9034   valenomg21
+63284   Molina Basso, Matías Francisco            (381)302-5613   matiasmol21
+63286   Murillo, Facundo Maximiliano              (381)561-3292   facumurillo
+63426   Osores, Matías                            (381)467-5336   Codebymatias
+61024   Palacios, Francisco Miguel                (381)539-0011   franciscook
+63361   Pastrana, Lucila Hainen                   (381)236-9376   lucilapastranaok-hue
+61732   Paz, Mikael                               (381)542-2918   MikaelPaz12
+63292   Peralta, María Victoria                   (381)660-3224   peraltavictoria
+61087   Pérez, Joaquín                            (381)520-8689   Joaquin-I9
+61175   Risso, Aaron Ezequiel                     (11)2592-7752   Inovax-cito
+62088   Rojas Sosa, Álvaro Tomás                  (381)569-1218   AlvaroRjas
+63232   Roldán, Enzo Joaquín                      (381)565-4292   Roldanebzo
+64052   Romano, Máximo Isaías                     (381)401-1798   -
+63307   Román, Santiago Francisco                 (381)691-5131   romansanti
+63403   Ruiz, Marcos Benjamín                     (381)516-8050   ruizbenjamin1
+61324   Ruiz, Pablo Emanuel                       (381)510-6031   PblRuiz
+63581   Ríos, Tomás Enrique                       (381)300-0390   tomasrios001
+52133   Sosa Villagra, José Lautaro               (296)630-9620   HerrDoc132
+55546   Thomás, Santiago                          (381)616-4736   Santhomas1
+63209   Valdez del Pino, Valentín                 (381)253-9306   valentindp110-tech
+63355   Vargas Mopty, Jazmín                      (381)241-1000   JazMoptyLPM
+61077   Vittar, Jazmín                            (381)595-9009   jaz-vittar
 ```
 
 ## C3
 ```text
-Legajo  Nombre y Apellido               Teléfono        GitHub                     Prácticos    Exm   Prs   Ast  Nta  Recuperación      Observaciones
-------  ------------------------------  -------------   -------------------------  ----------   ----  ---   ---  ---  ----------------  ------------------------
-63385   Almaraz Sintora, Nahuel         (381)502-5082   nahuelalmaraz957-ops       🟢🟢🟢🟢🟢🟢   🟢⚪   No    31   10  01/07/2026 08:00
-63217   Altamiranda Borquez, Bian       (381)581-3104   sofiaaltamiranda22         🟢🔴🔴🔴🟢🟢   🟢⚪   No    27    8  —                 R1
-63300   Álvarez, Hernán Fabricio        (381)581-4086   hernancarpalvarez28        🟢🟢🟢🟢🟢🟢   🟢⚪   No    24   10  01/07/2026 08:00
-63313   Ávila Puntano, Benjamín         (381)329-6643   santiagobnj-avila-pun      🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  01/07/2026 08:20
-63222   Bajre Martínez, Julián          (381)351-9652   julianbajre-png            🟢🟢🟢🟢🟢🟢   🟢⚪   No    26    7  01/07/2026 08:20
-61801   Benega, Maximiliano Abraham     (381)505-9048   abrahambenega              🟢🟢🟢🟢🟢🟢   🟢⚪   No    24    6  01/07/2026 08:40
-63493   Busnelli, Bruno                 (381)366-0607   brunobusnelli              🟢🟢🟢🟢🟢🟢   🟢⚪   No    15   10  01/07/2026 08:40
-63150   Carlino, Joaquín                (381)605-7383   vincent-coffe              🟢🟢🟢🟢🟢🟢   🟢⚪   No    13   10  01/07/2026 09:00
-63341   Carrer, Juan Cruz               (381)632-5727   juancarrer11               🟢🟢🟢🟢🟢🟢   🟢⚪   No    22   10  01/07/2026 09:00
-63461   Cativa, Facundo Simón           (381)391-4222   cativafacundo9-gif         🟢🟢🔴🔴🟡🔴   🟢⚪   No    19    8  —                 R2
-63218   Cortés, Guillermo Augusto       (381)606-0586   guillecortes01             🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  01/07/2026 09:20
-64016   Cura, Rocío Aylen               (381)478-8799   rocura26                   🔴🟢🟢🔴🟢🔴   🟢⚪   No    17    7  —
-63266   Decima, Juan Cruz               (381)558-9063   devjuancruz003-com         🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  01/07/2026 09:20
-63137   Díaz, José Simón                (381)617-9958   josesimondiaz              🟢🟢🔴🟢🟢🟢   🟢⚪   No    29    6  01/07/2026 09:40
-61641   Figueroa, Nahuel Ramón          (381)353-2589   figueroanahuel16           🟢🔴🔴🔴🔴🔴   🟢⚪   No    19    4  —
-63737   Galván, Rocío Julieta           (381)647-5597   rociogalvani               🟢🟢🟢🟢🟢🟢   🟢⚪   No    25   10  01/07/2026 09:40
-63345   García, Franco Tomás            (381)207-5701   francotms                  🔴🟢🟢🟢🟢🟢   🟢⚪   No    16   10  02/07/2026 08:00
-61057   Getar, Thomas                   (381)336-2147   thomasgetar                🟢🟢🟢🔴🟢🔴   🟢⚪   No    23    7  —                 R2
-61489   Gómez, Tomás                    (381)390-5024   tomasgomez18               🟢🟢🟢🟢🟢🟢   🟢⚪   No    28    9  02/07/2026 08:00
-63182   González Rojas, Emmanuel        (381)612-5571   emmanuelgr-web             🟢🟢🟢🟢🟢🟢   🟢⚪   No    32   10  02/07/2026 08:20
-63717   González, Octavio               (381)604-1868   owning01                   🟢🟢🟢🟢🟢🟢   🟢⚪   No    32    9  02/07/2026 08:20
-61161   González, Thomas Ezequiel       (381)369-9891   kobinee                    🟢🟢🔴🟢🟡🔴   🟢⚪   No    20    5  —                 R2
-62844   Guzmán, Luciano Leonel          (388)665-1248   lucianoleonelguzman        🔴🟢🟢🔴🟡🔴   🟢⚪   No    16   10  —                 R2
-63231   Herrera, Rocío Tatiana          (381)208-9907   tatianaherrera-commits     🟢🟢🟢🟢🟢🟢   🟢⚪   No    25   10  02/07/2026 08:40
-63425   Holmquist, Jeremy               (381)522-4955   jeremy-holmquist           🟢🟢🔴🔴🟡🔴   🟢⚪   No    16    6  —                 R2
-61907   Kargachin, Guadalupe            (381)457-6547   guadalupekargachin         🔴🔴🔴🔴🔴🔴   🔴⚪   No     0    1  —
-63219   Lazarte, Sergio Fabricio        (381)589-1439   fabriciolazarte27          🟢🟢🟢🟢🟢🟢   🟢⚪   No    23   10  02/07/2026 08:40
-63297   Lezana, Juan Ignacio            (381)555-5202   ignaciolezana25            🟢🟢🟢🟢🟢🟢   🟢⚪   No    26   10  02/07/2026 09:00
-63388   López, Leandro Joel             (381)360-4566   leandro-progam             🟢🟢🟢🟢🟢🟢   🟢⚪   No    29   10  02/07/2026 09:00
-63213   Marina Noguera, Morena Giovann  (381)354-0133   mmore-cloud                🟢🟢🟢🟢🟢🟢   🟢⚪   No    31    9  02/07/2026 09:20
-63494   Medina, Lourdes Natalia         (381)201-7153   lumedina23                 🟢🟢🟢🟢🟢🟢   🟢⚪   No    22   10  02/07/2026 09:20
-63418   Miranda, Gonzalo Emanuel        (381)208-1031   gonzalomiranda456          🟢🟢🟢🟢🟢🟢   🟢⚪   No    25    7  02/07/2026 09:40
-63234   Molina, Lázaro Exequiel         (381)416-0720   lazaro2005-ml              🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  02/07/2026 09:40  No edita datos
-63412   Morán, Facundo Martín           (381)301-0206   facumoran                  🟢🟢🟢🟢🟢🟢   🟢⚪   No    29   10  02/07/2026 12:00
-63205   Navarro Aragón, Facundo         (381)466-6665   facundonavarroaragon       🔴🔴🔴🔴🔴🔴   🟢⚪   No    23   10  —
-63220   Pérez Del Rien, Valentina       (381)360-2873   vall19-git                 🟢🟢🟢🟢🟢🟢   🟢⚪   No    32   10  02/07/2026 12:00
-63232   Roldan, Enzo Joaquín            (381)565-4292   roldanebzo                 🟢🟢🟢🔴🟡🔴   🟢⚪   No    27    5  —                 R2
-63216   Sánchez, Sofía Micaela          (381)342-9672   sofisanchez126             🟢🟢🟢🟢🟢🟢   🟢⚪   No    31   10  02/07/2026 12:20
-63207   Saravia, César Nahum            (381)612-1173   nahum-saravia              🟢🟢🟢🟢🟢🟢   🟢⚪   No    27   10  02/07/2026 12:20
-61026   Thompson, María José            (381)448-3445   mariajosethompson0-eng     🟢🟢🟢🟢🟢🟢   🟢⚪   No    26    9  02/07/2026 12:40
+Legajo  Nombre y Apellido                         Teléfono        GitHub
+------  ----------------------------------------  --------------  -------------------------
+63624   Andrada Romero, Lourdes Micaela           (381)545-8520   lourAndrada707
+63358   Argañaráz, Leonardo                       (381)362-5286   leoo2110
+63455   Aráoz, Marianela                          (381)510-7532   mararaoz260
+55956   Blanca, Leandro Ezequiel                  (381)627-6191   leandroblanca
+63627   Caro, Marcos Daniel                       (381)675-5253   marcos-d-c
+61441   Carrizo, Gonzalo                          3815134195      -
+63326   Carrizo Silva, Yaqueline Ailen            (381)345-1427   Incrost
+63324   Cedrón, Agustina Julieta                  (383)847-1519   Agustina-Cedron
+63171   Chocobar, Morena Agustina                 (381)697-0888   agustina-chocobar
+63352   Cordero, Leonel Rodrigo                   (381)685-3609   LeonelRC23
+61744   Díaz Rossini, Juan José                   (381)301-6487   JJDiazR
+63586   Flores, Pablo Ignacio                     (381)593-0288   IgnacioFlo
+63204   García Núñez, Germán Ariel                (381)222-1275   GerGarciia
+63717   González, Octavio                         (381)604-1868   Owning01
+61595   González Patti, Valentín                  (381)655-9195   ValentinPatti
+63140   Manca, Mariano                            (381)549-7187   -
+63434   Martín, Francisco Augusto                 (381)414-1903   ffranmartin
+63119   Montes, Luis Esteban                      3816272294      LCanopee
+63459   Méndez, Carlos Samuel                     (381)697-0888   bboymendez53-cmyk
+61246   Palacios, Mateo                           (381)522-3848   mateopalacios14
+63198   Parras, Mateo                             (381)646-3031   MateoParras17
+50793   Peralta, Lucas                            (381)666-3064   LucasPeraltaa
+63200   Rojas, Gael Mauricio                      (381)510-8033   rojasmauricio43c1-collab
+63195   Sustaita Fuentes, Federico                (381)524-0309   FedeSustaita
+63139   Torres, Axel                              (381)359-7415   -
+63197   Uehara Martorell, Ramiro                  (381)650-5653   ramirouehara
+63322   Veliz Herrera, Mayra Candela              (381)627-8950   mayherrera25
+63321   Zottola Caram, Ignacio                    (381)622-4165   VesselVI
+61984   Álvarez, Martín                           (381)366-2381   martinalvarez0192-gif
 ```
