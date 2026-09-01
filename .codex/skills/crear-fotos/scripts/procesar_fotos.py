@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,7 @@ from typing import Any
 
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MANIFEST_NAME = ".crear-fotos-manifest.json"
+PORTRAIT_PATTERN = re.compile(r"^(\d+)-carnet\.(?:jpg|jpeg|png|webp)$", re.IGNORECASE)
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,9 +43,20 @@ def parse_args() -> argparse.Namespace:
         help="Carpeta de salida, relativa a la raíz salvo que sea absoluta.",
     )
     parser.add_argument(
+        "--students-dir",
+        type=Path,
+        default=Path("practicos"),
+        help="Carpeta que contiene los directorios '<legajo> - <nombre>'.",
+    )
+    parser.add_argument(
         "--execute",
         action="store_true",
         help="Genera las fotos pendientes. Sin esta opción solo informa el plan.",
+    )
+    parser.add_argument(
+        "--organize-only",
+        action="store_true",
+        help="Solo planifica u organiza retratos ya generados; no invoca la API.",
     )
     parser.add_argument(
         "--imagegen-script",
@@ -125,6 +138,153 @@ def relative_label(path: Path, root: Path) -> str:
         return str(path)
 
 
+def student_folders_by_id(students_dir: Path) -> dict[str, list[Path]]:
+    folders: dict[str, list[Path]] = {}
+    if not students_dir.is_dir():
+        return folders
+    for candidate in students_dir.iterdir():
+        if not candidate.is_dir():
+            continue
+        match = re.match(r"^(\d+)\s+-\s+", candidate.name)
+        if match:
+            folders.setdefault(match.group(1), []).append(candidate)
+    return folders
+
+
+def convert_and_move_to_jpeg(source: Path, target: Path) -> None:
+    if target.exists():
+        raise RuntimeError(f"el destino ya existe: {target}")
+
+    if source.suffix.lower() in {".jpg", ".jpeg"}:
+        source.replace(target)
+        return
+
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        raise RuntimeError("no se encontró ffmpeg para convertir el retrato a JPG")
+
+    temporary = target.with_name(f".{target.stem}.{os.getpid()}.tmp.jpg")
+    temporary.unlink(missing_ok=True)
+    result = subprocess.run(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            str(source),
+            "-frames:v",
+            "1",
+            "-q:v",
+            "2",
+            str(temporary),
+        ],
+        check=False,
+    )
+    if result.returncode != 0 or not temporary.is_file() or temporary.stat().st_size == 0:
+        temporary.unlink(missing_ok=True)
+        raise RuntimeError(f"ffmpeg no pudo convertir {source}")
+
+    temporary.replace(target)
+    source.unlink()
+
+
+def update_manifest_output(
+    manifest: dict[str, Any], source: Path, target: Path, root: Path
+) -> bool:
+    source_label = relative_label(source, root)
+    target_label = relative_label(target, root)
+    target_hash = file_sha256(target)
+    changed = False
+    for item in manifest["items"].values():
+        if item.get("output") != source_label:
+            continue
+        item["output"] = target_label
+        item["output_sha256"] = target_hash
+        changed = True
+    return changed
+
+
+def organize_portraits(
+    root: Path,
+    output_dir: Path,
+    students_dir: Path,
+    manifest: dict[str, Any],
+    execute: bool,
+) -> tuple[int, int, int, int, bool]:
+    folders = student_folders_by_id(students_dir)
+    portraits = [] if not output_dir.is_dir() else sorted(
+        (
+            path
+            for path in output_dir.iterdir()
+            if path.is_file() and PORTRAIT_PATTERN.fullmatch(path.name)
+        ),
+        key=lambda path: path.name.casefold(),
+    )
+    planned = 0
+    moved = 0
+    skipped = 0
+    failures = 0
+    manifest_changed = False
+
+    for source in portraits:
+        student_id = PORTRAIT_PATTERN.fullmatch(source.name).group(1)
+        matches = folders.get(student_id, [])
+        if len(matches) == 0:
+            print(
+                "SIN DESTINO carpeta de alumno inexistente: "
+                f"{relative_label(source, root)}"
+            )
+            skipped += 1
+            continue
+        if len(matches) > 1:
+            print(
+                "SIN DESTINO legajo ambiguo: "
+                f"{student_id} tiene {len(matches)} carpetas",
+                file=sys.stderr,
+            )
+            skipped += 1
+            continue
+
+        target = matches[0] / f"{student_id}.jpg"
+        if target.exists():
+            print(f"OMITIDA foto final existente: {relative_label(target, root)}")
+            skipped += 1
+            continue
+
+        planned += 1
+        if not execute:
+            print(
+                "POR ORGANIZAR: "
+                f"{relative_label(source, root)} -> {relative_label(target, root)}"
+            )
+            continue
+
+        try:
+            convert_and_move_to_jpeg(source, target)
+            manifest_changed = (
+                update_manifest_output(manifest, source, target, root)
+                or manifest_changed
+            )
+            moved += 1
+            print(f"ORGANIZADA: {relative_label(target, root)}")
+        except RuntimeError as exc:
+            failures += 1
+            print(f"ERROR al organizar {relative_label(source, root)}: {exc}", file=sys.stderr)
+
+    if execute:
+        print(
+            "ORGANIZACIÓN: "
+            f"{moved} movidos, {skipped} omitidos, {failures} fallidos."
+        )
+    else:
+        print(
+            "ORGANIZACIÓN: "
+            f"{planned} por organizar, {skipped} omitidos."
+        )
+    return planned, moved, skipped, failures, manifest_changed
+
+
 def record_item(
     manifest: dict[str, Any], source_hash: str, source: Path, target: Path, root: Path
 ) -> None:
@@ -141,20 +301,29 @@ def main() -> int:
     root = args.project_root.expanduser().resolve()
     input_dir = resolve_from_root(root, args.input_dir)
     output_dir = resolve_from_root(root, args.output_dir)
+    students_dir = resolve_from_root(root, args.students_dir)
     manifest_path = output_dir / MANIFEST_NAME
     prompt_path = Path(__file__).resolve().parent.parent / "references/carnet-prompt.txt"
+
+    try:
+        manifest = load_manifest(manifest_path)
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+    if args.organize_only:
+        _, _, _, failures, manifest_changed = organize_portraits(
+            root, output_dir, students_dir, manifest, args.execute
+        )
+        if manifest_changed:
+            save_manifest(manifest_path, manifest)
+        return 1 if failures else 0
 
     if not input_dir.is_dir():
         print(f"ERROR: no existe la carpeta de entrada {input_dir}", file=sys.stderr)
         return 2
     if not prompt_path.is_file():
         print(f"ERROR: no existe el prompt {prompt_path}", file=sys.stderr)
-        return 2
-
-    try:
-        manifest = load_manifest(manifest_path)
-    except RuntimeError as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
     sources = sorted(
@@ -218,8 +387,17 @@ def main() -> int:
         f"{skipped_duplicate} duplicadas o ya procesadas."
     )
 
-    if not args.execute or not pending:
+    if not args.execute:
+        organize_portraits(root, output_dir, students_dir, manifest, False)
         return 0
+
+    if not pending:
+        _, _, _, failures, manifest_changed = organize_portraits(
+            root, output_dir, students_dir, manifest, True
+        )
+        if manifest_changed:
+            save_manifest(manifest_path, manifest)
+        return 1 if failures else 0
 
     if not os.environ.get("OPENAI_API_KEY"):
         print("ERROR: falta OPENAI_API_KEY; no se generó nada.", file=sys.stderr)
@@ -288,7 +466,12 @@ def main() -> int:
             )
 
     print(f"RESULTADO: {created} creadas, {failures} fallidas.")
-    return 1 if failures else 0
+    _, _, _, organization_failures, manifest_changed = organize_portraits(
+        root, output_dir, students_dir, manifest, True
+    )
+    if manifest_changed:
+        save_manifest(manifest_path, manifest)
+    return 1 if failures or organization_failures else 0
 
 
 if __name__ == "__main__":
