@@ -56,7 +56,7 @@ export default function ChatRoute() {
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
+    <div className="chat-page flex h-full min-h-0 flex-col bg-background">
       <AgentChatSurface
         mode="page"
         chatViewTransition

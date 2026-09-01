@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratorio lógico — selector OR / AND</title>
+  <style>
+    :root { color-scheme: light; --ink:#17231d; --paper:#f6f0e4; --brick:#b7472a; --blue:#1c5864; --green:#2f7d4c; --wire:#38524a; --soft:#e4d8c1; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); background:radial-gradient(circle at 90% 0%, #f7d9ab 0 13%, transparent 32%), var(--paper); font-family: Georgia, 'Times New Roman', serif; }
+    .page { width:min(1180px, 100%); margin:auto; padding:clamp(1.25rem, 4vw, 4rem); }
+    header { display:grid; grid-template-columns:auto 1fr; gap:1rem; align-items:end; border-bottom:2px solid var(--ink); padding-bottom:1.4rem; }
+    .stamp { width:3.8rem; height:3.8rem; display:grid; place-items:center; border:2px solid var(--brick); border-radius:50%; color:var(--brick); font:700 1.3rem/1 Georgia; transform:rotate(-10deg); }
+    h1 { font-size:clamp(2rem, 5vw, 4.5rem); line-height:.9; letter-spacing:-.06em; margin:0; }
+    header p { grid-column:2; margin:0; font-size:1.08rem; max-width:65ch; }
+    main { display:grid; grid-template-columns:minmax(14rem, .52fr) minmax(0, 1.8fr); gap:clamp(1.5rem, 4vw, 3.5rem); padding-top:2rem; }
+    .controls { align-self:start; border-top:7px solid var(--brick); padding-top:1rem; }
+    h2 { font-size:1rem; letter-spacing:.1em; text-transform:uppercase; margin:0 0 1rem; }
+    fieldset { border:0; padding:0; margin:0; display:grid; gap:.75rem; }
+    .toggle { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.8rem 0; border-bottom:1px solid color-mix(in srgb, var(--ink), transparent 78%); font-size:1.16rem; }
+    .toggle small { display:block; color:#5d6259; font-family:system-ui, sans-serif; font-size:.76rem; }
+    button { font:700 .9rem/1 system-ui, sans-serif; min-width:6rem; padding:.7rem .8rem; border:2px solid var(--ink); background:#fdf9f0; color:var(--ink); cursor:pointer; box-shadow:3px 3px 0 var(--ink); transition:transform .15s ease, box-shadow .15s ease, background .15s ease; }
+    button[aria-pressed="true"] { background:var(--ink); color:var(--paper); transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+    button:focus-visible { outline:3px solid #e58d24; outline-offset:3px; }
+    .reset { margin-top:1.35rem; background:#dcebd7; }
+    .rule { margin-top:1.8rem; padding:1rem; background:#efe4cd; border-left:4px solid var(--blue); font-size:.98rem; line-height:1.45; }
+    .rule strong { color:var(--blue); }
+    .stage { min-width:0; }
+    .readout { display:flex; justify-content:space-between; gap:1rem; align-items:baseline; margin-bottom:.45rem; }
+    .readout p { margin:0; font-family:system-ui, sans-serif; font-size:.9rem; }
+    output { color:var(--brick); font:700 clamp(2.2rem, 6vw, 5rem)/1 Georgia; }
+    svg { width:100%; height:auto; display:block; background:#fbf8f1; border:1px solid #c7b99f; }
+    .wire { fill:none; stroke:var(--wire); stroke-width:5; stroke-linecap:round; stroke-linejoin:round; transition:stroke .25s ease; }
+    .wire.hot { stroke:#d95730; filter:drop-shadow(0 0 4px #e99a73); }
+    .wire-gap { fill:none; stroke:#fbf8f1; stroke-width:13; }
+    .node { fill:#eee7d7; stroke:var(--ink); stroke-width:5; transition:fill .25s ease, filter .25s ease; }
+    .node.hot { fill:#f5cf35; filter:drop-shadow(0 0 12px #f3b822); }
+    .gate { fill:#e5eee1; stroke:var(--ink); stroke-width:3; transition:stroke .2s ease, stroke-width .2s ease; }
+    .gate.or { fill:#e5eee1; }
+    .gate.and { fill:#e3edf0; }
+    .gate.selected { stroke:var(--brick); stroke-width:5; }
+    .mux-shell { fill:#e5eee1; fill-opacity:.28; stroke:var(--ink); stroke-width:3; }
+    .mini-gate { fill:#fbf8f1; stroke:var(--ink); stroke-width:3; transition:stroke .2s ease, stroke-width .2s ease, fill .2s ease; }
+    .mini-gate.selected { fill:#f8eadc; stroke:var(--brick); stroke-width:4; }
+    .mini-symbol { fill:var(--ink); font:700 23px Georgia, serif; text-anchor:middle; }
+    .mux-title { fill:var(--ink); font:700 15px Georgia, serif; letter-spacing:.05em; }
+    .label { fill:var(--ink); font:700 18px Georgia, serif; }
+    .sub { fill:#535b54; font:14px system-ui, sans-serif; }
+    .pin { fill:var(--paper); stroke:var(--ink); stroke-width:2; }
+    .pin.hot { fill:#f6b064; }
+    .junction { fill:var(--wire); }
+    .signal-label { fill:#535b54; font:700 12px system-ui, sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+    .lamp { fill:#eee7d7; stroke:var(--ink); stroke-width:5; transition:fill .25s ease, filter .25s ease; }
+    .lamp.on { fill:#f5cf35; filter:drop-shadow(0 0 12px #f3b822); }
+    .truth { margin-top:1.1rem; width:100%; border-collapse:collapse; font-family:system-ui, sans-serif; font-size:.86rem; }
+    th { text-align:left; padding:.45rem; border-bottom:2px solid var(--ink); }
+    td { padding:.4rem .45rem; border-bottom:1px solid #d5c7ad; }
+    tr.current { background:#fde1b3; font-weight:700; }
+    .note { margin:.8rem 0 0; font-size:.87rem; color:#5d6259; }
+    @media (max-width:760px) { main { grid-template-columns:1fr; } header p { grid-column:1 / -1; } .controls { order:2; } }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { transition:none !important; } }
+  </style>
+</head>
+<body>
+  <a href="#simulador" style="position:absolute;left:-999px">Ir al simulador</a>
+  <div class="page">
+    <header>
+      <div class="stamp" aria-hidden="true">01</div>
+      <h1>Laboratorio lógico</h1>
+      <p>Un selector de tres variables: con <strong>A = 0</strong> se evalúa <strong>B OR C</strong>; con <strong>A = 1</strong>, <strong>B AND C</strong>.</p>
+    </header>
+    <main id="simulador" tabindex="-1">
+      <section class="controls" aria-labelledby="inputs-title">
+        <h2 id="inputs-title">Entradas</h2>
+        <fieldset>
+          <legend class="visually-hidden">Elegir valores de entrada</legend>
+          <div class="toggle"><span><strong>A</strong><small>selector de operación</small></span><button type="button" data-bit="a" aria-pressed="false">0 · apagado</button></div>
+          <div class="toggle"><span><strong>B</strong><small>primera entrada</small></span><button type="button" data-bit="b" aria-pressed="false">0 · apagado</button></div>
+          <div class="toggle"><span><strong>C</strong><small>segunda entrada</small></span><button type="button" data-bit="c" aria-pressed="false">0 · apagado</button></div>
+        </fieldset>
+        <button class="reset" type="button" id="reset">Reiniciar</button>
+        <p class="rule"><strong>Lectura:</strong> A no es un dato más: decide qué rama pasa a la salida. Es un multiplexor hecho con compuertas.</p>
+      </section>
+      <section class="stage" aria-labelledby="circuit-title">
+        <div class="readout"><h2 id="circuit-title">Circuito en vivo</h2><p>Salida <output id="result" aria-live="polite">0</output></p></div>
+        <svg viewBox="0 0 960 520" role="img" aria-labelledby="svg-title svg-desc">
+          <title id="svg-title">Circuito lógico selector OR y AND</title>
+          <desc id="svg-desc">B y C alimentan una OR de símbolo curvo y una AND de símbolo semicircular. El multiplexor se muestra transparente: A se invierte para la rama D0, alimenta directamente la rama D1 y ambas ramas se combinan con una OR interna.</desc>
+
+          <!-- Entradas principales -->
+          <text x="38" y="24" class="label">A · selector</text>
+          <circle id="a-node" class="node" cx="62" cy="55" r="25"/><text id="a-value" x="56" y="62" class="label">0</text>
+          <text x="38" y="158" class="label">B</text>
+          <circle id="b-node" class="node" cx="62" cy="190" r="25"/><text id="b-value" x="56" y="197" class="label">0</text>
+          <text x="38" y="373" class="label">C</text>
+          <circle id="c-node" class="node" cx="62" cy="405" r="25"/><text id="c-value" x="56" y="412" class="label">0</text>
+
+          <path id="a-select" class="wire" d="M87 55 H570 V80"/>
+
+          <!-- B alimenta la entrada superior de ambas compuertas. -->
+          <path id="b-feed" class="wire" d="M87 190 H140"/>
+          <path id="b-or" class="wire" d="M140 190 V145 H279"/>
+          <path id="b-and" class="wire" d="M140 190 V325 H260"/>
+          <circle class="junction" cx="140" cy="190" r="5"/>
+
+          <!-- C alimenta la entrada inferior de ambas compuertas. -->
+          <path id="c-feed" class="wire" d="M87 405 H210"/>
+          <path id="c-and" class="wire" d="M210 405 V395 H260"/>
+          <path class="wire-gap" d="M210 343 V337 C226 337 226 313 210 313 V307"/>
+          <path id="c-or" class="wire" d="M210 405 V337 C226 337 226 313 210 313 V215 H279"/>
+          <circle class="junction" cx="210" cy="405" r="5"/>
+
+          <!-- OR real: entrada cóncava y salida en punta. -->
+          <text x="285" y="94" class="signal-label">RAMA A = 0</text>
+          <path id="or-gate" class="gate or" d="M260 110 Q345 110 410 180 Q345 250 260 250 Q310 180 260 110 Z"/>
+          <circle class="pin" cx="279" cy="145" r="4"/><circle class="pin" cx="279" cy="215" r="4"/>
+          <text x="318" y="188" class="label">OR</text>
+
+          <!-- AND real: lateral plano y frente semicircular. -->
+          <path id="and-gate" class="gate and" d="M260 290 H325 A70 70 0 0 1 325 430 H260 Z"/>
+          <circle class="pin" cx="260" cy="325" r="4"/><circle class="pin" cx="260" cy="395" r="4"/>
+          <text x="283" y="368" class="label">AND</text>
+          <text x="285" y="458" class="signal-label">RAMA A = 1</text>
+
+          <!-- Caja transparente del multiplexor. -->
+          <rect x="500" y="80" width="375" height="370" rx="8" class="mux-shell"/>
+          <text x="520" y="108" class="mux-title">MUX · POR DENTRO</text>
+
+          <!-- Las salidas externas llegan exactamente a los pines D0 y D1. -->
+          <path id="or-out" class="wire" d="M410 180 H500"/>
+          <path id="and-out" class="wire" d="M395 360 H500"/>
+          <circle class="pin" cx="500" cy="180" r="5"/><circle class="pin" cx="500" cy="360" r="5"/>
+          <text x="514" y="171" class="signal-label">D0</text>
+          <text x="514" y="351" class="signal-label">D1</text>
+
+          <!-- Selector A: una copia directa y otra invertida. -->
+          <path id="mux-a-input" class="wire" d="M570 80 V125"/>
+          <path id="mux-not-input" class="wire" d="M570 125 V204 H585"/>
+          <path id="mux-a-direct" class="wire" d="M570 125 V300 H620 V336 H640"/>
+          <circle class="junction" cx="570" cy="125" r="5"/>
+          <path id="mux-not-gate" class="mini-gate" d="M585 192 V216 L610 204 Z"/>
+          <circle id="mux-not-bubble" class="pin" cx="617" cy="204" r="5"/>
+          <path id="mux-not-a" class="wire" d="M622 204 H640"/>
+          <text x="603" y="187" class="signal-label">¬A</text>
+          <text x="582" y="292" class="signal-label">A</text>
+          <circle id="mux-select" class="pin" cx="570" cy="80" r="5"/>
+          <text x="582" y="72" class="signal-label">S = A</text>
+
+          <!-- Datos internos; D0 pasa por encima del carril A sin unirse. -->
+          <path class="wire-gap" d="M557 180 H583"/>
+          <path id="mux-d0" class="wire" d="M500 180 H640"/>
+          <path id="mux-d1" class="wire" d="M500 360 H640"/>
+
+          <!-- Dos AND internas con su forma lógica real. -->
+          <path id="mux-and0-gate" class="mini-gate" d="M640 162 H670 A30 30 0 0 1 670 222 H640 Z"/>
+          <circle class="pin" cx="640" cy="180" r="3"/><circle class="pin" cx="640" cy="204" r="3"/>
+          <text x="650" y="196" class="signal-label">AND</text>
+          <text x="638" y="237" class="signal-label">D0 ∧ ¬A</text>
+          <path id="mux-and1-gate" class="mini-gate" d="M640 318 H670 A30 30 0 0 1 670 378 H640 Z"/>
+          <circle class="pin" cx="640" cy="336" r="3"/><circle class="pin" cx="640" cy="360" r="3"/>
+          <text x="650" y="352" class="signal-label">AND</text>
+          <text x="642" y="393" class="signal-label">D1 ∧ A</text>
+
+          <!-- Las dos ramas internas se reúnen en la OR final. -->
+          <path id="mux-and0-out" class="wire" d="M700 192 H720 V250 H748"/>
+          <path id="mux-and1-out" class="wire" d="M700 348 H720 V290 H748"/>
+          <path id="mux-or-gate" class="mini-gate" d="M735 220 Q790 220 825 270 Q790 320 735 320 Q765 270 735 220 Z"/>
+          <text x="780" y="278" class="mini-symbol">∨</text>
+          <path id="mux-or-out" class="wire" d="M825 270 H875"/>
+          <circle class="pin" cx="875" cy="270" r="5"/>
+
+          <path id="final-wire" class="wire" d="M875 270 H895"/>
+          <circle id="lamp" class="lamp" cx="925" cy="270" r="25"/>
+          <text x="889" y="315" class="label">SALIDA</text>
+        </svg>
+        <table class="truth"><caption class="visually-hidden">Tabla de verdad de la función</caption><thead><tr><th>A</th><th>B</th><th>C</th><th>F</th><th>Operación</th></tr></thead><tbody id="truth-body"></tbody></table>
+        <p class="note">F = (¬A ∧ (B ∨ C)) ∨ (A ∧ B ∧ C)</p>
+      </section>
+    </main>
+  </div>
+  <style>.visually-hidden{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}</style>
+  <script>
+    const state = { a:0, b:0, c:0 };
+    const rows = [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]];
+    const truthBody = document.querySelector('#truth-body');
+    truthBody.innerHTML = rows.map(([a,b,c]) => { const f = a ? b && c : b || c; return `<tr data-row="${a}${b}${c}"><td>${a}</td><td>${b}</td><td>${c}</td><td>${+f}</td><td>${a ? 'AND' : 'OR'}</td></tr>` }).join('');
+    const el = id => document.getElementById(id);
+    function hot(id, on) { el(id).classList.toggle('hot', Boolean(on)); }
+    function render() {
+      const {a,b,c} = state, or = b || c, and = b && c, out = a ? and : or;
+      ['a','b','c'].forEach(k => { const value = state[k]; const button = document.querySelector(`[data-bit="${k}"]`); button.setAttribute('aria-pressed', value); button.textContent = value ? '1 · encendido' : '0 · apagado'; hot(`${k}-node`, value); el(`${k}-value`).textContent = value; });
+      hot('b-feed', b); hot('b-or', b); hot('b-and', b); hot('c-feed', c); hot('c-or', c); hot('c-and', c); hot('or-out', !a && or); hot('and-out', a && and); hot('a-select', a); hot('mux-select', a); hot('mux-a-input', a); hot('mux-not-input', a); hot('mux-a-direct', a); hot('mux-not-a', !a); hot('mux-not-bubble', !a); hot('mux-d0', or); hot('mux-d1', and); hot('mux-and0-out', !a && or); hot('mux-and1-out', a && and); hot('mux-or-out', out); hot('final-wire', out); el('or-gate').classList.toggle('selected', !a); el('and-gate').classList.toggle('selected', Boolean(a)); el('mux-not-gate').classList.toggle('selected', !a); el('mux-and0-gate').classList.toggle('selected', !a); el('mux-and1-gate').classList.toggle('selected', Boolean(a)); el('mux-or-gate').classList.toggle('selected', Boolean(out)); el('lamp').classList.toggle('on', Boolean(out)); el('result').textContent = +out;
+      document.querySelectorAll('[data-row]').forEach(row => row.classList.toggle('current', row.dataset.row === `${a}${b}${c}`));
+    }
+    document.querySelectorAll('[data-bit]').forEach(button => button.addEventListener('click', () => { const bit = button.dataset.bit; state[bit] = +!state[bit]; render(); }));
+    el('reset').addEventListener('click', () => { state.a=state.b=state.c=0; render(); });
+    render();
+  </script>
+</body>
+</html>

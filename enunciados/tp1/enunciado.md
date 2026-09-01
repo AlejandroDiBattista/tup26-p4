@@ -7,15 +7,15 @@ un archivo de texto delimitado, ordene sus filas según los criterios indicados
 y escriba el resultado en otro archivo.
 
 La herramienta debe ser un único archivo `sortx.js`, ejecutable con Node.js y
-sin dependencias externas.
+sin dependencias externas. (Usar npm link para que sea ejecutable)
 
 ## Sintaxis
 
 ```text
-node sortx.js origen destino [-b|--by campo[:tipo[:orden]]]...
-      [-d|--delimiter delimitador]
-      [-nh|--no-header]
-      [-h|--help]
+sortx origen destino [-b|--by campo[:tipo[:orden]]]...
+    [-d|--delimiter delimitador]
+    [-nh|--no-header]
+    [-h|--help]
 ```
 
 Los archivos de origen y destino son obligatorios, excepto cuando se utiliza
@@ -23,10 +23,10 @@ Los archivos de origen y destino son obligatorios, excepto cuando se utiliza
 
 ## Argumentos
 
-| Posición   | Descripción                                     |
-|------------|-------------------------------------------------|
-| `origen`   | Archivo delimitado que se desea ordenar.        |
-| `destino`  | Archivo donde se guardará el resultado.         |
+| Posición       | Descripción                                     |
+|----------------|-------------------------------------------------|
+| `origen`       | Archivo delimitado que se desea ordenar.        |
+| `destino`      | Archivo donde se guardará el resultado.         |
 
 ## Opciones
 
@@ -46,12 +46,12 @@ campo[:tipo[:orden]]
 ```
 
 - **`campo`**: nombre de la columna o índice numérico si no hay encabezado.
-- **`tipo`**:
-  - `alpha`: comparación alfabética. Es el valor predeterminado.
-  - `num`: comparación numérica.
+- **`tipo`** :
+  - `alpha`  : comparación alfabética. Es el valor predeterminado.
+  - `num`    : comparación numérica.
 - **`orden`**:
-  - `asc`: ascendente. Es el valor predeterminado.
-  - `desc`: descendente.
+  - `asc`    : ascendente. Es el valor predeterminado.
+  - `desc`   : descendente.
 
 ### Ejemplos
 
@@ -90,7 +90,7 @@ debe mantenerse al comienzo del archivo de destino y no debe participar del
 ordenamiento.
 
 ```bash
-node sortx.js empleados.csv ordenados.csv -b apellido
+sortx empleados.csv ordenados.csv -b apellido
 ```
 
 ### Sin encabezado
@@ -99,7 +99,7 @@ Con `--no-header`, todas las filas son datos y las columnas se identifican por
 su índice desde cero.
 
 ```bash
-node sortx.js datos.csv ordenados.csv --no-header -b 2:num:desc
+sortx datos.csv ordenados.csv --no-header -b 2:num:desc
 ```
 
 ### Ordenamiento múltiple
@@ -109,9 +109,7 @@ El criterio siguiente se utiliza solamente cuando el anterior produce un
 empate.
 
 ```bash
-node sortx.js empleados.csv ordenados.csv \
-  -b departamento \
-  -b salario:num:desc
+sortx empleados.csv ordenados.csv -b departamento -b salario:num:desc
 ```
 
 Este comando ordena alfabéticamente por departamento y, dentro de cada
@@ -120,30 +118,28 @@ departamento, por salario de mayor a menor.
 ### Delimitador personalizado
 
 ```bash
-node sortx.js datos.tsv ordenados.tsv -d "\t" -b nombre
-node sortx.js datos.psv ordenados.psv -d "|" -b nombre
-node sortx.js datos.txt ordenados.txt -d ";" -b nombre
+sortx datos.tsv ordenados.tsv -d "\t" -b nombre
+sortx datos.psv ordenados.psv -d "|"  -b nombre
+sortx datos.txt ordenados.txt -d ";"  -b nombre
 ```
 
 ## Ejemplos de uso
 
 ```bash
 # Ordenar por apellido
-node sortx.js empleados.csv ordenados.csv -b apellido
+sortx empleados.csv ordenados.csv -b apellido
 
 # Ordenar por salario descendente
-node sortx.js empleados.csv salarios.csv -b salario:num:desc
+sortx empleados.csv salarios.csv -b salario:num:desc
 
 # Utilizar múltiples criterios
-node sortx.js empleados.csv resultado.csv \
-  -b departamento \
-  -b salario:num:desc
+sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
 
 # Ordenar un archivo sin encabezado
-node sortx.js datos.csv resultado.csv -nh -b 1:alpha:asc
+sortx datos.csv resultado.csv -nh -b 1:alpha:asc
 
 # Mostrar la ayuda
-node sortx.js --help
+sortx --help
 ```
 
 ## Ejecución en Windows
@@ -188,9 +184,7 @@ los errores generales.
   outputFile: "ordenados.csv",
   delimiter: ",",
   noHeader: false,
-  sortFields: [
-    { name: "apellido", numeric: false, descending: false }
-  ]
+  sortFields: [ { name: "apellido", numeric: false, descending: false } ]
 }
 ```
 
@@ -219,25 +213,25 @@ Crear un archivo `empleados.csv` con este contenido:
 
 ```csv
 nombre,apellido,edad,salario,departamento
-Carlos,García,35,85000,Ingeniería
-Ana,Martínez,28,72000,Diseño
-Luis,Rodríguez,42,120000,Gerencia
-María,López,31,88000,Ingeniería
-Pedro,Sánchez,25,65000,Diseño
-Laura,González,38,95000,Gerencia
+Carla,Castro,42,120000,Gerencia
+Federico,Fernández,38,95000,Gerencia
+Bruno,Benítez,28,72000,Diseño
+Elena,Escobar,25,65000,Diseño
+Ana,Álvarez,35,85000,Ingeniería
+Diego,Díaz,31,88000,Ingeniería
 ```
 
 ## Casos de prueba mínimos
 
-| Comando                                                                      | Resultado esperado                                      |
-|------------------------------------------------------------------------------|---------------------------------------------------------|
-| `node sortx.js empleados.csv salida.csv -b apellido`                         | Crea `salida.csv` con las filas ordenadas por apellido. |
-| `node sortx.js empleados.csv salida.csv -b salario:num:desc`                 | Ordena los salarios de mayor a menor.                   |
-| `node sortx.js empleados.csv salida.csv -b departamento -b salario:num:desc` | Ordena por departamento y luego por salario.            |
-| `node sortx.js datos.csv salida.csv -nh -b 2:num:desc`                       | Ordena todas las filas usando la columna de índice 2.   |
-| `node sortx.js empleados.csv salida.csv -b columnaInexistente`               | Informa un error y termina con código distinto de cero. |
-| `node sortx.js empleados.csv`                                                | Informa que falta el archivo de destino.                |
-| `node sortx.js --help`                                                       | Muestra la ayuda y termina con código cero.             |
+| Comando                                                             | Resultado esperado                                      |
+|---------------------------------------------------------------------|---------------------------------------------------------|
+| `sortx empleados.csv salida.csv -b apellido`                        | Crea `salida.csv` con las filas ordenadas por apellido. |
+| `sortx empleados.csv salida.csv -b salario:num:desc`                | Ordena los salarios de mayor a menor.                   |
+| `sortx empleados.csv salida.csv -b departamento -b salario:num:desc`| Ordena por departamento y luego por salario.            |
+| `sortx empleados.csv salida.csv -nh -b 2:num:desc`                  | Ordena todas las filas usando la columna de índice 2.   |
+| `sortx empleados.csv salida.csv -b columnaInexistente`              | Informa un error y termina con código distinto de cero. |
+| `sortx empleados.csv`                                               | Informa que falta el archivo de destino.                |
+| `sortx --help`                                                      | Muestra la ayuda y termina con código cero.             |
 
 ## Entrega
 
@@ -246,5 +240,5 @@ Laura,González,38,95000,Gerencia
 - Debe recibir obligatoriamente los archivos de origen y destino.
 
 ```bash
-node sortx.js origen destino [opciones]
+sortx origen destino [opciones]
 ```
