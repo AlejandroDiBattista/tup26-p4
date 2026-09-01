@@ -35,4 +35,72 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+const args = process.argv.slice(2);
+
+function parseArgs(args){
+    
+    if (args.includes('-h') || args.includes('--help')) {
+        console.log(HELP)
+        process.exit(0)
+    }
+
+    const config = {
+    inputFile: null,
+    outputFile: null,
+    delimiter: ',',
+    noHeader: false,
+    sortFields: []
+};
+
+
+for (let i = 0; i < args.length; i++) {
+    const arg = args[i]; 
+
+    if (arg === "-nh" || arg === "--no-header") {
+        config.noHeader = true;
+    } else if (arg === "-d" || arg === "--delimiter") {
+        if (i + 1 >= args.length) {
+            console.error("Error: Falta el valor para delimitar")
+            process.exit(1);
+        }
+        config.delimiter = args[++i];
+        if (config.delimiter === "\\t") config.delimiter = "\t";
+        } else if (arg === "-b" || arg === "--by") {
+            if (i + 1 >= args.length) {
+                console.error("Error: Falta el valor para ordenar")
+                process.exit(1);
+            }
+            const parts = args[++i].split(':');
+            config.sortFields.push({
+                field: parts[0],
+                type: parts[1] || 'num',
+                order: parts[2] || 'desc'
+            });
+        } else if (!arg.startsWith('-')) {
+            if (!config.inputFile) {
+                config.inputFile = arg;
+            } else if (!config.outputFile) {
+                config.outputFile = arg;
+            }
+        }
+        else{
+            console.error(`Error: Opción desconocida ${arg}`);
+            process.exit(1);
+        }
+    }
+    if (config.sortFields.length === 0) {
+        console.error("Error: No se especificó ningún criterio de ordenamiento");
+        process.exit(1);
+    }
+    if (config.delimiter.length !== 1) {
+        console.error("Error: El delimitador debe ser un solo carácter");
+        process.exit(1);
+    }
+
+return config;
+}
+
+const config = parseArgs(args);
+console.log(config);
+
