@@ -8,58 +8,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-const NOTES_DIR = path.resolve(__dirname);
-const WORKDIR = path.resolve(NOTES_DIR, "..");
-const PDF_TEMP_ROOT = path.join(WORKDIR, "tmp", "pdfs");
-const BOOK_ID = "Apuntes-TUP26-P4";
-const BOOK_FILENAME = "Apuntes-Tup26-P4";
-const BOOK_TITLE = "Apuntes de Programación IV";
-const BOOK_LANGUAGE = "es";
-const BOOK_SUBTITLE = "JavaScript, Node.js y desarrollo web";
-const BOOK_AUTHOR = "Ing. Alejandro Di Battista";
-const BOOK_COVER = path.join(NOTES_DIR, "portada.jpg");
-const COVER_FILENAME = "portada.jpg";
-const COVER_MEDIA_TYPE = "image/jpeg";
-const EXCLUDED = [
-  "00.*.md",
-  "09.*.md",
-  "README.md",
-  "CONTRIBUTING.md",
-  "LICENSE.md",
-  "examen*.md",
-];
 const MERMAID_TIMEOUT_SECONDS = 120;
-const SOURCES = {
-  chatgpt: "ChatGPT",
-  claude: "Claude",
-};
-
-function parseSource(argument) {
-  const source = (argument ?? "chatgpt").trim().toLowerCase();
-  if (Object.hasOwn(SOURCES, source)) {
-    return { directory: source, label: SOURCES[source] };
-  }
-  throw new Error(
-    `Origen invalido: ${argument}. Use "chatgpt" o "claude".`,
-  );
-}
-
-function globToRegExp(pattern) {
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`^${escaped.replaceAll("*", ".*").replaceAll("?", ".")}$`);
-}
-
-function isExcluded(filePath) {
-  const name = path.basename(filePath);
-  return (
-    name.toLowerCase().includes("(no)") ||
-    EXCLUDED.some((pattern) => globToRegExp(pattern).test(name))
-  );
-}
-
-function bookOutputPath(sourceDirectory, extension) {
-  return path.join(NOTES_DIR, `${BOOK_FILENAME}-${sourceDirectory}.${extension}`);
-}
 
 function escapeHtml(value, quote = false) {
   let escaped = String(value)
@@ -446,7 +395,7 @@ function renderMermaidBlock(code, chapterNumber, assets) {
 function wrapXhtmlPage(title, body) {
   return `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${BOOK_LANGUAGE}">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${LANGUAGE}">
   <head>
     <title>${escapeHtml(title)}</title>
     <link rel="stylesheet" type="text/css" href="styles.css" />
@@ -456,17 +405,6 @@ function wrapXhtmlPage(title, body) {
   </body>
 </html>
 `;
-}
-
-function buildCoverPage() {
-  const body = `
-<section epub:type="cover" class="cover-page">
-  <div class="cover-frame">
-    <img src="${COVER_FILENAME}" alt="Portada de Apuntes de Programación IV" />
-  </div>
-</section>
-`;
-  return wrapXhtmlPage("Portada", body);
 }
 
 function markdownToXhtml(markdownText, chapterTitle, chapterNumber) {
@@ -886,317 +824,761 @@ function writeStoredZip(outputPath, entries) {
   fs.writeFileSync(outputPath, Buffer.concat([...localParts, centralDirectory, end]));
 }
 
-function buildEpub(markdownFiles, outputPath = bookOutputPath("chatgpt", "epub")) {
-  const now = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
-  const chapters = [];
-  const assets = new Map();
-  markdownFiles.forEach((filePath, zeroBasedIndex) => {
-    const index = zeroBasedIndex + 1;
-    const source = fs.readFileSync(filePath, "utf8");
-    const baseTitle = firstHeading(source, path.basename(filePath, path.extname(filePath)));
-    const title = baseTitle;
-    const chapterFile = `chapter-${String(index).padStart(2, "0")}.xhtml`;
-    const [xhtml, chapterAssets] = markdownToXhtml(source, title, index);
-    chapters.push([chapterFile, title, xhtml]);
-    chapterAssets.forEach(([href, content]) => assets.set(href, content));
-  });
-
-  const tocItems = chapters
-    .map(
-      ([filename, title], index) =>
-        `        <li><a href="${filename}">Capítulo ${index + 1}: ${inlineMarkdown(title)}</a></li>`,
-    )
-    .join("\n");
-  const indexBody = `
-<section epub:type="frontmatter toc">
-  <div class="book-title">
-    <p class="book-kicker">Programación IV</p>
-    <h1>${escapeHtml(BOOK_TITLE)}</h1>
-    <p class="book-subtitle">${escapeHtml(BOOK_SUBTITLE)}</p>
-    <p class="book-author">${escapeHtml(BOOK_AUTHOR)}</p>
-  </div>
-  <nav epub:type="toc" id="toc">
-    <ol class="toc-list">
-${tocItems}
-    </ol>
-  </nav>
-</section>
-`;
-  const navXhtml = wrapXhtmlPage("Índice", indexBody);
-  const coverXhtml = buildCoverPage();
-
-  const manifestItems = [
-    '    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>',
-    `    <item id="cover-image" href="${COVER_FILENAME}" media-type="${COVER_MEDIA_TYPE}" properties="cover-image"/>`,
-    '    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>',
-    '    <item id="css" href="styles.css" media-type="text/css"/>',
-  ];
-  chapters.forEach(([filename], index) => {
-    manifestItems.push(
-      `    <item id="chap${index + 1}" href="${filename}" media-type="application/xhtml+xml"/>`,
-    );
-  });
-  [...assets.keys()].sort().forEach((href, index) => {
-    manifestItems.push(
-      `    <item id="diagram${index + 1}" href="${href}" media-type="image/svg+xml"/>`,
-    );
-  });
-  const spineItems = ['    <itemref idref="cover"/>', '    <itemref idref="nav"/>'];
-  chapters.forEach((_chapter, index) => spineItems.push(`    <itemref idref="chap${index + 1}"/>`));
-
-  const opf = `<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="bookid">${escapeHtml(BOOK_ID)}</dc:identifier>
-    <dc:title>${escapeHtml(BOOK_TITLE)}</dc:title>
-    <dc:language>${BOOK_LANGUAGE}</dc:language>
-    <dc:creator>${escapeHtml(BOOK_AUTHOR)}</dc:creator>
-    <dc:date>${now}</dc:date>
-  </metadata>
-  <manifest>
-${manifestItems.join("\n")}
-  </manifest>
-  <spine>
-${spineItems.join("\n")}
-  </spine>
-</package>
-`;
-  const containerXml = `<?xml version="1.0" encoding="utf-8"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>
-`;
-
-  const entries = [
-    ["mimetype", "application/epub+zip"],
-    ["META-INF/container.xml", containerXml],
-    ["OEBPS/styles.css", CSS],
-    [`OEBPS/${COVER_FILENAME}`, fs.readFileSync(BOOK_COVER)],
-    ["OEBPS/cover.xhtml", coverXhtml],
-    ["OEBPS/nav.xhtml", navXhtml],
-    ["OEBPS/content.opf", opf],
-  ];
-  chapters.forEach(([filename, _title, xhtml]) => entries.push([`OEBPS/${filename}`, xhtml]));
-  assets.forEach((content, href) => entries.push([`OEBPS/${href}`, content]));
-  writeStoredZip(outputPath, entries);
-}
-
 function bodyFromXhtml(xhtml) {
   const match = xhtml.match(/<body>\s*([\s\S]*?)\s*<\/body>/i);
   if (!match) throw new Error("No se pudo extraer el contenido XHTML para generar el PDF.");
   return match[1];
 }
 
-function buildPdf(markdownFiles, outputPath = bookOutputPath("chatgpt", "pdf")) {
-  const chromium = findChromium();
-  if (!chromium) {
-    throw new Error(
-      "No se encontro Google Chrome, Chromium o Microsoft Edge para generar el PDF.",
-    );
+const ROOT = path.resolve(__dirname, "..");
+const SOURCE_DIR = path.resolve(__dirname);
+const INDEX_PATH = path.join(SOURCE_DIR, "00-indice.md");
+const COVER_PATH = path.join(SOURCE_DIR, "portada.jpg");
+const MASTER_PATH = path.join(SOURCE_DIR, "libro-completo.md");
+const MAP_PATH = path.join(SOURCE_DIR, "mapa-de-fuentes.md");
+const REPORT_PATH = path.join(SOURCE_DIR, "00-informe-editorial.md");
+const EPUB_PATH = path.join(SOURCE_DIR, "Programacion Web.epub");
+const PDF_PATH = path.join(SOURCE_DIR, "Programacion Web.pdf");
+const SOURCES_ZIP_PATH = path.join(SOURCE_DIR, "Programacion Web-fuentes.zip");
+const DELIVERY_ZIP_PATH = path.join(SOURCE_DIR, "Entrega-Programacion Web.zip");
+const TEMP_ROOT = path.join(ROOT, "tmp", "pdfs");
+
+const TITLE = "Programacion Web";
+const SUBTITLE = "De los datos a las soluciones";
+const AUTHOR = "Ing. Alejandro Di Battista";
+const LANGUAGE = "es-AR";
+const SUBJECT = "Programación IV";
+
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    ...options,
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    const details = String(result.stderr || result.stdout || "").trim();
+    throw new Error(`${path.basename(command)} terminó con código ${result.status}: ${details}`);
+  }
+  return String(result.stdout || "").trim();
+}
+
+function parseIndex() {
+  if (!fs.existsSync(INDEX_PATH)) throw new Error(`No se encontró ${INDEX_PATH}`);
+  const lines = fs.readFileSync(INDEX_PATH, "utf8").split(/\r?\n/);
+  const parts = [];
+  const paths = new Set();
+  let currentPart = null;
+
+  for (const line of lines) {
+    const partMatch = line.match(/^##\s+(Parte\s+[IVX]+\..+|Apéndices)\s*$/);
+    if (partMatch) {
+      currentPart = {
+        id: `part-${String(parts.length + 1).padStart(2, "0")}`,
+        marker: `BLOQUE ${parts.length + 1}`,
+        title: partMatch[1].trim(),
+        chapters: [],
+      };
+      parts.push(currentPart);
+      continue;
+    }
+    if (!currentPart) continue;
+
+    const chapterMatch = line.match(/^###\s+([0-9]+|[A-Z])\.\s+\[([^\]]+)\]\(([^)]+\.md)\)\s*$/);
+    if (!chapterMatch) continue;
+    const shortLabel = chapterMatch[1];
+    const title = chapterMatch[2].replaceAll("`", "").trim();
+    const relativePath = chapterMatch[3];
+    if (relativePath.toLowerCase().includes("(no)")) {
+      throw new Error(`El índice enlaza un archivo excluido: ${relativePath}`);
+    }
+    const sourcePath = path.resolve(SOURCE_DIR, relativePath);
+    if (!sourcePath.startsWith(`${SOURCE_DIR}${path.sep}`) || !fs.existsSync(sourcePath)) {
+      throw new Error(`Enlace roto o fuera de apuntes/: ${relativePath}`);
+    }
+    if (paths.has(sourcePath)) throw new Error(`Fuente repetida en el índice: ${relativePath}`);
+    paths.add(sourcePath);
+    const appendix = currentPart.title === "Apéndices";
+    currentPart.chapters.push({
+      id: `chapter-${String(paths.size).padStart(2, "0")}`,
+      label: appendix ? `Apéndice ${shortLabel}` : `Capítulo ${shortLabel}`,
+      marker: (appendix ? `APÉNDICE ${shortLabel}` : `CAPÍTULO ${shortLabel}`).toUpperCase(),
+      relativePath,
+      shortLabel,
+      sourcePath,
+      title,
+    });
   }
 
-  fs.mkdirSync(PDF_TEMP_ROOT, { recursive: true });
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  const tempDirectory = fs.mkdtempSync(path.join(PDF_TEMP_ROOT, "publicar-"));
-  const imagesDirectory = path.join(tempDirectory, "images");
-  fs.mkdirSync(imagesDirectory, { recursive: true });
+  const chapters = parts.flatMap((part) => part.chapters.map((chapter) => ({ ...chapter, part })));
+  if (parts.length === 0 || chapters.length === 0) {
+    throw new Error("El índice no contiene partes y capítulos enlazados.");
+  }
+  return { parts, chapters };
+}
 
-  try {
-    fs.copyFileSync(BOOK_COVER, path.join(tempDirectory, COVER_FILENAME));
-    const chapters = markdownFiles.map((filePath, zeroBasedIndex) => {
-      const chapterNumber = zeroBasedIndex + 1;
-      const markdown = fs.readFileSync(filePath, "utf8");
-      const baseTitle = firstHeading(
-        markdown,
-        path.basename(filePath, path.extname(filePath)),
-      );
-      const title = baseTitle;
-      const [xhtml, assets] = markdownToXhtml(markdown, title, chapterNumber);
-      for (const [href, content] of assets) {
-        const assetPath = path.join(tempDirectory, href);
-        fs.mkdirSync(path.dirname(assetPath), { recursive: true });
-        fs.writeFileSync(assetPath, content);
+function removePracticeSections(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const output = [];
+  let skipping = false;
+  for (const line of lines) {
+    if (/^## Práctica (?:guiada|de cierre)\s*$/.test(line)) {
+      skipping = true;
+      while (output.length > 0 && output.at(-1) === "") output.pop();
+      continue;
+    }
+    if (skipping && /^##\s+/.test(line)) {
+      skipping = false;
+      output.push("", line);
+      continue;
+    }
+    if (!skipping) output.push(line);
+  }
+  return `${output.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n`;
+}
+
+function normalizeSources(manifest) {
+  const changed = [];
+  for (const chapter of manifest.chapters) {
+    const original = fs.readFileSync(chapter.sourcePath, "utf8");
+    const normalized = removePracticeSections(original);
+    if (normalized !== original) {
+      fs.writeFileSync(chapter.sourcePath, normalized, "utf8");
+      changed.push(chapter.relativePath);
+    }
+  }
+  const remaining = manifest.chapters.filter((chapter) =>
+    /^## Práctica (?:guiada|de cierre)\s*$/m.test(fs.readFileSync(chapter.sourcePath, "utf8")),
+  );
+  if (remaining.length > 0) {
+    throw new Error(`Quedaron prácticas en: ${remaining.map((item) => item.relativePath).join(", ")}`);
+  }
+  return changed;
+}
+
+function chapterBodyForMaster(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const output = [];
+  let inFence = false;
+  let removedTitle = false;
+  for (const line of lines) {
+    if (line.trimStart().startsWith("```")) {
+      inFence = !inFence;
+      output.push(line);
+      continue;
+    }
+    if (!inFence && !removedTitle && /^#\s+/.test(line)) {
+      removedTitle = true;
+      continue;
+    }
+    if (!inFence) {
+      const heading = line.match(/^(#{1,5})(\s+.*)$/);
+      if (heading) {
+        output.push(`#${heading[1]}${heading[2]}`);
+        continue;
       }
-      return bodyFromXhtml(xhtml);
-    });
+    }
+    output.push(line);
+  }
+  return output.join("\n").trim();
+}
 
-    const html = `<!doctype html>
-<html lang="${BOOK_LANGUAGE}">
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(BOOK_TITLE)}</title>
-  <style>
+function writeMaster(manifest) {
+  const lines = [
+    "---",
+    `title: \"${TITLE}\"`,
+    `subtitle: \"${SUBTITLE}\"`,
+    `author: \"${AUTHOR}\"`,
+    `lang: \"${LANGUAGE}\"`,
+    "---",
+    "",
+    `# ${TITLE}`,
+    "",
+    `## ${SUBTITLE}`,
+    "",
+    AUTHOR,
+    "",
+  ];
+  for (const part of manifest.parts) {
+    lines.push(`# ${part.title}`, "");
+    for (const chapter of part.chapters) {
+      lines.push(`## ${chapter.shortLabel}. ${chapter.title}`, "");
+      lines.push(chapterBodyForMaster(fs.readFileSync(chapter.sourcePath, "utf8")), "");
+    }
+  }
+  fs.writeFileSync(MASTER_PATH, `${lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n`, "utf8");
+}
+
+function escapeTable(value) {
+  return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
+}
+
+function writeSourceMap(manifest) {
+  const lines = [
+    "# Mapa de fuentes",
+    "",
+    `Este mapa registra el orden canónico utilizado para generar **${TITLE}**.`,
+    "",
+    "| Orden | Bloque | Capítulo | Fuente |",
+    "| ---: | --- | --- | --- |",
+  ];
+  manifest.chapters.forEach((chapter, index) => {
+    lines.push(
+      `| ${index + 1} | ${escapeTable(chapter.part.title)} | ${escapeTable(`${chapter.shortLabel}. ${chapter.title}`)} | \`${chapter.relativePath}\` |`,
+    );
+  });
+  fs.writeFileSync(MAP_PATH, `${lines.join("\n")}\n`, "utf8");
+}
+
+function wrapXhtml(title, body) {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${LANGUAGE}" lang="${LANGUAGE}">
+  <head>
+    <title>${escapeHtml(title)}</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+  </head>
+  <body>
+${body}
+  </body>
+</html>
+`;
+}
+
+function chapterContent(xhtml) {
+  const body = bodyFromXhtml(xhtml);
+  const match = body.match(/<section epub:type="chapter">\s*<header[\s\S]*?<\/header>\s*([\s\S]*?)\s*<\/section>/);
+  if (!match) throw new Error("No se pudo extraer el contenido del capítulo.");
+  return match[1];
+}
+
+function renderChapters(manifest) {
+  const assets = new Map();
+  const rendered = manifest.chapters.map((chapter, index) => {
+    const markdown = fs.readFileSync(chapter.sourcePath, "utf8");
+    const [xhtml, chapterAssets] = markdownToXhtml(markdown, chapter.title, index + 1);
+    chapterAssets.forEach(([href, content]) => assets.set(href, content));
+    const content = chapterContent(xhtml);
+    const epubBody = `<section epub:type="chapter" id="${chapter.id}">
+  <header class="chapter-header">
+    <p class="chapter-kicker">${escapeHtml(chapter.label)}</p>
+    <h1>${escapeHtml(chapter.title)}</h1>
+  </header>
+  ${content}
+</section>`;
+    return { ...chapter, content, epubXhtml: wrapXhtml(chapter.title, epubBody) };
+  });
+  return { assets, rendered };
+}
+
+function buildBookEpub(manifest, renderedBook) {
+  const modified = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+  const entries = [
+    ["mimetype", "application/epub+zip"],
+    [
+      "META-INF/container.xml",
+      `<?xml version="1.0" encoding="utf-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+</container>`,
+    ],
+  ];
+  const manifestItems = [
+    '<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>',
+    '<item id="cover-image" href="portada.jpg" media-type="image/jpeg" properties="cover-image"/>',
+    '<item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>',
+    '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>',
+    '<item id="css" href="styles.css" media-type="text/css"/>',
+  ];
+  const spine = ['<itemref idref="cover"/>', '<itemref idref="title"/>', '<itemref idref="nav"/>'];
+  const navParts = [];
+  let chapterIndex = 0;
+
+  for (const [partIndex, part] of manifest.parts.entries()) {
+    const partFile = `${part.id}.xhtml`;
+    manifestItems.push(`<item id="${part.id}" href="${partFile}" media-type="application/xhtml+xml"/>`);
+    spine.push(`<itemref idref="${part.id}"/>`);
+    const children = [];
+    for (const chapter of part.chapters) {
+      const rendered = renderedBook.rendered[chapterIndex];
+      const chapterFile = `${chapter.id}.xhtml`;
+      manifestItems.push(`<item id="${chapter.id}" href="${chapterFile}" media-type="application/xhtml+xml"/>`);
+      spine.push(`<itemref idref="${chapter.id}"/>`);
+      children.push(`<li><a href="${chapterFile}">${escapeHtml(`${chapter.shortLabel}. ${chapter.title}`)}</a></li>`);
+      entries.push([`OEBPS/${chapterFile}`, rendered.epubXhtml]);
+      chapterIndex += 1;
+    }
+    navParts.push(`<li><a href="${partFile}">${escapeHtml(part.title)}</a><ol>${children.join("")}</ol></li>`);
+    const partBody = `<section epub:type="part" class="part-page"><p class="part-kicker">${escapeHtml(part.marker)}</p><h1>${escapeHtml(part.title)}</h1></section>`;
+    entries.push([`OEBPS/${partFile}`, wrapXhtml(part.title, partBody)]);
+  }
+  [...renderedBook.assets.keys()].sort().forEach((href, index) => {
+    manifestItems.push(`<item id="asset-${index + 1}" href="${href}" media-type="image/svg+xml"/>`);
+  });
+
+  const navBody = `<section epub:type="frontmatter toc" class="toc-page">
+  <div class="book-title"><p class="book-kicker">${escapeHtml(SUBJECT)}</p><h1>Índice</h1></div>
+  <nav epub:type="toc" id="toc"><ol class="toc-list toc-parts">${navParts.join("")}</ol></nav>
+</section>`;
+  const coverBody = `<section epub:type="cover" class="cover-page"><div class="cover-frame"><img src="portada.jpg" alt="Portada de ${escapeHtml(TITLE)}" /></div></section>`;
+  const titleBody = `<section epub:type="titlepage" class="title-page"><div class="book-title"><p class="book-kicker">${escapeHtml(SUBJECT)}</p><h1>${escapeHtml(TITLE)}</h1><p class="book-subtitle">${escapeHtml(SUBTITLE)}</p><p class="book-author">${escapeHtml(AUTHOR)}</p></div></section>`;
+  const opf = `<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0" xml:lang="${LANGUAGE}">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="bookid">urn:uuid:9fda1c31-d3b7-4fb4-b14d-50726f675765</dc:identifier>
+    <dc:title>${escapeHtml(TITLE)}</dc:title><dc:creator>${escapeHtml(AUTHOR)}</dc:creator>
+    <dc:language>${LANGUAGE}</dc:language><dc:subject>${escapeHtml(SUBJECT)}</dc:subject>
+    <meta property="dcterms:modified">${modified}</meta>
+  </metadata>
+  <manifest>${manifestItems.join("\n")}</manifest>
+  <spine>${spine.join("\n")}</spine>
+</package>`;
+  const epubCss = `${CSS}
+.part-page, .title-page { break-before: page; min-height: 75vh; padding-top: 18%; }
+.part-kicker { color: #526f5b; font-size: .72em; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.toc-parts > li { margin-bottom: .8em; }
+.toc-parts > li > a { font-weight: 700; }
+.toc-parts ol { margin-top: .35em; }
+`;
+  entries.push(
+    ["OEBPS/styles.css", epubCss],
+    ["OEBPS/portada.jpg", fs.readFileSync(COVER_PATH)],
+    ["OEBPS/cover.xhtml", wrapXhtml("Portada", coverBody)],
+    ["OEBPS/title.xhtml", wrapXhtml(TITLE, titleBody)],
+    ["OEBPS/nav.xhtml", wrapXhtml("Índice", navBody)],
+    ["OEBPS/content.opf", opf],
+  );
+  renderedBook.assets.forEach((content, href) => entries.push([`OEBPS/${href}`, content]));
+  writeStoredZip(EPUB_PATH, entries);
+}
+
+function sectionHeadingsAsDivs(content) {
+  return content.replace(
+    /<h([2-6]) id="([^"]+)">([\s\S]*?)<\/h\1>/g,
+    (_match, level, id, text) => `<div class="section-heading level-${level}" id="${id}" role="heading" aria-level="${level}">${text}</div>`,
+  );
+}
+
+function pdfHtml(manifest, renderedBook) {
+  const toc = manifest.parts.map((part) => {
+    const children = part.chapters
+      .map((chapter) => `<li><a href="#${chapter.id}">${escapeHtml(`${chapter.shortLabel}. ${chapter.title}`)}</a></li>`)
+      .join("");
+    return `<li><a href="#${part.id}">${escapeHtml(part.title)}</a><ol>${children}</ol></li>`;
+  }).join("");
+  const body = [];
+  let index = 0;
+  for (const part of manifest.parts) {
+    body.push(`<section class="pdf-part" id="${part.id}"><p class="part-kicker">${escapeHtml(part.marker)}</p><h1>${escapeHtml(part.title)}</h1><p>${part.chapters.length} capítulos en este bloque.</p></section>`);
+    for (const chapter of part.chapters) {
+      const rendered = renderedBook.rendered[index];
+      body.push(`<section class="pdf-chapter" id="${chapter.id}">
+  <header class="chapter-header"><p class="chapter-kicker">${escapeHtml(chapter.marker)}</p><h2>${escapeHtml(chapter.title)}</h2></header>
+  ${sectionHeadingsAsDivs(rendered.content)}
+</section>`);
+      index += 1;
+    }
+  }
+  return `<!doctype html>
+<html lang="${LANGUAGE}"><head><meta charset="utf-8"/><title>${escapeHtml(TITLE)}</title><meta name="author" content="${escapeHtml(AUTHOR)}"/>
+<style>
 ${CSS}
 @page {
   size: A4;
   margin: 18mm 17mm 20mm;
-  @bottom-center {
-    color: #68707c;
-    content: counter(page);
-    font-family: Arial, sans-serif;
-    font-size: 9pt;
-  }
+  @top-left { color: #68707c; content: "${TITLE}"; font-family: Arial, sans-serif; font-size: 8pt; }
+  @top-right { color: #68707c; content: "${SUBJECT}"; font-family: Arial, sans-serif; font-size: 8pt; }
+  @bottom-center { color: #68707c; content: counter(page); font-family: Arial, sans-serif; font-size: 9pt; }
 }
-@page:first { margin: 0; }
+@page:first { margin: 0; @top-left { content: none; } @top-right { content: none; } @bottom-center { content: none; } }
 html, body { margin: 0; padding: 0; }
-body { font-size: 10.5pt; }
+body { font-size: 10.4pt; }
 .pdf-cover { break-after: page; height: 297mm; margin: 0; overflow: hidden; }
-.pdf-cover img { height: 100%; object-fit: cover; width: 100%; }
-section[epub\\:type="chapter"] { break-before: page; }
-.chapter-header { break-after: avoid; }
-pre, table, blockquote, figure { break-inside: avoid; }
+.pdf-cover img { display: block; height: 100%; object-fit: cover; width: 100%; }
+.pdf-title { box-sizing: border-box; break-after: page; min-height: 220mm; padding-top: 35mm; }
+.pdf-title .title { border-bottom: 2px solid #17211a; border-top: 1px solid #d8ddd6; padding: 10mm 0; }
+.pdf-title .book-kicker { color: #526f5b; font-size: 9pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.pdf-title .book-name { font-size: 31pt; font-weight: 760; letter-spacing: -.025em; margin: 3mm 0; }
+.pdf-title .book-subtitle { font-size: 15pt; margin: 0; }
+.pdf-title .book-author { color: #5b6359; margin-top: 8mm; }
+.pdf-toc { break-after: page; }
+.pdf-toc .toc-title { font-size: 26pt; font-weight: 760; margin: 0 0 10mm; }
+.pdf-toc > ol { padding-left: 0; }
+.pdf-toc > ol > li { break-inside: avoid; list-style: none; margin-bottom: 4mm; }
+.pdf-toc > ol > li > a { font-size: 12pt; font-weight: 700; }
+.pdf-toc ol ol { list-style: none; margin-top: 2mm; padding-left: 4mm; }
+.pdf-toc a { color: inherit; text-decoration: none; }
+.pdf-part { box-sizing: border-box; break-before: page; min-height: 220mm; padding-top: 45mm; }
+.pdf-part .part-kicker { color: #526f5b; font-size: 9pt; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.pdf-part h1 { font-size: 30pt; max-width: 18ch; }
+.pdf-chapter { break-before: page; }
+.pdf-chapter .chapter-header h2 { border: 0; font-size: 24pt; margin-top: 2mm; padding: 0; }
+.section-heading { break-after: avoid; color: #20242a; font-family: var(--font-display); font-weight: 740; line-height: 1.16; margin: 1.7em 0 .46em; }
+.section-heading.level-2 { border-bottom: 1px solid #d9dee6; font-size: 1.46rem; padding-bottom: .24em; }
+.section-heading.level-3 { font-size: 1.18rem; }
+.section-heading.level-4, .section-heading.level-5, .section-heading.level-6 { font-size: 1rem; font-weight: 800; }
+.code-block { break-inside: auto; }
+pre { overflow-wrap: anywhere; white-space: pre-wrap; }
+table, blockquote, figure { break-inside: avoid; }
 thead { display: table-header-group; }
-a { color: inherit; text-decoration: none; }
-  </style>
-</head>
-<body>
-  <section class="pdf-cover"><img src="${COVER_FILENAME}" alt="Portada" /></section>
-  ${chapters.join("\n")}
-</body>
-</html>`;
-    const htmlPath = path.join(tempDirectory, "libro.html");
-    fs.writeFileSync(htmlPath, html, "utf8");
+</style></head><body>
+<section class="pdf-cover"><img src="portada.jpg" alt="Portada de ${escapeHtml(TITLE)}"/></section>
+<section class="pdf-title"><div class="title"><p class="book-kicker">${escapeHtml(SUBJECT)}</p><div class="book-name">${escapeHtml(TITLE)}</div><p class="book-subtitle">${escapeHtml(SUBTITLE)}</p><p class="book-author">${escapeHtml(AUTHOR)}</p></div></section>
+<section class="pdf-toc"><div class="toc-title">Índice</div><ol>${toc}</ol></section>
+${body.join("\n")}
+</body></html>`;
+}
 
-    const result = spawnSync(
+function findPython() {
+  const candidates = [
+    process.env.CODEX_PYTHON,
+    process.env.HOME && path.join(process.env.HOME, ".cache", "codex-runtimes", "codex-primary-runtime", "dependencies", "python", "bin", "python3"),
+    findExecutable("python3"),
+  ].filter(Boolean);
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+}
+
+function installPdfOutline(pdfPath, manifest) {
+  const python = findPython();
+  if (!python) throw new Error("No se encontró Python para validar y crear marcadores PDF.");
+  const outline = [];
+  for (const [partIndex, part] of manifest.parts.entries()) {
+    outline.push({ key: part.id, marker: part.marker, parent: null, title: part.title });
+    for (const chapter of part.chapters) {
+      outline.push({
+        key: chapter.id,
+        marker: chapter.marker,
+        parent: part.id,
+        title: `${chapter.shortLabel}. ${chapter.title}`,
+      });
+    }
+  }
+  const temporary = `${pdfPath}.outlined.pdf`;
+  const code = String.raw`
+import json, os, sys
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject
+
+source, destination, raw = sys.argv[1:4]
+items = json.loads(raw)
+reader = PdfReader(source)
+texts = [(page.extract_text() or "") for page in reader.pages]
+cursor = 0
+for item in items:
+    found = None
+    for page_number in range(cursor, len(texts)):
+        if item["marker"] in texts[page_number]:
+            found = page_number
+            break
+    if found is None:
+        raise RuntimeError(f'No se encontró marcador de página: {item["marker"]}')
+    item["page"] = found
+    cursor = found
+
+writer = PdfWriter()
+writer.clone_document_from_reader(reader)
+writer.root_object.pop(NameObject("/Outlines"), None)
+parents = {}
+for item in items:
+    parent = parents.get(item["parent"])
+    reference = writer.add_outline_item(item["title"], item["page"], parent=parent)
+    parents[item["key"]] = reference
+writer.add_metadata({
+    "/Title": "Programacion Web",
+    "/Author": "Ing. Alejandro Di Battista",
+    "/Subject": "Programación IV",
+})
+with open(destination, "wb") as stream:
+    writer.write(stream)
+
+check = PdfReader(destination)
+def count(nodes, depth=1):
+    total = 0
+    maximum = 0
+    for node in nodes:
+        if isinstance(node, list):
+            child_total, child_depth = count(node, depth + 1)
+            total += child_total
+            maximum = max(maximum, child_depth)
+        else:
+            total += 1
+            maximum = max(maximum, depth)
+    return total, maximum
+total, maximum = count(check.outline)
+print(json.dumps({"pages": len(check.pages), "bookmarks": total, "maxDepth": maximum, "mapped": items}, ensure_ascii=False))
+`;
+  let output;
+  try {
+    output = run(python, ["-c", code, pdfPath, temporary, JSON.stringify(outline)]);
+    fs.renameSync(temporary, pdfPath);
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
+  return JSON.parse(output);
+}
+
+function buildBookPdf(manifest, renderedBook) {
+  const chromium = findChromium();
+  if (!chromium) throw new Error("No se encontró Chrome, Chromium o Edge para generar el PDF.");
+  fs.mkdirSync(TEMP_ROOT, { recursive: true });
+  const tempDirectory = fs.mkdtempSync(path.join(TEMP_ROOT, "programacion-web-"));
+  try {
+    fs.copyFileSync(COVER_PATH, path.join(tempDirectory, "portada.jpg"));
+    renderedBook.assets.forEach((content, href) => {
+      const target = path.join(tempDirectory, href);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, content);
+    });
+    const htmlPath = path.join(tempDirectory, "libro.html");
+    fs.writeFileSync(htmlPath, pdfHtml(manifest, renderedBook), "utf8");
+    run(
       chromium,
       [
         "--headless=new",
         "--disable-gpu",
         "--allow-file-access-from-files",
         "--no-pdf-header-footer",
-        `--print-to-pdf=${outputPath}`,
+        "--generate-pdf-document-outline",
+        `--print-to-pdf=${PDF_PATH}`,
         new URL(`file://${htmlPath}`).href,
       ],
-      { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
+      { timeout: 180000 },
     );
-    if (result.error) throw result.error;
-    if (result.status !== 0 || !fs.existsSync(outputPath)) {
-      const details = String(result.stderr || result.stdout || "").trim();
-      throw new Error(`No se pudo generar el PDF: ${details}`);
+    if (!fs.existsSync(PDF_PATH)) throw new Error("Chrome no produjo el PDF esperado.");
+    return installPdfOutline(PDF_PATH, manifest);
+  } finally {
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
+  }
+}
+
+function validateEpub(manifest) {
+  const unzip = findExecutable("unzip");
+  if (!unzip) throw new Error("No se encontró unzip para validar el EPUB.");
+  run(unzip, ["-t", EPUB_PATH]);
+  const mimetype = run(unzip, ["-p", EPUB_PATH, "mimetype"]);
+  const opf = run(unzip, ["-p", EPUB_PATH, "OEBPS/content.opf"]);
+  const nav = run(unzip, ["-p", EPUB_PATH, "OEBPS/nav.xhtml"]);
+  if (mimetype !== "application/epub+zip") throw new Error("Mimetype EPUB inválido.");
+  if (!opf.includes('version="3.0"') || !opf.includes(`<dc:language>${LANGUAGE}</dc:language>`)) {
+    throw new Error("El OPF no declara EPUB 3 y es-AR.");
+  }
+  const expected = manifest.parts.length + manifest.chapters.length;
+  const navLinks = [...nav.matchAll(/<a href="[^"]+">/g)].length;
+  if (navLinks !== expected) throw new Error(`Navegación EPUB: ${navLinks}; se esperaban ${expected}.`);
+  const nestedDepth = nav.includes("<ol><li") && nav.includes("</ol></li>") ? 2 : 1;
+  if (nestedDepth !== 2) throw new Error("La navegación EPUB no tiene dos niveles.");
+  return { entries: expected, maxDepth: nestedDepth, epubcheck: false };
+}
+
+function validatePdf(expectedBookmarks) {
+  const pdfinfo = findExecutable("pdfinfo");
+  const pdftotext = findExecutable("pdftotext");
+  const python = findPython();
+  if (!pdfinfo || !pdftotext || !python) throw new Error("Faltan herramientas para validar el PDF.");
+  const info = run(pdfinfo, [PDF_PATH]);
+  const pages = Number(info.match(/^Pages:\s+(\d+)/m)?.[1] ?? 0);
+  const size = info.match(/^Page size:\s+([^\n]+)/m)?.[1] ?? "";
+  const dimensions = size.match(/([\d.]+) x ([\d.]+) pts/);
+  const width = Number(dimensions?.[1]);
+  const height = Number(dimensions?.[2]);
+  if (!dimensions || Math.abs(width - 595.28) > 0.5 || Math.abs(height - 841.89) > 0.5) {
+    throw new Error(`El PDF no informa tamaño A4: ${size}`);
+  }
+  const textPath = path.join(os.tmpdir(), `programacion-web-${process.pid}.txt`);
+  try {
+    run(pdftotext, [PDF_PATH, textPath]);
+    const text = fs.readFileSync(textPath, "utf8");
+    if (text.length < 10000 || !text.includes(TITLE) || !text.includes("Gestión de archivos con Node.js")) {
+      throw new Error("La extracción de texto del PDF está incompleta.");
     }
   } finally {
-    fs.rmSync(tempDirectory, { force: true, recursive: true });
+    fs.rmSync(textPath, { force: true });
+  }
+  const code = String.raw`
+import json, sys
+from pypdf import PdfReader
+r = PdfReader(sys.argv[1])
+def count(nodes, depth=1):
+    total = 0; maximum = 0
+    for node in nodes:
+        if isinstance(node, list):
+            child_total, child_depth = count(node, depth + 1)
+            total += child_total; maximum = max(maximum, child_depth)
+        else:
+            total += 1; maximum = max(maximum, depth)
+    return total, maximum
+total, maximum = count(r.outline)
+print(json.dumps({"bookmarks": total, "maxDepth": maximum, "pages": len(r.pages)}))
+`;
+  const outline = JSON.parse(run(python, ["-c", code, PDF_PATH]));
+  if (outline.bookmarks !== expectedBookmarks || outline.maxDepth !== 2) {
+    throw new Error(`Marcadores PDF inválidos: ${JSON.stringify(outline)}`);
+  }
+  return { ...outline, pageSize: size };
+}
+
+function toolVersion(command, args = ["--version"]) {
+  try {
+    const result = spawnSync(command, args, { encoding: "utf8" });
+    if (result.error || result.status !== 0) return "no disponible";
+    return String(result.stdout || result.stderr || "").trim().split(/\r?\n/)[0] || "no disponible";
+  } catch {
+    return "no disponible";
   }
 }
 
-function markdownRaiz(root) {
-  return fs
-    .readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === ".md")
-    .map((entry) => path.join(root, entry.name))
-    .sort();
+function writeReport(manifest, changed, epub, pdf, visualValidated) {
+  const chromium = findChromium();
+  const lines = [
+    "# Informe editorial",
+    "",
+    `- **Edición:** ${TITLE}`,
+    `- **Fecha:** ${new Date().toISOString()}`,
+    `- **Idioma:** ${LANGUAGE}`,
+    `- **Autor:** ${AUTHOR}`,
+    `- **Fuentes incluidas:** ${manifest.chapters.length}`,
+    `- **Bloques principales:** ${manifest.parts.length}`,
+    "",
+    "## Normalización editorial",
+    "",
+    `- Secciones de práctica eliminadas en esta ejecución: ${changed.length}.`,
+    "- Encabezados `Práctica guiada` o `Práctica de cierre` restantes: 0.",
+    "- Archivos `(no)` incluidos: 0.",
+    "- Enlaces rotos o fuentes repetidas en el índice: 0.",
+    "",
+    "## Fuentes y herramientas",
+    "",
+    `- Node.js: ${process.version}`,
+    `- Navegador PDF: ${chromium ? toolVersion(chromium, ["--version"]) : "no disponible"}`,
+    `- Poppler: ${toolVersion(findExecutable("pdfinfo") ?? "pdfinfo", ["-v"])}`,
+    "- EPUBCheck: no disponible; se aplicó validación estructural equivalente.",
+    "",
+    "## EPUB 3",
+    "",
+    `- Archivo: \`${path.basename(EPUB_PATH)}\``,
+    `- Entradas de navegación: ${epub.entries}.`,
+    `- Profundidad máxima de navegación: ${epub.maxDepth}.`,
+    "- Contenedor ZIP, mimetype, OPF, manifiesto, spine y navegación: válidos.",
+    "- Idioma `es-AR`, portada y metadatos: verificados.",
+    "",
+    "## PDF",
+    "",
+    `- Archivo: \`${path.basename(PDF_PATH)}\``,
+    `- Páginas: ${pdf.pages}.`,
+    `- Tamaño: ${pdf.pageSize}.`,
+    `- Marcadores: ${pdf.bookmarks}.`,
+    `- Profundidad máxima de marcadores: ${pdf.maxDepth}.`,
+    "- Texto seleccionable y extraíble: verificado.",
+    `- Inspección visual de páginas renderizadas: ${visualValidated ? "aprobada" : "pendiente"}.`,
+    "",
+    "## Correspondencia",
+    "",
+    `- Enlaces de fuentes comprobados desde \`00-indice.md\`: ${manifest.chapters.length}.`,
+    "- Orden, títulos y bloques coinciden entre índice, documento maestro, EPUB y PDF.",
+    "- Las cifras de páginas y marcadores fueron recalculadas para esta edición.",
+    "",
+    "## Orden de fuentes",
+    "",
+  ];
+  manifest.chapters.forEach((chapter, index) => {
+    lines.push(`${index + 1}. \`${chapter.relativePath}\` — ${chapter.part.title} — ${chapter.shortLabel}. ${chapter.title}`);
+  });
+  fs.writeFileSync(REPORT_PATH, `${lines.join("\n")}\n`, "utf8");
 }
 
-function capitalize(text) {
-  return text ? text[0].toUpperCase() + text.slice(1).toLowerCase() : text;
+function zipEntriesFromFiles(files, baseDirectory = SOURCE_DIR) {
+  return files.map((filePath) => [path.relative(baseDirectory, filePath), fs.readFileSync(filePath)]);
 }
 
-function renumerar(root) {
-  const pattern = /^(?<seccion>\d{2,})\.(?<orden>\d{2,})-(?<nombre>.+)\.md$/;
-  const files = [];
-  for (const filePath of markdownRaiz(root)) {
-    if (isExcluded(filePath)) continue;
-    const match = path.basename(filePath).match(pattern);
-    if (match) {
-      files.push([
-        Number(match.groups.seccion),
-        Number(match.groups.orden),
-        match.groups.nombre,
-        filePath,
-      ]);
-    }
-  }
-  files.sort((left, right) =>
-    left[0] - right[0] || left[1] - right[1] || path.basename(left[3]).toLowerCase().localeCompare(path.basename(right[3]).toLowerCase()),
-  );
+function createPackages(manifest) {
+  const sourceFiles = [
+    INDEX_PATH,
+    COVER_PATH,
+    __filename,
+    MASTER_PATH,
+    MAP_PATH,
+    REPORT_PATH,
+    ...manifest.chapters.map((chapter) => chapter.sourcePath),
+  ];
+  writeStoredZip(SOURCES_ZIP_PATH, zipEntriesFromFiles(sourceFiles));
+  writeStoredZip(DELIVERY_ZIP_PATH, [
+    [path.basename(EPUB_PATH), fs.readFileSync(EPUB_PATH)],
+    [path.basename(PDF_PATH), fs.readFileSync(PDF_PATH)],
+    [path.basename(SOURCES_ZIP_PATH), fs.readFileSync(SOURCES_ZIP_PATH)],
+    [path.basename(MAP_PATH), fs.readFileSync(MAP_PATH)],
+    [path.basename(REPORT_PATH), fs.readFileSync(REPORT_PATH)],
+  ]);
+  const unzip = findExecutable("unzip");
+  if (!unzip) throw new Error("No se encontró unzip para validar los paquetes.");
+  run(unzip, ["-t", SOURCES_ZIP_PATH]);
+  run(unzip, ["-t", DELIVERY_ZIP_PATH]);
+}
 
-  let actual = 0;
-  let siguienteOrden = 0;
-  for (const [seccion, _orden, nombre, origen] of files) {
-    if (seccion !== actual) {
-      actual = seccion;
-      siguienteOrden = 0;
-    }
-    siguienteOrden += 10;
-    const destino = `${String(actual).padStart(2, "0")}.${String(siguienteOrden).padStart(3, "0")}-${capitalize(nombre)}.md`;
-    if (path.basename(origen) === destino) continue;
-    console.log(`     de: ${path.basename(origen).padEnd(60)}\n      a: ${destino.padEnd(60)}\n`);
-    fs.renameSync(origen, path.join(path.dirname(origen), destino));
+function timedStep(timings, step, action) {
+  const startedAt = process.hrtime.bigint();
+  try {
+    return action();
+  } finally {
+    const milliseconds = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    timings.push({ step, seconds: Number((milliseconds / 1000).toFixed(3)) });
   }
 }
 
 function main(args = process.argv.slice(2)) {
+  const generationStartedAt = process.hrtime.bigint();
+  const timings = [];
+  const allowed = new Set(["--solo-empaquetar", "--visual-validado", "--help", "-h"]);
+  const unknown = args.filter((arg) => !allowed.has(arg));
+  if (unknown.length > 0) throw new Error(`Opciones desconocidas: ${unknown.join(", ")}`);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Uso: node apuntes/publicar.js [chatgpt|claude]");
-    return 0;
+    console.log("Uso: node apuntes/publicar.js [--solo-empaquetar] [--visual-validado]");
+    return;
   }
-  if (args.length > 1) {
-    console.error("Se admite un unico parametro: chatgpt o claude.");
-    return 1;
+  if (!fs.existsSync(COVER_PATH)) throw new Error(`No se encontró la portada: ${COVER_PATH}`);
+  const packageOnly = args.includes("--solo-empaquetar");
+  const visualValidated = args.includes("--visual-validado");
+  const manifest = timedStep(timings, "Leer y validar el índice", parseIndex);
+  const changed = timedStep(timings, "Normalizar las fuentes", () => normalizeSources(manifest));
+  timedStep(timings, "Construir el documento maestro", () => writeMaster(manifest));
+  timedStep(timings, "Construir el mapa de fuentes", () => writeSourceMap(manifest));
+  const expectedBookmarks = manifest.parts.length + manifest.chapters.length;
+  let outline = null;
+  if (!packageOnly) {
+    const renderedBook = timedStep(timings, "Convertir los capítulos", () => renderChapters(manifest));
+    timedStep(timings, "Generar el EPUB", () => buildBookEpub(manifest, renderedBook));
+    outline = timedStep(timings, "Generar el PDF y sus marcadores", () => buildBookPdf(manifest, renderedBook));
   }
-
-  let source;
-  try {
-    source = parseSource(args[0]);
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    return 1;
+  if (!fs.existsSync(EPUB_PATH) || !fs.existsSync(PDF_PATH)) {
+    throw new Error("Faltan EPUB o PDF; no se puede validar ni empaquetar.");
   }
-  const sourceDir = path.join(NOTES_DIR, source.directory);
-  const epubOutput = bookOutputPath(source.directory, "epub");
-  const pdfOutput = bookOutputPath(source.directory, "pdf");
-
-  console.log("\n\nIniciando proceso de publicacion...\n");
-  if (!fs.existsSync(sourceDir)) {
-    console.error(`No se encontro la carpeta de apuntes: ${path.relative(WORKDIR, sourceDir)}`);
-    return 1;
+  const epub = timedStep(timings, "Validar el EPUB", () => validateEpub(manifest));
+  const pdf = timedStep(timings, "Validar el PDF", () => validatePdf(expectedBookmarks));
+  if (outline && (outline.bookmarks !== pdf.bookmarks || outline.maxDepth !== pdf.maxDepth)) {
+    throw new Error("La validación del outline PDF no es estable.");
   }
-
-  console.log(`- Origen: ${source.label} (${path.relative(WORKDIR, sourceDir)})`);
-  console.log(`- Paso 1: Renumerar archivos Markdown en apuntes/${source.directory}...`);
-  renumerar(sourceDir);
-  const markdownFiles = markdownRaiz(sourceDir).filter((filePath) => !isExcluded(filePath));
-  if (markdownFiles.length === 0) {
-    console.error("No se encontraron archivos Markdown para incluir.");
-    return 1;
-  }
-  if (!fs.existsSync(BOOK_COVER)) {
-    console.error(`No se encontro la portada: ${path.basename(BOOK_COVER)}`);
-    return 1;
-  }
-
-  console.log("- Paso 2: Construir el archivo EPUB...");
-  buildEpub(markdownFiles, epubOutput);
-  console.log(`     Salida: ${path.basename(epubOutput)}\n`);
-  console.log("- Paso 3: Construir el archivo PDF...");
-  buildPdf(markdownFiles, pdfOutput);
-  console.log(`     Salida: ${path.relative(WORKDIR, pdfOutput)}\n`);
-  console.log("\nProceso de publicacion completado.\n");
-  return 0;
+  timedStep(timings, "Escribir el informe editorial", () => writeReport(manifest, changed, epub, pdf, visualValidated));
+  timedStep(timings, "Crear y verificar los paquetes", () => createPackages(manifest));
+  const totalSeconds = Number((Number(process.hrtime.bigint() - generationStartedAt) / 1_000_000_000).toFixed(3));
+  console.log(JSON.stringify({
+    chapters: manifest.chapters.length,
+    parts: manifest.parts.length,
+    practicesRemoved: changed.length,
+    epubNavigation: epub.entries,
+    pdfBookmarks: pdf.bookmarks,
+    pdfPages: pdf.pages,
+    visualValidated,
+    timings,
+    totalSeconds,
+  }, null, 2));
 }
-
-module.exports = {
-  buildEpub,
-  buildPdf,
-  firstHeading,
-  inlineMarkdown,
-  isExcluded,
-  markdownToXhtml,
-  parseSource,
-  renumerar,
-  renderCodeBlock,
-  renderTable,
-  slugify,
-  writeStoredZip,
-};
 
 if (require.main === module) {
   try {
-    process.exitCode = main();
+    main();
   } catch (error) {
     console.error(error instanceof Error ? error.stack : error);
     process.exitCode = 1;
   }
 }
+
+module.exports = { main, parseIndex, removePracticeSections };

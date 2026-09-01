@@ -1,25 +1,24 @@
-# Especificación de publicación de «Pensar en JavaScript»
+# Especificación de publicación de «Programacion Web»
 
 Esta referencia fija los requisitos recuperados del chat editorial del libro y los concreta para este proyecto.
 
 ## Convenciones del proyecto
 
-- Raíz de fuentes: `apuntes/libro-gpt/`
-- Índice canónico: `apuntes/libro-gpt/00-indice.md`
+- Raíz de fuentes: `apuntes/`
+- Índice canónico: `apuntes/00-indice.md`
 - Portada predeterminada: `apuntes/portada.jpg`
-- Documento maestro: `apuntes/libro-gpt/libro-completo.md`
-- Mapa de procedencia: `apuntes/libro-gpt/mapa-de-fuentes.md`
-- Informe editorial: `apuntes/libro-gpt/00-informe-editorial.md`
-- EPUB: `apuntes/Pensar-en-JavaScript.epub`
-- PDF: `apuntes/Pensar-en-JavaScript.pdf`
-- Fuentes: `apuntes/Pensar-en-JavaScript-fuentes.zip`
-- Entrega: `apuntes/Entrega-Pensar-en-JavaScript.zip`
-
-Si el repositorio ya mantiene una ubicación equivalente y claramente vigente, conservar esa convención en vez de crear duplicados, y documentarla en el informe.
+- Documento maestro: `apuntes/libro-completo.md`
+- Mapa de procedencia: `apuntes/mapa-de-fuentes.md`
+- Informe editorial: `apuntes/00-informe-editorial.md`
+- EPUB: `apuntes/Programacion Web.epub`
+- PDF: `apuntes/Programacion Web.pdf`
+- Fuentes: `apuntes/Programacion Web-fuentes.zip`
+- Entrega: `apuntes/Entrega-Programacion Web.zip`
+- Publicador único: `apuntes/publicar.js`
 
 Metadatos predeterminados:
 
-- título: `Pensar en JavaScript`;
+- título: `Programacion Web`;
 - subtítulo: `De los datos a las soluciones`;
 - autor: `Ing. Alejandro Di Battista`;
 - idioma: `es-AR`;
@@ -27,7 +26,7 @@ Metadatos predeterminados:
 
 ## Selección y orden del contenido
 
-Interpretar `00-indice.md` como un manifiesto editorial, no como un archivo más para ordenar alfabéticamente.
+Interpretar `apuntes/00-indice.md` como un manifiesto editorial, no como un archivo más para ordenar alfabéticamente. Resolver todas sus rutas con `apuntes/` como directorio base.
 
 1. Extraer las partes o bloques principales en su orden de aparición.
 2. Dentro de cada bloque, resolver los enlaces Markdown a capítulos, material complementario, apéndices y referencias técnicas.
@@ -49,7 +48,13 @@ Las dos ediciones deben compartir exactamente el mismo cuerpo editorial:
 - progresión general desde motivación y modelo conceptual hacia mecanismos concretos y consecuencias prácticas;
 - variedad estructural razonable: no imponer a todos los capítulos una plantilla mecánica idéntica.
 
-En una tarea de solo publicación, no reescribir silenciosamente capítulos para corregir incumplimientos: registrar los hallazgos y detener la entrega final si afectan los requisitos. Cuando la solicitud incluya edición, aplicar las correcciones antes de construir el documento maestro.
+### Normalización autorizada de prácticas
+
+Antes de construir el documento maestro, eliminar de los archivos fuente las secciones cuyo encabezado de nivel 2 sea exactamente `## Práctica guiada` o `## Práctica de cierre`. La eliminación abarca desde ese encabezado hasta el siguiente encabezado de nivel 2 o el final del archivo; no debe afectar ejemplos, explicaciones ni usos ordinarios de la palabra «práctica» fuera de esas secciones.
+
+Actualizar también el índice si describe esas prácticas como parte de la estructura. Verificar la ausencia de ambos encabezados en todas las fuentes enlazadas. Esta normalización forma parte del proceso editorial autorizado de `Programacion Web` y debe ejecutarse antes de cada edición para evitar que una fuente nueva reintroduzca ejercicios.
+
+Para cualquier otro incumplimiento, no reescribir silenciosamente capítulos: registrar el hallazgo y detener la entrega final si afecta los requisitos. Cuando la solicitud incluya otras tareas de edición, aplicarlas antes de construir el documento maestro.
 
 ## Documento maestro y mapa de fuentes
 
@@ -66,7 +71,7 @@ En una tarea de solo publicación, no reescribir silenciosamente capítulos para
 
 ## EPUB 3
 
-Generar `Pensar-en-JavaScript.epub` con:
+Generar `Programacion Web.epub` con:
 
 - contenedor EPUB 3 íntegro;
 - idioma `es-AR` y metadatos de título, subtítulo y autor;
@@ -97,7 +102,7 @@ Usar EPUBCheck cuando esté disponible. Si no lo está, efectuar controles estru
 
 ## PDF
 
-Generar `Pensar-en-JavaScript.pdf` en A4, apto para lectura digital e impresión, con:
+Generar `Programacion Web.pdf` en A4, apto para lectura digital e impresión, con:
 
 - portada y página de título;
 - índice navegable;
@@ -148,13 +153,13 @@ Las cifras de ediciones anteriores son antecedentes, nunca criterios de aceptaci
 
 Crear primero un área temporal de empaquetado para evitar incluir archivos accidentales.
 
-`Pensar-en-JavaScript-fuentes.zip` debe contener las fuentes Markdown, portada, documento maestro, mapa de fuentes, informe editorial y los recursos o scripts de publicación necesarios para reproducir la edición.
+`Programacion Web-fuentes.zip` debe contener las fuentes Markdown, portada, documento maestro, mapa de fuentes, informe editorial y los recursos o scripts de publicación necesarios para reproducir la edición.
 
-`Entrega-Pensar-en-JavaScript.zip` debe contener, como mínimo:
+`Entrega-Programacion Web.zip` debe contener, como mínimo:
 
-- `Pensar-en-JavaScript.epub`;
-- `Pensar-en-JavaScript.pdf`;
-- `Pensar-en-JavaScript-fuentes.zip`;
+- `Programacion Web.epub`;
+- `Programacion Web.pdf`;
+- `Programacion Web-fuentes.zip`;
 - `mapa-de-fuentes.md`;
 - `00-informe-editorial.md`.
 
