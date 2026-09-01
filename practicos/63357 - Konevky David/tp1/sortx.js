@@ -34,5 +34,27 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+const isHelp = (value) => value === "-h" || value === "--help";
+function help() {
+  console.log(HELP);
+  process.exit(0);
+}
+
+function logError(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function parseArgs() {
+    const args = process.argv.slice(2);
+
+    if (isHelp(args[0])) return help();
+
+    const [origen, destino, ...opciones] = args;
+
+    /*DESPUES IMPLEMENTAR: const parsedOpciones = parseOpciones(opciones); */
+
+    return {origen, destino, opciones};
+}
+
+console.log(parseArgs());
