@@ -33,8 +33,14 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
+function isOption(regular,shorthand, value) {
+    return value === `--${regular}` || value === `-${shorthand}`;
+}
+const isHelp = (value) => isOption("help", "h", value);
+const isBy = (value) => isOption("by", "b", value);
+const isDelimiter = (value) => isOption("delimiter", "d", value);
+const isNoHeader = (value) => isOption("no-header", "nh", value);
 
-const isHelp = (value) => value === "-h" || value === "--help";
 function help() {
   console.log(HELP);
   process.exit(0);
@@ -45,16 +51,65 @@ function logError(message) {
   process.exit(1);
 }
 
+function getNextValue(i, opciones, flag) {
+  if (i + 1 >= opciones.length) logError(`${flag} requiere un valor`);
+  return opciones[i + 1];
+}
+
+function handleByCriterios(opcion) {
+    const [name, tipo = "alpha", orden = "asc"] = opcion.split(":");
+    if (!["alpha", "num"].includes(tipo)) {
+        logError(`Tipo inválido: ${tipo}`);
+    }
+    if (!["asc", "desc"].includes(orden)) {
+        logError(`Orden inválido: ${orden}`);
+    }
+    return {
+        name,
+        numeric: tipo === "num",
+        descending: orden === "desc"
+    };
+}
+
+function parseOpciones(opciones) {
+    const config = {
+        sortFields: [],
+        delimiter: ',',
+        noHeader: false
+    };
+
+    for (let i = 0; i < opciones.length; i++) {
+        const opcion = opciones[i];
+
+        if (isDelimiter(opcion)) {
+            config.delimiter = getNextValue(i, opciones, opcion);
+            i++;
+        } else if (isNoHeader(opcion)) {
+            config.noHeader = true;
+        } else if (isBy(opcion)) {
+            config.sortFields.push(handleByCriterios(getNextValue(i, opciones, opcion)));
+            i++;
+        } else {
+            logError(`Opción inválida: ${opcion}`);
+        }
+    }
+
+    if (config.sortFields.length === 0) {
+        logError(`Se requiere al menos un criterio -b o --by`);
+    }
+
+    return config;
+}
+
 function parseArgs() {
     const args = process.argv.slice(2);
 
     if (isHelp(args[0])) return help();
 
-    const [origen, destino, ...opciones] = args;
+    const [inputFile, outputFile, ...opciones] = args;
+    const config = parseOpciones(opciones);
 
-    /*DESPUES IMPLEMENTAR: const parsedOpciones = parseOpciones(opciones); */
-
-    return {origen, destino, opciones};
+    return { inputFile, outputFile, ...config };
 }
 
 console.log(parseArgs());
