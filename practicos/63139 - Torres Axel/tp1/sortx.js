@@ -32,7 +32,99 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+`;
+function parseArgs(args) {
+  const config = {
+    inputFile: null,
+    outputFile: null,
+    delimiter: ",",
+    noHeader: false,
+    sortFields: [],
+    help: false,
+  };
+  const positional = [];
+  const knownOptions = new Set([
+    "-b",
+    "--by",
+    "-d",
+    "--delimiter",
+    "-nh",
+    "--no-header",
+    "-h",
+    "--help",
+  ]);
+  for (let i = 0; i < args.length; i++) {
+    const argument = args[i];
+    if (argument === "-h" || argument === "--help") {
+      config.help = true;
+      continue;
+    }
+    if (argument === "-nh" || argument === "--no-header") {
+      config.noHeader = true;
+      continue;
+    }
+    if (argument === "-d" || argument === "--delimiter") {
+      const value = args[i + 1];
+      if (value === undefined || knownOptions.has(value)) {
+        throw new Error("${argument}requiere un delimitador");
+      }
+      config.delimiter = value === "\\t" ? "\t" : value;
+      i++;
+      continue;
+    }
+    if (argument === "-b" || argument === "--by") {
+      const criterion = args[i + 1];
+      if (criterion === undefined || criterion.startsWith("-")) {
+        throw new Error("${argument}requiere un criterio");
+      }
+      const parts = criterion.split(":");
+      if (parts.length > 3 || parts[0] === "") {
+        throw new Error("criterio invalido:${criterion}");
+      }
+      const name = parts[0];
+      const type = parts[1] || "alpha";
+      const order = parts[2] || "asc";
+      if (type !== "alpha" && type !== "num") {
+        throw new Error("tipo invalido:${type}");
+      }
+      if (order !== "asc" && order !== "desc") {
+        throw new Error("orden invalido:${order}");
+      }
+      config.sortFields.push({
+        name,
+        numeric: type === "num",
+        descending: order === "desc",
+      });
+      i++;
+      continue;
+    }
+    if (argument.startsWith("-")) {
+      throw new Error("opcion desconocida:${argument}");
+    }
+    positional.push(argument);
+  }
+  if (config.help) {
+    return config;
+  }
+  if (positional.length === 0) {
+    throw new Error("falta el archivo de origen");
+  }
+  if (positional.length === 1) {
+    throw new Error("falta el archivo de destino");
+  }
+  if (positional.length > 2) {
+    throw new Error("argumentos inesperado:${positional[2]}");
+  }
+  if (config.sortFields.length === 0) {
+    throw new Error("debe especificar al menos un criterio --by");
+  }
+  if ([...config.delimiter].length !== 1) {
+    throw new Error("el delimitador debe ser un unico caracter");
+  }
+  config.inputFile = positional[0];
+  config.outputFile = positional[1];
+  return config;
+}
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+console.log(HELP);
