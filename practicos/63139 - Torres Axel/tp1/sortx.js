@@ -135,6 +135,36 @@ function readInput(inputFile) {
     );
   }
 }
+function parseDelimited(text, delimiter) {
+  if (text.includes('"')) {
+    throw new Error(
+      "le entrada contiene comillas dobles; los campos entre comillas no estan admitidos",
+    );
+  }
 
+  if (text == "") {
+    return [];
+  }
+  const nomalizedText = text.replace(/\r\n/g, "\n");
+  const content = nomalizedText.endsWith("\n")
+    ? nomalizedText.slice(0, -1)
+    : nomalizedText;
+  if (content === "") {
+    return [];
+  }
+  const lines = content.split("\n");
+  const rows = lines.map((line) => line.split(delimiter));
+  const expectedFieldCount = rows[0].length;
+  for (let i = 1; i < rows.length; i++) {
+    const currentFieldCount = rows[i].length;
+    if (currentFieldCount !== expectedFieldCount) {
+      throw new Error(
+        "la fila ${i+1}tiene ${currentFieldCount} cmapos;" +
+          "se esperaban ${expectedFieldCount}",
+      );
+    }
+  }
+  return rows;
+}
 // Escribir aqui la solución al enunciado.
 console.log(HELP);
