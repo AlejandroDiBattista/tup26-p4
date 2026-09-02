@@ -125,6 +125,16 @@ function parseArgs(args) {
   config.outputFile = positional[1];
   return config;
 }
+import * as fs from "node:fs";
+function readInput(inputFile) {
+  try {
+    return fs.readFileSync(inputFile, "utf8");
+  } catch (error) {
+    throw new Error(
+      `no se pudo leer el archivo de origen "${inputFile}": ${error.message}`,
+    );
+  }
+}
 
 // Escribir aqui la solución al enunciado.
 console.log(HELP);
