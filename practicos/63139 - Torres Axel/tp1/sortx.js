@@ -233,5 +233,17 @@ function sortRows(rows, confing) {
   }
   return [header, ...sortedRows];
 }
+function serialize(rows, delimiter) {
+  return rows.map((row) => row.join(delimiter)).join("\n");
+}
+function writeOutput(outputFile, content) {
+  try {
+    fs.writeFileSync(outputFile, content, "utf8");
+  } catch (error) {
+    throw new Error(
+      'no se pudo escribir el archivo de destino "${outputFile}": ${error.message}',
+    );
+  }
+}
 // Escribir aqui la solución al enunciado.
 console.log(HELP);
