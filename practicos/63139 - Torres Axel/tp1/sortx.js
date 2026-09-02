@@ -166,5 +166,72 @@ function parseDelimited(text, delimiter) {
   }
   return rows;
 }
+function sortRows(rows, confing) {
+  if (rows.length === 0) {
+    throw new Error("el archivo de origen esta vacio");
+  }
+  const header = config.noHeader ? null : rows[0];
+  const dataRows = config.noHeader ? [...rows] : rows.slice(1);
+  const columnCount = rows[0].length;
+  const criteria = config.sortFields.map((field) => {
+    let columnIndex;
+    if (config.noHeader) {
+      if (!/^\d+$/.test(field.name)) {
+        throw new Error('el campo"${field.name}"debe ser un indice numerico');
+      }
+      columnIndex = Number(field.name);
+    } else {
+      columnIndex = header.indexOf(field.name);
+    }
+    if (columnIndex < 0 || columnIndex >= columnCount) {
+      throw new Error("el campo solicitado no existe:${field.name}");
+    }
+    return {
+      ...field,
+      columIndex,
+    };
+  });
+  for (const criterion of criteria) {
+    if (!criterion.numeric) {
+      continue;
+    }
+    for (let i = 0; i < dataRows.length; i++) {
+      const value = dataRows[i][criterion.columnIndex];
+      const number = Number(value);
+      if (value.trim() === "" || !Number.isFinite(number)) {
+        const rowNumber = config.noHeader ? i + 1 : i + 2;
+        throw new Error(
+          "el valor de la fila ${rowNumber}, campo" +
+            '"${criterion.name}", no es numerico:"${value}"',
+        );
+      }
+    }
+  }
+  const indexedRows = dataRows.map((row, originalIndex) => ({
+    row,
+    originalIndex,
+  }));
+  indexedRows.sort((first, second) => {
+    for (const criterion of criteria) {
+      const firstValue = first.row[criterion.columnIndex];
+      const secondValue = second.row[criterion.columnIndex];
+      let comparison;
+      if (criterion.numeric) {
+        comparison = Number(firstValue) - Number(secondValue);
+      } else {
+        comparison = firstValue.localeCompare(secondValue, "es");
+      }
+      if (comparison !== 0) {
+        return criterion.descendin ? -comparison : comparison;
+      }
+    }
+    return first.originalIndex - second.originalIndex;
+  });
+  const sortedRows = indexedRows.map((item) => item.row);
+  if (header === null) {
+    return sortedRows;
+  }
+  return [header, ...sortedRows];
+}
 // Escribir aqui la solución al enunciado.
 console.log(HELP);
