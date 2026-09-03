@@ -35,4 +35,19 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+//1
+function parseArgs(arrayDeStrings) {
+    const objetoConDosPropiedades = {
+        inputFile: arrayDeStrings[0],
+        outputFile: arrayDeStrings[1]
+    }
+    return objetoConDosPropiedades;
+}
+console.log(parseArgs(process.argv.slice(2)));
+
+
+
+
+
+//console.log(HELP)
