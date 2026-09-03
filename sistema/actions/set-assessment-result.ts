@@ -16,9 +16,11 @@ export default defineAction({
       .describe("Id de la evaluación, según list-assessments"),
     legajo: z.string().min(1).describe("Legajo del alumno"),
     status: z
-      .enum(["pendiente", "presentado", "aprobado", "desaprobado"])
+      .enum(["pendiente", "error", "falla", "presentado"])
       .optional()
-      .describe("Estado del trabajo para este alumno"),
+      .describe(
+        "Estado del trabajo: pendiente, error, falla o presentado",
+      ),
     submitted: z
       .boolean()
       .optional()

@@ -54,6 +54,26 @@ function stamp() {
   return new Date().toISOString();
 }
 
+function todayInArgentina() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Argentina/Tucuman",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function effectiveAttendanceStatus(
+  session: Pick<ClassSession, "date" | "status">,
+  status: string | null | undefined,
+  today = todayInArgentina(),
+): AttendanceStatus | null {
+  if (status) return status as AttendanceStatus;
+  return session.status === "programada" && session.date < today ? "ausente" : null;
+}
+
 function clean(value: string | undefined | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -75,10 +95,7 @@ export function normalizeDate(value: string | undefined | null) {
     throw new UserInputError(`Fecha inválida: "${raw}". Usar YYYY-MM-DD.`);
   }
   const parsed = new Date(`${raw}T00:00:00Z`);
-  if (
-    Number.isNaN(parsed.getTime()) ||
-    parsed.toISOString().slice(0, 10) !== raw
-  ) {
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== raw) {
     throw new UserInputError(`Fecha inválida: "${raw}".`);
   }
   return raw;
@@ -87,9 +104,7 @@ export function normalizeDate(value: string | undefined | null) {
 /** Compatibilidad con acciones antiguas. Los trabajos ahora son un único tipo. */
 export function assertKind(kind: string): AssessmentKind {
   if (!ASSESSMENT_KINDS.includes(kind as AssessmentKind)) {
-    throw new UserInputError(
-      `Tipo inválido: "${kind}". Usar "practico" o "parcial".`,
-    );
+    throw new UserInputError(`Tipo inválido: "${kind}". Usar "practico" o "parcial".`);
   }
   return kind as AssessmentKind;
 }
@@ -155,16 +170,10 @@ export async function getDefaultSubject(ownerEmail: string) {
   return row as Subject;
 }
 
-export async function listCourseSchedules(
-  ownerEmail: string,
-  courseId?: string,
-) {
+export async function listCourseSchedules(ownerEmail: string, courseId?: string) {
   const db = getDb();
   const where = courseId
-    ? and(
-        eq(courseSchedules.ownerEmail, ownerEmail),
-        eq(courseSchedules.courseId, courseId),
-      )
+    ? and(eq(courseSchedules.ownerEmail, ownerEmail), eq(courseSchedules.courseId, courseId))
     : eq(courseSchedules.ownerEmail, ownerEmail);
   return db
     .select()
@@ -227,14 +236,8 @@ export async function resolveCourse(ownerEmail: string, idOrName: string) {
   const [byCommission] = await db
     .select()
     .from(courses)
-    .where(
-      and(
-        eq(courses.ownerEmail, ownerEmail),
-        eq(courses.commission, key.toUpperCase()),
-      ),
-    );
-  if (!byCommission)
-    throw new NotFoundError(`No existe el curso "${idOrName}".`);
+    .where(and(eq(courses.ownerEmail, ownerEmail), eq(courses.commission, key.toUpperCase())));
+  if (!byCommission) throw new NotFoundError(`No existe el curso "${idOrName}".`);
   return byCommission;
 }
 
@@ -243,28 +246,17 @@ type ScheduleInput = { weekday: number; startTime: string; endTime: string };
 function validateSchedule(slots: ScheduleInput[]) {
   const seen = new Set<number>();
   for (const slot of slots) {
-    if (
-      !Number.isInteger(slot.weekday) ||
-      slot.weekday < 1 ||
-      slot.weekday > 7
-    ) {
+    if (!Number.isInteger(slot.weekday) || slot.weekday < 1 || slot.weekday > 7) {
       throw new UserInputError("El día del horario debe estar entre 1 y 7.");
     }
-    if (
-      !/^\d{2}:\d{2}$/.test(slot.startTime) ||
-      !/^\d{2}:\d{2}$/.test(slot.endTime)
-    ) {
+    if (!/^\d{2}:\d{2}$/.test(slot.startTime) || !/^\d{2}:\d{2}$/.test(slot.endTime)) {
       throw new UserInputError("Los horarios deben usar el formato HH:MM.");
     }
     if (slot.startTime >= slot.endTime) {
-      throw new UserInputError(
-        "La hora de inicio debe ser anterior a la de fin.",
-      );
+      throw new UserInputError("La hora de inicio debe ser anterior a la de fin.");
     }
     if (seen.has(slot.weekday)) {
-      throw new UserInputError(
-        "Sólo puede haber un horario por día y comisión.",
-      );
+      throw new UserInputError("Sólo puede haber un horario por día y comisión.");
     }
     seen.add(slot.weekday);
   }
@@ -279,12 +271,7 @@ async function replaceCourseSchedule(
   const db = getDb();
   await db
     .delete(courseSchedules)
-    .where(
-      and(
-        eq(courseSchedules.ownerEmail, ownerEmail),
-        eq(courseSchedules.courseId, courseId),
-      ),
-    );
+    .where(and(eq(courseSchedules.ownerEmail, ownerEmail), eq(courseSchedules.courseId, courseId)));
   if (schedule.length > 0) {
     await db.insert(courseSchedules).values(
       schedule.map((slot) => ({
@@ -327,8 +314,7 @@ export async function createCourse(
     updatedAt: stamp(),
   };
   await db.insert(courses).values(row);
-  if (input.schedule)
-    await replaceCourseSchedule(ownerEmail, row.id, input.schedule);
+  if (input.schedule) await replaceCourseSchedule(ownerEmail, row.id, input.schedule);
   return row;
 }
 
@@ -353,12 +339,10 @@ export async function updateCourse(
   if (input.term !== undefined) patch.term = clean(input.term) ?? null;
   if (input.commission !== undefined) {
     const commission = clean(input.commission)?.toUpperCase();
-    if (!commission)
-      throw new UserInputError("La comisión no puede quedar vacía.");
+    if (!commission) throw new UserInputError("La comisión no puede quedar vacía.");
     patch.commission = commission;
   }
-  if (input.classroom !== undefined)
-    patch.classroom = clean(input.classroom) ?? null;
+  if (input.classroom !== undefined) patch.classroom = clean(input.classroom) ?? null;
   const db = getDb();
   await db
     .update(courses)
@@ -381,57 +365,28 @@ export async function deleteCourse(ownerEmail: string, courseId: string) {
   const enrolled = await db
     .select({ id: enrollments.id })
     .from(enrollments)
-    .where(
-      and(
-        eq(enrollments.ownerEmail, ownerEmail),
-        eq(enrollments.courseId, courseId),
-      ),
-    );
+    .where(and(eq(enrollments.ownerEmail, ownerEmail), eq(enrollments.courseId, courseId)));
   if (enrolled.length > 0) {
-    throw new UserInputError(
-      "No se puede borrar una comisión que todavía tiene alumnos.",
-    );
+    throw new UserInputError("No se puede borrar una comisión que todavía tiene alumnos.");
   }
 
   const sessions = await db
     .select({ id: classSessions.id })
     .from(classSessions)
-    .where(
-      and(
-        eq(classSessions.ownerEmail, ownerEmail),
-        eq(classSessions.courseId, courseId),
-      ),
-    );
+    .where(and(eq(classSessions.ownerEmail, ownerEmail), eq(classSessions.courseId, courseId)));
   const sessionIds = sessions.map((session) => session.id);
   if (sessionIds.length > 0) {
     await db
       .delete(attendance)
-      .where(
-        and(
-          eq(attendance.ownerEmail, ownerEmail),
-          inArray(attendance.sessionId, sessionIds),
-        ),
-      );
+      .where(and(eq(attendance.ownerEmail, ownerEmail), inArray(attendance.sessionId, sessionIds)));
     await db
       .delete(classSessions)
-      .where(
-        and(
-          eq(classSessions.ownerEmail, ownerEmail),
-          inArray(classSessions.id, sessionIds),
-        ),
-      );
+      .where(and(eq(classSessions.ownerEmail, ownerEmail), inArray(classSessions.id, sessionIds)));
   }
   await db
     .delete(courseSchedules)
-    .where(
-      and(
-        eq(courseSchedules.ownerEmail, ownerEmail),
-        eq(courseSchedules.courseId, courseId),
-      ),
-    );
-  await db
-    .delete(courses)
-    .where(and(eq(courses.ownerEmail, ownerEmail), eq(courses.id, courseId)));
+    .where(and(eq(courseSchedules.ownerEmail, ownerEmail), eq(courseSchedules.courseId, courseId)));
+  await db.delete(courses).where(and(eq(courses.ownerEmail, ownerEmail), eq(courses.id, courseId)));
   return { deleted: courseId };
 }
 
@@ -442,16 +397,13 @@ export async function findStudentByLegajo(ownerEmail: string, legajo: string) {
   const [row] = await db
     .select()
     .from(students)
-    .where(
-      and(eq(students.ownerEmail, ownerEmail), eq(students.legajo, legajo)),
-    );
+    .where(and(eq(students.ownerEmail, ownerEmail), eq(students.legajo, legajo)));
   return row ?? null;
 }
 
 export async function requireStudent(ownerEmail: string, legajo: string) {
   const row = await findStudentByLegajo(ownerEmail, legajo);
-  if (!row)
-    throw new NotFoundError(`No existe el alumno con legajo ${legajo}.`);
+  if (!row) throw new NotFoundError(`No existe el alumno con legajo ${legajo}.`);
   return row;
 }
 
@@ -462,10 +414,7 @@ export async function requireStudent(ownerEmail: string, legajo: string) {
 export async function listStudents(ownerEmail: string, courseId?: string) {
   const db = getDb();
   const where = courseId
-    ? and(
-        eq(students.ownerEmail, ownerEmail),
-        eq(enrollments.courseId, courseId),
-      )
+    ? and(eq(students.ownerEmail, ownerEmail), eq(enrollments.courseId, courseId))
     : eq(students.ownerEmail, ownerEmail);
   const [rows, presentCounts] = await Promise.all([
     db
@@ -473,17 +422,11 @@ export async function listStudents(ownerEmail: string, courseId?: string) {
       .from(students)
       .innerJoin(
         enrollments,
-        and(
-          eq(enrollments.studentId, students.id),
-          eq(enrollments.ownerEmail, ownerEmail),
-        ),
+        and(eq(enrollments.studentId, students.id), eq(enrollments.ownerEmail, ownerEmail)),
       )
       .innerJoin(
         courses,
-        and(
-          eq(courses.id, enrollments.courseId),
-          eq(courses.ownerEmail, ownerEmail),
-        ),
+        and(eq(courses.id, enrollments.courseId), eq(courses.ownerEmail, ownerEmail)),
       )
       .where(where)
       .orderBy(students.apellido, students.nombre),
@@ -493,12 +436,7 @@ export async function listStudents(ownerEmail: string, courseId?: string) {
         clasesPresentes: sql<number>`count(*)`,
       })
       .from(attendance)
-      .where(
-        and(
-          eq(attendance.ownerEmail, ownerEmail),
-          eq(attendance.status, "presente"),
-        ),
-      )
+      .where(and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.status, "presente")))
       .groupBy(attendance.studentId),
   ]);
 
@@ -535,16 +473,12 @@ export async function upsertStudent(
       if (!nombre) throw new UserInputError("El nombre no puede ir vacío.");
       patch.nombre = nombre;
     }
-    if (input.telefono !== undefined)
-      patch.telefono = clean(input.telefono) ?? null;
-    if (input.github !== undefined)
-      patch.github = normalizeGithub(input.github) ?? null;
+    if (input.telefono !== undefined) patch.telefono = clean(input.telefono) ?? null;
+    if (input.github !== undefined) patch.github = normalizeGithub(input.github) ?? null;
     await db
       .update(students)
       .set(patch)
-      .where(
-        and(eq(students.ownerEmail, ownerEmail), eq(students.id, existing.id)),
-      );
+      .where(and(eq(students.ownerEmail, ownerEmail), eq(students.id, existing.id)));
     student = { ...existing, ...patch } as Student;
   } else {
     const apellido = clean(input.apellido);
@@ -569,38 +503,23 @@ export async function upsertStudent(
     student = row as Student;
   }
 
-  if (input.courseId)
-    await enrollStudent(ownerEmail, input.courseId, student.id);
+  if (input.courseId) await enrollStudent(ownerEmail, input.courseId, student.id);
   return student;
 }
 
 /** Mueve al alumno a la comisión indicada si ya estaba inscripto en otra. */
-export async function enrollStudent(
-  ownerEmail: string,
-  courseId: string,
-  studentId: string,
-) {
+export async function enrollStudent(ownerEmail: string, courseId: string, studentId: string) {
   await getCourse(ownerEmail, courseId);
   const db = getDb();
   const [current] = await db
     .select()
     .from(enrollments)
-    .where(
-      and(
-        eq(enrollments.ownerEmail, ownerEmail),
-        eq(enrollments.studentId, studentId),
-      ),
-    );
+    .where(and(eq(enrollments.ownerEmail, ownerEmail), eq(enrollments.studentId, studentId)));
   if (current?.courseId === courseId) return { enrolled: false, moved: false };
   if (current) {
     await db
       .delete(enrollments)
-      .where(
-        and(
-          eq(enrollments.ownerEmail, ownerEmail),
-          eq(enrollments.studentId, studentId),
-        ),
-      );
+      .where(and(eq(enrollments.ownerEmail, ownerEmail), eq(enrollments.studentId, studentId)));
   }
   await db.insert(enrollments).values({
     id: randomUUID(),
@@ -612,11 +531,7 @@ export async function enrollStudent(
   return { enrolled: true, moved: Boolean(current) };
 }
 
-export async function unenrollStudent(
-  ownerEmail: string,
-  courseId: string,
-  legajo: string,
-) {
+export async function unenrollStudent(ownerEmail: string, courseId: string, legajo: string) {
   const student = await requireStudent(ownerEmail, legajo);
   await getDb()
     .delete(enrollments)
@@ -643,25 +558,13 @@ export async function deleteStudent(ownerEmail: string, legajo: string) {
     );
   await db
     .delete(attendance)
-    .where(
-      and(
-        eq(attendance.ownerEmail, ownerEmail),
-        eq(attendance.studentId, student.id),
-      ),
-    );
+    .where(and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.studentId, student.id)));
   await db
     .delete(enrollments)
-    .where(
-      and(
-        eq(enrollments.ownerEmail, ownerEmail),
-        eq(enrollments.studentId, student.id),
-      ),
-    );
+    .where(and(eq(enrollments.ownerEmail, ownerEmail), eq(enrollments.studentId, student.id)));
   await db
     .delete(students)
-    .where(
-      and(eq(students.ownerEmail, ownerEmail), eq(students.id, student.id)),
-    );
+    .where(and(eq(students.ownerEmail, ownerEmail), eq(students.id, student.id)));
   return { deleted: legajo };
 }
 
@@ -684,12 +587,7 @@ export async function listAssessments(
   return getDb()
     .select()
     .from(assessments)
-    .where(
-      and(
-        eq(assessments.ownerEmail, ownerEmail),
-        eq(assessments.subjectId, subjectId),
-      ),
-    )
+    .where(and(eq(assessments.ownerEmail, ownerEmail), eq(assessments.subjectId, subjectId)))
     .orderBy(assessments.sortOrder, assessments.date, assessments.title);
 }
 
@@ -697,12 +595,7 @@ export async function getAssessment(ownerEmail: string, assessmentId: string) {
   const [row] = await getDb()
     .select()
     .from(assessments)
-    .where(
-      and(
-        eq(assessments.ownerEmail, ownerEmail),
-        eq(assessments.id, assessmentId),
-      ),
-    );
+    .where(and(eq(assessments.ownerEmail, ownerEmail), eq(assessments.id, assessmentId)));
   if (!row) throw new NotFoundError(`No existe el trabajo ${assessmentId}.`);
   return row;
 }
@@ -724,8 +617,7 @@ export async function createAssessment(
   const representative = input.courseId
     ? await getCourse(ownerEmail, input.courseId)
     : allCourses.find((course) => course.subjectId === subjectId);
-  if (!representative)
-    throw new UserInputError("Hace falta al menos una comisión.");
+  if (!representative) throw new UserInputError("Hace falta al menos una comisión.");
   const siblings = await listAssessments(ownerEmail, representative.id);
   const row = {
     id: randomUUID(),
@@ -774,19 +666,11 @@ export async function updateAssessment(
   await getDb()
     .update(assessments)
     .set(patch)
-    .where(
-      and(
-        eq(assessments.ownerEmail, ownerEmail),
-        eq(assessments.id, assessmentId),
-      ),
-    );
+    .where(and(eq(assessments.ownerEmail, ownerEmail), eq(assessments.id, assessmentId)));
   return getAssessment(ownerEmail, assessmentId);
 }
 
-export async function deleteAssessment(
-  ownerEmail: string,
-  assessmentId: string,
-) {
+export async function deleteAssessment(ownerEmail: string, assessmentId: string) {
   await getAssessment(ownerEmail, assessmentId);
   const db = getDb();
   await db
@@ -799,12 +683,7 @@ export async function deleteAssessment(
     );
   await db
     .delete(assessments)
-    .where(
-      and(
-        eq(assessments.ownerEmail, ownerEmail),
-        eq(assessments.id, assessmentId),
-      ),
-    );
+    .where(and(eq(assessments.ownerEmail, ownerEmail), eq(assessments.id, assessmentId)));
   return { deleted: assessmentId };
 }
 
@@ -828,22 +707,15 @@ export async function setAssessmentResult(
         : "pendiente"
       : undefined;
   if (explicitStatus === undefined && input.score === undefined) {
-    throw new UserInputError(
-      "Hay que indicar el estado o la nota del trabajo.",
-    );
+    throw new UserInputError("Hay que indicar el estado o la nota del trabajo.");
   }
   if (
     input.score !== undefined &&
     input.score !== null &&
-    (!assessment.graded ||
-      Number.isNaN(input.score) ||
-      input.score < 1 ||
-      input.score > 10)
+    (!assessment.graded || Number.isNaN(input.score) || input.score < 1 || input.score > 10)
   ) {
     throw new UserInputError(
-      assessment.graded
-        ? "La nota debe estar entre 1 y 10."
-        : "Este trabajo no lleva nota.",
+      assessment.graded ? "La nota debe estar entre 1 y 10." : "Este trabajo no lleva nota.",
     );
   }
 
@@ -859,10 +731,7 @@ export async function setAssessmentResult(
       ),
     );
 
-  const status =
-    explicitStatus ??
-    (existing?.status as WorkStatus | undefined) ??
-    "pendiente";
+  const status = explicitStatus ?? (existing?.status as WorkStatus | undefined) ?? "pendiente";
   const score =
     status === "pendiente"
       ? null
@@ -881,10 +750,7 @@ export async function setAssessmentResult(
       .update(assessmentResults)
       .set(values)
       .where(
-        and(
-          eq(assessmentResults.ownerEmail, ownerEmail),
-          eq(assessmentResults.id, existing.id),
-        ),
+        and(eq(assessmentResults.ownerEmail, ownerEmail), eq(assessmentResults.id, existing.id)),
       );
     return { ...existing, ...values };
   }
@@ -924,10 +790,7 @@ export async function assessmentGrid(
             ),
           );
   const byKey = new Map(
-    results.map((result) => [
-      `${result.assessmentId}:${result.studentId}`,
-      result,
-    ]),
+    results.map((result) => [`${result.assessmentId}:${result.studentId}`, result]),
   );
   return {
     assessments: columns,
@@ -952,30 +815,19 @@ export async function assessmentGrid(
 
 // ── Calendario y asistencia ─────────────────────────────────────────────────
 
-export async function listClassSessions(ownerEmail: string, courseId: string) {
-  await getCourse(ownerEmail, courseId);
-  return getDb()
-    .select()
-    .from(classSessions)
-    .where(
-      and(
-        eq(classSessions.ownerEmail, ownerEmail),
-        eq(classSessions.courseId, courseId),
-      ),
-    )
-    .orderBy(classSessions.date);
+export async function listClassSessions(ownerEmail: string, courseId?: string) {
+  if (courseId) await getCourse(ownerEmail, courseId);
+  const where = courseId
+    ? and(eq(classSessions.ownerEmail, ownerEmail), eq(classSessions.courseId, courseId))
+    : eq(classSessions.ownerEmail, ownerEmail);
+  return getDb().select().from(classSessions).where(where).orderBy(classSessions.date);
 }
 
 export async function getClassSession(ownerEmail: string, sessionId: string) {
   const [row] = await getDb()
     .select()
     .from(classSessions)
-    .where(
-      and(
-        eq(classSessions.ownerEmail, ownerEmail),
-        eq(classSessions.id, sessionId),
-      ),
-    );
+    .where(and(eq(classSessions.ownerEmail, ownerEmail), eq(classSessions.id, sessionId)));
   if (!row) throw new NotFoundError(`No existe la clase ${sessionId}.`);
   return row;
 }
@@ -987,15 +839,14 @@ export async function createClassSession(
   await getCourse(ownerEmail, input.courseId);
   const date = normalizeDate(input.date);
   if (!date) throw new UserInputError("La clase necesita una fecha.");
-  const [existing] = (
-    await listClassSessions(ownerEmail, input.courseId)
-  ).filter((session) => session.date === date);
+  const [existing] = (await listClassSessions(ownerEmail, input.courseId)).filter(
+    (session) => session.date === date,
+  );
   if (existing) return existing;
   const [slot] = (await listCourseSchedules(ownerEmail, input.courseId)).filter(
     (schedule) => schedule.weekday === weekdayOf(date),
   );
-  if (!slot)
-    throw new UserInputError("La fecha no coincide con un día de cursado.");
+  if (!slot) throw new UserInputError("La fecha no coincide con un día de cursado.");
   const row = {
     id: randomUUID(),
     courseId: input.courseId,
@@ -1026,18 +877,13 @@ export async function generateClassSessions(
   const start = new Date(`${startDate}T00:00:00Z`);
   const end = new Date(`${endDate}T00:00:00Z`);
   const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
-  if (days > 370)
-    throw new UserInputError("El rango no puede superar 370 días.");
+  if (days > 370) throw new UserInputError("El rango no puede superar 370 días.");
   const schedules = await listCourseSchedules(ownerEmail, input.courseId);
   const scheduleByDay = new Map(schedules.map((slot) => [slot.weekday, slot]));
   const existing = await listClassSessions(ownerEmail, input.courseId);
   const existingDates = new Set(existing.map((session) => session.date));
   const created: ClassSession[] = [];
-  for (
-    let cursor = new Date(start);
-    cursor <= end;
-    cursor.setUTCDate(cursor.getUTCDate() + 1)
-  ) {
+  for (let cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
     const date = cursor.toISOString().slice(0, 10);
     const weekday = cursor.getUTCDay() === 0 ? 7 : cursor.getUTCDay();
     const slot = scheduleByDay.get(weekday);
@@ -1067,9 +913,7 @@ export async function updateClassSession(
   },
 ) {
   const current = await getClassSession(ownerEmail, sessionId);
-  const status = input.status
-    ? assertClassStatus(input.status)
-    : (current.status as ClassStatus);
+  const status = input.status ? assertClassStatus(input.status) : (current.status as ClassStatus);
   let cancellationReason =
     input.cancellationReason === undefined
       ? current.cancellationReason
@@ -1093,43 +937,22 @@ export async function updateClassSession(
       status,
       cancellationReason,
       cancellationNote,
-      topic:
-        input.topic === undefined
-          ? current.topic
-          : (clean(input.topic) ?? null),
+      topic: input.topic === undefined ? current.topic : (clean(input.topic) ?? null),
       updatedAt: stamp(),
     })
-    .where(
-      and(
-        eq(classSessions.ownerEmail, ownerEmail),
-        eq(classSessions.id, sessionId),
-      ),
-    );
+    .where(and(eq(classSessions.ownerEmail, ownerEmail), eq(classSessions.id, sessionId)));
   return getClassSession(ownerEmail, sessionId);
 }
 
-export async function deleteClassSession(
-  ownerEmail: string,
-  sessionId: string,
-) {
+export async function deleteClassSession(ownerEmail: string, sessionId: string) {
   await getClassSession(ownerEmail, sessionId);
   const db = getDb();
   await db
     .delete(attendance)
-    .where(
-      and(
-        eq(attendance.ownerEmail, ownerEmail),
-        eq(attendance.sessionId, sessionId),
-      ),
-    );
+    .where(and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.sessionId, sessionId)));
   await db
     .delete(classSessions)
-    .where(
-      and(
-        eq(classSessions.ownerEmail, ownerEmail),
-        eq(classSessions.id, sessionId),
-      ),
-    );
+    .where(and(eq(classSessions.ownerEmail, ownerEmail), eq(classSessions.id, sessionId)));
   return { deleted: sessionId };
 }
 
@@ -1146,16 +969,13 @@ export async function setAttendance(
 ) {
   const session = await getClassSession(ownerEmail, input.sessionId);
   if (session.status !== "programada") {
-    throw new UserInputError(
-      "Sólo se puede tomar asistencia en una clase programada.",
-    );
+    throw new UserInputError("Sólo se puede tomar asistencia en una clase programada.");
   }
   if (input.entries.length === 0) {
     throw new UserInputError("No viene ningún alumno para marcar.");
   }
   const db = getDb();
-  const updated: Array<{ legajo: string; status: AttendanceStatus | null }> =
-    [];
+  const updated: Array<{ legajo: string; status: AttendanceStatus | null }> = [];
   for (const entry of input.entries) {
     const student = await requireStudent(ownerEmail, entry.legajo);
     const [membership] = await db
@@ -1197,23 +1017,13 @@ export async function setAttendance(
       if (existing) {
         await db
           .delete(attendance)
-          .where(
-            and(
-              eq(attendance.ownerEmail, ownerEmail),
-              eq(attendance.id, existing.id),
-            ),
-          );
+          .where(and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.id, existing.id)));
       }
     } else if (existing) {
       await db
         .update(attendance)
         .set({ status, present: status === "presente", updatedAt: stamp() })
-        .where(
-          and(
-            eq(attendance.ownerEmail, ownerEmail),
-            eq(attendance.id, existing.id),
-          ),
-        );
+        .where(and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.id, existing.id)));
     } else {
       await db.insert(attendance).values({
         id: randomUUID(),
@@ -1231,7 +1041,7 @@ export async function setAttendance(
   return { sessionId: input.sessionId, updated };
 }
 
-export async function attendanceGrid(ownerEmail: string, courseId: string) {
+export async function attendanceGrid(ownerEmail: string, courseId?: string) {
   const [roster, sessions] = await Promise.all([
     listStudents(ownerEmail, courseId),
     listClassSessions(ownerEmail, courseId),
@@ -1244,61 +1054,47 @@ export async function attendanceGrid(ownerEmail: string, courseId: string) {
           .select()
           .from(attendance)
           .where(
-            and(
-              eq(attendance.ownerEmail, ownerEmail),
-              inArray(attendance.sessionId, sessionIds),
-            ),
+            and(eq(attendance.ownerEmail, ownerEmail), inArray(attendance.sessionId, sessionIds)),
           );
-  const byKey = new Map(
-    marks.map((mark) => [`${mark.sessionId}:${mark.studentId}`, mark]),
-  );
+  const byKey = new Map(marks.map((mark) => [`${mark.sessionId}:${mark.studentId}`, mark]));
+  const today = todayInArgentina();
   return {
     sessions,
     rows: roster.map((student) => {
       const cells = sessions.map((session) => ({
         sessionId: session.id,
-        status: byKey.get(`${session.id}:${student.id}`)?.status ?? null,
+        status: effectiveAttendanceStatus(
+          session,
+          byKey.get(`${session.id}:${student.id}`)?.status,
+          today,
+        ),
       }));
-      const presentes = cells.filter(
-        (cell) => cell.status === "presente",
-      ).length;
+      const presentes = cells.filter((cell) => cell.status === "presente").length;
       const ausentes = cells.filter((cell) => cell.status === "ausente").length;
-      const justificadas = cells.filter(
-        (cell) => cell.status === "justificada",
-      ).length;
+      const justificadas = cells.filter((cell) => cell.status === "justificada").length;
       const computables = presentes + ausentes;
       return {
         id: student.id,
         legajo: student.legajo,
         apellido: student.apellido,
         nombre: student.nombre,
+        course: student.course,
         cells,
         presentes,
         ausentes,
         justificadas,
-        porcentaje:
-          computables === 0
-            ? null
-            : Math.round((presentes / computables) * 100),
+        porcentaje: computables === 0 ? null : Math.round((presentes / computables) * 100),
       };
     }),
   };
 }
 
-export async function listStudentCourses(
-  ownerEmail: string,
-  studentId: string,
-) {
+export async function listStudentCourses(ownerEmail: string, studentId: string) {
   const rows = await getDb()
     .select({ course: courses })
     .from(enrollments)
     .innerJoin(courses, eq(courses.id, enrollments.courseId))
-    .where(
-      and(
-        eq(enrollments.ownerEmail, ownerEmail),
-        eq(enrollments.studentId, studentId),
-      ),
-    )
+    .where(and(eq(enrollments.ownerEmail, ownerEmail), eq(enrollments.studentId, studentId)))
     .orderBy(courses.commission, courses.name);
   return rows.map((row) => row.course);
 }
@@ -1339,10 +1135,9 @@ export async function studentSummary(ownerEmail: string, legajo: string) {
             ),
           ),
   ]);
-  const resultByWork = new Map(
-    results.map((result) => [result.assessmentId, result]),
-  );
+  const resultByWork = new Map(results.map((result) => [result.assessmentId, result]));
   const markBySession = new Map(marks.map((mark) => [mark.sessionId, mark]));
+  const today = todayInArgentina();
   const practicos = works.map((work) => ({
     id: work.id,
     title: work.title,
@@ -1353,17 +1148,17 @@ export async function studentSummary(ownerEmail: string, legajo: string) {
   }));
   const clases = sessions.map((session) => ({
     ...session,
-    attendanceStatus: markBySession.get(session.id)?.status ?? null,
+    attendanceStatus: effectiveAttendanceStatus(
+      session,
+      markBySession.get(session.id)?.status,
+      today,
+    ),
   }));
   const scores = practicos
     .map((work) => work.score)
     .filter((score): score is number => typeof score === "number");
-  const presentes = clases.filter(
-    (session) => session.attendanceStatus === "presente",
-  ).length;
-  const ausentes = clases.filter(
-    (session) => session.attendanceStatus === "ausente",
-  ).length;
+  const presentes = clases.filter((session) => session.attendanceStatus === "presente").length;
+  const ausentes = clases.filter((session) => session.attendanceStatus === "ausente").length;
   const justificadas = clases.filter(
     (session) => session.attendanceStatus === "justificada",
   ).length;
@@ -1374,27 +1169,19 @@ export async function studentSummary(ownerEmail: string, legajo: string) {
     practicos,
     clases,
     totales: {
-      practicosPresentados: practicos.filter(
-        (work) => work.status !== "pendiente",
-      ).length,
-      practicosAprobados: practicos.filter((work) => work.status === "aprobado")
-        .length,
+      practicosPresentados: practicos.filter((work) => work.status !== "pendiente").length,
+      practicosConFalla: practicos.filter((work) => work.status === "falla").length,
       practicosTotales: practicos.length,
       promedio:
         scores.length === 0
           ? null
-          : Math.round(
-              (scores.reduce((sum, score) => sum + score, 0) / scores.length) *
-                100,
-            ) / 100,
+          : Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length) * 100) / 100,
       clasesPresentes: presentes,
       clasesAusentes: ausentes,
       clasesJustificadas: justificadas,
       clasesMarcadas: presentes + ausentes + justificadas,
       asistenciaPorcentaje:
-        presentes + ausentes === 0
-          ? null
-          : Math.round((presentes / (presentes + ausentes)) * 100),
+        presentes + ausentes === 0 ? null : Math.round((presentes / (presentes + ausentes)) * 100),
     },
   };
 }
@@ -1405,9 +1192,7 @@ export async function courseSummary(ownerEmail: string, courseId: string) {
     assessmentGrid(ownerEmail, courseId),
     attendanceGrid(ownerEmail, courseId),
   ]);
-  const attendanceByLegajo = new Map(
-    asistencia.rows.map((row) => [row.legajo, row]),
-  );
+  const attendanceByLegajo = new Map(asistencia.rows.map((row) => [row.legajo, row]));
   return {
     course,
     totalAlumnos: works.rows.length,
@@ -1422,22 +1207,15 @@ export async function courseSummary(ownerEmail: string, courseId: string) {
         legajo: row.legajo,
         apellido: row.apellido,
         nombre: row.nombre,
-        practicosPresentados: row.cells.filter(
-          (cell) => cell.status !== "pendiente",
-        ).length,
-        practicosAprobados: row.cells.filter(
-          (cell) => cell.status === "aprobado",
-        ).length,
+        practicosPresentados: row.cells.filter((cell) => cell.status !== "pendiente").length,
+        practicosConFalla: row.cells.filter((cell) => cell.status === "falla").length,
         practicosTotales: works.assessments.length,
         notas: scores,
         promedio:
           scores.length === 0
             ? null
-            : Math.round(
-                (scores.reduce((sum, score) => sum + score, 0) /
-                  scores.length) *
-                  100,
-              ) / 100,
+            : Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length) * 100) /
+              100,
         clasesPresentes: mark?.presentes ?? 0,
         clasesJustificadas: mark?.justificadas ?? 0,
         asistenciaPorcentaje: mark?.porcentaje ?? null,

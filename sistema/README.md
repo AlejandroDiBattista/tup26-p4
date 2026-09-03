@@ -10,7 +10,7 @@ comisiones C1 y C3.
 - calendario de clases generado desde el horario semanal;
 - asistencia presente, ausente o justificada;
 - trabajos prácticos compartidos por ambas comisiones;
-- estado pendiente, presentado, aprobado o desaprobado por alumno;
+- estado pendiente, error, falla o presentado por alumno;
 - nota opcional de 1 a 10 para los trabajos usados como parciales.
 
 ## Desarrollo local

@@ -76,7 +76,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `update-assessment`          | `assessmentId`, `title?`, `date?`, `graded?`             | Turning grading off clears grades.                                                                              |
 | `delete-assessment`          | `assessmentId`                                           | Deletes all results; confirm first.                                                                             |
 | `publicar-enunciado-trabajo` | `assessmentId`                                           | Generates student folders, then copies the matching `enunciados` folder without overwriting existing work.      |
-| `set-assessment-result`      | `assessmentId`, `legajo`, `status?`, `score?`            | Status is pending/presented/approved/failed; score is optional 1–10 only on graded work.                        |
+| `set-assessment-result`      | `assessmentId`, `legajo`, `status?`, `score?`            | Status is pending/error/failure/presented; score is optional 1–10 only on graded work.                          |
 | `work-grid`                  | `course?`                                                | GET. Students × shared practicals.                                                                              |
 | `list-classes`               | `course`                                                 | GET. Includes generated and cancelled dates.                                                                    |
 | `generate-classes`           | `course`, `startDate`, `endDate`                         | Adds matching weekly dates without duplicates.                                                                  |
@@ -99,8 +99,8 @@ call over one call per student.
 
 ### Conventions
 
-- Every practical starts as `pendiente`; other states are `presentado`,
-  `aprobado` and `desaprobado`.
+- Every practical starts as `pendiente`; other states are `error`, `falla` and
+  `presentado`.
 - A parcial is a practical with `graded=true`. Its optional grade is 1–10.
   State and grade are independent; never infer an approval threshold.
 - Justified attendance does not count against the attendance percentage.

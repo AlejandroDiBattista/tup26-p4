@@ -261,9 +261,9 @@ export type AssessmentKind = (typeof ASSESSMENT_KINDS)[number];
 
 export const WORK_STATUSES = [
   "pendiente",
+  "error",
+  "falla",
   "presentado",
-  "aprobado",
-  "desaprobado",
 ] as const;
 export type WorkStatus = (typeof WORK_STATUSES)[number];
 

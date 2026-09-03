@@ -7,6 +7,12 @@ describe("exportar_alumnos_md", () => {
     const markdown = exportar_alumnos_md([
       {
         name: "Programación 4 - C1",
+        assessments: [
+          { id: "tp1", title: "TP 1" },
+          { id: "tp2", title: "TP 2" },
+          { id: "tp3", title: "TP 3" },
+          { id: "tp4", title: "TP 4" },
+        ],
         students: [
           {
             legajo: "54865",
@@ -14,6 +20,13 @@ describe("exportar_alumnos_md", () => {
             nombre: "Sofía",
             telefono: "(381)467-0231",
             github: "sofceq",
+            asistencia: "4",
+            assessmentStatuses: {
+              tp1: "pendiente",
+              tp2: "error",
+              tp3: "falla",
+              tp4: "presentado",
+            },
           },
           {
             legajo: "63428",
@@ -21,6 +34,8 @@ describe("exportar_alumnos_md", () => {
             nombre: "Tomás Emilio",
             telefono: "(381)548-4231",
             github: null,
+            asistencia: "3",
+            assessmentStatuses: {},
           },
         ],
       },
@@ -32,10 +47,10 @@ describe("exportar_alumnos_md", () => {
         "",
         "## C1",
         "```text",
-        "Legajo  Nombre y Apellido                         Teléfono        GitHub",
-        "------  ----------------------------------------  --------------  -------------------------",
-        "54865   Cequi, Sofía                              (381)467-0231   sofceq",
-        "63428   Albornoz, Tomás Emilio                    (381)548-4231   -",
+        "Legajo  Nombre y Apellido                         Teléfono        GitHub                     Asistencia  Practicos",
+        "------  ----------------------------------------  --------------  -------------------------  ----------  ----------",
+        "54865   Cequi, Sofía                              (381)467-0231   sofceq                     4           ⚫️🔴🟡🟢",
+        "63428   Albornoz, Tomás Emilio                    (381)548-4231   -                          3           ⚫️⚫️⚫️⚫️",
         "```",
         "",
       ].join("\n"),
@@ -47,6 +62,7 @@ describe("exportar_alumnos_md", () => {
       [
         {
           name: "Comisión especial",
+          assessments: [],
           students: [
             {
               legajo: "1234567",
@@ -54,6 +70,8 @@ describe("exportar_alumnos_md", () => {
               nombre: "Nombre",
               telefono: null,
               github: null,
+              asistencia: "0",
+              assessmentStatuses: {},
             },
           ],
         },
@@ -63,7 +81,7 @@ describe("exportar_alumnos_md", () => {
 
     expect(markdown).toContain("# Materia de prueba\n\n## Comisión especial");
     expect(markdown).toContain(
-      "1234567  Apellido extremadamente largo para la columna, Nombre  -               -",
+      "1234567  Apellido extremadamente largo para la columna, Nombre  -               -                          0           -",
     );
   });
 });

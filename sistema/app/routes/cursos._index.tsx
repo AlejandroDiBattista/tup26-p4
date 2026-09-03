@@ -1,18 +1,6 @@
-import {
-  callAction,
-  useActionMutation,
-  useActionQuery,
-} from "@agent-native/core/client/hooks";
+import { useActionMutation, useActionQuery } from "@agent-native/core/client/hooks";
 import { useT } from "@agent-native/core/client/i18n";
-import {
-  IconAddressBook,
-  IconCalendarTime,
-  IconDownload,
-  IconMapPin,
-  IconPlus,
-  IconUsers,
-  IconX,
-} from "@tabler/icons-react";
+import { IconCalendarTime, IconMapPin, IconPlus, IconUsers, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -39,44 +27,13 @@ interface Course {
   schedules: Schedule[];
 }
 
-interface ExportResult {
-  filename: string;
-  content: string;
-}
-
-const WEEKDAYS = [
-  "",
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-  "Domingo",
-];
-
-function downloadFile(filename: string, content: string) {
-  const blob = new Blob([content], {
-    type: filename.endsWith(".vcf")
-      ? "text/vcard;charset=utf-8"
-      : "text/markdown;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-async function exportStudents(
-  action: "exportar-alumnos-md" | "exportar-alumnos-vcard",
-) {
-  const result = await callAction<ExportResult>(action, {}, { method: "GET" });
-  downloadFile(result.filename, result.content);
-}
+const WEEKDAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const EMPTY_COURSE = {
+  name: "",
+  commission: "",
+  classroom: "",
+  term: "2026 - 2.º cuatrimestre",
+};
 
 export function meta() {
   return [{ title: "Comisiones · Programación IV" }];
@@ -85,16 +42,8 @@ export function meta() {
 export default function CursosIndex() {
   const t = useT();
   const [showForm, setShowForm] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    commission: "",
-    classroom: "",
-    term: "2026 - 2.º cuatrimestre",
-  });
-  const { data, isLoading } = useActionQuery<{ courses: Course[] }>(
-    "list-courses",
-  );
+  const [form, setForm] = useState(EMPTY_COURSE);
+  const { data, isLoading } = useActionQuery<{ courses: Course[] }>("list-courses");
   const createCourse = useActionMutation("create-course");
   const updateCourse = useActionMutation("update-course");
   const courses = data?.courses ?? [];
@@ -122,12 +71,7 @@ export default function CursosIndex() {
       },
       {
         onSuccess: () => {
-          setForm({
-            name: "",
-            commission: "",
-            classroom: "",
-            term: "2026 - 2.º cuatrimestre",
-          });
+          setForm(EMPTY_COURSE);
           setShowForm(false);
         },
         onError: (error) => toast.error(error.message),
@@ -135,31 +79,11 @@ export default function CursosIndex() {
     );
   }
 
-  async function handleExport(
-    action: "exportar-alumnos-md" | "exportar-alumnos-vcard",
-  ) {
-    setIsExporting(true);
-    try {
-      await exportStudents(action);
-      toast.success(t("agenda.studentsExported"));
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("agenda.studentsExportFailed"),
-      );
-    } finally {
-      setIsExporting(false);
-    }
-  }
-
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
       <header className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="mb-1 text-sm font-medium text-primary">
-            Programación IV
-          </p>
+          <p className="mb-1 text-sm font-medium text-primary">Programación IV</p>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             {t("agenda.coursesTitle")}
           </h1>
@@ -168,29 +92,9 @@ export default function CursosIndex() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            disabled={isExporting || courses.length === 0}
-            onClick={() => void handleExport("exportar-alumnos-md")}
-          >
-            <IconDownload aria-hidden="true" />
-            {t("agenda.exportStudentsMd")}
-          </Button>
-          <Button
-            variant="outline"
-            disabled={isExporting || courses.length === 0}
-            onClick={() => void handleExport("exportar-alumnos-vcard")}
-          >
-            <IconAddressBook aria-hidden="true" />
-            vCard
-          </Button>
-          <Button onClick={() => setShowForm((open) => !open)}>
-            {showForm ? (
-              <IconX aria-hidden="true" />
-            ) : (
-              <IconPlus aria-hidden="true" />
-            )}
-            {showForm ? t("agenda.cancel") : t("agenda.newCourse")}
+          <Button onClick={() => setShowForm(true)} disabled={showForm}>
+            <IconPlus aria-hidden="true" />
+            {t("agenda.newCourse")}
           </Button>
         </div>
       </header>
@@ -224,9 +128,22 @@ export default function CursosIndex() {
               />
             </div>
           ))}
-          <div className="sm:col-span-2 lg:col-span-4">
+          <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
             <Button type="submit" disabled={createCourse.isPending}>
               {t("agenda.create")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              onClick={() => {
+                setForm(EMPTY_COURSE);
+                setShowForm(false);
+              }}
+              aria-label={t("agenda.cancel")}
+              title={t("agenda.cancel")}
+            >
+              <IconX aria-hidden="true" />
             </Button>
           </div>
         </form>
@@ -247,9 +164,7 @@ export default function CursosIndex() {
                     <span className="text-lg font-semibold text-primary">
                       <InlineEdit
                         value={course.commission ?? ""}
-                        onSave={(value) =>
-                          saveField(course, "commission", value)
-                        }
+                        onSave={(value) => saveField(course, "commission", value)}
                         label={t("agenda.commission")}
                         required
                       />
@@ -276,9 +191,7 @@ export default function CursosIndex() {
                       {t("agenda.classroom")}
                       <InlineEdit
                         value={course.classroom ?? ""}
-                        onSave={(value) =>
-                          saveField(course, "classroom", value)
-                        }
+                        onSave={(value) => saveField(course, "classroom", value)}
                         label={t("agenda.classroom")}
                       />
                     </span>
@@ -291,10 +204,7 @@ export default function CursosIndex() {
 
                 <div>
                   <h3 className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium">
-                    <IconCalendarTime
-                      aria-hidden="true"
-                      className="size-4 text-primary"
-                    />
+                    <IconCalendarTime aria-hidden="true" className="size-4 text-primary" />
                     {t("agenda.weeklySchedule")}
                   </h3>
                   <dl className="grid gap-x-5 gap-y-1.5 text-sm sm:grid-cols-2">
@@ -303,9 +213,7 @@ export default function CursosIndex() {
                         key={schedule.id}
                         className="flex justify-between gap-3 border-b border-border/70 py-1"
                       >
-                        <dt className="text-muted-foreground">
-                          {WEEKDAYS[schedule.weekday]}
-                        </dt>
+                        <dt className="text-muted-foreground">{WEEKDAYS[schedule.weekday]}</dt>
                         <dd className="font-medium tabular-nums">
                           {schedule.startTime}–{schedule.endTime}
                         </dd>
@@ -315,9 +223,7 @@ export default function CursosIndex() {
                 </div>
 
                 <Button asChild variant="outline" size="sm">
-                  <Link to={`/cursos/${course.id}`}>
-                    {t("agenda.configure")}
-                  </Link>
+                  <Link to={`/cursos/${course.id}`}>{t("agenda.configure")}</Link>
                 </Button>
               </div>
             </article>

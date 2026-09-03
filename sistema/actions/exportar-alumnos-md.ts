@@ -6,6 +6,8 @@ import {
   TITULO_ALUMNOS_MD,
 } from "../server/agenda/exportar-alumnos-md.js";
 import {
+  assessmentGrid,
+  attendanceGrid,
   listCourses,
   listStudents,
   requireUserEmail,
@@ -22,10 +24,44 @@ export default defineAction({
     const ownerEmail = requireUserEmail(ctx?.userEmail);
     const courses = await listCourses(ownerEmail);
     const coursesWithStudents = await Promise.all(
-      courses.map(async (course) => ({
-        name: course.name,
-        students: await listStudents(ownerEmail, course.id),
-      })),
+      courses.map(async (course) => {
+        const [students, works, attendance] = await Promise.all([
+          listStudents(ownerEmail, course.id),
+          assessmentGrid(ownerEmail, course.id),
+          attendanceGrid(ownerEmail, course.id),
+        ]);
+        const attendanceByLegajo = new Map(
+          attendance.rows.map((row) => [row.legajo, row.presentes]),
+        );
+        const workByLegajo = new Map(
+          works.rows.map((row) => [row.legajo, row]),
+        );
+
+        return {
+          name: course.name,
+          assessments: works.assessments.map(({ id, title }) => ({
+            id,
+            title,
+          })),
+          students: students.map((student) => ({
+            legajo: student.legajo,
+            apellido: student.apellido,
+            nombre: student.nombre,
+            telefono: student.telefono,
+            github: student.github,
+            asistencia: String(
+              attendanceByLegajo.get(student.legajo) ??
+                student.clasesPresentes,
+            ),
+            assessmentStatuses: Object.fromEntries(
+              workByLegajo
+                .get(student.legajo)
+                ?.cells.map((cell) => [cell.assessmentId, cell.status]) ??
+                [],
+            ),
+          })),
+        };
+      }),
     );
 
     return {

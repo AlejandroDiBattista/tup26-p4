@@ -19,7 +19,7 @@ export default function AlumnosIndex() {
           {t("agenda.studentsDescription")}
         </p>
       </header>
-      <StudentsTab />
+      <StudentsTab showExports />
     </div>
   );
 }

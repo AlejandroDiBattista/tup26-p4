@@ -1,8 +1,4 @@
-import {
-  ensureAdditiveColumns,
-  getDbExec,
-  runMigrations,
-} from "@agent-native/core/db";
+import { ensureAdditiveColumns, getDbExec, runMigrations } from "@agent-native/core/db";
 
 import * as schema from "../db/schema.js";
 
@@ -378,6 +374,60 @@ const runAgendaDataMigrations = runMigrations(
         cancellation_note = excluded.cancellation_note,
         updated_at = CURRENT_TIMESTAMP`,
     },
+    {
+      version: 11,
+      name: "agenda-work-error-failure-statuses",
+      sql: `UPDATE assessment_results
+        SET status = CASE
+          WHEN status = 'aprobado' THEN 'error'
+          WHEN status = 'desaprobado' THEN 'falla'
+          ELSE status
+        END,
+        updated_at = CURRENT_TIMESTAMP
+        WHERE status IN ('aprobado', 'desaprobado')`,
+    },
+    {
+      version: 12,
+      name: "agenda-mark-past-classes-absent",
+      sql: `UPDATE attendance
+        SET status = 'ausente',
+            present = 0,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE status IS NULL
+          AND EXISTS (
+            SELECT 1
+            FROM class_sessions session
+            WHERE session.id = attendance.session_id
+              AND session.owner_email = attendance.owner_email
+              AND session.status = 'programada'
+              AND session.date < date('now')
+          );
+
+      INSERT INTO attendance (
+        id, session_id, student_id, status, present,
+        owner_email, created_at, updated_at
+      )
+      SELECT
+        'attendance:auto-absent:' || session.id || ':' || enrollment.student_id,
+        session.id,
+        enrollment.student_id,
+        'ausente',
+        0,
+        session.owner_email,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      FROM class_sessions session
+      INNER JOIN enrollments enrollment
+        ON enrollment.owner_email = session.owner_email
+       AND enrollment.course_id = session.course_id
+      LEFT JOIN attendance mark
+        ON mark.owner_email = session.owner_email
+       AND mark.session_id = session.id
+       AND mark.student_id = enrollment.student_id
+      WHERE session.status = 'programada'
+        AND session.date < date('now')
+        AND mark.id IS NULL;`,
+    },
   ],
   { table: "agenda_migrations" },
 );
@@ -386,9 +436,7 @@ function isDrizzleTable(value: unknown): value is object {
   return (
     !!value &&
     typeof value === "object" &&
-    Object.getOwnPropertySymbols(value).some((s) =>
-      s.toString().includes("drizzle"),
-    )
+    Object.getOwnPropertySymbols(value).some((s) => s.toString().includes("drizzle"))
   );
 }
 
@@ -401,10 +449,7 @@ async function ensureAgendaColumns(): Promise<void> {
       tables: schemaTables,
     });
     if (summary.errors.length > 0) {
-      console.warn(
-        "[db] ensureAdditiveColumns completed with errors:",
-        summary.errors,
-      );
+      console.warn("[db] ensureAdditiveColumns completed with errors:", summary.errors);
     }
   } catch (err) {
     console.warn(
