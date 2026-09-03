@@ -32,7 +32,21 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+`;
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+// {
+//   inputFile: "empleados.csv",
+//   outputFile: "ordenados.csv",
+//   delimiter: ",",
+//   noHeader: false,
+//   sortFields: [ { name: "apellido", numeric: false, descending: false } ]
+// }
+// 1. parseArgs      → leer los argumentos y construir la configuración
+// 2. readInput      → leer el archivo de origen
+// 3. parseDelimited → convertir el texto en filas y columnas
+// 4. sortRows       → ordenar las filas
+// 5. serialize      → reconstruir el texto delimitado
+// 6. writeOutput    → escribir el archivo de destino
+
+console.log(HELP);
