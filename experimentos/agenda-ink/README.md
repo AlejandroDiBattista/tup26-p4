@@ -1,4 +1,4 @@
-# Agenda TUI con Terminal Kit
+# Agenda TUI con Ink
 
 ## Requisitos
 
@@ -6,19 +6,16 @@
 
 ## Instalación
 
-En una carpeta nueva:
+En esta carpeta:
 
 ```bash
-npm init -y
-npm install terminal-kit
+npm install
 ```
-
-Copiá `agenda.js` dentro de esa carpeta.
 
 ## Ejecución
 
 ```bash
-node agenda.js
+npm run ink
 ```
 
 La aplicación crea automáticamente un archivo `agenda.json` en la misma carpeta para persistir los contactos.
@@ -27,9 +24,10 @@ La aplicación crea automáticamente un archivo `agenda.json` en la misma carpet
 
 Podés buscar por cualquier combinación de:
 
-- nombre
+- legajo
+- nombre y apellido
 - teléfono
-- email
+- usuario de GitHub
 
 Ejemplos:
 

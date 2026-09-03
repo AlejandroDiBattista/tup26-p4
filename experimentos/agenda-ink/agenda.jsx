@@ -1,18 +1,19 @@
 "use strict";
 
-const {
+import {
     cargarContactos,
     filtrarContactos,
     guardarContactos,
     nombreCompleto,
     siguienteId
-} = require("./agenda-datos");
+} from "./datos.js";
 
 const CAMPOS = [
+    ["legajo", "Legajo"],
     ["nombre", "Nombre"],
     ["apellido", "Apellido"],
     ["telefono", "Teléfono"],
-    ["email", "Email"]
+    ["github", "GitHub"]
 ];
 
 let React;
@@ -45,9 +46,9 @@ function Panel({ titulo, activo, ancho, alto, children }) {
     );
 }
 
-function Lista({ contactos, indice, alto, activa }) {
+function Lista({ contactos, indice, inicio, alto, activa }) {
     const cantidad = Math.max(1, alto - 4);
-    const inicio = Math.max(0, Math.min(indice, contactos.length - cantidad));
+    const inicioVisible = Math.max(0, Math.min(inicio, contactos.length - cantidad));
 
     return (
         <Panel
@@ -58,13 +59,19 @@ function Lista({ contactos, indice, alto, activa }) {
         >
             {contactos.length === 0 ? (
                 <Text dimColor>Sin resultados</Text>
-            ) : contactos.slice(inicio, inicio + cantidad).map((contacto, posicion) => {
-                const seleccionado = inicio + posicion === indice;
+            ) : contactos.slice(inicioVisible, inicioVisible + cantidad).map((contacto, posicion) => {
+                const seleccionado = inicioVisible + posicion === indice;
 
                 return (
-                    <Text key={contacto.id} bold={seleccionado} color={seleccionado ? "cyan" : undefined}>
-                        {seleccionado ? "› " : "  "}{nombreCompleto(contacto)}
-                    </Text>
+                    <Box
+                        key={contacto.id}
+                        width="100%"
+                        backgroundColor={seleccionado ? "gray" : undefined}
+                    >
+                        <Text bold={seleccionado} color={seleccionado ? "black" : undefined}>
+                            {seleccionado ? "▶ " : "  "}{nombreCompleto(contacto)}
+                        </Text>
+                    </Box>
                 );
             })}
         </Panel>
@@ -88,10 +95,11 @@ function Detalle({ contacto, alto, activo }) {
 
 function Editor({ contacto, alto, onGuardar, onCancelar }) {
     const [valores, setValores] = useState({
+        legajo: contacto?.legajo ?? "",
         nombre: contacto?.nombre ?? "",
         apellido: contacto?.apellido ?? "",
         telefono: contacto?.telefono ?? "",
-        email: contacto?.email ?? ""
+        github: contacto?.github ?? ""
     });
     const [campo, setCampo] = useState(0);
     const [error, setError] = useState("");
@@ -101,9 +109,9 @@ function Editor({ contacto, alto, onGuardar, onCancelar }) {
             Object.entries(valores).map(([clave, valor]) => [clave, valor.trim()])
         );
 
-        if (!datos.nombre || !datos.apellido) {
-            setError("Nombre y apellido son obligatorios");
-            setCampo(datos.nombre ? 1 : 0);
+        if (!datos.legajo || !datos.nombre || !datos.apellido) {
+            setError("Legajo, nombre y apellido son obligatorios");
+            setCampo(datos.legajo ? datos.nombre ? 2 : 1 : 0);
             return;
         }
 
@@ -130,12 +138,30 @@ function Editor({ contacto, alto, onGuardar, onCancelar }) {
             alto={alto}
         >
             {CAMPOS.map(([clave, etiqueta], indice) => (
-                <Box key={clave} marginBottom={1}>
-                    <Box width={2}><Text color="cyan">{indice === campo ? "›" : " "}</Text></Box>
-                    <Box width={11}><Text dimColor={indice !== campo}>{etiqueta}</Text></Box>
+                <Box
+                    key={clave}
+                    marginBottom={1}
+                    width="100%"
+                    backgroundColor={indice === campo ? "gray" : undefined}
+                >
+                    <Box width={2}>
+                        <Text bold={indice === campo} color={indice === campo ? "black" : undefined}>
+                            {indice === campo ? "▶" : " "}
+                        </Text>
+                    </Box>
+                    <Box width={11}>
+                        <Text
+                            bold={indice === campo}
+                            color={indice === campo ? "gray" : undefined}
+                            dimColor={indice !== campo}
+                        >
+                            {etiqueta}
+                        </Text>
+                    </Box>
                     {indice === campo ? (
                         <TextInput
                             value={valores[clave]}
+                            showCursor
                             onChange={valor => {
                                 setValores({ ...valores, [clave]: valor });
                                 setError("");
@@ -177,6 +203,7 @@ function Agenda() {
     const [contactos, setContactos] = useState(cargarContactos);
     const [consulta, setConsulta] = useState("");
     const [indice, setIndice] = useState(0);
+    const [inicio, setInicio] = useState(0);
     const [foco, setFoco] = useState("buscar");
     const [edicion, setEdicion] = useState(null);
     const [borrando, setBorrando] = useState(null);
@@ -188,7 +215,19 @@ function Agenda() {
     const ocupado = edicion !== null || borrando !== null;
 
     function mover(cantidad) {
-        setIndice(Math.max(0, Math.min(resultados.length - 1, indice + cantidad)));
+        const nuevoIndice = Math.max(0, Math.min(resultados.length - 1, indice + cantidad));
+        const cantidadVisible = Math.max(1, alto - 4);
+        const maximoInicio = Math.max(0, resultados.length - cantidadVisible);
+        let nuevoInicio = Math.min(inicio, maximoInicio);
+
+        if (nuevoIndice < nuevoInicio) {
+            nuevoInicio = nuevoIndice;
+        } else if (nuevoIndice >= nuevoInicio + cantidadVisible) {
+            nuevoInicio = nuevoIndice - cantidadVisible + 1;
+        }
+
+        setIndice(nuevoIndice);
+        setInicio(nuevoInicio);
     }
 
     function persistir(nuevos, texto) {
@@ -217,7 +256,10 @@ function Agenda() {
         }
 
         setConsulta("");
-        setIndice(nuevos.findIndex(actual => actual.id === contacto.id));
+        const nuevoIndice = nuevos.findIndex(actual => actual.id === contacto.id);
+        const cantidadVisible = Math.max(1, alto - 4);
+        setIndice(nuevoIndice);
+        setInicio(Math.max(0, nuevoIndice - cantidadVisible + 1));
         setEdicion(null);
         setFoco("lista");
     }
@@ -230,6 +272,7 @@ function Agenda() {
         }
 
         setIndice(0);
+        setInicio(0);
         setBorrando(null);
     }
 
@@ -244,8 +287,7 @@ function Agenda() {
             if (tecla.return || tecla.tab) {
                 setFoco("lista");
             } else if (tecla.escape) {
-                setConsulta("");
-                setIndice(0);
+                exit();
             }
             return;
         }
@@ -317,10 +359,11 @@ function Agenda() {
                 <TextInput
                     value={consulta}
                     focus={foco === "buscar" && !ocupado}
-                    placeholder="nombre, teléfono o email"
+                    placeholder="legajo, nombre, teléfono o GitHub"
                     onChange={valor => {
                         setConsulta(valor);
                         setIndice(0);
+                        setInicio(0);
                     }}
                 />
             </Box>
@@ -329,6 +372,7 @@ function Agenda() {
                 <Lista
                     contactos={resultados}
                     indice={indice}
+                    inicio={inicio}
                     alto={alto}
                     activa={foco === "lista" && !ocupado}
                 />

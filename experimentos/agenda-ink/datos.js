@@ -1,8 +1,11 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ARCHIVO = path.join(__dirname, "agenda.json");
 
 function cargarContactos() {
@@ -18,7 +21,7 @@ function guardarContactos(contactos) {
 }
 
 function nombreCompleto(contacto) {
-    return `${contacto.nombre} ${contacto.apellido}`.trim();
+    return `${contacto.apellido}, ${contacto.nombre}`.trim();
 }
 
 function filtrarContactos(contactos, consulta) {
@@ -34,7 +37,7 @@ function filtrarContactos(contactos, consulta) {
 
     return contactos.filter(contacto => {
         const texto = normalizar(
-            `${nombreCompleto(contacto)} ${contacto.telefono} ${contacto.email}`
+            `${contacto.legajo} ${nombreCompleto(contacto)} ${contacto.telefono} ${contacto.github}`
         );
 
         return palabras.every(palabra => texto.includes(palabra));
@@ -45,7 +48,7 @@ function siguienteId(contactos) {
     return Math.max(0, ...contactos.map(contacto => contacto.id)) + 1;
 }
 
-module.exports = {
+export {
     cargarContactos,
     filtrarContactos,
     guardarContactos,
