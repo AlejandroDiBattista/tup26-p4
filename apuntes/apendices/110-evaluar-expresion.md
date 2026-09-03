@@ -61,36 +61,20 @@ programa solo depende de ese contrato.
 
 ```js
 class Stack {
-  constructor(maximo = 20) {
-    this.elementos = new Array(maximo);
+  constructor() {
+    this.elementos = [];
     this.contador = 0;
   }
 
   push(elemento) {
-    if (this.contador === this.elementos.length) {
-      throw new Error("La pila alcanzó su capacidad máxima");
-    }
-
-    this.elementos[this.contador] = elemento;
-    this.contador += 1;
+    this.elementos[this.contador++] = elemento;
   }
 
   pop() {
-    if (this.empty) {
-      throw new Error("No se puede retirar un elemento de una pila vacía");
-    }
-
-    this.contador -= 1;
-    const elemento = this.elementos[this.contador];
-    this.elementos[this.contador] = undefined;
-    return elemento;
+    return this.elementos[--this.contador];
   }
 
   get top() {
-    if (this.empty) {
-      return undefined;
-    }
-
     return this.elementos[this.contador - 1];
   }
 
@@ -108,6 +92,14 @@ elementos: [A, B, C, _, _]
 contador:              3
                          ↑ próxima posición disponible
 ```
+
+En `push`, el posincremento usa primero el valor actual de `contador` como
+índice y después lo incrementa. En `pop`, el predecremento reduce primero el
+contador y usa el nuevo valor para acceder al último elemento almacenado.
+
+Esta versión supone que la pila se utiliza correctamente: no controla una
+extracción cuando está vacía ni impone una capacidad máxima. El array comienza
+vacío y crece automáticamente a medida que se agregan elementos.
 
 En una pila no se accede a un elemento arbitrario. La única entrada válida es
 el tope. Esta restricción permite razonar sobre el orden de procesamiento y
@@ -321,8 +313,7 @@ explícitos:
 - no distingue entre resta binaria y signo unario;
 - no admite funciones como `sin(2)`;
 - no incorpora el operador de potencia ni otros operadores;
-- no verifica de manera detallada si faltan operandos;
-- la capacidad de cada pila es fija.
+- no verifica de manera detallada si faltan operandos.
 
 Por ejemplo, `-3 + 2` no se interpreta como una expresión con signo unario,
 porque el primer token debería ser un número. Para soportarlo habría que
