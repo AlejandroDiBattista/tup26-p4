@@ -34,5 +34,84 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+// Escribir aqui la solución al enunciado.</c>
+
+function parseArgs(argv) {
+  // argv es process.argv
+  const origen = argv[2];
+  const destino = argv[3];
+  const flags = argv.slice(4);
+  const valores = {
+    delimiter: ",",
+    noHeader: false,
+    sortFields: []
+  };
+
+  if (flags.includes("-h") || flags.includes("--help")) {
+    console.log(HELP);
+    process.exit(0);
+  }
+
+  // validaciones de argumentos
+
+  if (!origen || !destino) {
+    console.error("Error: Debe especificar un archivo de origen y un archivo de destino.");
+    process.exit(1);
+  }
+
+
+  for (let i = 0; i < flags.length; i++) {
+    const flag = flags[i];
+    if (flag === "-b" || flag === "--by") {
+      const criterio = flags[i + 1];
+        if (!criterio) {
+            console.error("Error: Falta el criterio de ordenamiento después de " + flag);
+            process.exit(1);
+        }
+        valores.sortFields.push(criterio);
+        i++;
+    } else if (flag === "-d" || flag === "--delimiter") {
+      const delimiter = flags[i + 1];
+        if (!delimiter) {
+            console.error("Error: Falta el delimitador después de " + flag);
+            process.exit(1);
+        }
+        valores.delimiter = delimiter;
+        i++;
+    }
+    else if (flag === "-nh" || flag === "--no-header") {
+      valores.noHeader = true;
+    }
+    else {
+        console.error("Error: Opción desconocida " + flag);
+        process.exit(1);
+    }
+  }
+
+  if (valores.delimiter.length !== 1) {
+    console.error("Error: El delimitador debe ser un solo carácter.");
+    process.exit(1);
+  }
+
+
+  if (valores.sortFields.length === 0) {
+    console.error("Error: Debe especificar al menos un criterio de ordenamiento con -b o --by.");
+    process.exit(1);
+  }
+
+
+  return {
+    inputFile: origen,
+    outputFile: destino,
+    delimiter: valores.delimiter,
+    noHeader: valores.noHeader,
+    sortFields: valores.sortFields
+  };
+}
+
+
+console.log(parseArgs(process.argv));
+
+
+// console.log(HELP)
