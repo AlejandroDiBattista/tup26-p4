@@ -212,5 +212,12 @@ console.log(parseArgs(process.argv.slice(2)));
 
 
 //2
+function readInput(inputFile) {
+    try {
+        return readFileSync(inputFile, 'utf8');
+    } catch (error) {
+        errur('no se pudo leer el archivo: "' + inputFile + '"');
+    }
+}
 
 //console.log(HELP)
