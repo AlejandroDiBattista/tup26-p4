@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs';
 
 const HELP = `
 
@@ -36,36 +37,44 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 
+//* 1. parseArgs      → leer los argumentos y construir la configuración
+//* 2. readInput      → leer el archivo de origen
+//? 3. parseDelimited → convertir el texto en filas y columnas
+//? 4. sortRows       → ordenar las filas
+//? 5. serialize      → reconstruir el texto delimitado
+//? 6. writeOutput    → escribir el archivo de destino
+
+
 const args = process.argv.slice(2);
 
-function parseArgs(args){
-    
+function parseArgs(args) {
+
     if (args.includes('-h') || args.includes('--help')) {
         console.log(HELP)
         process.exit(0)
     }
 
     const config = {
-    inputFile: null,
-    outputFile: null,
-    delimiter: ',',
-    noHeader: false,
-    sortFields: []
-};
+        inputFile: null,
+        outputFile: null,
+        delimiter: ',',
+        noHeader: false,
+        sortFields: []
+    };
 
 
-for (let i = 0; i < args.length; i++) {
-    const arg = args[i]; 
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
 
-    if (arg === "-nh" || arg === "--no-header") {
-        config.noHeader = true;
-    } else if (arg === "-d" || arg === "--delimiter") {
-        if (i + 1 >= args.length) {
-            console.error("Error: Falta el valor para delimitar")
-            process.exit(1);
-        }
-        config.delimiter = args[++i];
-        if (config.delimiter === "\\t") config.delimiter = "\t";
+        if (arg === "-nh" || arg === "--no-header") {
+            config.noHeader = true;
+        } else if (arg === "-d" || arg === "--delimiter") {
+            if (i + 1 >= args.length) {
+                console.error("Error: Falta el valor para delimitar")
+                process.exit(1);
+            }
+            config.delimiter = args[++i];
+            if (config.delimiter === "\\t") config.delimiter = "\t";
         } else if (arg === "-b" || arg === "--by") {
             if (i + 1 >= args.length) {
                 console.error("Error: Falta el valor para ordenar")
@@ -73,9 +82,9 @@ for (let i = 0; i < args.length; i++) {
             }
             const parts = args[++i].split(':');
             config.sortFields.push({
-                field: parts[0],
-                type: parts[1] || 'num',
-                order: parts[2] || 'desc'
+                name: parts[0],
+                numeric: parts[1] === 'num',
+                descending: parts[2] === 'desc'
             });
         } else if (!arg.startsWith('-')) {
             if (!config.inputFile) {
@@ -84,23 +93,53 @@ for (let i = 0; i < args.length; i++) {
                 config.outputFile = arg;
             }
         }
-        else{
+        else {
             console.error(`Error: Opción desconocida ${arg}`);
             process.exit(1);
         }
     }
-    if (config.sortFields.length === 0) {
-        console.error("Error: No se especificó ningún criterio de ordenamiento");
+    if (!config.inputFile) {
+        console.error("Error: Falta el archivo de origen");
+        process.exit(1);
+    }
+    if (!config.outputFile) {
+        console.error("Error: Falta el archivo de destino");
         process.exit(1);
     }
     if (config.delimiter.length !== 1) {
         console.error("Error: El delimitador debe ser un solo carácter");
         process.exit(1);
     }
+    if (config.sortFields.length === 0) {
+        console.error("Error: No se especificó ningún criterio de ordenamiento");
+        process.exit(1);
+    }
 
-return config;
+    return config;
 }
 
-const config = parseArgs(args);
-console.log(config);
 
+function readInput(filePath) {
+    try {
+        const archivo = readFileSync(filePath, 'utf-8');
+        return archivo;
+    }
+    catch (error) {
+        console.error(`Error: No se pudo leer el archivo de origen ${filePath}`);
+        process.exit(1);
+    }
+}
+
+function parseDelimited(texto, delimiter) {
+    const lines = texto.split('\n');
+    const rows = lines.map(line => line.split(delimiter));
+    return rows;
+}
+
+
+const config = parseArgs(args);
+const inputData = readInput(config.inputFile);
+const parsedData = parseDelimited(inputData, config.delimiter);
+console.log(config);
+console.log(inputData);
+console.log(parsedData);
