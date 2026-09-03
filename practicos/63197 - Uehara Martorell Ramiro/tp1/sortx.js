@@ -37,17 +37,26 @@ EJEMPLOS:
 // Escribir aqui la solución al enunciado.
 
 //1
-function parseArgs(arrayDeStrings) {
-    const objetoConDosPropiedades = {
-        inputFile: arrayDeStrings[0],
-        outputFile: arrayDeStrings[1]
+function parseArgs(arrayDeStrings) 
+    {
+        const objetoConDosPropiedades = {
+            inputFile: arrayDeStrings[0],
+            outputFile: arrayDeStrings[1],
+            noHeader: false
+        };
+
+        let i = 0;
+            while (i < arrayDeStrings.length) 
+
+                {
+                if (arrayDeStrings[i] === '-nh' || arrayDeStrings[i] === '--no-header') 
+                    {
+                        objetoConDosPropiedades.noHeader = true;
+                    }
+                i++;
+                }
+                return objetoConDosPropiedades;
     }
-    return objetoConDosPropiedades;
-}
+
 console.log(parseArgs(process.argv.slice(2)));
-
-
-
-
-
 //console.log(HELP)
