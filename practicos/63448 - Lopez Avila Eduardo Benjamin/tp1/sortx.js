@@ -62,13 +62,36 @@ function configuracion() {
 		config.delimitador =
 			argumentos[argumentos.indexOf("-d") + 1] ||
 			argumentos[argumentos.indexOf("--delimiter") + 1];
-	} else if (
-		argumentos.includes("-nh") ||
-		argumentos.includes("--no-header")
-	) {
+	}
+	if (argumentos.includes("-nh") || argumentos.includes("--no-header")) {
 		config.noHeader = true;
 	}
+	if (argumentos.includes("-b") || argumentos.includes("--by")) {
+		const crit = [];
+		const indices = [];
+		argumentos.forEach((arg, index) => {
+			if (arg === "-b" || arg === "--by") {
+				indices.push(index);
+			}
+		});
+		indices.forEach((index) => {
+			const criterio = argumentos[index + 1];
+			if (criterio) {
+				const partes = criterio.split(":");
+				const nombre = partes[0];
+				const tipo = partes[1] || "alpha";
+				const orden = partes[2] || "asc";
+				crit.push({
+					name: nombre,
+					numeric: tipo === "num",
+					descending: orden === "desc",
+				});
+			}
+		});
+		config.criterios = crit;
+	}
 	console.log(argumentos);
+	console.log(config);
 }
 
 function traductor() {
