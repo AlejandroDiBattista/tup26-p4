@@ -57,14 +57,27 @@ while (i < args.length) {
     if (opcion === "-b" || opcion === "--by"){
         const valor = args[i + 1];
         if (valor) {
+
+            const partes=
+            valor.split(":");
+
             config.sortFields.push({
-                name: valor,
-                numeric: false,
-                descending:false
+                name: partes[0],
+                numeric: partes[1] ==="num",
+                descending:
+                partes[2] ==="desc"
             });
         }
         i += 2;
     } else if (opcion === "-d" || opcion === "--delimiter"){
+        
+        const valor = args[i + 1];
+        if (valor === "\\t") {
+            config.delimiter = "\t";
+        } else if (valor){
+            config.delimiter = valor;
+        }
+
         i += 2;
     } else if(opcion === "-nh" || opcion === "--no-header") {
         config.noHeader = true;
