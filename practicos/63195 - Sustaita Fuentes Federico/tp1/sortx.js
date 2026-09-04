@@ -217,13 +217,34 @@ function sortRows(rows, config, header) {
     })
 }
 
+
+function serialize(header, rows, config) {
+    const lines = []
+    if (header) {
+        lines.push(header.join(config.delimiter))
+    }
+    for (const row of rows) {
+        lines.push(row.join(config.delimiter))
+    }
+    return lines.join('\n') + '\n'
+}
+
+function writeOutput(config, text) {
+    try {
+        fs.writeFileSync(config.outputFile, text, 'utf8')
+    } catch (err) {
+        throw fail(`no se pudo escribir el archivo de destino "${config.outputFile}": ${err.message}`)
+    }
+}
+
         function main() {
         try {
             const config = parseArgs(process.argv.slice(2));
             const rawText = readInput(config);
             const { header, rows } = parseDelimited(rawText, config);
             const sortedRows = sortRows(rows, config, header);
-            console.log(sortedRows); // TODO: reemplazar por el resto del pipeline
+            const outputText = serialize(header, sortedRows, config);
+            writeOutput(config, outputText);
         } catch (err) {
             console.error(`Error: ${err.message}`);
             process.exit(1);
