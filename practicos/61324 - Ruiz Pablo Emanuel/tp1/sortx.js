@@ -35,4 +35,84 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+//console.log(HELP)//
+import fs from "fs";
+
+function parseArgs(args) {
+    if (args.includes("-h") || 
+args.includes("--help")){
+    return {help:true};
+}
+const config = {
+    inputFile: args[0],
+    outputFile: args[1],
+    delimiter: ",",
+    noHeader: false,
+    sortFields: []
+};
+let i = 2;
+while (i < args.length) {
+    const opcion = args[i];
+
+    if (opcion === "-b" || opcion === "--by"){
+        const valor = args[i + 1];
+        if (valor) {
+            config.sortFields.push({
+                name: valor,
+                numeric: false,
+                descending:false
+            });
+        }
+        i += 2;
+    } else if (opcion === "-d" || opcion === "--delimiter"){
+        i += 2;
+    } else if(opcion === "-nh" || opcion === "--no-header") {
+        config.noHeader = true;
+        i++;
+    } else {
+        i++;
+    }
+}
+return config;
+}
+function readInput(file) {
+    return fs.readFileSync(file, "utf8");
+}
+function parseDelimited(text, delimiter){
+    const lineas = text.split(/\r?\n/);
+    return lineas.map(linea => linea.split(delimiter));
+}
+function sortRows(rows, config) {
+    return rows;
+}
+function serialize(rows, delimiter) {
+    return rows.map(row => row.join(delimiter)).join("\n");
+}
+function writeOutput(file, text) {
+    fs.writeFileSync(file, text, "utf8");
+}
+function main() {
+    try{
+        const config = parseArgs(process.argv.slice(2));
+        if(config.help){
+            console.log(HELP);
+            return;
+        }
+        const texto =
+         readInput(config.inputFile);
+        const filas =
+        parseDelimited(texto, config.delimiter);
+        const ordenadas = 
+        sortRows(filas, config);
+        const resultado = 
+        serialize(ordenadas, config.delimiter);
+
+        writeOutput(config.outputFile, resultado);
+    } catch (error) {
+        console.error("Error:",
+            error.message
+        );
+        process.exit(1);
+    }
+}
+main();
