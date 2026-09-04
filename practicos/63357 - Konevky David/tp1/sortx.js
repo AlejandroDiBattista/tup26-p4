@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 const HELP = `
 
@@ -86,6 +86,9 @@ function parseOpciones(opciones) {
 
         if (isDelimiter(opcion)) {
             config.delimiter = shiftValue(opciones, opcion);
+            if (config.delimiter.length !== 1) {
+                logError(`El delimitador debe ser un único carácter: ${config.delimiter}`);
+            }
         } else if (isNoHeader(opcion)) {
             config.noHeader = true;
         } else if (isBy(opcion)) {
@@ -118,6 +121,8 @@ function parseArgs() {
 
 const separator = (input, args) => input.split("\n").map(linea => linea.replaceAll("\r", "").split(args.delimiter));
 
+
+
 function readInput(inputFile) {
     try {
         return readFileSync(inputFile, "utf-8");
@@ -126,12 +131,32 @@ function readInput(inputFile) {
     }
 }
 
+
+
 function parseDelimited(input, args) {
+    if (input.includes('"')) {
+        logError(`La entrada contiene comillas dobles, lo cual no está admitido`);
+    }
+
     const filas = separator(input, args);
+    const ultima = filas[filas.length - 1];
+    if (ultima.length === 1 && ultima[0] === "") {
+        filas.pop();
+    }
+
+    const cantidadCampos = filas[0].length;
+    for (const fila of filas) {
+        if (fila.length !== cantidadCampos) {
+            logError(`Todas las filas deben tener la misma cantidad de campos`);
+        }
+    }
+
     if (args.noHeader) return { header: null, rows: filas };
     const [header, ...rows] = filas;
     return { header, rows };
 }
+
+
 
 function compareValues(valorA, valorB, numeric) {
     if (numeric) {
@@ -165,16 +190,30 @@ function sortRows(rows, sortFields, header) {
     return rows;
 }
 
+
+
+function serialize(header, rows, delimiter) {
+    const lines = header ? [header, ...rows] : rows;
+    return lines.map(row => row.join(delimiter)).join("\n");
+}
+
+function writeOutput(outputFile, output) {
+    try {
+        writeFileSync(outputFile, output);
+        return console.log(`Archivo ordenado correctamente: ${outputFile}`);
+    } catch (error) {
+        logError(`Error al escribir el archivo: ${error.message}`);
+    }
+}
+
+
+
 function main() {
     const args = parseArgs();
     const input = readInput(args.inputFile);
     const { header, rows } = parseDelimited(input, args);
     const sortedRows = sortRows(rows, args.sortFields, header);
-    if (args.noHeader) {
-        console.log(sortedRows);
-    } else {
-        console.log(header, sortedRows);
-    }
-    /*TODO: return writeOutput(args.outputFile, header, sortedRows, args.delimiter);*/
+    const output = serialize(header, sortedRows, args.delimiter);
+    return writeOutput(args.outputFile, output);
 }
 main();
