@@ -166,7 +166,7 @@ function parseDelimited(text, delimiter) {
   }
   return rows;
 }
-function sortRows(rows, confing) {
+function sortRows(rows, config) {
   if (rows.length === 0) {
     throw new Error("el archivo de origen esta vacio");
   }
@@ -188,7 +188,7 @@ function sortRows(rows, confing) {
     }
     return {
       ...field,
-      columIndex,
+      columnIndex,
     };
   });
   for (const criterion of criteria) {
@@ -222,7 +222,7 @@ function sortRows(rows, confing) {
         comparison = firstValue.localeCompare(secondValue, "es");
       }
       if (comparison !== 0) {
-        return criterion.descendin ? -comparison : comparison;
+        return criterion.descending ? -comparison : comparison;
       }
     }
     return first.originalIndex - second.originalIndex;
@@ -245,5 +245,21 @@ function writeOutput(outputFile, content) {
     );
   }
 }
-// Escribir aqui la solución al enunciado.
-console.log(HELP);
+function main() {
+  try {
+    const config = parseArgs(process.argv.slice(2));
+    if (config.help) {
+      console.log(HELP);
+      return;
+    }
+    const text = readInput(config.inputFile);
+    const rows = parseDelimited(text, config.delimiter);
+    const sortedRows = sortRows(rows, config);
+    const output = serialize(sortedRows, config.delimiter);
+    writeOutput(config.outputFile, output);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exitCode = 1;
+  }
+}
+main();
