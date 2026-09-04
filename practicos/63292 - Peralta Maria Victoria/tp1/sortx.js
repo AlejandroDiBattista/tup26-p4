@@ -93,6 +93,7 @@ function parseDelimited(text, delimiter, noHeader) {
 
   return { header, rows: data };
 }
+
 function fieldIndex(name, header, noHeader, n) {
   if (noHeader) {
     const idx = Number(name);
@@ -130,6 +131,14 @@ function sortRows(rows, sortFields, header, noHeader) {
     return 0;
   });
 }
+
+function serialize(header, rows, delimiter, noHeader) {
+  const lines = [];
+  if (!noHeader) lines.push(header.join(delimiter));
+  for (const r of rows) lines.push(r.join(delimiter));
+  return lines.join('\n') + '\n';
+}
+
 function main() {
   try {
     const config = parseArgs(process.argv.slice(2));
@@ -140,7 +149,8 @@ function main() {
     const raw = readInput(config.inputFile);
     const { header, rows } = parseDelimited(raw, config.delimiter, config.noHeader);
     const sorted = sortRows(rows, config.sortFields, header, config.noHeader);
-    console.log(sorted);
+    const out = serialize(header, sorted, config.delimiter, config.noHeader);
+    console.log(out);
   } catch (e) {
     console.error(`Error: ${e.message}`);
     process.exit(1);
