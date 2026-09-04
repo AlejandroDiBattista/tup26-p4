@@ -93,7 +93,43 @@ function parseDelimited(text, delimiter, noHeader) {
 
   return { header, rows: data };
 }
+function fieldIndex(name, header, noHeader, n) {
+  if (noHeader) {
+    const idx = Number(name);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= n) throw new Error(`el campo '${name}' no existe`);
+    return idx;
+  }
+  const idx = header.indexOf(name);
+  if (idx === -1) throw new Error(`el campo '${name}' no existe`);
+  return idx;
+}
 
+function cmp(a, b, numeric) {
+  if (!numeric) return a.localeCompare(b);
+  const na = Number(a);
+  const nb = Number(b);
+  if (Number.isNaN(na)) throw new Error(`valor no numérico: '${a}'`);
+  if (Number.isNaN(nb)) throw new Error(`valor no numérico: '${b}'`);
+  return na - nb;
+}
+
+function sortRows(rows, sortFields, header, noHeader) {
+  const n = header ? header.length : (rows[0] ? rows[0].length : 0);
+  const crit = sortFields.map((f) => ({
+    idx: fieldIndex(f.name, header, noHeader, n),
+    numeric: f.numeric,
+    desc: f.descending,
+  }));
+
+  return rows.slice().sort((r1, r2) => {
+    for (const c of crit) {
+      let res = cmp(r1[c.idx], r2[c.idx], c.numeric);
+      if (c.desc) res = -res;
+      if (res !== 0) return res;
+    }
+    return 0;
+  });
+}
 function main() {
   try {
     const config = parseArgs(process.argv.slice(2));
@@ -103,7 +139,8 @@ function main() {
     }
     const raw = readInput(config.inputFile);
     const { header, rows } = parseDelimited(raw, config.delimiter, config.noHeader);
-    console.log({ header, rows });
+    const sorted = sortRows(rows, config.sortFields, header, config.noHeader);
+    console.log(sorted);
   } catch (e) {
     console.error(`Error: ${e.message}`);
     process.exit(1);
