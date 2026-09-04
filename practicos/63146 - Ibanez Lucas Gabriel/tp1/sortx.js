@@ -87,8 +87,42 @@ function readInput(filePath) {
     }
 }
 
+// convertir el texto 
+
+function parseDelimited (texto, delimiter, noHeader) {
+    if (texto.includes('"')) {
+        console.error(`error: el archivo contiene comillas dobles`);
+        process.exit(1);
+    } 
+
+    let data = {header:[], rows:[]};
+    let lineas = texto.replace(/\r\n/g, "\n").split("\n");
+    if (lineas[lineas.length - 1] === "") {
+        lineas.pop();
+    }
+    let rows = lineas.map(linea=>linea.split(delimiter));
+    let cantidad = rows[0].length;
+    for (let i = 0; i < rows.length; i++) { /// este for va a checkear que todas las filas tengan la misma cantidad de campos
+        if (rows[i].length !== cantidad) {
+            console.error(`error: la fila ${i + 1} tiene distinta cantidad de campos`);
+            process.exit(1);
+        }
+    }
+    if(!noHeader){
+        data.header = rows.shift();
+    }else{
+        data.header = rows[0].map((valor, i)=>i)
+    }
+    data.rows = rows;
+    return data;
+}
+
+
+
 
 
 
 let verConfiguracion = parseArgs(process.argv.slice(2));
-console.log(verConfiguracion);
+let texto = readInput(verConfiguracion.inputFile);
+let datos = parseDelimited(texto, verConfiguracion.delimiter, verConfiguracion.noHeader);
+console.log(datos);
