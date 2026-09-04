@@ -165,12 +165,65 @@ function parseDelimited(text, config) {
     return { header, rows }
 }
 
+
+function resolveFieldIndex(field, header, config, columnCount) {
+    if (config.noHeader) {
+        const index = Number(field)
+        if (!Number.isInteger(index) || index < 0 || index >= columnCount) {
+            throw fail(`el campo solicitado no existe: "${field}".`)
+        }
+        return index
+    }
+
+    const index = header.indexOf(field)
+    if (index === -1) {
+        throw fail(`el campo solicitado no existe: "${field}".`)
+    }
+    return index
+}
+
+function sortRows(rows, config, header) {
+    const columnCount = header ? header.length : (rows[0] ? rows[0].length : 0)
+
+    const fields = config.sortFields.map((sf) => ({
+        ...sf,
+        index: resolveFieldIndex(sf.name, header, config, columnCount),
+    }))
+
+    for (const field of fields) {
+        if (!field.numeric) continue
+        for (const row of rows) {
+            const raw = row[field.index].trim()
+            if (raw === '' || Number.isNaN(Number(raw))) {
+                throw fail(`valor no numérico "${row[field.index]}" en el campo "${field.name}".`)
+            }
+        }
+    }
+
+    return [...rows].sort((a, b) => {
+        for (const field of fields) {
+            const valueA = a[field.index]
+            const valueB = b[field.index]
+
+            const cmp = field.numeric
+                ? Number(valueA) - Number(valueB)
+                : valueA.localeCompare(valueB, 'es', { sensitivity: 'base' })
+
+            if (cmp !== 0) {
+                return field.descending ? -cmp : cmp
+            }
+        }
+        return 0
+    })
+}
+
         function main() {
         try {
             const config = parseArgs(process.argv.slice(2));
             const rawText = readInput(config);
             const { header, rows } = parseDelimited(rawText, config);
-            console.log({ header, rows }); // TODO: reemplazar por el resto del pipeline
+            const sortedRows = sortRows(rows, config, header);
+            console.log(sortedRows); // TODO: reemplazar por el resto del pipeline
         } catch (err) {
             console.error(`Error: ${err.message}`);
             process.exit(1);
