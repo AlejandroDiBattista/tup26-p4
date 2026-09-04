@@ -139,6 +139,14 @@ function serialize(header, rows, delimiter, noHeader) {
   return lines.join('\n') + '\n';
 }
 
+function writeOutput(path, text) {
+  try {
+    fs.writeFileSync(path, text, 'utf8');
+  } catch (e) {
+    throw new Error(`no se pudo escribir ${path}: ${e.message}`);
+  }
+}
+
 function main() {
   try {
     const config = parseArgs(process.argv.slice(2));
@@ -150,7 +158,7 @@ function main() {
     const { header, rows } = parseDelimited(raw, config.delimiter, config.noHeader);
     const sorted = sortRows(rows, config.sortFields, header, config.noHeader);
     const out = serialize(header, sorted, config.delimiter, config.noHeader);
-    console.log(out);
+    writeOutput(config.outputFile, out);
   } catch (e) {
     console.error(`Error: ${e.message}`);
     process.exit(1);
