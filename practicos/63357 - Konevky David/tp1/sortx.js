@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 
 const HELP = `
 
@@ -51,10 +52,12 @@ function logError(message) {
   process.exit(1);
 }
 
-function getNextValue(i, opciones, flag) {
-  if (i + 1 >= opciones.length) logError(`${flag} requiere un valor`);
-  return opciones[i + 1];
+function shiftValue(opciones, flag) {
+  if (opciones.length === 0) logError(`${flag} requiere un valor`);
+  return opciones.shift();
 }
+
+
 
 function handleByCriterios(opcion) {
     const [name, tipo = "alpha", orden = "asc"] = opcion.split(":");
@@ -74,21 +77,19 @@ function handleByCriterios(opcion) {
 function parseOpciones(opciones) {
     const config = {
         sortFields: [],
-        delimiter: ',',
+        delimiter: ",",
         noHeader: false
     };
 
-    for (let i = 0; i < opciones.length; i++) {
-        const opcion = opciones[i];
+    while (opciones.length > 0) {
+        const opcion = opciones.shift();
 
         if (isDelimiter(opcion)) {
-            config.delimiter = getNextValue(i, opciones, opcion);
-            i++;
+            config.delimiter = shiftValue(opciones, opcion);
         } else if (isNoHeader(opcion)) {
             config.noHeader = true;
         } else if (isBy(opcion)) {
-            config.sortFields.push(handleByCriterios(getNextValue(i, opciones, opcion)));
-            i++;
+            config.sortFields.push(handleByCriterios(shiftValue(opciones, opcion)));
         } else {
             logError(`Opción inválida: ${opcion}`);
         }
@@ -107,9 +108,41 @@ function parseArgs() {
     if (isHelp(args[0])) return help();
 
     const [inputFile, outputFile, ...opciones] = args;
+
+    if (!inputFile || !outputFile) return logError(`Falta el archivo de origen o destino`);
+
     const config = parseOpciones(opciones);
 
     return { inputFile, outputFile, ...config };
 }
 
-console.log(parseArgs());
+const separator = (input, args) => input.split("\n").map(linea => linea.replaceAll('\r', '').split(args.delimiter));
+
+function readInput(inputFile) {
+    try {
+        return readFileSync(inputFile, "utf-8");
+    } catch (error) {
+        logError(`Error al leer el archivo: ${error.message}`);
+    }
+}
+
+function parseDelimited(input, args) {
+    const filas = separator(input, args);
+    if (args.noHeader) {
+        return { header: null, rows: filas };
+    }
+    const [header, ...rows] = filas;
+    return { header, rows };
+}
+
+function main() {
+    const args = parseArgs();
+    const input = readInput(args.inputFile);
+    const { header, rows } = parseDelimited(input, args);
+    if (args.noHeader) {
+        console.log(rows);
+    } else {
+        console.log(header, rows);
+    }
+}
+main();
