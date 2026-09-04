@@ -36,9 +36,13 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\\t" -b nombre
 `
 
+// Crea un Error "de dominio" para las fallas esperadas del programa.
+// Se usa como helper para mantener el mismo estilo en todos los
+// puntos donde se informan errores.
 function fail(message) {
     return new Error(message)
 }
+// 1. parseArgs → lee los argumentos y construye la configuración.
 function parseArgs(argv) {
     if (argv.includes('-h') || argv.includes('--help')) {
         console.log(HELP);
@@ -99,6 +103,7 @@ function parseArgs(argv) {
     
     return config;
 }
+    // Interpreta "campo[:tipo[:orden]]" y valida sus partes.
     function parseSortField(raw) {
         const parts = raw.split(':');
         if (parts.length > 3 || parts[0] === '') {
@@ -117,6 +122,7 @@ function parseArgs(argv) {
         return { name, numeric: tipo === 'num', descending: orden === 'desc' };
     }
     
+    // Resuelve el valor de -d/--delimiter, incluyendo el caso especial "\t".
     function resolveDelimiter(value) {
         const resolved = value === '\\t' ? '\t' : value;
         if (resolved.length !== 1) {
@@ -126,6 +132,7 @@ function parseArgs(argv) {
         }
         
 
+// 2. readInput → lee el archivo de origen.
 function readInput(config) {
     try {
         return fs.readFileSync(config.inputFile, 'utf8')
@@ -134,6 +141,7 @@ function readInput(config) {
     }
 }
 
+// 3. parseDelimited → convierte el texto en filas y columnas.
 function parseDelimited(text, config) {
     const lines = text.split(/\r\n|\n/)
     if (lines.length > 0 && lines[lines.length - 1] === '') {
@@ -166,6 +174,7 @@ function parseDelimited(text, config) {
 }
 
 
+// Traduce el nombre/índice de un campo a un índice de columna concreto.
 function resolveFieldIndex(field, header, config, columnCount) {
     if (config.noHeader) {
         const index = Number(field)
@@ -182,6 +191,7 @@ function resolveFieldIndex(field, header, config, columnCount) {
     return index
 }
 
+// 4. sortRows → ordena las filas.
 function sortRows(rows, config, header) {
     const columnCount = header ? header.length : (rows[0] ? rows[0].length : 0)
 
@@ -218,6 +228,7 @@ function sortRows(rows, config, header) {
 }
 
 
+// 5. serialize → reconstruye el texto delimitado.
 function serialize(header, rows, config) {
     const lines = []
     if (header) {
@@ -229,6 +240,7 @@ function serialize(header, rows, config) {
     return lines.join('\n') + '\n'
 }
 
+// 6. writeOutput → escribe el archivo de destino.
 function writeOutput(config, text) {
     try {
         fs.writeFileSync(config.outputFile, text, 'utf8')
@@ -237,6 +249,7 @@ function writeOutput(config, text) {
     }
 }
 
+// Punto de entrada: invoca el pipeline en orden y maneja errores generales.
         function main() {
         try {
             const config = parseArgs(process.argv.slice(2));
