@@ -1,38 +1,84 @@
 #!/usr/bin/env node
 
-const HELP = `
+function parseArgs(argv) {
+    let configuracion = {
+        delimiter: ",",
+        noHeader: false,
+        sortFields: [],
+    }
 
-sortx — Ordena archivos de texto delimitados
+    let posiciones = []
+    while (argv.length > 0) {
+        const opcion = argv.shift();
 
-USO:
-    sortx <origen> <destino> [opciones]
+        if (opcion === "-b" || opcion === "--by") {
+            let campos = argv.shift();
+            if (campos === undefined) {
+                console.error(`error: la opciom "${opcion}" requiere un valor.`);
+                process.exit(1);
+            }
+            let partes = campos.split(":");
 
-ARGUMENTOS:
-    origen              Archivo que se desea ordenar.
-    destino             Archivo donde se guardará el resultado.
+            let field = { name: partes[0], numeric: partes[1] === "num", descending: partes[2] === "desc" };
+            configuracion.sortFields.push(field);
+        } else if (opcion === "-d" || opcion === "--delimiter") {
+            let valor = argv.shift();
+            if (valor === undefined) {
+                console.error(`error: la opcion "${opcion}" requiere un valor.`);
+                process.exit(1);
+            }
+            configuracion.delimiter = valor;
 
-OPCIONES:
-    -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
-                        Formato: campo[:tipo[:orden]]
-                        tipo: alpha (predeterminado) o num
-                        orden: asc (predeterminado) o desc
+        } else if (opcion === "-nh" || opcion === "--no-header") {
+            configuracion.noHeader = true;
+        }
+        else if (opcion === "-h" || opcion === "--help") {
+            console.log("Uso: sortx [opciones] <archivo_entrada> <archivo_salida>");
+            console.log("Opciones:");
+            console.log("  -b, --by <campo>      Campo por el cual ordenar");
+            console.log("  -d, --delimiter <delim> Delimitador de campos");
+            console.log("  -nh, --no-header      No hay encabezado en el archivo");
+            console.log("  -h, --help            Mostrar esta ayuda");
+            process.exit(0);
+        } else if (opcion.startsWith("-")) { // aqui si viene con solo guio cierra el program
+         console.error(`error: solo acepta comandos que estan en help "${opcion}" .`);
+   process.exit(1);
+        }
+        else {
+            posiciones.push(opcion);
+        }
+    }
 
-    -d, --delimiter <c> Delimitador de un solo carácter.
-                        Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+    configuracion.inputFile = posiciones[0];
+    configuracion.outputFile = posiciones[1];
+    if (configuracion.inputFile === undefined) {
+        console.error("error: falta el archivo de origen.");
+        process.exit(1);
+    }
+    if (configuracion.outputFile === undefined) {
+        console.error("error: falta el archivo de destino.");
+        process.exit(1);
+    }
+    if (configuracion.sortFields.length === 0) {
+    console.error("error: debe especificar --by.");
+    process.exit(1);
+}
+if (configuracion.delimiter === "\\t") {
+    configuracion.delimiter = "\t";
+}
+if (configuracion.delimiter.length !== 1) {
+    console.error(`error: el delimitador debe ser un unico caracter"`);
+    process.exit(1);
+}
 
-    -nh, --no-header    Indica que el archivo no tiene encabezado.
-                        Los campos se identifican mediante índices desde cero.
+    return configuracion;
+}
 
-    -h, --help          Muestra esta ayuda.
 
-EJEMPLOS:
-    sortx empleados.csv ordenados.csv -b apellido
-    sortx empleados.csv salarios.csv -b salario:num:desc
-    sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
-    sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+
+
+
+let verConfiguracion = parseArgs(process.argv.slice(2));
+console.log(verConfiguracion);
