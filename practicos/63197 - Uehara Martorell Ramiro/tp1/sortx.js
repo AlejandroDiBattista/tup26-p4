@@ -44,6 +44,8 @@ function errur(mensaje) {
 }
 
 
+
+
 //1
 
 function interpretarDelimitador(valor) {
@@ -208,7 +210,13 @@ function parseArgs(arrayDeStrings) {
     return config;
 }
 
-console.log(parseArgs(process.argv.slice(2)));
+const config = parseArgs(process.argv.slice(2));
+const texto = readInput(config.inputFile);
+console.log(parseDelimited(texto, config.delimiter));
+
+
+
+
 
 
 //2
@@ -218,6 +226,61 @@ function readInput(inputFile) {
     } catch (error) {
         errur('no se pudo leer el archivo: "' + inputFile + '"');
     }
+}
+
+
+
+
+
+
+
+
+//3
+
+function parseDelimited(texto, delimiter) {
+
+    if (texto.includes('"')) {
+        errur('las comillas dobles no estan permitidas');
+
+    }
+
+    let limpio = texto.split('\r\n').join('\n');
+
+
+    while (limpio.endsWith('\n')) {
+
+        limpio = limpio.slice(0, limpio.length - 1);
+    }
+
+
+    if (limpio === '') {
+        
+        errur('el archivo de origen esta vacio');
+    }
+
+
+    const lineas = limpio.split('\n');
+
+    const filas = [];
+
+
+    for (let f = 0; f < lineas.length; f = f + 1) {
+
+        filas.push(lineas[f].split(delimiter));
+
+    }
+
+    const ancho = filas[0].length;
+
+    for (let f = 0; f < filas.length; f = f + 1) {
+
+        if (filas[f].length !== ancho) {
+            errur('la fila ' + (f + 1) + ' tiene ' + filas[f].length + ' campos y se esperaban ' + ancho);
+        }
+
+
+    }
+    return filas;
 }
 
 //console.log(HELP)
