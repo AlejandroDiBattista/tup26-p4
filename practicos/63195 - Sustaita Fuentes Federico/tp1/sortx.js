@@ -34,5 +34,103 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+function fail(message) {
+    return new Error(message)
+}
+function parseArgs(argv) {
+    if (argv.includes('-h' || argv.includes('--help')) ) {
+        console.log(HELP);
+        process.exit(0)
+    }
+    if (argv.length < 2) {
+        throw fail('falta el archivo de origen o el archivo de destino')
+    }
+    const[inputFile, outputFile]=argv
+    if (inputFile.startsWith('-') || outputFile.startsWith('-')) {
+        throw fail('falta el archivo de origen o el archivo de destino');
+    }
+    const config = {
+        inputFile,
+        outputFile,
+        delimiter:',',
+        noHeader: false,
+        sortFields:[],
+    }
+    for (let i = 2; i < argv.length; i++) {
+        const arg = argv[i];
+    
+        switch (arg) {
+            case '-b':
+            case '--by': {
+                const value = argv[i + 1];
+                if (value === undefined) {
+                throw fail(`la opción "${arg}" no recibió su valor.`);
+                }
+                config.sortFields.push(parseSortField(value));
+                i++;
+                break;
+            }
+        
+            case '-d':
+            case '--delimiter': {
+                const value = argv[i + 1];
+                if (value === undefined) {
+                throw fail(`la opción "${arg}" no recibió su valor.`);
+                }
+                config.delimiter = resolveDelimiter(value);
+                i++;
+                break;
+            }
+        
+            case '-nh':
+            case '--no-header':
+                config.noHeader = true;
+                break;
+        
+            default:
+                throw fail(`opción desconocida: "${arg}".`);
+        }
+    }
+    if (config.sortFields.length === 0) {
+        throw fail('no se especificó ningún criterio --by.');
+    }
+    
+    return config;
+}
+    function parseSortField(raw) {
+        const parts = raw.split(':');
+        if (parts.length > 3 || parts[0] === '') {
+            throw fail(`criterio de ordenamiento inválido: "${raw}".`);
+        }
+        
+        const [name, tipo = 'alpha', orden = 'asc'] = parts;
+        
+        if (tipo !== 'alpha' && tipo !== 'num') {
+            throw fail(`tipo inválido en "${raw}" (debe ser "alpha" o "num").`);
+        }
+        if (orden !== 'asc' && orden !== 'desc') {
+            throw fail(`orden inválido en "${raw}" (debe ser "asc" o "desc").`);
+        }
+        
+        return { name, numeric: tipo === 'num', descending: orden === 'desc' };
+    }
+    
+    function resolveDelimiter(value) {
+        const resolved = value === '\\t' ? '\t' : value;
+        if (resolved.length !== 1) {
+            throw fail('el delimitador no es un único carácter.');
+        }
+        return resolved;
+        }
+        
+        function main() {
+        try {
+            const config = parseArgs(process.argv.slice(2));
+            console.log(config); // TODO: reemplazar por el resto del pipeline
+        } catch (err) {
+            console.error(`Error: ${err.message}`);
+            process.exit(1);
+        }
+    }
+
+main();
