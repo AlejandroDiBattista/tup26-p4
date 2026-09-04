@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from "fs";
 function parseArgs(argv) {
     let configuracion = {
         delimiter: ",",
@@ -41,8 +41,8 @@ function parseArgs(argv) {
             console.log("  -h, --help            Mostrar esta ayuda");
             process.exit(0);
         } else if (opcion.startsWith("-")) { // aqui si viene con solo guio cierra el program
-         console.error(`error: solo acepta comandos que estan en help "${opcion}" .`);
-   process.exit(1);
+            console.error(`error: solo acepta comandos que estan en help "${opcion}" .`);
+            process.exit(1);
         }
         else {
             posiciones.push(opcion);
@@ -60,22 +60,32 @@ function parseArgs(argv) {
         process.exit(1);
     }
     if (configuracion.sortFields.length === 0) {
-    console.error("error: debe especificar --by.");
-    process.exit(1);
-}
-if (configuracion.delimiter === "\\t") {
-    configuracion.delimiter = "\t";
-}
-if (configuracion.delimiter.length !== 1) {
-    console.error(`error: el delimitador debe ser un unico caracter"`);
-    process.exit(1);
-}
+        console.error("error: debe especificar --by.");
+        process.exit(1);
+    }
+    if (configuracion.delimiter === "\\t") {
+        configuracion.delimiter = "\t";
+    }
+    if (configuracion.delimiter.length !== 1) {
+        console.error(`error: el delimitador debe ser un unico caracter"`);
+        process.exit(1);
+    }
 
     return configuracion;
 }
 
 
+/// Leer archivo
 
+function readInput(filePath) {
+    try {
+        let texto = fs.readFileSync(filePath, "utf8");
+        return texto;
+    } catch (err) {
+        console.error(`error: no se pudo leer el archivo de origen`);
+        process.exit(1);
+    }
+}
 
 
 
