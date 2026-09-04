@@ -210,10 +210,6 @@ function parseArgs(arrayDeStrings) {
     return config;
 }
 
-const config = parseArgs(process.argv.slice(2));
-const texto = readInput(config.inputFile);
-console.log(parseDelimited(texto, config.delimiter));
-
 
 
 
@@ -411,5 +407,78 @@ function sortRows(filas, sortFields, header) {
 
     return copia;
 }
+
+
+
+//5
+
+
+
+function serialize(header, filas, delimiter) {
+    const lineas = [];
+
+    if (header !== null) {
+        lineas.push(header.join(delimiter));
+    }
+
+    for (let f = 0; f < filas.length; f = f + 1) {
+        lineas.push(filas[f].join(delimiter));
+    }
+
+    return lineas.join('\n');
+}
+
+
+//6
+
+function writeOutput(outputFile, texto) {
+    try {
+        writeFileSync(outputFile, texto, 'utf8');
+    } catch (error) {
+        errur('no se pudo escribir el archivo de destino: "' + outputFile + '"');
+    }
+}
+
+
+
+
+
+
+function main() {
+
+    const config = parseArgs(process.argv.slice(2));
+
+    if (config.help) {
+
+        console.log(HELP);
+        return;
+    }
+
+    const texto = readInput(config.inputFile);
+
+    const filas = parseDelimited(texto, config.delimiter);
+
+
+    let header = null;
+    if (config.noHeader === false) {
+
+        header = filas.shift();
+    }
+
+    const ordenadas = sortRows(filas, config.sortFields, header);
+
+    const salida = serialize(header, ordenadas, config.delimiter);
+
+
+    writeOutput(config.outputFile, salida);
+
+}
+
+
+
+main();
+
+
+
 
 //console.log(HELP)
