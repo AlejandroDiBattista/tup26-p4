@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs'
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -123,10 +125,52 @@ function parseArgs(argv) {
         return resolved;
         }
         
+
+function readInput(config) {
+    try {
+        return fs.readFileSync(config.inputFile, 'utf8')
+    } catch (err) {
+        throw fail(`no se pudo leer el archivo de origen "${config.inputFile}": ${err.message}`)
+    }
+}
+
+function parseDelimited(text, config) {
+    const lines = text.split(/\r\n|\n/)
+    if (lines.length > 0 && lines[lines.length - 1] === '') {
+        lines.pop()
+    }
+
+    if (lines.length === 0) {
+        throw fail('el archivo de origen está vacío.')
+    }
+
+    for (const line of lines) {
+        if (line.includes('"')) {
+            throw fail('la entrada contiene comillas dobles, que no están admitidas.')
+        }
+    }
+
+    const allRows = lines.map((line) => line.split(config.delimiter))
+    const expectedFieldCount = allRows[0].length
+
+    allRows.forEach((row, idx) => {
+        if (row.length !== expectedFieldCount) {
+            throw fail(`la fila ${idx + 1} tiene ${row.length} campo(s), se esperaban ${expectedFieldCount}.`)
+        }
+    })
+
+    const header = config.noHeader ? null : allRows[0]
+    const rows = config.noHeader ? allRows : allRows.slice(1)
+
+    return { header, rows }
+}
+
         function main() {
         try {
             const config = parseArgs(process.argv.slice(2));
-            console.log(config); // TODO: reemplazar por el resto del pipeline
+            const rawText = readInput(config);
+            const { header, rows } = parseDelimited(rawText, config);
+            console.log({ header, rows }); // TODO: reemplazar por el resto del pipeline
         } catch (err) {
             console.error(`Error: ${err.message}`);
             process.exit(1);
