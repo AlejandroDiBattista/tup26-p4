@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const HELP = `
+/* const HELP = `
 
 sortx — Ordena archivos de texto delimitados
 
@@ -32,7 +32,19 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+` */
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+//console.log(HELP)
+
+//prueba_1
+
+let array = process.argv.slice(2);
+
+//console.log(array);
+
+for(let i = 0; i < array.length; i++){
+  if(array[i].startsWith("--")){console.log(array[i],":es una bandera")}
+  else{console.log(array[i])
+  }
+}
