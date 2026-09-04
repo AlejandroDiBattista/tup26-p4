@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
+
 const HELP = `
 sortx origen destino [-b|--by campo[:tipo[:orden]]]... [-d|--delimiter d] [-nh|--no-header] [-h|--help]
 tipo: alpha (default) | num
@@ -65,6 +67,33 @@ function parseArgs(args) {
   return config;
 }
 
+function readInput(path) {
+  try {
+    return fs.readFileSync(path, 'utf8');
+  } catch (e) {
+    throw new Error(`no se pudo leer ${path}: ${e.message}`);
+  }
+}
+
+function parseDelimited(text, delimiter, noHeader) {
+  if (text.includes('"')) throw new Error('el archivo contiene comillas dobles');
+
+  const lines = text.split(/\r\n|\n/).filter((l, idx, arr) => !(l === '' && idx === arr.length - 1));
+  if (lines.length === 0) throw new Error('el archivo está vacío');
+
+  const rows = lines.map((l) => l.split(delimiter));
+  const header = noHeader ? null : rows[0];
+  const data = noHeader ? rows : rows.slice(1);
+
+  const n = header ? header.length : data[0].length;
+  const all = header ? [header, ...data] : data;
+  for (const r of all) {
+    if (r.length !== n) throw new Error('las filas no tienen la misma cantidad de campos');
+  }
+
+  return { header, rows: data };
+}
+
 function main() {
   try {
     const config = parseArgs(process.argv.slice(2));
@@ -72,7 +101,9 @@ function main() {
       console.log(HELP);
       process.exit(0);
     }
-    console.log(config);
+    const raw = readInput(config.inputFile);
+    const { header, rows } = parseDelimited(raw, config.delimiter, config.noHeader);
+    console.log({ header, rows });
   } catch (e) {
     console.error(`Error: ${e.message}`);
     process.exit(1);
