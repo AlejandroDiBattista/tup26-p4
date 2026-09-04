@@ -237,7 +237,7 @@ function serialize(header, rows, config) {
     for (const row of rows) {
         lines.push(row.join(config.delimiter))
     }
-    return lines.join('\n') + '\n'
+    return lines.join('\n')
 }
 
 // 6. writeOutput → escribe el archivo de destino.
