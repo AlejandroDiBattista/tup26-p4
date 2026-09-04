@@ -48,7 +48,7 @@ function parseArgs(argv) {
     sortFields: []
   };
 
-  if (flags.includes("-h") || flags.includes("--help")) {
+  if (argv.includes("-h") || argv.includes("--help")) {
     console.log(HELP);
     process.exit(0);
   }
@@ -65,27 +65,42 @@ function parseArgs(argv) {
     const flag = flags[i];
     if (flag === "-b" || flag === "--by") {
       const criterio = flags[i + 1];
-        if (!criterio) {
-            console.error("Error: Falta el criterio de ordenamiento después de " + flag);
-            process.exit(1);
-        }
-        valores.sortFields.push(criterio);
-        i++;
+      if (!criterio) {
+        console.error("Error: Falta el criterio de ordenamiento después de " + flag);
+        process.exit(1);
+      }
+
+
+      const parts = criterio.split(":")
+      const name = parts[0]
+      const numeric = parts[1]
+      const descending = parts[2]
+
+      if (!name) {
+        console.error("Error: El criterio de ordenamiento debe especificar un campo.");
+        process.exit(1);
+      }
+      valores.sortFields.push({
+        name: name,
+        numeric: numeric === "num",
+        descending: descending === "desc"
+      });
+      i++;
     } else if (flag === "-d" || flag === "--delimiter") {
       const delimiter = flags[i + 1];
-        if (!delimiter) {
-            console.error("Error: Falta el delimitador después de " + flag);
-            process.exit(1);
-        }
-        valores.delimiter = delimiter;
-        i++;
+      if (!delimiter) {
+        console.error("Error: Falta el delimitador después de " + flag);
+        process.exit(1);
+      }
+      valores.delimiter = delimiter;
+      i++;
     }
     else if (flag === "-nh" || flag === "--no-header") {
       valores.noHeader = true;
     }
     else {
-        console.error("Error: Opción desconocida " + flag);
-        process.exit(1);
+      console.error("Error: Opción desconocida " + flag);
+      process.exit(1);
     }
   }
 
