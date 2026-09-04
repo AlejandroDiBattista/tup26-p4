@@ -35,4 +35,6 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+function parseArgs(){
+    
+}
