@@ -116,7 +116,7 @@ function parseArgs() {
     return { inputFile, outputFile, ...config };
 }
 
-const separator = (input, args) => input.split("\n").map(linea => linea.replaceAll('\r', '').split(args.delimiter));
+const separator = (input, args) => input.split("\n").map(linea => linea.replaceAll("\r", "").split(args.delimiter));
 
 function readInput(inputFile) {
     try {
@@ -128,21 +128,53 @@ function readInput(inputFile) {
 
 function parseDelimited(input, args) {
     const filas = separator(input, args);
-    if (args.noHeader) {
-        return { header: null, rows: filas };
-    }
+    if (args.noHeader) return { header: null, rows: filas };
     const [header, ...rows] = filas;
     return { header, rows };
+}
+
+function compareValues(valorA, valorB, numeric) {
+    if (numeric) {
+        const [numA, numB] = [Number(valorA), Number(valorB)];
+        if (Number.isNaN(numA) || Number.isNaN(numB)) {
+            logError(`Valor no numérico: ${Number.isNaN(numA) ? valorA : valorB}`);
+        }
+        return numA - numB;
+    }
+    return valorA.localeCompare(valorB);
+}
+
+function sortRows(rows, sortFields, header) {
+    const resolved = sortFields.map(field => {
+        const index = header ? header.indexOf(field.name) : Number(field.name);
+        if (index === -1 || Number.isNaN(index)) {
+            logError(`El campo solicitado no existe: ${field.name}`);
+        }
+        return { ...field, index };
+    });
+
+    rows.sort((a, b) => {
+        for (let field of resolved) {
+            const comparison = compareValues(a[field.index], b[field.index], field.numeric);
+            if (comparison !== 0) {
+                return field.descending ? -comparison : comparison;
+            }
+        }
+        return 0;
+    });
+    return rows;
 }
 
 function main() {
     const args = parseArgs();
     const input = readInput(args.inputFile);
     const { header, rows } = parseDelimited(input, args);
+    const sortedRows = sortRows(rows, args.sortFields, header);
     if (args.noHeader) {
-        console.log(rows);
+        console.log(sortedRows);
     } else {
-        console.log(header, rows);
+        console.log(header, sortedRows);
     }
+    /*TODO: return writeOutput(args.outputFile, header, sortedRows, args.delimiter);*/
 }
 main();
