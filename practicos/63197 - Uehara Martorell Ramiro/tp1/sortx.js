@@ -283,4 +283,133 @@ function parseDelimited(texto, delimiter) {
     return filas;
 }
 
+
+
+
+
+
+
+
+//4
+
+
+function aNumero(valor, campo) {
+    if (valor.trim() === '') {
+        errur('el campo "' + campo + '" contiene un valor no numerico: "' + valor + '"');
+    }
+
+    const numero = Number(valor);
+
+
+    if (Number.isNaN(numero)) {
+        errur('el campo "' + campo + '" contiene un valor no numerico: "' + valor + '"');
+    }
+
+
+    return numero;
+}
+
+
+
+function resolverIndices(sortFields, header, ancho) {
+    const criterios = [];
+
+
+    for (let c = 0; c < sortFields.length; c = c + 1) {
+        const campo = sortFields[c];
+        let indice;
+
+
+        if (header === null) {
+            indice = Number(campo.name);
+
+
+            if (Number.isInteger(indice) === false) {
+                errur('sin encabezado los campos se indican por indice: "' + campo.name + '"');
+            }
+
+        } else {
+
+            indice = header.indexOf(campo.name);
+        }
+
+        if (indice < 0 || indice >= ancho) {
+
+            errur('el campo "' + campo.name + '" no existe');
+
+        }
+
+        criterios.push({
+
+            name: campo.name,
+            numeric: campo.numeric,
+            descending: campo.descending,
+            indice: indice,
+
+        });
+    }
+
+
+    return criterios;
+}
+
+
+
+function sortRows(filas, sortFields, header) {
+
+    let ancho;
+
+    if (header === null) {
+
+        ancho = filas[0].length;
+
+    } else {
+
+        ancho = header.length;
+
+    }
+
+    const criterios = resolverIndices(sortFields, header, ancho);
+
+    const copia = filas.slice();
+
+
+    copia.sort(function (filaA, filaB) {
+
+
+        for (let c = 0; c < criterios.length; c = c + 1) {
+
+            const criterio = criterios[c];
+            const izquierda = filaA[criterio.indice];
+            const derecha = filaB[criterio.indice];
+            let comparacion;
+
+            if (criterio.numeric) {
+
+                comparacion = aNumero(izquierda, criterio.name) - aNumero(derecha, criterio.name);
+
+            } else {
+
+                comparacion = izquierda.localeCompare(derecha, 'es');
+
+            }
+            if (comparacion !== 0) {
+
+                if (criterio.descending) {
+                    return -comparacion;
+
+                }
+                return comparacion;
+            }
+
+        }
+
+
+        return 0;
+    });
+
+
+    return copia;
+}
+
 //console.log(HELP)
