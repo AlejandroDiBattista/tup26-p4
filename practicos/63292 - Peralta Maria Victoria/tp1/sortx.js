@@ -1,38 +1,82 @@
 #!/usr/bin/env node
 
 const HELP = `
+sortx origen destino [-b|--by campo[:tipo[:orden]]]... [-d|--delimiter d] [-nh|--no-header] [-h|--help]
+tipo: alpha (default) | num
+orden: asc (default) | desc
+`;
 
-sortx — Ordena archivos de texto delimitados
+function parseBy(val) {
+  const [name, tipo = 'alpha', orden = 'asc'] = val.split(':');
+  if (!name) throw new Error(`criterio inválido: ${val}`);
+  if (tipo !== 'alpha' && tipo !== 'num') throw new Error(`tipo inválido: ${tipo}`);
+  if (orden !== 'asc' && orden !== 'desc') throw new Error(`orden inválido: ${orden}`);
+  return { name, numeric: tipo === 'num', descending: orden === 'desc' };
+}
 
-USO:
-    sortx <origen> <destino> [opciones]
+function parseArgs(args) {
+  const config = { delimiter: ',', noHeader: false, sortFields: [], help: false };
+  const pos = [];
+  let i = 0;
 
-ARGUMENTOS:
-    origen              Archivo que se desea ordenar.
-    destino             Archivo donde se guardará el resultado.
+  while (i < args.length) {
+    const a = args[i];
 
-OPCIONES:
-    -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
-                        Formato: campo[:tipo[:orden]]
-                        tipo: alpha (predeterminado) o num
-                        orden: asc (predeterminado) o desc
+    if (a === '-h' || a === '--help') {
+      config.help = true;
+      return config;
+    }
 
-    -d, --delimiter <c> Delimitador de un solo carácter.
-                        Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+    if (a === '-b' || a === '--by') {
+      const v = args[i + 1];
+      if (v === undefined) throw new Error(`${a} requiere un valor`);
+      config.sortFields.push(parseBy(v));
+      i += 2;
+      continue;
+    }
 
-    -nh, --no-header    Indica que el archivo no tiene encabezado.
-                        Los campos se identifican mediante índices desde cero.
+    if (a === '-d' || a === '--delimiter') {
+      const v = args[i + 1];
+      if (v === undefined) throw new Error(`${a} requiere un valor`);
+      const d = v === '\\t' ? '\t' : v;
+      if (d.length !== 1) throw new Error('el delimitador debe ser un solo carácter');
+      config.delimiter = d;
+      i += 2;
+      continue;
+    }
 
-    -h, --help          Muestra esta ayuda.
+    if (a === '-nh' || a === '--no-header') {
+      config.noHeader = true;
+      i++;
+      continue;
+    }
 
-EJEMPLOS:
-    sortx empleados.csv ordenados.csv -b apellido
-    sortx empleados.csv salarios.csv -b salario:num:desc
-    sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
-    sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+    if (a.startsWith('-')) throw new Error(`opción desconocida: ${a}`);
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+    pos.push(a);
+    i++;
+  }
+
+  if (pos.length < 2) throw new Error('faltan origen y/o destino');
+  if (pos.length > 2) throw new Error(`argumento de más: ${pos[2]}`);
+  if (config.sortFields.length === 0) throw new Error('falta al menos un --by');
+
+  [config.inputFile, config.outputFile] = pos;
+  return config;
+}
+
+function main() {
+  try {
+    const config = parseArgs(process.argv.slice(2));
+    if (config.help) {
+      console.log(HELP);
+      process.exit(0);
+    }
+    console.log(config);
+  } catch (e) {
+    console.error(`Error: ${e.message}`);
+    process.exit(1);
+  }
+}
+
+main();
