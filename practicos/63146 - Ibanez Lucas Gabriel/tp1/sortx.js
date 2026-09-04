@@ -14,7 +14,7 @@ function parseArgs(argv) {
         if (opcion === "-b" || opcion === "--by") {
             let campos = argv.shift();
             if (campos === undefined) {
-                console.error(`error: la opciom "${opcion}" requiere un valor.`);
+                console.error(`error: la opcion "${opcion}" requiere un valor.`);
                 process.exit(1);
             }
             let partes = campos.split(":");
