@@ -35,4 +35,45 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+//console.log(HELP)
+
+const palabrasConsola = process.argv.slice(2);
+
+
+
+function parseArgs(datosDUsu) {
+  
+  const origen = datosDUsu[0];
+
+  const destino = datosDUsu[1];
+
+  
+  const posCorta = datosDUsu.indexOf("-d");
+  const posLarga = datosDUsu.indexOf("--delimiter");
+
+  let separador = ",";
+
+  
+  if (posCorta !== -1) {
+    separador = datosDUsu[posCorta + 1];
+  } 
+  
+  else if (posLarga !== -1) {
+    separador = datosDUsu[posLarga + 1];
+  }
+
+  const sinEncabezado = datosDUsu.includes("-nh") || datosDUsu.includes("--no-header");
+
+
+  const configuracion = {
+    inputFile: origen,
+    outputFile: destino,
+    delimiter: separador, 
+    noHeader: sinEncabezado,
+    sortFields: [] };
+
+  return configuracion;
+}
+
+
+
