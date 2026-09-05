@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 
 const HELP = `
 
@@ -104,7 +105,18 @@ function parseArgs(args) {
     return config;
 }
 
+function readInput(inputFile) {
+    try {
+        const content = fs.readFileSync(inputFile, 'utf8');
+        return content;
+    } catch (error) {
+        console.error(`Error: El archivo de origen '${inputFile}' no existe o no puede leerse.`);
+        process.exit(1);
+    }
+}
+
 const config = parseArgs(process.argv.slice(2));
-console.log(config);
+const rawText = readInput(config.inputFile);
+console.log(rawText.substring(0, 100));
 
 console.log(HELP)
