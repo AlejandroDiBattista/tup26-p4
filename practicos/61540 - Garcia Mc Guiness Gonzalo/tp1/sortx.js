@@ -161,6 +161,44 @@ function parseDelimited(text, configuracion) {
     return {header, rows}
 }
 
+function sortRows(data, configuracion) {
+    const {header, rows} = data
+
+    return rows.sort((filaA, filaB) => {
+        for(const campo of configuracion.sortFields) {
+            
+            const indiceCampo = header.indexOf(campo.name)
+
+            const valorA = filaA[indiceCampo]
+            const valorB = filaB[indiceCampo]
+
+            if (campo.numeric) {
+                const numA = Number(valorA)
+                const numB = Number(valorB)
+
+                if (isNaN(numA) || valorA.trim() === "") {
+                    errores(`Un valor no numerico en el campo '${campo.name}': '${valorA}'`)
+                }
+                if (isNaN(numB) || valorB.trim() === "") {
+                    errores(`Un valor no numerico en el campo '${campo.name}': '${valorB}'`)
+                }
+
+                if (numA !== numB) {
+                    return campo.descending ? numB - numA : numA - numB
+                }
+            } else {
+
+                const comparacionAlf = valorA.localeCompare(valorB)
+
+                if (comparacionAlf !== 0) {
+                    return campo.descending ?  -comparacionAlf : comparacionAlf
+                }
+            }
+        }
+        return 0
+    })
+}
+
 function main(){
 
     const config = parseArgs(process.argv.slice(2))
@@ -169,8 +207,10 @@ function main(){
 
     const datosMapeados = parseDelimited(contenidoCsv, config)
 
+    const filasOrdenadas = sortRows(datosMapeados, config)
+
     console.log("Configuracion:", config)
-    console.log("Datos Mapeados:", datosMapeados)
+    console.log("Filas Ordenadas:", filasOrdenadas)
 }
 
 main()
