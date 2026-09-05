@@ -111,7 +111,7 @@ function parseDelimited (texto, delimiter, noHeader) {
     if(!noHeader){
         data.header = rows.shift();
     }else{
-        data.header = rows[0].map((valor, i)=>i)
+        data.header = rows[0].map((valor, i)=>i.toString());
     }
     data.rows = rows;
     return data;
