@@ -118,6 +118,38 @@ function parseDelimited (texto, delimiter, noHeader) {
 }
 
 
+// Logica del sortx para acomodar las filas
+
+function sortRows (tabla, header, sortFields) {
+    let filas = [...tabla.rows]
+    filas.sort((a, b) => {
+        for (let field of sortFields) {
+        let name= field.name, numeric= field.numeric, descending= field.descending;
+        let index = tabla.header.indexOf(name);
+        let valorA = a[index];
+        let valorB = b[index];
+        let diff;
+
+        if(numeric ) {
+            diff = number(valorA) - number(valorB);
+        }else{
+            diff = valorA.localeCompare(valorB, "es");
+        }
+
+        if(descending) {
+            diff= -diff;
+        }
+        if(diff !== 0) {
+            return diff;
+        }
+        
+  }
+  return 0
+        })
+        
+    return filas
+}
+
 
 
 
@@ -126,3 +158,6 @@ let verConfiguracion = parseArgs(process.argv.slice(2));
 let texto = readInput(verConfiguracion.inputFile);
 let datos = parseDelimited(texto, verConfiguracion.delimiter, verConfiguracion.noHeader);
 console.log(datos);
+
+let filasOrdenadas = sortRows(datos, datos.header, verConfiguracion.sortFields);
+console.log(filasOrdenadas);
