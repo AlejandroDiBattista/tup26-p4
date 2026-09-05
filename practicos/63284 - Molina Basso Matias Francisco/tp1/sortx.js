@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
 
 
 const HELP = `
@@ -145,9 +145,13 @@ return configuracion
 }
 
 function readInput (nombre){
+    try {
     const texto = readFileSync(nombre, "utf-8")
     return texto
-
+    }
+    catch (error) {
+        throw new Error(`No se pudo leer el archivo de origen: ${nombre}`)
+    }
 }
 function parseDelimited (texto, delimiter){
     if (texto.includes ('"')) {
@@ -222,13 +226,38 @@ function sortRows (filas, sortFields, noHeader){
     return { header: encabezado, rows: datos }
 }
 
-const argumentos = process.argv.slice(2)
-const resultado = parseArgs(argumentos)
+function serialize (header, rows, delimiter){
+    let filasCompletas = rows
+    if (header){
+        filasCompletas = [header, ...rows]
+    }
+   const lineasCompletas = filasCompletas.map(fila => fila.join(delimiter))
+    const texto = lineasCompletas.join("\n")
+    return texto
+}
+
+function writeOutput (nombre, texto){
+    try {
+    writeFileSync(nombre, texto, "utf-8")
+    }
+    catch (error) {
+        throw new Error(`No se pudo escribir el archivo de destino: ${nombre}`)
+    }
+}
+try {
+    const argumentos = process.argv.slice(2)
+    const resultado = parseArgs(argumentos)
+
 
 if (resultado) {
     
     const texto = readInput(resultado.inputFile)
     const filas = parseDelimited(texto, resultado.delimiter)
     const { header, rows } = sortRows(filas, resultado.sortFields, resultado.noHeader)
-
+    const textoSalida = serialize(header, rows, resultado.delimiter)
+   writeOutput(resultado.outputFile, textoSalida)
+}
+} catch (error) {
+    console.error("Error:", error.message)
+    process.exit(1)
 }
