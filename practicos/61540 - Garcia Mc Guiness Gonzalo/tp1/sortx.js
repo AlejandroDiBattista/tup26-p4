@@ -84,7 +84,7 @@ function parseArgs(argv)    {
         } else if (arg === '-d' || arg === '--delimiter'){
             if (i + 1 >= args.length) errores("La opcion de '-d' o '--delimiter' no recibe su valor.")
             let rawDelimiter = args[i+1]
-        
+
             if (rawDelimiter === '\\t') rawDelimiter = '\t';
             if (rawDelimiter === '\\n') rawDelimiter = '\n';
             if (rawDelimiter === '\\r') rawDelimiter = '\r';
@@ -125,5 +125,52 @@ function readInput(filePath){
         errores(`EL archivo de origen no existe o no se puede leer: ${filePath}`)
     }
 }
-const config = parseArgs(process.argv.slice(2))
-console.log(config)
+
+function parseDelimited(text, configuracion) {
+    if (text.includes('"')) errores("El archivo de origen contiene comillas dobles.")
+    const lineas = text.split (/\r?\n/).filter(linea => linea.trim() !== "")
+
+    if (lineas.length === 0) {
+        return {header: [], rows: []}
+    }
+
+    const todasLasFilas = lineas.map(linea => linea.split(configuracion.delimiter))
+    const camposEsperados = todasLasFilas[0].length
+
+    for (let i = 0; i < todasLasFilas.length; i++) {
+        if (todasLasFilas[i].length !== camposEsperados) {
+            errores("Las filas tienen diferente cantidad de campos.")
+        }
+    }
+
+    let header = []
+    let rows = []
+
+    if (configuracion.noHeader) {
+        header = Array.from({length: camposEsperados}, (_, i) => i.toString())
+        rows = todasLasFilas
+    } else {
+        header = todasLasFilas[0].map(h => h.trim())
+        rows = todasLasFilas.slice(1)
+    }
+
+    configuracion.sortFields.forEach(campo => {
+        if (!header.includes(campo.name)) errores(`El campo solicitado no existe: '${campo.name}'`)        
+    })
+
+    return {header, rows}
+}
+
+function main(){
+
+    const config = parseArgs(process.argv.slice(2))
+
+    const contenidoCsv = readInput(config.inputFile)
+
+    const datosMapeados = parseDelimited(contenidoCsv, config)
+
+    console.log("Configuracion:", config)
+    console.log("Datos Mapeados:", datosMapeados)
+}
+
+main()
