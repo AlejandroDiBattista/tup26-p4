@@ -39,7 +39,7 @@ EJEMPLOS:
 
 //* 1. parseArgs      → leer los argumentos y construir la configuración
 //* 2. readInput      → leer el archivo de origen
-//? 3. parseDelimited → convertir el texto en filas y columnas
+//* 3. parseDelimited → convertir el texto en filas y columnas
 //? 4. sortRows       → ordenar las filas
 //? 5. serialize      → reconstruir el texto delimitado
 //? 6. writeOutput    → escribir el archivo de destino
@@ -131,15 +131,79 @@ function readInput(filePath) {
 }
 
 function parseDelimited(texto, delimiter) {
-    const lines = texto.split('\n');
+    if (texto.includes('"')){
+        console.error("Error: la entrada tiene comillas")
+        process.exit(1);
+    }
+    const textoLimpio = texto.replaceAll("\r", "").trim();
+    const lines = textoLimpio.split('\n');
     const rows = lines.map(line => line.split(delimiter));
+    for (const row of rows) {
+        if (row.length !== rows[0].length) {
+            console.error("Error: Las filas tienen un número diferente de columnas");
+            process.exit(1);
+        }
+    }
     return rows;
+}
+
+function sortRows(rows, config) {
+    let header = null
+    let data = rows;
+    if (!config.noHeader) {
+        header = rows[0];
+        data = rows.slice(1);
+    }
+
+    for (const field of config.sortFields){
+        if(!config.noHeader){
+            field.index = header.indexOf(field.name);
+            if (field.index === -1) {
+                console.error("error: el campo no existe")
+                process.exit(1);
+            }
+        } else {
+            field.index = parseInt(field.name, 10);
+        }
+    }
+
+    data.sort((filaA, filaB) => {
+        for (const field of config.sortFields) {
+            
+            let valorA = filaA[field.index];
+            let valorB = filaB[field.index];
+    
+            if (field.numeric) {
+                valorA = Number(valorA);
+                valorB = Number(valorB);
+                    if (isNaN(valorA) || isNaN(valorB)) {
+                    console.error("error: el campo no es numérico")
+                    process.exit(1);
+                }
+            }  
+            if (valorA > valorB) {
+                return field.descending ? -1 : 1;
+            }
+            if (valorA < valorB) {
+                return field.descending ? 1 : -1;
+            }
+        }
+        return 0;
+    })
+
+    if (header){
+        return [header, ...data];
+    } else {
+        return data;
+    }
 }
 
 
 const config = parseArgs(args);
 const inputData = readInput(config.inputFile);
 const parsedData = parseDelimited(inputData, config.delimiter);
+const sortedData = sortRows(parsedData, config);
 console.log(config);
 console.log(inputData);
 console.log(parsedData);
+console.log(sortedData);
