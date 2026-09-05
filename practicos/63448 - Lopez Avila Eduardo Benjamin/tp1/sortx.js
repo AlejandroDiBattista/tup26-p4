@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import { readFile } from "node:fs/promises";
 // const HELP = `
 
 // sortx — Ordena archivos de texto delimitados
@@ -49,15 +49,17 @@
 // 5. serialize      → reconstruir el texto delimitado
 // 6. writeOutput    → escribir el archivo de destino
 
+let config = {
+	input: "",
+	output: "",
+	delimitador: ",",
+	noHeader: false,
+	criterios: [{ name: "apellido", numeric: false, descending: false }],
+};
 function configuracion() {
 	const argumentos = process.argv.slice(2);
-	let config = {
-		input: argumentos[0],
-		output: argumentos[1],
-		delimitador: ",",
-		noHeader: false,
-		criterios: [{ name: "apellido", numeric: false, descending: false }],
-	};
+	config.input = argumentos[0];
+	config.output = argumentos[1];
 	if (argumentos.includes("-d") || argumentos.includes("--delimiter")) {
 		config.delimitador =
 			argumentos[argumentos.indexOf("-d") + 1] ||
@@ -90,15 +92,30 @@ function configuracion() {
 		});
 		config.criterios = crit;
 	}
-	console.log(argumentos);
 	console.log(config);
 }
 
+async function readInput(config) {
+	const contenido = await readFile(config.input, "utf8");
+	console.log(contenido);
+}
+
+function parseDelimited(text, delimiter, noHeader) {
+	const filas = text.split("\n").map((fila) => fila.split(delimiter));
+	if (noHeader && filas.length > 0) {
+		filas.shift();
+	}
+	return filas;
+}
+
+
 function traductor() {
 	configuracion();
+	readInput(config);
 }
 traductor();
 
 //Consultas a ia:
 //1 Le pedi que analizara el workspace en preparacion para algun duda que tenga
 //2 le pregunte como se lee la cli
+//3 consulte como se utiliza link y como leer el archivo de entrada
