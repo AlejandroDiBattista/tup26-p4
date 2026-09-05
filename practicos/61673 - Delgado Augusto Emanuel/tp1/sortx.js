@@ -111,3 +111,62 @@ function parseSortField(expr) {
         descending: ordenRaw === "desc"
     }
 }
+
+// readInput — lee el archivo de origen
+async function readInput(filePath) {
+    try {
+        const contenido = await readFile(filePath, "utf8")
+        return contenido
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            throw new Error(`El archivo de origen no existe: "${filePath}"`)
+        }
+        throw new Error(`No se pudo leer el archivo "${filePath}": ${error.message}`)
+    }
+}
+
+// parseDelimited — convierte texto en filas y columnas
+function parseDelimited(text, delimiter, noHeader) {
+    // se divide por lineas (maneja \r\n y \n)
+    const lineas = text.split(/\r?\n/u)
+
+    // se elimina la ultima linea vacia si el archivo termina con salto de linea
+    if (lineas.length > 0 && lineas[lineas.length - 1] === "") {
+        lineas.pop()
+    }
+
+    if (lineas.length === 0) {
+        throw new Error("El archivo de origen esta vacio.")
+    }
+
+    // se verifica que no haya comillas dobles (no soportadas)
+    for (let i = 0; i < lineas.length; i++) {
+        if (lineas[i].includes('"')) {
+            throw new Error(`La linea ${i + 1} contiene comillas dobles, que no estan soportadas.`)
+        }
+    }
+
+    // se parsean todas las filas
+    const filas = lineas.map(linea => linea.split(delimiter))
+
+    // se verifica que todas las filas tengan la misma cantidad de campos
+    const cantidadEsperada = filas[0].length
+    for (let i = 1; i < filas.length; i++) {
+        if (filas[i].length !== cantidadEsperada) {
+            throw new Error(
+                `La fila ${i + 1} tiene ${filas[i].length} campo(s) pero se esperaban ${cantidadEsperada}.`
+            )
+        }
+    }
+
+    // separa el encabezado de los datos
+    let header = null
+    let rows = filas
+
+    if (!noHeader) {
+        header = filas[0]
+        rows = filas.slice(1)
+    }
+
+    return { header, rows }
+}
