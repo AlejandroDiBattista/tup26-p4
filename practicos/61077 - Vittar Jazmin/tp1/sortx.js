@@ -35,4 +35,26 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
+console.log(process.argv) /* array con 2 elementos 'process.argv[0] → Node.js' y 'process.argv[1] → sortx.js' */
+
+/* FUNCIÓN 1 --> mirar lo que escribió el usuario */
+function parseArgs() {
+    const inputFile = process.argv[2]       // archivo de entrada
+    const outputFile = process.argv[3]      // archivo de salida
+
+    for (let i = 4; i < process.argv.length; i++) {         // en posición 4 empiezan las opciones
+        if (process.argv[i] === "-d" || process.argv[i] === "--delimiter") {
+            let delimiter = process.argv[i + 1]
+        }
+
+    }
+    return {
+        inputFile: inputFile,
+        outputFile: outputFile,
+        delimiter: delimiter,
+        noHeader: false
+    }
+}
+console.log(parseArgs())
+
 console.log(HELP)
