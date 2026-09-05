@@ -35,24 +35,46 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(process.argv) /* array con 2 elementos 'process.argv[0] → Node.js' y 'process.argv[1] → sortx.js' */
+/* console.log(process.argv)   // array con 2 elementos 'process.argv[0] → Node.js' y 'process.argv[1] → sortx.js' */
 
 /* FUNCIÓN 1 --> mirar lo que escribió el usuario */
 function parseArgs() {
     const inputFile = process.argv[2]       // archivo de entrada
     const outputFile = process.argv[3]      // archivo de salida
 
+    let delimiter = ","         // valor predeterminado
+    let noHeader = false        // valor predeterminado
+    let sortFields = []         // valor predeterminado
+
     for (let i = 4; i < process.argv.length; i++) {         // en posición 4 empiezan las opciones
         if (process.argv[i] === "-d" || process.argv[i] === "--delimiter") {
-            let delimiter = process.argv[i + 1]
-        }
+            delimiter = process.argv[i + 1]
+            i++
+        } else if (process.argv[i] === "-nh" || process.argv[i] === "--no-header") {
+            noHeader = true
+        } else if (process.argv[i] === "-b" || process.argv[i] === "--by") {
+            const criterio = process.argv[i + 1]
+            i++
 
+            const partes = criterio.split(":")      // criterio tiene columna:tipo:orden (ej: salario:num:desc)
+                                    // split transforma cadena en array
+            const name = partes[0]                      // columna
+            const numeric = partes[1] === "num"         // tipo
+            const descending = partes[2] === "desc"     // orden
+
+            sortFields.push({       // guardar criterio en una lista
+                name: name,
+                numeric: numeric,
+                descending: descending
+            })
+        }
     }
     return {
         inputFile: inputFile,
         outputFile: outputFile,
         delimiter: delimiter,
-        noHeader: false
+        noHeader: noHeader,
+        sortFields: sortFields
     }
 }
 console.log(parseArgs())
