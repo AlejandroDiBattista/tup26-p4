@@ -181,9 +181,83 @@ function parseDelimited(text, delimiter, noHeader) {
   }
 }
 
+function sortRows(rows, header, sortFields) {
+  if (rows.length === 0) {
+    return []
+  }
+
+  const totalCols = rows[0].length
+
+  const criteria = sortFields.map(field => {
+    let colIndex = -1
+
+    if (header !== null) {
+      colIndex = header.indexOf(field.name)
+      if (colIndex === -1) {
+        console.error('Error: El campo "' + field.name + '" no existe en el archivo.')
+        process.exit(1)
+      }
+    } else {
+      const index = Number(field.name)
+      if (isNaN(index) || !Number.isInteger(index) || index < 0 || index >= totalCols) {
+        console.error('Error: El índice de columna "' + field.name + '" es inválido.')
+        process.exit(1)
+      }
+      colIndex = index
+    }
+
+    return {
+      index: colIndex,
+      name: field.name,
+      numeric: field.numeric,
+      descending: field.descending
+    }
+  })
+
+  return [...rows].sort((rowA, rowB) => {
+    for (let i = 0; i < criteria.length; i++) {
+      const crit = criteria[i]
+      const valA = rowA[crit.index]
+      const valB = rowB[crit.index]
+      let cmp = 0
+
+      if (crit.numeric) {
+        const numA = Number(valA)
+        const numB = Number(valB)
+
+        if (isNaN(numA) || isNaN(numB)) {
+          console.error('Error: Se encontró un valor no numérico en el campo "' + crit.name + '".')
+          process.exit(1)
+        }
+
+        if (numA < numB) {
+          cmp = -1
+        } else if (numA > numB) {
+          cmp = 1
+        } else {
+          cmp = 0
+        }
+      } else {
+        cmp = valA.localeCompare(valB)
+      }
+
+      if (crit.descending) {
+        cmp = -cmp
+      }
+
+      if (cmp !== 0) {
+        return cmp
+      }
+    }
+
+    return 0
+  })
+}
+
 const config = parseArgs(process.argv.slice(2))
 const content = readInput(config.inputFile)
 const data = parseDelimited(content, config.delimiter, config.noHeader)
+const sorted = sortRows(data.rows, data.header, config.sortFields)
 
-console.log('Encabezado:', data.header)
-console.log('Cantidad de filas:', data.rows.length)
+console.log('Filas ordenadas:')
+console.log(sorted)
