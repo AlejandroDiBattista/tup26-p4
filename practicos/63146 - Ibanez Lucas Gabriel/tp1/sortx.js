@@ -150,6 +150,19 @@ function sortRows (tabla, header, sortFields) {
     return filas
 }
 
+/// rescontruye el texto en su estructura necesario
+function serialize (tabla, delimiter, noHeader){
+    let cabezera = noHeader ? "" : tabla.header.join(delimiter) + "\n";
+    let filas = tabla.rows.map(fila => fila.join(delimiter)).join("\n");
+    return cabezera + filas + "\n";
+    return cabezera + filas;
+}
+
+
+
+
+
+
 
 
 
@@ -157,7 +170,9 @@ function sortRows (tabla, header, sortFields) {
 let verConfiguracion = parseArgs(process.argv.slice(2));
 let texto = readInput(verConfiguracion.inputFile);
 let datos = parseDelimited(texto, verConfiguracion.delimiter, verConfiguracion.noHeader);
-console.log(datos);
-
 let filasOrdenadas = sortRows(datos, datos.header, verConfiguracion.sortFields);
-console.log(filasOrdenadas);
+
+let tablaOrdenada = { header: datos.header, rows: filasOrdenadas };
+let salidaDatos = serialize(tablaOrdenada, verConfiguracion.delimiter, verConfiguracion.noHeader);
+
+console.log(salidaDatos);
