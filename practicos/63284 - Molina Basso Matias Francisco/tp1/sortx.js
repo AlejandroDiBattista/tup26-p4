@@ -155,12 +155,47 @@ function parseDelimited (texto, delimiter){
     return mapeo
 }
 
+function sortRows (filas, sortFields, noHeader){
+    let encabezado = null
+    let datos = filas
+    if (!noHeader)
+    {
+        encabezado = filas[0]
+        datos = filas.slice(1)
+    }
+    for (let i = sortFields.length - 1; i >= 0; i--){
+        const field = sortFields[i]
+        const index = noHeader ? parseInt(field.name) : encabezado.indexOf(field.name)
+    datos.sort((a, b) => {
+        let valorA = a[index]
+        let valorB = b[index]
+        if (field.numeric) {
+            valorA = parseFloat(valorA)
+            valorB = parseFloat(valorB)
+        }
+        if (field.descending) {
+            [valorA, valorB] = [valorB, valorA]
+        }
+        if (!field.numeric)
+        {
+            return valorA.localeCompare(valorB, "es")
+        }
+        if (valorA < valorB) return -1
+        if (valorA > valorB) return 1
+        return 0
+    })
+
+    }
+    return { header: encabezado, rows: datos }
+}
 
 const argumentos = process.argv.slice(2)
 const resultado = parseArgs(argumentos)
 
 if (resultado) {
+    
     const texto = readInput(resultado.inputFile)
     const filas = parseDelimited(texto, resultado.delimiter)
-    
+    const { header, rows } = sortRows(filas, resultado.sortFields, resultado.noHeader)
+
 }
