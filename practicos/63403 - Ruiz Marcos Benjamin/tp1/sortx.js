@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync  } from 'node:fs';
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -41,8 +41,6 @@ EJEMPLOS:
 // 4. sortRows       → ordenar las filas
 // 5. serialize      → reconstruir el texto delimitado
 // 6. writeOutput    → escribir el archivo de destino
-
-
 
 function parseArgs() {
 let inputFile = process.argv[2];
@@ -173,9 +171,20 @@ lineas.push(linea);
 return lineas.join('\r\n');
 }
 
+//const config = parseArgs();
+//const contenido = readInput(config.inputFile);
+//const filas = parseDelimited(contenido, config.delimiter);
+//const filasOrdenadas = sortRows(filas, config.sortFields, config.noHeader);
+//const resultado = serialize(filasOrdenadas, config.delimiter);
+//console.log(resultado);
+
+function writeOutput(archivo, contenido) {
+writeFileSync(archivo, contenido, 'utf8');
+}
+
 const config = parseArgs();
 const contenido = readInput(config.inputFile);
 const filas = parseDelimited(contenido, config.delimiter);
 const filasOrdenadas = sortRows(filas, config.sortFields, config.noHeader);
 const resultado = serialize(filasOrdenadas, config.delimiter);
-console.log(resultado);
+writeOutput(config.outputFile, resultado);
