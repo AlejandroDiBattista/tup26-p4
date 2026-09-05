@@ -131,7 +131,7 @@ function sortRows (tabla, header, sortFields) {
         let diff;
 
         if(numeric ) {
-            diff = number(valorA) - number(valorB);
+            diff = Number(valorA) - Number(valorB);
         }else{
             diff = valorA.localeCompare(valorB, "es");
         }
@@ -183,4 +183,3 @@ let filasOrdenadas = sortRows(datos, datos.header, verConfiguracion.sortFields);
 let tablaOrdenada = { header: datos.header, rows: filasOrdenadas };
 let salidaDatos = serialize(tablaOrdenada, verConfiguracion.delimiter, verConfiguracion.noHeader);
 writeOutput(verConfiguracion.outputFile, salidaDatos);
-console.log(salidaDatos);
