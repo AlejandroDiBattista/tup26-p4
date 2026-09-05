@@ -150,8 +150,21 @@ function readInput (nombre){
 
 }
 function parseDelimited (texto, delimiter){
+    if (texto.includes ('"')) {
+        throw new Error("El archivo contiene comillas, lo cual no está permitido.")
+    }
     const filas = texto.split(/\r?\n/)
+    if (filas[filas.length - 1] === "") {
+        filas.pop()
+    }
     const mapeo = filas.map(fila => fila.split(delimiter))
+    const cantidadcampos = mapeo[0].length
+    const cantidad = mapeo.length
+    for (let i = 0; i < cantidad; i++) {
+        if (mapeo[i].length !== cantidadcampos) {
+            throw new Error("El archivo contiene filas con un número diferente de campos.")
+        }
+    }
     return mapeo
 }
 
@@ -165,13 +178,33 @@ function sortRows (filas, sortFields, noHeader){
     }
     for (let i = sortFields.length - 1; i >= 0; i--){
         const field = sortFields[i]
-        const index = noHeader ? parseInt(field.name) : encabezado.indexOf(field.name)
+        const index = noHeader ? Number(field.name) : encabezado.indexOf(field.name)
+        if (!noHeader && index === -1) {
+            throw new Error(`El campo "${field.name}" no se encuentra en el encabezado.`)
+        }
+    if (noHeader && !Number.isInteger(index)) {
+        throw new Error(`El índice "${field.name}" no es un número válido.`)
+    }
+    if (noHeader && (index < 0 || index >= datos[0].length)) {
+        throw new Error(`El índice "${field.name}" está fuera del rango de los campos.`)
+    }
+
+    if (field.numeric === true) {
+    for (const fila of datos) {
+        const valor = fila[index]
+        if (valor === undefined || valor === null || valor.trim() === "" || !Number.isFinite(Number(valor))) {
+            throw new Error(`El valor "${valor}" del campo "${field.name}" no es numérico.`)
+        }
+
+    }
+
+    }
     datos.sort((a, b) => {
         let valorA = a[index]
         let valorB = b[index]
         if (field.numeric) {
-            valorA = parseFloat(valorA)
-            valorB = parseFloat(valorB)
+            valorA = Number(valorA)
+            valorB = Number(valorB)
         }
         if (field.descending) {
             [valorA, valorB] = [valorB, valorA]
