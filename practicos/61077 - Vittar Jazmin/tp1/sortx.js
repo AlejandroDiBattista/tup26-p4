@@ -57,7 +57,7 @@ function parseArgs() {
             i++
 
             const partes = criterio.split(":")      // criterio tiene columna:tipo:orden (ej: salario:num:desc)
-                                    // split transforma cadena en array
+            // split transforma cadena en array
             const name = partes[0]                      // columna
             const numeric = partes[1] === "num"         // tipo
             const descending = partes[2] === "desc"     // orden
@@ -78,5 +78,23 @@ function parseArgs() {
     }
 }
 console.log(parseArgs())
+
+/* FUNCIÓN 2 --> buscar y leer el archivo que pidió el usuario */
+/* const fs = require("fs") */        // fs es File System, sirve para leer archivos, es una librería de node.js
+import fs from "fs"           // solución a 'const fs = require("fs")' ya que daba error por la configuración en package.json
+
+function readInput(inputFile) {
+    const contenido = fs.readFileSync(inputFile, "utf-8")
+    return contenido
+}
+const args = parseArgs()
+console.log(readInput(args.inputFile))
+
+
+
+/* FUNCIÓN 3 --> convertir texto en array con filas y columnas */
+/* FUNCIÓN 4 --> recibir filas y criterios para ordenar */
+/* FUNCIÓN 5 --> contrario a parseDelimited (convierte array en texto) */
+/* FUNCIÓN 6 --> guardar texto en el archivo pedido */
 
 console.log(HELP)
