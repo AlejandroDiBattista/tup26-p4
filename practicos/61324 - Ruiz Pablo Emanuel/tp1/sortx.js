@@ -61,9 +61,15 @@ function parseArgs(args) {
                 throw new Error("Falta indicar el criterio de ordenamiento");
             }
             const partes = valor.split(":");
+            if (partes.length > 3) {
+                throw new Error(`criterio invalido: ${valor}`);
+            }
             const nombre = partes[0];
             const tipo = partes[1] || "alpha";
             const orden = partes[2] || "asc";
+            if (!nombre){
+                throw new Error("el campo de ordenamiento no puede estar vacio");
+            }
             if (tipo !== "alpha" && tipo !== "num") {
                 throw new Error(`Tipo de ordenamiento invalido: ${tipo}`);
             }
@@ -112,7 +118,7 @@ function parseDelimited(text, delimiter){
         throw new Error("el archivo contiene comillas dobles, que no estan soportadas");
     }
     const lineas = text.trim().split(/\r?\n/);
-    const filas = lineas.map(lineas => lineas.split(delimiter));
+    const filas = lineas.map(linea => linea.split(delimiter));
     const cantidadCampos = filas[0].length;
     for (const fila of filas) {
         if (fila.length !== cantidadCampos) {
@@ -134,6 +140,9 @@ function sortRows(rows, config) {
         for (const campo of config.sortFields) {
             let indice;
             if(config.noHeader) {
+                if (!/^\d+$/.test(campo.name)){
+                    throw new Error(`indice de campo invalido: ${campo.name}`);
+                }
                 indice = Number(campo.name);
             } else {
                 indice = header.indexOf(campo.name);
@@ -175,7 +184,7 @@ function sortRows(rows, config) {
         return [header, ...data];
     }
     return data;
-};
+}
 function serialize(rows, delimiter) {
     return rows.map(row => 
         row.join(delimiter)).join("\n");
