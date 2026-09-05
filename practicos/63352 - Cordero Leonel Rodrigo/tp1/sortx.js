@@ -33,6 +33,78 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
+function parseArgs(args) {
+    if (args.includes('-h') || args.includes('--help')) {
+        console.log("Uso: sortx origen destino [-b|--by campo[:tipo[:orden]]]... [-d|--delimiter delimitador] [-nh|--no-header] [-h|--help]");
+        process.exit(0);
+    }
 
-// Escribir aqui la solución al enunciado.
+    const inputFile = args.shift();
+    const outputFile = args.shift();
+
+    if (!inputFile || !outputFile || inputFile.startsWith('-') || outputFile.startsWith('-')) {
+        console.error("Error: Faltan el archivo de origen o destino.");
+        process.exit(1);
+    }
+
+    const config = {
+        inputFile: inputFile,
+        outputFile: outputFile,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    };
+
+    while (args.length > 0) {
+        const arg = args.shift();
+
+        if (arg === '-nh' || arg === '--no-header') {
+            config.noHeader = true;
+        }
+        else if (arg === '-d' || arg === '--delimiter') {
+            const delim = args.shift();
+            if (!delim) {
+                console.error("Error: La opción --delimiter requiere un valor.");
+                process.exit(1);
+            }
+
+            const finalDelim = delim === "\\t" ? "\t" : delim;
+
+            if (finalDelim.length !== 1) {
+                console.error("Error: El delimitador no es un único carácter.");
+                process.exit(1);
+            }
+            config.delimiter = finalDelim;
+        }
+        else if (arg === '-b' || arg === '--by') {
+            const byValue = args.shift();
+            if (!byValue) {
+                console.error("Error: La opción --by requiere un valor.");
+                process.exit(1);
+            }
+
+            const parts = byValue.split(':');
+            config.sortFields.push({
+                name: parts[0],
+                numeric: parts[1] === 'num',
+                descending: parts[2] === 'desc'
+            });
+        }
+        else {
+            console.error(`Error: Se indica una opción desconocida '${arg}'.`);
+            process.exit(1);
+        }
+    }
+
+    if (config.sortFields.length === 0) {
+        console.error("Error: No se especifica ningún criterio --by.");
+        process.exit(1);
+    }
+
+    return config;
+}
+
+const config = parseArgs(process.argv.slice(2));
+console.log(config);
+
 console.log(HELP)
