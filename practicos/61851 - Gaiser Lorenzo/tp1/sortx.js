@@ -35,4 +35,27 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+
+//console.log(process.argv)
+
+const datosUsuarios = process.argv.slice(2) 
+
+console.log(datosUsuarios)
+
+
+for ( let i = 0 ;i < datosUsuarios.length; i++) {
+
+    if (datosUsuarios[i].startsWith("-") ){
+    
+    }else {
+        console.log(i , datosUsuarios[i])
+        }
+        }
+
+
+
+   
+
+
+
