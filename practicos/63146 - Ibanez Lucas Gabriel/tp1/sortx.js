@@ -158,7 +158,15 @@ function serialize (tabla, delimiter, noHeader){
     return cabezera + filas;
 }
 
-
+// escribe el archivo de salia
+function writeOutput(nombre, texto) {
+    try {
+        fs.writeFileSync(nombre, texto);
+    }catch (err) {
+        console.error(`error: no se puede escribir el archivo de destino`);
+        process.exit(1);
+    }
+}
 
 
 
@@ -174,5 +182,5 @@ let filasOrdenadas = sortRows(datos, datos.header, verConfiguracion.sortFields);
 
 let tablaOrdenada = { header: datos.header, rows: filasOrdenadas };
 let salidaDatos = serialize(tablaOrdenada, verConfiguracion.delimiter, verConfiguracion.noHeader);
-
+writeOutput(verConfiguracion.outputFile, salidaDatos);
 console.log(salidaDatos);
