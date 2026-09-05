@@ -19,7 +19,7 @@ OPCIONES:
 
     -d, --delimiter <c> Delimitador de un solo carácter.
                         Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+                        Usá "\\t" para archivos separados por tabulaciones.
 
     -nh, --no-header    Indica que el archivo no tiene encabezado.
                         Los campos se identifican mediante índices desde cero.
@@ -31,8 +31,114 @@ EJEMPLOS:
     sortx empleados.csv salarios.csv -b salario:num:desc
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
+    sortx datos.tsv salida.tsv -d "\\t" -b nombre
 `
+//Validar los argumentos de entrada
+//Agregar lectura del archivo CSV
+//Implementar ordenamiento por múltiples campos
+//Controlar errores de formato
+//Completar ayuda y pruebas manuales
+
+//1. parseArgs      → leer los argumentos y construir la configuración
+//2. readInput      → leer el archivo de origen
+//3. parseDelimited → convertir el texto en filas y columnas
+//4. sortRows       → ordenar las filas
+//5. serialize      → reconstruir el texto delimitado
+//6. writeOutput    → escribir el archivo de destino
+
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+function parseArgs(args)
+{
+    let configuracion = 
+    {
+        delimiter: ",",
+        inputFile: "",
+        outputFile: null,
+        noHeader: false,
+        sortFields: [],
+    }
+    
+
+    if (args[0] === "-h" || args[0] === "--help")
+    {
+        console.log(HELP)
+        return
+    }
+
+    configuracion.inputFile = args.shift() 
+    configuracion.outputFile = args.shift()
+if (!configuracion.inputFile)
+    {
+        throw new Error("Falta el archivo de origen.")
+    }
+if (!configuracion.outputFile)
+    {
+        throw new Error("Falta el archivo de destino.")
+    }   
+    while (args.length !== 0) 
+    {
+        let opcion = args.shift()
+
+        if (opcion === "-b" || opcion === "--by")
+        {
+            let campo = args.shift()
+            if (!campo || campo.startsWith("-"))    
+            {
+                throw new Error("Falta el argumento para la opción -b/--by")
+            }
+            let [nombre, numerico = "alpha", descendente = "asc"] = campo.split(":")
+
+            if (numerico !== "alpha" && numerico !== "num")
+            {
+                throw new Error(`Tipo de ordenamiento desconocido: ${numerico}`)
+            }
+            if (descendente !== "asc" && descendente !== "desc")
+            {
+                throw new Error(`Criterio de ordenamiento desconocido: ${descendente}`)
+            }
+            let field = {
+                name: nombre,
+                numeric: numerico === "num",
+                descending: descendente === "desc"
+            }
+
+            configuracion.sortFields.push(field)
+        }
+        else if (opcion === "-d" || opcion === "--delimiter")
+        {
+            let delimitador = args.shift()
+            if (!delimitador || (delimitador.length >1 && delimitador.startsWith("-")))
+            {
+                throw new Error("Falta el argumento para la opción -d/--delimiter")
+            }
+            if (delimitador.length !== 1 && delimitador !== "\\t")
+            {
+                throw new Error("El delimitador debe ser un solo carácter o '\\t' para tabulaciones.")
+            }
+            if (delimitador === "\\t")
+            {
+                delimitador = "\t"
+            }
+            configuracion.delimiter = delimitador
+        }
+        else if (opcion === "-nh" || opcion === "--no-header")
+        { 
+            configuracion.noHeader = true
+        }
+        else
+        {
+            throw new Error(`Opción desconocida: ${opcion}`)
+        }
+    }
+    if (configuracion.sortFields.length === 0)
+    {
+        throw new Error("Debe especificar al menos un criterio de ordenamiento con -b/--by.")
+    }
+return configuracion
+
+}
+
+const argumentos = process.argv.slice(2)
+const resultado = parseArgs(argumentos)
