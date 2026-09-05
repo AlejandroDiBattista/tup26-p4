@@ -128,7 +128,13 @@ function readInput(filePath){
 
 function parseDelimited(text, configuracion) {
     if (text.includes('"')) errores("El archivo de origen contiene comillas dobles.")
-    const lineas = text.split (/\r?\n/).filter(linea => linea.trim() !== "")
+    
+    const textoLimpio = text.replace(/\r\n/g, '\n')
+    const lineas = textoLimpio.split ('\n')
+
+    if (lineas.length > 0 && lineas[lineas.length - 1] === "") {
+        lineas.pop()
+    }
 
     if (lineas.length === 0) {
         return {header: [], rows: []}
@@ -150,12 +156,14 @@ function parseDelimited(text, configuracion) {
         header = Array.from({length: camposEsperados}, (_, i) => i.toString())
         rows = todasLasFilas
     } else {
-        header = todasLasFilas[0].map(h => h.trim())
+        header = todasLasFilas[0]
         rows = todasLasFilas.slice(1)
     }
 
     configuracion.sortFields.forEach(campo => {
-        if (!header.includes(campo.name)) errores(`El campo solicitado no existe: '${campo.name}'`)        
+
+        const existe = header.some(h => h.trim() === campo.name.trim())
+        if (!existe) errores(`El campo solicitado no existe: '${campo.name}'`)        
     })
 
     return {header, rows}
@@ -164,31 +172,40 @@ function parseDelimited(text, configuracion) {
 function sortRows(data, configuracion) {
     const {header, rows} = data
 
-    return rows.sort((filaA, filaB) => {
+    for (const campo of configuracion.sortFields) {
+        if (campo.numeric) {
+            const indiceCampo = header.findIndex(h => h.trim() === campo.name.trim())
+            if (indiceCampo === -1) continue
+
+            for (const fila of rows) {
+                const valor = fila[indiceCampo]
+                if (valor === undefined || valor.trim() === "" || isNaN(Number(valor))) {
+                    errores(`El campo '${campo.name}' contiene un valor no numerico: '${valor}'`)
+                }
+            }
+        }
+    }
+
+    return [...rows].sort((filaA, filaB) => {
         for(const campo of configuracion.sortFields) {
             
-            const indiceCampo = header.indexOf(campo.name)
+            const indiceCampo = header.findIndex(h => h.trim() === campo.name.trim())
 
             const valorA = filaA[indiceCampo]
             const valorB = filaB[indiceCampo]
 
+            if (valorA === undefined || valorB === undefined) continue 
+
             if (campo.numeric) {
                 const numA = Number(valorA)
                 const numB = Number(valorB)
-
-                if (isNaN(numA) || valorA.trim() === "") {
-                    errores(`Un valor no numerico en el campo '${campo.name}': '${valorA}'`)
-                }
-                if (isNaN(numB) || valorB.trim() === "") {
-                    errores(`Un valor no numerico en el campo '${campo.name}': '${valorB}'`)
-                }
 
                 if (numA !== numB) {
                     return campo.descending ? numB - numA : numA - numB
                 }
             } else {
 
-                const comparacionAlf = valorA.localeCompare(valorB)
+                const comparacionAlf = valorA.trim().localeCompare(valorB.trim())
 
                 if (comparacionAlf !== 0) {
                     return campo.descending ?  -comparacionAlf : comparacionAlf
@@ -197,6 +214,28 @@ function sortRows(data, configuracion) {
         }
         return 0
     })
+}
+
+function serialize(header, sortedRows, configuracion) {
+    const lineasSalida = []
+
+    if (!configuracion.noHeader) {
+        lineasSalida.push(header.join(configuracion.delimiter))
+    }
+
+    sortedRows.forEach(fila => {
+        lineasSalida.push(fila.join(configuracion.delimiter))    
+    })
+
+    return lineasSalida.join('\n')
+}
+
+function writeOutput(filePath, content) {
+    try {
+        fs.writeFileSync(filePath, content, "utf8")
+    } catch (error) {
+        errores(`El archivo de destino no puede escribirse: ${filePath}`)
+    }
 }
 
 function main(){
@@ -209,8 +248,10 @@ function main(){
 
     const filasOrdenadas = sortRows(datosMapeados, config)
 
-    console.log("Configuracion:", config)
-    console.log("Filas Ordenadas:", filasOrdenadas)
+    const contenidoSalida = serialize(datosMapeados.header, filasOrdenadas, config)
+
+    writeOutput(config.outputFile, contenidoSalida)
+
 }
 
 main()
