@@ -77,7 +77,6 @@ function parseArgs() {
         sortFields: sortFields
     }
 }
-console.log(parseArgs())
 
 /* FUNCIÓN 2 --> buscar y leer el archivo que pidió el usuario */
 /* const fs = require("fs") */        // fs es File System, sirve para leer archivos, es una librería de node.js
@@ -87,14 +86,31 @@ function readInput(inputFile) {
     const contenido = fs.readFileSync(inputFile, "utf-8")
     return contenido
 }
-const args = parseArgs()
-console.log(readInput(args.inputFile))
-
-
 
 /* FUNCIÓN 3 --> convertir texto en array con filas y columnas */
+function parseDelimited (contenido, delimiter) {
+    const lineasTexto = contenido.trim().split("\n")           // separar el texto en distintas líneas
+    // trim quita espacios o saltos de línea vacíos del final
+    const filas = []            // array para acumular las filas
+
+    for (let i = 0; i < lineasTexto.length; i++) {
+        const lineaLimpia = lineasTexto[i].replace("\r", "")        // eliminar salto de linea
+        const fila = lineaLimpia.split(delimiter)                   // separar las lineas en columnas según el delimitador
+        filas.push(fila)                // agregar la fila al array
+    }
+
+    return filas
+}
+
 /* FUNCIÓN 4 --> recibir filas y criterios para ordenar */
 /* FUNCIÓN 5 --> contrario a parseDelimited (convierte array en texto) */
 /* FUNCIÓN 6 --> guardar texto en el archivo pedido */
+
+const args = parseArgs()
+console.log(args)
+console.log(readInput(args.inputFile))
+const contenido = readInput(args.inputFile)
+const filas = parseDelimited(contenido, args.delimiter)
+console.log(filas)
 
 console.log(HELP)
