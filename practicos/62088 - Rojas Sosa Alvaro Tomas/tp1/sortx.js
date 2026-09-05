@@ -118,9 +118,6 @@ for(let i = 2; i < deLaSegunda.length;i++)
     return Config
 }
 
-const configuracion = parseArgs()
-console.log(configuracion)
-
 
 function readInput(ruta) { 
 try {
@@ -128,10 +125,45 @@ try {
     return contenido
     
 } catch (error) {
-console.error("error: no se pudo leer el archivo noexiste.csv (no existe o no tiene permisos)")
+console.error("error: no se pudo leer el archivo" + ruta + "(no existe o no tiene permisos)")
+process.exit(1)
+
+}
+}
+
+
+function parseDelimited (texto, delimitador) {
+
+if (texto.includes('"')) 
+{
+console.error("error: la entrada no puede contener comillas dobles")
 process.exit(1)
 }
-}
-const texto = readInput(configuracion.inputFile)
-console.log(texto)
 
+const textolimpio = texto.replaceAll("\r", "")
+const textSeparado = textolimpio.split("\n")
+
+let SeparadoFinal = []
+
+for(let i = 0; i < textSeparado.length; i++) 
+    {
+        let separado = textSeparado[i].split(delimitador)
+        SeparadoFinal.push(separado)
+    }
+
+const CantidadCampos = SeparadoFinal[0].length
+for(let i = 0; i < SeparadoFinal.length;i++) 
+    {
+        if(SeparadoFinal[i].length !== CantidadCampos)
+            {
+                console.error("error: la fila " + (i + 1) + " tiene " + SeparadoFinal[i].length + " elementos, y deberia tener: " + CantidadCampos)
+                process.exit(1)
+            }
+    }
+
+return SeparadoFinal
+}
+
+const configuracion = parseArgs();
+const texto = readInput(configuracion.inputFile)
+const filas = parseDelimited(texto, configuracion.delimiter)
