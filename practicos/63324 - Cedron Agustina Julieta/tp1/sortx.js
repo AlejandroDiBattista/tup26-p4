@@ -33,6 +33,7 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
+import fs from "node:fs";
 
 // Escribir aqui la solución al enunciado.
 //1-parseArgs:
@@ -42,6 +43,8 @@ function parseArgs(argumentos){
         arcEntrada:null,
         arcSalida:null,
         ayuda:false,
+        delimitador:",",
+        sinEncabezado:false,
         reglas:[]
     };
     
@@ -52,6 +55,15 @@ function parseArgs(argumentos){
         //verifico si pidio ayuda o no
         if(arg==="-h"||arg==="--help"){
             opciones.ayuda=true;
+        }
+        //si pasa el delimitador
+        else if(arg==="-d"||arg==="--delimiter"){
+            i++;
+            opciones.delimitador=argumentos[i];
+        }
+        //si no tiene encabezado
+        else if(arg==="-nh"||arg==="--no-header"){
+            opciones.sinEncabezado=true;
         }
         // si es para ordenar, uso la regla
         else if (arg==="-b"||arg==="--by") {
