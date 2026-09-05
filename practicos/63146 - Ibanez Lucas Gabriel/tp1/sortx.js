@@ -1,38 +1,193 @@
 #!/usr/bin/env node
+import fs from "fs";
+function parseArgs(argv) {
+    let configuracion = {
+        delimiter: ",",
+        noHeader: false,
+        sortFields: [],
+    }
 
-const HELP = `
+    let posiciones = []
+    while (argv.length > 0) {
+        const opcion = argv.shift();
 
-sortx — Ordena archivos de texto delimitados
+        if (opcion === "-b" || opcion === "--by") {
+            let campos = argv.shift();
+            if (campos === undefined) {
+                console.error(`error: la opcion "${opcion}" requiere un valor.`);
+                process.exit(1);
+            }
+            let partes = campos.split(":");
 
-USO:
-    sortx <origen> <destino> [opciones]
+            let field = { name: partes[0], numeric: partes[1] === "num", descending: partes[2] === "desc" };
+            configuracion.sortFields.push(field);
+        } else if (opcion === "-d" || opcion === "--delimiter") {
+            let valor = argv.shift();
+            if (valor === undefined) {
+                console.error(`error: la opcion "${opcion}" requiere un valor.`);
+                process.exit(1);
+            }
+            configuracion.delimiter = valor;
 
-ARGUMENTOS:
-    origen              Archivo que se desea ordenar.
-    destino             Archivo donde se guardará el resultado.
+        } else if (opcion === "-nh" || opcion === "--no-header") {
+            configuracion.noHeader = true;
+        }
+        else if (opcion === "-h" || opcion === "--help") {
+            console.log("Uso: sortx [opciones] <archivo_entrada> <archivo_salida>");
+            console.log("Opciones:");
+            console.log("  -b, --by <campo>      Campo por el cual ordenar");
+            console.log("  -d, --delimiter <delim> Delimitador de campos");
+            console.log("  -nh, --no-header      No hay encabezado en el archivo");
+            console.log("  -h, --help            Mostrar esta ayuda");
+            process.exit(0);
+        } else if (opcion.startsWith("-")) { // aqui si viene con solo guio cierra el program
+            console.error(`error: solo acepta comandos que estan en help "${opcion}" .`);
+            process.exit(1);
+        }
+        else {
+            posiciones.push(opcion);
+        }
+    }
 
-OPCIONES:
-    -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
-                        Formato: campo[:tipo[:orden]]
-                        tipo: alpha (predeterminado) o num
-                        orden: asc (predeterminado) o desc
+    configuracion.inputFile = posiciones[0];
+    configuracion.outputFile = posiciones[1];
+    if (configuracion.inputFile === undefined) {
+        console.error("error: falta el archivo de origen.");
+        process.exit(1);
+    }
+    if (configuracion.outputFile === undefined) {
+        console.error("error: falta el archivo de destino.");
+        process.exit(1);
+    }
+    if (configuracion.sortFields.length === 0) {
+        console.error("error: debe especificar --by.");
+        process.exit(1);
+    }
+    if (configuracion.delimiter === "\\t") {
+        configuracion.delimiter = "\t";
+    }
+    if (configuracion.delimiter.length !== 1) {
+        console.error(`error: el delimitador debe ser un unico caracter"`);
+        process.exit(1);
+    }
 
-    -d, --delimiter <c> Delimitador de un solo carácter.
-                        Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+    return configuracion;
+}
 
-    -nh, --no-header    Indica que el archivo no tiene encabezado.
-                        Los campos se identifican mediante índices desde cero.
 
-    -h, --help          Muestra esta ayuda.
+/// Leer archivo
 
-EJEMPLOS:
-    sortx empleados.csv ordenados.csv -b apellido
-    sortx empleados.csv salarios.csv -b salario:num:desc
-    sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
-    sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+function readInput(filePath) {
+    try {
+        let texto = fs.readFileSync(filePath, "utf8");
+        return texto;
+    } catch (err) {
+        console.error(`error: no se pudo leer el archivo de origen`);
+        process.exit(1);
+    }
+}
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+// convertir el texto 
+
+function parseDelimited (texto, delimiter, noHeader) {
+    if (texto.includes('"')) {
+        console.error(`error: el archivo contiene comillas dobles`);
+        process.exit(1);
+    } 
+
+    let data = {header:[], rows:[]};
+    let lineas = texto.replace(/\r\n/g, "\n").split("\n");
+    if (lineas[lineas.length - 1] === "") {
+        lineas.pop();
+    }
+    let rows = lineas.map(linea=>linea.split(delimiter));
+    let cantidad = rows[0].length;
+    for (let i = 0; i < rows.length; i++) { /// este for va a checkear que todas las filas tengan la misma cantidad de campos
+        if (rows[i].length !== cantidad) {
+            console.error(`error: la fila ${i + 1} tiene distinta cantidad de campos`);
+            process.exit(1);
+        }
+    }
+    if(!noHeader){
+        data.header = rows.shift();
+    }else{
+        data.header = rows[0].map((valor, i)=>i.toString());
+    }
+    data.rows = rows;
+    return data;
+}
+
+
+// Logica del sortx para acomodar las filas
+
+function sortRows (tabla, header, sortFields) {
+    let filas = [...tabla.rows]
+    filas.sort((a, b) => {
+        for (let field of sortFields) {
+        let name= field.name, numeric= field.numeric, descending= field.descending;
+        let index = tabla.header.indexOf(name);
+        let valorA = a[index];
+        let valorB = b[index];
+        let diff;
+            if(index === -1) {
+                console.error(`error: "${name}" no existe en el encabezado`);
+                process.exit(1);
+            }
+        if(numeric ) {
+            let numA = Number(valorA);
+            let numB = Number(valorB);
+            if (isNaN(numA) || isNaN(numB)) {
+                console.error(`error: valor numerico invalido en la columna "${name}"`);
+                process.exit(1);
+            }
+            diff = numA - numB;
+        }else{
+            diff = valorA.localeCompare(valorB, "es");
+        }
+
+        if(descending) {
+            diff= -diff;
+        }
+        if(diff !== 0) {
+            return diff;
+        }
+        
+  }
+  return 0
+        })
+        
+    return filas
+}
+
+/// rescontruye el texto en su estructura necesario
+function serialize (tabla, delimiter, noHeader){
+    let cabezera = noHeader ? "" : tabla.header.join(delimiter) + "\n";
+    let filas = tabla.rows.map(fila => fila.join(delimiter)).join("\n");
+    return cabezera + filas + "\n";
+}
+
+// escribe el archivo de salia
+function writeOutput(nombre, texto) {
+    try {
+        fs.writeFileSync(nombre, texto);
+    }catch (err) {
+        console.error(`error: no se puede escribir el archivo de destino`);
+        process.exit(1);
+    }
+}
+
+
+
+
+
+
+
+
+let verConfiguracion = parseArgs(process.argv.slice(2));
+let texto = readInput(verConfiguracion.inputFile);
+let datos = parseDelimited(texto, verConfiguracion.delimiter, verConfiguracion.noHeader);
+let filasOrdenadas = sortRows(datos, datos.header, verConfiguracion.sortFields);
+
+let tablaOrdenada = { header: datos.header, rows: filasOrdenadas };
+let salidaDatos = serialize(tablaOrdenada, verConfiguracion.delimiter, verConfiguracion.noHeader);
+writeOutput(verConfiguracion.outputFile, salidaDatos);
