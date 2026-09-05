@@ -35,4 +35,52 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+// 1. parseArgs      → leer los argumentos y construir la configuración
+// 2. readInput      → leer el archivo de origen
+// 3. parseDelimited → convertir el texto en filas y columnas
+// 4. sortRows       → ordenar las filas
+// 5. serialize      → reconstruir el texto delimitado
+// 6. writeOutput    → escribir el archivo de destino
+
+function parseArgs() {
+let inputFile = process.argv[2];
+let outputFile = process.argv[3];
+let delimiter = ',';
+let noHeader = false;
+let sortFields = [];
+
+if (process.argv[2] === "-h" || process.argv[2] === "--help") {
+        console.log(HELP);
+        process.exit(0);
+    }
+
+for (let i = 4; i < process.argv.length; i++) {
+    const arg = process.argv[i];    
+    //console.log(arg);
+if (arg === "-b" || arg === "--by") {
+    const valor = process.argv[i + 1];
+    //console.log(valor);
+    const partes = valor.split(':');
+    //console.log(partes);
+    const tipo = partes[1] || "alpha";
+    const orden = partes[2] || "asc";
+    const numeric = tipo === "num";
+    const descending = orden === "desc";
+    sortFields.push({ name: partes[0], numeric, descending });
+    }
+else if (arg === "-nh" || arg === "--no-header") {
+        noHeader = true;
+    }
+else if (arg === "-d" || arg === "--delimiter") {
+        delimiter = process.argv[i + 1];
+    }
+else if (arg === "-h" || arg === "--help") {
+        console.log(HELP);
+        process.exit(0);
+    }
+
+}
+return { inputFile, outputFile, delimiter, noHeader, sortFields };
+}
+
+console.log(parseArgs());
