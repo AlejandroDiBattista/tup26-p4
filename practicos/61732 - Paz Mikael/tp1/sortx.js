@@ -254,10 +254,29 @@ function sortRows(rows, header, sortFields) {
   })
 }
 
+function serialize(header, rows, delimiter) {
+  const lines = []
+  if (header !== null) {
+    lines.push(header.join(delimiter))
+  }
+  for (let i = 0; i < rows.length; i++) {
+    lines.push(rows[i].join(delimiter))
+  }
+  return lines.join('\n') + '\n'
+}
+
+function writeOutput(filePath, content) {
+  try {
+    fs.writeFileSync(filePath, content, 'utf-8')
+  } catch (error) {
+    console.error('Error: No se pudo escribir en el archivo de destino: ' + filePath)
+    process.exit(1)
+  }
+}
+
 const config = parseArgs(process.argv.slice(2))
 const content = readInput(config.inputFile)
 const data = parseDelimited(content, config.delimiter, config.noHeader)
-const sorted = sortRows(data.rows, data.header, config.sortFields)
-
-console.log('Filas ordenadas:')
-console.log(sorted)
+const sortedRows = sortRows(data.rows, data.header, config.sortFields)
+const outputText = serialize(data.header, sortedRows, config.delimiter)
+writeOutput(config.outputFile, outputText)
