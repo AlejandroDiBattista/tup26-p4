@@ -65,4 +65,14 @@ function parseArgs() {
 const config = parseArgs();
 console.log(config);
 
+function readInput(inputFile){
+    const contenido = fs.readFileSync(inputFile, "utf8");
+    return contenido;
+
+}
+
+
+
+
 console.log(HELP)
+
