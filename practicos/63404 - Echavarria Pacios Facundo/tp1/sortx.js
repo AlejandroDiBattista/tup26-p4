@@ -39,7 +39,7 @@ EJEMPLOS:
 let params = process.argv.slice(2)
 
 // 1. parseArgs      → leer los argumentos y construir la configuración. Listo
-// 2. readInput      → leer el archivo de origen.
+// 2. readInput      → leer el archivo de origen. Listo
 // 3. parseDelimited → convertir el texto en filas y columnas.
 // 4. sortRows       → ordenar las filas.
 // 5. serialize      → reconstruir el texto delimitado.
@@ -86,7 +86,7 @@ const parseBy = (arg) => {
 
 //Funcion para validar el delimitador
 const validateDelimiter = (delimiter) => {
-    if (delimiter === "\t") {
+    if (delimiter === `\\t`) {
         return delimiter
     }
 
@@ -198,3 +198,23 @@ const readInput = (inputFile) => {
         showError(error.message)
     }
 }
+
+//convertir el texto en filas y columnas.
+const parseDelimited = (text, delimiter) => {
+    const cleanText = text.replace(/\r/g, "").trim();
+
+    let data = cleanText.split("\n")
+
+    data = data.map(e => e.split(delimiter))
+
+    for (const element of data) {
+        if (data[0].length != element.length) {
+            showError("Todas las filas tiene que tener la misma cantidad de campos.")
+        }
+    }
+
+    return data
+}
+
+
+parseArgs(params)
