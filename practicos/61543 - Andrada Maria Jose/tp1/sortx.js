@@ -35,4 +35,34 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
+
+function parseArgs() {
+     const args = process.argv.slice(2);
+     const inputFile = args[0];
+     const outputFile = args[1];
+     const sortFields = [];
+     let noHeader = false;
+     for (let i = 2; i < args.length; i++) {
+          if (args[i] === "-b" || args[i] === "--by") {
+            const criterio = args[i+1];
+            const partes = criterio.split(":");
+            const name = partes[0];
+            const tipo = partes[1] || "alpha";
+            const orden = partes[2] || "asc";
+            const numeric = tipo === "num";
+            const descending = orden === "desc";
+            const campo = {name: name, numeric: numeric, descending: descending,};
+            sortFields.push(campo);    
+        }
+        if(args[i] === "-nh" || args[i] === "--no-header"){
+            noHeader = true;
+        }
+       
+}
+    
+    return {inputFile: inputFile, outputFile: outputFile, delimiter: ",", noHeader: noHeader, sortFields: sortFields};
+}
+const config = parseArgs();
+console.log(config);
+
 console.log(HELP)
