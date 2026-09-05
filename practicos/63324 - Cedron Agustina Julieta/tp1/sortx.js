@@ -67,16 +67,16 @@ function parseArgs(argumentos){
         }
         // si es para ordenar, uso la regla
         else if (arg==="-b"||arg==="--by") {
-            //avazo para guardar el dato siguientee
+            //avanzo para guardar el dato siguientee
             i++;
             const valor=argumentos[i];
             if (valor) {
                 //desarmo el texto separado por los dos puntos
-                const [nombre,tipo, orden]=valor.split(":");
+                const partes=valor.split(":");
                 opciones.reglas.push({
-                    nombre:nombre,
-                    tipo:tipo === "num",
-                    orden:orden ==="desc"
+                    nombre:partes[0],
+                    tipo:partes.includes("num"),
+                    orden: partes.includes("desc")
             }); 
             }
         //si no tiene guión, es porque es un archivo
@@ -104,8 +104,27 @@ function readInput(rutaArchivo) {
         return texto.replaceAll("\r\n","\n");
     } catch (error) {
         //si el archivo no esxiste o no se puede abrir, muestra el error y salgo
-        console.error(`Error: el archivo ${rutaArchivo} no se puede leer o no existe.`)
+        console.error(`Error: el archivo "${rutaArchivo}" no se puede leer o no existe.`)
         process.exit(1);
     }
+}
+//3-parseDelimited
+function parseDelimited(texto, delimitador=",",sinEncabezado= false){
+    //separo el texto por renglones y descarto lineas vacias
+    let lineas= texto.split("\n").filter(linea=>linea.trim()!=="");
+    //si el archivo estaba vacio, devuelvo arrays vacios
+    if (lineas.length===0) {
+        return {encabezado:[],filas: [] };
+    }
+    let encabezado=[];
+    let lineasDatos=lineas;
+    //si el archivo tiene encabezado, extraigo la primera linea
+    if(!sinEncabezado){
+        encabezado=lineas[0].split(delimitador).map(celda=>celda.trim());
+        lineasDatos= lineas.slice(1);
+    }
+    //convertir cada linea restante en un array de valores
+    const filas= lineasDatos.map(linea=>linea.split(delimitador).map(celda=>celda.trim()));
+    return {encabezado, filas};
 }
 console.log(HELP)
