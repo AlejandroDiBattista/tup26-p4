@@ -33,7 +33,7 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
-import fs from "node:fs";
+import fs, { readFileSync } from "node:fs";
 
 // Escribir aqui la solución al enunciado.
 //1-parseArgs:
@@ -94,5 +94,18 @@ function parseArgs(argumentos){
         }
         return opciones;
     
+}
+// 2-readInput:
+function readInput(rutaArchivo) {
+    try {
+        //leo todo el texto del archivo en fromato utf-8
+        let texto= readFileSync(rutaArchivo,"utf-8");
+        //cambio los saltos de lineas de windows por saltos comuness
+        return texto.replaceAll("\r\n","\n");
+    } catch (error) {
+        //si el archivo no esxiste o no se puede abrir, muestra el error y salgo
+        console.error(`Error: el archivo ${rutaArchivo} no se puede leer o no existe.`)
+        process.exit(1);
+    }
 }
 console.log(HELP)
