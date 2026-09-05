@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -124,6 +126,16 @@ function parseArgs(argv) {
     sortFields: valores.sortFields
   };
 }
+
+function readInput(inputFile) {
+    try {
+        return fs.readFileSync(inputFile, "utf8");
+    } catch (error) {
+        throw new Error(
+            `No se puede leer el archivo de origen: ${inputFile}`
+        );
+    }
+} 
 
 
 console.log(parseArgs(process.argv));
