@@ -129,9 +129,18 @@ function sortRows (tabla, header, sortFields) {
         let valorA = a[index];
         let valorB = b[index];
         let diff;
-
+            if(index === -1) {
+                console.error(`error: "${name}" no existe en el encabezado`);
+                process.exit(1);
+            }
         if(numeric ) {
-            diff = Number(valorA) - Number(valorB);
+            let numA = Number(valorA);
+            let numB = Number(valorB);
+            if (isNaN(numA) || isNaN(numB)) {
+                console.error(`error: valor numerico invalido en la columna "${name}"`);
+                process.exit(1);
+            }
+            diff = numA - numB;
         }else{
             diff = valorA.localeCompare(valorB, "es");
         }
@@ -155,7 +164,6 @@ function serialize (tabla, delimiter, noHeader){
     let cabezera = noHeader ? "" : tabla.header.join(delimiter) + "\n";
     let filas = tabla.rows.map(fila => fila.join(delimiter)).join("\n");
     return cabezera + filas + "\n";
-    return cabezera + filas;
 }
 
 // escribe el archivo de salia
