@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import fs from 'fs'
+
 const HELP = `
 sortx — Ordena archivos de texto delimitados
 
@@ -128,5 +130,60 @@ function parseArgs(args) {
   }
 }
 
+function readInput(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf-8')
+  } catch (error) {
+    console.error('Error: No se pudo leer el archivo de origen: ' + filePath)
+    process.exit(1)
+  }
+}
+
+function parseDelimited(text, delimiter, noHeader) {
+  if (text.includes('"')) {
+    console.error('Error: El archivo contiene comillas dobles, formato no admitido.')
+    process.exit(1)
+  }
+
+  const lines = text.split(/\r?\n/)
+  if (lines.length > 0 && lines[lines.length - 1] === '') {
+    lines.pop()
+  }
+
+  if (lines.length === 0) {
+    console.error('Error: El archivo de origen está vacío.')
+    process.exit(1)
+  }
+
+  const firstRow = lines[0].split(delimiter)
+  const expectedCols = firstRow.length
+
+  const parsedRows = []
+  for (let i = 0; i < lines.length; i++) {
+    const fields = lines[i].split(delimiter)
+    if (fields.length !== expectedCols) {
+      console.error('Error: La fila ' + (i + 1) + ' tiene ' + fields.length + ' campos, se esperaban ' + expectedCols + '.')
+      process.exit(1)
+    }
+    parsedRows.push(fields)
+  }
+
+  if (noHeader) {
+    return {
+      header: null,
+      rows: parsedRows
+    }
+  }
+
+  return {
+    header: parsedRows[0],
+    rows: parsedRows.slice(1)
+  }
+}
+
 const config = parseArgs(process.argv.slice(2))
-console.log(config)
+const content = readInput(config.inputFile)
+const data = parseDelimited(content, config.delimiter, config.noHeader)
+
+console.log('Encabezado:', data.header)
+console.log('Cantidad de filas:', data.rows.length)
