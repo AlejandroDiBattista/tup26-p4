@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs"
+// `
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -35,7 +36,10 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-
+function errores(mensaje) {
+    console.error(`Error: ${mensaje}`)
+    process.exit(1)
+}
 
 function parseArgs(argv)    {
     const configuracion = {
@@ -52,34 +56,74 @@ function parseArgs(argv)    {
         process.exit(0)
     }
 
-    if (args.length < 2){
-        console.error("Falta archivo de origen o destino.")
-        process.exit(1)
-    }
-
-    configuracion.inputFile = args[0]
-    configuracion.outputFile = args[1]
-
-    for (let i = 2; i < argv.length; i++) {
+    for (let i = 0; i < argv.length; i++) {
 
         const arg = argv[i]
 
         if (arg === '-b' || arg === '--by') {
+            if (i + 1 >= args.length) errores("La opcion '-b' o '--by' no recibe su valor.")
             const campo = args[i+1]
-            if (campo){
-                configuracion.sortFields.push(campo)
+            
+            const parts = campo.split(":")
+            const name = parts[0]
+            if (!name) errores("El nombre de campo en '-b' o '--by' esta vacio.")
+            
+            let numeric = false
+            let descending = false
+
+            for (let j = 1; j < parts.length; j++){               
+                if (parts[j] === "num") numeric = true;
+                else if (parts[j] === "alpha") numeric = false;
+                else if (parts[j] === "asc") descending = false;
+                else if (parts[j] === "desc") descending = true;
+                else errores(`Modificador desconocido '${parts[j]}' en el criterio '-b' o '--by'.`)
             }
+
+            configuracion.sortFields.push({name, numeric, descending})
             i++
         } else if (arg === '-d' || arg === '--delimiter'){
-            configuracion.delimiter = args[i+1] || ","
-            i++
+            if (i + 1 >= args.length) errores("La opcion de '-d' o '--delimiter' no recibe su valor.")
+            let rawDelimiter = args[i+1]
+        
+            if (rawDelimiter === '\\t') rawDelimiter = '\t';
+            if (rawDelimiter === '\\n') rawDelimiter = '\n';
+            if (rawDelimiter === '\\r') rawDelimiter = '\r';
+            
+            configuracion.delimiter = rawDelimiter
+            i++            
         } else if (arg === '-nh' || arg === '--no-header'){
             configuracion.noHeader = true
-        }
-
-        
+        } else if (arg.startsWith("-")){
+            errores(`Se indica una opcion desconocida '${arg}'`)
+        } else {
+            if (!configuracion.inputFile) {
+                configuracion.inputFile = arg
+            } else if (!configuracion.outputFile) {
+                configuracion.outputFile = arg
+            } else {
+                errores(`Se indica un argumento inesperado '${arg}'`)
+            }
+        } 
     }
+    
+    if (!configuracion.inputFile || !configuracion.outputFile) {
+        errores("Falta archivo de origen o destino.")
+    }
+    if (configuracion.sortFields.length === 0) {
+        errores("Falta el criterio de campo -b o --by.")
+    }
+    if (!configuracion.delimiter || configuracion.delimiter.length !== 1){
+        errores("El delimitador no es un solo caracter.")
+    }
+
     return configuracion
+}
+function readInput(filePath){
+    try {
+        return fs.readFileSync(filePath, "utf8")
+    } catch (error) {
+        errores(`EL archivo de origen no existe o no se puede leer: ${filePath}`)
+    }
 }
 const config = parseArgs(process.argv.slice(2))
 console.log(config)
