@@ -170,3 +170,78 @@ function parseDelimited(text, delimiter, noHeader) {
 
     return { header, rows }
 }
+
+// sortRows: ordena las filas
+function sortRows(rows, sortFields, header) {
+    if (rows.length === 0) {
+        return []
+    }
+
+    // se resuelve el indice de columna de cada campo
+    const criterios = sortFields.map(field => {
+        let colIndex
+
+        // si el nombre es un numero, se lo usa como indice directo
+        if (/^\d+$/u.test(field.name)) {
+            colIndex = Number(field.name)
+            if (colIndex >= rows[0].length) {
+                throw new Error(
+                    `El indice de columna ${colIndex} esta fuera de rango (el archivo tiene ${rows[0].length} columna(s)).`
+                )
+            }
+        } else {
+            // buscamos por nombre en el encabezado
+            if (!header) {
+                throw new Error(
+                    `No se puede buscar por nombre de campo "${field.name}" en un archivo sin encabezado. Usa un indice numerico.`
+                )
+            }
+            colIndex = header.indexOf(field.name)
+            if (colIndex === -1) {
+                throw new Error(`El campo "${field.name}" no existe en el encabezado.`)
+            }
+        }
+
+        return { ...field, colIndex }
+    })
+
+    // funcion comparadora que aplica los criterios en orden
+    const comparar = (filaA, filaB) => {
+        for (const criterio of criterios) {
+            const valA = filaA[criterio.colIndex]
+            const valB = filaB[criterio.colIndex]
+
+            let resultado
+
+            if (criterio.numeric) {
+                const numA = Number(valA)
+                const numB = Number(valB)
+
+                if (isNaN(numA)) {
+                    throw new Error(`El campo "${criterio.name}" tiene un valor no numerico: "${valA}"`)
+                }
+                if (isNaN(numB)) {
+                    throw new Error(`El campo "${criterio.name}" tiene un valor no numerico: "${valB}"`)
+                }
+
+                resultado = numA - numB
+            } else {
+                // comparacion alfabetica usando localeCompare para manejar acentos
+                resultado = valA.localeCompare(valB, undefined, { sensitivity: "base" })
+            }
+
+            if (criterio.descending) {
+                resultado = -resultado
+            }
+
+            if (resultado !== 0) {
+                return resultado
+            }
+        }
+
+        return 0
+    }
+
+    return [...rows].sort(comparar)
+}
+
