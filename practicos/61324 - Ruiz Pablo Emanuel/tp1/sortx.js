@@ -95,8 +95,53 @@ function parseDelimited(text, delimiter){
     const lineas = text.split(/\r?\n/);
     return lineas.map(linea => linea.split(delimiter));
 }
+
 function sortRows(rows, config) {
-    return rows;
+    let header = [];
+    let data = rows;
+
+    if(!config.noHeader){
+        header = rows[0];
+        data = rows.slice(1);
+    }
+    data.sort((a, b) => {
+        for (const campo of config.sortFields) {
+            let indice;
+            if(config.noHeader) {
+                indice = Number(campo.name);
+            } else {
+                indice = header.indexOf(campo.name);
+            }
+            if (indice < 0) {
+                continue;
+            }
+
+            const valorA = a[indice];
+            const valorB = b[indice];
+
+            let resultado;
+            if (campo.numeric) {
+                resultado = Number(valorA) - Number(valorB);
+            } else {
+                resultado = valorA.localeCompare(valorB);
+            }
+
+            if (resultado !== 0) {
+                if (campo.descending) {
+                    resultado = -resultado;
+                }
+                return resultado;
+            }
+
+        }
+        return 0;
+    });
+    if (!config.noHeader) {
+        return [header, ...data];
+    }
+    return data;
+
+    //return rows;//
 }
 function serialize(rows, delimiter) {
     return rows.map(row => row.join(delimiter)).join("\n");
