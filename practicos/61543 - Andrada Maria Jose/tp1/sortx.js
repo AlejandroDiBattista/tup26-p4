@@ -59,7 +59,6 @@ function parseArgs() {
         }
        
 }
-    
     return {inputFile: inputFile, outputFile: outputFile, delimiter: ",", noHeader: noHeader, sortFields: sortFields};
 }
 const config = parseArgs();
@@ -68,8 +67,38 @@ console.log(config);
 function readInput(inputFile){
     const contenido = fs.readFileSync(inputFile, "utf8");
     return contenido;
+}
+const contenido = readInput(config.inputFile);
+const rows = parseDelimited(contenido, config.delimiter);
+console.log(rows);
+const sortedRows = sortRows(rows, config);
+console.log(sortedRows); 
+ 
+function parseDelimited(contenido, delimiter) {
+    if (contenido.includes('"')) {
+        throw new Error("El archivo contiene comillas dobles");
+    }
+    const filas = contenido.trim().split("\n");
+    const rows = [];
+    let cantidadColumnas;
+    for (let i = 0; i < filas.length; i++) {
+    const fila = filas[i].replace(/\r$/, "");
+    const columnas = fila.split(delimiter);
+    if (i === 0) {
+        cantidadColumnas = columnas.length;
+    }
+    if (columnas.length !== cantidadColumnas) {
+        throw new Error("Las filas tienen distinta cantidad de columnas");
+    }
+    rows.push(columnas); 
+    }
+ return rows;
+    
 
 }
+
+
+
 
 
 
