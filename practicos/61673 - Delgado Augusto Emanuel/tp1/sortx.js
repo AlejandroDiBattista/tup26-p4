@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { readFile, writeFile } from "node:fs/promises"
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -34,5 +36,78 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+function parseArgs(argv) {
+    // si el usuario pide ayuda se muestra y se sale
+    if (argv.includes("--help") || argv.includes("-h")) {
+        console.log(HELP)
+        process.exit(0)
+    }
+    const args = argv.slice(0)
+    if (args.length < 1 || args[0].startsWith("-")) {
+        throw new Error("Falta el archivo de origen.")
+    }
+    const inputFile = args.shift()
+    if (args.length < 1 || args[0].startsWith("-")) {
+        throw new Error("Falta el archivo de destino.")
+    }
+    const outputFile = args.shift()
+    const config = {
+        inputFile,
+        outputFile,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    }
+    // se procesan el resto de las opciones
+    let i = 0
+    while (i < args.length) {
+        const arg = args[i]
+        if (arg === "--by" || arg === "-b") {
+            i++
+            if (i >= args.length) {
+                throw new Error(`La opcion "${arg}" necesita un valor.`)
+            }
+            config.sortFields.push(parseSortField(args[i]))
+        } else if (arg === "--delimiter" || arg === "-d") {
+            i++
+            if (i >= args.length) {
+                throw new Error(`La opcion "${arg}" necesita un valor.`)
+            }
+            const delim = args[i]
+            const resolvedDelim = delim === "\\t" ? "\t" : delim
+            if ([...resolvedDelim].length !== 1) {
+                throw new Error(`El delimitador debe ser exactamente un caracter. Se recibio: "${delim}"`)
+            }
+            config.delimiter = resolvedDelim
+        } else if (arg === "--no-header" || arg === "-nh") {
+            config.noHeader = true
+        } else if (arg.startsWith("-")) {
+            throw new Error(`Opcion desconocida: "${arg}"`)
+        } else {
+            throw new Error(`Argumento inesperado: "${arg}"`)
+        }
+        i++
+    }
+    if (config.sortFields.length === 0) {
+        throw new Error("Debe especificar al menos un criterio de ordenamiento con --by (-b).")
+    }
+    return config
+}
+// parsea una expresion del tipo: campo[:tipo[:orden]]
+function parseSortField(expr) {
+    const partes = expr.split(":")
+    const name = partes[0]
+    const tipoRaw = partes[1] ?? "alpha"
+    const ordenRaw = partes[2] ?? "asc"
+    if (tipoRaw !== "alpha" && tipoRaw !== "num") {
+        throw new Error(`Tipo de ordenamiento invalido: "${tipoRaw}". Debe ser "alpha" o "num".`)
+    }
+    if (ordenRaw !== "asc" && ordenRaw !== "desc") {
+        throw new Error(`Orden invalido: "${ordenRaw}". Debe ser "asc" o "desc".`)
+    }
+    return {
+        name,
+        numeric: tipoRaw === "num",
+        descending: ordenRaw === "desc"
+    }
+}
