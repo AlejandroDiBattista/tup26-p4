@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs"
+
 
 const HELP = `
 
@@ -48,6 +50,8 @@ EJEMPLOS:
 
 
 // Escribir aqui la solución al enunciado.
+
+
 
 function parseArgs(args)
 {
@@ -140,5 +144,23 @@ return configuracion
 
 }
 
+function readInput (nombre){
+    const texto = readFileSync(nombre, "utf-8")
+    return texto
+
+}
+function parseDelimited (texto, delimiter){
+    const filas = texto.split(/\r?\n/)
+    const mapeo = filas.map(fila => fila.split(delimiter))
+    return mapeo
+}
+
+
 const argumentos = process.argv.slice(2)
 const resultado = parseArgs(argumentos)
+
+if (resultado) {
+    const texto = readInput(resultado.inputFile)
+    const filas = parseDelimited(texto, resultado.delimiter)
+    
+}
