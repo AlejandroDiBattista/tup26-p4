@@ -40,7 +40,7 @@ let params = process.argv.slice(2)
 
 // 1. parseArgs      → leer los argumentos y construir la configuración. Listo
 // 2. readInput      → leer el archivo de origen. Listo
-// 3. parseDelimited → convertir el texto en filas y columnas.
+// 3. parseDelimited → convertir el texto en filas y columnas. Listo
 // 4. sortRows       → ordenar las filas.
 // 5. serialize      → reconstruir el texto delimitado.
 // 6. writeOutput    → escribir el archivo de destino.
@@ -216,5 +216,26 @@ const parseDelimited = (text, delimiter) => {
     return data
 }
 
+//reconstruir el texto delimitado
+const serialize = (data, delimiter) => {
+    data = data.map(e => e.join(delimiter))
 
-parseArgs(params)
+    return data.join('\n')
+}
+
+//escribir el archivo de destino.
+const writeOutput = (outputFile, text) => {
+    try {
+        fs.writeFileSync(outputFile, text, 'utf-8')
+    } catch (error) {
+        showError(error.message)
+    }
+}
+
+const sortx = (args) => {
+    let {inputFile, outputFile, delimiter, noHeader, sortFields} = parseArgs(args)
+
+    let inputData = parseDelimited(readInput(inputFile), delimiter)
+}
+
+sortx(params)
