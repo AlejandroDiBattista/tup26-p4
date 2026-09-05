@@ -274,9 +274,13 @@ function writeOutput(filePath, content) {
   }
 }
 
-const config = parseArgs(process.argv.slice(2))
-const content = readInput(config.inputFile)
-const data = parseDelimited(content, config.delimiter, config.noHeader)
-const sortedRows = sortRows(data.rows, data.header, config.sortFields)
-const outputText = serialize(data.header, sortedRows, config.delimiter)
-writeOutput(config.outputFile, outputText)
+function main() {
+  const config = parseArgs(process.argv.slice(2))
+  const content = readInput(config.inputFile)
+  const data = parseDelimited(content, config.delimiter, config.noHeader)
+  const sortedRows = sortRows(data.rows, data.header, config.sortFields)
+  const outputText = serialize(data.header, sortedRows, config.delimiter)
+  writeOutput(config.outputFile, outputText)
+}
+
+main()
