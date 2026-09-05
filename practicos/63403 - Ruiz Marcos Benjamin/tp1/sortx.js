@@ -92,4 +92,16 @@ function readInput(archivo) {
     return(contenido);
 }   
 
-console.log(readInput('empleados.csv'));
+//console.log(readInput('empleados.csv'));
+
+function parseDelimited(texto, delimitador){
+const lineas = texto.split('\r\n');
+const filas = [];
+for (let i = 0; i < lineas.length; i++) {
+const fila = lineas[i];
+const columnas = fila.split(delimitador);
+filas.push(columnas);}
+return filas;
+}
+
+console.log(parseDelimited(readInput('empleados.csv'), ','));
