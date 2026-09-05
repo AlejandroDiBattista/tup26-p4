@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from "node:fs"
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -35,4 +35,51 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+
+function parseArgs(argv)    {
+    const configuracion = {
+        inputFile: null,
+        outputFile: null,
+        delimiter: ",",
+        noHeader: false,
+        sortFields:[]
+    }
+    const args = argv
+
+    if (args.includes("-h") || args.includes("--help")){
+        console.log(HELP)
+        process.exit(0)
+    }
+
+    if (args.length < 2){
+        console.error("Falta archivo de origen o destino.")
+        process.exit(1)
+    }
+
+    configuracion.inputFile = args[0]
+    configuracion.outputFile = args[1]
+
+    for (let i = 2; i < argv.length; i++) {
+
+        const arg = argv[i]
+
+        if (arg === '-b' || arg === '--by') {
+            const campo = args[i+1]
+            if (campo){
+                configuracion.sortFields.push(campo)
+            }
+            i++
+        } else if (arg === '-d' || arg === '--delimiter'){
+            configuracion.delimiter = args[i+1] || ","
+            i++
+        } else if (arg === '-nh' || arg === '--no-header'){
+            configuracion.noHeader = true
+        }
+
+        
+    }
+    return configuracion
+}
+const config = parseArgs(process.argv.slice(2))
+console.log(config)
