@@ -49,17 +49,15 @@ import { readFile } from "node:fs/promises";
 // 5. serialize      → reconstruir el texto delimitado
 // 6. writeOutput    → escribir el archivo de destino
 
-let config = {
-	input: "",
-	output: "",
-	delimitador: ",",
-	noHeader: false,
-	criterios: [{ name: "apellido", numeric: false, descending: false }],
-};
 function configuracion() {
 	const argumentos = process.argv.slice(2);
-	config.input = argumentos[0];
-	config.output = argumentos[1];
+	let config = {
+		input: argumentos[0],
+		output: argumentos[1],
+		delimitador: ",",
+		noHeader: false,
+		criterios: [{ name: "apellido", numeric: false, descending: false }],
+	};
 	if (argumentos.includes("-d") || argumentos.includes("--delimiter")) {
 		config.delimitador =
 			argumentos[argumentos.indexOf("-d") + 1] ||
@@ -93,11 +91,13 @@ function configuracion() {
 		config.criterios = crit;
 	}
 	console.log(config);
+	return config;
 }
 
-async function readInput(config) {
-	const contenido = await readFile(config.input, "utf8");
+async function readInput(input) {
+	const contenido = await readFile(input, "utf8");
 	console.log(contenido);
+	return contenido;
 }
 
 function parseDelimited(text, delimiter, noHeader) {
@@ -108,12 +108,14 @@ function parseDelimited(text, delimiter, noHeader) {
 	return filas;
 }
 
-
-function traductor() {
-	configuracion();
-	readInput(config);
+async function sorteador() {
+	const config = configuracion();
+	const contenido = await readInput(config.input);
+	const filas = parseDelimited(contenido, config.delimitador, config.noHeader);
 }
-traductor();
+
+sorteador();
+
 
 //Consultas a ia:
 //1 Le pedi que analizara el workspace en preparacion para algun duda que tenga
