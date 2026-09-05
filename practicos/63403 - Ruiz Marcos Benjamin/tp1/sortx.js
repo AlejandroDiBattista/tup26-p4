@@ -104,4 +104,61 @@ filas.push(columnas);}
 return filas;
 }
 
-console.log(parseDelimited(readInput('empleados.csv'), ','));
+//console.log(parseDelimited(readInput('empleados.csv'), ','));
+
+function sortRows(filas, sortFields, noHeader) {
+let datos;
+let encabezado;
+const criterios =[];
+if (noHeader) {
+     encabezado = null;
+     datos = filas;
+ }
+ else {
+     encabezado = filas[0];
+     datos = filas.slice(1);
+ }
+for (let i = 0; i < sortFields.length; i++) {
+const campos = sortFields[i];
+let indice;
+if (noHeader) {
+    indice = Number(campos.name);
+}
+else {
+    indice = encabezado.indexOf(campos.name);
+
+}
+criterios.push({ indice, numeric: campos.numeric, descending: campos.descending });
+}
+
+datos.sort((a, b) => {
+for (let i = 0; i < criterios.length; i++) {
+const criterio = criterios[i];
+let resultado;
+if (criterio.numeric) {
+  resultado = Number(a[criterio.indice]) - Number(b[criterio.indice]);
+} else {
+  resultado = a[criterio.indice].localeCompare(b[criterio.indice]);
+}
+if (criterio.descending) {
+  resultado = -resultado;
+}
+if (resultado !== 0) {
+  return resultado;
+}
+
+}
+return 0;
+});
+if (encabezado !== null) {
+    datos.unshift(encabezado);
+}
+return datos;
+}
+
+
+const config = parseArgs();
+const contenido = readInput(config.inputFile);
+const filas = parseDelimited(contenido, config.delimiter);
+const filasOrdenadas = sortRows(filas, config.sortFields, config.noHeader);
+console.log(filasOrdenadas);
