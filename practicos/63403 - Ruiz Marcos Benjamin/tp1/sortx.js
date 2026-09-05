@@ -157,8 +157,25 @@ return datos;
 }
 
 
+//const config = parseArgs();
+//const contenido = readInput(config.inputFile);
+//const filas = parseDelimited(contenido, config.delimiter);
+//const filasOrdenadas = sortRows(filas, config.sortFields, config.noHeader);
+//console.log(filasOrdenadas);
+
+function serialize(filas, delimitador) {
+const lineas = [];
+for (let i = 0; i < filas.length; i++) {
+const fila = filas[i];
+const linea = fila.join(delimitador);
+lineas.push(linea);
+}
+return lineas.join('\r\n');
+}
+
 const config = parseArgs();
 const contenido = readInput(config.inputFile);
 const filas = parseDelimited(contenido, config.delimiter);
 const filasOrdenadas = sortRows(filas, config.sortFields, config.noHeader);
-console.log(filasOrdenadas);
+const resultado = serialize(filasOrdenadas, config.delimiter);
+console.log(resultado);
