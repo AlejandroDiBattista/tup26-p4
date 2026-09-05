@@ -33,6 +33,58 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
+function parseArgs(args){
+    const config = {
+    inputFile: null,
+    outputFile: null,
+    delimiter: ",",
+    noHeader: false,
+    sortFields: [ ]
+    };
+    for (let i =0; i < args.length; i++ ){
+        const arg = args[i];
+        if (arg==="-nh" || arg === "--no-header"){
+        config.noHeader = true;
+        }
+        else if (arg === "-b" || arg ==="--by"){ i++;
+            const expresion= args[i];
+            const partes = expresion.split(':');
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+            const nombreCampo = partes[0];
+            let esNumerico = false;
+            let esDescendente = false;
+            if (partes[1]=== "num") {
+                esNumerico= true;
+            }
+            
+            if (partes[2]=== "desc") {
+                esDescendente= true;
+            }
+            const newCampo = {
+                name: nombreCampo,
+                numeric:esNumerico,
+                descending:esDescendente
+            };
+            config.sortFields.push(newCampo);
+        }
+        else{
+
+            if (config.inputFile === null) {
+                config.inputFile = arg;
+            } 
+            else if (config.outputFile === null) {
+                config.outputFile = arg;
+        }
+    }}
+    return config
+}
+
+function main() {
+    const argumentoUsuario = process.argv.slice(2);
+    const resultadoConfig =parseArgs(argumentoUsuario);
+    
+    console.log("TEST DE CONFIGURACION");
+    console.log(resultadoConfig);
+}
+main();
+
