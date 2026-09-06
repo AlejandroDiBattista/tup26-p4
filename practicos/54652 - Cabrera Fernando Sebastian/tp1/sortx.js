@@ -73,3 +73,11 @@ function readInput(filePath) {
 }
 const inputData = readInput(inputFile);
 console.log(inputData);
+
+function parseDelimited(text,delimiter) {
+    const lines = text.split('\n').map(line=> line.trimEnd());
+    const parsedData = lines.map(line => line.split(delimiter));
+    return parsedData;
+}
+const parsedData = parseDelimited(inputData, delimiter);
+console.log(parsedData);
