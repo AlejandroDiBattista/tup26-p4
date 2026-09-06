@@ -108,6 +108,9 @@ function configuracion() {
 		console.error("Error: no se especifica ningún criterio --by."); 
 		process.exit(1);
 	}
+	if (config.delimitador.replace('\\t', '\t').length !== 1) {
+		console.error("Error: el delimitador no es un único carácter."); process.exit(1);
+	}
 	console.log(config);
 	return config;
 }
