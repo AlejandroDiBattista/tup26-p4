@@ -143,7 +143,37 @@ function readInput(config) {
 }
 
 
-//function parseDelimited(){}
+function parseDelimited(text, config) {
+
+    let lines = text.split(/\r?\n/);
+
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
+        lines.pop();
+    }
+
+    let allRows = lines.map(line => line.split(config.delimiter));
+
+    let header = null;
+    let rows = allRows;
+
+    if (!config.noHeader) {
+        header = allRows[0];
+        rows = allRows.slice(1);
+    }
+
+    let referencia = config.noHeader ? rows[0] : header;
+    let expectedLength = referencia ? referencia.length : 0;
+
+    for (let row of rows) {
+        if (row.length !== expectedLength) {
+            throw new Error(
+                `Las filas tienen distinta cantidad de campos.`
+            );
+        }
+    }
+
+    return { header, rows };
+}
 //function sortRows(){} 
 //function serialize() {}
 //function writeOutput(){}
