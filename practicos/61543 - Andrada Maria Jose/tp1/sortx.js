@@ -154,6 +154,18 @@ function sortRows(rows, config) {
 
 }
 
+function serialize(rows, delimiter) {
+    const filas = rows.map((fila) => {
+        return fila.join(delimiter);
+        
+
+    });
+    return filas.join("\n");
+}
+
+const texto = serialize(sortedRows, config.delimiter);
+console.log(texto);
+
 
 
 
