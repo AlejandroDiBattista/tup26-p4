@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from 'node:fs';
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -99,12 +99,24 @@ return {
 }
 
 
-
-
 //2. readInput      → leer el archivo de origen
+function readInput(rutadelarchivo) {
+    //leeremos el archivo con try catch para manejar errores
+    try {
+        const contenido = fs.readFileSync(rutadelarchivo, 'utf-8');
+        return contenido;
+    } catch (error) {
+        throw new Error(`Error al leer el archivo: ${error.message}`);
+    }
+}
 //3. parseDelimited → convertir el texto en filas y columnas
 //4. sortRows       → ordenar las filas
 //5. serialize      → reconstruir el texto delimitado
 //6. writeOutput    → escribir el archivo de destino
-
-
+function writeOutput(rutadelarchivo, contenido) {
+    try {
+        fs.writeFileSync(rutadelarchivo, contenido, 'utf-8');
+    } catch (error) {
+        throw new Error(`Error al escribir el archivo: ${error.message}`);
+    }
+}
