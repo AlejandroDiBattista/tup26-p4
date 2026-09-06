@@ -210,9 +210,26 @@ function sortRows(parsedData, config) {
     return parsedData;
 }
 
+function serialize(sortedData, config) {
+    const lines = [];
+
+    if (sortedData.header) {
+        const headerLine = sortedData.header.join(config.delimiter);
+        lines.push(headerLine);
+    }
+
+    for (const row of sortedData.rows) {
+        const dataLine = row.join(config.delimiter);
+        lines.push(dataLine);
+    }
+
+    return lines.join('\n') + '\n';
+}
+
 const config = parseArgs(process.argv.slice(2));
 const rawText = readInput(config.inputFile);
 const parsedData = parseDelimited(rawText, config);
 const sortedData = sortRows(parsedData, config);
+const finalText = serialize(sortedData, config);
 
 // console.log(HELP)
