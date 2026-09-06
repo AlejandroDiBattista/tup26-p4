@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { kMaxLength } from "node:buffer";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { ByteLengthQueuingStrategy } from "node:stream/web";
 // const HELP = `
 
@@ -138,6 +138,15 @@ function sortRows(filas, criterios) {
 		return 0;
 	});
 }
+
+function serialize(header, filas, delimiter) {
+	const textoHeader = header.join(delimiter);
+	const textoFilas = filas.map((fila) => fila.join(delimiter)).join("\n");
+	return [textoHeader, textoFilas].join("\n");
+}
+
+async function writeOutput(output, contenido) {
+	await writeFile(output, contenido, "utf8");
 }
 
 async function sorteador() {
@@ -147,6 +156,9 @@ async function sorteador() {
 	const columnacriterios = columnasPorCriterio(tabla.header, config.criterios);
 	const filasOrdenadas = sortRows(tabla.filas, columnacriterios);
 	console.log("Filas ordenadas:", filasOrdenadas);
+	const serializado = serialize(tabla.header, filasOrdenadas, config.delimitador);
+	await writeOutput(config.output, serializado);
+
 }
 
 sorteador();
