@@ -112,6 +112,7 @@ const config = parseArgs();
 
 
 
+
 function readInput(inputFile){
     try {
     const contenido = fs.readFileSync(inputFile, "utf8");
@@ -192,10 +193,10 @@ function sortRows(rows, config) {
         return comparacion;
         }
     }
-        return 0;
+        
 
 }
-
+ return 0;
     });
 
     if (config.noHeader) {
