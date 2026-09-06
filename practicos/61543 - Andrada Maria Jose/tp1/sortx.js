@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from "fs";
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -95,10 +95,64 @@ function parseDelimited(contenido, delimiter) {
  return rows;
     
 }
- function sortRows(rows, config) {
+ 
+function sortRows(rows, config) {
     const headers = config.noHeader ? null : rows[0];
     const dataRows = config.noHeader ? rows : rows.slice(1);
- }
+    dataRows.sort((a, b) => {
+        for (let i = 0; i < config.sortFields.length; i++){
+            const criterio = config.sortFields[i];
+            let indice;
+            if (config.noHeader) {
+                indice = Number(criterio.name);
+            } else {
+                indice = headers.indexOf(criterio.name);
+            }
+
+            if (indice === -1) {
+                throw new Error("El campo solicitado no existe");
+            }
+        
+        if (criterio.numeric) {
+            const valorA = Number(a[indice]);
+            const valorB = Number(b[indice]);
+            if (Number.isNaN(valorA) || Number.isNaN(valorB)){
+                throw new Error("El criterio numerico contiene un valor no numerico");
+            }
+
+            if(valorA < valorB) {
+                return criterio.descending ? 1 : -1;
+            }
+
+            if (valorA > valorB) {
+                return criterio.descending ? -1 : 1;
+            }
+            
+        }
+        
+        if (!criterio.numeric) {
+            const comparacion = a[indice].localeCompare(b[indice], "es");
+
+        if(comparacion !==0) {
+        if (criterio.descending) {
+            return -comparacion;
+        }
+        
+        return comparacion;
+        }
+    }
+        return 0;
+
+}
+
+    });
+
+    if (config.noHeader) {
+        return dataRows;
+    }
+ return [headers, ...dataRows];
+
+}
 
 
 
