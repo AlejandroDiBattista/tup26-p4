@@ -107,7 +107,18 @@ writeFileSync(uso.outputFile, texto)
 const tablas = filas.map(f => f.split(uso.delimiter) )
 console.log(tablas)
 
+let cabeza = null 
 
+let filasDatos = []
 
-
+if(uso.noHeader == false){
+  
+  cabeza = tablas[0]
+  filasDatos = tablas.slice(1)
+  
+}else {
+    filasDatos= tablas
+}
+  console.log("CABEZA:" , cabeza)
+  console.log("DATOS:" , filasDatos)
 
