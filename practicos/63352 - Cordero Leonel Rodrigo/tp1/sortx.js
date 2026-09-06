@@ -115,8 +115,44 @@ function readInput(inputFile) {
     }
 }
 
+function parseDelimited(rawText, config) {
+    if (rawText.includes('"')) {
+        console.error("Error: La entrada contiene comillas dobles.");
+        process.exit(1);
+    }
+
+    const lines = rawText.replace(/\r/g, '').split('\n').filter(line => line.length > 0);
+
+    if (lines.length === 0) {
+        return { header: null, rows: [] };
+    }
+
+    const allRows = lines.map(line => line.split(config.delimiter));
+    const expectedColumnCount = allRows[0].length;
+
+    for (let i = 1; i < allRows.length; i++) {
+        if (allRows[i].length !== expectedColumnCount) {
+            console.error("Error: Las filas tienen diferente cantidad de campos.");
+            process.exit(1);
+        }
+    }
+
+    let header = null;
+    let dataRows = allRows;
+
+    if (!config.noHeader) {
+        header = allRows.shift(); 
+        dataRows = allRows; 
+    }
+
+    return {
+        header: header,
+        rows: dataRows
+    };
+}
+
 const config = parseArgs(process.argv.slice(2));
 const rawText = readInput(config.inputFile);
-console.log(rawText.substring(0, 100));
+const parsedData = parseDelimited(rawText, config);
 
-console.log(HELP)
+// console.log(HELP)
