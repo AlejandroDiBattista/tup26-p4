@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { fail } from "node:assert"
+
 import { readFileSync, writeFileSync } from "node:fs"
 const HELP = `
 
@@ -54,17 +54,22 @@ const uso = {
 
 }
 
+if (datosUsuarios.includes("-h") ||  datosUsuarios.includes("--help")) {
+    console.log(HELP)
+    process.exit(0)
+}
 
 //let part = null 
 
-console.log(datosUsuarios)
+//console.log(datosUsuarios)
+
 
 
 for ( let i = 0 ;i < datosUsuarios.length; i++) {
 
     if (datosUsuarios[i].startsWith("-") ){
         if(datosUsuarios[i] !== "-nh" && datosUsuarios[i] !== "-h" && datosUsuarios[i] !== "--no-header" && datosUsuarios[i] !== "--help" ){
-        console.log(datosUsuarios[i] , datosUsuarios[i + 1])
+       // console.log(datosUsuarios[i] , datosUsuarios[i + 1])
         if(datosUsuarios[i] === "-d" || datosUsuarios[i] === "--delimiter")
         uso.delimiter = datosUsuarios[i + 1 ]
           if(datosUsuarios[i] === "-b" || datosUsuarios[i] === "--by"){
@@ -76,37 +81,37 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
             descending: partes[2] === "desc",
             
            }
-           console.log(criterio)
+           //console.log(criterio)
            uso.sortFields.push(criterio)
         }
         i++
         }else{
-          console.log(i , datosUsuarios[i])
+          //console.log(i , datosUsuarios[i])
           if(datosUsuarios[i] === "-nh" || datosUsuarios[i] === "--no-header"){
             uso.noHeader = true
           } 
         }
     }else {
-        console.log(i , datosUsuarios[i])
+        //console.log(i , datosUsuarios[i])
         if(uso.inputFile){
            uso.outputFile = datosUsuarios[i]
         }else{
             uso.inputFile = datosUsuarios[i]
         }
         }
-        }console.log(uso)
+        }//console.log(uso)
 
 
 let texto = readFileSync(uso.inputFile, "utf8")
 texto = texto.replaceAll("\r","") 
 const filas = texto.split("\n").filter(g => g !== "")
-console.log(filas)
+//console.log(filas)
 //writeFileSync(uso.outputFile, texto)
 
 
 
 const tablas = filas.map(f => f.split(uso.delimiter) )
-console.log(tablas)
+//console.log(tablas)
 
 let cabeza = null 
 
@@ -121,8 +126,8 @@ if(uso.noHeader == false){
     filasDatos= tablas
 }
 
-  console.log("CABEZA:" , cabeza)
-  console.log("DATOS:" , filasDatos)
+  //console.log("CABEZA:" , cabeza)
+  //console.log("DATOS:" , filasDatos)
 
 for (let i = 0; i < uso.sortFields.length; i++) {
     if (cabeza) {
@@ -134,7 +139,7 @@ for (let i = 0; i < uso.sortFields.length; i++) {
     }
 }
 
-console.log(uso.sortFields)   
+//console.log(uso.sortFields)   
 
 
 
@@ -163,7 +168,7 @@ console.log(uso.sortFields)
     }return 0
 })
 
-console.log("ORDENADO:", filasDatos)
+//console.log("ORDENADO:", filasDatos)
 
 //cabeza
 
@@ -178,9 +183,9 @@ if(cabeza){
 }else{
     union = filasDatos
 }
-console.log(union)
+//console.log(union)
 
 const lineas = union.map(fila => fila.join(uso.delimiter))
 const salida = lineas.join("\n")
-console.log(salida)
+//console.log(salida)
 writeFileSync(uso.outputFile, salida)
