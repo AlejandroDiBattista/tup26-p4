@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from "fs"
 
 const HELP = `
 
@@ -56,7 +57,7 @@ for (let i = 0; i < argumentos.length; i++) {
 
     const arg = argumentos[i];
     if (arg === "-b" || arg === "--by") {
-        const criterio = args[i + 1];
+        const criterio = argumentos[i + 1];
 
         if (!criterio) {
             console.log("Error: falta el criterio después de -b.");
@@ -70,7 +71,7 @@ for (let i = 0; i < argumentos.length; i++) {
         arg === "-d" ||
         arg === "--delimiter"
     ) {
-        delimitador = args[i + 1];
+        delimitador = argumentos[i + 1];
 
         if (!delimitador) {
             console.log(
@@ -204,6 +205,80 @@ let indice;
         };
     }
 );
+datos.sort((a, b) => {
+    for (
+        const criterio
+        of criteriosProcesados
+    ) {
+        const valorA =
+            a[criterio.indice];
+        const valorB =
+            b[criterio.indice];
+        let resultado;
+        if (criterio.tipo === "num") {
+            resultado =
+                Number(valorA) -
+                Number(valorB);
+        }
+        else {
 
+            resultado =
+                String(valorA)
+                    .localeCompare(
+                        String(valorB)
+                    );
+        }
+        if (resultado !== 0) {
+            if (
+                criterio.orden === "desc"
+            ) {
+                return -resultado;
+            }
+            return resultado;
+        }
+    }
+    return 0;
+});
+
+let resultadoFinal;
+
+if (tieneHeader) {
+    resultadoFinal = [
+        header,
+        ...datos
+    ];
+} else {
+    resultadoFinal = datos;
+}
+
+const salida = resultadoFinal
+    .map((fila) => {
+
+        return fila.join(
+            delimitador
+        );
+
+    })
+    .join("\n");
+try {
+    fs.writeFileSync(
+
+        destino,
+
+        salida,
+
+        "utf8"
+
+    );
+    console.log(
+        "Archivo ordenado correctamente."
+    );
+
+} catch (error) {
+    console.log(
+        "Error: no se pudo guardar el archivo."
+    );
+    process.exit(1);
+}
 
 console.log(HELP)
