@@ -35,4 +35,97 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
+
+import fs from "node:fs"
+
+function parseArgs(argv){
+    const opciones = {
+        inputFile:null,
+        outputFile: null,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    }
+    const restantes=[]
+    let i = 0;
+
+    while (i<argv.length){
+        const arg =argv[i]
+
+        if (arg === "-h" || arg === "--help"){
+            console.log(HELP);
+            process.exit(0);
+        } else if (arg === "-nh"|| arg === "--no-header"){
+            opciones.noHeader=true;
+            i++;
+        }else if (arg === "-b" || arg === "--by") {
+            if (i+1 >= argv.length) {
+                console.error ("ERROR: -b/--by no tiene valor");
+                process.exit(1)
+            }
+            const partes= argv[i+1].split(":");
+            const name= partes[0];
+            const tipo= partes [1] || "alpha";
+            const orden= partes [2] || "asc";
+            if (!name){
+                console.error("ERROR: falta completar un campo --by")
+                process.exit(1)
+            }
+            if (tipo !== "alpha" && tipo !== "num") {
+                console.error('ERROR: tipo no reconocido: "${tipo}"' )
+                process.exit(1);
+            }
+            if (orden !== "asc" && orden !== "desc"){
+                console.error('ERROR: orden no reconocido: "${orden}"')
+                process.exit(1)
+            }
+
+            opciones.sortFields.push({
+                name: name,
+                numeric: tipo === "num",
+                descending: orden === "desc",
+            })
+            i+=2
+        } else if (arg === "-d" || arg === "--delimiter"){
+            if (i + 1 >=argv.length) {
+                console.error ("ERROR: -d/--dlimiter no tiene valor")
+                process.exit(1)
+            }
+            let delim=argv[i+1]
+            if (delim === "\\t") delim = "\t"
+            if (delim === "\\n") delim = "\n"
+            if (delim === "\\r") delim = "\r"
+            opciones.delimiter= delim;
+            i+= 2
+        } else if (arg.startsWith("-")){
+            console.error('ERROR: opcion desconocida: "${arg}"')
+            process.exit(1)
+        }else {
+            restantes.push(arg)
+            i++
+        }
+    }
+
+    if (restantes.length < 1){
+        console.error("ERROR: falta el archivo de origen")
+        process.exit(1)
+    }
+    if (restantes.length < 2){
+        console.error("ERROR: falta el archivo de destino")
+        process.exit(1)
+    }
+    opciones.inputFile= restantes[0]
+    opciones.outputFile= restantes[1]
+    if (opciones.sortFields.length === 0){
+        console.error("ERROR: indique porlomenos 1 criterio con --by")
+        process.exit(1)
+    }
+    if (opciones.delimiter.lenght !==1){
+        console.error("ERROR: tiene que ser 1 (un) caracter")
+        process.exit(1)
+    }
+
+    return opciones
+}
+
 console.log(HELP)
