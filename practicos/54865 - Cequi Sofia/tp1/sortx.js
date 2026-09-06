@@ -36,8 +36,7 @@ EJEMPLOS:
 
 
 
-const fs = require("fs");
-let args = process.argv.slice(2);
+import fs from "fs";
 
 
 function parseArgs(args) {
@@ -56,12 +55,7 @@ function parseArgs(args) {
         let valor = args[indice];
 
         if (valor === "-h" || valor === "--help") {
-            console.log(`Opciones: 
-                -b, --by campo[:tipo[:orden]]  Indica el criterio de ordenación.
-                -d, --delimiter delimitador    Especifica el delimitador de campos.
-                -nh, --no-header               Indica que los archivos no tienen cabecera.
-                -h, --help                     Muestra este mensaje de ayuda.
-                `);
+            console.log(HELP);
             process.exit(0);
         }
 
@@ -240,5 +234,47 @@ function sortRows(parsed, config) {
 }
 
 
-//function serialize() {}
-//function writeOutput(){}
+function serialize(parsed, config) {
+    let { header, rows } = parsed;
+    let lineas = [];
+
+    if (header) {
+        lineas.push(header.join(config.delimiter));
+    }
+
+    for (let row of rows) {
+        lineas.push(row.join(config.delimiter));
+    }
+
+    return lineas.join("\n") + "\n";
+}
+
+
+function writeOutput(text, config) {
+    try {
+        fs.writeFileSync(config.outputFile, text, "utf-8");
+    } catch (error) {
+        throw new Error(`No se pudo escribir el archivo de destino.`);
+    }
+}
+
+
+function main() {
+    let args = process.argv.slice(2);
+
+    try {
+        let config = parseArgs(args);
+        let texto = readInput(config);
+        let parsed = parseDelimited(texto, config);
+        let ordenado = sortRows(parsed, config);
+        let salida = serialize(ordenado, config);
+        writeOutput(salida, config);
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        process.exit(1);
+    }
+}
+
+
+
+main();
