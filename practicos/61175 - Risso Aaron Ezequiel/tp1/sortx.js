@@ -67,11 +67,30 @@ const argumentos = [
     "apellido"
 ]
 
+function ParseCampo(texto){
+ const partes = texto.split(":");
+ const name = partes[0];
+
+ let numeric = false;
+ let descending = false;
+
+ if (partes[1] === "num") {
+        numeric = true;
+    }
+    if (partes[2] === "desc") {
+        descending = true;
+    }
+    
+    return { name, numeric, descending };
+
+}
+
 function ParseArg(argumentos){
     let inputFile = null;
     let outFile = null;
     let delimiter = null;
     let noHeader = false;
+    let sortFields = [];
 
 
     let i = 0;
@@ -93,14 +112,15 @@ function ParseArg(argumentos){
            i++;
        } 
        else if(argumentos[i] === "-b" || argumentos[i] === "--by"){
-           delimiter = argumentos[i + 1];
-           i+=2;
+          const campo = ParseCampo(argumentos[i + 2]);
+            sortFields.push(campo);
+            i += 2;
        } 
        else{
         i++;
        }
     }
-    return{inputFile,outFile,delimiter,noHeader}
+    return{inputFile,outFile,delimiter,noHeader,sortFields}
 }
 
 console.log(ParseArg(argumentos));
