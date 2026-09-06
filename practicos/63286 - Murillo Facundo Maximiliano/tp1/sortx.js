@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import fs from "fs"
+import fs, { read } from "fs"
 
 const HELP = `
 
@@ -168,6 +168,36 @@ function readInput(configuracion){
  
 }
 
+function parseDelimited(texto, configuracion){
+
+    const filas = texto.split("\n")
+
+    let resultado = []
+    for ( let fila of filas){
+
+          if(fila.includes('"')){
+         console.log("Se encontro comillas")
+            process.exitCode = 1
+            return 
+        }
+         resultado.push(fila.trim().split(configuracion.delimiter))
+    }
+    
+    for ( let i of resultado){
+
+        if( i.length !== resultado[0].length){
+
+            console.log("Campos incompletos")
+            process.exitCode = 1
+            return 
+             
+        }
+    }
+
+    return resultado
+
+}
+
 const configuracion = parseArgs()
-console.log(configuracion)
-console.log(readInput(configuracion))
+const texto = readInput(configuracion)
+const datos = parseDelimited(texto, configuracion)
