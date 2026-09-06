@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from 'node:fs';
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -67,6 +67,10 @@ function parseArgs(args){
             };
             config.sortFields.push(newCampo);
         }
+        else if (arg === "-d" || arg === "--delimiter") {
+            i++;
+            config.delimiter =args[i]
+        }
         else{
 
             if (config.inputFile === null) {
@@ -78,6 +82,16 @@ function parseArgs(args){
     }}
     return config
 }
+function readInput(rutaArchivo){
+    try{
+    const contenidoTexto = fs.readFileSync(rutaArchivo,'utf-8');
+    return contenidoTexto;
+    }catch(error){
+    console.error("Error: el archivo de origen no existe o no se puede leer");
+    process.exit(1);
+    }
+
+}
 
 function main() {
     const argumentoUsuario = process.argv.slice(2);
@@ -85,6 +99,16 @@ function main() {
     
     console.log("TEST DE CONFIGURACION");
     console.log(resultadoConfig);
+
+    console.log("TEST DE LECTURA");
+
+    if(resultadoConfig.inputFile){
+        const textoDelArchivo = readInput(resultadoConfig.inputFile);
+
+    console.log("contenido leido con exito:\n",textoDelArchivo);
+}else{
+    console.error("Error: No se especifico un archivo de entrada");
+}
 }
 main();
 
