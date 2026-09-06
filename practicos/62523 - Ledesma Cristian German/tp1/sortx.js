@@ -80,6 +80,21 @@ function parseArgs(args){
                 config.outputFile = arg;
         }
     }}
+            if (config.inputFile === null || config.outputFile === null){
+            console.error("Error: falta el archivo de origen o de destino");
+            process.exit(1);
+        }
+
+            if(config.delimiter.length !== 1){
+            console.error("Error:el delimitador debe ser un unico caracter");
+            process.exit(1);
+            }
+            
+            if (config.sortFields.length === 0){
+            console.error("Error: no se especifico ningun criterio de ordenamiento (-b o --by)");
+            process.exit(1);
+            }
+
     return config
 }
 function readInput(rutaArchivo){
@@ -95,12 +110,18 @@ function readInput(rutaArchivo){
     function parseDelimited(textoCrudo,delimitador){
     const lineas = textoCrudo.trim().split('\n');
     const matrizFilas =[];
+    
+    for (let i = 0; i < lineas.length; i++) {
+        if(lineas[i].includes('""')){
+        console.error("Error: la entrada contiene comillas dobles (formato no admitido)");
+        process.exit(1);
+        
+    }}
 
     for (let i = 0; i < lineas.length; i++) {
         const lineaLimpia = lineas[i].replace('\r','');
         const columnas = lineaLimpia.split(delimitador);
-
-
+        
         if (i>0 && columnas.length !==matrizFilas[0].length) {
             console.error("Error:las filas tienen diferente cantidad de campos");
             process.exit(1);
@@ -185,32 +206,21 @@ return datosParaOrdenar;
 
     }
 
-function main() {
-    const argumentoUsuario = process.argv.slice(2);
-    const resultadoConfig =parseArgs(argumentoUsuario);
+    function main() {
+        const argumentoUsuario = process.argv.slice(2);
+        
+        if (argumentoUsuario.includes("-h") || argumentoUsuario.includes("--help")) {
+            console.log(HELP);
+            process.exit(0);
+        }
+        const config = parseArgs(argumentoUsuario);
+        const textoDelArchivo = readInput(config.inputFile);
+        const matrizDatos = parseDelimited (textoDelArchivo,config.delimiter);
+        const matrizOrdenada = sortRows(matrizDatos,config);
+        const textoDestino = serialize(matrizOrdenada,config.delimiter);
 
-    console.log("TEST DE CONFIGURACION");
-    console.log(resultadoConfig);
-
-    console.log("TEST DE LECTURA");
-
-    if(resultadoConfig.inputFile){
-        const textoDelArchivo = readInput(resultadoConfig.inputFile);
-
-    console.log("contenido leido con exito:\n",textoDelArchivo);
-
-    console.log("TEST MATRIZ");
-    const matrizDatos = parseDelimited(textoDelArchivo, resultadoConfig.delimiter);
-
-    console.log(matrizDatos);
-
-    console.log("TEST DE FILAS ORDENADAS");
-    const matrizOrdenada = sortRows(matrizDatos,resultadoConfig);
-    console.log(matrizOrdenada);
-
-}else{
-    console.error("Error: No se especifico un archivo de entrada");
-}
+        writeOutput(config.outputFile,textoDestino);
+        
 }
 main();
 
