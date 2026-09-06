@@ -34,9 +34,11 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
 
+
+const fs = require("fs");
 let args = process.argv.slice(2);
+
 
 function parseArgs(args) {
 
@@ -127,10 +129,20 @@ function parseArgs(args) {
     return config;
 }
 
-parseArgs(args);
-console.log(parseArgs(args));
 
-//function readInput(){}
+function readInput(config) {
+    let content;
+
+    try {
+        content = fs.readFileSync(config.inputFile, "utf-8");
+    } catch (error) {
+        throw new Error(`No se pudo leer el archivo de origen`);
+    }
+
+    return content;
+}
+
+
 //function parseDelimited(){}
 //function sortRows(){} 
 //function serialize() {}
