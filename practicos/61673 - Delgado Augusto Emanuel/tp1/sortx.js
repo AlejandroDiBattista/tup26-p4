@@ -258,4 +258,29 @@ async function writeOutput(filePath, content) {
         throw new Error(`No se pudo escribir el archivo de destino "${filePath}": ${error.message}`)
     }
 }
+// punto de entrada principal
+async function main() {
+    const argv = process.argv.slice(2)
+
+    try {
+        const config = parseArgs(argv)
+
+        const texto = await readInput(config.inputFile)
+
+        const { header, rows } = parseDelimited(texto, config.delimiter, config.noHeader)
+
+        const filasOrdenadas = sortRows(rows, config.sortFields, header)
+
+        const resultado = serialize(header, filasOrdenadas, config.delimiter)
+
+        await writeOutput(config.outputFile, resultado)
+
+        console.log(`Listo. Se escribio "${config.outputFile}".`)
+    } catch (error) {
+        console.error(`Error: ${error.message}`)
+        process.exit(1)
+    }
+}
+
+main()
 
