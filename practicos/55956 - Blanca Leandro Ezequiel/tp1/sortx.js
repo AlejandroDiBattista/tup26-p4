@@ -141,5 +141,40 @@ const filas = lineas.map((linea) => {
     return linea.split(delimitador);
 });
 
+let header = [];
+let datos = [];
+
+if (tieneHeader) {
+    header = filas[0];
+    datos = filas.slice(1);
+} else {
+    datos = filas;
+}
+
+const criteriosProcesados = criterios.map(
+    (criterio) => {
+        const partes = criterio.split(":");
+        const campo = partes[0];
+        const tipo = partes[1] || "alpha";
+        const orden = partes[2] || "asc";
+        if (
+            tipo !== "alpha" &&
+            tipo !== "num"
+        ) {
+            console.log(
+                "Error: tipo inválido."
+            );
+            process.exit(1);
+        }
+        if (
+            orden !== "asc" &&
+            orden !== "desc"
+        ) {
+            console.log(
+                "Error: orden inválido."
+            );
+            process.exit(1);
+        }
+
 
 console.log(HELP)
