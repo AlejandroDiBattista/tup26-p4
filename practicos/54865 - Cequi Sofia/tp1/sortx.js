@@ -35,4 +35,103 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+let args = process.argv.slice(2);
+
+function parseArgs(args) {
+
+    const config = {
+        inputFile: null,
+        outputFile: null,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    };
+
+    const positionals = [];
+
+    for (let indice = 0; indice < args.length; indice++) {
+        let valor = args[indice];
+
+        if (valor === "-h" || valor === "--help") {
+            console.log(`Opciones: 
+                -b, --by campo[:tipo[:orden]]  Indica el criterio de ordenación.
+                -d, --delimiter delimitador    Especifica el delimitador de campos.
+                -nh, --no-header               Indica que los archivos no tienen cabecera.
+                -h, --help                     Muestra este mensaje de ayuda.
+                `);
+            process.exit(0);
+        }
+
+        else if (valor === "-b" || valor === "--by") {
+            let fields = args[indice + 1];
+            if (fields === undefined) {
+                throw new Error("La opción -b --by requiere un valor.");
+            }
+            let parts = fields.split(":");
+            let criterion = { name: parts[0], numeric: false, descending: false };
+
+            if (parts[1] === "num") {
+                criterion.numeric = true;
+            }
+            if (parts[2] === "desc") {
+                criterion.descending = true;
+            }
+
+            config.sortFields.push(criterion);
+            indice++;
+        }
+
+        else if (valor === "-nh" || valor === "--no-header") {
+            config.noHeader = true;
+        }
+
+        else if (valor === "-d" || valor === "--delimiter") {
+            let delimiter = args[indice + 1];
+            if (delimiter === undefined) {
+                throw new Error("La opción -d --delimiter requiere un valor.");
+            }
+
+            if (delimiter === "\\t") {
+                delimiter = "\t";
+            }
+
+            if (delimiter.length !== 1) {
+                throw new Error("El delimitador debe ser un únicp caracter.");
+            }
+
+            config.delimiter = delimiter;
+            indice++;
+        }
+
+        else if (valor.startsWith("-")) {
+            throw new Error(`Opción no válida`);
+        }
+
+        else {
+            positionals.push(valor);
+        }
+    }
+
+    if (positionals.length < 2) {
+        throw new Error("Faltan los archivos de origen o destino.");
+    }
+
+    config.inputFile = positionals[0];
+    config.outputFile = positionals[1];
+
+    if (config.sortFields.length === 0) {
+        throw new Error("Debe especificarse al menos un criterio -b --by.");
+    }
+
+    return config;
+}
+
+parseArgs(args);
+console.log(parseArgs(args));
+
+//function readInput(){}
+//function parseDelimited(){}
+//function sortRows(){} 
+//function serialize() {}
+//function writeOutput(){}
