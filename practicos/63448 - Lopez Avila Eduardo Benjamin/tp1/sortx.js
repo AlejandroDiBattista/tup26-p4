@@ -117,7 +117,6 @@ function configuracion() {
 	if (config.delimitador.replace('\\t', '\t').length !== 1) {
 		console.error("Error: el delimitador no es un único carácter."); process.exit(1);
 	}
-	console.log(config);
 	return config;
 }
 
@@ -162,7 +161,6 @@ function sortRows(filas, criterios) {
 			const valorA = a[criterio.index];
 			const valorB = b[criterio.index];
 			if (criterio.numeric && (isNaN(Number(valorA)) || isNaN(Number(valorB)))) {
-				console.log("valorA:", valorA, "valorB:", valorB);
 				console.error("Error: un criterio numérico encuentra un valor no numérico.");
 				process.exit(1);
 			}
@@ -197,7 +195,6 @@ async function sorteador() {
 	const tabla = parseDelimited(contenido, config.delimitador, config.noHeader);
 	const columnacriterios = columnasPorCriterio(tabla.header, config.criterios);
 	const filasOrdenadas = sortRows(tabla.filas, columnacriterios);
-	console.log("Filas ordenadas:", filasOrdenadas);
 	const serializado = serialize(tabla.header, filasOrdenadas, config.delimitador);
 	await writeOutput(config.output, serializado);
 }
