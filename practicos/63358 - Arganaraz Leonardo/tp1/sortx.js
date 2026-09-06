@@ -155,16 +155,48 @@ function readInput(filename) {
     }
 }
 
+function parseDelimited(text, delimiter) {
+    const lines = text.split(/\r?\n/);
+
+    // Eliminamos una última línea vacía si existe
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
+        lines.pop();
+    }
+
+    if (lines.length === 0) {
+        throw new Error("El archivo está vacío.");
+    }
+
+    const rows = lines.map(line => {
+        // No se permiten comillas en el archivo
+        if (line.includes('"')) {
+            throw new Error("El archivo no puede contener comillas.");
+        }
+
+        return line.split(delimiter);
+    });
+
+    // Todas las filas deben tener la misma cantidad de campos
+    const fieldCount = rows[0].length;
+
+    for (const row of rows) {
+        if (row.length !== fieldCount) {
+            throw new Error("Las filas tienen distinta cantidad de campos.");
+        }
+    }
+
+    return rows;
+}
+
 try {
     const config = parseArgs(process.argv.slice(2));
 
     const text = readInput(config.inputFile);
 
-    console.log(text);
+    const rows = parseDelimited(text, config.delimiter);
+
+    console.log(rows);
 } catch (error) {
     console.error("Error:", error.message);
     process.exitCode = 1;
 }
-
-
-
