@@ -35,4 +35,30 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
+function parseArgs() {
+    const args = process.argv.slice(2);
+    const inputFile = args[0];
+    const outputFile = args[1];
+    const sortFields = [];
+    let delimiter = ",";
+    let noHeader = false;
+    for (let i = 0; i <args.length; i++) {
+        if (args[i] === '-b' || args[i] === '--by') {
+            const criterio = args[i + 1];
+            sortFields.push(criterio);
+        }if (args[i] === '-d' || args[i] === '--delimiter') {
+            const delim = args[i + 1];
+            delimiter = delim;
+        }
+        if (args[i] === '-nh' || args[i] === '--no-header') {
+            noHeader = true;
+        }
+    }
+    return {inputFile,outputFile,sortFields,delimiter,noHeader};
+}
+const {inputFile,outputFile,sortFields,delimiter,noHeader} = parseArgs();
+console.log(inputFile,outputFile,sortFields,delimiter,noHeader);
+
+
+
 console.log(HELP)
