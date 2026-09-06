@@ -61,7 +61,7 @@ function parseArgs() {
                 throw new Error("Falta el valor de --delimiter");
             }
 
-            delimiter = args[i + 1];
+            delimiter = args[i + 1] === "\\t" ? "\t" : args[i + 1];
 
             if(delimiter.length !== 1) {
                 throw new Error("El delimitador debe tener un solo caracter");
