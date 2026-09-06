@@ -30,6 +30,7 @@ const ENOENT_CODE = "ENOENT";
 const EMPTY_LINE = "";
 const QUOTE_CHAR = '"';
 const NEWLINE = "\n";
+const NOT_FOUND = -1;
 
 const HELP = `sortx — Ordena archivos de texto delimitados
 
@@ -234,6 +235,50 @@ function parseDelimited(text, delimiter, noHeader) {
   return { headers, rows: dataRows };
 }
 
+function sortRows(rows, headers, sortFields) {
+  if (rows.length === 0) return rows;
+
+  const getColumnIndex = (field) => {
+    const index = headers.indexOf(field.name);
+    if (index === NOT_FOUND) {
+      throw new Error(`El campo solicitado no existe: ${field.name}`);
+    }
+    return index;
+  };
+
+  const compareAlpha = (a, b) => a.localeCompare(b);
+  const compareNumeric = (a, b) => {
+    const numA = Number(a);
+    const numB = Number(b);
+    if (Number.isNaN(numA) || Number.isNaN(numB)) {
+      throw new Error("Un criterio numérico encuentra un valor no numérico");
+    }
+    return numA - numB;
+  };
+
+  const comparers = sortFields.map((field) => {
+    const columnIndex = getColumnIndex(field);
+    const baseCompare = field.numeric ? compareNumeric : compareAlpha;
+    return field.descending
+      ? (rowA, rowB) => baseCompare(rowB[columnIndex], rowA[columnIndex])
+      : (rowA, rowB) => baseCompare(rowA[columnIndex], rowB[columnIndex]);
+  });
+
+  return [...rows].sort((rowA, rowB) => {
+    for (const comparer of comparers) {
+      const result = comparer(rowA, rowB);
+      if (result !== 0) return result;
+    }
+    return 0;
+  });
+}
+
+function serialize(headers, rows, delimiter, noHeader) {
+  const lines = noHeader ? [] : [headers.join(delimiter)];
+  rows.forEach((row) => lines.push(row.join(delimiter)));
+  return lines.join(NEWLINE);
+}
+
 async function main() {
   try {
     const config = parseArgs(process.argv);
@@ -246,12 +291,10 @@ async function main() {
     const content = await readInput(config.inputFile);
     const { headers, rows } = parseDelimited(content, config.delimiter, config.noHeader);
 
-    console.log("Archivo leído:", content.length, "caracteres");
-    console.log("Headers:", headers);
-    console.log("Rows:", rows.length);
+    const sortedRows = sortRows(rows, headers, config.sortFields);
+    const output = serialize(headers, sortedRows, config.delimiter, config.noHeader);
 
-    await writeOutput(config.outputFile, content);
-    console.log("Archivo escrito (sin procesar por ahora)");
+    await writeOutput(config.outputFile, output);
 
     process.exit(EXIT_SUCCESS);
   } catch (error) {
