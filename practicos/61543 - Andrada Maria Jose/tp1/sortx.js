@@ -77,6 +77,9 @@ function parseArgs() {
             const criterio = args[i+1];
             const partes = criterio.split(":");
             const name = partes[0];
+            if (name === "") {
+                throw new Error("Falta el nombre del campo");
+            }
             const tipo = partes[1] || "alpha";
             const orden = partes[2] || "asc";
             if (tipo !== "alpha" && tipo !== "num") {
