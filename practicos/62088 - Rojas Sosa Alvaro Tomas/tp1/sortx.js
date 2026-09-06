@@ -164,6 +164,25 @@ for(let i = 0; i < SeparadoFinal.length;i++)
 return SeparadoFinal
 }
 
+function serialize(filas, delimitador){
+let ElementUnidos = []
+for(let i = 0;i < filas.length;i++ )
+    {
+        let unido = filas[i].join(delimitador)
+        ElementUnidos.push(unido)
+    }
+
+const textoFinal = ElementUnidos.join("\n")
+return textoFinal
+}
+
+
+
+
+
+
 const configuracion = parseArgs();
 const texto = readInput(configuracion.inputFile)
 const filas = parseDelimited(texto, configuracion.delimiter)
+const textoFinal = serialize(filas, configuracion.delimiter)
+console.log(textoFinal)
