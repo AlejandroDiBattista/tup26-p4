@@ -52,9 +52,9 @@ let delimitador = ",";
 let tieneHeader = true;
 let criterios = [];
 
-for (let i = 0; i < args.length; i++) {
+for (let i = 0; i < argumentos.length; i++) {
 
-    const arg = args[i];
+    const arg = argumentos[i];
     if (arg === "-b" || arg === "--by") {
         const criterio = args[i + 1];
 
@@ -120,4 +120,26 @@ if (criterios.length === 0) {
     );
     process.exit(1);
 }
+let contenido;
+try {
+    contenido = fs.readFileSync(
+        origen,
+        "utf8"
+    );
+} catch (error) {
+    console.log(
+        "Error: no se pudo leer el archivo de origen."
+    );
+    process.exit(1);
+}
+
+const lineas = contenido
+    .trim()
+    .split(/\r?\n/);
+
+const filas = lineas.map((linea) => {
+    return linea.split(delimitador);
+});
+
+
 console.log(HELP)
