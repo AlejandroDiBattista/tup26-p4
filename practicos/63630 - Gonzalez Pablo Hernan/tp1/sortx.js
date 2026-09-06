@@ -98,6 +98,28 @@ function readInput(config) {
 }
 
 
+function parseDelimited(texto, config) {
+
+    let lineas = texto.split(/\r?\n/)
+    let filas = lineas.map((linea) => linea.split(config.delimiter));
+    let encabezado;
+    let filasDeDatos;
+
+    if (config.noHeader) {
+        encabezado = null;
+        filasDeDatos = filas;           
+    } else {
+        encabezado = filas[0];          
+        filasDeDatos = filas.slice(1);  
+}
+
+    return { encabezado, filasDeDatos }
+}
+
+
+
+
+
 
 
 
