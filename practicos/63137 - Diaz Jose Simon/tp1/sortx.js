@@ -27,6 +27,9 @@ const TYPE_INDEX = 1;
 const ORDER_INDEX = 2;
 const ENCODING = "utf8";
 const ENOENT_CODE = "ENOENT";
+const EMPTY_LINE = "";
+const QUOTE_CHAR = '"';
+const NEWLINE = "\n";
 
 const HELP = `sortx — Ordena archivos de texto delimitados
 
@@ -202,6 +205,35 @@ async function writeOutput(filePath, content) {
   }
 }
 
+function parseDelimited(text, delimiter, noHeader) {
+  const lines = text.split(/\r?\n/).filter((line) => line !== EMPTY_LINE);
+  if (lines.length === 0) {
+    throw new Error("Las filas tienen diferente cantidad de campos");
+  }
+
+  const rows = lines.map((line) => {
+    if (line.includes(QUOTE_CHAR)) {
+      throw new Error("Los campos no pueden contener comillas dobles");
+    }
+    return line.split(delimiter);
+  });
+
+  const columnCount = rows[0].length;
+  const hasInconsistentFields = rows.some((row) => row.length !== columnCount);
+  if (hasInconsistentFields) {
+    throw new Error("Las filas tienen diferente cantidad de campos");
+  }
+
+  if (noHeader) {
+    const headers = Array.from({ length: columnCount }, (_, index) => String(index));
+    return { headers, rows };
+  }
+
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
+  return { headers, rows: dataRows };
+}
+
 async function main() {
   try {
     const config = parseArgs(process.argv);
@@ -212,7 +244,11 @@ async function main() {
     }
 
     const content = await readInput(config.inputFile);
+    const { headers, rows } = parseDelimited(content, config.delimiter, config.noHeader);
+
     console.log("Archivo leído:", content.length, "caracteres");
+    console.log("Headers:", headers);
+    console.log("Rows:", rows.length);
 
     await writeOutput(config.outputFile, content);
     console.log("Archivo escrito (sin procesar por ahora)");
