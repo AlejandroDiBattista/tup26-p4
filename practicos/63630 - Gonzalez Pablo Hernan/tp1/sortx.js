@@ -35,4 +35,66 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+//console.log(process.argv)
+
+function parseArgs(){
+
+    let items = process.argv.slice(2)
+    let config = {
+        inputFile: null,
+        outputFile: null,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    };
+
+    let i = 0 
+    while (i < items.length) {
+        if (items[i] === '-h' || items[i] === '--help') {
+
+            console.log(HELP)
+            process.exit(0)
+
+        } else if (items[i] === '-b' || items[i] === '--by') {
+
+            config.sortFields.push(items[i + 1])
+            i = i + 2
+            
+
+        } else if (items[i] === '-d' || items[i] === '--delimiter') {
+
+            config.delimiter = items[i + 1]
+            i = i + 2
+
+        } else if (items[i] === '-nh' || items[i] === '--no-header') {
+
+            config.noHeader = true
+            i = i + 1
+
+        } else {
+
+            if (config.inputFile === null) {
+
+                config.inputFile = items[i]
+                
+            } else {
+
+                config.outputFile = items[i]
+            }
+
+            i = i + 1
+        }
+        
+
+
+    }
+    return config;
+}
+
+
+
+
+
+
+
