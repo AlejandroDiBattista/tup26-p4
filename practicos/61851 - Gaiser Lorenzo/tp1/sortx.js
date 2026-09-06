@@ -41,18 +41,24 @@ EJEMPLOS:
 
 const datosUsuarios = process.argv.slice(2) 
 
+let historial = 0 ; 
+
 console.log(datosUsuarios)
 
 
 for ( let i = 0 ;i < datosUsuarios.length; i++) {
 
     if (datosUsuarios[i].startsWith("-") ){
-    
+        if(datosUsuarios[i] !== "-nh" && datosUsuarios[i] !== "-h" && datosUsuarios[i] !== "--no-header" && datosUsuarios[i] !== "--help" ){
+        console.log(datosUsuarios[i] , datosUsuarios[i + 1])
+        i++
+        }else{
+          console.log(i , datosUsuarios[i])
+        }
     }else {
         console.log(i , datosUsuarios[i])
         }
         }
-
 
 
    
