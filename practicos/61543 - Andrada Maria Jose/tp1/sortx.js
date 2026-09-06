@@ -40,14 +40,20 @@ function parseArgs() {
      const args = process.argv.slice(2);
      const inputFile = args[0];
      const outputFile = args[1];
+     const sortFields = [];
+     let noHeader = false;
+     if (args.includes("-h") || args.includes("--help")) {
+        console.log(HELP);
+        process.exit(0);
+     }
+
      if(inputFile === undefined) {
         throw new Error("Falta indicar el archivo de origen");
      }
      if (outputFile === undefined) {
         throw new Error("Falta indicar el archivo de destino");
      }
-     const sortFields = [];
-     let noHeader = false;
+
      for (let i = 2; i < args.length; i++) {
           if (args[i] === "-b" || args[i] === "--by") {
             if (args[i + 1] === undefined) {
