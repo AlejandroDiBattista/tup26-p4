@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import fs from 'fs';
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -32,8 +33,9 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
-
+    `
+    //console.log(HELP)
+    
 // Escribir aqui la solución al enunciado.
 function parseArgs() {
     const args = process.argv.slice(2);
@@ -60,5 +62,14 @@ const {inputFile,outputFile,sortFields,delimiter,noHeader} = parseArgs();
 console.log(inputFile,outputFile,sortFields,delimiter,noHeader);
 
 
-
-console.log(HELP)
+function readInput(filePath) {
+    try {
+        const data = fs.readFileSync(filePath, 'utf8');
+        return data;
+    } catch (error) {
+        console.error(`Error reading file ${filePath}:`, error);
+        process.exit(1);
+    }
+}
+const inputData = readInput(inputFile);
+console.log(inputData);
