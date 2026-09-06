@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { fail } from "node:assert";
 import { readFileSync, writeFileSync } from "node:fs";
 
 // function parseArgs(argv){};
@@ -8,22 +7,40 @@ import { readFileSync, writeFileSync } from "node:fs";
 // function parseDelimited(text,delimiter,noHeader){}
 // function sortRows(rows, sortFields, header){}
 // function serialize(){}
-function fieldsParser(raw) {
-    const parts = raw.split(":");
-    if (parts.length < 1 || parts.length > 3 || parts.length === "") {
-        fail(`cantidad de campos invalidos`)
-    }
-    const name = parts[0]
-    const tipo = parts[1] ?? "alpha";
-    const orden = parts[2] ?? "asc";
+const HELP = `
 
-    if (tipo !== "alpha" && tipo !== "num") {
-        fail(`tipo de ordenamiento invalido (usa alpha o num)`);
-    }
-    if (orden !== "asc" && orden !== " desc") {
-        fail(`orden invalido (usa asc o desc)`)
-    }
-}
+sortx — Ordena archivos de texto delimitados
+
+USO:
+    sortx <origen> <destino> [opciones]
+
+ARGUMENTOS:
+    origen              Archivo que se desea ordenar.
+    destino             Archivo donde se guardará el resultado.
+
+OPCIONES:
+    -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
+                        Formato: campo[:tipo[:orden]]
+                        tipo: alpha (predeterminado) o num
+                        orden: asc (predeterminado) o desc
+
+    -d, --delimiter <c> Delimitador de un solo carácter.
+                        Predeterminado: ","
+                        Usá "\t" para archivos separados por tabulaciones.
+
+    -nh, --no-header    Indica que el archivo no tiene encabezado.
+                        Los campos se identifican mediante índices desde cero.
+
+    -h, --help          Muestra esta ayuda.
+
+EJEMPLOS:
+    sortx empleados.csv ordenados.csv -b apellido
+    sortx empleados.csv salarios.csv -b salario:num:desc
+    sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
+    sortx datos.csv resultado.csv -nh -b 2:num:desc
+    sortx datos.tsv salida.tsv -d "\t" -b nombre
+`
+
 function parseArgs(argv) {
     const config = {
         inputFile: null,
@@ -61,19 +78,20 @@ function parseArgs(argv) {
             continue;
         }
         if (arg === "-d" || arg === "--delimiter") {
-            let value = arg[i + 1]
+            let value = argv[i + 1];
             if (value === undefined) {
-                fail(`la opcion ${arg} necesita un valor`)
+                fail(`La opción ${arg} requiere un valor`);
             }
-            if (vale === "\\t") value = "\t";
+            if (value === "\\t") value = "\t";
             if (value.length !== 1) {
-                fail(`El delimitador debe tener un unico caracter(caracter recibido ${value})`)
+                fail(`El delimitador debe ser un único carácter (recibido: "${value}")`);
             }
-            config.delimiter = value
+            config.delimiter = value;
             i += 2;
             continue;
-
         }
+
+
         if (arg.startsWith("-")) {
             fail(`opcion desconocida: ${arg}`)
         }
@@ -125,7 +143,7 @@ function parseDelimited(text, delimiter, noHeader) {
         .split("\n")
         .filter((line, idx, arr) => !(line === "" && idx === arr.length - 1));
 
-    if (lines.length === 0) {
+    if (!lines.length) {
         fail("El archivo de origen está vacío");
     }
 
@@ -133,10 +151,9 @@ function parseDelimited(text, delimiter, noHeader) {
     const expectedCols = allRows[0].length;
 
     for (let i = 0; i < allRows.length; i++) {
-        if (allRows[i].length !== expectedCols) {
-            fail(
-                `La fila ${i + 1} tiene ${allRows[i].length} campos, se esperaban ${expectedCols}`
-            );
+        const row = allRows[i];
+        if (row.length !== expectedCols) {
+            fail(`La fila ${i + 1} tiene ${row.length} campos, se esperaban ${expectedCols}`);
         }
     }
 
@@ -150,21 +167,102 @@ function parseDelimited(text, delimiter, noHeader) {
     };
 }
 
+function compareValues(a, b, numeric, descending) {
+    let result;
+
+    if (numeric) {
+        const na = Number(a);
+        const nb = Number(b);
+        if (Number.isNaN(na) || Number.isNaN(nb)) {
+            fail(`Valor no numérico encontrado (valores: "${a}", "${b}")`);
+        }
+        result = na - nb;
+    } else {
+        result = String(a).localeCompare(String(b), "es");
+    }
+
+    return descending ? -result : result;
+}
+function resolveColumnIndex(field, header, columnCount) {
+
+    if (header) {
+        const idx = header.indexOf(field.name);
+
+        if (idx === -1) {
+            fail(`El campo solicitado no existe: "${field.name}"`);
+        }
+        return idx;
+    }
+    if (!/^\d+$/.test(field.name)) {
+        fail(`Sin encabezado, el campo debe ser un índice numérico (recibido: "${field.name}")`);
+    }
+
+    const idx = Number(field.name);
+
+    if (idx < 0 || idx >= columnCount) {
+        fail(`Índice de columna fuera de rango: ${idx}`);
+    }
+
+    return idx;
+}
+
+function sortRows(rows, sortFields, header) {
+    if (!rows.length) return rows;
+
+    const columnCount = rows[0].length;
+    const resolved = sortFields.map((field) => ({
+        ...field,
+        index: resolveColumnIndex(field, header, columnCount),
+    }));
+
+    return rows.slice().sort((rowA, rowB) => {
+        for (const field of resolved) {
+            const cmp = compareValues(rowA[field.index], rowB[field.index], field.numeric, field.descending);
+            if (cmp !== 0) return cmp;
+        }
+        return 0;
+    });
+}
+
+function serialize(header, rows, delimiter) {
+    const lines = [];
+
+    if (header) {
+        lines.push(header.join(delimiter));
+    }
+
+    for (const row of rows) {
+        lines.push(row.join(delimiter));
+    }
+
+    return lines.join("\n") + "\n";
+}
+
+function writeOutput(outputFile, content) {
+    try {
+        writeFileSync(outputFile, content, "utf8");
+    } catch {
+        fail(`No se pudo escribir el archivo de destino: ${outputFile}`);
+    }
+}
 
 function sortFieldsParser(raw) {
     const parts = raw.split(":");
-    if (parts.length < 1 || parts.length > 3 || parts.length === "") {
-        fail(`cantidad de campos invalidos`)
+
+    if (parts.length < 1 || parts.length > 3 || parts[0] === "") {
+        fail(`cantidad de campos invalidos`);
     }
-    const name = parts[0]
+
+    const name = parts[0];
     const tipo = parts[1] ?? "alpha";
     const orden = parts[2] ?? "asc";
 
     if (tipo !== "alpha" && tipo !== "num") {
         fail(`tipo de ordenamiento invalido (usa alpha o num)`);
     }
-    if (orden !== "asc" && orden !== " desc") {
-        fail(`orden invalido (usa asc o desc)`)
+
+    if (orden !== "asc" && orden !== "desc") {
+        fail(`orden invalido (usa asc o desc)`);
     }
 
     return {
@@ -174,11 +272,22 @@ function sortFieldsParser(raw) {
     };
 }
 
-
 function main() {
     try {
         const config = parseArgs(process.argv.slice(2));
-        console.log(config);
+
+        if (config.help) {
+            console.log(HELP);
+            process.exit(0);
+        }
+
+        const text = readInput(config.inputFile);
+        const { header, rows } = parseDelimited(text, config.delimiter, config.noHeader);
+
+        const sorted = sortRows(rows, config.sortFields, header);
+        const output = serialize(header, sorted, config.delimiter);
+
+        writeOutput(config.outputFile, output);
     } catch (err) {
         console.error(err.message);
         process.exit(1);
@@ -186,40 +295,3 @@ function main() {
 }
 
 main();
-
-// Escribir aqui la solución al enunciado.
-// console.log(args);
-
-// const HELP = `
-
-// sortx — Ordena archivos de texto delimitados
-
-// USO:
-//     sortx <origen> <destino> [opciones]
-
-// ARGUMENTOS:
-//     origen              Archivo que se desea ordenar.
-//     destino             Archivo donde se guardará el resultado.
-
-// OPCIONES:
-//     -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
-//                         Formato: campo[:tipo[:orden]]
-//                         tipo: alpha (predeterminado) o num
-//                         orden: asc (predeterminado) o desc
-
-//     -d, --delimiter <c> Delimitador de un solo carácter.
-//                         Predeterminado: ","
-//                         Usá "\t" para archivos separados por tabulaciones.
-
-//     -nh, --no-header    Indica que el archivo no tiene encabezado.
-//                         Los campos se identifican mediante índices desde cero.
-
-//     -h, --help          Muestra esta ayuda.
-
-// EJEMPLOS:
-//     sortx empleados.csv ordenados.csv -b apellido
-//     sortx empleados.csv salarios.csv -b salario:num:desc
-//     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
-//     sortx datos.csv resultado.csv -nh -b 2:num:desc
-//     sortx datos.tsv salida.tsv -d "\t" -b nombre
-// `
