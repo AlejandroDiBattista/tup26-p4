@@ -246,14 +246,14 @@ function sortRows(rows, headers, sortFields) {
     return index;
   };
 
-  const compareAlpha = (a, b) => a.localeCompare(b);
-  const compareNumeric = (a, b) => {
-    const numA = Number(a);
-    const numB = Number(b);
-    if (Number.isNaN(numA) || Number.isNaN(numB)) {
+  const compareAlpha = (valorA, valorB) => valorA.localeCompare(valorB);
+  const compareNumeric = (valorA, valorB) => {
+    const numeroA = Number(valorA);
+    const numeroB = Number(valorB);
+    if (Number.isNaN(numeroA) || Number.isNaN(numeroB)) {
       throw new Error("Un criterio numérico encuentra un valor no numérico");
     }
-    return numA - numB;
+    return numeroA - numeroB;
   };
 
   const comparers = sortFields.map((field) => {
