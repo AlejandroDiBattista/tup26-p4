@@ -89,7 +89,7 @@ function ParseArg(argumentos){
     let noHeader = false;
     let sortFields = [];
     let help = false;
-
+    const Valido = ["-d", "--delimiter", "-nh", "--no-header", "-b", "--by", "-h", "--help"];
 
     let i = 0;
     while(i < argumentos.length){
@@ -107,7 +107,15 @@ function ParseArg(argumentos){
         i++
        }
        else if(argumentos[i] === "-d" || argumentos[i] === "--delimiter"){
-           delimiter = argumentos[i + 1];
+           if(argumentos[i + 1] === undefined){
+            console.error(`${argumentos[i]} necesita de un valor`);
+            process.exit(1);
+           }
+           let delimitar = argumentos[i + 1];
+           if(delimitar ==="\\t"){
+            delimitar= "\t"
+           }
+           delimiter = delimitar;
            i+=2;
        } 
        else if(argumentos[i] === "-nh" || argumentos[i] === "--noHeader"){
@@ -115,15 +123,40 @@ function ParseArg(argumentos){
            i++;
        } 
        else if(argumentos[i] === "-b" || argumentos[i] === "--by"){
+        if(argumentos [i+1] === undefined){
+            console.error("comando no valido")
+            process.exit(1);    
+        }
           const campo = ParseCampo(argumentos[i + 1]);
             sortFields.push(campo);
             i += 2;
        } 
        else{
-        i++;
+        console.error(`${argumentos[i]} opcion invalida`);
+           process.exit(1);
        }
     }
-    return{inputFile,outFile,delimiter,noHeader,sortFields,help}
+    if(help){
+        return { help: true };
+    }
+    if(inputFile === null){
+        console.error("no exite el archivo de origen.");
+        process.exit(1);
+    }
+    if(outFile === null){
+        console.error("falta el archivo de destino.");
+        process.exit(1);
+    }
+    if(sortFields.length === 0){
+        console.error("no se especifica ningún criterio --by");
+        process.exit(1);
+    }
+    if(delimiter.length !== 1){
+        console.error("el delimitador debe ser de un unico caracter");
+        process.exit(1);
+    }
+
+    return{inputFile,outFile,delimiter,noHeader,sortFields,help:false}
 }
 
 //console.log(ParseArg(argumentos));
@@ -141,6 +174,21 @@ function parseDelimited(texto, delimiter, noHeader = false  ) {
     const textoNormalizado = texto.replace(/\r\n/g, "\n");
     const lineas = textoNormalizado.split("\n").filter(linea => linea !== "");
     const filas = lineas.map(linea => linea.split(delimiter));
+   for (let i = 0; i < filas.length; i++) {
+        for (const campo of filas[i]) {
+            if (campo.includes('"')) {
+                console.error("el campo no permite comillas dobles.");
+                process.exit(1);
+            }
+        }
+    }
+    const cantidadEsperada = filas[0].length;
+    for (let i = 1; i < filas.length; i++) {
+        if (filas[i].length !== cantidadEsperada) {
+            console.error("las filas tienen diferente cantidad de campos");
+            process.exit(1);
+        }
+    }
    if(noHeader){
     return  {header:null, rows:filas};
    }
@@ -152,9 +200,19 @@ function parseDelimited(texto, delimiter, noHeader = false  ) {
 
 function PosicionArray(campo,header,noHeader){
     if(noHeader){
-        return parseInt(campo,10);
+      const indice = parseInt(campo,10);
+        if(isNaN(indice)){
+            console.error("no es un índice numérico válido.");
+            process.exit(1);
+        }
+        return indice;
     }
-    return header.indexOf(campo);
+      const posicion = header.indexOf(campo);
+       if(posicion === -1){
+        console.error("el campo no existe.");
+        process.exit(1);
+    }
+       return posicion;
 }
 
 function sortRows(rows,sortFields,header,noHeader){
@@ -166,10 +224,25 @@ function sortRows(rows,sortFields,header,noHeader){
     
     return rows.slice().sort((a,b)=>{
         for(const{posicion,numeric,descending} of comando){
-            const compara = numeric
-            ? Number(a[posicion]) - Number(b[posicion])
-            : a[posicion].localeCompare(b[posicion]);
-            if (compara !== 0) return descending ? -compara : compara;     
+            const valorAOriginal = a[posicion];
+            const valorBOriginal = b[posicion];
+            let compara;
+
+            if(numeric){
+                const valorA = Number(valorAOriginal);
+                const valorB = Number(valorBOriginal);
+                if(isNaN(valorA) || isNaN(valorB)){
+                    console.error("Se encontro un valor no numerico");
+                    process.exit(1);
+                }
+                compara = valorA - valorB;
+            } else {
+                compara = a[posicion].localeCompare(b[posicion]);
+            }
+
+            if(compara !== 0){
+                return descending ? -compara : compara;
+            }
         }
         return 0;
     });
