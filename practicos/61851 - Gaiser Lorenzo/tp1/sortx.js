@@ -96,10 +96,16 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         }console.log(uso)
 
 
-const texto = readFileSync(uso.inputFile, "utf8")
-console.log(texto)
+let texto = readFileSync(uso.inputFile, "utf8")
+texto = texto.replaceAll("\r","") 
+const filas = texto.split("\n").filter(g => g !== "")
+console.log(filas)
 writeFileSync(uso.outputFile, texto)
 
+
+
+const tablas = filas.map(f => f.split(uso.delimiter) )
+console.log(tablas)
 
 
 
