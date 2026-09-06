@@ -173,6 +173,34 @@ function parseDelimited(contenido, delimiter, noHeader) {
     return filas;
 }
 
+function sortRows(filas, sortFields, noHeader) {
+    let inicio = 0;
+
+    if (!noHeader) {
+        inicio = 1;
+    }
+    const datos = filas.slice(inicio);
+
+    let encabezado = [];
+
+if (!noHeader) {
+    encabezado = filas[0];
+}
+for (let i = 0; i < sortFields.length; i++) {
+    const campo = sortFields[i];
+    let posicion = -1;
+
+    if (noHeader) {
+        posicion = Number(campo.name);
+    } else {
+        posicion = encabezado.indexOf(campo.name);
+    }
+    if (posicion === -1) {
+    throw new Error("No existe el campo: " + campo.name);
+    }
+ }
+}
+
 const config = parseArgs();
 const contenido = readInput(config.inputFile);
 const filas = parseDelimited(contenido, config.delimiter, config.noHeader);
