@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-
-const HELP = `
+ const HELP = `
 
 sortx — Ordena archivos de texto delimitados
 
@@ -35,4 +34,30 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+// console.log(HELP);
+
+function parseArgs() {
+const inputFile = process.argv[2];
+const outputFile = process.argv[3];
+
+const sortFields =  [];
+for (let i = 4; i < process.argv.length; i++) {
+    if (process.argv[i] === "-b") {
+        const criterio = process.argv[i + 1];
+        sortFields.push(criterio);
+
+        const partes = criterio.split(":");
+        console.log(partes);
+    }
+}
+
+return {
+inputFile: inputFile,
+outputFile: outputFile,
+sortFields: sortFields
+
+  };
+}
+
+const config = parseArgs();
+console.log(config);
