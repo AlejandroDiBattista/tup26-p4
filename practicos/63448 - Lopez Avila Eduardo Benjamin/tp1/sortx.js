@@ -49,7 +49,7 @@ function configuracion() {
 		output: argumentos[1],
 		delimitador: ",",
 		noHeader: false,
-		criterios: [{ name: "apellido", numeric: false, descending: false }],
+		criterios: [],
 	};
 	if (argumentos.includes("-h") || argumentos.includes("--help")) {
 		console.log(HELP);
@@ -86,6 +86,9 @@ function configuracion() {
 			}
 		});
 		config.criterios = crit;
+	}
+	if (!config.input || !config.output || config.input.startsWith('-') || config.output.startsWith('-')) {
+		console.error("Error: falta el archivo de origen o destino."); process.exit(1);
 	}
 	console.log(config);
 	return config;
@@ -153,7 +156,6 @@ async function sorteador() {
 	console.log("Filas ordenadas:", filasOrdenadas);
 	const serializado = serialize(tabla.header, filasOrdenadas, config.delimitador);
 	await writeOutput(config.output, serializado);
-
 }
 
 sorteador();
