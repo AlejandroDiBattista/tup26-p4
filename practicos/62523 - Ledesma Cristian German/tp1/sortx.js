@@ -92,6 +92,23 @@ function readInput(rutaArchivo){
     }
 
 }
+    function parseDelimited(textoCrudo,delimitador){
+    const lineas = textoCrudo.trim().split('\n');
+    const matrizFilas =[];
+
+    for (let i = 0; i < lineas.length; i++) {
+        const lineaLimpia = lineas[i].replace('\r','');
+        const columnas = lineaLimpia.split(delimitador);
+        
+
+        if (i>0 && columnas.length !==matrizFilas[0].length) {
+            console.error("Error:las filas tienen diferente cantidad de campos");
+            process.exit(1);
+        }
+        matrizFilas.push(columnas);
+    }
+    return matrizFilas
+    }
 
 function main() {
     const argumentoUsuario = process.argv.slice(2);
@@ -106,6 +123,12 @@ function main() {
         const textoDelArchivo = readInput(resultadoConfig.inputFile);
 
     console.log("contenido leido con exito:\n",textoDelArchivo);
+
+    console.log("TEST MATRIZ");
+    const matrizDatos = parseDelimited(textoDelArchivo, resultadoConfig.delimiter);
+    
+    console.log(matrizDatos);
+
 }else{
     console.error("Error: No se especifico un archivo de entrada");
 }
