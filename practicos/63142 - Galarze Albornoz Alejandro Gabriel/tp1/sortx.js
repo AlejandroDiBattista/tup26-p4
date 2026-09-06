@@ -35,4 +35,39 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+// console.log(HELP) 
+
+function parseArgs(args){
+    if (args.includes('-h') || args.includes('--help')) {
+        printHelp();
+        process.exit(0);
+    }
+
+    const positional = [];
+    const sortFieldsRaw = [];
+    
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        if (arg === '-b' || arg === '--by') {
+            const valor = args [++i];
+            
+            const partes = valor.split(':');
+            
+            const campo = partes[0];
+            const tipo = partes[1];
+            const orden = partes [2];
+
+            sortFieldsRaw.push({ campo, tipo, orden });
+        } else if (!arg.startsWith('-')) {
+            positional.push(arg);
+        }
+    }
+
+    return {
+        inputFile: positional [0],
+        outputFile: positional [1],
+        sortFieldsRaw: sortFieldsRaw
+    };
+
+}
