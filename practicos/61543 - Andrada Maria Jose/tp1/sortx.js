@@ -42,6 +42,7 @@ function parseArgs() {
      const outputFile = args[1];
      const sortFields = [];
      let noHeader = false;
+     let delimiter = ",";
      if (args.includes("-h") || args.includes("--help")) {
         console.log(HELP);
         process.exit(0);
@@ -55,7 +56,19 @@ function parseArgs() {
      }
 
      for (let i = 2; i < args.length; i++) {
-          if (args[i] === "-b" || args[i] === "--by") {
+        if (args[i] === "-d" || args[i] === "--delimiter"){
+            if (args[i + 1] === undefined) {
+                throw new Error("Falta el valor de --delimiter");
+            }
+
+            delimiter = args[i + 1];
+
+            if(delimiter.length !== 1) {
+                throw new Error("El delimitador debe tener un solo caracter");
+            }
+
+        }         
+            if (args[i] === "-b" || args[i] === "--by") {
             if (args[i + 1] === undefined) {
                 throw new Error("Falta el valor de --by");
             }
@@ -74,9 +87,13 @@ function parseArgs() {
         }
        
 }
-    return {inputFile: inputFile, outputFile: outputFile, delimiter: ",", noHeader: noHeader, sortFields: sortFields};
+ if(sortFields.length === 0){
+    throw new Error("Falta indicar al menos un criterio de ordenamiento");
+ }
+    return {inputFile: inputFile, outputFile: outputFile, delimiter: delimiter, noHeader: noHeader, sortFields: sortFields};
 }
 const config = parseArgs();
+
 
 
 function readInput(inputFile){
