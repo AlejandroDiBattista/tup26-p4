@@ -176,7 +176,17 @@ const textoFinal = ElementUnidos.join("\n")
 return textoFinal
 }
 
-
+function writeOutput(ruta, textoFinal){
+try
+{
+    fs.writeFileSync(ruta, textoFinal)
+}
+catch (error)
+{
+    console.error("el archivo de destino " + "(" + ruta + ") " + "no puede escribirse")
+    process.exit(1)
+}
+}
 
 
 
@@ -185,4 +195,4 @@ const configuracion = parseArgs();
 const texto = readInput(configuracion.inputFile)
 const filas = parseDelimited(texto, configuracion.delimiter)
 const textoFinal = serialize(filas, configuracion.delimiter)
-console.log(textoFinal)
+const archivoSalida = writeOutput(configuracion.outputFile, textoFinal)
