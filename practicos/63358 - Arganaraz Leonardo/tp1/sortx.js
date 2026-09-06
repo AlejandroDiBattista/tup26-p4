@@ -158,7 +158,6 @@ function readInput(filename) {
 function parseDelimited(text, delimiter) {
     const lines = text.split(/\r?\n/);
 
-    // Eliminamos una última línea vacía si existe
     if (lines.length > 0 && lines[lines.length - 1] === "") {
         lines.pop();
     }
@@ -168,7 +167,7 @@ function parseDelimited(text, delimiter) {
     }
 
     const rows = lines.map(line => {
-        // No se permiten comillas en el archivo
+        
         if (line.includes('"')) {
             throw new Error("El archivo no puede contener comillas.");
         }
@@ -176,7 +175,6 @@ function parseDelimited(text, delimiter) {
         return line.split(delimiter);
     });
 
-    // Todas las filas deben tener la misma cantidad de campos
     const fieldCount = rows[0].length;
 
     for (const row of rows) {
@@ -193,7 +191,6 @@ function sortRows(rows, config) {
     const header = config.noHeader ? null : rows[0];
     const data = config.noHeader ? rows : rows.slice(1);
 
-    // Obtenemos la posición de cada criterio
     const criteria = config.sortFields.map(field => {
         let index;
 
@@ -250,6 +247,18 @@ function sortRows(rows, config) {
     return header ? [header, ...data] : data;
 }
 
+function serialize(rows, delimiter) {
+    return rows.map(row => row.join(delimiter)).join("\n");
+}
+
+function writeOutput(filename, text) {
+    try {
+        fs.writeFileSync(filename, text, "utf8");
+    } catch (error) {
+        throw new Error(`No se puede escribir el archivo de destino: ${filename}`);
+    }
+}
+
 try {
     const config = parseArgs(process.argv.slice(2));
 
@@ -259,7 +268,11 @@ try {
 
     const sortedRows = sortRows(rows, config);
 
-    console.log(sortedRows);
+    const outputText = serialize(sortedRows, config.delimiter);
+
+    writeOutput(config.outputFile, outputText);
+
+    console.log(`Archivo generado correctamente: ${config.outputFile}`);
 } catch (error) {
     console.error("Error:", error.message);
     process.exitCode = 1;
