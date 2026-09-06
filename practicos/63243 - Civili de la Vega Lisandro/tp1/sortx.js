@@ -185,7 +185,48 @@ async function readInput(objConfiguracion){
         }
 }
 
+function parseDelimited(texto, configuracion) {
+
+    if (texto.includes('"')) {
+        throw new Error("La entrada tiene comillas dobles.");
+    }
+
+    //separo filas
+    const filas = texto.split(/\r?\n/u);
+    //filtro por filas que no esten vacias
+    const tabla = filas.filter(fila => fila.length > 0);
+    //separo por delimitador
+    const tablaNormalizada = tabla.map(fila => fila.split(configuracion.delimiter));
+
+
+    //por si viene vacio, para que no se rompa el programa
+    if (tablaNormalizada.length === 0) {
+        throw new Error("El archivo de entrada está vacío.")
+    }
+
+    //guardo la cantidad esperada de campos segun la primera fila
+    const columnasEsperadas = tablaNormalizada[0].length;
+
+    //recorro todas las filas comprobando su longitud
+    for (let i = 0; i < tablaNormalizada.length; i++) {
+        if (tablaNormalizada[i].length !== columnasEsperadas) {
+            throw new Error("Las filas tienen diferente cantidad de campos.");
+        }
+    }
+
+    if (!configuracion.noHeader) {
+        const header = tablaNormalizada.shift()
+        const headerYFilas = [header, tablaNormalizada]
+        return headerYFilas
+    }else{
+        return tablaNormalizada;
+    }
+
+}
+
 const configuracionObj = parseArgs(process.argv)
 console.log(configuracionObj)
 const lector = await readInput(configuracionObj)
 console.log(lector)
+const textoSeparado = parseDelimited(lector, configuracionObj)
+console.log(textoSeparado)
