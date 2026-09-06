@@ -44,6 +44,9 @@ function parseArgs() {
      let noHeader = false;
      for (let i = 2; i < args.length; i++) {
           if (args[i] === "-b" || args[i] === "--by") {
+            if (args[i + 1] === undefined) {
+                throw new Error("Falta el valor de --by");
+            }
             const criterio = args[i+1];
             const partes = criterio.split(":");
             const name = partes[0];
