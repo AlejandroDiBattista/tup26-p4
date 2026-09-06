@@ -72,6 +72,9 @@ const criterios = [];
 for (let i = 0; i < args.length; i++) {
     if (args[i] === '-b' || args[i] === '--by') {
         const criterio = args[i + 1];
+        if(!criterio){
+            throw new Error('la opcion --by requiere un argumento');
+        }
         const partes = criterio.split(':');
         
         criterios.push({
@@ -93,18 +96,8 @@ return {
     noHeader: noencabezado,
     sortFields: criterios 
 };
-
-// salida
-  const configuracion = {
-    inputFile: origen,
-    outputFile: destino,
-    delimiter: delimiter === "\\t" ? "\t" : delimiter, // Pequeño ajuste para que \t funcione como tabulación
-    noHeader: noencabezado,
-    sortFields: criterios 
-  };
-
-  return configuracion;
 }
+
 
 
 
