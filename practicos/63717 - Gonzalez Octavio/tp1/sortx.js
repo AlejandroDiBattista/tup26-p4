@@ -143,14 +143,19 @@ async function readInput(entrada) {
 const {columnas, filas} = parseDelimited(input, configuracion)
 
 function parseDelimited(input, config) {
-
-
     let lineas =  input.includes("\r\n") ? input.split("\r\n")  : input.split("\n");
 
-    let columnas = lineas[0].split(config.delimiter);
     let filas = [];
-    for (let i = 1; i < lineas.length; i++) {
-        filas.push(lineas[i].split(config.delimiter));
+    let columnas = [];
+    if (config.noHeader == false) {
+        columnas = lineas[0].split(config.delimiter);
+        for (let i = 1; i < lineas.length; i++) {
+            filas.push(lineas[i].split(config.delimiter));
+        }
+    } else {
+        for (let i = 0; i < lineas.length; i++) {
+            filas.push(lineas[i].split(config.delimiter));
+    }
     }
     return {columnas, filas}
 }
