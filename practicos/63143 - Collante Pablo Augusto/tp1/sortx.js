@@ -40,7 +40,7 @@ EJEMPLOS:
 //* 1. parseArgs      → leer los argumentos y construir la configuración
 //* 2. readInput      → leer el archivo de origen
 //* 3. parseDelimited → convertir el texto en filas y columnas
-//? 4. sortRows       → ordenar las filas
+//* 4. sortRows       → ordenar las filas
 //? 5. serialize      → reconstruir el texto delimitado
 //? 6. writeOutput    → escribir el archivo de destino
 
@@ -131,7 +131,7 @@ function readInput(filePath) {
 }
 
 function parseDelimited(texto, delimiter) {
-    if (texto.includes('"')){
+    if (texto.includes('"')) {
         console.error("Error: la entrada tiene comillas")
         process.exit(1);
     }
@@ -155,8 +155,8 @@ function sortRows(rows, config) {
         data = rows.slice(1);
     }
 
-    for (const field of config.sortFields){
-        if(!config.noHeader){
+    for (const field of config.sortFields) {
+        if (!config.noHeader) {
             field.index = header.indexOf(field.name);
             if (field.index === -1) {
                 console.error("error: el campo no existe")
@@ -169,18 +169,18 @@ function sortRows(rows, config) {
 
     data.sort((filaA, filaB) => {
         for (const field of config.sortFields) {
-            
+
             let valorA = filaA[field.index];
             let valorB = filaB[field.index];
-    
+
             if (field.numeric) {
                 valorA = Number(valorA);
                 valorB = Number(valorB);
-                    if (isNaN(valorA) || isNaN(valorB)) {
+                if (isNaN(valorA) || isNaN(valorB)) {
                     console.error("error: el campo no es numérico")
                     process.exit(1);
                 }
-            }  
+            }
             if (valorA > valorB) {
                 return field.descending ? -1 : 1;
             }
@@ -191,19 +191,31 @@ function sortRows(rows, config) {
         return 0;
     })
 
-    if (header){
+    if (header) {
         return [header, ...data];
     } else {
         return data;
     }
 }
 
+function serialize(rows, delimiter) {
+    const lines = rows.map(row => row.join(delimiter));
+    return lines.join('\n');
+    console.log(textOutput);
+}
+
+
+
+
+
 
 const config = parseArgs(args);
 const inputData = readInput(config.inputFile);
 const parsedData = parseDelimited(inputData, config.delimiter);
 const sortedData = sortRows(parsedData, config);
+const textOutput = serialize(sortedData, config.delimiter);
 console.log(config);
 console.log(inputData);
 console.log(parsedData);
 console.log(sortedData);
+console.log(textOutput);
