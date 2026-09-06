@@ -69,6 +69,10 @@ function parseArgs() {
             }
 
             delimiter = process.argv[i + 1]
+            if (delimiter === "\\t") {
+                delimiter = "\t"
+            }
+
             i++
 
             if (delimiter.length !== 1) {                   // validar un caracter
@@ -101,14 +105,14 @@ function parseArgs() {
                 process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
             }
 
-            const numeric = partes[1] === "num"         // tipo
-            if (partes[1] !== "alpha" && partes[1] !== "num") {             // validar tipo
+            const numeric = partes[1] === undefined ? false : partes[1] === "num"         // tipo
+            if (partes[1] !== undefined && partes[1] !== "alpha" && partes[1] !== "num") {             // validar tipo
                 console.error(`Error: El tipo '${partes[1]}' no es válido. Debe ser 'alpha' o 'num'`)
                 process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
             }
 
-            const descending = partes[2] === "desc"     // orden
-            if (partes[2] !== "asc" && partes[2] !== "desc") {             // validar orden
+            const descending = partes[2] === undefined ? false : partes[2] === "desc"     // orden
+            if (partes[2] !== undefined && partes[2] !== "asc" && partes[2] !== "desc") {             // validar orden
                 console.error(`Error: El orden '${partes[2]}' no es válido. Debe ser 'asc' o 'desc'`)
                 process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
             }
@@ -154,13 +158,27 @@ function readInput(inputFile) {
 
 /* FUNCIÓN 3 --> convertir texto en array con filas y columnas */
 function parseDelimited(contenido, delimiter) {
-    const lineasTexto = contenido.trim().split("\n")           // separar el texto en distintas líneas
-    // trim quita espacios o saltos de línea vacíos del final
+    const lineasTexto = contenido.split(/\r?\n/)           // separar el texto en distintas líneas
+    // /\r?\n/ --> buscar el salto de línea y eliminarlo
+    if (lineasTexto[lineasTexto.length - 1] === "") {
+        lineasTexto.pop()
+    }
+    
     const filas = []            // array para acumular las filas
 
     for (let i = 0; i < lineasTexto.length; i++) {
-        const lineaLimpia = lineasTexto[i].replace("\r", "")        // eliminar salto de linea
+        const lineaLimpia = lineasTexto[i]
+        if (lineaLimpia.includes('"')) {
+            console.error("Error: La entrada contiene comillas dobles")
+            process.exit(1)
+        }
+
         const fila = lineaLimpia.split(delimiter)                   // separar las lineas en columnas según el delimitador
+        if (filas.length > 0 && fila.length !== filas[0].length) {
+            console.error("Error: Las filas tienen diferente cantidad de campos")
+            process.exit(1)
+        }
+
         filas.push(fila)                // agregar la fila al array
     }
 
@@ -182,9 +200,18 @@ function sortRows(filas, args) {
         let indiceColumna = -1
 
         if (args.noHeader) {
-            indiceColumna = parseInt(campo.name, 10)            // convertir texto a número (ej: "2" a 2)
+            indiceColumna = Number(campo.name)
+            if (!Number.isInteger(indiceColumna) || indiceColumna < 0 || indiceColumna >= filas[0].length) {
+                console.error(`Error: Índice de columna inválido: ${campo.name}`)
+                process.exit(1)
+            }
+
         } else {
             indiceColumna = encabezado.indexOf(campo.name)      // buscar posición en el encabezado
+            if (indiceColumna === -1) {
+                console.error(`Error: El campo '${campo.name}' no existe en el encabezado`)
+                process.exit(1)
+            }
         }
 
         return {
@@ -196,13 +223,25 @@ function sortRows(filas, args) {
 
     datos.sort(function (filaA, filaB) {             // ordenar lista
         for (let i = 0; i < criterios.length; i++) {
+
             const criterio = criterios[i]
             let valorA = filaA[criterio.index]
             let valorB = filaB[criterio.index]
             let resultado = 0
 
             if (criterio.numeric) {                 // comparación
+                if (valorA.trim() === "" || valorB.trim() === "") {
+                    console.error("Error: Un criterio numérico encontró un valor vacío")
+                    process.exit(1)
+                }
+
+                if (!Number.isFinite(Number(valorA)) || !Number.isFinite(Number(valorB))) {             // validar que sean números     isFinite --> función JavaScript, comprueba que sea num. válido y finito
+                    console.error("Error: El criterio numérico encontró un valor no numérico")
+                    process.exit(1)
+                }
+
                 resultado = Number(valorA) - Number(valorB)
+
             } else {
                 resultado = valorA.localeCompare(valorB)
             }
@@ -231,7 +270,7 @@ function serialize(filas, delimiter) {
         lineasTexto.push(lineaUnida)			// agregar línea al array
     }
 
-    return lineasTexto.join("\n") + "\n"		// unir líneas con salto de línea
+    return lineasTexto.join("\n")		// unir líneas
 }
 
 /* FUNCIÓN 6 --> guardar texto en el archivo pedido */
