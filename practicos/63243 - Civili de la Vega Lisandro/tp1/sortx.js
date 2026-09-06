@@ -1,10 +1,6 @@
 #!/usr/bin/env node
 import console from "node:console"
-import { readFile } from "node:fs/promises"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
-
-
+import { readFile, writeFile } from "node:fs/promises"
 
 const HELP = `
 
@@ -237,7 +233,6 @@ function sortRows(tabla, configuracion) {
             indice = parseInt(campo.name, 10);
             //prevencion de errores: no es un nro, es menor que 0 o no existe el indice
             if (isNaN(indice) || indice < 0 || indice >= tabla[0].length) {
-                console.log(configuracion.noHeader)
                 throw new Error(`El campo solicitado no existe: ${campo.name} parte 1`);
             }
         } else {
@@ -303,11 +298,33 @@ function sortRows(tabla, configuracion) {
     return datos;
 }
 
-const configuracionObj = parseArgs(process.argv)
-console.log(configuracionObj)
-const lector = await readInput(configuracionObj)
-console.log(lector)
-const textoSeparado = parseDelimited(lector, configuracionObj)
-console.log(textoSeparado)
-const ordenada = sortRows(textoSeparado, configuracionObj)
-console.log(ordenada)
+function serialize(tabla, configuracion) {
+    //uno las filas por el delmitador
+    const filasTexto = tabla.map(fila => fila.join(configuracion.delimiter));
+    
+    //uno todas las filas con un salto de linea
+    return filasTexto.join('\n');
+}
+
+async function writeOutput(texto, configuracion) {
+    //creo el archivo destino, si hay uno lo piso
+    await writeFile(configuracion.outputFile, texto, "utf8");
+    console.log(`Archivo guardado en: ${configuracion.outputFile} existosamente.`);
+}
+
+async function main(){
+    try {
+        const configuracionObj = parseArgs(process.argv)
+        const lector = await readInput(configuracionObj)
+        const textoSeparado = parseDelimited(lector, configuracionObj)
+        const textoOrdenado = sortRows(textoSeparado, configuracionObj)
+        const textoFinal = serialize(textoOrdenado, configuracionObj)
+        
+        await writeOutput(textoFinal, configuracionObj) 
+    } catch (error) {
+        console.error(error.message);
+        process.exit(1);
+    }
+}
+
+main()
