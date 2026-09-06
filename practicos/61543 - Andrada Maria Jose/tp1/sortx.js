@@ -165,6 +165,11 @@ function serialize(rows, delimiter) {
 
 const texto = serialize(sortedRows, config.delimiter);
 console.log(texto);
+writeOutput(config.outputFile, texto);
+
+function writeOutput(outputFile, contenido){
+    fs.writeFileSync(outputFile, contenido, "utf8");
+}
 
 
 
