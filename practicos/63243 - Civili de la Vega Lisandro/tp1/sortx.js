@@ -214,14 +214,93 @@ function parseDelimited(texto, configuracion) {
         }
     }
 
+    return tablaNormalizada;
+}
+
+function sortRows(tabla, configuracion) {
+    //aca guardare (si es que hay) el encabezado
+    let encabezado = [];
+    let datos = tabla;
+
+    //separo el encabezado si corresponde
     if (!configuracion.noHeader) {
-        const header = tablaNormalizada.shift()
-        const headerYFilas = [header, tablaNormalizada]
-        return headerYFilas
-    }else{
-        return tablaNormalizada;
+        encabezado = tabla[0];
+        datos = tabla.slice(1); //guardo desde la segunda fila en adelante
     }
 
+    //cambio los nombres de los campos a nros de columna (indices)
+    const criteriosConIndices = configuracion.sortFields.map(campo => {
+        let indice;
+        
+        if (configuracion.noHeader) {
+            //si no hay encabezado, intento convertir el nro de indice a tipo numero (viene como string)
+            indice = parseInt(campo.name, 10);
+            //prevencion de errores: no es un nro, es menor que 0 o no existe el indice
+            if (isNaN(indice) || indice < 0 || indice >= tabla[0].length) {
+                console.log(configuracion.noHeader)
+                throw new Error(`El campo solicitado no existe: ${campo.name} parte 1`);
+            }
+        } else {
+            //si hay encabezado, busco en que posicion esta esa palabra
+            indice = encabezado.indexOf(campo.name);
+            if (indice === -1) {
+                throw new Error(`El campo solicitado no existe: ${campo.name} parte 2`);
+            }
+        }
+        
+        //retorno el mismo campo pero sumándole la propiedad 'index' para luego usarlo
+        return { ...campo, index: indice };
+    });
+
+    //verifico que los campos numericos tengan números posta
+    for (let i = 0; i < datos.length; i++) {
+        for (const criterio of criteriosConIndices) {
+            if (criterio.numeric) { //busco los que supuestamente deben ser numeros
+                //tomo el valor
+                const valor = datos[i][criterio.index];
+                //verifico si es numero o si no es vacio, ya que vacio daria 0 y lo tomaria ok
+                if (isNaN(Number(valor)) || valor.trim() === "") {
+                    throw new Error(`Se encontró un valor no numérico en un campo numérico: "${valor}"`);
+                }
+            }
+        }
+    }
+
+    //comienzo a ordernar, sort() recibe 2 args y deberia devolver numero
+    datos.sort((filaA, filaB) => {
+        //uso for por si se uso mas de un -b, recorro ordenadamente
+        for (const criterio of criteriosConIndices) {
+            //le doy valor a lo que se ira comparando con sort()
+            const valorA = filaA[criterio.index];
+            const valorB = filaB[criterio.index];
+
+            //variable para luego almacenar el resultado de las restas de sort()
+            let resultado = 0;
+
+            //si el criterio es numerico hago una resta normal
+            if (criterio.numeric) {
+                resultado = Number(valorA) - Number(valorB);
+            } else {
+                //si es texto, hago comparacion alfabetica
+                resultado = valorA.localeCompare(valorB);
+            }
+
+            //si el resultado no es 0, es decir hay uno mayor que otro, verifico si pidio desc o asc
+            if (resultado !== 0) {
+                //si pidio desc multiplico el resultado por -1 para invertirlo
+                return criterio.descending ? resultado * -1 : resultado;
+            }
+            //si hay empate (resultado es 0), el bucle for sigue al proximo criterio
+        }
+        return 0; //si empata todo
+    });
+
+    //vuelvo a armar la tabla de datos
+    if (!configuracion.noHeader) {
+        return [encabezado, ...datos]; //el encabezado arriba de los datos si es que hay
+    }
+    
+    return datos;
 }
 
 const configuracionObj = parseArgs(process.argv)
@@ -230,3 +309,5 @@ const lector = await readInput(configuracionObj)
 console.log(lector)
 const textoSeparado = parseDelimited(lector, configuracionObj)
 console.log(textoSeparado)
+const ordenada = sortRows(textoSeparado, configuracionObj)
+console.log(ordenada)
