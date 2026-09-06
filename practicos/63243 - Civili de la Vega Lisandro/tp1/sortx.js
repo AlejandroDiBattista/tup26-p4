@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+import console from "node:console"
+import { readFile } from "node:fs/promises"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+
 
 const HELP = `
 
@@ -45,9 +51,6 @@ function parseArgs(inputConsole){
     //set con opciones de ayuda, set para que la comparacion sea mas rapida y directa
     const opcionesAyuda = new Set (["--help", "-h"])
    
-    //set con extensiones validas para comparar
-    const extensionesValidas = new Set([".csv", ".psv", ".tsv", ".txt"])
-
     //variables para guardar nombres de archivos
     let inputFile
     let outputFile
@@ -132,7 +135,6 @@ function parseArgs(inputConsole){
                 i++
             }else if (inputNormalizado[i] === "--no-header" || inputNormalizado[i] === "-nh") {
                 config.noHeader = true
-                opcionesIngresadas.add(inputNormalizado[i])
             }else if (inputNormalizado[i] === "--delimiter" || inputNormalizado[i] === "-d") {
                 const proximoValor = inputNormalizado[i + 1];
 
@@ -153,7 +155,6 @@ function parseArgs(inputConsole){
                 }
                 
                 config.delimiter = delimitadorFinal;
-                opcionesIngresadas.add(inputNormalizado[i]);
                 
                 i++
             }else{
@@ -171,4 +172,20 @@ function parseArgs(inputConsole){
     }   
 }
 
-console.log(parseArgs(process.argv))
+async function readInput(objConfiguracion){
+    try {
+            const contenido = await readFile(objConfiguracion.inputFile, "utf8");
+            return contenido;
+        } catch (error) {
+            if (error.code === "ENOENT") {
+                throw new Error("El archivo no existe en la ruta.");
+            }else {
+                throw error;
+            }
+        }
+}
+
+const configuracionObj = parseArgs(process.argv)
+console.log(configuracionObj)
+const lector = await readInput(configuracionObj)
+console.log(lector)
