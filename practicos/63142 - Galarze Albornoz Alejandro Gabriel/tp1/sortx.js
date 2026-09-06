@@ -40,7 +40,7 @@ import fs from "fs";
 
 function parseArgs(args){
     if (args.includes('-h') || args.includes('--help')) {
-        printHelp();
+        console.log(HELP);
         process.exit(0);
     }
 
@@ -60,6 +60,10 @@ function parseArgs(args){
             }
             
             const partes = valor.split(':');
+
+            if (partes.length > 3) {
+                throw new Error(`Criterio invalido: ${valor}`);
+            }
             
             const campo = partes[0];
             const tipo = partes[1] || "alpha";
@@ -77,11 +81,19 @@ function parseArgs(args){
 
             sortFieldsRaw.push({ campo, tipo, orden });
         }   else if (arg ==='-d' || arg === '--delimiter') {
-                const val = args[++i];
+                let val = args[++i];
 
-                if (!val) {
+                if (!val || val.startsWith('-')) {
                     throw new Error('Falta el delimitador para -d');
                 }
+
+                if (val === '\\t'){
+                    val = '\t'
+                }
+
+                if (val.length !== 1){
+                    throw new Error('El delimitador tiene que ser un caracter unico');
+                } 
                 delimiter = val;
 
         }   else if (arg === '-nh' || arg === '--no-header') {
@@ -89,7 +101,17 @@ function parseArgs(args){
 
         }   else if (!arg.startsWith('-')) {
             positional.push(arg);
+        }   else {
+                throw new Error(`Opcion invalida: ${arg}`)
         }
+    }
+
+    if (positional.length !== 2) {
+        throw new Error('Faltan los archivos de origen y destino');
+    }
+
+    if (sortFieldsRaw.length === 0) {
+        throw new Error('Debes indicar al menos un -b');
     }
 
     const sortFields = [];
@@ -111,3 +133,4 @@ function parseArgs(args){
     }; 
 
 }
+
