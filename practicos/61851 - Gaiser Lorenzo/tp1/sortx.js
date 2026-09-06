@@ -136,8 +136,12 @@ for (let i = 0; i < uso.sortFields.length; i++) {
 
 console.log(uso.sortFields)   
 
-filasDatos.sort((a, b) => {
-    const c = uso.sortFields[0]
+
+
+  filasDatos.sort((a, b) => {
+
+    for (const c of uso.sortFields) {
+    //const c = uso.sortFields[0]
     let resultado 
    
     if (c.numeric){
@@ -152,9 +156,11 @@ filasDatos.sort((a, b) => {
     }else{
      
     }
+    if (resultado !== 0) {
     return resultado
+}
     //return a[c.col].localeCompare(b[c.col], "es")
-
+    }return 0
 })
 
 console.log("ORDENADO:", filasDatos)
