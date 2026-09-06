@@ -53,19 +53,20 @@ for(let i = 0; i < array.length; i++){
 
 import fs from "fs";
 
+
 const argumentos = [
     "empleados.csv",
     "ordenados.csv",
     "-d",
-    "--delimiter",
+    //"--delimiter",
     ",",
     "-nh",
     "--noHeader",
     "-b",
-    "--by",
+    //"--by",
     "salario:num:desc",
     "-b",
-    "--by",
+    //"--by",
     "apellido"
 ]
 
@@ -114,7 +115,7 @@ function ParseArg(argumentos){
            i++;
        } 
        else if(argumentos[i] === "-b" || argumentos[i] === "--by"){
-          const campo = ParseCampo(argumentos[i + 2]);
+          const campo = ParseCampo(argumentos[i + 1]);
             sortFields.push(campo);
             i += 2;
        } 
@@ -125,7 +126,7 @@ function ParseArg(argumentos){
     return{inputFile,outFile,delimiter,noHeader,sortFields}
 }
 
-//console.log(ParseArg(argumentos));
+console.log(ParseArg(argumentos));
 
 function readInput(texto) {
   try {
@@ -135,4 +136,15 @@ function readInput(texto) {
 }
 }
 
-console.log(readInput("empleados.csv"));
+function parseDelimited(texto, delimiter) {
+    const textoNormalizado = texto.replace(/\r\n/g, "\n");
+    const lineas = textoNormalizado.split("\n").filter(linea => linea !== "");
+    const filas = lineas.map(linea => linea.split(delimiter));
+    return filas;
+}
+
+const confi = ParseArg(argumentos);
+const texto = readInput(confi.inputFile);
+const rows =  parseDelimited(texto,confi.delimiter);
+
+console.log(rows);
