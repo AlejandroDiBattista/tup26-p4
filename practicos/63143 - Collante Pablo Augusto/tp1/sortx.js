@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const HELP = `
 
@@ -204,7 +204,14 @@ function serialize(rows, delimiter) {
     console.log(textOutput);
 }
 
-
+function writeOutput(filePath, text) {
+    try {
+        writeFileSync(filePath, text, 'utf-8');
+    } catch (error) {
+        console.error(`Error: No se pudo escribir el archivo de destino ${filePath}`);
+        process.exit(1);
+    }
+}
 
 
 
@@ -214,8 +221,10 @@ const inputData = readInput(config.inputFile);
 const parsedData = parseDelimited(inputData, config.delimiter);
 const sortedData = sortRows(parsedData, config);
 const textOutput = serialize(sortedData, config.delimiter);
-console.log(config);
-console.log(inputData);
-console.log(parsedData);
-console.log(sortedData);
-console.log(textOutput);
+
+writeOutput(config.outputFile, textOutput);
+// console.log(config);
+// console.log(inputData);
+// console.log(parsedData);
+// console.log(sortedData);
+// console.log(textOutput);
