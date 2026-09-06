@@ -104,17 +104,21 @@ function sortRows(tabla, sortFields) {
             
             let varA = a[i];
             let varB = b[i];
+            let res;
 
             if (field.numeric) {
-                let res = varA - varB;
+                res = varA - varB;
+            } else{ 
+                res= varA.localeCompare(varB);
+            }
 
                 if (field.descending) {
-                    res = res;
+                    res = -res;
                 }
                 if (res !=0) {
                      return res;
                 }
-            }
+            
         }
 
     }); 
@@ -126,11 +130,23 @@ function sortRows(tabla, sortFields) {
 
 }
 
+function serialize(tabla, delimiter,noHeader){
+let texto = "";
+
+if (!noHeader) {
+    texto = tabla.header.join(delimiter) + "\n"; 
+}
+
+texto = texto + tabla.rows.map(linea => linea.join(delimiter)).join("\n");
+return texto;
+}
+
 let configuracion = parseArgs();
 let texto = readInput(configuracion.inputFile);
 let tabla = parseDelimited(texto, configuracion.delimiter, configuracion.noHeader);
 let tablaOrdenada = sortRows(tabla, configuracion.sortFields);
 
-
+let textoSalida = serialize(tablaOrdenada, configuracion.delimiter, configuracion.noHeader);
+console.log(textoSalida);
 console.log(tablaOrdenada);
 
