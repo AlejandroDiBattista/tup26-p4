@@ -57,16 +57,29 @@ function parseArgs(){
 
         } else if (items[i] === '-b' || items[i] === '--by') {
 
+            if (items[i + 1] === undefined) {
+                throw new Error("La opción -b/--by requiere un valor")
+            }
+
+            
             config.sortFields.push(items[i + 1])
             i = i + 2
             
-
+            
         } else if (items[i] === '-d' || items[i] === '--delimiter') {
-
+            
+            if (items[i + 1] === undefined) {
+                throw new Error("La opción -d/--delimiter requiere un valor")
+            }
             config.delimiter = items[i + 1]
             if (config.delimiter === "\\t") {
                 config.delimiter = '\t'
             }
+
+            if (config.delimiter.length !== 1) {
+                throw new Error("El delimitador debe ser un único carácter")
+            }
+
 
             i = i + 2
 
@@ -74,6 +87,12 @@ function parseArgs(){
 
             config.noHeader = true
             i = i + 1
+
+
+        } else if (items[i].startsWith('-')) {
+
+            throw new Error("Opción desconocida: " + items[i])
+
 
         } else {
 
@@ -92,16 +111,36 @@ function parseArgs(){
 
 
     }
+
+    if (config.inputFile === null || config.outputFile === null) {
+    throw new Error("Faltan los archivos de origen y/ o destino")
+    }
+
+    if (config.sortFields.length === 0) {
+        throw new Error("Debe especificar al menos un criterio de ordenamiento con -b/--by")
+    }
+
     return config;
+
+
 }
 
 
 function readInput(config) {
-    return readFileSync(config.inputFile, 'utf8')
+    try {
+        return readFileSync(config.inputFile, 'utf8')
+    } catch (error) {
+        throw new Error("No se pudo leer el archivo de origen: " + config.inputFile)
+    }
 }
 
 
+
 function parseDelimited(texto, config) {
+
+    if (texto.includes('"')) {
+        throw new Error("El archivo de origen contiene comillas dobles, lo cual no está soportado")
+    }
 
     let lineas = texto.split(/\r?\n/)
     let filas = lineas.map((linea) => linea.split(config.delimiter));
@@ -115,6 +154,20 @@ function parseDelimited(texto, config) {
         encabezado = filas[0];          
         filasDeDatos = filas.slice(1);  
 }
+
+    let cantidadEsperada;
+    if (config.noHeader) {
+        cantidadEsperada = filasDeDatos[0].length;
+    } else {
+        cantidadEsperada = encabezado.length;
+    }
+
+    for (let fila of filasDeDatos) {
+        if (fila.length !== cantidadEsperada) {
+            throw new Error("Las filas no tienen la misma cantidad de campos")
+        }
+    }
+
 
     return { encabezado, filasDeDatos }
 }
@@ -137,6 +190,10 @@ function sortRows(filasDeDatos, encabezado, config) {
             index = Number(name)
         } else {
             index = encabezado.indexOf(name)
+            if (index === -1) {
+            throw new Error("El campo '" + name + "' no existe en el encabezado")
+        }
+
         }
 
         return { name, numeric, descending, index}
@@ -154,6 +211,12 @@ function sortRows(filasDeDatos, encabezado, config) {
             if (criterio.numeric) {
                 valorA = Number(valorA)
                 valorB = Number(valorB)
+
+                if (Number.isNaN(valorA) || Number.isNaN(valorB)) {
+                throw new Error("El campo '" + criterio.name + "' contiene un valor no numérico")
+            }
+
+
             }
 
             let resultado;
@@ -197,10 +260,15 @@ function serialize(encabezado, filasDeDatos, config) {
 }
 
 function writeOutput(config, texto) {
-
-    return writeFileSync(config.outputFile, texto, 'utf8')
-
+    try {
+        return writeFileSync(config.outputFile, texto, 'utf8')
+    } catch (error) {
+        throw new Error("No se pudo escribir el archivo de destino: " + config.outputFile)
+    }
 }
+
+
+try {
 
 let config = parseArgs()
 let texto = readInput(config)
@@ -209,9 +277,7 @@ let ordenadas = sortRows(resultado.filasDeDatos, resultado.encabezado, config)
 let textoSalida = serialize(resultado.encabezado, ordenadas, config)
 writeOutput(config, textoSalida)
 
-
-
-
-
-
-
+} catch (error) {
+    console.error(error.message)
+    process.exit(1)
+}
