@@ -44,6 +44,7 @@ const argumentos = process.argv.slice(2); // array c/argumentos desde el indice 
 const configuracion = parseArgs(argumentos);
 const input = await readInput(configuracion.inputFile);
 const { columnas, filas } = parseDelimited(input, configuracion);
+const output = sortRows(columnas, filas, configuracion.sortfields);
 
 // Funciones ————————————————————————————————————————————————————————————————————————
 
@@ -83,8 +84,12 @@ function parseArgs(args) {
 
     for (let i = 0; i < opciones.length; i++) {
         if (opciones[i] === "-b" || opciones[i] === "--by") {
-
-            if (opciones[i + 1] === undefined || opciones[i + 1].startsWith("-")) {
+            if (opciones[i + 1] === undefined
+                || opciones[i + 1].startsWith("-")
+                || opciones[i + 1].startsWith("--")
+                || opciones[i + 1] === ""
+                || opciones[i + 1].startsWith("\n")
+            ) {
                 console.error("La opcion -b debe ir seguida de un criterio de ordenamiento. Consultar help.");
                 process.exit(-1);
             }
@@ -127,8 +132,10 @@ function parseArgs(args) {
                             Opcion invalida: ${opciones[i]}. Consultar help.`);
             process.exit(-1);
         }
-
-
+    }
+    if (config.sortfields.length === 0) {
+        console.error("Debe especificar al menos un criterio de ordenamiento. Consultar help.");
+        process.exit(-1);
     }
     return config;
 }
@@ -175,8 +182,10 @@ function parseDelimited(input, config) {
     return { columnas, filas }
 }
 
-function sortRows(filas, columnas, config) {
-
+function sortRows(columnas, filas, campos = [{ name: "", numeric: false, descending: false }]) {
+    for (let campo of campos) {
+        console.log(campo);
+    }
 }
 
 // function serialize (rows, config)
