@@ -188,6 +188,68 @@ function parseDelimited(text, delimiter) {
     return rows;
 }
 
+
+function sortRows(rows, config) {
+    const header = config.noHeader ? null : rows[0];
+    const data = config.noHeader ? rows : rows.slice(1);
+
+    // Obtenemos la posición de cada criterio
+    const criteria = config.sortFields.map(field => {
+        let index;
+
+        if (config.noHeader) {
+            index = Number(field.name);
+
+            if (!Number.isInteger(index) || index < 0 || index >= rows[0].length) {
+                throw new Error(`Campo inexistente: ${field.name}`);
+            }
+        } else {
+            index = header.indexOf(field.name);
+
+            if (index === -1) {
+                throw new Error(`Campo inexistente: ${field.name}`);
+            }
+        }
+
+        return {
+            ...field,
+            index
+        };
+    });
+
+    data.sort((a, b) => {
+        for (const criterion of criteria) {
+            const valueA = a[criterion.index];
+            const valueB = b[criterion.index];
+
+            let comparison;
+
+            if (criterion.numeric) {
+                const numberA = Number(valueA);
+                const numberB = Number(valueB);
+
+                if (Number.isNaN(numberA) || Number.isNaN(numberB)) {
+                    throw new Error(
+                        `El campo ${criterion.name} contiene un valor no numérico.`
+                    );
+                }
+
+                comparison = numberA - numberB;
+            } else {
+                comparison = valueA.localeCompare(valueB, "es");
+            }
+
+            if (comparison !== 0) {
+                return criterion.descending ? -comparison : comparison;
+            }
+        }
+
+        return 0;
+    });
+
+    return header ? [header, ...data] : data;
+}
+
 try {
     const config = parseArgs(process.argv.slice(2));
 
@@ -195,7 +257,9 @@ try {
 
     const rows = parseDelimited(text, config.delimiter);
 
-    console.log(rows);
+    const sortedRows = sortRows(rows, config);
+
+    console.log(sortedRows);
 } catch (error) {
     console.error("Error:", error.message);
     process.exitCode = 1;
