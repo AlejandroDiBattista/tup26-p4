@@ -1,38 +1,67 @@
-#!/usr/bin/env node
+function parseArgs() {
+    const args = process.argv.slice(2);
 
-const HELP = `
 
-sortx — Ordena archivos de texto delimitados
+    let configuracion = {};
 
-USO:
-    sortx <origen> <destino> [opciones]
+    if (args[0] === "-h"  || args[0] === "--help") { 
+        console.log("-b/--by: indica el campo a ordenar");
+        console.log("-d/--delimiter: separador para utilizar");
+        console.log("-nh/--no-header: muestra que no hay encabezado");
+        console.log("-h/--help: muestra ayuda"); 
+        return;
+    } 
 
-ARGUMENTOS:
-    origen              Archivo que se desea ordenar.
-    destino             Archivo donde se guardará el resultado.
 
-OPCIONES:
-    -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
-                        Formato: campo[:tipo[:orden]]
-                        tipo: alpha (predeterminado) o num
-                        orden: asc (predeterminado) o desc
+    configuracion.inputFile = args.shift();
+    configuracion.outputFile = args.shift();
 
-    -d, --delimiter <c> Delimitador de un solo carácter.
-                        Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+    if  (configuracion.inputFile === undefined || configuracion.outputFile === undefined) {
+        console.log("Indicar el archivo de origen o el archivo de destino");
+        return; 
 
-    -nh, --no-header    Indica que el archivo no tiene encabezado.
-                        Los campos se identifican mediante índices desde cero.
+    }
 
-    -h, --help          Muestra esta ayuda.
 
-EJEMPLOS:
-    sortx empleados.csv ordenados.csv -b apellido
-    sortx empleados.csv salarios.csv -b salario:num:desc
-    sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
-    sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+    configuracion.delimiter = ",";
+    configuracion.noHeader = false;
+     configuracion.sortFields = [];
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+
+    while (args.length > 0) {
+        let opcion = args.shift();
+        
+        if (opcion === "-b" || opcion === "--by") {
+             let campo = args.shift() ?? "";
+
+         let partes = campo.split(":");
+
+              configuracion.sortFields.push({
+                name: partes[0],
+                numeric: partes [1] === "num",
+
+                descending: partes[2] === "desc"
+            });
+        }
+        if (opcion === "-d" ||opcion === "--delimiter") {
+            configuracion.delimiter = args.shift();
+        }
+
+        if (opcion === "-nh" ||opcion === "--no-header") {
+            configuracion.noHeader = true;
+        }
+        
+    }
+
+    if (configuracion.sortFields.length === 0) {
+            console.log("Escriba indicando el campo que sea ordenar");
+            return;
+        }
+
+        
+    return configuracion;
+
+}
+ 
+console.log(parseArgs());
