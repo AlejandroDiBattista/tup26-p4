@@ -43,6 +43,7 @@ const argumentos = process.argv.slice(2); // array c/argumentos desde el indice 
 
 const configuracion = parseArgs(argumentos);
 const input = await readInput(configuracion.inputFile);
+const { columnas, filas } = parseDelimited(input, configuracion);
 
 // Funciones ————————————————————————————————————————————————————————————————————————
 
@@ -59,7 +60,7 @@ function parseArgs(args) {
         console.error("Debe especificar un archivo de origen y de entrada, sino help para obtener ayuda.");
         process.exit(-1);
     }
-    else if (destino === undefined) {
+    else if (destino === undefined || destino.startsWith("-")) {
         console.error("Debe especificar un archivo de destino.");
         process.exit(-1);
     }
@@ -134,35 +135,48 @@ function parseArgs(args) {
 
 async function readInput(entrada) {
     try {
-        return await readFile(entrada, "utf-8"); 
+        return await readFile(entrada, "utf-8");
     } catch (error) {
         console.error("Error al leer el archivo porque la ruta es incorrecta");
         process.exit(-1);
-    }   
+    }
 }
-const {columnas, filas} = parseDelimited(input, configuracion)
 
 function parseDelimited(input, config) {
-    let lineas =  input.includes("\r\n") ? input.split("\r\n")  : input.split("\n");
-
+    let lineas = input.includes("\r\n") ? input.split("\r\n") : input.split("\n")
+    if (lineas[lineas.length - 1] === "") {
+        lineas.pop();
+    }
     let filas = [];
     let columnas = [];
+    for (let i = 0; i < lineas.length - 1; i++) {
+        if (lineas[i].split(config.delimiter).length !== lineas[i + 1].split(config.delimiter).length) {
+            console.error("No todas las filas tienen la misma cantidad");
+            process.exit(-1);
+        }
+    }
+    for (let i = 0; i < lineas.length; i++) {
+        if (lineas[i].includes('"')) {
+            console.error("El archivo no puede contener comillas dobles");
+            process.exit(-1);
+        }
+    }
     if (config.noHeader == false) {
         columnas = lineas[0].split(config.delimiter);
         for (let i = 1; i < lineas.length; i++) {
-            filas.push(lineas[i].split(config.delimiter));
+            filas.push(lineas[i].split(config.delimiter))
         }
-    } else {
+    }
+    else {
         for (let i = 0; i < lineas.length; i++) {
             filas.push(lineas[i].split(config.delimiter));
+        }
     }
-    }
-    return {columnas, filas}
+    return { columnas, filas }
 }
 
-function sortRows (filas, columnas, config)
-{
- 
+function sortRows(filas, columnas, config) {
+
 }
 
 // function serialize (rows, config)
