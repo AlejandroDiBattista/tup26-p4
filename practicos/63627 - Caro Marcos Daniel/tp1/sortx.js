@@ -234,7 +234,7 @@ function sortRows(tabla, ajustes) {
   let titulos = ajustes.noHeader ? null : tabla[0];
   let datos_puros = ajustes.noHeader ? tabla : tabla.slice(1);
 
-  // copiamos los datos para no romper la matriz original
+  
   let resultado_ordenado = [...datos_puros].sort(function(fila_a, fila_b) {
     
     for (let c = 0; c < ajustes.sortFields.length; c++) {
@@ -271,6 +271,39 @@ function sortRows(tabla, ajustes) {
   
   return [titulos, ...resultado_ordenado];
 }
+
+
+
+
+function serialize(filas_ordenadas, separador) {
+  let texto_final = [];
+  
+  for (let i = 0; i < filas_ordenadas.length; i++) {
+    texto_final.push(filas_ordenadas[i].join(separador));
+  }
+  
+  return texto_final.join('\n');
+}
+
+
+
+
+
+function writeOutput(ruta_salida, contenido_string) {
+  let carpeta = path.dirname(ruta_salida);
+  
+  
+  if (carpeta && carpeta !== '.') {
+    fs.mkdirSync(carpeta, { recursive: true });
+  }
+
+  try {
+    fs.writeFileSync(ruta_salida, contenido_string, 'utf8');
+  } catch (err) {
+    throw new Error(`Error: fallo la escritura en el archivo '${ruta_salida}'.`);
+  }
+}
+
 
 
 
