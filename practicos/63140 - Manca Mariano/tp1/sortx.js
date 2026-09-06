@@ -174,3 +174,20 @@ function sortRows (header,  lineas, sortFields) {
 return filas;
 }
 
+
+ function serialize(header, filas, delimitador, noHeader) {
+ let h = noHeader ? "" : header.join(delimitador) + "\n";
+let f = filas.map(fila => fila.join(delimitador)).join("\n");
+return h + f;
+}
+
+function writeOutput(outputFile, textoFinal) {
+    try {
+           fs.writeFileSync(outputFile, textoFinal, "utf-8");
+    } catch (error) {
+        throw new Error("el archivo de destino no puede escribirse");
+    }
+ }
+
+
+      
