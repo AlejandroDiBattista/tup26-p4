@@ -33,19 +33,19 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
-import fs, { readFileSync } from "node:fs";
+import fs, { readFileSync, writeFileSync } from "node:fs";
 
 // Escribir aqui la solución al enunciado.
 //1-parseArgs:
 function parseArgs(argumentos){
     //aqui voy a guardar todo lo que me mande el usuario
     const opciones={
-        arcEntrada:null,
-        arcSalida:null,
+        inputFile:null,
+        outputFile:null,
         ayuda:false,
-        delimitador:",",
-        sinEncabezado:false,
-        reglas:[]
+        delimiter:",",
+        noHeader:false,
+        sortFields:[]
     };
     
     const valores=[];
@@ -59,11 +59,11 @@ function parseArgs(argumentos){
         //si pasa el delimitador
         else if(arg==="-d"||arg==="--delimiter"){
             i++;
-            opciones.delimitador=argumentos[i];
+            opciones.delimiter=argumentos[i];
         }
         //si no tiene encabezado
         else if(arg==="-nh"||arg==="--no-header"){
-            opciones.sinEncabezado=true;
+            opciones.noHeader=true;
         }
         // si es para ordenar, uso la regla
         else if (arg==="-b"||arg==="--by") {
@@ -73,10 +73,10 @@ function parseArgs(argumentos){
             if (valor) {
                 //desarmo el texto separado por los dos puntos
                 const partes=valor.split(":");
-                opciones.reglas.push({
-                    nombre:partes[0],
-                    tipo:partes.includes("num"),
-                    orden: partes.includes("desc")
+                opciones.sortFields.push({
+                    name:partes[0],
+                    numeric:partes.includes("num"),
+                    descending: partes.includes("desc")
             }); 
             }
         //si no tiene guión, es porque es un archivo
@@ -86,11 +86,11 @@ function parseArgs(argumentos){
     }
     //el primero que pasen es el archivo a leer
         if(valores.length>0){
-            opciones.arcEntrada=valores[0];
+            opciones.inputFile=valores[0];
         }
         //si pasan otro, es el de salida
         if(valores.length>1){
-            opciones.arcSalida=valores[1];
+            opciones.outputFile=valores[1];
         }
         return opciones;
     
@@ -127,4 +127,67 @@ function parseDelimited(texto, delimitador=",",sinEncabezado= false){
     const filas= lineasDatos.map(linea=>linea.split(delimitador).map(celda=>celda.trim()));
     return {encabezado, filas};
 }
+//4-sortRows
+function sortRows(filas, reglas,encabezado=[]){
+    //si no se definieron criterios con -b, devuelve las filas como llegaron
+    if (!reglas||reglas.length===0) {
+        return filas;
+    }
+    //usamos [...filas] para copiar y asi no alterar el array original
+    return [...filas].sort((filaA,filaB)=>{
+        //evaluamos cada regla en el orden que fue paasda
+       for(const regla of reglas){
+        let indice=-1;
+        //si hay encabezado, buscamos la posicion por nombre de columna
+        if (encabezado.length>0) {
+            indice= encabezado.indexOf(regla.name);
+        }else{
+            //si no hay encabezado (-nh), el nombre es directamente el indice
+            indice= parseInt(regla.name,10);
+        }
+        //si la columna no existe en la fila, se ignora la regla
+        if (indice === -1 || indice>=filaA.length) {
+            continue;
+        }
+        const valA=filaA[indice];
+        const valB=filaB[indice];
+        let diferencia = 0;
+        if (regla.numeric) {
+            //en orden numerico
+            const numA= Number(valA);
+            const numB= Number(valB);
+            diferencia= numA-numB;
+        }else{
+            //en orden alfabetico con acentos, mayusculas y minusculas
+            diferencia= valA.localeCompare(valB);
+        }
+        //si no son iguales, se aplica ascendente o descendente
+        if (diferencia!==0) {
+            if (regla.descending) {
+                return -diferencia;//si es desc
+            }
+            else{
+                return diferencia;//si es asc
+            }
+        }
+        //si son iguales, continua el for con otra regla
+    }
+    return 0;
+    });
+}
+//5-serialize
+function serialize(filas, encabezado=[],delimitador=","){
+    const lineas=[];
+    //si hay encabezado va en la primera linea
+    if (encabezado && encabezado.length>0) {
+        lineas.push(encabezado.join(delimitador));
+    }
+    //transformo cada fila en texto uniendo celdas
+    for(const fila of filas){
+        lineas.push(fila.join(delimitador));
+    }
+    // unir todo con saltos de linea y agregamos el salto final
+    return lineas.join("\n") + "\n";
+}
+
 console.log(HELP)
