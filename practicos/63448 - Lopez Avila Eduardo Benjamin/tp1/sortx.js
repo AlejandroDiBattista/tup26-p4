@@ -155,6 +155,10 @@ function sortRows(filas, criterios) {
 		for (const criterio of criterios) {
 			const valorA = a[criterio.index];
 			const valorB = b[criterio.index];
+			if (criterio.numeric && (isNaN(Number(valorA)) || isNaN(Number(valorB)))) {
+				console.error("Error: un criterio numérico encuentra un valor no numérico.");
+				process.exit(1);
+			}
 			let comparacion;
 			if (criterio.numeric) {
 				comparacion = parseFloat(valorA) - parseFloat(valorB);
