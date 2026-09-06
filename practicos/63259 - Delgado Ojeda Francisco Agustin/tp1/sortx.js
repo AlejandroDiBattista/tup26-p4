@@ -20,7 +20,7 @@ OPCIONES:
 
     -d, --delimiter <c> Delimitador de un solo carácter.
                         Predeterminado: ","
-                        Usá "\\t" para archivos separados por tabulaciones.
+                        Usá "\t" para archivos separados por tabulaciones.
 
     -nh, --no-header    Indica que el archivo no tiene encabezado.
                         Los campos se identifican mediante índices desde cero.
@@ -32,7 +32,7 @@ EJEMPLOS:
     sortx empleados.csv salarios.csv -b salario:num:desc
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\\t" -b nombre
+    sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
 // Escribir aqui la solución al enunciado.
@@ -184,4 +184,76 @@ function parseDelimited(text, delimiter) {
     }
 
     return rows
+}
+
+
+function sortRows(rows, sortFields, noHeader) {
+    const header = noHeader ? null : rows[0]
+    const dataRows = noHeader ? [...rows] : rows.slice(1)
+    const columnCount = rows[0].length
+
+    const criteria = sortFields.map(field => {
+        let index
+
+        if (noHeader) {
+            if (!/^\d+$/.test(field.name)) {
+                throw new Error(`Índice de columna inválido: "${field.name}"`)
+            }
+
+            index = Number(field.name)
+        } else {
+            index = header.indexOf(field.name)
+
+            if (index === -1) {
+                throw new Error(`No existe la columna: "${field.name}"`)
+            }
+        }
+
+        if (index < 0 || index >= columnCount) {
+            throw new Error(`Índice de columna fuera de rango: ${index}`)
+        }
+
+        return {
+            ...field,
+            index
+        }
+    })
+
+    for (const criterion of criteria) {
+        if (!criterion.numeric) {
+            continue
+        }
+
+        for (const row of dataRows) {
+            if (row[criterion.index].trim() === '' ||
+                Number.isNaN(Number(row[criterion.index]))) {
+                throw new Error(
+                    `La columna "${criterion.name}" contiene un valor no numérico`
+                )
+            }
+        }
+    }
+
+    dataRows.sort((rowA, rowB) => {
+        for (const criterion of criteria) {
+            const valueA = rowA[criterion.index]
+            const valueB = rowB[criterion.index]
+
+            let comparison
+
+            if (criterion.numeric) {
+                comparison = Number(valueA) - Number(valueB)
+            } else {
+                comparison = valueA.localeCompare(valueB)
+            }
+
+            if (comparison !== 0) {
+                return criterion.descending ? -comparison : comparison
+            }
+        }
+
+        return 0
+    })
+
+    return noHeader ? dataRows : [header, ...dataRows]
 }
