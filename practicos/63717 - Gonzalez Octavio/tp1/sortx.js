@@ -133,7 +133,12 @@ function parseArgs(args) {
 }
 
 async function readInput(entrada) {
-    return await readFile(entrada, "utf-8");
+    try {
+        return await readFile(entrada, "utf-8"); 
+    } catch (error) {
+        console.error("Error al leer el archivo porque la ruta es incorrecta");
+        process.exit(-1);
+    }   
 }
 const {columnas, filas} = parseDelimited(input, configuracion)
 
@@ -147,16 +152,14 @@ function parseDelimited(input, config) {
     for (let i = 1; i < lineas.length; i++) {
         filas.push(lineas[i].split(config.delimiter));
     }
-
     return {columnas, filas}
 }
-console.log(columnas, filas);
 
+function sortRows (filas, columnas, config)
+{
+ 
+}
 
-// function sortRows (rows, config)
-// {
-
-// }
 // function serialize (rows, config)
 // {
 
