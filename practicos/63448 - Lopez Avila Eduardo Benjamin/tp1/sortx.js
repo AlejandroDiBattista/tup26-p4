@@ -178,9 +178,12 @@ function sortRows(filas, criterios) {
 	});
 }
 
-function serialize(header, filas, delimiter) {
+function serialize(header, filas, delimiter, noHeader) {
 	const textoHeader = header.join(delimiter);
 	const textoFilas = filas.map((fila) => fila.join(delimiter)).join("\n");
+	if (noHeader) {
+		return textoFilas;
+	}
 	return [textoHeader, textoFilas].join("\n");
 }
 
@@ -195,7 +198,7 @@ async function sorteador() {
 	const tabla = parseDelimited(contenido, config.delimitador, config.noHeader);
 	const columnacriterios = columnasPorCriterio(tabla.header, config.criterios);
 	const filasOrdenadas = sortRows(tabla.filas, columnacriterios);
-	const serializado = serialize(tabla.header, filasOrdenadas, config.delimitador);
+	const serializado = serialize(tabla.header, filasOrdenadas, config.delimitador, config.noHeader);
 	await writeOutput(config.output, serializado);
 }
 
