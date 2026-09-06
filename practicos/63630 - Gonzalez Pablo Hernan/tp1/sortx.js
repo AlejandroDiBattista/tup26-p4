@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import { readFileSync } from 'node:fs';
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -92,6 +92,10 @@ function parseArgs(){
     return config;
 }
 
+
+function readInput(config) {
+    return readFileSync(config.inputFile, 'utf8')
+}
 
 
 
