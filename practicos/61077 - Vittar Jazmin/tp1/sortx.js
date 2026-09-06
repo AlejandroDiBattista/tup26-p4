@@ -39,8 +39,23 @@ EJEMPLOS:
 
 /* FUNCIÓN 1 --> mirar lo que escribió el usuario */
 function parseArgs() {
+    if (process.argv.includes("-h") || process.argv.includes("--help")) {       // mostrar ayuda
+        console.log(HELP)
+        process.exit(0)                     // función de node.js       (0) --> terminó correctamente
+    }
+
     const inputFile = process.argv[2]       // archivo de entrada
     const outputFile = process.argv[3]      // archivo de salida
+
+    if (!inputFile) {                           // validar archivo de entrada
+        console.error("Error: Falta especificar el archivo de origen")
+        process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+    }
+
+    if (!outputFile) {                           // validar archivo de salida
+        console.error("Error: Falta especificar el archivo de destino")
+        process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+    }
 
     let delimiter = ","         // valor predeterminado
     let noHeader = false        // valor predeterminado
@@ -48,27 +63,72 @@ function parseArgs() {
 
     for (let i = 4; i < process.argv.length; i++) {         // en posición 4 empiezan las opciones
         if (process.argv[i] === "-d" || process.argv[i] === "--delimiter") {
+            if (i + 1 >= process.argv.length) {
+                console.error("Error: La opción --delimiter requiere un valor")
+                process.exit(1)
+            }
+
             delimiter = process.argv[i + 1]
             i++
+
+            if (delimiter.length !== 1) {                   // validar un caracter
+                console.error("Error: El delimitador debe ser de un solo carácter")
+                process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+            }
+
         } else if (process.argv[i] === "-nh" || process.argv[i] === "--no-header") {
             noHeader = true
+
         } else if (process.argv[i] === "-b" || process.argv[i] === "--by") {
+            if (i + 1 >= process.argv.length) {
+                console.error("Error: la opción --by requiere un criterio")
+                process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+            }
+
             const criterio = process.argv[i + 1]
             i++
 
             const partes = criterio.split(":")      // criterio tiene columna:tipo:orden (ej: salario:num:desc)
             // split transforma cadena en array
+            if (partes.length > 3) {
+                console.error("Error: El criterio debe tener el formato campo[:tipo[:orden]]")
+                process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+            }
+
             const name = partes[0]                      // columna
+            if (!name) {
+                console.error("Error: Debe especificar un campo para ordenar")
+                process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+            }
+
             const numeric = partes[1] === "num"         // tipo
+            if (partes[1] !== "alpha" && partes[1] !== "num") {             // validar tipo
+                console.error(`Error: El tipo '${partes[1]}' no es válido. Debe ser 'alpha' o 'num'`)
+                process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+            }
+
             const descending = partes[2] === "desc"     // orden
+            if (partes[2] !== "asc" && partes[2] !== "desc") {             // validar orden
+                console.error(`Error: El orden '${partes[2]}' no es válido. Debe ser 'asc' o 'desc'`)
+                process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+            }
 
             sortFields.push({       // guardar criterio en una lista
                 name: name,
                 numeric: numeric,
                 descending: descending
             })
+        } else {
+            console.error(`Error: Opción inválida ${process.argv[i]}`)
+            process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
         }
     }
+
+    if (sortFields.length === 0) {                      // validar existencia de criterio
+        console.error("Error: Debe especificar al menos un criterio de ordenamiento con -b / --by")
+        process.exit(1)                     // función de node.js       (1) --> terminó porque hubo un error
+    }
+
     return {
         inputFile: inputFile,
         outputFile: outputFile,
@@ -83,12 +143,17 @@ function parseArgs() {
 import fs from "fs"           // solución a 'const fs = require("fs")' ya que daba error por la configuración en package.json
 
 function readInput(inputFile) {
-    const contenido = fs.readFileSync(inputFile, "utf-8")
-    return contenido
+    try {
+        const contenido = fs.readFileSync(inputFile, "utf-8")
+        return contenido
+    } catch (error) {
+        console.error(`Error: No se puede leer el archivo de origen ${inputFile}`)
+        process.exit(1)
+    }
 }
 
 /* FUNCIÓN 3 --> convertir texto en array con filas y columnas */
-function parseDelimited (contenido, delimiter) {
+function parseDelimited(contenido, delimiter) {
     const lineasTexto = contenido.trim().split("\n")           // separar el texto en distintas líneas
     // trim quita espacios o saltos de línea vacíos del final
     const filas = []            // array para acumular las filas
@@ -113,7 +178,7 @@ function sortRows(filas, args) {
         datos = filas.slice(1) // slice copia todo desde la fila 1 en adelante
     }
 
-    const criterios = args.sortFields.map(function(campo) {       // buscar posición del índice de cada columna a ordenar
+    const criterios = args.sortFields.map(function (campo) {       // buscar posición del índice de cada columna a ordenar
         let indiceColumna = -1
 
         if (args.noHeader) {
@@ -129,7 +194,7 @@ function sortRows(filas, args) {
         }
     })
 
-    datos.sort(function(filaA, filaB) {             // ordenar lista
+    datos.sort(function (filaA, filaB) {             // ordenar lista
         for (let i = 0; i < criterios.length; i++) {
             const criterio = criterios[i]
             let valorA = filaA[criterio.index]
@@ -171,7 +236,12 @@ function serialize(filas, delimiter) {
 
 /* FUNCIÓN 6 --> guardar texto en el archivo pedido */
 function writeOutput(outputFile, contenido) {
-    fs.writeFileSync(outputFile, contenido)         // craer archivo y guardar contenido
+    try {
+        fs.writeFileSync(outputFile, contenido)         // craer archivo y guardar contenido
+    } catch (error) {
+        console.error(`Error: No se puede escribir el archivo de destino '${outputFile}'`)
+        process.exit(1)
+    }
 }
 
 const args = parseArgs()
@@ -181,5 +251,3 @@ const filasOrdenadas = sortRows(filas, args)
 const textoOrdenado = serialize(filasOrdenadas, args.delimiter)
 
 writeOutput(args.outputFile, textoOrdenado)
-
-console.log(HELP)
