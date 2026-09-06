@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 function parseArgs() {
     const args = process.argv.slice(2);
 
@@ -59,9 +61,17 @@ function parseArgs() {
             return;
         }
 
-        
+
     return configuracion;
 
 }
+
+function readInput(nombre) {
+    let texto = fs.readFileSync(nombre, "utf8");
+    return texto;
+}
  
-console.log(parseArgs());
+let configuracion = parseArgs();
+let texto = readInput(configuracion.inputFile);
+
+console.log(texto); 
