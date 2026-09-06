@@ -244,4 +244,18 @@ function sortRows(rows, sortFields, header) {
 
     return [...rows].sort(comparar)
 }
+// serialize — reconstruye el texto delimitado con encabezado y filas ordenadas
+function serialize(header, rows, delimiter) {
+    const todasLasFilas = header ? [header, ...rows] : rows
+    return todasLasFilas.map(fila => fila.join(delimiter)).join("\n") + "\n"
+}
+
+// writeOutput — escribe el archivo de destino de forma asincrona
+async function writeOutput(filePath, content) {
+    try {
+        await writeFile(filePath, content, "utf8")
+    } catch (error) {
+        throw new Error(`No se pudo escribir el archivo de destino "${filePath}": ${error.message}`)
+    }
+}
 
