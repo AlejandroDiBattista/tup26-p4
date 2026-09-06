@@ -145,3 +145,43 @@ function parseArgs(args) {
 
     return config
 }
+
+
+function readInput(filePath) {
+    try {
+        return fs.readFileSync(filePath, 'utf-8')
+    } catch (error) {
+        throw new Error(`No se pudo leer el archivo de origen: "${filePath}"`)
+    }
+}
+
+
+function parseDelimited(text, delimiter) {
+    if (text.includes('"')) {
+        throw new Error('El archivo no puede contener comillas')
+    }
+
+    const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    const lines = normalizedText.split('\n')
+
+    if (lines[lines.length - 1] === '') {
+        lines.pop()
+    }
+
+    if (lines.length === 0) {
+        throw new Error('El archivo de origen está vacío')
+    }
+
+    const rows = lines.map(line => line.split(delimiter))
+    const columnCount = rows[0].length
+
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i].length !== columnCount) {
+            throw new Error(
+                `La fila ${i + 1} tiene ${rows[i].length} columnas; se esperaban ${columnCount}`
+            )
+        }
+    }
+
+    return rows
+}
