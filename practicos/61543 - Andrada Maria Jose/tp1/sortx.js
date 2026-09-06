@@ -77,6 +77,13 @@ function parseArgs() {
             const name = partes[0];
             const tipo = partes[1] || "alpha";
             const orden = partes[2] || "asc";
+            if (tipo !== "alpha" && tipo !== "num") {
+                throw new Error("El tipo debe ser alpha o num");
+            }
+
+            if (orden !== "asc" && orden !== "desc") {
+                throw new Error("El orden debe ser asc o desc");
+            }
             const numeric = tipo === "num";
             const descending = orden === "desc";
             const campo = {name: name, numeric: numeric, descending: descending,};
