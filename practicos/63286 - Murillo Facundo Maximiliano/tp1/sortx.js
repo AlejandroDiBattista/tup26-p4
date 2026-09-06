@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import fs from "fs"
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -97,7 +99,7 @@ function parseArgs(){
                      process.exitCode = 1
                     return "Condicion incorrecta"
                 }
-                console.log(partes)
+                // console.log(partes)
 
                 configuracion.sortFields.push(
                     { 
@@ -106,7 +108,7 @@ function parseArgs(){
                     descending: partes[2] === "desc"
                     }
                 )
-                console.log(configuracion)
+                // console.log(configuracion)
                 i++
             }
 
@@ -158,4 +160,14 @@ function parseArgs(){
         
 }
 
-console.log(parseArgs())
+function readInput(configuracion){
+
+
+    return fs.readFileSync(configuracion.inputFile , "utf8")
+
+ 
+}
+
+const configuracion = parseArgs()
+console.log(configuracion)
+console.log(readInput(configuracion))
