@@ -49,13 +49,18 @@ function serialize(rows, delimiter) {
   return lines.join('\n') + '\n';
 }
 
+function writeOutput(outputFile, text) {
+  fs.writeFileSync(outputFile, text, 'utf8');
+}
+
 const config = parseArgs(argv);
 console.log(config);
 const text = readInput(config.inputFile);
 const rows = parseDelimited(text, config.delimiter);
 const sortedRows = sortRows(rows, config.campo);
 const output = serialize(sortedRows, config.delimiter);
-console.log(output);
+writeOutput(config.outputFile, output);
+console.log('Listo, se generó', config.outputFile);
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
