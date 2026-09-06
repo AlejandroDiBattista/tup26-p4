@@ -55,14 +55,12 @@ function parseArgs(argv) {
     process.exit(0);
   }
 
-  // validaciones de argumentos
-
   if (!origen || !destino) {
     console.error("Error: Debe especificar un archivo de origen y un archivo de destino.");
     process.exit(1);
   }
 
-
+  
   for (let i = 0; i < flags.length; i++) {
     const flag = flags[i];
     if (flag === "-b" || flag === "--by") {
@@ -72,7 +70,7 @@ function parseArgs(argv) {
         process.exit(1);
       }
 
-
+      
       const parts = criterio.split(":")
       const name = parts[0]
       const numeric = parts[1]
@@ -127,6 +125,7 @@ function parseArgs(argv) {
   };
 }
 
+// readInput es para leer el contenido del archivo de entrada
 function readInput(inputFile) {
     try {
         return fs.readFileSync(inputFile, "utf8");
@@ -137,6 +136,7 @@ function readInput(inputFile) {
     }
 } 
 
+// parseDelimited es para convertir el contenido del archivo en un array de arrays
 function parseDelimited(text, delimiter) {
     if (text.includes('"')) {
         throw new Error("La entrada contiene comillas dobles.");
@@ -167,6 +167,7 @@ function parseDelimited(text, delimiter) {
     return rows;
 }
 
+// sortRows es para ordenar las filas según los criterios especificados
 function sortRows(rows, config) {
     if (rows.length === 0) {
         return rows;
@@ -254,7 +255,36 @@ function sortRows(rows, config) {
 
     return dataRows;
 }
-console.log(parseArgs(process.argv));
+
+// serialize es para convertir el array de arrays en un string delimitado
+function serialize(rows, delimiter) {
+    return rows.map(row => row.join(delimiter)).join("\n");
+}
+
+// writeOutput es para escribir el contenido en el archivo de salida
+function writeOutput(outputFile, text) {
+    try {
+        fs.writeFileSync(outputFile, text, "utf8");
+    } catch (error) {
+        throw new Error(
+            `No se puede escribir el archivo de destino: ${outputFile}`
+        );
+    }
+}
+
+// código principal
+try {
+    const config = parseArgs(process.argv);
+    const inputText = readInput(config.inputFile);
+    const rows = parseDelimited(inputText, config.delimiter);
+    const sortedRows = sortRows(rows, config);
+    const outputText = serialize(sortedRows, config.delimiter);
+    writeOutput(config.outputFile, outputText);
+    console.log(`Archivo ordenado correctamente: ${config.outputFile}`);
+} catch (error) {
+    console.error("Error:", `${error.message}`);
+    process.exit(1);
+}
 
 
 // console.log(HELP)
