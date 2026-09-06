@@ -137,7 +137,123 @@ function readInput(inputFile) {
     }
 } 
 
+function parseDelimited(text, delimiter) {
+    if (text.includes('"')) {
+        throw new Error("La entrada contiene comillas dobles.");
+    }
 
+    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+    if (text.endsWith("\n")) {
+        text = text.slice(0, -1);
+    }
+
+    if (text === "") {
+        return [];
+    }
+
+    const lines = text.split("\n");
+    const rows = lines.map(line => line.split(delimiter));
+    const fieldCount = rows[0].length;
+
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i].length !== fieldCount) {
+            throw new Error(
+                `La fila ${i + 1} tiene una cantidad diferente de campos.`
+            );
+        }
+    }
+
+    return rows;
+}
+
+function sortRows(rows, config) {
+    if (rows.length === 0) {
+        return rows;
+    }
+
+    let header = null;
+    let dataRows = rows;
+
+    if (!config.noHeader) {
+        header = rows[0];
+        dataRows = rows.slice(1);
+    }
+
+    const fields = config.sortFields.map(field => {
+        let index;
+
+        if (config.noHeader) {
+            if (!/^\d+$/.test(field.name)) {
+                throw new Error(
+                    `El campo "${field.name}" debe ser un indice numerico cuando se usa --no-header.`
+                );
+            }
+            index = Number(field.name);
+        } else {
+            index = header.indexOf(field.name);
+            if (index === -1) {
+                throw new Error(
+                    `El campo solicitado no existe: ${field.name}`
+                );
+            }
+        }
+
+        if (index >= rows[0].length) {
+            throw new Error(
+                `El indice de columna no existe: ${field.name}`
+            );
+        }
+
+        return {
+            ...field,
+            index: index
+        };
+    });
+
+    dataRows.sort((a, b) => {
+        for (const field of fields) {
+            const valueA = a[field.index];
+            const valueB = b[field.index];
+            let comparison;
+
+            if (field.numeric) {
+                const numberA = Number(valueA);
+                const numberB = Number(valueB);
+
+                if (valueA.trim() === "" || !Number.isFinite(numberA)) {
+                    throw new Error(
+                        `El valor "${valueA}" no es numerico en el campo "${field.name}".`
+                    );
+                }
+
+                if (valueB.trim() === "" || !Number.isFinite(numberB)) {
+                    throw new Error(
+                        `El valor "${valueB}" no es numerico en el campo "${field.name}".`
+                    );
+                }
+
+                comparison = numberA - numberB;
+            } else {
+                comparison = valueA.localeCompare(valueB, "es", {
+                    sensitivity: "base"
+                });
+            }
+
+            if (comparison !== 0) {
+                return field.descending ? -comparison : comparison;
+            }
+        }
+
+        return 0;
+    });
+
+    if (header !== null) {
+        return [header, ...dataRows];
+    }
+
+    return dataRows;
+}
 console.log(parseArgs(process.argv));
 
 
