@@ -157,12 +157,25 @@ function sortRows(filas, args) {
 }
 
 /* FUNCIÓN 5 --> contrario a parseDelimited (convierte array en texto) */
+function serialize(filas, delimiter) {
+    const lineasTexto = []
+
+    for (let i = 0; i < filas.length; i++) {
+        const filaActual = filas[i]
+        const lineaUnida = filaActual.join(delimiter)		// unir elementos de la fila actual con delimitador
+        lineasTexto.push(lineaUnida)			// agregar línea al array
+    }
+
+    return lineasTexto.join("\n") + "\n"		// unir líneas con salto de línea
+}
+
 /* FUNCIÓN 6 --> guardar texto en el archivo pedido */
 
 const args = parseArgs()
 const contenido = readInput(args.inputFile)
 const filas = parseDelimited(contenido, args.delimiter)
 const filasOrdenadas = sortRows(filas, args)
-console.log(filasOrdenadas)
+const textoOrdenado = serialize(filasOrdenadas, args.delimiter)
 
+console.log(textoOrdenado)
 console.log(HELP)
