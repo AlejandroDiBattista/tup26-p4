@@ -190,4 +190,28 @@ function writeOutput(outputFile, textoFinal) {
  }
 
 
+
+
+try {
+
+    let config = parseArgs();
+
+    let texto = readInput( config.inputFile );
+
+    let [header, lineas] = parseDelimited(texto, config.delimiter, config.noHeader, config.sortFields);
+
+    let lineasOrdenadas = sortRows(header, lineas, config.sortFields);
+
+    let textoFinal = serialize(header, lineasOrdenadas, config.delimiter, config.noHeader);
+
+    writeOutput(  config.outputFile, textoFinal );
+
+    console.log("¡Archivo ordenado con éxito!");
+
+} catch (error) {
+
+    console.error(error.message);
+
+    process.exit(1);
+}
       
