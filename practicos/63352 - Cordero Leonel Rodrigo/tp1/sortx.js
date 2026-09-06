@@ -189,18 +189,16 @@ function sortRows(parsedData, config) {
             const valA = rowA[crit.index];
             const valB = rowB[crit.index];
 
-            let comparacion = 0;
+            let comparason = 0;
 
             if (crit.numeric) {
-                comparacion = Number(valA) - Number(valB);
+                comparason = Number(valA) - Number(valB);
             } else {
-                if (valA < valB) comparacion = -1;
-                else if (valA > valB) comparacion = 1;
-                else comparacion = 0;
+                comparason = valA.localeCompare(valB, 'es');
             }
 
-            if (comparacion !== 0) {
-                return crit.descending ? -comparacion : comparacion;
+            if (comparason !== 0) {
+                return crit.descending ? -comparason : comparason;
             }
         }
 
@@ -223,7 +221,7 @@ function serialize(sortedData, config) {
         lines.push(dataLine);
     }
 
-    return lines.join('\n') + '\n';
+    return lines.join('\n');
 }
 
 function writeOutput(outputFile, finalText) {
