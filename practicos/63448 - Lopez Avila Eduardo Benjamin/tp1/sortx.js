@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { kMaxLength } from "node:buffer";
 import { readFile } from "node:fs/promises";
+import { ByteLengthQueuingStrategy } from "node:stream/web";
 // const HELP = `
 
 // sortx — Ordena archivos de texto delimitados
@@ -96,22 +98,55 @@ function configuracion() {
 
 async function readInput(input) {
 	const contenido = await readFile(input, "utf8");
-	console.log(contenido);
 	return contenido;
 }
 
 function parseDelimited(text, delimiter, noHeader) {
-	const filas = text.split("\n").map((fila) => fila.split(delimiter));
-	if (noHeader && filas.length > 0) {
-		filas.shift();
+	let tabla = {header: [], filas: []};
+	tabla.filas = text.split("\n").map((fila) => fila.split(delimiter));
+	if (noHeader && tabla.filas.length > 0) {
+		tabla.header = tabla.filas[0].map((_, index) => index.toString());
+	} else {
+		tabla.header = tabla.filas.shift();
 	}
-	return filas;
+	return tabla;
+}
+
+function columnasPorCriterio(header, criterios) {
+	return criterios.map((criterio) => {
+		const index = header.indexOf(criterio.name);
+		return { ...criterio, index };
+	});
+}
+
+function sortRows(filas, criterios) {
+	//criterios: [{ name: "apellido", numeric: false, descending: false }],
+	return filas.sort((a, b) => {
+		for (const criterio of criterios) {
+			const valorA = a[criterio.index];
+			const valorB = b[criterio.index];
+			let comparacion;
+			if (criterio.numeric) {
+				comparacion = parseFloat(valorA) - parseFloat(valorB);
+			} else {
+				comparacion = valorA.localeCompare(valorB);
+			}
+			if (comparacion !== 0) {
+				return criterio.descending ? -comparacion : comparacion;
+			}
+		}
+		return 0;
+	});
+}
 }
 
 async function sorteador() {
 	const config = configuracion();
 	const contenido = await readInput(config.input);
-	const filas = parseDelimited(contenido, config.delimitador, config.noHeader);
+	const tabla = parseDelimited(contenido, config.delimitador, config.noHeader);
+	const columnacriterios = columnasPorCriterio(tabla.header, config.criterios);
+	const filasOrdenadas = sortRows(tabla.filas, columnacriterios);
+	console.log("Filas ordenadas:", filasOrdenadas);
 }
 
 sorteador();
@@ -121,3 +156,7 @@ sorteador();
 //1 Le pedi que analizara el workspace en preparacion para algun duda que tenga
 //2 le pregunte como se lee la cli
 //3 consulte como se utiliza link y como leer el archivo de entrada
+//4 como arreglar el flujo de datos para evitar trabajar con variables globales
+
+//Notas:
+//Que pasa si un usuario pasa un criterio de columna numerico pero no junto al -nh
