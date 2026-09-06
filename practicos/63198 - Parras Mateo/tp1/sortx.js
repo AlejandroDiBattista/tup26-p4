@@ -180,6 +180,61 @@ function parseDelimited(texto, opciones) {
 return {header: header, rows: rows};
 }
 
+function sortRows(datos, opciones){
+    const header = datos.header;
+    const noHeader = opciones.noHeader;
+
+    const criteriosConIndice = []
+    for (const criterio of opciones.sortFields) {
+        let indice;
+        if (noHeader){
+            indice= Number(criterio.name)
+            if (Number.isNaN(indice)) {
+                console.error("ERROR: este indice de columna \"" + criterio.name + "\" no es valido")
+                process.exit(1);
+            }
+        }else {
+            indice= header.indexOf(criterio.name);
+        }
+        
+        criteriosConIndice.push({
+            name: criterio.name,
+            numeric: criterio.numeric,
+            descending: criterio.descending,
+            indice: indice
+        })
+    }
+
+    const filasOrdenadas = datos.rows.slice();
+    filasOrdenadas.sort((filaA, filaB) => {
+        for (const criterio of criteriosConIndice){
+            const valorA= filaA [criterio.indice];
+            const valorB= filaB [criterio.indice];
+            let resultado = 0;
+
+            if (criterio.numeric) {
+                const numA = Number(valorA)
+                const numB = Number(valorB)
+                if (Number.isNaN (numA) || Number.isNaN(numB)){
+                    console.error("ERROR: ingrese un valor numerico en: \"" + criterio.name + "\"")
+                    process.exit(1)
+                }
+                resultado = numA - numB;
+            }else {
+                resultado= valorA.localeCompare(valorB);
+            }
+            if (criterio.descending){
+                resultado = resultado * -1;
+            }
+
+            if (resultado !==0){
+                return resultado;
+            }
+        }
+        return 0;
+    });
+    return filasOrdenadas
+}
 
 
 console.log(HELP)
