@@ -54,7 +54,7 @@ const uso = {
 }
 
 
-
+//let part = null 
 
 console.log(datosUsuarios)
 
@@ -66,6 +66,18 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         console.log(datosUsuarios[i] , datosUsuarios[i + 1])
         if(datosUsuarios[i] === "-d" || datosUsuarios[i] === "--delimiter")
         uso.delimiter = datosUsuarios[i + 1 ]
+          if(datosUsuarios[i] === "-b" || datosUsuarios[i] === "--by"){
+            console.log(datosUsuarios[i + 1 ].split(":"))
+           const partes = datosUsuarios[i + 1 ].split(":")
+           const criterio = {
+            name: partes[0] ,
+            numeric:partes[1] === "num",
+            descending: partes[2] === "desc",
+            
+           }
+           console.log(criterio)
+           uso.sortFields.push(criterio)
+        }
         i++
         }else{
           console.log(i , datosUsuarios[i])
