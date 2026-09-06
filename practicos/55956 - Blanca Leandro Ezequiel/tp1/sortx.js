@@ -35,4 +35,89 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
+const argumentos = process.argv.slice(2)
+
+if (
+    argumentos.length === 0 ||
+    argumentos.includes("-h") ||
+    argumentos.includes("--help")
+) {
+    console.log(HELP);
+    process.exit(0);
+}
+
+let origen = null;
+let destino = null;
+let delimitador = ",";
+let tieneHeader = true;
+let criterios = [];
+
+for (let i = 0; i < args.length; i++) {
+
+    const arg = args[i];
+    if (arg === "-b" || arg === "--by") {
+        const criterio = args[i + 1];
+
+        if (!criterio) {
+            console.log("Error: falta el criterio después de -b.");
+            process.exit(1);
+        }
+        criterios.push(criterio);
+        i++;
+    }
+
+    else if (
+        arg === "-d" ||
+        arg === "--delimiter"
+    ) {
+        delimitador = args[i + 1];
+
+        if (!delimitador) {
+            console.log(
+                "Error: falta el delimitador."
+            );
+            process.exit(1);
+        }
+
+        if (delimitador === "\\t") {
+            delimitador = "\t";
+        }
+        i++;
+    }
+    else if (
+        arg === "-nh" ||
+        arg === "--no-header"
+    ) {
+        tieneHeader = false;
+    }
+    else if (origen === null) {
+
+        origen = arg;
+
+    }
+    else if (destino === null) {
+        destino = arg;
+    }
+}
+
+
+if (!origen) {
+    console.log(
+        "Error: falta el archivo de origen."
+    );
+    process.exit(1);
+}
+
+if (!destino) {
+    console.log(
+        "Error: falta el archivo de destino."
+    );
+    process.exit(1);
+}
+if (criterios.length === 0) {
+    console.log(
+        "Error: debés indicar al menos un criterio con -b."
+    );
+    process.exit(1);
+}
 console.log(HELP)
