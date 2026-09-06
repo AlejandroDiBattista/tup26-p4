@@ -39,7 +39,7 @@ EJEMPLOS:
 
 //prueba_1
 
-let array = process.argv.slice(2);
+/* let array = process.argv.slice(2);
 
 //console.log(array);
 
@@ -48,3 +48,59 @@ for(let i = 0; i < array.length; i++){
   else{console.log(array[i])
   }
 }
+
+ */
+
+const argumentos = [
+    "empleados.csv",
+    "ordenados.csv",
+    "-d",
+    "--delimiter",
+    ",",
+    "-nh",
+    "--noHeader",
+    "-b",
+    "--by",
+    "salario:num:desc",
+    "-b",
+    "--by",
+    "apellido"
+]
+
+function ParseArg(argumentos){
+    let inputFile = null;
+    let outFile = null;
+    let delimiter = null;
+    let noHeader = false;
+
+
+    let i = 0;
+    while(i < argumentos.length){
+       if(!argumentos[i].startsWith("-")){
+        if(inputFile === null){
+            inputFile = argumentos[i];
+        }
+        else if(outFile === null){
+            outFile = argumentos[i];
+        } i++
+       }
+       else if(argumentos[i] === "-d" || argumentos[i] === "--delimiter"){
+           delimiter = argumentos[i + 1];
+           i+=2;
+       } 
+       else if(argumentos[i] === "-nh" || argumentos[i] === "--noHeader"){
+           noHeader = true;
+           i++;
+       } 
+       else if(argumentos[i] === "-b" || argumentos[i] === "--by"){
+           delimiter = argumentos[i + 1];
+           i+=2;
+       } 
+       else{
+        i++;
+       }
+    }
+    return{inputFile,outFile,delimiter,noHeader}
+}
+
+console.log(ParseArg(argumentos));
