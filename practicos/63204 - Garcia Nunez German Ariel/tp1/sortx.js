@@ -42,7 +42,7 @@ console.log(HELP)
 //1. parseArgs      → leer los argumentos y construir la configuración
 function parseArgs(args) {
 //validamos que contenfa el help
-if (args.includes('-h') || args.includes('--help|')) {
+if (args.includes('-h') || args.includes('--help')) {
     return {
         showHelp: true
     }
@@ -55,12 +55,55 @@ if (!origen || !destino) {
     throw new Error('faltan datos de origen y/o destino')
 }
 //validar que tenga el delimitador
-
+let delimiter = ','
+ 
+if (args.includes('-d') || args.includes('--delimiter')) {
+    const index = args.indexOf('-d') !== -1 ? args.indexOf('-d') : args.indexOf('--delimiter')
+    delimiter = args[index + 1]
+    if(delimiter.length !== 1 && delimiter !== "\\t") {
+        throw new Error('el delimitador debe ser un solo caracter')
+    }
+}
 //corroborar el encabezado
+const noencabezado = args.includes('-nh') || args.includes('--no-header')
 
 // corroborar el criterio de ordenamiento
-// salida
+const criterios = [];
+for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-b' || args[i] === '--by') {
+        const criterio = args[i + 1];
+        const partes = criterio.split(':');
+        
+        criterios.push({
+            name: partes[0],
+            numeric: partes[1] === 'num',
+            descending: partes[2] === 'desc'
+        });
+    }
+}
 
+if (criterios.length === 0) {
+    throw new Error('Se requiere al menos un criterio de ordenamiento');
+}
+
+return {
+    inputFile: origen,
+    outputFile: destino,
+    delimiter: delimiter === "\\t" ? "\t" : delimiter,
+    noHeader: noencabezado,
+    sortFields: criterios 
+};
+
+// salida
+  const configuracion = {
+    inputFile: origen,
+    outputFile: destino,
+    delimiter: delimiter === "\\t" ? "\t" : delimiter, // Pequeño ajuste para que \t funcione como tabulación
+    noHeader: noencabezado,
+    sortFields: criterios 
+  };
+
+  return configuracion;
 }
 
 
