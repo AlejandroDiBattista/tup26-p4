@@ -97,8 +97,6 @@ return {
     sortFields: criterios 
 };
 }
-
-
 //2. readInput      → leer el archivo de origen
 function readInput(rutadelarchivo) {
     //leeremos el archivo con try catch para manejar errores
@@ -110,6 +108,18 @@ function readInput(rutadelarchivo) {
     }
 }
 //3. parseDelimited → convertir el texto en filas y columnas
+function parseData(texto, delimiter) {
+    const renglones = texto.split('\n');
+    const datosparceados = [];
+    for (let i = 0; i < renglones.length; i++) {
+        const renglon = renglones[i].trim();
+        if (renglon !== '') {
+            const columnas = renglon.split(delimiter);
+            datosparceados.push(columnas);
+        }
+    }
+    return datosparceados;
+}
 //4. sortRows       → ordenar las filas
 //5. serialize      → reconstruir el texto delimitado
 //6. writeOutput    → escribir el archivo de destino
@@ -120,3 +130,4 @@ function writeOutput(rutadelarchivo, contenido) {
         throw new Error(`Error al escribir el archivo: ${error.message}`);
     }
 }
+
