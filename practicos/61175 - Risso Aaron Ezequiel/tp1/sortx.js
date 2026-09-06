@@ -61,7 +61,7 @@ const argumentos = [
     //"--delimiter",
     ",",
     "-nh",
-    "--noHeader",
+    //"--noHeader",
     "-b",
     //"--by",
     "salario:num:desc",
@@ -126,7 +126,7 @@ function ParseArg(argumentos){
     return{inputFile,outFile,delimiter,noHeader,sortFields}
 }
 
-console.log(ParseArg(argumentos));
+//console.log(ParseArg(argumentos));
 
 function readInput(texto) {
   try {
@@ -140,11 +140,14 @@ function parseDelimited(texto, delimiter) {
     const textoNormalizado = texto.replace(/\r\n/g, "\n");
     const lineas = textoNormalizado.split("\n").filter(linea => linea !== "");
     const filas = lineas.map(linea => linea.split(delimiter));
-    return filas;
+    const header = filas[0];
+    const rows = filas.slice(1);
+
+    return {header,rows};
 }
 
 const confi = ParseArg(argumentos);
 const texto = readInput(confi.inputFile);
-const rows =  parseDelimited(texto,confi.delimiter);
+const tabla =  parseDelimited(texto,confi.delimiter);
 
-console.log(rows);
+console.log(tabla);
