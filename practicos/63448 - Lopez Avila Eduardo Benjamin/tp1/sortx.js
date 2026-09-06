@@ -116,8 +116,8 @@ function configuracion() {
 }
 
 async function readInput(input) {
-	const contenido = await readFile(input, "utf8");
-	return contenido;
+	try { return await readFile(input, "utf8"); }
+	catch { console.error("Error: el archivo de origen no existe o no puede leerse."); process.exit(1); }
 }
 
 function parseDelimited(text, delimiter, noHeader) {
@@ -165,7 +165,8 @@ function serialize(header, filas, delimiter) {
 }
 
 async function writeOutput(output, contenido) {
-	await writeFile(output, contenido, "utf8");
+	try { await writeFile(output, contenido, "utf8"); }
+	catch { console.error("Error: el archivo de destino no puede escribirse."); process.exit(1); }
 }
 
 async function sorteador() {
