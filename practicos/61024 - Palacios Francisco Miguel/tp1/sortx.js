@@ -37,27 +37,98 @@ EJEMPLOS:
 // console.log(HELP);
 
 function parseArgs() {
-const inputFile = process.argv[2];
-const outputFile = process.argv[3];
+    const inputFile = process.argv[2];
+    const outputFile = process.argv[3];
 
-const sortFields =  [];
-for (let i = 4; i < process.argv.length; i++) {
-    if (process.argv[i] === "-b") {
-        const criterio = process.argv[i + 1];
-        sortFields.push(criterio);
-
-        const partes = criterio.split(":");
-        console.log(partes);
+    if (!inputFile || !outputFile) {
+        throw new Error("Faltan el archivo de origen o destino");
     }
+
+    let delimiter = ",";
+    let noHeader = false;
+    const sortFields = [];
+
+    for (let i = 4; i < process.argv.length; i++) {
+
+        if (process.argv[i] === "-b" || process.argv[i] === "--by") {
+            const criterio = process.argv[i + 1];
+
+            if (!criterio) {
+                throw new Error("La opción --by necesita un valor");
+            }
+
+            const partes = criterio.split(":");
+            const nombre = partes[0];
+            const tipo = partes[1] || "alpha";
+            const orden = partes[2] || "asc";
+
+            if (tipo !== "alpha" && tipo !== "num") {
+                throw new Error("El tipo debe ser alpha o num");
+            }
+
+            if (orden !== "asc" && orden !== "desc") {
+                throw new Error("El orden debe ser asc o desc");
+            }
+
+            const numeric = tipo === "num";
+            const descending = orden === "desc";
+            const campo = {
+                name: nombre,
+                numeric: numeric,
+                descending: descending
+            };
+
+            sortFields.push(campo);
+
+            i++;
+        }
+
+        else if (process.argv[i] === "-d" || process.argv[i] === "--delimiter") {
+            const valor = process.argv[i + 1];
+
+            if (!valor) {
+                throw new Error("La opción --delimiter necesita un valor");
+            }
+
+            if (valor === "\\t") {
+                delimiter = "\t";
+            } else {
+                delimiter = valor;
+            }
+
+            if (delimiter.length !== 1) {
+                throw new Error("El delimitador debe tener un solo carácter");
+            }
+
+            i++;
+        }
+
+        else if (process.argv[i] === "-nh" || process.argv[i] === "--no-header") {
+            noHeader = true;
+        }
+
+        else if (process.argv[i] === "-h" || process.argv[i] === "--help") {
+            console.log(HELP);
+            process.exit(0);
+        }
+
+        else {
+            throw new Error("Opción desconocida: " + process.argv[i]);
+        }
+    }
+
+    if (sortFields.length === 0) {
+        throw new Error("Debe especificarse al menos un criterio con --by");
+    }
+
+    return {
+        inputFile: inputFile,
+        outputFile: outputFile,
+        delimiter: delimiter,
+        noHeader: noHeader,
+        sortFields: sortFields
+    };
+
 }
-
-return {
-inputFile: inputFile,
-outputFile: outputFile,
-sortFields: sortFields
-
-  };
-}
-
 const config = parseArgs();
 console.log(config);
