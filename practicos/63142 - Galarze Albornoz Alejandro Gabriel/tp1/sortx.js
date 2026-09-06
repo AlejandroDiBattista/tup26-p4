@@ -107,7 +107,7 @@ function parseArgs(args){
     }
 
     if (positional.length !== 2) {
-        throw new Error('Faltan los archivos de origen y destino');
+        throw new Error('De requieren exactamente archivos de origen y destino');
     }
 
     if (sortFieldsRaw.length === 0) {
@@ -134,3 +134,38 @@ function parseArgs(args){
 
 }
 
+function readInput(filename) {
+    if (!fs.existsSync(filename)) {
+        throw new Error(`El archivo no existe: ${filename}`);
+    }
+
+    return fs.readFileSync(filename, 'utf-8');
+}
+
+function parseDelimited(text, delimiter){
+    if (text.includes('"')){
+        throw new Error('tiene comillas dobles y no esta permitido');
+    }
+
+    const lines = text.split(/\r?\n/);
+    const row = [];
+    let totalColumnas = 0;
+
+    for (let i = 0; i < lines.length; i++){
+        const line = lines[i];
+
+        if (line.trim() !== ''){
+            const row = line.split(delimiter);
+
+        if (totalColumnas === 0){
+            totalColumnas = rows.length;
+        } else if (row.length !== totalColumnas){
+            throw new Error('Las filas no tienen la misma cantidad de columnas');
+        }
+        row.push(row);
+
+        }
+    }
+
+    return row;
+}
