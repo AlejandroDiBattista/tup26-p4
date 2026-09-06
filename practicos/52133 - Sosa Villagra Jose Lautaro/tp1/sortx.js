@@ -35,4 +35,59 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+// Lectura de argumentos y construccion de la configuracion
+function parseArgs(argv){
+    
+    const config = {
+        inputFile: null,
+        outputFile: null,
+        delimiter: ',',
+        noHeader: false,
+        sortFields: [ { name: null, numeric: false, descending: false } ],
+    }
+
+    const positionalArgs = []
+
+    for (let index = 0; index < argv.length; index++) {
+        const token = argv[index]
+        
+        
+        if (token === '-b' || token === '--by') {
+            index++ 
+            if (index >= argv.length) throw new Error("La opcion --by requiere un valor") 
+            config.sortFields.push(interpretarCriterio(argv[index]))  
+        }
+        else if (token === '-nh' || token === '--no-header') {
+            config.noHeader = true
+        }
+        else if (token === '-d' || token === '--delimiter') {
+            index++
+            // aca tambien aplicamos manejos de errores
+            if (index >= argv.length) throw new Error ("La opcion --delimiter requiere un valor")
+            config.delimiter = resolveDelimiter(argv[index])
+            if(config.delimiter.length !== 1) throw new Error ("El delimitador debe ser un unico caracter")
+        }
+        else if (token.startsWith('-')) {
+            console.log('opcion desconocida: "' + token + '"')
+        }
+        else {
+            positionalArgs.push(token)
+        } 
+    }
+
+    if (positionalArgs.length < 1) throw new Error("Falta el archivo de origen")
+
+    if (positionalArgs.length < 2) throw new Error("Falta el archivo de destino")
+
+    config.inputFile = positionalArgs[0]
+    
+    config.outputFile = positionalArgs[1]
+}
+
+// Esta funcion se usa para resolver cuando un delimitador es una tabulacion
+function resolveDelimiter(text) {
+    if (text === '\\t') return '\t'
+    return text
+}
+
