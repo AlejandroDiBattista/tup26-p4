@@ -62,7 +62,7 @@ function parseArgs() {
     return {inputFile: inputFile, outputFile: outputFile, delimiter: ",", noHeader: noHeader, sortFields: sortFields};
 }
 const config = parseArgs();
-console.log(config);
+
 
 function readInput(inputFile){
     const contenido = fs.readFileSync(inputFile, "utf8");
@@ -70,9 +70,8 @@ function readInput(inputFile){
 }
 const contenido = readInput(config.inputFile);
 const rows = parseDelimited(contenido, config.delimiter);
-console.log(rows);
 const sortedRows = sortRows(rows, config);
-console.log(sortedRows); 
+
  
 function parseDelimited(contenido, delimiter) {
     if (contenido.includes('"')) {
@@ -164,7 +163,6 @@ function serialize(rows, delimiter) {
 }
 
 const texto = serialize(sortedRows, config.delimiter);
-console.log(texto);
 writeOutput(config.outputFile, texto);
 
 function writeOutput(outputFile, contenido){
