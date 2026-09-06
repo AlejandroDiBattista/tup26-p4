@@ -72,11 +72,11 @@ function parseArgs(argv){
                 process.exit(1)
             }
             if (tipo !== "alpha" && tipo !== "num") {
-                console.error('ERROR: tipo no reconocido: "${tipo}"' )
+                console.error("ERROR: tipo no reconocido: \"" + tipo + "\"" )
                 process.exit(1);
             }
             if (orden !== "asc" && orden !== "desc"){
-                console.error('ERROR: orden no reconocido: "${orden}"')
+                console.error("ERROR: orden no reconocido: \"" + orden + "\"")
                 process.exit(1)
             }
 
@@ -98,7 +98,7 @@ function parseArgs(argv){
             opciones.delimiter= delim;
             i+= 2
         } else if (arg.startsWith("-")){
-            console.error('ERROR: opcion desconocida: "${arg}"')
+            console.error("ERROR: opcion desconocida: \"" + arg + "\"")
             process.exit(1)
         }else {
             restantes.push(arg)
@@ -126,6 +126,19 @@ function parseArgs(argv){
     }
 
     return opciones
+}
+
+function readInput(ruta){
+    if (!fs.existsSync(ruta)){
+        console.error("ERROR: el archivo no existe: \"" + ruta + "\"")
+        process.exit(1)
+    }
+    try {
+        return fs.readFileSync(ruta, "utf8")
+    }catch (error){
+        console.error("ERROR: no se pudo leer el archivo \"" + ruta + "\"")
+        process.exit(1)
+    }
 }
 
 console.log(HELP)
