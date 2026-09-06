@@ -56,7 +56,7 @@ function parseArgs(args){
             if (partes[1]=== "num") {
                 esNumerico= true;
             }
-            
+
             if (partes[2]=== "desc") {
                 esDescendente= true;
             }
@@ -75,7 +75,7 @@ function parseArgs(args){
 
             if (config.inputFile === null) {
                 config.inputFile = arg;
-            } 
+            }
             else if (config.outputFile === null) {
                 config.outputFile = arg;
         }
@@ -99,7 +99,7 @@ function readInput(rutaArchivo){
     for (let i = 0; i < lineas.length; i++) {
         const lineaLimpia = lineas[i].replace('\r','');
         const columnas = lineaLimpia.split(delimitador);
-        
+
 
         if (i>0 && columnas.length !==matrizFilas[0].length) {
             console.error("Error:las filas tienen diferente cantidad de campos");
@@ -110,10 +110,85 @@ function readInput(rutaArchivo){
     return matrizFilas
     }
 
+    function sortRows(filas,config){
+    let encabezado = null;
+    let datosParaOrdenar = [];
+    if(config.noHeader === false){
+    encabezado= filas[0]
+    datosParaOrdenar= filas.slice(1);
+}else {
+    datosParaOrdenar=filas.slice(0);
+    }
+
+    datosParaOrdenar.sort((filaA,filaB) =>{
+    for(let i =0; i < config.sortFields.length; i++ ){
+    const criterio = config.sortFields[i];
+    let indiceColumna = -1
+    if (config.noHeader){
+    indiceColumna = parseInt(criterio.name);
+    } else{
+        indiceColumna = encabezado.indexOf(criterio.name);
+    }
+    if (indiceColumna === -1 ){
+    console.error(`Error: el campo solicitado "${criterio.name}" no existe`);
+    process.exit(1);
+    }
+    let valorA = filaA[indiceColumna];
+    let valorB = filaB[indiceColumna];
+
+    if (criterio.numeric){
+    const numA = parseFloat(valorA);
+    const numB =parseFloat(valorB);
+    if (isNaN(numA) || isNaN(numB)){
+        console.error("Error: los parametros deben ser numericos para poder continuar");
+        process.exit(1);
+    }
+    valorA = numA;
+    valorB = numB;
+    }
+    if (valorA<valorB){
+    return criterio.descending ? 1: -1;
+    }
+    if(valorA>valorB){
+    return criterio.descending ? -1 : 1;
+    }
+    }
+    return 0;
+    });
+
+
+    if(encabezado !== null){
+    datosParaOrdenar.unshift(encabezado);
+    }
+return datosParaOrdenar;
+
+}
+    function serialize(filas,delimitador){
+
+    const lineasTexto=[];
+
+    for(let i = 0 ; i <filas.length; i++){
+    const filaUnida = filas[i].join(delimitador);
+    lineasTexto.push(filaUnida);
+    }
+    return lineasTexto.join('\n');
+
+    }
+
+    function writeOutput(rutaArchivo,contenidoTexto){
+        try{
+            fs.writeFileSync(rutaArchivo,contenidoTexto,'utf-8');
+        }catch(error){
+            console.error(`No se pudo escribir en el archivo "${rutaArchivo}":`, error.message);
+            process.exit(1);
+        }
+
+    }
+
 function main() {
     const argumentoUsuario = process.argv.slice(2);
     const resultadoConfig =parseArgs(argumentoUsuario);
-    
+
     console.log("TEST DE CONFIGURACION");
     console.log(resultadoConfig);
 
@@ -126,8 +201,12 @@ function main() {
 
     console.log("TEST MATRIZ");
     const matrizDatos = parseDelimited(textoDelArchivo, resultadoConfig.delimiter);
-    
+
     console.log(matrizDatos);
+
+    console.log("TEST DE FILAS ORDENADAS");
+    const matrizOrdenada = sortRows(matrizDatos,resultadoConfig);
+    console.log(matrizOrdenada);
 
 }else{
     console.error("Error: No se especifico un archivo de entrada");
