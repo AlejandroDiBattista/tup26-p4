@@ -44,50 +44,82 @@ function parseArgs(argv){
         outputFile: null,
         delimiter: ',',
         noHeader: false,
-        sortFields: [ { name: null, numeric: false, descending: false } ],
-    }
+        sortFields: [],
+    };
 
-    const positionalArgs = []
+    const positionalArgs = [];
 
     for (let index = 0; index < argv.length; index++) {
-        const token = argv[index]
+        const token = argv[index];
         
         
         if (token === '-b' || token === '--by') {
-            index++ 
-            if (index >= argv.length) throw new Error("La opcion --by requiere un valor") 
-            config.sortFields.push(interpretarCriterio(argv[index]))  
+            index++;
+            if (index >= argv.length) throw new Error("La opcion --by requiere un valor");
+            config.sortFields.push(parseSortArguments(argv[index]));
         }
         else if (token === '-nh' || token === '--no-header') {
-            config.noHeader = true
+            config.noHeader = true;
         }
         else if (token === '-d' || token === '--delimiter') {
-            index++
+            index++;
             // aca tambien aplicamos manejos de errores
-            if (index >= argv.length) throw new Error ("La opcion --delimiter requiere un valor")
-            config.delimiter = resolveDelimiter(argv[index])
-            if(config.delimiter.length !== 1) throw new Error ("El delimitador debe ser un unico caracter")
+            if (index >= argv.length) throw new Error ("La opcion --delimiter requiere un valor");
+            config.delimiter = resolveDelimiter(argv[index]);
+            if(config.delimiter.length !== 1) throw new Error ("El delimitador debe ser un unico caracter");
         }
         else if (token.startsWith('-')) {
-            console.log('opcion desconocida: "' + token + '"')
+            throw new Error('opcion desconocida: "' + token + '"');
         }
         else {
-            positionalArgs.push(token)
+            positionalArgs.push(token);
         } 
     }
 
-    if (positionalArgs.length < 1) throw new Error("Falta el archivo de origen")
+    if (positionalArgs.length < 1) throw new Error("Falta el archivo de origen");
 
-    if (positionalArgs.length < 2) throw new Error("Falta el archivo de destino")
+    if (positionalArgs.length < 2) throw new Error("Falta el archivo de destino");
 
-    config.inputFile = positionalArgs[0]
+    config.inputFile = positionalArgs[0];
     
-    config.outputFile = positionalArgs[1]
+    config.outputFile = positionalArgs[1];
+
+    if (config.sortFields.length === 0 ) throw new Error("No especifico ningun criterio --by");
+
+    return config;
+}
+
+function parseSortArguments(sortFields){
+    const fields = sortFields.split(":");
+
+    // Valores por defecto 
+    let type = "alpha";
+    let direction = "asc";
+    
+    if (fields.length > 1) type = fields[1];
+    
+    if (fields.length > 2) direction = fields[2];
+    
+    // campo:tipo:orden
+    // salario:num:desc
+    // { name: "salario", numeric: true, descending: true }
+    return  {
+        name: fields[0], 
+        numeric: type === "num", 
+        descending: direction === "desc"
+    }
 }
 
 // Esta funcion se usa para resolver cuando un delimitador es una tabulacion
 function resolveDelimiter(text) {
     if (text === '\\t') return '\t'
-    return text
+    return text;
 }
 
+// Algo temporal para prueba tecnica
+
+const argv = [];
+for (let index = 2; index < process.argv.length; index++) {
+	argv.push(process.argv[index]);
+}
+console.log(parseArgs(argv));
