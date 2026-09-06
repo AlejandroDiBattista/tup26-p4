@@ -170,6 +170,9 @@ function serialize(filas, delimiter) {
 }
 
 /* FUNCIÓN 6 --> guardar texto en el archivo pedido */
+function writeOutput(outputFile, contenido) {
+    fs.writeFileSync(outputFile, contenido)         // craer archivo y guardar contenido
+}
 
 const args = parseArgs()
 const contenido = readInput(args.inputFile)
@@ -177,5 +180,6 @@ const filas = parseDelimited(contenido, args.delimiter)
 const filasOrdenadas = sortRows(filas, args)
 const textoOrdenado = serialize(filasOrdenadas, args.delimiter)
 
-console.log(textoOrdenado)
+writeOutput(args.outputFile, textoOrdenado)
+
 console.log(HELP)
