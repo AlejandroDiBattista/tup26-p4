@@ -54,13 +54,15 @@ for(let i = 0; i < array.length; i++){
 import fs from "fs";
 
 
-const argumentos = [
+/* const argumentos = [
     "empleados.csv",
     "ordenados.csv",
     "-d", ",",
     "-b", "salario:num:desc",
     "-b", "apellido"
-]
+] */
+
+const argumentos = process.argv.slice(2);
 
 function ParseCampo(texto){
  const partes = texto.split(":");
@@ -164,15 +166,32 @@ function sortRows(rows,sortFields,header,noHeader){
         }
         return 0;
     });
-}  
+}
+
+function serialize(header,rows,delimiter){
+    const tablaff = header !== null ? [header, ...rows] : rows;
+    return tablaff.map(row => row.join(delimiter)).join("\n");
+}
+
+function writeOutput(texto,datos){
+    try {
+        fs.writeFileSync(texto,datos,"utf-8");
+    } catch (error) {
+      console.log("No pudo guardar el archivo");
+      process.exit(1); 
+    }
+}
 
 const confi = ParseArg(argumentos);
 const texto = readInput(confi.inputFile);
 const tabla =  parseDelimited(texto,confi.delimiter,confi.noHeader);
 const ordenfilas = sortRows(tabla.rows,confi.sortFields,tabla.header,confi.noHeader);
-const tablafinal = {header: tabla.header,
+/* const tablafinal = {header: tabla.header,
     rows: ordenfilas
-};
+}; */
+const TextoOrdenado = serialize(tabla.header,ordenfilas,confi.delimiter);
+writeOutput(confi.outFile,TextoOrdenado);
 
-console.log(tablafinal);
+
+//console.log(tablafinal);
 
