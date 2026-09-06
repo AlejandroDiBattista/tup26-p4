@@ -37,24 +37,24 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
     `
-    const argumentos = process.argv.slice(2); // array c/argumentos desde el indice indicado 
-    
-    // Llamada a funciones ————————————————————————————————————————————————————————————————
-    
-    const configuracion = parseArgs(argumentos);
-    const input         = readInput(configuracion.inputFile);
-    const filas         = parseDelimited(input, configuracion);
+const argumentos = process.argv.slice(2); // array c/argumentos desde el indice indicado 
+
+// Llamada a funciones ————————————————————————————————————————————————————————————————
+
+const configuracion = parseArgs(argumentos);
+const input = await readInput(configuracion.inputFile);
+
 // Funciones ————————————————————————————————————————————————————————————————————————
 
 function parseArgs(args) {
     const [entrada, destino, ...opciones] = args;
-    
+
     if (entrada === "h" || entrada === "help" || entrada === "-h" || entrada === "--help") {
         console.clear();
         console.log(HELP);
         process.exit(0);
     }
-    
+
     if (entrada === undefined && destino === undefined) {
         console.error("Debe especificar un archivo de origen y de entrada, sino help para obtener ayuda.");
         process.exit(-1);
@@ -67,85 +67,92 @@ function parseArgs(args) {
         console.error(`
             La ruta debe escribirse como 'ruta', no "ruta" 
             `);
-            process.exit(-1);
-        }
-        if (destino.startsWith('"')) {
-            console.error(`
+        process.exit(-1);
+    }
+    if (destino.startsWith('"')) {
+        console.error(`
                 La ruta debe escribirse como 'ruta', no "ruta"
                 `);
+        process.exit(-1);
+    }
+
+    // CONFIGURACION ------------------------------------
+    let config = { inputFile: entrada, outputFile: destino, sortfields: [], delimiter: ",", noHeader: false }
+    // ------------------------------------
+
+    for (let i = 0; i < opciones.length; i++) {
+        if (opciones[i] === "-b" || opciones[i] === "--by") {
+
+            if (opciones[i + 1] === undefined || opciones[i + 1].startsWith("-")) {
+                console.error("La opcion -b debe ir seguida de un criterio de ordenamiento. Consultar help.");
                 process.exit(-1);
             }
-            
-            let config = { inputFile: entrada, outputFile: destino, sortfields: [], delimiter: ",", noHeader: false }
-            
-            for (let i = 0; i < opciones.length; i++) {
-                if (opciones[i] === "-b" || opciones[i] === "--by") {
-                    
-                    if (opciones[i + 1] === undefined || opciones[i + 1].startsWith("-")) {
-                        console.error("La opcion -b debe ir seguida de un criterio de ordenamiento. Consultar help.");
-                        process.exit(-1);
-                    }
-                    
-                    let [campo, ...modificador] = opciones[i + 1].split(":");
-                    const nombre = campo === "" ? undefined : campo;
-                    
-                    if (nombre != undefined) {
-                        config.sortfields.push({
-                            name: nombre,
-                            numeric: modificador.includes("num"),
-                            descending: modificador.includes("desc")
-                        });
-                    }
-                    i++;
-                    continue;
-                }
-                if (opciones[i] === "-d" || opciones[i] === "--delimiter") {
-                    const valor = opciones[i + 1];
-                    if (valor === '\\t') config.delimiter = "\t";
-                    
-                    else if (valor === undefined || valor.startsWith("-") || valor.length != 1) {
-                        console.error("Debe especificar un delimitador. Consultar help."
-                        );
-                        process.exit(-1);
-                    }
-                    else { config.delimiter = valor; }
-                    i++;
-                    continue;
-                }
-                if (opciones[i] === "-nh" || opciones[i] === "--no-header") {
-                    config.noHeader = true;
-                    continue;
-                }
-                
-                if ((opciones[i] !== "-b" && opciones[i] !== "--by" &&
-                    opciones[i] !== "-d" && opciones[i] !== "--delimiter" &&
-                    opciones[i] !== "-nh" && opciones[i] !== "--no-header")) {
-                        console.log(`
+
+            let [campo, ...modificador] = opciones[i + 1].split(":");
+            const nombre = campo === "" ? undefined : campo;
+
+            if (nombre != undefined) {
+                config.sortfields.push({
+                    name: nombre,
+                    numeric: modificador.includes("num"),
+                    descending: modificador.includes("desc")
+                });
+            }
+            i++;
+            continue;
+        }
+        if (opciones[i] === "-d" || opciones[i] === "--delimiter") {
+            const valor = opciones[i + 1];
+            if (valor === '\\t') config.delimiter = "\t";
+
+            else if (valor === undefined || valor.startsWith("-") || valor.length != 1) {
+                console.error("Debe especificar un delimitador. Consultar help."
+                );
+                process.exit(-1);
+            }
+            else { config.delimiter = valor; }
+            i++;
+            continue;
+        }
+        if (opciones[i] === "-nh" || opciones[i] === "--no-header") {
+            config.noHeader = true;
+            continue;
+        }
+
+        if ((opciones[i] !== "-b" && opciones[i] !== "--by" &&
+            opciones[i] !== "-d" && opciones[i] !== "--delimiter" &&
+            opciones[i] !== "-nh" && opciones[i] !== "--no-header")) {
+            console.log(`
                             Opcion invalida: ${opciones[i]}. Consultar help.`);
-                            process.exit(-1);
-                        }
-                        
-                        
-                    }
-                    console.log(config);
-                    return config;
-                }
-           
+            process.exit(-1);
+        }
+
+
+    }
+    return config;
+}
+
 async function readInput(entrada) {
-
-    let input = await readFile(entrada, 'utf-8');
-    console.log(input);
-    return input;
+    return await readFile(entrada, "utf-8");
 }
+const {columnas, filas} = parseDelimited(input, configuracion)
+
+function parseDelimited(input, config) {
 
 
-function parseDelimited(input, config)
-{
-    let filas = input.split('\n');
-    let columnas = filas[0].split(config.delimiter);
-    
+    let lineas =  input.includes("\r\n") ? input.split("\r\n")  : input.split("\n");
 
+    let columnas = lineas[0].split(config.delimiter);
+    let filas = [];
+    for (let i = 1; i < lineas.length; i++) {
+        filas.push(lineas[i].split(config.delimiter));
+    }
+
+    return {columnas, filas}
 }
+console.log(columnas, filas);
+
+
 // function sortRows (rows, config)
 // {
 
