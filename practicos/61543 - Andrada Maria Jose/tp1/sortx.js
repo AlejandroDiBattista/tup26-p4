@@ -94,9 +94,11 @@ function parseDelimited(contenido, delimiter) {
     }
  return rows;
     
-
 }
-
+ function sortRows(rows, config) {
+    const headers = config.noHeader ? null : rows[0];
+    const dataRows = config.noHeader ? rows : rows.slice(1);
+ }
 
 
 
