@@ -46,7 +46,14 @@ function parseArgs(args){
         if (arg==="-nh" || arg === "--no-header"){
         config.noHeader = true;
         }
-        else if (arg === "-b" || arg ==="--by"){ i++;
+        else if (arg === "-b" || arg ==="--by"){
+            if (i + 1 >= args.length) {
+                console.error("Error: falta especificar el criterio despues de -b o --by");
+                process.exit(1);
+            }
+
+
+            i++;
             const expresion= args[i];
             const partes = expresion.split(':');
 
@@ -68,8 +75,16 @@ function parseArgs(args){
             config.sortFields.push(newCampo);
         }
         else if (arg === "-d" || arg === "--delimiter") {
+            if (i + 1 >= args.length) {
+                console.error("Error: falta especificar el delimitador despues de -d o --delimiter");
+                process.exit(1);
+            }
             i++;
             config.delimiter =args[i]
+        }
+            else if(arg.startsWith("-")){
+            console.error(`Error: opcion desconocida "${arg}"`);
+            process.exit(1);
         }
         else{
 
@@ -89,7 +104,7 @@ function parseArgs(args){
             console.error("Error:el delimitador debe ser un unico caracter");
             process.exit(1);
             }
-            
+
             if (config.sortFields.length === 0){
             console.error("Error: no se especifico ningun criterio de ordenamiento (-b o --by)");
             process.exit(1);
@@ -107,74 +122,91 @@ function readInput(rutaArchivo){
     }
 
 }
-    function parseDelimited(textoCrudo,delimitador){
-    const lineas = textoCrudo.trim().split('\n');
-    const matrizFilas =[];
-    
-    for (let i = 0; i < lineas.length; i++) {
-        if(lineas[i].includes('""')){
-        console.error("Error: la entrada contiene comillas dobles (formato no admitido)");
+        function parseDelimited(textoCrudo,delimitador){
+        if (!textoCrudo || textoCrudo.trim() === "") {
+        console.error("Error: el archivo de origen esta vacio");
         process.exit(1);
-        
-    }}
-
-    for (let i = 0; i < lineas.length; i++) {
-        const lineaLimpia = lineas[i].replace('\r','');
-        const columnas = lineaLimpia.split(delimitador);
-        
-        if (i>0 && columnas.length !==matrizFilas[0].length) {
-            console.error("Error:las filas tienen diferente cantidad de campos");
-            process.exit(1);
         }
+
+        const lineas = textoCrudo.split(/\r?\n/);
+        const matrizFilas =[];
+        for (let i = 0; i < lineas.length; i++) {
+            const linea = lineas[i];
+            if (i === lineas.length - 1 && linea === "")continue; {
+            }
+            if (linea.includes('"')) {
+                console.error("Error: la entrada contiene comillas dobles, formato no admitido");
+                process.exit(1);
+            }
+            const columnas = linea.split(delimitador);
+
+            if (i > 0 && columnas.length !== matrizFilas[0].length) {
+                console.error("error: las filas tienen diferente cantidad de campos");
+                process.exit(1);
+            }
+
         matrizFilas.push(columnas);
     }
-    return matrizFilas
-    }
+    return matrizFilas;
+}
 
-    function sortRows(filas,config){
-    let encabezado = null;
-    let datosParaOrdenar = [];
-    if(config.noHeader === false){
-    encabezado= filas[0]
-    datosParaOrdenar= filas.slice(1);
-}else {
-    datosParaOrdenar=filas.slice(0);
-    }
+        function sortRows(filas,config){
+
+        let encabezado = null;
+        let datosParaOrdenar = [];
+        if(config.noHeader === false){
+        encabezado= filas[0]
+        datosParaOrdenar= filas.slice(1);
+}   else {
+        datosParaOrdenar=filas.slice(0);
+}
 
     datosParaOrdenar.sort((filaA,filaB) =>{
     for(let i =0; i < config.sortFields.length; i++ ){
     const criterio = config.sortFields[i];
     let indiceColumna = -1
     if (config.noHeader){
-    indiceColumna = parseInt(criterio.name);
+        if (!/^\d+$/.test(criterio.name)) {
+            console.error(`Error: el indice de columna "${criterio.name}" debe ser un numero entero no negativo `);
+            process.exit(1);
+        }
+    indiceColumna = parseInt(criterio.name, 10);
+
+    if (indiceColumna>=filaA.length) {
+        console.error(`Error: el indice de columna "${indiceColumna}" esta fuera de los limites del archivo`);
+        process.exit(1);
+    }
     } else{
         indiceColumna = encabezado.indexOf(criterio.name);
     }
-    if (indiceColumna === -1 ){
+        if (indiceColumna === -1 ){
     console.error(`Error: el campo solicitado "${criterio.name}" no existe`);
     process.exit(1);
     }
-    let valorA = filaA[indiceColumna];
-    let valorB = filaB[indiceColumna];
+        const valorA = filaA[indiceColumna];
+        const valorB = filaB[indiceColumna];
 
-    if (criterio.numeric){
-    const numA = parseFloat(valorA);
-    const numB =parseFloat(valorB);
-    if (isNaN(numA) || isNaN(numB)){
-        console.error("Error: los parametros deben ser numericos para poder continuar");
-        process.exit(1);
+        if(criterio.numeric){
+
+            if (!/^-?\d+(\.\d+)?$/.test(valorA) || !/^-?\d+(\.\d+)?$/.test(valorB)) {
+                console.error("Error: los parametros deben ser estrictamente numericos ");
+                process.exit(1);
+            }
+            const numA= parseFloat(valorA);
+            const numB = parseFloat(valorB);
+
+            if(numA < numB) return criterio.descending ? 1 : -1;
+            if(numA > numB) return criterio.descending ? -1 : 1;
+
+        }else {
+            const comparacion =valorA.localeCompare(valorB,'es',{sensitivity: 'accent'});
+
+            if (comparacion !== 0) {
+                return criterio.descending ? -comparacion : comparacion;
+            }
+        }
+
     }
-    valorA = numA;
-    valorB = numB;
-    }
-    if (valorA<valorB){
-    return criterio.descending ? 1: -1;
-    }
-    if(valorA>valorB){
-    return criterio.descending ? -1 : 1;
-    }
-    }
-    return 0;
     });
 
 
@@ -208,7 +240,7 @@ return datosParaOrdenar;
 
     function main() {
         const argumentoUsuario = process.argv.slice(2);
-        
+
         if (argumentoUsuario.includes("-h") || argumentoUsuario.includes("--help")) {
             console.log(HELP);
             process.exit(0);
@@ -220,7 +252,7 @@ return datosParaOrdenar;
         const textoDestino = serialize(matrizOrdenada,config.delimiter);
 
         writeOutput(config.outputFile,textoDestino);
-        
+
 }
 main();
 
