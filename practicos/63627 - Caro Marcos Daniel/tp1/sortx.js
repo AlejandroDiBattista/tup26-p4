@@ -37,10 +37,12 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `;
 
+
+// Mensaje de ayuda resumido para mostrar en caso de error
 const texto_ayuda = `Uso: sortx <origen> <destino> [-b|--by campo[:tipo[:orden]]]... [-d|--delimiter delimitador] [-nh|--no-header] [-h|--help]`;
 
 
-
+// Funcion para parsear los argumentos de la línea de comandos y devolver un objeto. Lanza errores si hay problemas de sintaxis o de lógica.
 function parseArgs(args_consola) {
 
 
@@ -49,6 +51,8 @@ function parseArgs(args_consola) {
     process.exit(0);
   }
 
+
+  // Inicializo la configuración con valores predeterminados
   let lista_archivos = [];
   let configuracion = {
     inputFile: undefined,
@@ -58,49 +62,69 @@ function parseArgs(args_consola) {
     sortFields: []
   };
 
+  // Verifico que haya esten los archivos de origen y destino
   if (args_consola.length === 0) {
     throw new Error('Error: faltan los archivos de origen y destino.');
   }
 
+  // Recorro los argumentos de la consola para procesarlos
   for (let i = 0; i < args_consola.length; i++) {
     let arg_actual = args_consola[i];
 
+    // Manejo de la opción de delimitador
     if (arg_actual === '-d' || arg_actual === '--delimiter') {
       let valor_sep = args_consola[i + 1];
       if (!valor_sep || valor_sep.startsWith('-')) {
         throw new Error('Error: te falto el valor del delimitador.');
       }
       
+
+      // Verifico que el delimitador sea un solo caracter
       let sep_final = valor_sep === '\\t' ? '\t' : valor_sep;
       if (sep_final.length !== 1) {
         throw new Error('Error: el delimitador tiene que ser un solo caracter.');
       }
       
+      // Asigno el delimitador a la configuración
       configuracion.delimiter = sep_final;
       i++; // 
       continue;
     }
 
+    // Manejo de la opción de no-header
     if (arg_actual === '-nh' || arg_actual === '--no-header') {
       configuracion.noHeader = true;
       continue;
     }
-
+// Manejo de la opción de criterio de ordenamiento
     if (arg_actual === '-b' || arg_actual === '--by') {
       let regla = args_consola[i + 1];
       if (!regla || regla.startsWith('-')) {
         throw new Error('Error: falta el criterio despues de -b.');
       }
 
+
+      // Divido la regla en partes: nombre de columna, tipo de dato y tipo de orden
       let partes = regla.split(':');
       let nombre_columna = partes[0];
       let tipo_dato = partes[1] || 'alpha';
       let tipo_orden = partes[2] || 'asc';
 
+      // Verifico que el tipo de dato sea válido
       if (!nombre_columna || nombre_columna.trim() === '') {
         throw new Error('Error: el criterio de ordenamiento no es valido.');
       }
+// Verifico que el tipo de dato sea válido
+      if (tipo_dato !== 'alpha' && tipo_dato !== 'num') {
+        throw new Error(`Error: el tipo de dato '${tipo_dato}' no es valido. Debe ser 'alpha' o 'num'.`);
+      }
 
+      // Verifico que el tipo de orden sea válido
+      if (tipo_orden !== 'asc' && tipo_orden !== 'desc') {
+        throw new Error(`Error: el tipo de orden '${tipo_orden}' no es valido. Debe ser 'asc' o 'desc'.`);
+      }
+
+// Agrego la regla a la lista de criterios de ordenamiento
       configuracion.sortFields.push({
         name: nombre_columna,
         numeric: tipo_dato === 'num',
@@ -111,6 +135,8 @@ function parseArgs(args_consola) {
       continue;
     }
 
+
+    // Si el argumento no es una opción, lo agrego a la lista de archivos
     if (arg_actual.startsWith('-')) {
       throw new Error(`Error: opcion desconocida '${arg_actual}'.`);
     }
@@ -128,6 +154,7 @@ function parseArgs(args_consola) {
     throw new Error('Error: necesitas especificar por lo menos un criterio con -b.');
   }
 
+  // Asigno los archivos de entrada y salida a la configuración
   configuracion.inputFile = lista_archivos[0];
   configuracion.outputFile = lista_archivos[1];
 
@@ -139,6 +166,7 @@ function parseArgs(args_consola) {
 
 
 
+// Función para leer el contenido de un archivo y devolverlo como string. Lanza error si no se puede abrir o leer el archivo.
 function readInput(ruta_origen) {
   try {
     return fs.readFileSync(ruta_origen, 'utf8');
@@ -151,7 +179,7 @@ function readInput(ruta_origen) {
 
 
 
-
+// Función para parsear un texto delimitado en una matriz de datos. Lanza error si hay problemas de formato.
 function parseDelimited(texto_crudo, separador) {
   if (texto_crudo.includes('"')) {
     throw new Error('Error: el archivo no puede contener comillas dobles.');
@@ -225,7 +253,7 @@ function acomodar_tipo(dato_crudo, es_numero) {
 
 
 
-
+// Función para ordenar las filas de la tabla según los criterios especificados en ajustes. Devuelve una nueva matriz ordenada.
 function sortRows(tabla, ajustes) {
   if (tabla.length === 0) {
     return [];
@@ -274,7 +302,7 @@ function sortRows(tabla, ajustes) {
 
 
 
-
+// Función para serializar una matriz de datos en un string delimitado. Devuelve el string final.
 function serialize(filas_ordenadas, separador) {
   let texto_final = [];
   
@@ -288,7 +316,7 @@ function serialize(filas_ordenadas, separador) {
 
 
 
-
+// Función para escribir un string en un archivo de salida. Crea la carpeta si no existe. Lanza error si no se puede escribir.
 function writeOutput(ruta_salida, contenido_string) {
   let carpeta = path.dirname(ruta_salida);
   
@@ -304,7 +332,43 @@ function writeOutput(ruta_salida, contenido_string) {
   }
 }
 
+// Función principal que ejecuta el flujo del programa. Maneja errores y devuelve un código de salida.
+function main() {
+  let args_limpios = process.argv.slice(2);
 
+  if (args_limpios.includes('--help') || args_limpios.includes('-h')) {
+    console.log(texto_ayuda);
+    return 0;
+  }
+// Verifico que haya esten los archivos de origen y destino
+  if (args_limpios.length < 2) {
+    console.error('Error: faltan los archivos de origen y destino.');
+    return 1;
+  }
+
+  // Verifico que haya esten los archivos de origen y destino
+  if (args_limpios.length > 2) {
+    console.error('Error: pusiste demasiados archivos en el comando.');
+    return 1;
+  }
+  // try-catch para manejar errores y devolver un código de salida adecuado
+  try {
+    let configuracion = parseArgs(args_limpios);
+    let texto = readInput(configuracion.inputFile);
+    let matriz = parseDelimited(texto, configuracion.delimiter);
+    let matriz_ordenada = sortRows(matriz, configuracion);
+    let string_final = serialize(matriz_ordenada, configuracion.delimiter);
+    
+    writeOutput(configuracion.outputFile, string_final);
+    
+    return 0;
+  } catch (error) {
+    console.error(error.message);
+    return 1;
+  }
+}
+
+process.exitCode = main();
 
 
 
