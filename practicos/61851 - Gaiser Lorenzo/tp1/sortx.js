@@ -41,7 +41,7 @@ EJEMPLOS:
 
 const datosUsuarios = process.argv.slice(2) 
 
-//let historial = 0 ; 
+
 
 const uso = {
     
@@ -53,7 +53,7 @@ const uso = {
 
 }
 
-const usuario = {inputFile: }
+
 
 
 console.log(datosUsuarios)
@@ -64,9 +64,14 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
     if (datosUsuarios[i].startsWith("-") ){
         if(datosUsuarios[i] !== "-nh" && datosUsuarios[i] !== "-h" && datosUsuarios[i] !== "--no-header" && datosUsuarios[i] !== "--help" ){
         console.log(datosUsuarios[i] , datosUsuarios[i + 1])
+        if(datosUsuarios[i] === "-d" || datosUsuarios[i] === "--delimiter")
+        uso.delimiter = datosUsuarios[i + 1 ]
         i++
         }else{
           console.log(i , datosUsuarios[i])
+          if(datosUsuarios[i] === "-nh" || datosUsuarios[i] === "--no-header"){
+            uso.noHeader = true
+          } 
         }
     }else {
         console.log(i , datosUsuarios[i])
