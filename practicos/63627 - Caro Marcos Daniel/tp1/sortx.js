@@ -186,6 +186,91 @@ function parseDelimited(texto_crudo, separador) {
 
 
 
+// funcion de ayuda para sacar el valor de la columna segun su nombre o indice
+function sacar_valor(fila_actual, nombre_col, titulos) {
+  if (titulos !== null) {
+    let indice = titulos.indexOf(nombre_col);
+    if (indice === -1) {
+      throw new Error(`Error: la columna pedida no existe: ${nombre_col}`);
+    }
+    return fila_actual[indice];
+  }
+
+  let pos_num = Number(nombre_col);
+  if (!Number.isInteger(pos_num) || pos_num < 0 || pos_num >= fila_actual.length) {
+    throw new Error(`Error: el indice de la columna no es valido: ${nombre_col}`);
+  }
+
+  return fila_actual[pos_num];
+}
+
+
+
+
+// funcion de ayuda para convertir a numero si hace falta
+function acomodar_tipo(dato_crudo, es_numero) {
+  let texto_limpio = String(dato_crudo || '');
+
+  if (!es_numero) {
+    return texto_limpio;
+  }
+
+  let valor_num = Number(texto_limpio);
+  if (!Number.isFinite(valor_num)) {
+    throw new Error(`Error: se esperaba un numero pero se encontro '${texto_limpio}'`);
+  }
+
+  return valor_num;
+}
+
+
+
+
+function sortRows(tabla, ajustes) {
+  if (tabla.length === 0) {
+    return [];
+  }
+
+  let titulos = ajustes.noHeader ? null : tabla[0];
+  let datos_puros = ajustes.noHeader ? tabla : tabla.slice(1);
+
+  // copiamos los datos para no romper la matriz original
+  let resultado_ordenado = [...datos_puros].sort(function(fila_a, fila_b) {
+    
+    for (let c = 0; c < ajustes.sortFields.length; c++) {
+      let regla = ajustes.sortFields[c];
+
+      let val_a = sacar_valor(fila_a, regla.name, titulos);
+      let val_b = sacar_valor(fila_b, regla.name, titulos);
+
+      let norm_a = acomodar_tipo(val_a, regla.numeric);
+      let norm_b = acomodar_tipo(val_b, regla.numeric);
+
+      let diferencia = 0;
+      if (regla.numeric) {
+        diferencia = Number(norm_a) - Number(norm_b);
+      } else {
+        diferencia = String(norm_a).localeCompare(String(norm_b));
+      }
+
+      if (regla.descending) {
+        diferencia = diferencia * -1;
+      }
+
+      if (diferencia !== 0) {
+        return diferencia;
+      }
+    }
+
+    return 0; // empate
+  });
+
+  if (ajustes.noHeader) {
+    return resultado_ordenado;
+  }
+  
+  return [titulos, ...resultado_ordenado];
+}
 
 
 
