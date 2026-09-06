@@ -113,8 +113,12 @@ const config = parseArgs();
 
 
 function readInput(inputFile){
+    try {
     const contenido = fs.readFileSync(inputFile, "utf8");
     return contenido;
+    } catch (error) {
+        throw new Error("No se pudo leer el archivo de origen");
+    }
 }
 const contenido = readInput(config.inputFile);
 const rows = parseDelimited(contenido, config.delimiter);
@@ -214,7 +218,11 @@ const texto = serialize(sortedRows, config.delimiter);
 writeOutput(config.outputFile, texto);
 
 function writeOutput(outputFile, contenido){
+    try {
     fs.writeFileSync(outputFile, contenido, "utf8");
+    } catch (error) {
+        throw new Error("No se pudo escribir el archivo de destino");
+    }
 }
 
 
