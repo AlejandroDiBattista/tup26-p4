@@ -67,8 +67,10 @@ function parseArgs() {
                 throw new Error("El delimitador debe tener un solo caracter");
             }
 
+            i++;
+
         }         
-            if (args[i] === "-b" || args[i] === "--by") {
+           else if (args[i] === "-b" || args[i] === "--by") {
             if (args[i + 1] === undefined) {
                 throw new Error("Falta el valor de --by");
             }
@@ -87,11 +89,15 @@ function parseArgs() {
             const numeric = tipo === "num";
             const descending = orden === "desc";
             const campo = {name: name, numeric: numeric, descending: descending,};
-            sortFields.push(campo);    
+            sortFields.push(campo); 
+            i++;   
         }
-        if(args[i] === "-nh" || args[i] === "--no-header"){
+       else if(args[i] === "-nh" || args[i] === "--no-header"){
             noHeader = true;
         }
+       else {
+        throw new Error("Opcion desconocida: " + args[i]);
+       }
        
 }
  if(sortFields.length === 0){
