@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -34,9 +34,8 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
 
-//console.log(process.argv)
+
 
 function parseArgs(){
 
@@ -65,6 +64,10 @@ function parseArgs(){
         } else if (items[i] === '-d' || items[i] === '--delimiter') {
 
             config.delimiter = items[i + 1]
+            if (config.delimiter === "\\t") {
+                config.delimiter = '\t'
+            }
+
             i = i + 2
 
         } else if (items[i] === '-nh' || items[i] === '--no-header') {
@@ -180,11 +183,34 @@ function sortRows(filasDeDatos, encabezado, config) {
 
 }
 
+function serialize(encabezado, filasDeDatos, config) {
+
+    let lineasDeDatos = filasDeDatos.map((fila) => fila.join(config.delimiter))
+
+    if (encabezado !== null) {
+    lineasDeDatos.unshift(encabezado.join(config.delimiter))
+    }
+
+    let textoFinal = lineasDeDatos.join('\n')
+    return textoFinal
+
+}
+
+function writeOutput(config, texto) {
+
+    return writeFileSync(config.outputFile, texto, 'utf8')
+
+}
+
 let config = parseArgs()
 let texto = readInput(config)
 let resultado = parseDelimited(texto, config)
 let ordenadas = sortRows(resultado.filasDeDatos, resultado.encabezado, config)
-console.log(ordenadas)
+let textoSalida = serialize(resultado.encabezado, ordenadas, config)
+writeOutput(config, textoSalida)
+
+
+
 
 
 
