@@ -236,5 +236,17 @@ function sortRows(datos, opciones){
     return filasOrdenadas
 }
 
+function serialize(datos, filasOrdenadas, opciones) {
+    const lineas = [];
+
+    if (!opciones.noHeader) {
+        lineas.push(datos.header.join(opciones.delimiter));
+    }
+    for (const fila of filasOrdenadas) {
+        lineas.push(fila.join(opciones.delimiter))
+    }
+    return lineas.join("\n");
+}
+
 
 console.log(HELP)
