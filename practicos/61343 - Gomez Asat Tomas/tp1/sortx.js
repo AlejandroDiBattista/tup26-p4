@@ -37,28 +37,37 @@ EJEMPLOS:
 // Escribir aqui la solución al enunciado.
 console.log(HELP)
 
+function error(mensaje) {
+    console.error("Error:", mensaje);
+    process.exit(1);
+}
+if (args.length === 0) {
+    error("faltan los archivos de origen y destino.");
+}
+if (args[0] === "-h" || args[0] === "--help") {
+    console.log(HELP);
+    process.exit(0);
+}
+if (args.length < 2) {
+    error("deben especificarse obligatoriamente el archivo de origen y el archivo de destino.");
+}
 const origen = args[0];
 const destino = args[1];
 console.log("origen:", origen);
 console.log("destino:", destino);
-
-const criterios = [];
+const criterios = [];       
 let delimiter = ",";
 let noHeader = false;
-
 for (let i = 2; i < args.length; i++) {
     const opcion = args[i];
-
     if (opcion === "-b" || opcion === "--by") {
         criterios.push(args[i + 1]);
         i++;
     } else if (opcion === "-d" || opcion === "--delimiter") {
         delimiter = args[i + 1];
-
         if (delimiter === "\\t") {
             delimiter = "\t";
         }
-
         i++;
     } else if (opcion === "-nh" || opcion === "--no-header") {
         noHeader = true;
@@ -70,7 +79,7 @@ for (let i = 2; i < args.length; i++) {
         process.exit(1);
     }
 }
-
-console.log("Criterios:", criterios);
-console.log("Delimitador:", delimiter);
-console.log("Sin encabezado:", noHeader);
+if (criterios.length === 0) {
+    error("no se especificó ningún criterio --by.");
+}
+//primer commit  
