@@ -141,4 +141,45 @@ function readInput(ruta){
     }
 }
 
+function parseDelimited(texto, opciones) {
+    if (texto.includes ('"')){
+        console.error("ERROR: no se admiten comillas dobles")
+        process.exit(1)
+    }
+    let lineas= texto.split("\n");
+    if (lineas[lineas.length - 1] === ""){
+        lineas.pop()
+    }
+    
+    const filas = []
+    for (let i = 0; i <lineas.length; i++){
+        filas.push(lineas[i].split(opciones.delimiter))
+    }
+
+    const cantidadDeColumnas = filas.length > 0 ? filas[0].length : 0
+    for (let i= 0; i < filas.length; i++){
+        if (filas[i].length !== cantidadDeColumnas){
+            console.error("ERROR: la fila " + (i + 1) + " tiene una cantidad distinta de campos");
+            process.exit(1);
+        }
+    }
+    let header= null;
+    let rows = filas;
+
+    if (!opciones.noHeader) {
+        header = filas[0];
+        rows= filas.slice(1)
+    }
+
+    for (const criterio of opciones.sortFields) {
+        if (!opciones.noHeader && header.indexOf(criterio.name) === -1) {
+            console.error ("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
+            process.exit(1)
+        }
+    }
+return {header: header, rows: rows};
+}
+
+
+
 console.log(HELP)
