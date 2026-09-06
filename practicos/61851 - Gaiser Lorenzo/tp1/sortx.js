@@ -138,8 +138,23 @@ console.log(uso.sortFields)
 
 filasDatos.sort((a, b) => {
     const c = uso.sortFields[0]
-    
-    return a[c.col].localeCompare(b[c.col], "es")
+    let resultado 
+   
+    if (c.numeric){
+      resultado = Number(a[c.col]) - Number(b[c.col]) ;
+    }else{
+        resultado = a[c.col].localeCompare(b[c.col], "es")
+    }
+
+
+    if (c.descending){
+     resultado = resultado * (-1)
+    }else{
+     
+    }
+    return resultado
+    //return a[c.col].localeCompare(b[c.col], "es")
+
 })
 
 console.log("ORDENADO:", filasDatos)
