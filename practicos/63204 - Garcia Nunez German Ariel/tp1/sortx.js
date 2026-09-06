@@ -36,3 +36,39 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 console.log(HELP)
+
+
+//funciones a realizar:
+//1. parseArgs      → leer los argumentos y construir la configuración
+function parseArgs(args) {
+//validamos que contenfa el help
+if (args.includes('-h') || args.includes('--help|')) {
+    return {
+        showHelp: true
+    }
+}
+//validar que tenga el origen y destino
+const origen = args[0]
+const destino = args[1]
+
+if (!origen || !destino) {
+    throw new Error('faltan datos de origen y/o destino')
+}
+//validar que tenga el delimitador
+
+//corroborar el encabezado
+
+// corroborar el criterio de ordenamiento
+// salida
+
+}
+
+
+
+//2. readInput      → leer el archivo de origen
+//3. parseDelimited → convertir el texto en filas y columnas
+//4. sortRows       → ordenar las filas
+//5. serialize      → reconstruir el texto delimitado
+//6. writeOutput    → escribir el archivo de destino
+
+
