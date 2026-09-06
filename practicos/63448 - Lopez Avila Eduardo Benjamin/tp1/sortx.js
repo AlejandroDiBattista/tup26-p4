@@ -56,9 +56,15 @@ function configuracion() {
 		process.exit(0);
 	}
 	if (argumentos.includes("-d") || argumentos.includes("--delimiter")) {
+		let indexD = argumentos.indexOf("-d");
+		let indexDelimiter = argumentos.indexOf("--delimiter");
+		if (argumentos[indexD + 1] == argumentos[0] || argumentos[indexDelimiter + 1] == argumentos[0]) {
+			console.error("Error: La opción delimitador no recibe su valor.");
+			process.exit(1);
+		}
 		config.delimitador =
-			argumentos[argumentos.indexOf("-d") + 1] ||
-			argumentos[argumentos.indexOf("--delimiter") + 1];
+			argumentos[indexD + 1] ||
+			argumentos[indexDelimiter + 1];
 		if (config.delimitador.startsWith('-')){
 			console.error("Error: La opción delimitador no recibe su valor.");
 			process.exit(1);
@@ -156,6 +162,7 @@ function sortRows(filas, criterios) {
 			const valorA = a[criterio.index];
 			const valorB = b[criterio.index];
 			if (criterio.numeric && (isNaN(Number(valorA)) || isNaN(Number(valorB)))) {
+				console.log("valorA:", valorA, "valorB:", valorB);
 				console.error("Error: un criterio numérico encuentra un valor no numérico.");
 				process.exit(1);
 			}
