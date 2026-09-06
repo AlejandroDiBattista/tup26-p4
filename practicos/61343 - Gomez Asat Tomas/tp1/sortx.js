@@ -38,7 +38,7 @@ EJEMPLOS:
 console.log(HELP)
 
 function error(mensaje) {
-    console.error("Error:", mensaje);
+    console.error("Error:",mensaje);
     process.exit(1);
 }
 if (args.length === 0) {
