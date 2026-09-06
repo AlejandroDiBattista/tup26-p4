@@ -100,7 +100,7 @@ function parseArgs() {
             if (delimiter.length !== 1) {
                 throw new Error("El delimitador debe tener un solo carácter");
             }
-            
+
             i++;
         }
 
@@ -139,7 +139,41 @@ function readInput(inputFile) {
         throw new Error("No se pudo leer el archivo de entrada");
     }
 }
+function parseDelimited(contenido, delimiter, noHeader) {
+    const lineas = contenido.split(/\r?\n/);
+    const filas = [];
+
+    if (lineas.length === 0) {
+        throw new Error("El archivo está vacío");
+    }
+
+    const cantidadCampos = lineas[0].split(delimiter).length;
+
+    for (let i = 0; i < lineas.length; i++) {
+
+        if (lineas[i] === "") {
+            continue;
+        }
+        if (lineas[i].includes('"')) {
+            throw new Error("No se permiten comillas dobles");
+        }
+
+        const fila = lineas[i].split(delimiter);
+        if (fila.length !== cantidadCampos) {
+            throw new Error("Las filas tienen distinta cantidad de campos");
+        }
+
+        filas.push(fila);
+    }
+
+    if (filas.length === 0) {
+        throw new Error("El archivo está vacío");
+    }
+
+    return filas;
+}
+
 const config = parseArgs();
 const contenido = readInput(config.inputFile);
-console.log(config);
-console.log(contenido);
+const filas = parseDelimited(contenido, config.delimiter, config.noHeader);
+console.log(filas);
