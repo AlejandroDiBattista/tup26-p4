@@ -44,7 +44,7 @@ const argumentos = process.argv.slice(2); // array c/argumentos desde el indice 
 const configuracion = parseArgs(argumentos);
 const input = await readInput(configuracion.inputFile);
 const { columnas, filas } = parseDelimited(input, configuracion);
-const output = sortRows(columnas, filas, configuracion.sortfields);
+const output = sortRows(columnas, filas, configuracion.noHeader, configuracion.sortfields);
 
 // Funciones ————————————————————————————————————————————————————————————————————————
 
@@ -96,7 +96,15 @@ function parseArgs(args) {
 
             let [campo, ...modificador] = opciones[i + 1].split(":");
             const nombre = campo === "" ? undefined : campo;
-
+            
+            if (modificador[0] !== undefined && modificador[0] !== "num" && modificador[0] !== "alpha") {
+                console.error("No se puede ordenar por: '" + modificador[0] + "', solo alpha (alfabético) y num (numérico)");
+                process.exit(-1);
+            }
+            if (modificador[1] !== undefined && modificador[1] !== "asc" && modificador[1] !== "desc") {
+                console.error("No se puede ordenar por: '" + modificador[1] + "', solo asc (ascendente) y desc (descendente)");
+                process.exit(-1);
+            }
             if (nombre != undefined) {
                 config.sortfields.push({
                     name: nombre,
@@ -106,6 +114,7 @@ function parseArgs(args) {
             }
             i++;
             continue;
+           
         }
         if (opciones[i] === "-d" || opciones[i] === "--delimiter") {
             const valor = opciones[i + 1];
@@ -182,11 +191,19 @@ function parseDelimited(input, config) {
     return { columnas, filas }
 }
 
-function sortRows(columnas, filas, campos = [{ name: "", numeric: false, descending: false }]) {
-    for (let campo of campos) {
-        console.log(campo);
+function sortRows(columnas, filas, noheader, campos = [{ name: "", numeric: false, descending: false }]) {
+
+    for (let i = 0; i < campos.length; i++) {
+        if (!noheader && !columnas.includes(campos[i].name)) {
+            console.error("No se puede ordenar por este campo, ya que no lo contiene la tabla");
+            process.exit(-1);
+        }
+        console.log(campos[i].numeric);
+
     }
 }
+
+
 
 // function serialize (rows, config)
 // {
