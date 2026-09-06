@@ -96,6 +96,7 @@ function parseArgs(inputConsole){
     if(inputNormalizado.length === 1){
         if (opcionesAyuda.has(inputNormalizado[0].toLowerCase())) {
             console.log(HELP)   
+            process.exit(0)
         }else{
             throw new Error("Opción ingresada incorrecta. Usá --help para ver la sintaxis.");
         }
@@ -233,13 +234,13 @@ function sortRows(tabla, configuracion) {
             indice = parseInt(campo.name, 10);
             //prevencion de errores: no es un nro, es menor que 0 o no existe el indice
             if (isNaN(indice) || indice < 0 || indice >= tabla[0].length) {
-                throw new Error(`El campo solicitado no existe: ${campo.name} parte 1`);
+                throw new Error(`El campo solicitado no existe: ${campo.name}`);
             }
         } else {
             //si hay encabezado, busco en que posicion esta esa palabra
             indice = encabezado.indexOf(campo.name);
             if (indice === -1) {
-                throw new Error(`El campo solicitado no existe: ${campo.name} parte 2`);
+                throw new Error(`El campo solicitado no existe: ${campo.name}`);
             }
         }
         
@@ -307,9 +308,13 @@ function serialize(tabla, configuracion) {
 }
 
 async function writeOutput(texto, configuracion) {
-    //creo el archivo destino, si hay uno lo piso
-    await writeFile(configuracion.outputFile, texto, "utf8");
-    console.log(`Archivo guardado en: ${configuracion.outputFile} existosamente.`);
+    try {
+        //creo el archivo destino, si hay uno lo piso
+        await writeFile(configuracion.outputFile, texto, "utf8");
+        console.log(`Archivo guardado en: ${configuracion.outputFile} existosamente.`);
+    } catch (error) {
+        throw new Error("El archivo de destino no puede escribirse.")
+    }
 }
 
 async function main(){
