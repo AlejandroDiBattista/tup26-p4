@@ -117,9 +117,74 @@ function parseDelimited(texto, config) {
 }
 
 
+function sortRows(filasDeDatos, encabezado, config) {
+
+    let criterios = config.sortFields.map((criterio) => {
+
+        let partes = criterio.split(':')
+
+        let name = partes[0]
+        let tipo = partes[1] || 'alpha'
+        let orden = partes[2] || 'asc'
+        let  numeric = tipo === 'num'
+        let descending = orden === 'desc'
+
+        let index;
+        if (config.noHeader) {
+            index = Number(name)
+        } else {
+            index = encabezado.indexOf(name)
+        }
+
+        return { name, numeric, descending, index}
 
 
+    }); 
+    
+    filasDeDatos.sort((filaA, filaB) => {
 
+        for (let criterio of criterios) {
+
+            let valorA = filaA[criterio.index]
+            let valorB = filaB[criterio.index]
+
+            if (criterio.numeric) {
+                valorA = Number(valorA)
+                valorB = Number(valorB)
+            }
+
+            let resultado;
+
+            if (criterio.numeric) {
+                resultado = valorA - valorB;
+            } else {
+                resultado = valorA.localeCompare(valorB);
+            }
+
+            if (criterio.descending) {
+                resultado = resultado * -1;
+            }
+
+            if (resultado !== 0) {
+                return resultado;
+            }
+
+            
+        }
+        return 0
+        
+        
+    });
+    return filasDeDatos
+
+
+}
+
+let config = parseArgs()
+let texto = readInput(config)
+let resultado = parseDelimited(texto, config)
+let ordenadas = sortRows(resultado.filasDeDatos, resultado.encabezado, config)
+console.log(ordenadas)
 
 
 
