@@ -35,6 +35,7 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 // console.log(HELP);
+import fs from "fs";
 
 function parseArgs() {
     const inputFile = process.argv[2];
@@ -99,7 +100,7 @@ function parseArgs() {
             if (delimiter.length !== 1) {
                 throw new Error("El delimitador debe tener un solo carácter");
             }
-
+            
             i++;
         }
 
@@ -130,5 +131,15 @@ function parseArgs() {
     };
 
 }
+function readInput(inputFile) {
+    try {
+        const contenido = fs.readFileSync(inputFile, "utf8");
+        return contenido;
+    } catch (error) {
+        throw new Error("No se pudo leer el archivo de entrada");
+    }
+}
 const config = parseArgs();
+const contenido = readInput(config.inputFile);
 console.log(config);
+console.log(contenido);
