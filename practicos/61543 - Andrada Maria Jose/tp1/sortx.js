@@ -230,5 +230,5 @@ function writeOutput(outputFile, contenido){
 
 
 
-console.log(HELP)
+
 
