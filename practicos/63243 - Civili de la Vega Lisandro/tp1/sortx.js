@@ -40,13 +40,13 @@ function parseArgs(inputConsole){
     //separo lo que necesito del argumento
     const inputText = inputConsole.slice(2)
 
-    //normalizo quitando espacios y mayusculas
-    const inputNormalizado = inputText.map(str => str.trim().toLowerCase())
+    //normalizo quitando espacios
+    const inputNormalizado = inputText.map(str => str.trim())
     //set con opciones de ayuda, set para que la comparacion sea mas rapida y directa
     const opcionesAyuda = new Set (["--help", "-h"])
-
+   
     //set con extensiones validas para comparar
-    const extensionesValidas = new Set([".csv", ".psv", ".tsv"])
+    const extensionesValidas = new Set([".csv", ".psv", ".tsv", ".txt"])
 
     //variables para guardar nombres de archivos
     let inputFile
@@ -61,20 +61,31 @@ function parseArgs(inputConsole){
         sortFields: []
     };
 
-    //funcion para parsear lo que venga despues de --by o -b
-    function opcionBy(stringOpcionBy){
-        const partes = stringOpcionBy.split(":")
-    
-        const campo = partes[0]
-        const tipo = partes[1] || "text"
-        const orden = partes[2] || "ascending"
-    
+    //funcion para parsear y controlar lo que venga despues de --by o -b
+    function opcionBy(stringOpcionBy) {
+        //si la cadena llega vacía o indefinida, tiro error
+        if (!stringOpcionBy) {
+            throw new Error("Falta el valor para la opción --by.");
+        }
+
+        const partes = stringOpcionBy.split(":");
+        
+        const campo = partes[0].trim();
+        
+        //verifico si el campo esta vacio
+        if (!campo) {
+            throw new Error("Falta especificar el campo por el cual ordenar.");
+        }
+
+        //si no viene las otras opciones asigno por defecto
+        const tipo = partes[1] || "alpha";
+        const orden = partes[2] || "asc";
+
         return {
-            campo: campo,
+            name: campo,
             numeric: tipo === "num",
             descending: orden === "desc"
-    
-        }
+        };
     }
 
     //verifico que el argumento no venga vacio
@@ -83,56 +94,81 @@ function parseArgs(inputConsole){
     }
     
     //si solo es un argumento, debe ser la opcion para ver HELP si o si
-    if(inputNormalizado.length === 1 && opcionesAyuda.has(inputNormalizado[0])){
-        console.log(HELP)   
+    if(inputNormalizado.length === 1){
+        if (opcionesAyuda.has(inputNormalizado[0].toLowerCase())) {
+            console.log(HELP)   
+        }else{
+            throw new Error("Opción ingresada incorrecta. Usá --help para ver la sintaxis.");
+        }
     }else if (inputNormalizado.length < 4) { //si el argumento trae menos de 4 opciones es porque esta incompleto
-        throw new Error("Opción ingresada incompleta. Usá --help para ver la sintaxis.");
+        throw new Error("Opción ingresada incorrecta. Usá --help para ver la sintaxis.");
     }else {
-        //del argumento separo los archivos
-        const archivos = inputNormalizado.slice(0,2)
+        //guardo las 2 primeras posiciones
+        const origen = inputNormalizado[0];
+        const destino = inputNormalizado[1];
 
-        //verifico la extension de los archivos
-        archivos.filter(archivo => {
-            const extension = archivo.slice(-4); 
-            if (extensionesValidas.has(extension)) {
-                if (inputNormalizado[0] === inputNormalizado[1]) {
-                    throw new Error("El archivo origen y destino no pueden llevar mismo nombre.")
-                }else{ //si estan bien las extension guardo en el objeto config
-                    inputFile = inputNormalizado[0]
-                    outputFile = inputNormalizado[1]
-                    config.inputFile = inputFile
-                    config.outputFile = outputFile
-                }
-            }else {
-                throw new Error("Formato de archivo incorrecto. Usá --help para ver la sintaxis")
-            }
-        })
+        //verifico que no falten y que no sean opciones
+        if (!origen || origen.startsWith('-') || !destino || destino.startsWith('-')) {
+            throw new Error("Falta el archivo de origen o destino. Usá --help para ver la sintaxis.");
+        }
 
+        //verifico que no sean el mismo archivo
+        if (origen === destino) {
+            throw new Error("El archivo origen y destino no pueden llevar el mismo nombre.");
+        }
+
+        config.inputFile = origen;
+        config.outputFile = destino;
+
+    
         //bucle para verificar las opciones
         for (let i = 2; i < inputNormalizado.length; i++) {
             if (inputNormalizado[i] === "--by" || inputNormalizado[i] === "-b") {
+                if (!inputNormalizado[i+1] || inputNormalizado[i+1].startsWith("-")) {
+                    throw new Error("Falta un campo para la opcion --by. Usá --help para ver la sintaxis")
+                }
                 const fields = opcionBy(inputNormalizado[i+1])
                 config.sortFields.push(fields)
-            }else if (inputNormalizado[i] === "--help" || inputNormalizado[i] === "-h") {
+                i++
+            }else if (inputNormalizado[i] === "--no-header" || inputNormalizado[i] === "-nh") {
                 config.noHeader = true
+                opcionesIngresadas.add(inputNormalizado[i])
             }else if (inputNormalizado[i] === "--delimiter" || inputNormalizado[i] === "-d") {
-                switch (inputNormalizado[i+1]) {
-                    case '\\t':
-                        config.delimiter = "\t"
-                        break;
-                    case '|':
-                        config.delimiter = "|"
-                        break;
-                    case ';':
-                        config.delimiter = ";"
-                        break;
-                    
+                const proximoValor = inputNormalizado[i + 1];
+
+                //verifico que no este vacio y o que no sea otra opcion
+                if (!proximoValor || proximoValor.startsWith('-')) {
+                    throw new Error("La opción --delimiter no recibió un valor.");
                 }
+
+                //transformo la tabulacion "\\t"
+                let delimitadorFinal = proximoValor;
+                if (delimitadorFinal === '\\t') {
+                    delimitadorFinal = '\t';
+                }
+
+                //verifico que mide 1
+                if (delimitadorFinal.length !== 1) {
+                    throw new Error("El delimitador debe ser un único carácter.");
+                }
+                
+                config.delimiter = delimitadorFinal;
+                opcionesIngresadas.add(inputNormalizado[i]);
+                
+                i++
+            }else{
+                throw new Error(`Opción desconocida: ${inputNormalizado[i]}. Usá --help para ver la sintaxis.`)
             }
+
+
         }
+        //si el array de sortFields sigue vacío, es porque no pasaron ningún -b
+        if (config.sortFields.length === 0) {
+            throw new Error("No se ingresó ningun criterio de ordenamiento. Usá --help para ver la sintaxis");
+        }        
+
         return config
     }   
 }
 
-const arguementoParseado = parseArgs(process.argv)
-console.log(arguementoParseado)
+console.log(parseArgs(process.argv))
