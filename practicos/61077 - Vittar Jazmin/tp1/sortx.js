@@ -103,14 +103,66 @@ function parseDelimited (contenido, delimiter) {
 }
 
 /* FUNCIÓN 4 --> recibir filas y criterios para ordenar */
+function sortRows(filas, args) {
+    if (filas.length === 0) return []
+    let encabezado = null
+    let datos = filas
+
+    if (!args.noHeader) {     // sacar encabezado (si es que hay)
+        encabezado = filas[0]
+        datos = filas.slice(1) // slice copia todo desde la fila 1 en adelante
+    }
+
+    const criterios = args.sortFields.map(function(campo) {       // buscar posición del índice de cada columna a ordenar
+        let indiceColumna = -1
+
+        if (args.noHeader) {
+            indiceColumna = parseInt(campo.name, 10)            // convertir texto a número (ej: "2" a 2)
+        } else {
+            indiceColumna = encabezado.indexOf(campo.name)      // buscar posición en el encabezado
+        }
+
+        return {
+            index: indiceColumna,
+            numeric: campo.numeric,
+            descending: campo.descending
+        }
+    })
+
+    datos.sort(function(filaA, filaB) {             // ordenar lista
+        for (let i = 0; i < criterios.length; i++) {
+            const criterio = criterios[i]
+            let valorA = filaA[criterio.index]
+            let valorB = filaB[criterio.index]
+            let resultado = 0
+
+            if (criterio.numeric) {                 // comparación
+                resultado = Number(valorA) - Number(valorB)
+            } else {
+                resultado = valorA.localeCompare(valorB)
+            }
+
+            if (resultado !== 0) {              // invertir comparación si hay otro orden (ej: descendente)
+                return criterio.descending ? -resultado : resultado
+            }
+        }
+        return 0            // si son iguales en el criterio se pasa al siguiente
+    })
+
+    if (encabezado) {               // se pone encabezado al inicio (si es que hay)
+        return [encabezado, ...datos]
+    }
+
+    return datos
+}
+
 /* FUNCIÓN 5 --> contrario a parseDelimited (convierte array en texto) */
 /* FUNCIÓN 6 --> guardar texto en el archivo pedido */
 
 const args = parseArgs()
-console.log(args)
-console.log(readInput(args.inputFile))
 const contenido = readInput(args.inputFile)
 const filas = parseDelimited(contenido, args.delimiter)
-console.log(filas)
+const filasOrdenadas = sortRows(filas, args)
+console.log(filasOrdenadas)
 
 console.log(HELP)
