@@ -145,6 +145,10 @@ function readInput(config) {
 
 function parseDelimited(text, config) {
 
+    if (text.includes('"')) {
+        throw new Error("No se admiten comillas dobles.");
+    }
+
     let lines = text.split(/\r?\n/);
 
     if (lines.length > 0 && lines[lines.length - 1] === "") {
@@ -174,6 +178,67 @@ function parseDelimited(text, config) {
 
     return { header, rows };
 }
-//function sortRows(){} 
+
+
+function sortRows(parsed, config) {
+    let { header, rows } = parsed;
+
+    let criteria = config.sortFields.map(criterion => {
+        let index;
+
+        if (config.noHeader) {
+            index = Number(criterion.name);
+            if (!Number.isInteger(index) || index < 0) {
+                throw new Error(`Índice de columna no válido: "${criterion.name}".`);
+            }
+        } else {
+            index = header.indexOf(criterion.name);
+        }
+
+        let cantidadColumnas = config.noHeader
+            ? (rows[0] ? rows[0].length : 0)
+            : header.length;
+
+        if (index === -1 || index >= cantidadColumnas) {
+            throw new Error(`El campo "${criterion.name}" no existe.`);
+        }
+
+        return { ...criterion, index };
+    });
+
+    let sorted = [...rows].sort((filaA, filaB) => {
+        for (let criterio of criteria) {
+            let valorA = filaA[criterio.index];
+            let valorB = filaB[criterio.index];
+            let comparacion;
+
+            if (criterio.numeric) {
+                let numA = Number(valorA);
+                let numB = Number(valorB);
+
+                if (Number.isNaN(numA) || Number.isNaN(numB)) {
+                    throw new Error(`Valor incorrecto en la columna "${criterio.name}".`);
+                }
+
+                comparacion = numA - numB;
+            } else {
+                comparacion = valorA.localeCompare(valorB);
+            }
+
+            if (criterio.descending) {
+                comparacion = -comparacion;
+            }
+
+            if (comparacion !== 0) {
+                return comparacion;
+            }
+        }
+        return 0;
+    });
+
+    return { header, rows: sorted };
+}
+
+
 //function serialize() {}
 //function writeOutput(){}
