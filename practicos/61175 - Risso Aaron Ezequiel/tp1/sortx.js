@@ -57,17 +57,9 @@ import fs from "fs";
 const argumentos = [
     "empleados.csv",
     "ordenados.csv",
-    "-d",
-    //"--delimiter",
-    ",",
-    "-nh",
-    //"--noHeader",
-    "-b",
-    //"--by",
-    "salario:num:desc",
-    "-b",
-    //"--by",
-    "apellido"
+    "-d", ",",
+    "-b", "salario:num:desc",
+    "-b", "apellido"
 ]
 
 function ParseCampo(texto){
@@ -91,7 +83,7 @@ function ParseCampo(texto){
 function ParseArg(argumentos){
     let inputFile = null;
     let outFile = null;
-    let delimiter = null;
+    let delimiter = ",";
     let noHeader = false;
     let sortFields = [];
 
@@ -136,18 +128,51 @@ function readInput(texto) {
 }
 }
 
-function parseDelimited(texto, delimiter) {
+function parseDelimited(texto, delimiter, noHeader = false  ) {
     const textoNormalizado = texto.replace(/\r\n/g, "\n");
     const lineas = textoNormalizado.split("\n").filter(linea => linea !== "");
     const filas = lineas.map(linea => linea.split(delimiter));
+   if(noHeader){
+    return  {header:null, rows:filas};
+   }
     const header = filas[0];
     const rows = filas.slice(1);
-
+ 
     return {header,rows};
 }
 
+function PosicionArray(campo,header,noHeader){
+    if(noHeader){
+        return parseInt(campo,10);
+    }
+    return header.indexOf(campo);
+}
+
+function sortRows(rows,sortFields,header,noHeader){
+    const comando = sortFields.map(comando =>({
+        posicion : PosicionArray(comando.name,header,noHeader),
+        numeric : comando.numeric,
+        descending : comando.descending
+    }));
+    
+    return rows.slice().sort((a,b)=>{
+        for(const{posicion,numeric,descending} of comando){
+            const compara = numeric
+            ? Number(a[posicion]) - Number(b[posicion])
+            : a[posicion].localeCompare(b[posicion]);
+            if (compara !== 0) return descending ? -compara : compara;     
+        }
+        return 0;
+    });
+}  
+
 const confi = ParseArg(argumentos);
 const texto = readInput(confi.inputFile);
-const tabla =  parseDelimited(texto,confi.delimiter);
+const tabla =  parseDelimited(texto,confi.delimiter,confi.noHeader);
+const ordenfilas = sortRows(tabla.rows,confi.sortFields,tabla.header,confi.noHeader);
+const tablafinal = {header: tabla.header,
+    rows: ordenfilas
+};
 
-console.log(tabla);
+console.log(tablafinal);
+
