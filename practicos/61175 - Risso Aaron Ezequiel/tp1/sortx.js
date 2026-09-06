@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/* const HELP = `
+ const HELP = `
 
 sortx — Ordena archivos de texto delimitados
 
@@ -32,7 +32,7 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-` */
+` 
 
 // Escribir aqui la solución al enunciado.
 //console.log(HELP)
@@ -88,17 +88,23 @@ function ParseArg(argumentos){
     let delimiter = ",";
     let noHeader = false;
     let sortFields = [];
+    let help = false;
 
 
     let i = 0;
     while(i < argumentos.length){
-       if(!argumentos[i].startsWith("-")){
+        if(argumentos[i] === "-h" || argumentos[i] === "--help"){
+           help = true;
+           i++;
+       }
+       else if(!argumentos[i].startsWith("-")){
         if(inputFile === null){
             inputFile = argumentos[i];
         }
         else if(outFile === null){
             outFile = argumentos[i];
-        } i++
+        } 
+        i++
        }
        else if(argumentos[i] === "-d" || argumentos[i] === "--delimiter"){
            delimiter = argumentos[i + 1];
@@ -117,7 +123,7 @@ function ParseArg(argumentos){
         i++;
        }
     }
-    return{inputFile,outFile,delimiter,noHeader,sortFields}
+    return{inputFile,outFile,delimiter,noHeader,sortFields,help}
 }
 
 //console.log(ParseArg(argumentos));
@@ -127,6 +133,7 @@ function readInput(texto) {
     return fs.readFileSync(texto, "utf-8");
   } catch (error) {
         console.log("No se pudo leer el archivo.");
+        process.exit(1);
 }
 }
 
@@ -183,6 +190,10 @@ function writeOutput(texto,datos){
 }
 
 const confi = ParseArg(argumentos);
+if (confi.help) {
+  console.log(HELP);
+  process.exit(0);
+}
 const texto = readInput(confi.inputFile);
 const tabla =  parseDelimited(texto,confi.delimiter,confi.noHeader);
 const ordenfilas = sortRows(tabla.rows,confi.sortFields,tabla.header,confi.noHeader);
