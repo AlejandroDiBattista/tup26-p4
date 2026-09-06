@@ -75,6 +75,11 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         }
     }else {
         console.log(i , datosUsuarios[i])
+        if(uso.inputFile){
+           uso.outputFile = datosUsuarios[i]
+        }else{
+            uso.inputFile = datosUsuarios[i]
+        }
         }
         }console.log(uso)
 
