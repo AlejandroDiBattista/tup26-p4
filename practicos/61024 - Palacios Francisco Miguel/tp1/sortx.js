@@ -35,6 +35,7 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 // console.log(HELP);
+
 import fs from "fs";
 
 function parseArgs() {
@@ -70,7 +71,6 @@ function parseArgs() {
             if (orden !== "asc" && orden !== "desc") {
                 throw new Error("El orden debe ser asc o desc");
             }
-
             const numeric = tipo === "num";
             const descending = orden === "desc";
             const campo = {
@@ -179,29 +179,89 @@ function sortRows(filas, sortFields, noHeader) {
     if (!noHeader) {
         inicio = 1;
     }
+
     const datos = filas.slice(inicio);
 
     let encabezado = [];
 
-if (!noHeader) {
-    encabezado = filas[0];
-}
-for (let i = 0; i < sortFields.length; i++) {
-    const campo = sortFields[i];
-    let posicion = -1;
+    if (!noHeader) {
+        encabezado = filas[0];
+    }
 
-    if (noHeader) {
-        posicion = Number(campo.name);
-    } else {
-        posicion = encabezado.indexOf(campo.name);
+    for (let i = 0; i < sortFields.length; i++) {
+        const campo = sortFields[i];
+        let posicion = -1;
+
+        if (noHeader) {
+            posicion = Number(campo.name);
+        } else {
+            posicion = encabezado.indexOf(campo.name);
+        }
+
+        if (posicion === -1) {
+            throw new Error("No existe el campo: " + campo.name);
+        }
+
+        campo.position = posicion;
     }
-    if (posicion === -1) {
-    throw new Error("No existe el campo: " + campo.name);
+
+    datos.sort(function(a, b) {
+        for (let i = 0; i < sortFields.length; i++) {
+            const campo = sortFields[i];
+            const posicion = campo.position;
+
+            let resultado = 0;
+
+            if (campo.numeric) {
+                const numeroA = Number(a[posicion]);
+                const numeroB = Number(b[posicion]);
+
+                if (Number.isNaN(numeroA) || Number.isNaN(numeroB)) {
+                    throw new Error("El valor no es numérico");
+                }
+
+                if (numeroA < numeroB) {
+                    resultado = -1;
+                } else if (numeroA > numeroB) {
+                    resultado = 1;
+                }
+            } else {
+                resultado = a[posicion].localeCompare(b[posicion]);
+            }
+
+            if (resultado !== 0) {
+                if (campo.descending) {
+                    resultado = resultado * -1;
+                }
+
+                return resultado;
+            }
+        }
+
+        return 0;
+    });
+
+    if (!noHeader) {
+        return [encabezado, ...datos];
     }
- }
-}
+
+    return datos;
+} 
+    function serialize(filas, delimiter) {
+         let lineas = [];
+        for (let i = 0; i < filas.length; i++) {
+            lineas.push(filas[i].join(delimiter));
+        }
+        return lineas.join("\n");
+    
+    }
+
+
 
 const config = parseArgs();
 const contenido = readInput(config.inputFile);
 const filas = parseDelimited(contenido, config.delimiter, config.noHeader);
-console.log(filas);
+const filasOrdenadas = sortRows(filas, config.sortFields, config.noHeader);
+const texto = serialize(filasOrdenadas, config.delimiter);
+
+console.log(texto);
