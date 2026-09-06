@@ -163,7 +163,7 @@ function sortRows (tabla, header, sortFields) {
 function serialize (tabla, delimiter, noHeader){
     let cabezera = noHeader ? "" : tabla.header.join(delimiter) + "\n";
     let filas = tabla.rows.map(fila => fila.join(delimiter)).join("\n");
-    return cabezera + filas + "\n";
+    return cabezera + filas;
 }
 
 // escribe el archivo de salia
