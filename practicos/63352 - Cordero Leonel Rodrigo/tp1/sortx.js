@@ -151,8 +151,68 @@ function parseDelimited(rawText, config) {
     };
 }
 
+function sortRows(parsedData, config) {
+    const criteria = config.sortFields.map(field => {
+        let colIndex = -1;
+
+        if (config.noHeader) {
+            colIndex = parseInt(field.name, 10);
+            if (isNaN(colIndex) || colIndex < 0 || colIndex >= parsedData.rows[0].length) {
+                console.error(`Error: El campo solicitado '${field.name}' no existe.`);
+                process.exit(1);
+            }
+        } else {
+            colIndex = parsedData.header.indexOf(field.name);
+            if (colIndex === -1) {
+                console.error(`Error: El campo solicitado '${field.name}' no existe.`);
+                process.exit(1);
+            }
+        }
+
+        return { ...field, index: colIndex };
+    });
+
+    for (const crit of criteria) {
+        if (crit.numeric) {
+            for (const row of parsedData.rows) {
+                const value = row[crit.index];
+                if (value.trim() === '' || isNaN(Number(value))) {
+                    console.error(`Error: Un criterio numérico encuentra un valor no numérico '${value}'.`);
+                    process.exit(1);
+                }
+            }
+        }
+    }
+
+    parsedData.rows.sort((rowA, rowB) => {
+        for (const crit of criteria) {
+            const valA = rowA[crit.index];
+            const valB = rowB[crit.index];
+
+            let comparacion = 0;
+
+            if (crit.numeric) {
+                comparacion = Number(valA) - Number(valB);
+            } else {
+                if (valA < valB) comparacion = -1;
+                else if (valA > valB) comparacion = 1;
+                else comparacion = 0;
+            }
+
+            if (comparacion !== 0) {
+                return crit.descending ? -comparacion : comparacion;
+            }
+        }
+
+        return 0; 
+    });
+
+    return parsedData;
+}
+
 const config = parseArgs(process.argv.slice(2));
 const rawText = readInput(config.inputFile);
 const parsedData = parseDelimited(rawText, config);
+const sortedData = sortRows(parsedData, config);
 
 // console.log(HELP)
