@@ -57,9 +57,13 @@ function parseArgs(argumentos){
             opciones.ayuda=true;
         }
         //si pasa el delimitador
-        else if(arg==="-d"||arg==="--delimiter"){
+       else if(arg==="-d"||arg==="--delimiter"){
             i++;
-            opciones.delimiter=argumentos[i];
+        let delim = argumentos[i];
+          if (delim === "\\t") {
+                delim = "\t";
+         }
+            opciones.delimiter = delim;
         }
         //si no tiene encabezado
         else if(arg==="-nh"||arg==="--no-header"){
@@ -187,7 +191,41 @@ function serialize(filas, encabezado=[],delimitador=","){
         lineas.push(fila.join(delimitador));
     }
     // unir todo con saltos de linea y agregamos el salto final
-    return lineas.join("\n") + "\n";
+    return lineas.join("\n");
+}
+//6-writeOutput
+function writeOutput(rutaArc, contenido){
+    try {
+        //intentamos guardar el texto usando utf-8
+        writeFileSync(rutaArc,contenido,"utf-8")
+    } catch (error) {
+        //si no es valido, avisamos y salimos
+       console.error(`Error: no se pudo escribir en el archivo "${rutaArc}".`);
+      process.exit(1);  
+    }
+}
+// Punto de entrada para ejecutar todo
+const args = process.argv.slice(2);
+const config = parseArgs(args);
+
+// Si se pasó -h o --help
+if (config.ayuda) {
+    console.log(HELP.trim());
+    process.exit(0);
 }
 
-console.log(HELP)
+// 1. Lee el archivo de origen
+const textoEntrada = readInput(config.inputFile);
+
+// 2. Parsea el contenido
+const { encabezado, filas } = parseDelimited(textoEntrada, config.delimiter, config.noHeader);
+
+// 3. Ordena las filas
+const filasOrdenadas = sortRows(filas, config.sortFields, encabezado);
+
+// 4. Reconstruye el texto
+const salidaTexto = serialize(filasOrdenadas, encabezado, config.delimiter);
+
+// 5. Escribe el archivo final
+writeOutput(config.outputFile, salidaTexto);
+//console.log(HELP)
