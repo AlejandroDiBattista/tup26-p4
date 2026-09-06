@@ -36,3 +36,41 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 console.log(HELP)
+
+const origen = args[0];
+const destino = args[1];
+console.log("origen:", origen);
+console.log("destino:", destino);
+
+const criterios = [];
+let delimiter = ",";
+let noHeader = false;
+
+for (let i = 2; i < args.length; i++) {
+    const opcion = args[i];
+
+    if (opcion === "-b" || opcion === "--by") {
+        criterios.push(args[i + 1]);
+        i++;
+    } else if (opcion === "-d" || opcion === "--delimiter") {
+        delimiter = args[i + 1];
+
+        if (delimiter === "\\t") {
+            delimiter = "\t";
+        }
+
+        i++;
+    } else if (opcion === "-nh" || opcion === "--no-header") {
+        noHeader = true;
+    } else if (opcion === "-h" || opcion === "--help") {
+        console.log(HELP);
+        process.exit(0);
+    } else {
+        console.error("Error: opción desconocida:", opcion);
+        process.exit(1);
+    }
+}
+
+console.log("Criterios:", criterios);
+console.log("Delimitador:", delimiter);
+console.log("Sin encabezado:", noHeader);
