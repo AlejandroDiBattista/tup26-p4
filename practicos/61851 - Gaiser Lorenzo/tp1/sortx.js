@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import { readFileSync, writeFileSync } from "node:fs"
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -67,7 +67,7 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         if(datosUsuarios[i] === "-d" || datosUsuarios[i] === "--delimiter")
         uso.delimiter = datosUsuarios[i + 1 ]
           if(datosUsuarios[i] === "-b" || datosUsuarios[i] === "--by"){
-            console.log(datosUsuarios[i + 1 ].split(":"))
+           // console.log(datosUsuarios[i + 1 ].split(":"))
            const partes = datosUsuarios[i + 1 ].split(":")
            const criterio = {
             name: partes[0] ,
@@ -94,6 +94,11 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         }
         }
         }console.log(uso)
+
+
+const texto = readFileSync(uso.inputFile, "utf8")
+console.log(texto)
+writeFileSync(uso.outputFile, texto)
 
 
 
