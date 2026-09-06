@@ -96,6 +96,10 @@ function configuracion() {
 		console.error("Error: se indica una opción desconocida."); 
 		process.exit(1);
 	}
+	if (config.criterios.length === 0) {
+		console.error("Error: no se especifica ningún criterio --by."); 
+		process.exit(1);
+	}
 	console.log(config);
 	return config;
 }
