@@ -88,7 +88,13 @@ function configuracion() {
 		config.criterios = crit;
 	}
 	if (!config.input || !config.output || config.input.startsWith('-') || config.output.startsWith('-')) {
-		console.error("Error: falta el archivo de origen o destino."); process.exit(1);
+		console.error("Error: falta el archivo de origen o destino."); 
+		process.exit(1);
+	}
+	const opcionesValidas = ['-b', '--by', '-d', '--delimiter', '-nh', '--no-header', '-h', '--help'];
+	if (argumentos.slice(2).some(a => a.startsWith('-') && !opcionesValidas.includes(a))) {
+		console.error("Error: se indica una opción desconocida."); 
+		process.exit(1);
 	}
 	console.log(config);
 	return config;
