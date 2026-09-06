@@ -175,6 +175,35 @@ const criteriosProcesados = criterios.map(
             );
             process.exit(1);
         }
+let indice;
+        if (tieneHeader) {
+            indice = header.indexOf(campo);
+            if (indice === -1) {
+                console.log(
+                    `Error: no existe la columna "${campo}".`
+                );
+                process.exit(1);
+            }
+        }
+        else {
+            indice = Number(campo);
+            if (
+                !Number.isInteger(indice) ||
+                indice < 0
+            ) {
+                console.log(
+                    "Error: el índice del campo no es válido."
+                );
+                process.exit(1);
+            }
+        }
+        return {
+            indice: indice,
+            tipo: tipo,
+            orden: orden
+        };
+    }
+);
 
 
 console.log(HELP)
