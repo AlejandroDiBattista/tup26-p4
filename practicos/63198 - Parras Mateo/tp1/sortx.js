@@ -248,5 +248,23 @@ function serialize(datos, filasOrdenadas, opciones) {
     return lineas.join("\n");
 }
 
+function writeOutput(ruta, contenido) {
+    try{
+        fs.writeFileSync(ruta, contenido, "utf8");
+    }catch (error){
+        console.error("ERROR: no se puede guardar el archivo: \"" + ruta + "\"")
+        process.exit(1);
+    }
+}
 
-console.log(HELP)
+function main() {
+    const opciones= parseArgs(process.argv.slice(2));
+    const texto= readInput(opciones.inputFile);
+    const datos= parseDelimited(texto, opciones);
+    const filasOrdenadas= sortRows(datos, opciones);
+    const salida= serialize(datos, filasOrdenadas, opciones);
+    writeOutput(opciones.outputFile, salida);
+    console.log("listo se genero \"" + opciones.outputFile + "\".")
+}
+
+main();
