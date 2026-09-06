@@ -41,7 +41,20 @@ EJEMPLOS:
 
 const datosUsuarios = process.argv.slice(2) 
 
-let historial = 0 ; 
+//let historial = 0 ; 
+
+const uso = {
+    
+  inputFile: null ,
+  outputFile: null ,
+  delimiter: ",",
+  noHeader: false , 
+  sortFields: [] ,
+
+}
+
+const usuario = {inputFile: }
+
 
 console.log(datosUsuarios)
 
@@ -58,10 +71,10 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
     }else {
         console.log(i , datosUsuarios[i])
         }
-        }
+        }console.log(uso)
 
 
-   
+
 
 
 
