@@ -226,10 +226,20 @@ function serialize(sortedData, config) {
     return lines.join('\n') + '\n';
 }
 
+function writeOutput(outputFile, finalText) {
+    try {
+        fs.writeFileSync(outputFile, finalText, 'utf8');
+    } catch (error) {
+        console.error(`Error: El archivo de destino '${outputFile}' no puede escribirse.`);
+        process.exit(1);
+    }
+}
+
 const config = parseArgs(process.argv.slice(2));
 const rawText = readInput(config.inputFile);
 const parsedData = parseDelimited(rawText, config);
 const sortedData = sortRows(parsedData, config);
 const finalText = serialize(sortedData, config);
+writeOutput(config.outputFile, finalText);
 
 // console.log(HELP)
