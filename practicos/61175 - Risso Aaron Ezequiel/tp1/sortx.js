@@ -51,6 +51,8 @@ for(let i = 0; i < array.length; i++){
 
  */
 
+import fs from "fs";
+
 const argumentos = [
     "empleados.csv",
     "ordenados.csv",
@@ -123,4 +125,14 @@ function ParseArg(argumentos){
     return{inputFile,outFile,delimiter,noHeader,sortFields}
 }
 
-console.log(ParseArg(argumentos));
+//console.log(ParseArg(argumentos));
+
+function readInput(texto) {
+  try {
+    return fs.readFileSync(texto, "utf-8");
+  } catch (error) {
+        console.log("No se pudo leer el archivo.");
+}
+}
+
+console.log(readInput("empleados.csv"));
