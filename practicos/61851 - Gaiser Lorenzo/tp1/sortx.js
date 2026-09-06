@@ -119,6 +119,21 @@ if(uso.noHeader == false){
 }else {
     filasDatos= tablas
 }
+
   console.log("CABEZA:" , cabeza)
   console.log("DATOS:" , filasDatos)
+
+for (let i = 0; i < uso.sortFields.length; i++) {
+    if (cabeza) {
+        const posicion = cabeza.indexOf(uso.sortFields[i].name)
+        uso.sortFields[i].col = posicion        
+    } else {
+        const posicion = Number(uso.sortFields[i].name)
+        uso.sortFields[i].col = posicion        
+    }
+}
+
+console.log(uso.sortFields)   
+
+
 
