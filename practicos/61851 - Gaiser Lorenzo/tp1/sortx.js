@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { fail } from "node:assert"
 import { readFileSync, writeFileSync } from "node:fs"
 const HELP = `
 
@@ -100,7 +101,7 @@ let texto = readFileSync(uso.inputFile, "utf8")
 texto = texto.replaceAll("\r","") 
 const filas = texto.split("\n").filter(g => g !== "")
 console.log(filas)
-writeFileSync(uso.outputFile, texto)
+//writeFileSync(uso.outputFile, texto)
 
 
 
@@ -142,3 +143,23 @@ filasDatos.sort((a, b) => {
 })
 
 console.log("ORDENADO:", filasDatos)
+
+//cabeza
+
+//const union = [cabeza + filasDatos] 
+//const union = [cabeza, ...filasDatos]
+
+
+let union 
+
+if(cabeza){
+  union = [cabeza, ...filasDatos]
+}else{
+    union = filasDatos
+}
+console.log(union)
+
+const lineas = union.map(fila => fila.join(uso.delimiter))
+const salida = lineas.join("\n")
+console.log(salida)
+writeFileSync(uso.outputFile, salida)
