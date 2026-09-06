@@ -141,6 +141,10 @@ function parseDelimited(text, delimiter, noHeader) {
 function columnasPorCriterio(header, criterios) {
 	return criterios.map((criterio) => {
 		const index = header.indexOf(criterio.name);
+		if (index === -1) { 
+			console.error("Error: el campo solicitado no existe."); 
+			process.exit(1);
+		}
 		return { ...criterio, index };
 	});
 }
