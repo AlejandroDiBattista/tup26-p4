@@ -59,6 +59,10 @@ function configuracion() {
 		config.delimitador =
 			argumentos[argumentos.indexOf("-d") + 1] ||
 			argumentos[argumentos.indexOf("--delimiter") + 1];
+		if (config.delimitador.startsWith('-')){
+			console.error("Error: La opción delimitador no recibe su valor.");
+			process.exit(1);
+		}
 	}
 	if (argumentos.includes("-nh") || argumentos.includes("--no-header")) {
 		config.noHeader = true;
@@ -73,6 +77,10 @@ function configuracion() {
 		});
 		indices.forEach((index) => {
 			const criterio = argumentos[index + 1];
+			if (criterio && criterio.startsWith('-')) {
+				console.error("Error: La opción --by o -b no recibe su valor.");
+				process.exit(1);
+			}
 			if (criterio) {
 				const partes = criterio.split(":");
 				const nombre = partes[0];
@@ -179,3 +187,4 @@ sorteador();
 
 //Notas:
 //Que pasa si un usuario pasa un criterio de columna numerico pero no junto al -nh
+//Si una opcion esta al final y no recibe un valor, se agarra el siguiente en el array, que seria el array[0]
