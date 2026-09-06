@@ -122,11 +122,18 @@ async function readInput(input) {
 
 function parseDelimited(text, delimiter, noHeader) {
 	let tabla = {header: [], filas: []};
+	if (text.includes('"')) { 
+		console.error("Error: la entrada contiene comillas dobles."); 
+		process.exit(1); 
+	}
 	tabla.filas = text.split("\n").map((fila) => fila.split(delimiter));
 	if (noHeader && tabla.filas.length > 0) {
 		tabla.header = tabla.filas[0].map((_, index) => index.toString());
 	} else {
 		tabla.header = tabla.filas.shift();
+	}
+	if (tabla.filas.some(f => f.length !== tabla.header.length)) {
+		console.error("Error: las filas tienen diferente cantidad de campos."); process.exit(1);
 	}
 	return tabla;
 }
@@ -188,7 +195,10 @@ sorteador();
 //2 le pregunte como se lee la cli
 //3 consulte como se utiliza link y como leer el archivo de entrada
 //4 como arreglar el flujo de datos para evitar trabajar con variables globales
+//5 como puedo manejar errores en una funcion asincrona
+//6 como funciona la funcion some()
 
 //Notas:
 //Que pasa si un usuario pasa un criterio de columna numerico pero no junto al -nh
 //Si una opcion esta al final y no recibe un valor, se agarra el siguiente en el array, que seria el array[0]
+//No entiendo cual es al entrada que no debe tener comillas dobles, si es el archivo de entrada o el criterio de ordenamiento
