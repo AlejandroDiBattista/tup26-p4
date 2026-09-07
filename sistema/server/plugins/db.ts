@@ -151,6 +151,11 @@ const runAgendaBaseMigrations = runMigrations(
       CREATE INDEX IF NOT EXISTS idx_course_schedules_owner_course
         ON course_schedules (owner_email, course_id)`,
     },
+    {
+      version: 13,
+      name: "agenda-students-github-collaborator",
+      sql: "ALTER TABLE students ADD COLUMN IF NOT EXISTS es_colaborador INTEGER NOT NULL DEFAULT 0",
+    },
   ],
   { table: "agenda_migrations" },
 );

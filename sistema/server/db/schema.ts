@@ -89,6 +89,7 @@ export const students = table(
     nombre: text("nombre").notNull(),
     telefono: text("telefono"),
     github: text("github"),
+    esColaborador: integer("es_colaborador", { mode: "boolean" }).notNull().default(false),
     ownerEmail: text("owner_email").notNull(),
     createdAt: text("created_at").notNull().default(now()),
     updatedAt: text("updated_at").notNull().default(now()),

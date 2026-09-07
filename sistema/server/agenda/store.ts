@@ -452,6 +452,7 @@ export async function upsertStudent(
     nombre?: string;
     telefono?: string;
     github?: string;
+    esColaborador?: boolean;
     courseId?: string;
   },
 ) {
@@ -459,6 +460,10 @@ export async function upsertStudent(
   if (!legajo) throw new UserInputError("El alumno necesita un legajo.");
   const db = getDb();
   const existing = await findStudentByLegajo(ownerEmail, legajo);
+  const github = input.github === undefined ? existing?.github : normalizeGithub(input.github);
+  if (input.esColaborador && !github) {
+    throw new UserInputError("Para marcar un colaborador hace falta una cuenta de GitHub.");
+  }
 
   let student: Student;
   if (existing) {
@@ -474,7 +479,14 @@ export async function upsertStudent(
       patch.nombre = nombre;
     }
     if (input.telefono !== undefined) patch.telefono = clean(input.telefono) ?? null;
-    if (input.github !== undefined) patch.github = normalizeGithub(input.github) ?? null;
+    if (input.esColaborador !== undefined) patch.esColaborador = input.esColaborador;
+    if (input.github !== undefined) {
+      const github = normalizeGithub(input.github) ?? null;
+      patch.github = github;
+      if (!github || github.toLowerCase() !== existing.github?.toLowerCase()) {
+        patch.esColaborador = false;
+      }
+    }
     await db
       .update(students)
       .set(patch)
@@ -495,6 +507,7 @@ export async function upsertStudent(
       nombre,
       telefono: clean(input.telefono) ?? null,
       github: normalizeGithub(input.github) ?? null,
+      esColaborador: input.esColaborador ?? false,
       ownerEmail,
       createdAt: stamp(),
       updatedAt: stamp(),

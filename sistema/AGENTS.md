@@ -101,6 +101,11 @@ call over one call per student.
 
 - Every practical starts as `pendiente`; other states are `error`, `falla` and
   `presentado`.
+- `upsert-student` accepts optional `esColaborador`. Setting it to `false`
+  marks a student with GitHub as `invitación pendiente` locally; it does not
+  send a GitHub invitation or change repository access. Clicking the GitHub
+  icon in the roster toggles between collaborator (green) and invitation
+  pending (yellow), provided the student has a GitHub account.
 - A parcial is a practical with `graded=true`. Its optional grade is 1–10.
   State and grade are independent; never infer an approval threshold.
 - Justified attendance does not count against the attendance percentage.

@@ -87,6 +87,11 @@ const messages = {
     studentRequiredFieldsWithCourse:
       "Student ID, last name, first name and commission are required.",
     studentSaved: "Student saved.",
+    pendingInvitation: "Invitation pending",
+    markInvitationPending: "Change from collaborator to invitation pending",
+    invitationPendingSaved: "Student marked as invitation pending.",
+    markCollaborator: "Change from invitation pending to collaborator",
+    collaboratorSaved: "Student marked as collaborator.",
     studentDeleted: "Student deleted.",
     studentMoved: "Student moved to another commission.",
     searchStudents: "Search students",

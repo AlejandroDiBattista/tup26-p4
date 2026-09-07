@@ -43,12 +43,13 @@ interface Student {
   nombre: string;
   telefono: string | null;
   github: string | null;
+  esColaborador: boolean;
   clasesPresentes: number;
   course: Course;
 }
 
 type WorkStatus = "pendiente" | "error" | "falla" | "presentado";
-type StudentFilter = "todos" | "sinGithub" | "sinFotos";
+type StudentFilter = "todos" | "invitacionPendiente" | "sinFotos";
 
 interface WorkGrid {
   assessments: Array<{ id: string; title: string }>;
@@ -100,6 +101,42 @@ const STATUS_ICONS: Record<WorkStatus, string> = {
   falla: "🟡",
   presentado: "🟢",
 };
+
+function GithubStatus({ student, onToggle, pending }: {
+  student: Student;
+  onToggle: () => void;
+  pending: boolean;
+}) {
+  const t = useT();
+  const hasAccount = Boolean(student.github?.trim());
+  const label = !hasAccount
+    ? "Sin cuenta de GitHub registrada"
+    : student.esColaborador
+      ? "Colaborador del repositorio en GitHub"
+      : t("agenda.pendingInvitation");
+  const buttonLabel = hasAccount
+    ? t(student.esColaborador ? "agenda.markInvitationPending" : "agenda.markCollaborator")
+    : label;
+  return (
+    <button
+      type="button"
+      title={buttonLabel}
+      aria-label={buttonLabel}
+      disabled={!hasAccount || pending}
+      onClick={onToggle}
+      className="inline-flex shrink-0 rounded-sm p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring enabled:cursor-pointer enabled:hover:bg-muted disabled:cursor-default"
+    >
+      <IconBrandGithub
+        aria-hidden="true"
+        className={cn("size-4", !hasAccount
+          ? "text-red-600 dark:text-red-400"
+          : student.esColaborador
+            ? "text-green-600 dark:text-green-400"
+            : "text-yellow-600 dark:text-yellow-400")}
+      />
+    </button>
+  );
+}
 
 export function StudentsTab({
   courseId,
@@ -164,7 +201,7 @@ export function StudentsTab({
   const studentFilterCounts = useMemo(
     () => ({
       todos: visibleStudents.length,
-      sinGithub: visibleStudents.filter((student) => !student.github?.trim()).length,
+      invitacionPendiente: visibleStudents.filter((student) => Boolean(student.github?.trim()) && !student.esColaborador).length,
       sinFotos: visibleStudents.filter((student) => !studentPhotoUrl(student.legajo)).length,
     }),
     [visibleStudents],
@@ -172,8 +209,8 @@ export function StudentsTab({
 
   const filteredStudents = useMemo(() => {
     if (studentFilter === "todos") return visibleStudents;
-    if (studentFilter === "sinGithub") {
-      return visibleStudents.filter((student) => !student.github?.trim());
+    if (studentFilter === "invitacionPendiente") {
+      return visibleStudents.filter((student) => Boolean(student.github?.trim()) && !student.esColaborador);
     }
     return visibleStudents.filter((student) => !studentPhotoUrl(student.legajo));
   }, [studentFilter, visibleStudents]);
@@ -253,6 +290,18 @@ export function StudentsTab({
           setPendingDelete(null);
           toast.success(t("agenda.studentDeleted"));
         },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  function toggleCollaborator(student: Student) {
+    if (!student.github?.trim() || upsert.isPending) return;
+    const esColaborador = !student.esColaborador;
+    upsert.mutate(
+      { legajo: student.legajo, esColaborador },
+      {
+        onSuccess: () => toast.success(t(esColaborador ? "agenda.collaboratorSaved" : "agenda.invitationPendingSaved")),
         onError: (error) => toast.error(error.message),
       },
     );
@@ -422,7 +471,7 @@ export function StudentsTab({
           {(
             [
               ["todos", "agenda.allStatuses"],
-              ["sinGithub", "agenda.withoutGithub"],
+              ["invitacionPendiente", "agenda.pendingInvitation"],
               ["sinFotos", "agenda.withoutPhotos"],
             ] as const
           ).map(([filter, labelKey]) => {
@@ -502,7 +551,10 @@ export function StudentsTab({
                         emptyText="—"
                       />
                     </dd>
-                    <dt className="text-muted-foreground">{t("agenda.github")}</dt>
+                    <dt className="flex items-center gap-1.5 text-muted-foreground">
+                      <GithubStatus student={student} onToggle={() => toggleCollaborator(student)} pending={upsert.isPending} />
+                      {t("agenda.github")}
+                    </dt>
                     <dd>
                       <InlineEdit
                         value={student.github ?? ""}
@@ -620,9 +672,7 @@ export function StudentsTab({
                       </td>
                       <td className="px-3 py-2">
                         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                          {student.github ? (
-                            <IconBrandGithub aria-hidden="true" className="size-4" />
-                          ) : null}
+                          <GithubStatus student={student} onToggle={() => toggleCollaborator(student)} pending={upsert.isPending} />
                           <InlineEdit
                             value={student.github ?? ""}
                             onSave={(value) => saveField(student, "github", value)}
