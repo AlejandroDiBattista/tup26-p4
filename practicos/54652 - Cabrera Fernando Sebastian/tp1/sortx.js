@@ -74,9 +74,42 @@ function readInput(filePath) {
 const inputData = readInput(inputFile);
 console.log(inputData);
 
+
 function parseDelimited(text,delimiter) {
     const lines = text.split('\n').map(line=> line.trimEnd());
     const parsedData = lines.map(line => line.split(delimiter));
     return parsedData;
 }
 const parsedData = parseDelimited(inputData, delimiter);
+console.log(parsedData);
+
+
+function sortRows(data, sortFields, noHeader) {
+    const header = noHeader ? [] : data[0];
+    const rows = noHeader ? data : data.slice(1);
+    
+    rows.sort((a, b) => {
+        for (let i = 0; i < sortFields.length; i++) {
+            const [field, type = 'alpha', order = 'asc'] = sortFields[i].split(':');
+            const fieldIndex = noHeader ? parseInt(field) : header.indexOf(field);
+            const valorA = a[fieldIndex];
+            const valorB = b[fieldIndex];
+            
+            if(type === "num"){
+                const numA = parseFloat(valorA);
+                const numB = parseFloat(valorB);
+                if(numA < numB) return order === "asc" ? -1 :1;
+                if(numA > numB) return order === "asc" ? 1 :-1;
+            } else {
+               const resultado = valorA.localeCompare(valorB);
+               if (resultado !== 0) return order === "asc" ? resultado : -resultado;
+            }
+        }
+    });
+    return noHeader ? rows : [header, ...rows];
+}
+
+const sortedData= sortRows(parsedData, sortFields,noHeader);
+console.log(sortedData);
+
+
