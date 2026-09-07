@@ -36,6 +36,8 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 
+import fs from "node:fs"
+
 const fail = (message) => {
   throw new Error(message)
 }
@@ -138,6 +140,36 @@ const parseArgs = (args) => {
   return config
 }
 
+const readInput = (inputFile) => {
+  try {
+    return fs.readFileSync(inputFile, "utf8")
+  } catch (error) {
+    fail(`No se pudo leer el archivo de origen: ${inputFile}`)
+  }
+}
+
+const parseDelimited = (text, delimiter) => {
+  if (text.includes('"')) {
+    fail("La entrada no puede contener comillas dobles.")
+  }
+
+  const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+  const content = normalizedText.endsWith("\n")
+    ? normalizedText.slice(0, -1)
+    : normalizedText
+
+  const rows = content.split("\n").map((line) => line.split(delimiter))
+  const fieldCount = rows[0].length
+
+  rows.forEach((row, index) => {
+    if (row.length !== fieldCount) {
+      fail(`La fila ${index + 1} tiene una cantidad de campos diferente.`)
+    }
+  })
+
+  return rows
+}
+
 const sortx = (args) => {
   const config = parseArgs(args)
 
@@ -145,7 +177,10 @@ const sortx = (args) => {
     return
   }
 
-  console.log(config)
+  const text = readInput(config.inputFile)
+  const rows = parseDelimited(text, config.delimiter)
+
+  console.log(`Entrada válida: ${rows.length} filas leídas.`)
 }
 
 try {
