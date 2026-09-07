@@ -102,6 +102,11 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         }//console.log(uso)
 
 
+ if(uso.inputFile === null || uso.outputFile === null){
+console.error("Falta el archivo para llegar al destino ")
+process.exit(1)
+ }
+
 let texto = readFileSync(uso.inputFile, "utf8")
 texto = texto.replaceAll("\r","") 
 const filas = texto.split("\n").filter(g => g !== "")
