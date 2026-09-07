@@ -163,6 +163,29 @@ function  parseDelimitedFile(text, delimiter, noHeader) {
     // Construccion de filas con datos
     const rows = [];
     for (const line of lines.slice(firstDataLine)) {
-        rows.push()
+        rows.push(line.split(delimiter));
     }
+    
+    // Cantidad de columnas a determinar
+    let columnCount = 0;
+    if (header !== null) {
+        columnCount = header.length;
+    }
+    else if (rows.length > 0) {
+        columnCount = rows[0].length
+    }
+
+    // Valida que todas las filas tengan esa cantidad de campos.
+	for (const [index, row] of rows.entries()) {
+		if (row.length !== columnCount) {
+			throw new Error(
+				"la fila " +
+				(index + 1) +
+				" tiene una cantidad de campos distinta a las demás",
+			);
+		}
+	}
+
+    return { header, rows }
 }
+
