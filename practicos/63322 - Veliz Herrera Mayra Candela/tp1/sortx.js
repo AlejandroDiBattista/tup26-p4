@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'node:fs'
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -138,10 +140,54 @@ function parseArgs(argv) {
   return config
 }
 
+function readInput(inputFile) {
+  try {
+    return readFileSync(inputFile, 'utf8')
+  } catch (err) {
+    mostrarError('No se pudo leer el archivo de origen: ' + inputFile + '.')
+  }
+}
+
+function parseDelimited(text, config) {
+  const lineas = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+  if (lineas.length > 0 && lineas[lineas.length - 1] === '') {
+    lineas.pop()
+  }
+  if (lineas.length === 0) {
+    mostrarError('El archivo de origen esta vacio.')
+  }
+
+  for (let i = 0; i < lineas.length; i += 1) {
+    if (lineas[i].includes('"')) {
+      mostrarError('La entrada contiene comillas dobles, que no estan admitidas.')
+    }
+  }
+
+  const allRows = lineas.map(function (linea) {
+    return linea.split(config.delimiter)
+  })
+  const expected = allRows[0].length
+
+  for (let i = 0; i < allRows.length; i += 1) {
+    if (allRows[i].length !== expected) {
+      mostrarError(
+        'La fila ' + (i + 1) + ' tiene ' + allRows[i].length + ' campos y se esperaban ' + expected + '.'
+      )
+    }
+  }
+
+  if (config.noHeader) {
+    return { header: null, rows: allRows }
+  }
+  return { header: allRows[0], rows: allRows.slice(1) }
+}
+
 function main() {
   try {
     const config = parseArgs(process.argv.slice(2))
-    console.log('Configuracion leida. La lectura de "' + config.inputFile + '" queda pendiente.')
+    const text = readInput(config.inputFile)
+    const parsed = parseDelimited(text, config)
+    console.log('Archivo parseado: ' + parsed.rows.length + ' filas de datos. Aun no se ordena.')
   } catch (err) {
     console.error(err.message)
     process.exit(1)
