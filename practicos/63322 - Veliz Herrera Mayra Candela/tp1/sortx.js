@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 
 const HELP = `
 
@@ -182,12 +182,73 @@ function parseDelimited(text, config) {
   return { header: allRows[0], rows: allRows.slice(1) }
 }
 
+function resolverIndice(field, header) {
+  if (header) {
+    const idx = header.indexOf(field.name)
+    if (idx === -1) {
+      mostrarError('El campo solicitado no existe: "' + field.name + '".')
+    }
+    return idx
+  }
+
+  const idx = Number(field.name)
+  if (Number.isNaN(idx)) {
+    mostrarError('El campo solicitado no existe: "' + field.name + '".')
+  }
+  return idx
+}
+
+function compararValores(a, b, numeric) {
+  if (numeric) {
+    return Number(a) - Number(b)
+  }
+  return String(a).localeCompare(String(b), 'es')
+}
+
+function sortRows(rows, config, header) {
+  const field = config.sortFields[0]
+  const index = resolverIndice(field, header)
+  const copia = rows.slice()
+
+  copia.sort(function (rowA, rowB) {
+    const cmp = compararValores(rowA[index], rowB[index], field.numeric)
+    if (field.descending) {
+      return -cmp
+    }
+    return cmp
+  })
+
+  return copia
+}
+
+function serialize(header, rows, config) {
+  const lineas = []
+  if (header) {
+    lineas.push(header.join(config.delimiter))
+  }
+  for (let i = 0; i < rows.length; i += 1) {
+    lineas.push(rows[i].join(config.delimiter))
+  }
+  return lineas.join('\n') + '\n'
+}
+
+function writeOutput(outputFile, content) {
+  try {
+    writeFileSync(outputFile, content, 'utf8')
+  } catch (err) {
+    mostrarError('No se pudo escribir el archivo de destino: ' + outputFile + '.')
+  }
+}
+
 function main() {
   try {
     const config = parseArgs(process.argv.slice(2))
     const text = readInput(config.inputFile)
     const parsed = parseDelimited(text, config)
-    console.log('Archivo parseado: ' + parsed.rows.length + ' filas de datos. Aun no se ordena.')
+    const sorted = sortRows(parsed.rows, config, parsed.header)
+    const output = serialize(parsed.header, sorted, config)
+    writeOutput(config.outputFile, output)
+    console.log('Resultado escrito en ' + config.outputFile + '.')
   } catch (err) {
     console.error(err.message)
     process.exit(1)
