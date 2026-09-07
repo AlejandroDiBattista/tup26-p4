@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { captureRejectionSymbol } from "node:events";
 import { writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 
