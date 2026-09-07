@@ -34,10 +34,6 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
-
-
 //funciones a realizar:
 //1. parseArgs      → leer los argumentos y construir la configuración
 function parseArgs(args) {
@@ -108,7 +104,7 @@ function readInput(rutadelarchivo) {
     }
 }
 //3. parseDelimited → convertir el texto en filas y columnas
-function parseData(texto, delimiter) {
+function parseDelimited(texto, delimiter) {
     const renglones = texto.split('\n');
     const datosparceados = [];
     for (let i = 0; i < renglones.length; i++) {
@@ -120,8 +116,65 @@ function parseData(texto, delimiter) {
     }
     return datosparceados;
 }
-//4. sortRows       → ordenar las filas
-//5. serialize      → reconstruir el texto delimitado
+// 4. sortRows -> ordenar las filas
+function sortRows(filas, configuracion) {
+    let encabezado = null;
+
+    // A. Separar el encabezado si corresponde
+    if (!configuracion.noHeader && filas.length > 0) {
+        encabezado = filas.shift();
+    }
+
+    // B. Ordenar los datos
+    filas.sort((a, b) => {
+        for (let i = 0; i < configuracion.sortFields.length; i++) {
+            const criterio = configuracion.sortFields[i];
+            
+            // Buscar la columna a comparar
+            let indiceColumna = -1;
+            if (!configuracion.noHeader && encabezado) {
+                indiceColumna = encabezado.indexOf(criterio.name);
+            } else {
+                indiceColumna = parseInt(criterio.name, 10);
+            }
+
+            if (indiceColumna === -1) continue;
+
+            const valorA = a[indiceColumna] || "";
+            const valorB = b[indiceColumna] || "";
+
+            // Comparar según el tipo (numérico o texto)
+            let comparacion = 0;
+            if (criterio.numeric) {
+                comparacion = Number(valorA) - Number(valorB);
+            } else {
+                comparacion = valorA.localeCompare(valorB);
+            }
+
+            // Si hay diferencia, retornamos respetando si es ascendente o descendente
+            if (comparacion !== 0) {
+                return criterio.descending ? -comparacion : comparacion;
+            }
+        }
+        return 0; // Si son iguales, mantiene el orden
+    });
+
+    // C. Volver a colocar el encabezado arriba de todo
+    if (encabezado) {
+        filas.unshift(encabezado);
+    }
+
+    return filas;
+}
+// 5. serialize -> reconstruir el texto delimitado
+function serialize(datosParseados, delimitador) {
+    const lineas = [];
+    for (let i = 0; i < datosParseados.length; i++) {
+        const filaComoTexto = datosParseados[i].join(delimitador);
+        lineas.push(filaComoTexto);
+    }
+    return lineas.join('\n');
+}
 //6. writeOutput    → escribir el archivo de destino
 function writeOutput(rutadelarchivo, contenido) {
     try {
@@ -131,3 +184,27 @@ function writeOutput(rutadelarchivo, contenido) {
     }
 }
 
+
+try {
+    // agarramos lo que el usuario escribió en la consola
+    const argumentosDeConsola = process.argv.slice(2);
+    const configuracion = parseArgs(argumentosDeConsola);
+
+    if (configuracion.showHelp) {
+        console.log(HELP);
+        process.exit(0);
+    }
+
+    const textoCrudo = readInput(configuracion.inputFile);
+    const datosDesarmados = parseDelimited(textoCrudo, configuracion.delimiter);
+    const datosOrdenados = sortRows(datosDesarmados, configuracion);
+    const textoFinal = serialize(datosOrdenados, configuracion.delimiter);
+    
+    writeOutput(configuracion.outputFile, textoFinal);
+
+    console.log(`✅ ¡Éxito! Archivo ordenado y guardado en: ${configuracion.outputFile}`);
+
+} catch (error) {
+    console.error(error.message);
+    process.exit(1);
+}
