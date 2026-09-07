@@ -285,3 +285,23 @@ function sortRows(filas, args) {
 
     return registros
 }
+
+//función 5: serialize → reconstruir el texto delimitado
+
+function serialize(filas, delimiter) {
+    const resultado = filas.map(fila => fila.join(delimiter))
+
+    return resultado.join("\n")
+}
+
+// función 6: writeOutput → escribir el archivo de destino
+
+function writeOutput(outputFile, contenido) {
+    try {
+        fs.writeFileSync(outputFile, contenido, 'utf-8')
+        return true
+    } catch (error) {
+        console.error('error: no se pudo escribir el archivo de destino.')
+        process.exit(1)
+    }
+}
