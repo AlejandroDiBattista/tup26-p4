@@ -44,6 +44,8 @@ const configuracion = parseArgs(argumentos);
 const input = await readInput(configuracion.inputFile);
 const { columnas, filas } = parseDelimited(input, configuracion);
 const output = sortRows(columnas, filas, configuracion.noHeader, configuracion.sortfields);
+const salidaTexto = serialize(columnas, output, configuracion.noHeader, configuracion.delimiter);
+await writeOutput(configuracion.outputFile, salidaTexto);
 
 // Funciones ————————————————————————————————————————————————————————————————————————
 
@@ -256,17 +258,18 @@ function sortRows(columnas, filas, noheader, campos = []) {
     });
     return filas;
 }
+function serialize(columnas, output, noHeader, delimiter) {
+    let lineasSalida = [];
+    if (noHeader === false) {
+        lineasSalida.push(columnas.join(delimiter));
+    }
+    for (let i = 0; i < output.length; i++) {
+        lineasSalida.push(output[i].join(delimiter));
+    }
 
-let lineasSalida = [];
-if (configuracion.noHeader === false) {
-    lineasSalida.push(columnas.join(configuracion.delimiter));
+    const contenidoFinal = lineasSalida.join("\n");
+    return contenidoFinal;
 }
-for (let i = 0; i < output.length; i++) {
-    lineasSalida.push(output[i].join(configuracion.delimiter));
-}
-
-const contenidoFinal = lineasSalida.join("\n");
-await writeOutput(configuracion.outputFile, contenidoFinal);
 
 async function writeOutput(destino, texto) {
     try {
