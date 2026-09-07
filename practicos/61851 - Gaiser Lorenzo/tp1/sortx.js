@@ -147,13 +147,20 @@ if(uso.noHeader == false){
 for (let i = 0; i < uso.sortFields.length; i++) {
     if (cabeza) {
         const posicion = cabeza.indexOf(uso.sortFields[i].name)
+        if(posicion === -1 ){
+         console.error("campo inexistente")
+         process.exit(1)
+        }
         uso.sortFields[i].col = posicion        
     } else {
         const posicion = Number(uso.sortFields[i].name)
+        if(Number.isNaN(posicion)){
+         cosnole.error("columna no valida ")
+         process.exit(1)
+        }
         uso.sortFields[i].col = posicion        
     }
 }
-
 //console.log(uso.sortFields)   
 
 
