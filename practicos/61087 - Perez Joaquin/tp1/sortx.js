@@ -123,19 +123,39 @@ readInput(configuracion.inputFile);
 let data = readInput(configuracion.inputFile);
 console.log(data);
 
+function parseDelimited(data, delimiter) {
+    let filas = data.split('\r\n');
+    let parseData = filas.map(fila => fila.split(delimiter));  
+    return parseData;
+}
+let parseData = parseDelimited(data, configuracion.delimiter);
+console.log(parseData);
+
+
+function sortRows(parseData, configuracion) {
+    let header = [];
+    if (!configuracion.noHeader) {
+        header = parseData.shift();
+    }
+    let columnaIndex = header.indexOf(configuracion.sortFields[0].name);
+    if (columnaIndex === -1) {
+        console.log(`Error: La columna "${configuracion.sortFields[0].name}" no existe en el archivo.`);
+        process.exit(1);
+    }
+
+    let filadata = parseData.sort((a, b) => {
+        let valorA = a[columnaIndex];
+        let valorB = b[columnaIndex];
+        return valorA.localeCompare(valorB);
+    });
+    console.log(filadata);
+}
+sortRows(parseData, configuracion);
 
 
 
 
-
-
-
-
-
-
-
-
-
+//node .\sortx.js empleados.csv ordenados.csv -b apellido
 
 
 
