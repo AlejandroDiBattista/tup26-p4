@@ -184,39 +184,69 @@ function parseDelimited(texto, opciones) {
 }
 
 function sortRows(datos, opciones) {
-    const criterio = opciones.sortFields[0];
-    let indice;
+    const cantidadColumnas = datos.filas.length > 0 ? datos.filas[0].length : 0;
+    const criterios = [];
 
-    if (opciones.noHeader) {
-        indice = Number(criterio.name);
-        if (Number.isNaN(indice)) {
-            console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
-            process.exit(1);
+    for (let i = 0; i < opciones.sortFields.length; i = i + 1) {
+        const criterio = opciones.sortFields[i];
+        let indice;
+
+        if (opciones.noHeader) {
+            indice = Number(criterio.name);
+            if (!Number.isInteger(indice) || String(indice) !== criterio.name) {
+                console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
+                process.exit(1);
+            }
+            if (indice < 0 || indice >= cantidadColumnas) {
+                console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
+                process.exit(1);
+            }
+        } else {
+            indice = datos.encabezado.indexOf(criterio.name);
+            if (indice === -1) {
+                console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
+                process.exit(1);
+            }
         }
-    } else {
-        indice = datos.encabezado.indexOf(criterio.name);
-        if (indice === -1) {
-            console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
-            process.exit(1);
-        }
+
+        criterios.push({
+            name: criterio.name,
+            numeric: criterio.numeric,
+            descending: criterio.descending,
+            indice: indice,
+        });
     }
 
     const filasOrdenadas = datos.filas.slice();
     filasOrdenadas.sort(function (filaA, filaB) {
-        const valorA = filaA[indice];
-        const valorB = filaB[indice];
-        let resultado = 0;
+        for (let i = 0; i < criterios.length; i = i + 1) {
+            const criterio = criterios[i];
+            const valorA = filaA[criterio.indice];
+            const valorB = filaB[criterio.indice];
+            let resultado = 0;
 
-        if (criterio.numeric) {
-            resultado = Number(valorA) - Number(valorB);
-        } else {
-            resultado = String(valorA).localeCompare(String(valorB));
-        }
+            if (criterio.numeric) {
+                const numA = Number(valorA);
+                const numB = Number(valorB);
+                if (opciones.noHeader && (Number.isNaN(numA) || Number.isNaN(numB))) {
+                    const a = Number.isNaN(numA) ? Number.NEGATIVE_INFINITY : numA;
+                    const b = Number.isNaN(numB) ? Number.NEGATIVE_INFINITY : numB;
+                    resultado = a - b;
+                } else {
+                    resultado = numA - numB;
+                }
+            } else {
+                resultado = String(valorA).localeCompare(String(valorB));
+            }
 
-        if (criterio.descending) {
-            resultado = resultado * -1;
+            if (criterio.descending) {
+                resultado = resultado * -1;
+            }
+            if (resultado !== 0) {
+                return resultado;
+            }
         }
-        return resultado;
+        return 0;
     });
 
     return filasOrdenadas;
