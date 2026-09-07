@@ -152,3 +152,60 @@ function parseDelimited(texto, config) {
 
     return { encabezado, filas, cantidadCampos };
 }
+
+function sortRows(datos, config) {
+    const criterios = [];
+
+    for (let i = 0; i < config.sortFields.length; i++) {
+        const campo = config.sortFields[i];
+        let indice;
+
+        if (config.noHeader) {
+            if (!/^\d+$/.test(campo.name)) {
+                throw new Error("Sin encabezado, el campo debe ser un índice desde cero: " + campo.name);
+            }
+            indice = Number(campo.name);
+        } else {
+            indice = datos.encabezado.indexOf(campo.name);
+        }
+
+        if (!Number.isSafeInteger(indice) || indice < 0 || indice >= datos.cantidadCampos) {
+            throw new Error("El campo solicitado no existe: " + campo.name);
+        }
+
+        if (campo.numeric) {
+            for (let j = 0; j < datos.filas.length; j++) {
+                const valor = datos.filas[j][indice];
+                if (valor.trim() === "" || !Number.isFinite(Number(valor))) {
+                    const numeroFila = j + (config.noHeader ? 1 : 2);
+                    throw new Error("Valor no numérico en la fila " + numeroFila +
+                        ", campo " + campo.name + ": " + valor);
+                }
+            }
+        }
+
+        criterios.push({ indice, numeric: campo.numeric, descending: campo.descending });
+    }
+
+    datos.filas.sort(function (filaA, filaB) {
+        for (let i = 0; i < criterios.length; i++) {
+            const criterio = criterios[i];
+            const valorA = filaA[criterio.indice];
+            const valorB = filaB[criterio.indice];
+            let comparacion;
+
+            if (criterio.numeric) {
+                comparacion = Number(valorA) - Number(valorB);
+            } else {
+                comparacion = valorA.localeCompare(valorB, "es");
+            }
+
+            if (comparacion !== 0) {
+                return criterio.descending ? -comparacion : comparacion;
+            }
+        }
+        return 0;
+    });
+
+    return datos;
+}
