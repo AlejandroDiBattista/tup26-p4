@@ -51,10 +51,12 @@ function parseArgs() {
         switch (argumento[i]) {
             case '-d':
             case '--delimiter':
-                if (!delimiter || delimiter.startsWith('-')) {
+                let del = argumento [i + 1] 
+                if (!del || del.startsWith('-')) {
                     console.log("Error: Debe especificar un delimitador después de -d o --delimiter.");
                     process.exit(1);
                 }
+                
                 break;
         }
     }
@@ -90,7 +92,7 @@ function parseArgs() {
                 console.log("Error: Debe especificar un criterio de ordenamiento después de -b o --by.");
                 process.exit(1);
             }
-            console.log("Criterio:", criterio.split(':'));
+            
             sortfields.push({ name: criterio.split(':')[0], numeric: criterio.split(':')[1] === 'num', descending: criterio.split(':')[2] === 'desc' });
 
             break;
@@ -102,7 +104,7 @@ function parseArgs() {
         process.exit(1);
     }
 
-    console.log(sortfields);
+    
 
     const configuracion = {
         inputFile: argumento[0],
@@ -115,7 +117,7 @@ function parseArgs() {
 }
 
 const configuracion = parseArgs();
-console.log(configuracion);
+
 
 
 function readInput(inputFile) {
@@ -123,15 +125,15 @@ function readInput(inputFile) {
 }
 readInput(configuracion.inputFile);
 let data = readInput(configuracion.inputFile);
-console.log(data);
+
 
 function parseDelimited(data, delimiter) {
-    let filas = data.split('\r\n');
+    let filas = data.split(/\r\n|\n/).filter(fila => fila !== '');
     let parseData = filas.map(fila => fila.split(delimiter));  
     return parseData;
 }
 let parseData = parseDelimited(data, configuracion.delimiter);
-console.log(parseData);
+
 
 
 function sortRows(parseData, configuracion) {
@@ -188,7 +190,7 @@ function sortRows(parseData, configuracion) {
                 
 }
 const filasOrdenadas = sortRows(parseData,configuracion)
-console.log(filasOrdenadas)
+
 
 function serialize (filasOrdenadas,delimiter ){
     let lineas = [];
@@ -200,8 +202,15 @@ function serialize (filasOrdenadas,delimiter ){
 }  
 
 let arreglo = serialize(filasOrdenadas,configuracion.delimiter)
-console.log(arreglo)
+
     
+function writeOutput (arreglo,configuracion){
+    let ruta = configuracion.outputFile
+    fs.writeFileSync(configuracion.outputFile,arreglo)
+    
+}
+let ruta= writeOutput(arreglo,configuracion)
+
 
 
 
