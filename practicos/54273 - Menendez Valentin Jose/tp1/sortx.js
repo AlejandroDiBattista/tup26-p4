@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import { readFileSync } from "fs";
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -137,7 +137,62 @@ function parseArgs() {
 
 function main() {
     const args = parseArgs();
-    console.log(args);
+
+    const input = readInput(args.inputFile);
+
+    const result = parseDelimited(input, args);
+
+    console.log(result);
+}
+
+
+function separator(input, args) {
+    return input
+        .split("\n")
+        .map(linea => linea.replaceAll("\r", "").split(args.delimiter));
+}
+
+function readInput(inputFile) {
+    try {
+        return readFileSync(inputFile, "utf-8");
+    } catch (error) {
+        logError(`Error al leer el archivo: ${error.message}`);
+    }
+}
+
+function parseDelimited(input, args) {
+    if (input.includes('"')) {
+        logError("La entrada contiene comillas dobles, lo cual no está admitido");
+    }
+
+    const filas = separator(input, args);
+    const ultima = filas[filas.length - 1];
+
+    if (ultima.length === 1 && ultima[0] === "") {
+        filas.pop();
+    }
+
+    const cantidadCampos = filas[0].length;
+
+    for (const fila of filas) {
+        if (fila.length !== cantidadCampos) {
+            logError("Todas las filas deben tener la misma cantidad de campos");
+        }
+    }
+
+    if (args.noHeader) {
+        return {
+            header: null,
+            rows: filas
+        };
+    }
+
+    const [header, ...rows] = filas;
+
+    return {
+        header,
+        rows
+    };
 }
 
 main();
