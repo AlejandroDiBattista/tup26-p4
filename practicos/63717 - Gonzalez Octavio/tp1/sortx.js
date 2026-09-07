@@ -253,9 +253,27 @@ function sortRows(columnas, filas, noheader, campos = []) {
                 return resultado;
             }
         }
-        return 0; 
+        return 0;
     });
-    console.log(filas);
     return filas;
 }
 
+let lineasSalida = [];
+if (configuracion.noHeader === false) {
+    lineasSalida.push(columnas.join(configuracion.delimiter));
+}
+for (let i = 0; i < output.length; i++) {
+    lineasSalida.push(output[i].join(configuracion.delimiter));
+}
+
+const contenidoFinal = lineasSalida.join("\n");
+await writeOutput(configuracion.outputFile, contenidoFinal);
+
+async function writeOutput(destino, texto) {
+    try {
+        await writeFile(destino, texto, "utf-8");
+    } catch (error) {
+        console.error("Error al escribir el archivo de destino");
+        process.exit(-1);
+    }
+}
