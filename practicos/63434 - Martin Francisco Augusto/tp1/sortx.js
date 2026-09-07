@@ -120,6 +120,10 @@ function parseArgs(argv) {
         console.error("ERROR: falta el archivo de destino");
         process.exit(1);
     }
+    if (restantes.length > 2) {
+        console.error("ERROR: sobran argumentos");
+        process.exit(1);
+    }
     if (opciones.sortFields.length === 0) {
         console.error("ERROR: indique al menos un criterio con --by");
         process.exit(1);
@@ -217,6 +221,22 @@ function sortRows(datos, opciones) {
         });
     }
 
+    if (!opciones.noHeader) {
+        for (let i = 0; i < criterios.length; i = i + 1) {
+            const criterio = criterios[i];
+            if (!criterio.numeric) {
+                continue;
+            }
+            for (let j = 0; j < datos.filas.length; j = j + 1) {
+                const valor = datos.filas[j][criterio.indice];
+                if (Number.isNaN(Number(valor))) {
+                    console.error("ERROR: se encontro un valor no numerico en \"" + criterio.name + "\"");
+                    process.exit(1);
+                }
+            }
+        }
+    }
+
     const filasOrdenadas = datos.filas.slice();
     filasOrdenadas.sort(function (filaA, filaB) {
         for (let i = 0; i < criterios.length; i = i + 1) {
@@ -228,7 +248,11 @@ function sortRows(datos, opciones) {
             if (criterio.numeric) {
                 const numA = Number(valorA);
                 const numB = Number(valorB);
-                if (opciones.noHeader && (Number.isNaN(numA) || Number.isNaN(numB))) {
+                if (Number.isNaN(numA) || Number.isNaN(numB)) {
+                    if (!opciones.noHeader) {
+                        console.error("ERROR: se encontro un valor no numerico en \"" + criterio.name + "\"");
+                        process.exit(1);
+                    }
                     const a = Number.isNaN(numA) ? Number.NEGATIVE_INFINITY : numA;
                     const b = Number.isNaN(numB) ? Number.NEGATIVE_INFINITY : numB;
                     resultado = a - b;
