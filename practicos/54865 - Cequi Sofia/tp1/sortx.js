@@ -246,7 +246,7 @@ function serialize(parsed, config) {
         lineas.push(row.join(config.delimiter));
     }
 
-    return lineas.join("\n") + "\n";
+    return lineas.join("\n");
 }
 
 
