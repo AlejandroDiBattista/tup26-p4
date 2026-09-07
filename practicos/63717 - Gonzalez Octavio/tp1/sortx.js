@@ -96,7 +96,7 @@ function parseArgs(args) {
 
             let [campo, ...modificador] = opciones[i + 1].split(":");
             const nombre = campo === "" ? undefined : campo;
-            
+
             if (modificador[0] !== undefined && modificador[0] !== "num" && modificador[0] !== "alpha") {
                 console.error("No se puede ordenar por: '" + modificador[0] + "', solo alpha (alfabético) y num (numérico)");
                 process.exit(-1);
@@ -114,7 +114,7 @@ function parseArgs(args) {
             }
             i++;
             continue;
-           
+
         }
         if (opciones[i] === "-d" || opciones[i] === "--delimiter") {
             const valor = opciones[i + 1];
@@ -191,23 +191,71 @@ function parseDelimited(input, config) {
     return { columnas, filas }
 }
 
-function sortRows(columnas, filas, noheader, campos = [{ name: "", numeric: false, descending: false }]) {
+function sortRows(columnas, filas, noheader, campos = []) {
 
     for (let i = 0; i < campos.length; i++) {
-        if (!noheader && !columnas.includes(campos[i].name)) {
-            console.error("No se puede ordenar por este campo, ya que no lo contiene la tabla");
-            process.exit(-1);
+        const campo = campos[i];
+        if (noheader == false) {
+            if (!columnas.includes(campo.name)) {
+                console.error("No se puede ordenar por este campo, ya que no lo contiene la tabla");
+                process.exit(-1);
+            }
+            campo.indice = columnas.indexOf(campo.name);
+        } else {
+            campo.indice = Number(campo.name);
+            if (Number.isNaN(campo.indice)
+                || campo.indice < 0
+                || (filas.length > 0 && campo.indice >= filas[0].length)) {
+                console.error("Indice no valido");
+                process.exit(-1);
+            }
         }
-        console.log(campos[i].numeric);
-
     }
+
+    filas.sort((a, b) => {
+        for (let i = 0; i < campos.length; i++) {
+            const campo = campos[i];
+            const indice = campo.indice;
+            let resultado = 0;
+
+
+            if (campo.numeric == true) {
+                const colA = Number(a[indice]);
+                const colB = Number(b[indice]);
+                if (campo.descending == true) {
+                    if (colA < colB) resultado = 1;
+                    else if (colA > colB) resultado = -1;
+                    else resultado = 0;
+                } else {
+                    if (colA < colB) resultado = -1;
+                    else if (colA > colB) resultado = 1;
+                    else resultado = 0;
+                }
+            }
+
+            // Comparación Alfabética
+            else {
+                const colA = a[indice] ?? "";
+                const colB = b[indice] ?? "";
+                const comp = colA.localeCompare(colB, "es");
+                if (campo.descending == true) {
+                    if (comp < 0) resultado = 1;
+                    else if (comp > 0) resultado = -1;
+                    else resultado = 0;
+                } else {
+                    if (comp < 0) resultado = -1;
+                    else if (comp > 0) resultado = 1;
+                    else resultado = 0;
+                }
+            }
+
+            if (resultado !== 0) {
+                return resultado;
+            }
+        }
+        return 0; 
+    });
+    console.log(filas);
+    return filas;
 }
 
-
-
-// function serialize (rows, config)
-// {
-
-// }
-// function writeOutput (output, config)
-// {}
