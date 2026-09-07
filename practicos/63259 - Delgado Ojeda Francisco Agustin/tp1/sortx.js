@@ -269,3 +269,24 @@ function writeOutput(filePath, content) {
         throw new Error(`No se pudo escribir el archivo de destino: "${filePath}"`)
     }
 }
+
+function main() {
+    try {
+        const config = parseArgs(process.argv.slice(2))
+        const input = readInput(config.inputFile)
+        const rows = parseDelimited(input, config.delimiter)
+        const sortedRows = sortRows(
+            rows,
+            config.sortFields,
+            config.noHeader
+        )
+        const output = serialize(sortedRows, config.delimiter)
+
+        writeOutput(config.outputFile, output)
+    } catch (error) {
+        console.error(`Error: ${error.message}`)
+        process.exitCode = 1
+    }
+}
+
+main()
