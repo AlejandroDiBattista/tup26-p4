@@ -36,6 +36,8 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 
+import fs from "fs"
+
 function parseSortField(valor) {
     const partes = valor.split(":")
     const nombre = partes[0]
@@ -48,7 +50,6 @@ function parseSortField(valor) {
         descending: orden === "desc"
     }
 }
-
 
 function parseArgs(arg) {
     let configuracion = {
@@ -98,4 +99,17 @@ function parseArgs(arg) {
 
     return configuracion
 }
-console.log(parseArgs(process.argv.slice(2)))
+
+function readInput(inputFile) {
+    try {
+        const contenido = fs.readFileSync(inputFile, "utf8")
+        return contenido
+    } catch {
+        console.error(`Error: no se pudo leer el archivo "${inputFile}".`)
+        process.exit(1)
+    }
+}
+
+const config = parseArgs(process.argv.slice(2))
+const texto = readInput(config.inputFile)
+console.log(texto)
