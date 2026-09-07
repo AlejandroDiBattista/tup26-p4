@@ -182,7 +182,7 @@ function parseDelimited(text, config) {
   return { header: allRows[0], rows: allRows.slice(1) }
 }
 
-function resolverIndice(field, header) {
+function resolverIndice(field, header, columnCount) {
   if (header) {
     const idx = header.indexOf(field.name)
     if (idx === -1) {
@@ -191,8 +191,12 @@ function resolverIndice(field, header) {
     return idx
   }
 
+  if (!/^\d+$/.test(field.name)) {
+    mostrarError('El campo solicitado no existe: "' + field.name + '".')
+  }
+
   const idx = Number(field.name)
-  if (Number.isNaN(idx)) {
+  if (idx < 0 || idx >= columnCount) {
     mostrarError('El campo solicitado no existe: "' + field.name + '".')
   }
   return idx
@@ -200,24 +204,40 @@ function resolverIndice(field, header) {
 
 function compararValores(a, b, numeric) {
   if (numeric) {
-    return Number(a) - Number(b)
+    const numA = Number(a)
+    const numB = Number(b)
+    const izq = Number.isNaN(numA) ? Number.NEGATIVE_INFINITY : numA
+    const der = Number.isNaN(numB) ? Number.NEGATIVE_INFINITY : numB
+    return izq - der
   }
   return String(a).localeCompare(String(b), 'es')
 }
 
 function sortRows(rows, config, header) {
-  const field = config.sortFields[0]
-  const index = resolverIndice(field, header)
+  const columnCount = header ? header.length : rows.length > 0 ? rows[0].length : 0
+  const fields = []
+
+  for (let i = 0; i < config.sortFields.length; i += 1) {
+    const field = config.sortFields[i]
+    fields.push({
+      name: field.name,
+      numeric: field.numeric,
+      descending: field.descending,
+      index: resolverIndice(field, header, columnCount),
+    })
+  }
+
   const copia = rows.slice()
-
   copia.sort(function (rowA, rowB) {
-    const cmp = compararValores(rowA[index], rowB[index], field.numeric)
-    if (field.descending) {
-      return -cmp
+    for (let i = 0; i < fields.length; i += 1) {
+      const field = fields[i]
+      const cmp = compararValores(rowA[field.index], rowB[field.index], field.numeric)
+      if (cmp !== 0) {
+        return field.descending ? -cmp : cmp
+      }
     }
-    return cmp
+    return 0
   })
-
   return copia
 }
 
