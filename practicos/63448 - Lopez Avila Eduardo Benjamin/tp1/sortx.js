@@ -56,17 +56,20 @@ function configuracion() {
 		process.exit(0);
 	}
 	if (argumentos.includes("-d") || argumentos.includes("--delimiter")) {
-		let indexD = argumentos.indexOf("-d");
-		let indexDelimiter = argumentos.indexOf("--delimiter");
-		if (argumentos[indexD + 1] == argumentos[0] || argumentos[indexDelimiter + 1] == argumentos[0]) {
-			console.error("Error: La opción delimitador no recibe su valor.");
+		const indexD = argumentos.indexOf("-d");
+		const indexDelimiter = argumentos.indexOf("--delimiter");
+
+		const index = indexD !== -1 ? indexD : indexDelimiter;
+
+		if (index + 1 >= argumentos.length) {
+			console.error("Error: la opción delimitador no recibe su valor.");
 			process.exit(1);
 		}
-		config.delimitador =
-			argumentos[indexD + 1] ||
-			argumentos[indexDelimiter + 1];
-		if (config.delimitador.startsWith('-')){
-			console.error("Error: La opción delimitador no recibe su valor.");
+
+		config.delimitador = argumentos[index + 1];
+
+		if (config.delimitador.startsWith("-")) {
+			console.error("Error: la opción delimitador no recibe su valor.");
 			process.exit(1);
 		}
 	}
@@ -114,8 +117,12 @@ function configuracion() {
 		console.error("Error: no se especifica ningún criterio --by."); 
 		process.exit(1);
 	}
-	if (config.delimitador.replace('\\t', '\t').length !== 1) {
-		console.error("Error: el delimitador no es un único carácter."); process.exit(1);
+	if (config.delimitador === '\\t') {
+		config.delimitador = '\t';
+	}
+	if (config.delimitador.length !== 1) {
+		console.error("Error: el delimitador no es un único carácter.");
+		process.exit(1);
 	}
 	return config;
 }
@@ -216,4 +223,4 @@ sorteador();
 //Notas:
 //Que pasa si un usuario pasa un criterio de columna numerico pero no junto al -nh
 //Si una opcion esta al final y no recibe un valor, se agarra el siguiente en el array, que seria el array[0]
-//No entiendo cual es al entrada que no debe tener comillas dobles, si es el archivo de entrada o el criterio de ordenamiento
+//No entiendo cual es al entrada que no debe tener comillas dobles, si es el archivo de entrada o el criterio de ordenamiento. Supongo que el archivo
