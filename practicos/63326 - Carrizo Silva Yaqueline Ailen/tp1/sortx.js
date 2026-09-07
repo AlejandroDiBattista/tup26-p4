@@ -209,3 +209,12 @@ function sortRows(filas, configuracion){
     }
     return datos;
 }
+function serialize(filas, delimitador){
+    let lineas = filas.map(fila =>fila.join(delimitador));
+    //unir las filas usando saltos de linea
+    return lineas.join("\n");
+}
+
+function writeOutput(texto,archivo){
+    fs.writeFileSync(archivo, texto, "utf-8");
+}
