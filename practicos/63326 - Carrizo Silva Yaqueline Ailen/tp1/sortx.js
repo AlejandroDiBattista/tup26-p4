@@ -126,3 +126,26 @@ import fs from "fs";
     return objeto;
 
 }
+function readInput(configuracion){
+    return fs.readFileSync(configuracion.inputFile, "utf8");
+}
+
+function parseDelimited(texto, delimitador){
+    if (texto.includes('"')){
+        throw new Error("La entrada no puede contener comillas dobles.")
+    } 
+
+    let filas = texto.trim().split(/\r?\n/);
+
+    let resultado = filas.map(fila => fila.split(delimitador));
+
+    let cantidadCampos = resultado[0].length;
+
+    for(let i = 1; i < resultado.length; i++){
+        if (resultado[i].length !== cantidadCampos) {
+            throw new Error ("Las filas tienen dif. cantidad de campos.");
+        }
+    }
+
+    return resultado;
+}
