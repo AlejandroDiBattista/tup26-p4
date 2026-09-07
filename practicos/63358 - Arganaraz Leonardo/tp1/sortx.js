@@ -20,7 +20,7 @@ OPCIONES:
 
     -d, --delimiter <c> Delimitador de un solo carácter.
                         Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+                        Usá "\\t" para archivos separados por tabulaciones.
 
     -nh, --no-header    Indica que el archivo no tiene encabezado.
                         Los campos se identifican mediante índices desde cero.
@@ -32,7 +32,7 @@ EJEMPLOS:
     sortx empleados.csv salarios.csv -b salario:num:desc
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
+    sortx datos.tsv salida.tsv -d "\\t" -b nombre
 `
 
 // Escribir aqui la solución al enunciado.
@@ -261,6 +261,11 @@ function writeOutput(filename, text) {
 
 try {
     const config = parseArgs(process.argv.slice(2));
+
+    if (config.help) {
+        console.log(HELP);
+        process.exit(0);
+    }
 
     const text = readInput(config.inputFile);
 
