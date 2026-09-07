@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { readFileSync } from "node:fs";
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -116,10 +118,51 @@ function resolveDelimiter(text) {
     return text;
 }
 
-// Algo temporal para prueba tecnica
+function readFile(path) {
+    try {
+        return readFileSync(path, "utf8");
+    } catch (error) {
+        throw new Error('no se pudo leer el archivo: "' + path + '"');
+    }
 
-const argv = [];
-for (let index = 2; index < process.argv.length; index++) {
-	argv.push(process.argv[index]);
 }
-console.log(parseArgs(argv));
+
+function  parseDelimitedFile(text, delimiter, noHeader) {
+    // Normalizacion del texto para distintos sistemas operativos
+    const normalized = text.split("\r\n").join("\n");
+    const allLines = normalized.split("\n");
+    
+    // Limpiar ultima linea vacia
+    let lineCount = allLines.length;
+    if (lineCount > 0 && allLines[lineCount - 1] === "") {
+        lineCount--;
+    }
+    
+    const lines = [];
+
+    for (const line of allLines.slice(0, lineCount)) {
+        lines.push(line);
+    }
+    
+    // No se permiten comillas dobles en el archivo
+    // throw new Error("No se permiten comillas dobles");
+    for (const line of lines) {
+        if (line.includes('"')) {
+            throw new Error("No se permiten comillas dobles");
+        }
+    }
+
+    // Validacion del no header
+    let header = null;
+    let firstDataLine = 0;
+    if (!noHeader) {
+        header = lines[0].split(delimiter);
+        firstDataLine = 1;
+    }
+    
+    // Construccion de filas con datos
+    const rows = [];
+    for (const line of lines.slice(firstDataLine)) {
+        rows.push()
+    }
+}
