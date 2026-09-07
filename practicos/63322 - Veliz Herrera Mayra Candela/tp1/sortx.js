@@ -227,6 +227,22 @@ function sortRows(rows, config, header) {
     })
   }
 
+  if (header) {
+    for (let i = 0; i < fields.length; i += 1) {
+      const field = fields[i]
+      if (!field.numeric) {
+        continue
+      }
+      for (let j = 0; j < rows.length; j += 1) {
+        const raw = rows[j][field.index]
+        const texto = raw === undefined ? '' : String(raw).trim()
+        if (texto === '' || Number.isNaN(Number(texto))) {
+          mostrarError('Valor no numerico "' + raw + '" en el campo "' + field.name + '".')
+        }
+      }
+    }
+  }
+
   const copia = rows.slice()
   copia.sort(function (rowA, rowB) {
     for (let i = 0; i < fields.length; i += 1) {
