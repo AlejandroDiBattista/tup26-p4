@@ -40,6 +40,16 @@ const fail = (message) => {
   throw new Error(message)
 }
 
+const parseDelimiter = (value) => {
+  const delimiter = value === "\\t" ? "\t" : value
+
+  if (delimiter.length !== 1) {
+    fail("El delimitador debe ser un unico caracter.")
+  }
+
+  return delimiter
+}
+
 const parseSortField = (value) => {
   const parts = value.split(":")
 
@@ -86,12 +96,23 @@ const parseArgs = (args) => {
     if (arg === "-b" || arg === "--by") {
       const value = args[index + 1]
 
-      if (!value) {
+      if (!value || value.startsWith("-")) {
         fail(`La opción ${arg} necesita un valor.`)
       }
 
       config.sortFields.push(parseSortField(value))
       index += 1
+    } else if (arg === "-d" || arg === "--delimiter") {
+      const value = args[index + 1]
+
+      if (!value || value.startsWith("-")) {
+        fail(`La opción ${arg} necesita un valor.`)
+      }
+
+      config.delimiter = parseDelimiter(value)
+      index += 1
+    } else if (arg === "-nh" || arg === "--no-header") {
+      config.noHeader = true
     } else if (arg.startsWith("-")) {
       fail(`Opción desconocida: ${arg}`)
     } else {
