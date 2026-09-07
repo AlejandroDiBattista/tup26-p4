@@ -35,4 +35,101 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+// función 1: leer args y construir config
+
+function parseArgs() {
+    if (process.argv.includes('-h') || process.argv.includes('--help')) {
+        console.log(HELP)
+        process.exit(0)
+    }
+
+    const inputFile = process.argv[2]
+    const outputFile = process.argv[3]
+
+    if (inputFile === undefined || outputFile === undefined) {
+        console.error('Error: Debe especificar un archivo de origen y un archivo de destino.')
+        process.exit(1)
+    }
+
+    let delimiter = ','
+    let noHeader = false
+    let sortFields = []
+
+    for (let i = 4; i < process.argv.length; i++) {
+        const option = process.argv[i]
+        if (option === '-d' || option === '--delimiter') {
+            if (i + 1 >= process.argv.length) {
+                console.error('error: la opción -d requiere un argumento.')
+                process.exit(1)
+            }
+            delimiter = process.argv[++i]
+
+            if (delimiter === '\\t') {
+                delimiter = '\t'
+            }
+
+            if (delimiter.length !== 1) {
+                console.error('error: el delimitador debe ser un solo carácter.')
+                process.exit(1)
+            }
+
+        } else if (option === '-nh' || option === '--no-header') {
+            noHeader = true
+        } else if (option === '-b' || option === '--by') {
+            if (i + 1 >= process.argv.length) {
+                console.error('error: la opción -b requiere un argumento.')
+                process.exit(1)
+            }
+
+            const criterio = process.argv[++i]
+            const partes = criterio.split(':')
+
+            if (partes.length > 3) {
+                console.error('error: el criterio de ordenamiento tiene un formato inválido.')
+                process.exit(1)
+            }
+
+            const nombre = partes[0]
+
+            if (!nombre) {
+                console.error('error: el criterio de ordenamiento debe especificar un campo.')
+                process.exit(1)
+            }
+
+            if (partes[1] !== undefined && partes[1] !== 'alpha' && partes[1] !== 'num') {
+                console.error('error: el tipo de ordenamiento debe ser "alpha" o "num".')
+                process.exit(1)
+            }
+
+            if (partes[2] !== undefined && partes[2] !== 'asc' && partes[2] !== 'desc') {
+                console.error('error: el orden de ordenamiento debe ser "asc" o "desc".')
+                process.exit(1)
+            }
+
+            const numeric = partes[1] === 'num'
+            const descending = partes[2] === 'desc'
+
+            sortFields.push({
+                name: nombre,
+                numeric: numeric,
+                descending: descending
+            })
+        }    else {
+            console.error(`error: opción desconocida "${option}".`)
+            process.exit(1)
+        }
+    }
+    if (sortFields.length === 0) {
+        console.error('error: debe especificar al menos un criterio de ordenamiento con -b.')
+        process.exit(1)
+    }
+
+    return {
+        inputFile,
+        outputFile,
+        delimiter,
+        noHeader,
+        sortFields
+    }
+}
