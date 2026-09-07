@@ -36,11 +36,37 @@ sortx — Ordena archivos de texto delimitados
 
 // Escribir aqui la solución al enunciado.
 
+import fs from 'node:fs';
 
 let argumento= process.argv.slice(2)
 
 function parseArgs() {
+    
     let sortfields = []
+
+    let delimiter = ',';
+    for (let i = 0; i < argumento.length; i++) {
+        switch (argumento[i]) {
+            case '-d':
+            case '--delimiter':
+                if (!delimiter || delimiter.startsWith('-')) {
+                    console.log("Error: Debe especificar un delimitador después de -d o --delimiter.");
+                    process.exit(1);
+                }
+                break;
+        }
+    }
+
+    let noHeader = false;
+    for (let i = 0; i < argumento.length; i++) {
+        switch (argumento[i]) {
+            case '-nh':
+            case '--no-header':
+                noHeader = true;
+                break;
+        }
+    }
+
     if (argumento.includes('-h') || argumento.includes('--help')) {
         console.log(HELP);
         process.exit(0);
@@ -73,23 +99,29 @@ function parseArgs() {
         console.log("Error: Debe especificar al menos un criterio de ordenamiento");
         process.exit(1);
     }
+
     console.log(sortfields);
+
     const configuracion = {
         inputFile: argumento[0],
         outputFile: argumento[1],
-        delimiter: ',',
-        noHeader: false,
+        delimiter: delimiter,
+        noHeader: noHeader,
         sortFields: sortfields
     }
     return configuracion;
 }
+
 const configuracion = parseArgs();
 console.log(configuracion);
 
 
-
-
-
+function readInput(inputFile) {
+    return fs.readFileSync(inputFile, 'utf8');
+}
+readInput(configuracion.inputFile);
+let data = readInput(configuracion.inputFile);
+console.log(data);
 
 
 
