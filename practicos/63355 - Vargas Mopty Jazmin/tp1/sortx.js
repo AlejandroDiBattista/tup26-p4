@@ -35,4 +35,37 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+const fs = import("fs")
+
+const showError = (message) => {
+  console.error(`Error: ${message}`)
+  process.exit(1)
+}
+const parseArgs = (args) => {
+  if (args.includes("-h") || args.includes("--help")) {
+    console.log(HELP)
+    process.exit(0)
+
+  }
+
+  if (args.length < 2) {
+    showError("Falta el archivo de origen o destino.")
+  }
+
+  const config = {
+    inputFile: args[0],
+    outputFile: args[1],
+    delimiter: ",",
+    noHeader: false,
+    sortFields: []
+  }
+
+  return config
+}
+const sortx = (args) => {
+  const config = parseArgs(args)
+  console.log(config)
+}
+
+sortx(process.argv.slice(2))
