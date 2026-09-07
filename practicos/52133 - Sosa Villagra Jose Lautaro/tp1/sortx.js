@@ -92,21 +92,13 @@ function parseArgs(argv){
 }
 
 function parseSortArguments(sortFields){
-    const fields = sortFields.split(":");
-
-    // Valores por defecto 
-    let type = "alpha";
-    let direction = "asc";
-    
-    if (fields.length > 1) type = fields[1];
-    
-    if (fields.length > 2) direction = fields[2];
-    
+    const [ name, type = "alpha", direction = "asc" ] = sortFields.split(":");
+        
     // campo:tipo:orden
     // salario:num:desc
     // { name: "salario", numeric: true, descending: true }
     return  {
-        name: fields[0], 
+        name,
         numeric: type === "num", 
         descending: direction === "desc"
     }
