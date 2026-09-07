@@ -66,6 +66,9 @@ function shiftValue(opcion, flag) {
 function handleCriterios(opcion) {
     const [name, tipo = 'alpha', orden = 'asc'] = opcion.split(':');
 
+    if (!name) {
+    logError("El criterio de ordenamiento no puede estar vacío");
+    }
     if (!['alpha', 'num'].includes(tipo)) {
         logError(`Tipo de ordenamiento inválido: ${tipo}`);
     }
@@ -276,6 +279,5 @@ function writeOutput(outputFile, output) {
         logError(`Error al escribir el archivo: ${error.message}`);
     }
 }
-
 
 main();
