@@ -136,8 +136,7 @@ function parseArgs() {
 
 const config = parseArgs()
 const contenido = readInput(config.inputFile)
-console.log(parseDelimited(contenido, config.delimiter))
-console.log(readInput(config.inputFile))
+console.log(sortRows(parseDelimited(contenido, config.delimiter), config))
 
 //función 2: leer el archivo de origen
 
@@ -182,4 +181,107 @@ function parseDelimited(contenido, delimiter) {
         return campos
     })
     return filas
+}
+
+//función 4: sortRows → ordenar las filas
+
+function sortRows(filas, args) {
+    if (filas.length === 0) {
+        return []
+    }
+
+    let encabezado
+    let registros
+
+    if (args.noHeader) {
+        registros = filas.slice()
+    } else {
+        encabezado = filas[0]
+        registros = filas.slice(1)
+    }
+
+    const criterios = []
+
+    for (const campo of args.sortFields) {
+        let posicion
+
+        if (args.noHeader) {
+            posicion = parseInt(campo.name)
+
+            if (
+                !Number.isInteger(posicion) ||
+                posicion < 0 ||
+                posicion >= filas[0].length
+            ){
+                console.error(`error: el índice de campo "${campo.name}" es inválido.`)
+                process.exit(1)
+            }
+        } else {
+            
+            posicion = encabezado.findIndex(nombre => nombre === campo.name)
+
+            if (posicion === -1) {
+                console.error(`error: el campo "${campo.name}" no existe en el encabezado.`)
+                process.exit(1)
+            }
+        }
+
+        criterios.push({
+            index: posicion,
+            numeric: campo.numeric,
+            descending: campo.descending
+        })
+    }
+
+    registros.sort((a, b) => {
+        for (const criterio of criterios) {
+
+            const valorA = a[criterio.index]
+            const valorB = b[criterio.index]
+
+            let comparacion
+
+            if (criterio.numeric) {
+                
+                /*if (valorA.trim() === '' || valorB.trim() === '') {
+                    console.error('error: no se puede ordenar numéricamente con campos vacíos.')
+                    process.exit(1)
+                }
+                
+                const numA = Number(valorA)
+                const numB = Number(valorB)*/
+
+                if (valorA.trim() === '' || valorB.trim() === ''){
+                    console.error('error: no se puede ordenar numéricamente con campos vacíos.')
+                    process.exit(1)
+                }
+
+                const numeroA = Number(valorA)
+                const numeroB = Number(valorB)
+
+                if (!Number.isFinite(numeroA) || !Number.isFinite(numeroB)) {
+                    console.error('error: no se puede ordenar numéricamente con campos no numéricos.')
+                    process.exit(1)
+                }
+
+                comparacion = numeroA - numeroB
+            } else {
+                comparacion = valorA.localeCompare(valorB)
+            }
+
+            if (comparacion !== 0) {
+                return criterio.descending 
+                ? -comparacion 
+                : comparacion
+            }
+        }
+
+        return 0
+    })
+    
+    if (encabezado !== undefined) {
+        registros.unshift(encabezado)
+    }
+
+    return registros
 }
