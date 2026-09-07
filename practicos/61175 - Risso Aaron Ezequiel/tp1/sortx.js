@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const HELP = `
+ const HELP = `
 
 sortx — Ordena archivos de texto delimitados
 
@@ -32,7 +32,250 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+` 
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+//console.log(HELP)
+
+//prueba_1
+
+/* let array = process.argv.slice(2);
+
+//console.log(array);
+
+for(let i = 0; i < array.length; i++){
+  if(array[i].startsWith("--")){console.log(array[i],":es una bandera")}
+  else{console.log(array[i])
+  }
+}
+
+ */
+
+import fs from "fs";
+
+
+/* const argumentos = [
+    "empleados.csv",
+    "ordenados.csv",
+    "-d", ",",
+    "-b", "salario:num:desc",
+    "-b", "apellido"
+] */
+
+const argumentos = process.argv.slice(2);
+
+function ParseCampo(texto){
+ const partes = texto.split(":");
+ const name = partes[0];
+
+ let numeric = false;
+ let descending = false;
+
+ if (partes[1] === "num") {
+        numeric = true;
+    }
+    if (partes[2] === "desc") {
+        descending = true;
+    }
+    
+    return { name, numeric, descending };
+
+}
+
+function ParseArg(argumentos){
+    let inputFile = null;
+    let outFile = null;
+    let delimiter = ",";
+    let noHeader = false;
+    let sortFields = [];
+    let help = false;
+    const Valido = ["-d", "--delimiter", "-nh", "--no-header", "-b", "--by", "-h", "--help"];
+
+    let i = 0;
+    while(i < argumentos.length){
+        if(argumentos[i] === "-h" || argumentos[i] === "--help"){
+           help = true;
+           i++;
+       }
+       else if(!argumentos[i].startsWith("-")){
+        if(inputFile === null){
+            inputFile = argumentos[i];
+        }
+        else if(outFile === null){
+            outFile = argumentos[i];
+        } 
+        i++
+       }
+       else if(argumentos[i] === "-d" || argumentos[i] === "--delimiter"){
+           if(argumentos[i + 1] === undefined){
+            console.error(`${argumentos[i]} necesita de un valor`);
+            process.exit(1);
+           }
+           let delimitar = argumentos[i + 1];
+           if(delimitar ==="\\t"){
+            delimitar= "\t"
+           }
+           delimiter = delimitar;
+           i+=2;
+       } 
+       else if(argumentos[i] === "-nh" || argumentos[i] === "--noHeader"){
+           noHeader = true;
+           i++;
+       } 
+       else if(argumentos[i] === "-b" || argumentos[i] === "--by"){
+        if(argumentos [i+1] === undefined){
+            console.error("comando no valido")
+            process.exit(1);    
+        }
+          const campo = ParseCampo(argumentos[i + 1]);
+            sortFields.push(campo);
+            i += 2;
+       } 
+       else{
+        console.error(`${argumentos[i]} opcion invalida`);
+           process.exit(1);
+       }
+    }
+    if(help){
+        return { help: true };
+    }
+    if(inputFile === null){
+        console.error("no exite el archivo de origen.");
+        process.exit(1);
+    }
+    if(outFile === null){
+        console.error("falta el archivo de destino.");
+        process.exit(1);
+    }
+    if(sortFields.length === 0){
+        console.error("no se especifica ningún criterio --by");
+        process.exit(1);
+    }
+    if(delimiter.length !== 1){
+        console.error("el delimitador debe ser de un unico caracter");
+        process.exit(1);
+    }
+
+    return{inputFile,outFile,delimiter,noHeader,sortFields,help:false}
+}
+
+//console.log(ParseArg(argumentos));
+
+function readInput(texto) {
+  try {
+    return fs.readFileSync(texto, "utf-8");
+  } catch (error) {
+        console.log("No se pudo leer el archivo.");
+        process.exit(1);
+}
+}
+
+function parseDelimited(texto, delimiter, noHeader = false  ) {
+    const textoNormalizado = texto.replace(/\r\n/g, "\n");
+    const lineas = textoNormalizado.split("\n").filter(linea => linea !== "");
+    const filas = lineas.map(linea => linea.split(delimiter));
+   for (let i = 0; i < filas.length; i++) {
+        for (const campo of filas[i]) {
+            if (campo.includes('"')) {
+                console.error("el campo no permite comillas dobles.");
+                process.exit(1);
+            }
+        }
+    }
+    const cantidadEsperada = filas[0].length;
+    for (let i = 1; i < filas.length; i++) {
+        if (filas[i].length !== cantidadEsperada) {
+            console.error("las filas tienen diferente cantidad de campos");
+            process.exit(1);
+        }
+    }
+   if(noHeader){
+    return  {header:null, rows:filas};
+   }
+    const header = filas[0];
+    const rows = filas.slice(1);
+ 
+    return {header,rows};
+}
+
+function PosicionArray(campo,header,noHeader){
+    if(noHeader){
+      const indice = parseInt(campo,10);
+        if(isNaN(indice)){
+            console.error("no es un índice numérico válido.");
+            process.exit(1);
+        }
+        return indice;
+    }
+      const posicion = header.indexOf(campo);
+       if(posicion === -1){
+        console.error("el campo no existe.");
+        process.exit(1);
+    }
+       return posicion;
+}
+
+function sortRows(rows,sortFields,header,noHeader){
+    const comando = sortFields.map(comando =>({
+        posicion : PosicionArray(comando.name,header,noHeader),
+        numeric : comando.numeric,
+        descending : comando.descending
+    }));
+    
+    return rows.slice().sort((a,b)=>{
+        for(const{posicion,numeric,descending} of comando){
+            const valorAOriginal = a[posicion];
+            const valorBOriginal = b[posicion];
+            let compara;
+
+            if(numeric){
+                const valorA = Number(valorAOriginal);
+                const valorB = Number(valorBOriginal);
+                if(isNaN(valorA) || isNaN(valorB)){
+                    console.error("Se encontro un valor no numerico");
+                    process.exit(1);
+                }
+                compara = valorA - valorB;
+            } else {
+                compara = a[posicion].localeCompare(b[posicion]);
+            }
+
+            if(compara !== 0){
+                return descending ? -compara : compara;
+            }
+        }
+        return 0;
+    });
+}
+
+function serialize(header,rows,delimiter){
+    const tablaff = header !== null ? [header, ...rows] : rows;
+    return tablaff.map(row => row.join(delimiter)).join("\n");
+}
+
+function writeOutput(texto,datos){
+    try {
+        fs.writeFileSync(texto,datos,"utf-8");
+    } catch (error) {
+      console.log("No pudo guardar el archivo");
+      process.exit(1); 
+    }
+}
+
+const confi = ParseArg(argumentos);
+if (confi.help) {
+  console.log(HELP);
+  process.exit(0);
+}
+const texto = readInput(confi.inputFile);
+const tabla =  parseDelimited(texto,confi.delimiter,confi.noHeader);
+const ordenfilas = sortRows(tabla.rows,confi.sortFields,tabla.header,confi.noHeader);
+/* const tablafinal = {header: tabla.header,
+    rows: ordenfilas
+}; */
+const TextoOrdenado = serialize(tabla.header,ordenfilas,confi.delimiter);
+writeOutput(confi.outFile,TextoOrdenado);
+
+
+//console.log(tablafinal);
+
