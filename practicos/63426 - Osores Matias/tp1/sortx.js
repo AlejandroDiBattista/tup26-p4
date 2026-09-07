@@ -209,3 +209,22 @@ function sortRows(datos, config) {
 
     return datos;
 }
+
+function serialize(datos, config) {
+    const lineas = [];
+    if (datos.encabezado !== null) {
+        lineas.push(datos.encabezado.join(config.delimiter));
+    }
+    for (let i = 0; i < datos.filas.length; i++) {
+        lineas.push(datos.filas[i].join(config.delimiter));
+    }
+    return lineas.join("\n");
+}
+
+function writeOutput(outputFile, texto) {
+    try {
+        writeFileSync(outputFile, texto, "utf8");
+    } catch (error) {
+        throw new Error("No se pudo escribir el archivo de destino " + outputFile + " (" + error.code + ")");
+    }
+}
