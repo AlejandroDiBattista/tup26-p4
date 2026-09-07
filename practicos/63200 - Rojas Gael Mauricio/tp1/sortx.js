@@ -1,41 +1,39 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
-const HELP = `
 
-sortx — Ordena archivos de texto delimitados
+const HELP = `
+sortx - Ordena archivos de texto delimitados
 
 USO:
     sortx <origen> <destino> [opciones]
 
-ARGUMENTOS:
-    origen              Archivo que se desea ordenar.
-    destino             Archivo donde se guardará el resultado.
-
 OPCIONES:
-    -b, --by <criterio> Criterio de ordenamiento. Se puede repetir.
-                        Formato: campo[:tipo[:orden]]
-                        tipo: alpha (predeterminado) o num
-                        orden: asc (predeterminado) o desc
-
-    -d, --delimiter <c> Delimitador de un solo carácter.
-                        Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
-
-    -nh, --no-header    Indica que el archivo no tiene encabezado.
-                        Los campos se identifican mediante índices desde cero.
-
+    -b, --by <criterio> Campo por el que ordenar.
+    -d, --delimiter <c> Delimitador.
+    -nh, --no-header    Archivo sin encabezado.
     -h, --help          Muestra esta ayuda.
 
 EJEMPLOS:
     sortx empleados.csv ordenados.csv -b apellido
     sortx empleados.csv salarios.csv -b salario:num:desc
-    sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+`;
 
-// Escribir aqui la solución al enunciado.
+function parseSortField(texto) {
+    let partes = texto.split(":");
+
+    let name = partes[0];
+    let tipo = partes[1] || "alpha";
+    let orden = partes[2] || "asc";
+
+    return {
+        name: name,
+        numeric: tipo === "num",
+        descending: orden === "desc"
+    };
+}
+
 function parseArgs(args) {
     if (args.includes("--help") || args.includes("-h")) {
         console.log(HELP);
@@ -81,10 +79,44 @@ function parseArgs(args) {
     return config;
 }
 
+function readInput(fileName) {
+    return fs.readFileSync(fileName, "utf8");
+}
+
+function parseDelimited(texto, delimiter) {
+    texto = texto.replace(/\r\n/g, "\n");
+    texto = texto.replace(/\r/g, "\n");
+
+    if (texto.endsWith("\n")) {
+        texto = texto.slice(0, -1);
+    }
+
+    if (texto.length === 0) {
+        return [];
+    }
+
+    let lineas = texto.split("\n");
+    let filas = [];
+
+    for (let i = 0; i < lineas.length; i++) {
+        let fila = lineas[i].split(delimiter);
+        filas.push(fila);
+    }
+
+    return filas;
+}
+
 function main() {
     let config = parseArgs(process.argv.slice(2));
 
-    console.log(config);
+    let texto = readInput(config.inputFile);
+
+    let filas = parseDelimited(
+        texto,
+        config.delimiter
+    );
+
+    console.log(filas);
 }
 
 main();
