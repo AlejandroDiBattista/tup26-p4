@@ -35,4 +35,109 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+function isOption(regular, shorthand, value) {
+    return value === `--${regular}` || value === `-${shorthand}`;
+}
+
+const isHelp = (value) => isOption('help', 'h', value);
+const isBy = (value) => isOption('by', 'b', value);
+const isDelimiter = (value) => isOption('delimiter', 'd', value);
+const isNoHeader = (value) => isOption('no-header', 'nh', value);
+
+function help() {
+    console.log(HELP);
+    process.exit(0);
+}
+
+function logError(message) {
+    console.error(message);
+    process.exit(1);
+}
+
+function shiftValue(opcion, flag) {
+    if (opcion.length === 0) {
+        logError(`Falta un valor para la opción ${flag}`);
+    }
+    
+    return opcion.shift();
+}
+
+function handleCriterios(opcion) {
+    const [name, tipo = 'alpha', orden = 'asc'] = opcion.split(':');
+
+    if (!['alpha', 'num'].includes(tipo)) {
+        logError(`Tipo de ordenamiento inválido: ${tipo}`);
+    }
+    if (!['asc', 'desc'].includes(orden)) {
+        logError(`Orden de ordenamiento inválido: ${orden}`);
+    }
+
+    return{
+        name,
+        numeric: tipo === 'num',
+        descending: orden === 'desc'
+    };
+}
+
+function parseOpciones(opciones) {
+    const config = {
+        sortFields: [],
+        delimiter: ",",
+        noHeader: false
+    };
+
+    while (opciones.length > 0) {
+        const opcion = opciones.shift();
+
+        if (isDelimiter(opcion)) {
+            config.delimiter = shiftValue(opciones, opcion);
+
+            if (config.delimiter.length !== 1) {
+                logError(`El delimitador debe ser un único carácter: ${config.delimiter}`);
+            }
+        } else if (isNoHeader(opcion)) {
+            config.noHeader = true;
+        } else if (isBy(opcion)) {
+            config.sortFields.push(
+                handleCriterios(shiftValue(opciones, opcion))
+            );
+        } else {
+            logError(`Opción inválida: ${opcion}`);
+        }
+    }
+
+    if (config.sortFields.length === 0) {
+        logError("Se requiere al menos un criterio -b o --by");
+    }
+
+    return config;
+}
+
+function parseArgs() {
+    const args = process.argv.slice(2);
+    if (isHelp(args[0])) {
+        return help();
+    }
+
+    const [inputFile, outputFile, ...opciones] = args;
+
+    if (!inputFile || !outputFile) {
+        logError("falta los archivos de origen o destino");
+    }
+
+    const config = parseOpciones(opciones);
+
+    return {
+        inputFile,
+        outputFile,
+        ...config
+    };
+}
+
+function main() {
+    const args = parseArgs();
+    console.log(args);
+}
+
+main();
