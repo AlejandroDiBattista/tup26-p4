@@ -183,11 +183,73 @@ function parseDelimited(texto, opciones) {
     return { encabezado: encabezado, filas: filas };
 }
 
+function sortRows(datos, opciones) {
+    const criterio = opciones.sortFields[0];
+    let indice;
+
+    if (opciones.noHeader) {
+        indice = Number(criterio.name);
+        if (Number.isNaN(indice)) {
+            console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
+            process.exit(1);
+        }
+    } else {
+        indice = datos.encabezado.indexOf(criterio.name);
+        if (indice === -1) {
+            console.error("ERROR: el campo solicitado no existe: \"" + criterio.name + "\"");
+            process.exit(1);
+        }
+    }
+
+    const filasOrdenadas = datos.filas.slice();
+    filasOrdenadas.sort(function (filaA, filaB) {
+        const valorA = filaA[indice];
+        const valorB = filaB[indice];
+        let resultado = 0;
+
+        if (criterio.numeric) {
+            resultado = Number(valorA) - Number(valorB);
+        } else {
+            resultado = String(valorA).localeCompare(String(valorB));
+        }
+
+        if (criterio.descending) {
+            resultado = resultado * -1;
+        }
+        return resultado;
+    });
+
+    return filasOrdenadas;
+}
+
+function serialize(datos, filasOrdenadas, opciones) {
+    const lineas = [];
+    if (!opciones.noHeader) {
+        lineas.push(datos.encabezado.join(opciones.delimiter));
+    }
+    for (let i = 0; i < filasOrdenadas.length; i = i + 1) {
+        lineas.push(filasOrdenadas[i].join(opciones.delimiter));
+    }
+    return lineas.join("\n");
+}
+
+function writeOutput(ruta, contenido) {
+    try {
+        fs.writeFileSync(ruta, contenido, "utf8");
+    } catch (error) {
+        console.error("ERROR: no se puede escribir el archivo de destino: \"" + ruta + "\"");
+        process.exit(1);
+    }
+}
+
 function main() {
     const opciones = parseArgs(process.argv.slice(2));
     const texto = readInput(opciones.inputFile);
     const datos = parseDelimited(texto, opciones);
-    console.log("Se leyeron " + datos.filas.length + " filas. El ordenamiento queda pendiente.");
+    const filasOrdenadas = sortRows(datos, opciones);
+    const salida = serialize(datos, filasOrdenadas, opciones);
+    writeOutput(opciones.outputFile, salida);
+    console.log("listo se genero \"" + opciones.outputFile + "\".");
 }
 
 main();
