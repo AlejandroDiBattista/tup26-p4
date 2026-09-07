@@ -38,6 +38,8 @@ sortx — Ordena archivos de texto delimitados
 
 import fs from 'node:fs';
 
+
+
 let argumento= process.argv.slice(2)
 
 function parseArgs() {
@@ -137,27 +139,77 @@ function sortRows(parseData, configuracion) {
     if (!configuracion.noHeader) {
         header = parseData.shift();
     }
-    let columnaIndex = header.indexOf(configuracion.sortFields[0].name);
-    if (columnaIndex === -1) {
-        console.log(`Error: La columna "${configuracion.sortFields[0].name}" no existe en el archivo.`);
-        process.exit(1);
-    }
+    
+    let criterios = configuracion.sortFields.map(campo => {
+        let indice ;
+        if(configuracion.noHeader){
+            indice = Number(campo.name)
+        }else{
+            indice = header.indexOf(campo.name);
+        }
 
-    let filadata = parseData.sort((a, b) => {
-        let valorA = a[columnaIndex];
-        let valorB = b[columnaIndex];
-        return valorA.localeCompare(valorB);
+        if (indice === -1 || Number.isNaN(indice)) {
+            console.log(`Error: El campo "${campo.name}" no se encuentra en el encabezado.`);
+            process.exit(1);
+        }
+
+        return { ...campo, indice };
     });
-    console.log(filadata);
+
+    parseData.sort((a, b) => {
+        for (let criterio of criterios) {
+            let valorA = a[criterio.indice];
+            let valorB = b[criterio.indice];
+
+            let comparacion;
+
+            if (criterio.numeric) {
+                comparacion = Number(valorA) - Number(valorB);
+
+            } else {
+                comparacion = valorA.localeCompare(valorB);
+            }
+            if (criterio.descending) {
+                comparacion *= -1;
+            }
+            if (comparacion !== 0) {
+                return comparacion;
+            }
+        }
+        return 0;
+    });
+    
+    let filasOrdenadas = [];
+    if (!configuracion.noHeader){
+        filasOrdenadas.push(header)
+    }
+    filasOrdenadas.push(...parseData)
+    return filasOrdenadas
+                
 }
-sortRows(parseData, configuracion);
+const filasOrdenadas = sortRows(parseData,configuracion)
+console.log(filasOrdenadas)
+
+function serialize (filasOrdenadas,delimiter ){
+    let lineas = [];
+    for (let linea of filasOrdenadas) {
+        lineas.push(linea.join(delimiter))
+    }
+    let arreglo = lineas.join('\n')
+    return arreglo
+}  
+
+let arreglo = serialize(filasOrdenadas,configuracion.delimiter)
+console.log(arreglo)
+    
+
+
+
+
+
 
 
 
 
 //node .\sortx.js empleados.csv ordenados.csv -b apellido
-
-
-
-
 
