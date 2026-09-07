@@ -101,11 +101,21 @@ for ( let i = 0 ;i < datosUsuarios.length; i++) {
         }
         }//console.log(uso)
 
-
+//errores 
  if(uso.inputFile === null || uso.outputFile === null){
 console.error("Falta el archivo para llegar al destino ")
 process.exit(1)
  }
+
+if(uso.sortFields.length === 0 ){
+  console.error("indicar almenos un opcion para ordenar")
+  process.exit(1)
+}
+
+if(uso.delimiter.length !== 1  ){
+console.error("el delimitador debe ser solo un caracter ")
+process.exit(1)
+}
 
 let texto = readFileSync(uso.inputFile, "utf8")
 texto = texto.replaceAll("\r","") 
