@@ -135,6 +135,8 @@ function parseArgs() {
 }
 
 const config = parseArgs()
+const contenido = readInput(config.inputFile)
+console.log(parseDelimited(contenido, config.delimiter))
 console.log(readInput(config.inputFile))
 
 //función 2: leer el archivo de origen
@@ -147,4 +149,37 @@ function readInput(inputFile) {
         console.error('error: no se pudo leer el archivo de origen.')
         process.exit(1)
     }
+}
+
+
+//función 3: parseDelimited → convertir el texto en filas y columnas
+
+function parseDelimited(contenido, delimiter) {
+    if (contenido.includes('"')) {
+        console.error('error: el archivo contiene comillas dobles, lo cual no está permitido.')
+        process.exit(1)
+    }
+
+    const texto = contenido.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    const textoSinFinal = texto.endsWith('\n') 
+    ? texto.slice(0, -1) 
+    : texto
+
+    if (textoSinFinal === "") {
+        return []
+    }
+
+    const lineas = textoSinFinal.split('\n')
+    const cantidadCampos = lineas[0].split(delimiter).length
+
+    const filas = lineas.map((linea, indice) => {
+        const campos = linea.split(delimiter)
+
+        if (campos.length !== cantidadCampos) {
+            console.error(`error: la línea ${indice + 1} tiene una cantidad de campos diferente a las demás.`)
+            process.exit(1)
+        }
+        return campos
+    })
+    return filas
 }
