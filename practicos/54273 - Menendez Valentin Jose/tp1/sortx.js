@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";   
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -145,10 +145,13 @@ function main() {
         header
     );
 
-    console.log({
+    const output = serialize(
         header,
-        rows: sortedRows
-    });
+        sortedRows,
+        args.delimiter
+    );
+
+    writeOutput(args.outputFile, output);
 }
 
 
@@ -255,5 +258,24 @@ function sortRows(rows, sortFields, header) {
 
     return rows;
 }
+
+function serialize(header, rows, delimiter) {
+    const lines = header ? [header, ...rows] : rows;
+
+    return lines
+        .map(row => row.join(delimiter))
+        .join("\n");
+}
+
+function writeOutput(outputFile, output) {
+    try {
+        writeFileSync(outputFile, output);
+
+        console.log(`Archivo ordenado correctamente: ${outputFile}`);
+    } catch (error) {
+        logError(`Error al escribir el archivo: ${error.message}`);
+    }
+}
+
 
 main();
