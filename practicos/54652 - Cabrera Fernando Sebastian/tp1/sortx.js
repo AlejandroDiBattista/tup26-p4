@@ -80,4 +80,3 @@ function parseDelimited(text,delimiter) {
     return parsedData;
 }
 const parsedData = parseDelimited(inputData, delimiter);
-console.log(parsedData);
