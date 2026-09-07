@@ -109,3 +109,46 @@ function parseArgs(args) {
 
     return config;
 }
+
+function readInput(inputFile) {
+    try {
+        return readFileSync(inputFile, "utf8");
+    } catch (error) {
+        throw new Error("No se pudo leer el archivo de origen " + inputFile + " (" + error.code + ")");
+    }
+}
+
+function parseDelimited(texto, config) {
+    if (texto.includes('"')) {
+        throw new Error("La entrada contiene comillas dobles, que no están admitidas");
+    }
+
+    texto = texto.replace(/^\uFEFF/, "");
+    if (texto.length === 0) {
+        throw new Error("El archivo de origen está vacío");
+    }
+
+    const lineas = texto.split(/\r\n|\n|\r/);
+    if (lineas[lineas.length - 1] === "") {
+        lineas.pop();
+    }
+
+    const filas = [];
+    const cantidadCampos = lineas[0].split(config.delimiter).length;
+
+    for (let i = 0; i < lineas.length; i++) {
+        const campos = lineas[i].split(config.delimiter);
+        if (campos.length !== cantidadCampos) {
+            throw new Error("La fila " + (i + 1) + " tiene " + campos.length +
+                " campos; se esperaban " + cantidadCampos);
+        }
+        filas.push(campos);
+    }
+
+    let encabezado = null;
+    if (!config.noHeader) {
+        encabezado = filas.shift();
+    }
+
+    return { encabezado, filas, cantidadCampos };
+}
