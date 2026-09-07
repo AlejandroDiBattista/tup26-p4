@@ -142,13 +142,13 @@ function readInput(filename) {
     return fs.readFileSync(filename, 'utf-8');
 }
 
-function parseDelimited(text, delimiter){
+function parseDelimited(text, delimiter, noHeader){
     if (text.includes('"')){
         throw new Error('tiene comillas dobles y no esta permitido');
     }
-
     const lines = text.split(/\r?\n/);
-    const row = [];
+    const rows = [];
+    let header = null;
     let totalColumnas = 0;
 
     for (let i = 0; i < lines.length; i++){
@@ -158,14 +158,95 @@ function parseDelimited(text, delimiter){
             const row = line.split(delimiter);
 
         if (totalColumnas === 0){
-            totalColumnas = rows.length;
+            totalColumnas = row.length;
         } else if (row.length !== totalColumnas){
             throw new Error('Las filas no tienen la misma cantidad de columnas');
         }
-        row.push(row);
+        if (!noHeader && header === null){
+            header = row;
+        } else{
+
+            rows.push(row);
+        }
 
         }
     }
 
-    return row;
+    return {
+        header: header,
+        rows: rows,
+    };
+}
+
+function sortRows(rows, header, sortFields){
+    const criterios = [];
+    
+    for (let i = 0; i < sortFields.length; i++){
+        const campo = sortFields[i];
+        let colIndex = -1;
+
+        if (header !== null){
+            for (let j = 0; j < header.length; j++){
+                if (header[j] === campo.name){
+                    colIndex = j;
+                    break;
+                }
+            }
+            if (colIndex === -1){
+                throw new Error('No existe la columna en el encabezado');
+                }
+            }else{
+                if (!/^\d+$/.test(campo.name)){
+                    throw new Error('El criterio debe ser un numero de columna');
+                }
+                colIndex = parseInt(campo.name, 10);
+
+                if (isNaN(colIndex)){
+                    throw new Error('Con -nh el criterio debe ser un numero de columna')
+                }
+                if(rows.length > 0 && (colIndex < 0 || colIndex >= rows[0].length)){
+                    throw new Error('Indice de Columna esta fuera de rango');
+                }
+            }
+
+            criterios.push({
+                pos: colIndex,
+                esNumero: campo.numeric,
+                esDesc: campo.descending
+            });
+        }
+
+        const filasOrdenadas = rows.slice();
+
+        filasOrdenadas.sort((filaA, filaB) =>{
+            for(let i = 0; i < criterios.length; i++){
+                const crit = criterios[i];
+                let valA = filaA[crit.pos];
+                let valB = filaB[crit.pos];
+
+                let resultado = 0;
+
+                if (crit.esNumero){
+                    const numA = parseFloat(valA);
+                    const numB = parseFloat(valB);
+                    
+                    if(isNaN(numA) || isNaN(numB)){
+                        throw new Error('Intento ordenar una columna numericamente con texto invalido');
+                    }
+                    resultado = numA - numB;
+                }else{
+                    resultado = valA.localeCompare(valB);
+                }
+
+                if (resultado !== 0){
+                    if (crit.esDesc){
+                        return -resultado;
+                    }
+                    return resultado;
+                }
+                
+            }
+            return 0;
+        });
+    return filasOrdenadas;
 }
