@@ -198,6 +198,41 @@ function parseDelimited(texto, configuracion){
 
 }
 
+function sortRows(datos, configuracion) {
+
+    let encabezados = datos[0];
+    let filas = datos.slice(1);
+
+    for (let criterio of configuracion.sortFields) {
+
+        console.log(criterio.name);
+        console.log(criterio.numeric);
+
+        let posicion = encabezados.indexOf(criterio.name);
+
+        console.log(posicion);
+
+        filas.sort((a, b) => {
+            if (criterio.numeric) {
+
+             let numeroA = parseInt(a[posicion])
+            let numeroB = parseInt(b[posicion])
+
+            return numeroA - numeroB
+
+        
+            }else{
+                return a[posicion].localeCompare(b[posicion]);
+            }
+        });
+    }
+
+    return [encabezados, ...filas];
+}
+
 const configuracion = parseArgs()
+console.log(configuracion)
 const texto = readInput(configuracion)
 const datos = parseDelimited(texto, configuracion)
+const datosOrdenados = sortRows(datos, configuracion)
+console.log(datosOrdenados)
