@@ -176,3 +176,64 @@ const partes = criterio.split(":");
     };
 });
 //cuarto commit 
+function comparar(a, b) {
+    for (const criterio of criteriosProcesados) {
+        const valorA = a[criterio.indice];
+        const valorB = b[criterio.indice];
+
+        let resultado = 0;
+
+        if (criterio.tipo === "numeric") {
+            const numeroA = Number(valorA);
+            const numeroB = Number(valorB);
+
+            if (valorA.trim() === "" || !Number.isFinite(numeroA)) {
+                error(
+                    `el criterio numérico encontró un valor no numérico: "${valorA}".`
+                );
+            }
+            if (valorB.trim() === "" || !Number.isFinite(numeroB)) {
+                error(
+                    `el criterio numérico encontró un valor no numérico: "${valorB}".`
+                );
+            }
+
+            if (numeroA < numeroB) {
+                resultado = -1;
+            } else if (numeroA > numeroB) {
+                resultado = 1;
+            }
+        } else {
+            resultado = valorA.localeCompare(valorB, undefined, {
+                numeric: true,
+                sensitivity: "base"
+            });
+        }
+
+        if (resultado !== 0) {
+            return criterio.orden === "desc" ? -resultado : resultado;
+        }
+    }
+
+    return 0;
+}
+datos.sort(comparar);
+
+const resultado = [];
+
+if (encabezado !== null) {
+    resultado.push(encabezado.join(delimiter));
+}
+
+for (const fila of datos) {
+    resultado.push(fila.join(delimiter));
+}
+
+const salida = resultado.join("\n");
+
+try {
+    fs.writeFileSync(destino, salida, "utf8");
+} catch (e) {
+    error(`no se puede escribir el archivo de destino "${destino}".`);
+}
+//quinto commit
