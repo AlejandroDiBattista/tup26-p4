@@ -88,7 +88,7 @@ function parseArgs(argv){
             i+=2
         } else if (arg === "-d" || arg === "--delimiter"){
             if (i + 1 >=argv.length) {
-                console.error ("ERROR: -d/--dlimiter no tiene valor")
+                console.error ("ERROR: -d/--delimiter no tiene valor")
                 process.exit(1)
             }
             let delim=argv[i+1]
@@ -120,7 +120,7 @@ function parseArgs(argv){
         console.error("ERROR: indique porlomenos 1 criterio con --by")
         process.exit(1)
     }
-    if (opciones.delimiter.lenght !==1){
+    if (opciones.delimiter.length !==1){
         console.error("ERROR: tiene que ser 1 (un) caracter")
         process.exit(1)
     }
