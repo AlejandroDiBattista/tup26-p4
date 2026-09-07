@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-const HELP = `
+import { readFileSync, writeFileSync } from "node:fs";
+
+const HELP = String.raw`
 
 sortx — Ordena archivos de texto delimitados
 
@@ -34,5 +36,76 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+function parseArgs(args) {
+    if (args.includes("--help") || args.includes("-h")) {
+        console.log(HELP);
+        return;
+    }
+
+    if (!args[0] || args[0].startsWith("-")) {
+        throw new Error("Falta el archivo de origen");
+    }
+
+    if (!args[1] || args[1].startsWith("-")) {
+        throw new Error("Falta el archivo de destino");
+    }
+
+    const config = {
+        inputFile: args[0],
+        outputFile: args[1],
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    };
+
+    for (let i = 2; i < args.length; i++) {
+        if (args[i] === "-b" || args[i] === "--by") {
+            if (!args[i + 1] || args[i + 1].startsWith("-")) {
+                throw new Error("Falta el valor de --by");
+            }
+
+            const partes = args[i + 1].split(":");
+            const campo = partes[0];
+            const tipo = partes[1] === undefined ? "alpha" : partes[1];
+            const orden = partes[2] === undefined ? "asc" : partes[2];
+
+            if (!campo || partes.length > 3) {
+                throw new Error("Criterio inválido: " + args[i + 1]);
+            }
+            if (tipo !== "alpha" && tipo !== "num") {
+                throw new Error("Tipo inválido: " + tipo + ". Usá alpha o num");
+            }
+            if (orden !== "asc" && orden !== "desc") {
+                throw new Error("Orden inválido: " + orden + ". Usá asc o desc");
+            }
+
+            config.sortFields.push({
+                name: campo,
+                numeric: tipo === "num",
+                descending: orden === "desc"
+            });
+            i++;
+        } else if (args[i] === "-d" || args[i] === "--delimiter") {
+            if (args[i + 1] === undefined || /^--?[a-z]/i.test(args[i + 1])) {
+                throw new Error("Falta el valor de --delimiter");
+            }
+            config.delimiter = args[i + 1] === "\\t" ? "\t" : args[i + 1];
+            if (Array.from(config.delimiter).length !== 1 ||
+                config.delimiter === "\n" || config.delimiter === "\r" ||
+                config.delimiter === '"') {
+                throw new Error("El delimitador debe ser un único carácter, distinto de comillas dobles o saltos de línea");
+            }
+            i++;
+        } else if (args[i] === "-nh" || args[i] === "--no-header") {
+            config.noHeader = true;
+        } else {
+            throw new Error("Opción desconocida: " + args[i]);
+        }
+    }
+
+    if (config.sortFields.length === 0) {
+        throw new Error("Falta indicar al menos un criterio con --by");
+    }
+
+    return config;
+}
