@@ -86,6 +86,9 @@ function parseOpciones(opciones) {
 
         if (isDelimiter(opcion)) {
             config.delimiter = shiftValue(opciones, opcion);
+            if (config.delimiter === "\\t") {
+                config.delimiter = "\t";
+            }
             if (config.delimiter.length !== 1) {
                 logError(`El delimitador debe ser un único carácter: ${config.delimiter}`);
             }
