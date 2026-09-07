@@ -149,3 +149,63 @@ function parseDelimited(texto, delimitador){
 
     return resultado;
 }
+function sortRows(filas, configuracion){
+    // separamos el encabezado de los datos 
+    let encabezado = configuracion.noHeader ? null : filas[0];
+    let datos = configuracion.noHeader ? filas : filas.slice(1);
+
+    datos.sort((a,b) => {
+
+    for(let criterio of configuracion.sortFields){
+        let indice;
+    if (configuracion.noHeader) {
+        indice = Number(criterio.name);
+    } else{
+        indice =encabezado.indexOf(criterio.name);
+    }
+
+    if (
+        !Number.isInteger(indice) ||
+        indice < 0 || 
+        indice >= a.length
+    ){
+        throw new Error("El campo solicitado no existe")
+    }
+
+    let valorA=a[indice];
+    let valorB=b[indice];
+
+    if(criterio.numeric){
+        valorA = Number(valorA);
+        valorB = Number(valorB);
+
+        if(Number.isNaN(valorA) || Number.isNaN(valorB)){
+            throw new Error("El criterio numerico tiene un valor no numerico");
+        }
+    }
+
+    let comparacion;
+    if (criterio.numeric) {
+        comparacion = valorA - valorB;
+    }else{
+        comparacion =valorA.localeCompare(valorB)
+    }
+
+    if (criterio.descending) {
+        comparacion = -comparacion;
+    }
+
+    //si son diferentes, este criterio decide el orden
+    if (comparacion !== 0) {
+        return comparacion;
+    }
+    }
+    return 0;
+
+    });
+
+    if (!configuracion.noHeader) {
+        datos.unshift(encabezado)
+    }
+    return datos;
+}
