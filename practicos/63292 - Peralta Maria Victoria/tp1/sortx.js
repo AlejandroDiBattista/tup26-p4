@@ -136,7 +136,7 @@ function serialize(header, rows, delimiter, noHeader) {
   const lines = [];
   if (!noHeader) lines.push(header.join(delimiter));
   for (const r of rows) lines.push(r.join(delimiter));
-  return lines.join('\n') + '\n';
+  return lines.join('\n');
 }
 
 function writeOutput(path, text) {
