@@ -150,3 +150,29 @@ function obtenerIndiceCampo(criterio) {
     error(`el campo solicitado "${criterio}" no existe.`);
 }
 //tercer commit
+const criteriosProcesados = criterios.map((criterio) => {
+    let nombre = criterio;
+    let tipo = "string";
+    let orden = "asc";
+const partes = criterio.split(":");
+    nombre = partes[0];
+
+    for (let i = 1; i < partes.length; i++) {
+        const parte = partes[i].toLowerCase();
+
+        if (parte === "numeric" || parte === "number" || parte === "num") {
+            tipo = "numeric";
+        } else if (parte === "asc" || parte === "desc") {
+            orden = parte;
+        } else {
+            error(`criterio desconocido: "${parte}".`);
+        }
+    }
+
+    return {
+        indice: obtenerIndiceCampo(nombre),
+        tipo,
+        orden
+    };
+});
+//cuarto commit 
