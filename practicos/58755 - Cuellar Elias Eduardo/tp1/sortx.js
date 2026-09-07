@@ -110,6 +110,32 @@ function readInput(inputFile) {
     }
 }
 
+function parseDelimited(texto, delimiter) {
+   const lineas = texto.split(/\r?\n/).filter(linea => linea.trim() !== "")
+    const filas = []
+    let cantidadColumnas = null
+
+    for (const linea of lineas) {
+        if (linea.includes('"')) {
+            console.error("Error: la entrada contiene comillas dobles.")
+            process.exit(1)
+        }
+
+        const columnas = linea.split(delimiter)
+
+        if (cantidadColumnas === null) {
+            cantidadColumnas = columnas.length
+        } else if (columnas.length !== cantidadColumnas) {
+            console.error("Error: las filas tienen diferente cantidad de campos.")
+            process.exit(1)
+        }
+
+        filas.push(columnas)
+    }
+    return filas
+}
+
 const config = parseArgs(process.argv.slice(2))
 const texto = readInput(config.inputFile)
-console.log(texto)
+const filas = parseDelimited(texto, config.delimiter)
+console.log(filas)
