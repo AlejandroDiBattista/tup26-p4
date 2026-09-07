@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-//console.log(process.argv)
 import fs from "node:fs"
 const HELP = `
 
@@ -20,7 +19,7 @@ OPCIONES:
 
     -d, --delimiter <c> Delimitador de un solo carácter.
                         Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+                        Usá "\\t" para archivos separados por tabulaciones.
 
     -nh, --no-header    Indica que el archivo no tiene encabezado.
                         Los campos se identifican mediante índices desde cero.
@@ -32,7 +31,7 @@ EJEMPLOS:
     sortx empleados.csv salarios.csv -b salario:num:desc
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
+    sortx datos.tsv salida.tsv -d "\\t" -b nombre
 `
 
 // Escribir aqui la solución al enunciado.
@@ -125,7 +124,7 @@ try {
     return contenido
     
 } catch (error) {
-console.error("error: no se pudo leer el archivo" + ruta + "(no existe o no tiene permisos)")
+console.error("error: no se pudo leer el archivo " + ruta + " (no existe o no tiene permisos)")
 process.exit(1)
 
 }
@@ -141,7 +140,8 @@ process.exit(1)
 }
 
 const textolimpio = texto.replaceAll("\r", "")
-const textSeparado = textolimpio.split("\n")
+let textSeparado = textolimpio.split("\n")
+textSeparado = textSeparado.filter(t => t !== "")
 
 let SeparadoFinal = []
 
@@ -163,6 +163,71 @@ for(let i = 0; i < SeparadoFinal.length;i++)
 
 return SeparadoFinal
 }
+
+function sortRows(filas, sortFields, noHeader) {
+let encabezado 
+let datos 
+if (noHeader) 
+{
+    datos = filas
+}
+else 
+{
+    encabezado = filas[0]
+    datos = filas.slice(1)
+}
+    datos.sort(function (a, b) {
+    let resultado
+    for ( let i = 0; i < sortFields.length; i++)
+    { 
+    let indice 
+        if(noHeader) 
+        {
+            indice = Number(sortFields[i].name)
+        }
+        else 
+        {
+            indice = encabezado.indexOf(sortFields[i].name)
+        }
+        if(indice === -1)
+            {
+                console.error("error: la columna solicitada: " + sortFields[i].name + " no existe")
+                process.exit(1)
+            }
+        if(sortFields[i].numeric)
+    {
+        if(isNaN(a[indice]) || isNaN(b[indice])) 
+        {
+            console.error("error: ingreso un valor no numerico en donde va uno numerico")
+            console.error("los valores que ingresaste fueron : " + a[indice] + " y " + b[indice])
+            process.exit(1)
+        }
+        resultado = a[indice] - b[indice]
+    }
+    else
+    {    
+        resultado = a[indice].localeCompare(b[indice])
+    }
+
+        if(sortFields[i].descending) 
+    {
+        resultado = -resultado
+    }
+    
+    if (resultado !== 0) {
+        return resultado
+    }
+    }
+    return 0
+    })
+
+if (noHeader === false)
+{
+    datos.unshift(encabezado)
+}
+return datos
+}
+
 
 function serialize(filas, delimitador){
 let ElementUnidos = []
@@ -189,10 +254,9 @@ catch (error)
 }
 
 
-
-
 const configuracion = parseArgs();
 const texto = readInput(configuracion.inputFile)
 const filas = parseDelimited(texto, configuracion.delimiter)
-const textoFinal = serialize(filas, configuracion.delimiter)
-const archivoSalida = writeOutput(configuracion.outputFile, textoFinal)
+const filasOrdenadas = sortRows(filas, configuracion.sortFields, configuracion.noHeader)
+const textoFinal = serialize(filasOrdenadas, configuracion.delimiter)
+writeOutput(configuracion.outputFile, textoFinal)
