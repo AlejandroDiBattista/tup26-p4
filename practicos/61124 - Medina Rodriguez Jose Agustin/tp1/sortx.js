@@ -92,6 +92,10 @@ if (argv.includes('-h') || argv.includes('--help')) {
   console.log(HELP);
 } else {
   const config = parseArgs(argv);
+  if (!config.outputFile) {
+  console.error('Falta indicar el archivo de destino.');
+  process.exit(1);
+}
   const text = readInput(config.inputFile);
   const rows = parseDelimited(text, config.delimiter);
   const sortedRows = sortRows(rows, config.campo);
