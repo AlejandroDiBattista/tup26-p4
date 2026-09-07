@@ -200,10 +200,23 @@ function serialize(filas, delimiter) {
     return lineas.join("\n")
 }
 
+function writeOutput(outputFile, texto) {
+    try {
+        fs.writeFileSync(outputFile, texto)
+    } catch (error) {
+        console.error(`Error: no se pudo escribir el archivo "${outputFile}".`)
+        process.exit(1)
+    }
+}
 
-const config = parseArgs(process.argv.slice(2))
-const texto = readInput(config.inputFile)
-const filas = parseDelimited(texto, config.delimiter)
-const ordenadas = sortRows(filas, config)
-const salida = serialize(ordenadas, config.delimiter)
-console.log(salida)
+try {
+    const config = parseArgs(process.argv.slice(2))
+    const texto = readInput(config.inputFile)
+    const filas = parseDelimited(texto, config.delimiter)
+    const ordenadas = sortRows(filas, config)
+    const salida = serialize(ordenadas, config.delimiter)
+    writeOutput(config.outputFile, salida)
+} catch (error) {
+    console.error(`Error inesperado: ${error.message}`)
+    process.exit(1)
+}
