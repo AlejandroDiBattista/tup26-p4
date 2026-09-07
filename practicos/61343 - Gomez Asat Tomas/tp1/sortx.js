@@ -125,3 +125,28 @@ for (let i = 0; i < filas.length; i++) {
     }
 };
 // segundo commit
+function obtenerIndiceCampo(criterio) {
+    // Permite indicar el campo por nombre o por número.
+    if (/^\d+$/.test(criterio)) {
+        const numero = Number(criterio);
+
+        if (numero < 1 || numero > cantidadCampos) {
+            error(`el campo solicitado "${criterio}" no existe.`);
+        }
+
+        return numero - 1;
+    }
+
+    if (!noHeader) {
+        const indice = encabezado.indexOf(criterio);
+
+        if (indice === -1) {
+            error(`el campo solicitado "${criterio}" no existe.`);
+        }
+
+        return indice;
+    }
+
+    error(`el campo solicitado "${criterio}" no existe.`);
+}
+//tercer commit
