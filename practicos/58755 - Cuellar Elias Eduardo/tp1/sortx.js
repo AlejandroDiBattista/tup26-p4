@@ -195,10 +195,15 @@ function obtenerIndiceColumna(campo, header) {
     return indice
 }
 
+function serialize(filas, delimiter) {
+    const lineas = filas.map(fila => fila.join(delimiter))
+    return lineas.join("\n")
+}
 
 
 const config = parseArgs(process.argv.slice(2))
 const texto = readInput(config.inputFile)
 const filas = parseDelimited(texto, config.delimiter)
 const ordenadas = sortRows(filas, config)
-console.log(ordenadas)
+const salida = serialize(ordenadas, config.delimiter)
+console.log(salida)
