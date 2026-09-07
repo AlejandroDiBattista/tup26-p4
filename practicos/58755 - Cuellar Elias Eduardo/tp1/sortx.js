@@ -35,4 +35,67 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+function parseSortField(valor) {
+    const partes = valor.split(":")
+    const nombre = partes[0]
+    const tipo = partes[1] || "alpha"
+    const orden = partes[2] || "asc"
+
+    return {
+        name: nombre,
+        numeric: tipo === "num",
+        descending: orden === "desc"
+    }
+}
+
+
+function parseArgs(arg) {
+    let configuracion = {
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    }
+    let ubicacion = []
+
+    while (arg.length > 0) {
+        const opcion = arg.shift()
+        if (opcion === "--by" || opcion === "-b") {
+            let campo = arg.shift()
+            configuracion.sortFields.push(parseSortField(campo))   
+        } else if (opcion === "--delimiter" || opcion === "-d") {
+            let valor = arg.shift()
+            configuracion.delimiter = valor
+        } else if (opcion === "--no-header" || opcion === "-nh") {
+            configuracion.noHeader = true
+        } else if (opcion === "--help" || opcion === "-h") {
+            console.log(HELP)
+            process.exit(0)
+        } else if (opcion.startsWith("-")) {
+            console.error(`Error: opción desconocida "${opcion}".`)
+            process.exit(1)
+        } else {
+            ubicacion.push(opcion)
+        }
+    }
+
+    if (ubicacion.length < 1) {
+        console.error("Error: falta el archivo de origen.")
+        process.exit(1)
+    }
+    if (ubicacion.length < 2) {
+        console.error("Error: falta el archivo de destino.")
+        process.exit(1)
+    }
+
+    configuracion.inputFile = ubicacion[0]
+    configuracion.outputFile = ubicacion[1]
+
+    if (configuracion.sortFields.length === 0) {
+        console.error("Error: debe especificar al menos un criterio -b/--by.")
+        process.exit(1)
+    }
+
+    return configuracion
+}
+console.log(parseArgs(process.argv.slice(2)))
