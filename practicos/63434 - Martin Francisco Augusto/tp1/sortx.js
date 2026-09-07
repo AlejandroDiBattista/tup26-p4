@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -128,9 +130,64 @@ function parseArgs(argv) {
     return opciones;
 }
 
+function readInput(ruta) {
+    if (!fs.existsSync(ruta)) {
+        console.error("ERROR: el archivo de origen no existe: \"" + ruta + "\"");
+        process.exit(1);
+    }
+
+    try {
+        return fs.readFileSync(ruta, "utf8");
+    } catch (error) {
+        console.error("ERROR: no se pudo leer el archivo de origen: \"" + ruta + "\"");
+        process.exit(1);
+    }
+}
+
+function parseDelimited(texto, opciones) {
+    if (texto.includes("\"")) {
+        console.error("ERROR: no se admiten comillas dobles");
+        process.exit(1);
+    }
+
+    const normalizado = texto.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lineas = normalizado.split("\n");
+    if (lineas.length > 0 && lineas[lineas.length - 1] === "") {
+        lineas.pop();
+    }
+    if (lineas.length === 0) {
+        console.error("ERROR: el archivo de origen esta vacio");
+        process.exit(1);
+    }
+
+    const tabla = [];
+    for (let i = 0; i < lineas.length; i = i + 1) {
+        tabla.push(lineas[i].split(opciones.delimiter));
+    }
+
+    const cantidad = tabla[0].length;
+    for (let i = 0; i < tabla.length; i = i + 1) {
+        if (tabla[i].length !== cantidad) {
+            console.error("ERROR: la fila " + (i + 1) + " tiene distinta cantidad de campos");
+            process.exit(1);
+        }
+    }
+
+    let encabezado = null;
+    let filas = tabla;
+    if (!opciones.noHeader) {
+        encabezado = tabla[0];
+        filas = tabla.slice(1);
+    }
+
+    return { encabezado: encabezado, filas: filas };
+}
+
 function main() {
     const opciones = parseArgs(process.argv.slice(2));
-    console.log("parseArgs listo. Todavia no se lee el archivo \"" + opciones.inputFile + "\".");
+    const texto = readInput(opciones.inputFile);
+    const datos = parseDelimited(texto, opciones);
+    console.log("Se leyeron " + datos.filas.length + " filas. El ordenamiento queda pendiente.");
 }
 
 main();
