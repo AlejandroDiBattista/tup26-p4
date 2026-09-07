@@ -228,3 +228,17 @@ function writeOutput(outputFile, texto) {
         throw new Error("No se pudo escribir el archivo de destino " + outputFile + " (" + error.code + ")");
     }
 }
+
+try {
+    const config = parseArgs(process.argv.slice(2));
+    if (config !== undefined) {
+        const texto = readInput(config.inputFile);
+        const datos = parseDelimited(texto, config);
+        const ordenados = sortRows(datos, config);
+        const salida = serialize(ordenados, config);
+        writeOutput(config.outputFile, salida);
+    }
+} catch (error) {
+    console.error("Error: " + error.message);
+    process.exitCode = 1;
+}
