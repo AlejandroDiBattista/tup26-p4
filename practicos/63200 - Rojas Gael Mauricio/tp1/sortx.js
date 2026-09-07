@@ -13,11 +13,6 @@ OPCIONES:
     -d, --delimiter <c> Delimitador.
     -nh, --no-header    Archivo sin encabezado.
     -h, --help          Muestra esta ayuda.
-
-EJEMPLOS:
-    sortx empleados.csv ordenados.csv -b apellido
-    sortx empleados.csv salarios.csv -b salario:num:desc
-    sortx datos.csv resultado.csv -nh -b 2:num:desc
 `;
 
 function parseSortField(texto) {
@@ -99,11 +94,85 @@ function parseDelimited(texto, delimiter) {
     let filas = [];
 
     for (let i = 0; i < lineas.length; i++) {
-        let fila = lineas[i].split(delimiter);
-        filas.push(fila);
+        filas.push(lineas[i].split(delimiter));
     }
 
     return filas;
+}
+
+function sortRows(filas, config) {
+    if (filas.length === 0) {
+        return filas;
+    }
+
+    let header = null;
+    let datos = filas;
+
+    if (!config.noHeader) {
+        header = filas[0];
+        datos = filas.slice(1);
+    }
+
+    let criterios = [];
+
+    for (let criterio of config.sortFields) {
+        let indice;
+
+        if (config.noHeader) {
+            indice = Number(criterio.name);
+        }
+        else {
+            indice = header.indexOf(criterio.name);
+        }
+
+        criterios.push({
+            index: indice,
+            numeric: criterio.numeric,
+            descending: criterio.descending
+        });
+    }
+
+    datos.sort(function (filaA, filaB) {
+
+        for (let criterio of criterios) {
+
+            let valorA = filaA[criterio.index];
+            let valorB = filaB[criterio.index];
+
+            let resultado = 0;
+
+            if (criterio.numeric) {
+                let numeroA = Number(valorA);
+                let numeroB = Number(valorB);
+
+                if (numeroA < numeroB) {
+                    resultado = -1;
+                }
+                else if (numeroA > numeroB) {
+                    resultado = 1;
+                }
+            }
+            else {
+                resultado = valorA.localeCompare(valorB);
+            }
+
+            if (resultado !== 0) {
+                if (criterio.descending) {
+                    resultado = resultado * -1;
+                }
+
+                return resultado;
+            }
+        }
+
+        return 0;
+    });
+
+    if (!config.noHeader) {
+        return [header, ...datos];
+    }
+
+    return datos;
 }
 
 function main() {
@@ -116,7 +185,12 @@ function main() {
         config.delimiter
     );
 
-    console.log(filas);
+    let ordenadas = sortRows(
+        filas,
+        config
+    );
+
+    console.log(ordenadas);
 }
 
 main();
