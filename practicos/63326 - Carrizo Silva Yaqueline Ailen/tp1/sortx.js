@@ -218,3 +218,14 @@ function serialize(filas, delimitador){
 function writeOutput(texto,archivo){
     fs.writeFileSync(archivo, texto, "utf-8");
 }
+try{
+    let valor = parseArgs(process.argv);
+    let texto = readInput(valor)
+    let filas = parseDelimited(texto, valor.delimiter);
+    let ordenadas = sortRows(filas, valor);
+    let textFinal = serialize(ordenadas, valor.delimiter);
+    writeOutput(textFinal, valor.outputFile);
+}  catch(error) {
+    console.error(error.message);
+    process.exit(1)
+}
