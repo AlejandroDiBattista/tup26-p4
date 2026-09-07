@@ -246,6 +246,13 @@ function serialize(datosOrdenados, configuracion) {
 
     return resultado.join("\n")
 }
+
+function writeOutput(texto, configuracion) {
+    console.log("ENTRÉ A WRITE")
+    console.log(configuracion.outputFile)
+    console.log(texto)
+    fs.writeFileSync(configuracion.outputFile, texto)
+}
 const configuracion = parseArgs()
 console.log(configuracion)
 const texto = readInput(configuracion)
@@ -254,3 +261,4 @@ const datosOrdenados = sortRows(datos, configuracion)
 console.log(datosOrdenados)
 const textoSalida = serialize(datosOrdenados, configuracion)
 console.log(textoSalida)
+writeOutput(textoSalida, configuracion)
