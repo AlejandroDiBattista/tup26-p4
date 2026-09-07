@@ -143,7 +143,7 @@ const parseArgs = (args) => {
 const readInput = (inputFile) => {
   try {
     return fs.readFileSync(inputFile, "utf8")
-  } catch (error) {
+  } catch {
     fail(`No se pudo leer el archivo de origen: ${inputFile}`)
   }
 }
@@ -170,6 +170,77 @@ const parseDelimited = (text, delimiter) => {
   return rows
 }
 
+const sortRows = (rows, config) => {
+  const header = config.noHeader ? null : rows[0]
+  const dataRows = config.noHeader ? rows : rows.slice(1)
+
+  const criteria = config.sortFields.map((field) => {
+    let index
+
+    if (config.noHeader) {
+      if (!/^\d+$/.test(field.name)) {
+        fail(`Sin encabezado, el campo debe ser un índice numérico: ${field.name}`)
+      }
+
+      index = Number(field.name)
+    } else {
+      index = header.indexOf(field.name)
+    }
+
+    if (index < 0 || index >= rows[0].length) {
+      fail(`El campo solicitado no existe: ${field.name}`)
+    }
+
+    return { ...field, index }
+  })
+
+  criteria
+    .filter((criterion) => criterion.numeric)
+    .forEach((criterion) => {
+      dataRows.forEach((row) => {
+        const value = row[criterion.index]
+
+        if (value.trim() === "" || !Number.isFinite(Number(value))) {
+          fail(`El valor "${value}" no es numérico para el campo ${criterion.name}`)
+        }
+      })
+    })
+
+  return {
+    header,
+    rows: [...dataRows].sort((rowA, rowB) => {
+      for (const criterion of criteria) {
+        const valueA = rowA[criterion.index]
+        const valueB = rowB[criterion.index]
+
+        const comparison = criterion.numeric
+          ? Number(valueA) - Number(valueB)
+          : valueA.localeCompare(valueB)
+
+        if (comparison !== 0) {
+          return criterion.descending ? -comparison : comparison
+        }
+      }
+
+      return 0
+    })
+  }
+}
+
+const serialize = (header, rows, delimiter) => {
+  const allRows = header ? [header, ...rows] : rows
+
+  return `${allRows.map((row) => row.join(delimiter)).join("\n")}\n`
+}
+
+const writeOutput = (outputFile, text) => {
+  try {
+    fs.writeFileSync(outputFile, text, "utf8")
+  } catch {
+    fail(`No se pudo escribir el archivo de destino: ${outputFile}`)
+  }
+}
+
 const sortx = (args) => {
   const config = parseArgs(args)
 
@@ -179,8 +250,10 @@ const sortx = (args) => {
 
   const text = readInput(config.inputFile)
   const rows = parseDelimited(text, config.delimiter)
+  const result = sortRows(rows, config)
+  const output = serialize(result.header, result.rows, config.delimiter)
 
-  console.log(`Entrada válida: ${rows.length} filas leídas.`)
+  writeOutput(config.outputFile, output)
 }
 
 try {
