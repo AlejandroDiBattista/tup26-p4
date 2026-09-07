@@ -175,6 +175,20 @@ function sortRows(filas, config) {
     return datos;
 }
 
+function serialize(filas, delimiter) {
+    let lineas = [];
+
+    for (let fila of filas) {
+        lineas.push(fila.join(delimiter));
+    }
+
+    return lineas.join("\n") + (filas.length > 0 ? "\n" : "");
+}
+
+function writeOutput(fileName, texto) {
+    fs.writeFileSync(fileName, texto, "utf8");
+}
+
 function main() {
     let config = parseArgs(process.argv.slice(2));
 
@@ -185,12 +199,25 @@ function main() {
         config.delimiter
     );
 
-    let ordenadas = sortRows(
+    let filasOrdenadas = sortRows(
         filas,
         config
     );
 
-    console.log(ordenadas);
+    let resultado = serialize(
+        filasOrdenadas,
+        config.delimiter
+    );
+
+    writeOutput(
+        config.outputFile,
+        resultado
+    );
+
+    console.log(
+        "Archivo ordenado correctamente: " +
+        config.outputFile
+    );
 }
 
 main();
