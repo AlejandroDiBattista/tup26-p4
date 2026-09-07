@@ -135,7 +135,70 @@ function parseDelimited(texto, delimiter) {
     return filas
 }
 
+function sortRows(filas, config) {
+    let header = null
+    let datos = filas
+
+    if (!config.noHeader) {
+        header = filas[0]
+        datos = filas.slice(1)
+    }
+
+    datos.sort((filaA, filaB) => {
+        for (const criterio of config.sortFields) {
+            const indice = obtenerIndiceColumna(criterio.name, header)
+            let valorA = filaA[indice]
+            let valorB = filaB[indice]
+            let comparacion
+
+            if (criterio.numeric) {
+                const numA = Number(valorA)
+                const numB = Number(valorB)
+                if (isNaN(numA) || isNaN(numB)) {
+                    console.error(`Error: valor no numérico en el campo "${criterio.name}".`)
+                    process.exit(1)
+                }
+                comparacion = numA - numB
+            } else {
+                comparacion = valorA.localeCompare(valorB)
+            }
+            if (criterio.descending) {
+                comparacion = -comparacion
+            }
+            if (comparacion !== 0) {
+                return comparacion
+            }
+        }
+        return 0
+    })
+
+    if (header !== null) {
+        return [header, ...datos]
+    }
+    return datos
+}
+
+function obtenerIndiceColumna(campo, header) {
+    if (header === null) {
+        const indice = Number(campo)
+        if (isNaN(indice)) {
+            console.error(`Error: el campo "${campo}" no es un índice válido.`)
+            process.exit(1)
+        }
+        return indice
+    }
+    const indice = header.indexOf(campo)
+    if (indice === -1) {
+        console.error(`Error: el campo "${campo}" no existe.`)
+        process.exit(1)
+    }
+    return indice
+}
+
+
+
 const config = parseArgs(process.argv.slice(2))
 const texto = readInput(config.inputFile)
 const filas = parseDelimited(texto, config.delimiter)
-console.log(filas)
+const ordenadas = sortRows(filas, config)
+console.log(ordenadas)
