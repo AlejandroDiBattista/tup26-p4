@@ -218,21 +218,39 @@ function sortRows(datos, configuracion) {
              let numeroA = parseInt(a[posicion])
             let numeroB = parseInt(b[posicion])
 
-            return numeroA - numeroB
 
-        
-            }else{
-                return a[posicion].localeCompare(b[posicion]);
+            if (criterio.descending === false) {
+                return numeroA - numeroB;
+            } else {
+                return numeroB - numeroA;
             }
+            }else{
+                if (criterio.descending === false) {
+                    return a[posicion].localeCompare(b[posicion]);
+                } else {
+                    return b[posicion].localeCompare(a[posicion]);
+                }
+            }
+            
         });
     }
 
     return [encabezados, ...filas];
 }
 
+function serialize(datosOrdenados, configuracion) {
+
+    let resultado = datosOrdenados.map((fila) => {
+        return fila.join(configuracion.delimiter)
+    })
+
+    return resultado.join("\n")
+}
 const configuracion = parseArgs()
 console.log(configuracion)
 const texto = readInput(configuracion)
 const datos = parseDelimited(texto, configuracion)
 const datosOrdenados = sortRows(datos, configuracion)
 console.log(datosOrdenados)
+const textoSalida = serialize(datosOrdenados, configuracion)
+console.log(textoSalida)
