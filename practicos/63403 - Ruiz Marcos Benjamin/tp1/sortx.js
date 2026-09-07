@@ -53,12 +53,20 @@ if (process.argv[2] === "-h" || process.argv[2] === "--help") {
         console.log(HELP);
         process.exit(0);
     }
+if (inputFile === undefined || outputFile === undefined) {
+    console.error("Faltan los archivos de origen o destino");
+    process.exit(1);
+}
 
 for (let i = 4; i < process.argv.length; i++) {
     const arg = process.argv[i];    
     //console.log(arg);
 if (arg === "-b" || arg === "--by") {
     const valor = process.argv[i + 1];
+if (valor === undefined) {
+    console.error("Falta el valor del criterio de ordenamiento");
+    process.exit(1);
+}    
     //console.log(valor);
     const partes = valor.split(':');
     //console.log(partes);
@@ -73,23 +81,44 @@ else if (arg === "-nh" || arg === "--no-header") {
     }
 else if (arg === "-d" || arg === "--delimiter") {
         delimiter = process.argv[i + 1];
-    }
+if (delimiter === undefined) {
+    console.error("Falta el valor del delimitador");
+    process.exit(1);
+}
+if (delimiter.length !== 1) {
+    console.error("El delimitador debe ser un solo carácter");
+    process.exit(1);
+}
+}
 else if (arg === "-h" || arg === "--help") {
         console.log(HELP);
         process.exit(0);
     }
+else if (arg.startsWith("-")) {
+        console.error("Opción desconocida");
+        process.exit(1);
+    }
 
+}
+if(sortFields.length === 0) {
+    console.error("Debe especificar al menos un criterio de ordenamiento");
+    process.exit(1);
 }
 return { inputFile, outputFile, delimiter, noHeader, sortFields };
 }
 
+
 //console.log(parseArgs());
 
 function readInput(archivo) {
+    try {
     const contenido = readFileSync(archivo, 'utf8');
     return(contenido);
+} catch (error) {
+    console.error("No se puede leer el archivo de origen:");
+    process.exit(1);
 }   
-
+}
 //console.log(readInput('empleados.csv'));
 
 function parseDelimited(texto, delimitador){
@@ -126,6 +155,11 @@ else {
     indice = encabezado.indexOf(campos.name);
 
 }
+if(indice === -1){
+console.error ("El campo indicado no existe")
+process.exit (1)
+}
+
 criterios.push({ indice, numeric: campos.numeric, descending: campos.descending });
 }
 
