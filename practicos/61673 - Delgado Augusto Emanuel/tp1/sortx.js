@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { readFile, writeFile } from "node:fs/promises"
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -34,5 +36,251 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+function parseArgs(argv) {
+    // si el usuario pide ayuda se muestra y se sale
+    if (argv.includes("--help") || argv.includes("-h")) {
+        console.log(HELP)
+        process.exit(0)
+    }
+    const args = argv.slice(0)
+    if (args.length < 1 || args[0].startsWith("-")) {
+        throw new Error("Falta el archivo de origen.")
+    }
+    const inputFile = args.shift()
+    if (args.length < 1 || args[0].startsWith("-")) {
+        throw new Error("Falta el archivo de destino.")
+    }
+    const outputFile = args.shift()
+    const config = {
+        inputFile,
+        outputFile,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    }
+    // se procesan el resto de las opciones
+    let i = 0
+    while (i < args.length) {
+        const arg = args[i]
+        if (arg === "--by" || arg === "-b") {
+            i++
+            if (i >= args.length) {
+                throw new Error(`La opcion "${arg}" necesita un valor.`)
+            }
+            config.sortFields.push(parseSortField(args[i]))
+        } else if (arg === "--delimiter" || arg === "-d") {
+            i++
+            if (i >= args.length) {
+                throw new Error(`La opcion "${arg}" necesita un valor.`)
+            }
+            const delim = args[i]
+            const resolvedDelim = delim === "\\t" ? "\t" : delim
+            if ([...resolvedDelim].length !== 1) {
+                throw new Error(`El delimitador debe ser exactamente un caracter. Se recibio: "${delim}"`)
+            }
+            config.delimiter = resolvedDelim
+        } else if (arg === "--no-header" || arg === "-nh") {
+            config.noHeader = true
+        } else if (arg.startsWith("-")) {
+            throw new Error(`Opcion desconocida: "${arg}"`)
+        } else {
+            throw new Error(`Argumento inesperado: "${arg}"`)
+        }
+        i++
+    }
+    if (config.sortFields.length === 0) {
+        throw new Error("Debe especificar al menos un criterio de ordenamiento con --by (-b).")
+    }
+    return config
+}
+// parsea una expresion del tipo: campo[:tipo[:orden]]
+function parseSortField(expr) {
+    const partes = expr.split(":")
+    const name = partes[0]
+    const tipoRaw = partes[1] ?? "alpha"
+    const ordenRaw = partes[2] ?? "asc"
+    if (tipoRaw !== "alpha" && tipoRaw !== "num") {
+        throw new Error(`Tipo de ordenamiento invalido: "${tipoRaw}". Debe ser "alpha" o "num".`)
+    }
+    if (ordenRaw !== "asc" && ordenRaw !== "desc") {
+        throw new Error(`Orden invalido: "${ordenRaw}". Debe ser "asc" o "desc".`)
+    }
+    return {
+        name,
+        numeric: tipoRaw === "num",
+        descending: ordenRaw === "desc"
+    }
+}
+
+// readInput — lee el archivo de origen
+async function readInput(filePath) {
+    try {
+        const contenido = await readFile(filePath, "utf8")
+        return contenido
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            throw new Error(`El archivo de origen no existe: "${filePath}"`)
+        }
+        throw new Error(`No se pudo leer el archivo "${filePath}": ${error.message}`)
+    }
+}
+
+// parseDelimited — convierte texto en filas y columnas
+function parseDelimited(text, delimiter, noHeader) {
+    // se divide por lineas (maneja \r\n y \n)
+    const lineas = text.split(/\r?\n/u)
+
+    // se elimina la ultima linea vacia si el archivo termina con salto de linea
+    if (lineas.length > 0 && lineas[lineas.length - 1] === "") {
+        lineas.pop()
+    }
+
+    if (lineas.length === 0) {
+        throw new Error("El archivo de origen esta vacio.")
+    }
+
+    // se verifica que no haya comillas dobles (no soportadas)
+    for (let i = 0; i < lineas.length; i++) {
+        if (lineas[i].includes('"')) {
+            throw new Error(`La linea ${i + 1} contiene comillas dobles, que no estan soportadas.`)
+        }
+    }
+
+    // se parsean todas las filas
+    const filas = lineas.map(linea => linea.split(delimiter))
+
+    // se verifica que todas las filas tengan la misma cantidad de campos
+    const cantidadEsperada = filas[0].length
+    for (let i = 1; i < filas.length; i++) {
+        if (filas[i].length !== cantidadEsperada) {
+            throw new Error(
+                `La fila ${i + 1} tiene ${filas[i].length} campo(s) pero se esperaban ${cantidadEsperada}.`
+            )
+        }
+    }
+
+    // separa el encabezado de los datos
+    let header = null
+    let rows = filas
+
+    if (!noHeader) {
+        header = filas[0]
+        rows = filas.slice(1)
+    }
+
+    return { header, rows }
+}
+
+// sortRows: ordena las filas
+function sortRows(rows, sortFields, header) {
+    if (rows.length === 0) {
+        return []
+    }
+
+    // se resuelve el indice de columna de cada campo
+    const criterios = sortFields.map(field => {
+        let colIndex
+
+        // si el nombre es un numero, se lo usa como indice directo
+        if (/^\d+$/u.test(field.name)) {
+            colIndex = Number(field.name)
+            if (colIndex >= rows[0].length) {
+                throw new Error(
+                    `El indice de columna ${colIndex} esta fuera de rango (el archivo tiene ${rows[0].length} columna(s)).`
+                )
+            }
+        } else {
+            // buscamos por nombre en el encabezado
+            if (!header) {
+                throw new Error(
+                    `No se puede buscar por nombre de campo "${field.name}" en un archivo sin encabezado. Usa un indice numerico.`
+                )
+            }
+            colIndex = header.indexOf(field.name)
+            if (colIndex === -1) {
+                throw new Error(`El campo "${field.name}" no existe en el encabezado.`)
+            }
+        }
+
+        return { ...field, colIndex }
+    })
+
+    // funcion comparadora que aplica los criterios en orden
+    const comparar = (filaA, filaB) => {
+        for (const criterio of criterios) {
+            const valA = filaA[criterio.colIndex]
+            const valB = filaB[criterio.colIndex]
+
+            let resultado
+
+            if (criterio.numeric) {
+                const numA = Number(valA)
+                const numB = Number(valB)
+
+                if (isNaN(numA)) {
+                    throw new Error(`El campo "${criterio.name}" tiene un valor no numerico: "${valA}"`)
+                }
+                if (isNaN(numB)) {
+                    throw new Error(`El campo "${criterio.name}" tiene un valor no numerico: "${valB}"`)
+                }
+
+                resultado = numA - numB
+            } else {
+                // comparacion alfabetica usando localeCompare para manejar acentos
+                resultado = valA.localeCompare(valB, undefined, { sensitivity: "base" })
+            }
+
+            if (criterio.descending) {
+                resultado = -resultado
+            }
+
+            if (resultado !== 0) {
+                return resultado
+            }
+        }
+
+        return 0
+    }
+
+    return [...rows].sort(comparar)
+}
+// serialize — reconstruye el texto delimitado con encabezado y filas ordenadas
+function serialize(header, rows, delimiter) {
+    const todasLasFilas = header ? [header, ...rows] : rows
+    return todasLasFilas.map(fila => fila.join(delimiter)).join("\n") + "\n"
+}
+
+// writeOutput — escribe el archivo de destino de forma asincrona
+async function writeOutput(filePath, content) {
+    try {
+        await writeFile(filePath, content, "utf8")
+    } catch (error) {
+        throw new Error(`No se pudo escribir el archivo de destino "${filePath}": ${error.message}`)
+    }
+}
+// punto de entrada principal
+async function main() {
+    const argv = process.argv.slice(2)
+
+    try {
+        const config = parseArgs(argv)
+
+        const texto = await readInput(config.inputFile)
+
+        const { header, rows } = parseDelimited(texto, config.delimiter, config.noHeader)
+
+        const filasOrdenadas = sortRows(rows, config.sortFields, header)
+
+        const resultado = serialize(header, filasOrdenadas, config.delimiter)
+
+        await writeOutput(config.outputFile, resultado)
+
+        console.log(`Listo. Se escribio "${config.outputFile}".`)
+    } catch (error) {
+        console.error(`Error: ${error.message}`)
+        process.exit(1)
+    }
+}
+
+main()
+
