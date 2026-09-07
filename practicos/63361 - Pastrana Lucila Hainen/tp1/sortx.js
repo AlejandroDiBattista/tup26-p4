@@ -1,5 +1,6 @@
 import fs from "node:fs";
 
+
 function parseArgs() {
     const args = process.argv.slice(2);
 
@@ -18,10 +19,17 @@ function parseArgs() {
     configuracion.inputFile = args.shift();
     configuracion.outputFile = args.shift();
 
-    if  (configuracion.inputFile === undefined || configuracion.outputFile === undefined) {
-        console.log("Indicar el archivo de origen o el archivo de destino");
-        return; 
+    if  (configuracion.inputFile === undefined) { 
+        console.log("Indicar el archivo de origen");
+        process.exitCode = 1;
+        return;
+    
+    }
 
+    if(configuracion.outputFile === undefined) {
+        console.log("Indicar el archivo de destino");
+        process.exitCode = 1;
+        return;
     }
 
 
@@ -35,9 +43,31 @@ function parseArgs() {
         let opcion = args.shift();
         
         if (opcion === "-b" || opcion === "--by") {
-             let campo = args.shift() ?? "";
+             let campo = args.shift();
+
+             if (campo === undefined) {
+                console.log("Falta indicar el campo para ordenar");
+                process.exitCode = 1;
+                return;
+             }
 
          let partes = campo.split(":");
+
+         if (partes[1] !== undefined && partes[1] !== "alpha" && partes[1] !== "num") {
+            console.log("Tipo de orden inválido");
+            process.exitCode = 1;
+            return;
+         }
+
+         if (partes[2] !== undefined) {
+            if (partes[2] !== "asc" && partes[2] !== "desc") {
+                console.log("Orden inválido");
+                process.exitCode = 1;
+                return;
+            }
+         
+            
+         }
 
               configuracion.sortFields.push({
                 name: partes[0],
@@ -46,18 +76,43 @@ function parseArgs() {
                 descending: partes[2] === "desc"
             });
         }
-        if (opcion === "-d" ||opcion === "--delimiter") {
-            configuracion.delimiter = args.shift();
+        else if (opcion === "-d" ||opcion === "--delimiter") {
+            let delimiter = args.shift();
+
+            if (delimiter === undefined) {
+                console.log("No indicó el delimitador");
+                process.exitCode = 1;
+                return;
+            }
+
+            if(delimiter === "\\t") {
+                delimiter = "\t"; 
+            }
+
+            if (delimiter.length !== 1) {
+                console.log("El delimitador debe poseer un solo carácter");
+                process.exitCode = 1;
+                return; 
+            }
+
+            configuracion.delimiter = delimiter;
         }
 
-        if (opcion === "-nh" ||opcion === "--no-header") {
+        else if (opcion === "-nh" ||opcion === "--no-header") {
             configuracion.noHeader = true;
+        }
+
+        else {
+            console.log("Opción no válida");
+            process.exitCode = 1;
+            return;
         }
         
     }
 
     if (configuracion.sortFields.length === 0) {
             console.log("Escriba indicando el campo que sea ordenar");
+            process.exitCode = 1;
             return;
         }
 
@@ -67,8 +122,16 @@ function parseArgs() {
 }
 
 function readInput(nombre) {
+    if (!fs.existsSync(nombre)) {
+        console.log("No se pudo leer el archivo de origen");
+        process.exitCode= 1;
+        return;
+    }
+
     let texto = fs.readFileSync(nombre, "utf8");
     return texto;
+
+
 }
 
 
@@ -79,6 +142,27 @@ function parseDelimited(texto,  delimiter, noHeader) {
     }; 
 
    let filas = texto.split(/\r?\n/).map(linea => linea.split(delimiter));
+
+
+   let cantidadCampos = filas[0].length;
+
+   for (let fila of filas) {
+     if (fila.length !== cantidadCampos) {
+        console.log("Las filas poseen distinta cantidad de campos");
+        process.exitCode = 1;
+        return;
+     }
+   }
+
+    for (let fila of filas) {
+        for (let campo of fila) {
+            if (campo.includes('"')) {
+                console.log("No se permiten campos entre comillas");
+                process.exitCode = 1;
+                return;
+            }
+        }
+    }
    
    if (!noHeader) {
     tabla.header = filas.shift(); 
@@ -96,17 +180,52 @@ function parseDelimited(texto,  delimiter, noHeader) {
 
 function sortRows(tabla, sortFields) {
     let filas = [...tabla.rows]; 
-    filas.sort((a,b) => {
 
-        for (let field of sortFields) {
+    for (let field of sortFields) {
             let name = field.name;
             let i = tabla.header.indexOf(name);
+
+            if (i === -1) {
+                i = tabla.header.indexOf(Number(name));
+
+            }
             
+            if (i === -1) {
+                console.log("El campo marcado no existe");
+                process.exitCode = 1;
+                return;
+            }
+            
+        
+
+
+        if (field.numeric) {
+            for (let fila of tabla.rows) {
+                if (isNaN(fila[i])) {
+                    console.log("Este campo posee un valor no numérico");
+                    process.exitCode = 1;
+                    return;
+                }
+            }
+        }
+    }
+           filas.sort((a,b) => {
+
+            for (let field of sortFields) {
+            let name = field.name;
+            let i = tabla.header.indexOf(name);
+
+            if (i === -1) {
+                i = tabla.header.indexOf(Number(name));
+
+            }
+
             let varA = a[i];
             let varB = b[i];
             let res;
 
             if (field.numeric) {
+   
                 res = varA - varB;
             } else{ 
                 res= varA.localeCompare(varB);
@@ -141,12 +260,35 @@ texto = texto + tabla.rows.map(linea => linea.join(delimiter)).join("\n");
 return texto;
 }
 
-let configuracion = parseArgs();
-let texto = readInput(configuracion.inputFile);
-let tabla = parseDelimited(texto, configuracion.delimiter, configuracion.noHeader);
-let tablaOrdenada = sortRows(tabla, configuracion.sortFields);
+function writeOutput(nombre, texto) {
+    try {
 
-let textoSalida = serialize(tablaOrdenada, configuracion.delimiter, configuracion.noHeader);
-console.log(textoSalida);
-console.log(tablaOrdenada);
+        fs.writeFileSync(nombre, texto);
+    } catch (error) {
+        console.log("No se pudo escribir el archivo de destino");
+        process.exitCode = 1;
+        return;
+    }    
+}
+
+let configuracion = parseArgs();
+
+if (configuracion !== undefined) {
+    let texto = readInput(configuracion.inputFile);
+
+    if (texto !== undefined) {
+        let tabla = parseDelimited(texto, configuracion.delimiter, configuracion.noHeader);
+        
+        if ( tabla !== undefined) {
+            let tablaOrdenada = sortRows(tabla, configuracion.sortFields);
+            
+            if (tablaOrdenada !== undefined) {
+                let textoSalida = serialize(tablaOrdenada, configuracion.delimiter, configuracion.noHeader);
+                writeOutput(configuracion.outputFile, textoSalida);
+            }
+        }
+    }
+}
+
+
 
