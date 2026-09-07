@@ -42,8 +42,8 @@ let params = process.argv.slice(2)
 // 2. readInput      → leer el archivo de origen. Listo
 // 3. parseDelimited → convertir el texto en filas y columnas. Listo
 // 4. sortRows       → ordenar las filas.
-// 5. serialize      → reconstruir el texto delimitado.
-// 6. writeOutput    → escribir el archivo de destino.
+// 5. serialize      → reconstruir el texto delimitado. Listo
+// 6. writeOutput    → escribir el archivo de destino. Listo
 
 //Funcion para mostar errores
 const showError = (message) => {
@@ -86,8 +86,8 @@ const parseBy = (arg) => {
 
 //Funcion para validar el delimitador
 const validateDelimiter = (delimiter) => {
-    if (delimiter === `\\t`) {
-        return delimiter
+    if (delimiter === `\\t` || delimiter === "\t") {
+        return "\t"
     }
 
     if (delimiter.length != 1) {
@@ -232,10 +232,76 @@ const writeOutput = (outputFile, text) => {
     }
 }
 
+//Ordena las filas
+const sortRows = (rows, noHeader, sortConfig) => {
+    let header = []
+    let dataRows = rows
+
+    if (noHeader) {
+        header = rows[0].map((_, i) => i)
+    }else {
+        header = rows[0]
+        dataRows = rows.slice(1)
+    }
+
+    const sortConfigIndex = sortConfig.map(config => {
+        let index;
+        if (noHeader) {
+            index = Number(config.name);
+            if (isNaN(index) || index < 0 || index >= rows[0].length) {
+            showError(`Índice de columna inválido: ${config.name}`);
+            }
+        } else {
+            index = header.indexOf(config.name);
+            if (index === -1) {
+            showError(`El campo '${config.name}' no existe.`);
+            }
+        }
+        return {
+            index,
+            numeric: config.numeric,
+            descending: config.descending
+        };
+    });
+
+    dataRows.sort((row1, row2) => {
+        for (const config of sortConfigIndex) {
+            let result = 0
+            if (config.numeric) {
+                const val1 = row1[config.index]
+                const val2 = row2[config.index]
+
+                if (isNaN(val1) || isNaN(val2)) {
+                    showError("Se encontro un valor no numerico en una columna configurada como numerica.")
+                }
+
+                result = val1 - val2
+            }else {
+                result = row1[config.index].localeCompare(row2[config.index])
+            }
+
+            if (config.descending) {
+                result *= -1
+            }
+
+            if (result !== 0) {
+                return result
+            }
+        }
+        return 0
+    })
+
+    return noHeader ? dataRows : [header, ...dataRows]
+}
+
 const sortx = (args) => {
     let {inputFile, outputFile, delimiter, noHeader, sortFields} = parseArgs(args)
 
     let inputData = parseDelimited(readInput(inputFile), delimiter)
+
+    let sortedData = sortRows(inputData, noHeader, sortFields)
+
+    writeOutput(outputFile, serialize(sortedData, delimiter))
 }
 
 sortx(params)
