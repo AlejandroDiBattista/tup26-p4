@@ -55,9 +55,32 @@ function parseArgs(args){
 
             i++;
             const expresion= args[i];
+
+            if (expresion.startsWith("-")) {
+            console.error(`Error: Se esperaba un criterio válido después de -b o --by, pero se recibió la opción "${expresion}".`);
+            process.exit(1);
+            }
             const partes = expresion.split(':');
 
+            if (partes.length > 3 ) {
+                console.error(`error: el criterio "${expresion}" esta mal formado`);
+                process.exit(1);
+            }
+            if (partes[0].trim()==="") {
+                console.error(`Error: el criterio "${expresion}" está mal formado, Falta especificar el nombre o índice del campo`);
+                process.exit(1);
+            }
             const nombreCampo = partes[0];
+
+            if (partes[1] !== undefined && partes[1] !== "alpha" && partes[1] !== "num") {
+                console.error(`Error: Tipo de ordenamiento inválido "${partes[1]}", Debe ser "alpha" o "num"`);
+                process.exit(1);
+            }
+            if (partes[2] !== undefined && partes[2] !== "asc" && partes[2] !== "desc") {
+                console.error(`Error: orden invalido "${partes[2]}", Debe ser "asc" o "desc"`);
+                process.exit(1);
+            }
+
             let esNumerico = false;
             let esDescendente = false;
             if (partes[1]=== "num") {
@@ -80,6 +103,10 @@ function parseArgs(args){
                 process.exit(1);
             }
             i++;
+            if (args[i].startsWith("-")) {
+                console.error(`Error: se esperaba un carácter de delimitación válido, pero se recibió la opción "${args[i]}".`);
+                process.exit(1);
+            }
             config.delimiter =args[i]
         }
             else if(arg.startsWith("-")){
@@ -93,6 +120,9 @@ function parseArgs(args){
             }
             else if (config.outputFile === null) {
                 config.outputFile = arg;
+        }else {
+            console.error(`Error: argumento posicional inesperado o excedente"${arg}"`);
+            process.exit(1);
         }
     }}
             if (config.inputFile === null || config.outputFile === null){
@@ -132,8 +162,7 @@ function readInput(rutaArchivo){
         const matrizFilas =[];
         for (let i = 0; i < lineas.length; i++) {
             const linea = lineas[i];
-            if (i === lineas.length - 1 && linea === "")continue; {
-            }
+            if (i === lineas.length - 1 && linea === "")continue;
             if (linea.includes('"')) {
                 console.error("Error: la entrada contiene comillas dobles, formato no admitido");
                 process.exit(1);
@@ -207,6 +236,7 @@ function readInput(rutaArchivo){
         }
 
     }
+    return 0;
     });
 
 
