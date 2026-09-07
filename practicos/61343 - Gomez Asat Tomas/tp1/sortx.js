@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-
+const fs = require("fs");
 const HELP = `
-
 sortx — Ordena archivos de texto delimitados
 
 USO:
@@ -19,7 +18,7 @@ OPCIONES:
 
     -d, --delimiter <c> Delimitador de un solo carácter.
                         Predeterminado: ","
-                        Usá "\t" para archivos separados por tabulaciones.
+                        Usá "\\t" para archivos separados por tabulaciones.
 
     -nh, --no-header    Indica que el archivo no tiene encabezado.
                         Los campos se identifican mediante índices desde cero.
@@ -31,178 +30,147 @@ EJEMPLOS:
     sortx empleados.csv salarios.csv -b salario:num:desc
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
-    sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+    sortx datos.tsv salida.tsv -d "\\t" -b nombre
+`;
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
-
+const args = process.argv.slice(2);
 function error(mensaje) {
-    console.error("Error:",mensaje);
+    console.error("Error:", mensaje);
     process.exit(1);
 }
-if (args.length === 0) {
-    error("faltan los archivos de origen y destino.");
-}
-if (args[0] === "-h" || args[0] === "--help") {
+if (args.includes("-h") || args.includes("--help")) {
     console.log(HELP);
     process.exit(0);
 }
 if (args.length < 2) {
-    error("deben especificarse obligatoriamente el archivo de origen y el archivo de destino.");
+    error("deben especificarse el archivo de origen y el archivo de destino.");
 }
+//primer commit-Agrega validaciones del archivo de origen  
 const origen = args[0];
-const destino = args[1];
-console.log("origen:", origen);
-console.log("destino:", destino);
-const criterios = [];       
+const destino = args[1];    
+const criterios = [];
 let delimiter = ",";
 let noHeader = false;
 for (let i = 2; i < args.length; i++) {
     const opcion = args[i];
     if (opcion === "-b" || opcion === "--by") {
-        criterios.push(args[i + 1]);
-        i++;
+        if (i + 1 >= args.length) {
+            error(`la opción ${opcion} necesita un valor.`);
+        }
+        criterios.push(args[++i]);
     } else if (opcion === "-d" || opcion === "--delimiter") {
-        delimiter = args[i + 1];
+        if (i + 1 >= args.length) {
+            error(`la opción ${opcion} necesita un valor.`);
+        }
+        delimiter = args[++i];
         if (delimiter === "\\t") {
             delimiter = "\t";
         }
-        i++;
+        if (delimiter.length !== 1) {
+            error("el delimitador debe tener exactamente un carácter.");
+        }
     } else if (opcion === "-nh" || opcion === "--no-header") {
         noHeader = true;
-    } else if (opcion === "-h" || opcion === "--help") {
-        console.log(HELP);
-        process.exit(0);
     } else {
-        console.error("Error: opción desconocida:", opcion);
-        process.exit(1);
+        error(`opción desconocida: ${opcion}`);
     }
 }
 if (criterios.length === 0) {
     error("no se especificó ningún criterio --by.");
 }
-//primer commit  
-
+//segundo commit-Agrega validación de argumentos y opciones
 let contenido;
-
 try {
     contenido = fs.readFileSync(origen, "utf8");
 } catch (e) {
     error(`no se puede leer el archivo de origen "${origen}".`);
 }
-
 if (contenido.includes('"')) {
     error("la entrada contiene comillas dobles, lo cual no está permitido.");
 }
-
-const lineas = contenido.split(/\r?\n/);
-
-if (lineas.length > 0 && lineas[lineas.length - 1] === "") {
+contenido = contenido.replace(/\r\n/g, "\n");
+const lineas = contenido.split("\n");
+if (lineas[lineas.length - 1] === "") {
     lineas.pop();
 }
-
 if (lineas.length === 0) {
     error("el archivo de origen está vacío.");
 }
-const filas = lineas.map((linea, indice) => {
-    const campos = linea.split(delimiter);
-
-    if (indice === 0 && !noHeader) {
-        return campos;
-    }
-
-    return campos;
-});
-
+const filas = lineas.map(linea => linea.split(delimiter));
 const cantidadCampos = filas[0].length;
-
 for (let i = 0; i < filas.length; i++) {
     if (filas[i].length !== cantidadCampos) {
         error(
             `la fila ${i + 1} tiene ${filas[i].length} campos y se esperaban ${cantidadCampos}.`
         );
     }
-};
-// segundo commit
-function obtenerIndiceCampo(criterio) {
-    // Permite indicar el campo por nombre o por número.
-    if (/^\d+$/.test(criterio)) {
-        const numero = Number(criterio);
-
-        if (numero < 1 || numero > cantidadCampos) {
-            error(`el campo solicitado "${criterio}" no existe.`);
+}
+//tercer commit-Agrega validación de cantidad de campos
+let encabezado = null;
+let datos = filas;
+if (!noHeader) {
+    encabezado = filas[0];
+    datos = filas.slice(1);
+}
+function obtenerIndiceCampo(campo) {
+    if (noHeader) {
+        if (!/^\d+$/.test(campo)) {
+            error(`el campo solicitado "${campo}" no existe.`);
         }
-
-        return numero - 1;
-    }
-
-    if (!noHeader) {
-        const indice = encabezado.indexOf(criterio);
-
-        if (indice === -1) {
-            error(`el campo solicitado "${criterio}" no existe.`);
+        const indice = Number(campo);
+        if (indice < 0 || indice >= cantidadCampos) {
+            error(`el campo solicitado "${campo}" no existe.`);
         }
-
         return indice;
     }
-
-    error(`el campo solicitado "${criterio}" no existe.`);
-}
-//tercer commit
-const criteriosProcesados = criterios.map((criterio) => {
-    let nombre = criterio;
-    let tipo = "string";
-    let orden = "asc";
-const partes = criterio.split(":");
-    nombre = partes[0];
-
-    for (let i = 1; i < partes.length; i++) {
-        const parte = partes[i].toLowerCase();
-
-        if (parte === "numeric" || parte === "number" || parte === "num") {
-            tipo = "numeric";
-        } else if (parte === "asc" || parte === "desc") {
-            orden = parte;
-        } else {
-            error(`criterio desconocido: "${parte}".`);
-        }
+    const indice = encabezado.indexOf(campo);
+    if (indice === -1) {
+        error(`el campo solicitado "${campo}" no existe.`);
     }
+    return indice;
+}
+const criteriosProcesados = criterios.map(criterio => {
+    const partes = criterio.split(":");
 
+    if (partes.length > 3 || partes[0] === "") {
+        error(`criterio inválido: "${criterio}".`);
+    }
+    const campo = partes[0];
+    const tipo = partes[1] || "alpha";
+    const orden = partes[2] || "asc";
+    if (tipo !== "alpha" && tipo !== "num") {
+        error(`tipo desconocido: "${tipo}".`);
+    }
+    if (orden !== "asc" && orden !== "desc") {
+        error(`orden desconocido: "${orden}".`);
+    }
     return {
-        indice: obtenerIndiceCampo(nombre),
+        indice: obtenerIndiceCampo(campo),
         tipo,
         orden
     };
 });
-//cuarto commit 
+//cuarto commit-Agrega validación de criterios de ordenamiento
 function comparar(a, b) {
     for (const criterio of criteriosProcesados) {
-        const valorA = a[criterio.indice];
-        const valorB = b[criterio.indice];
+        const valorA = a[criterio.indice].trim();
+        const valorB = b[criterio.indice].trim();
 
         let resultado = 0;
 
-        if (criterio.tipo === "numeric") {
+        if (criterio.tipo === "num") {
+            if (valorA === "" || !Number.isFinite(Number(valorA))) {
+                error(`el criterio numérico encontró un valor no numérico: "${valorA}".`);
+            }
+
+            if (valorB === "" || !Number.isFinite(Number(valorB))) {
+                error(`el criterio numérico encontró un valor no numérico: "${valorB}".`);
+            }
+
             const numeroA = Number(valorA);
             const numeroB = Number(valorB);
-
-            if (valorA.trim() === "" || !Number.isFinite(numeroA)) {
-                error(
-                    `el criterio numérico encontró un valor no numérico: "${valorA}".`
-                );
-            }
-            if (valorB.trim() === "" || !Number.isFinite(numeroB)) {
-                error(
-                    `el criterio numérico encontró un valor no numérico: "${valorB}".`
-                );
-            }
-
-            if (numeroA < numeroB) {
-                resultado = -1;
-            } else if (numeroA > numeroB) {
-                resultado = 1;
-            }
+            if (numeroA < numeroB) resultado = -1;
+            if (numeroA > numeroB) resultado = 1;
         } else {
             resultado = valorA.localeCompare(valorB, undefined, {
                 numeric: true,
@@ -228,12 +196,9 @@ if (encabezado !== null) {
 for (const fila of datos) {
     resultado.push(fila.join(delimiter));
 }
-
-const salida = resultado.join("\n");
-
 try {
-    fs.writeFileSync(destino, salida, "utf8");
+    fs.writeFileSync(destino, resultado.join("\n"), "utf8");
 } catch (e) {
     error(`no se puede escribir el archivo de destino "${destino}".`);
 }
-//quinto commit
+//quinto commit-generación del archivo de salida
