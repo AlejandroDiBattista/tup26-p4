@@ -137,12 +137,18 @@ function parseArgs() {
 
 function main() {
     const args = parseArgs();
-
     const input = readInput(args.inputFile);
+    const { header, rows } = parseDelimited(input, args);
+    const sortedRows = sortRows(
+        rows,
+        args.sortFields,
+        header
+    );
 
-    const result = parseDelimited(input, args);
-
-    console.log(result);
+    console.log({
+        header,
+        rows: sortedRows
+    });
 }
 
 
@@ -193,6 +199,61 @@ function parseDelimited(input, args) {
         header,
         rows
     };
+}
+
+function compareValues(valorA, valorB, numeric) {
+    if (numeric) {
+        const numA = Number(valorA);
+        const numB = Number(valorB);
+
+        if (Number.isNaN(numA) || Number.isNaN(numB)) {
+            const valor = Number.isNaN(numA) ? valorA : valorB;
+            logError(`Valor no numérico: ${valor}`);
+        }
+
+        return numA - numB;
+    }
+
+    return valorA.localeCompare(valorB);
+}
+
+function sortRows(rows, sortFields, header) {
+    const fields = sortFields.map(field => {
+        let index;
+
+        if (header) {
+            index = header.indexOf(field.name);
+        } else {
+            index = Number(field.name);
+        }
+
+        if (index === -1 || Number.isNaN(index)) {
+            logError(`El campo solicitado no existe: ${field.name}`);
+        }
+
+        return {
+            ...field,
+            index
+        };
+    });
+
+    rows.sort((a, b) => {
+        for (const field of fields) {
+            const result = compareValues(
+                a[field.index],
+                b[field.index],
+                field.numeric
+            );
+
+            if (result !== 0) {
+                return field.descending ? -result : result;
+            }
+        }
+
+        return 0;
+    });
+
+    return rows;
 }
 
 main();
