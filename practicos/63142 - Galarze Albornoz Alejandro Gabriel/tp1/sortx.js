@@ -250,3 +250,40 @@ function sortRows(rows, header, sortFields){
         });
     return filasOrdenadas;
 }
+
+function serialize(header, rows, deLimiter){
+    const lines = [];
+
+    if (header !== null){
+        lines.push(header.join(deLimiter));
+    }
+
+    for (let i = 0; i < rows.length; i++){
+        lines.push(rows[i].join(deLimiter));
+    }
+    return lines.join('\n');
+}
+
+function writeOutput(outputPath, content){
+    if (outputPath){
+        fs.writeFileSync(outputPath, content, 'utf-8');
+    } else {
+        console.log(content);
+    }
+}
+
+function main(){
+    try{
+        const options = parseArgs(process.argv.slice(2));
+        const rawText = readInput(options.inputFile);
+        const parsed = parseDelimited(rawText, options.delimiter, options.noHeader);
+        const sortedRows = sortRows(parsed.rows, parsed.header, options.sortFields);
+        const outputText = serialize(parsed.header, sortedRows, options.delimiter);
+        writeOutput(options.outputFile, outputText);
+    } catch (error){
+        console.error('Error:', error.message);
+        process.exit(1);
+    }
+}
+
+main();
