@@ -44,13 +44,14 @@ EJEMPLOS:
 function parseArgs(){
         if(process.argv[2] === "-h" || process.argv[2] === "--help"){
 
-                    return HELP
+            console.log(HELP)
+            process.exit()
         }
 
         if (process.argv[2] === undefined || process.argv[3] === undefined) {
 
-            process.exitCode = 1            
-          return ("Los argumentos de origen y destino son obligatorios")
+            console.log("Los argumentos de origen y destino son obligatorios")
+            process.exit()
     
         }
 
@@ -63,6 +64,7 @@ function parseArgs(){
             noHeader: false,        
             sortFields: []
         }
+    
         let i = 4
         while( i < process.argv.length){
 
@@ -153,8 +155,8 @@ function parseArgs(){
         }
 
     if(configuracion.sortFields.length === 0){
-        process.exitCode = 1
-        return("Array vacio")
+         console.log("error: Los argumentos de origen y destino son obligatorios")
+        process.exit()
     }
     return configuracion
         
@@ -200,42 +202,71 @@ function parseDelimited(texto, configuracion){
 
 function sortRows(datos, configuracion) {
 
-    let encabezados = datos[0];
-    let filas = datos.slice(1);
+    let encabezados;
+    let filas;
 
-    for (let criterio of configuracion.sortFields) {
-
-        console.log(criterio.name);
-        console.log(criterio.numeric);
-
-        let posicion = encabezados.indexOf(criterio.name);
-
-        console.log(posicion);
-
-        filas.sort((a, b) => {
-            if (criterio.numeric) {
-
-             let numeroA = parseInt(a[posicion])
-            let numeroB = parseInt(b[posicion])
-
-
-            if (criterio.descending === false) {
-                return numeroA - numeroB;
-            } else {
-                return numeroB - numeroA;
-            }
-            }else{
-                if (criterio.descending === false) {
-                    return a[posicion].localeCompare(b[posicion]);
-                } else {
-                    return b[posicion].localeCompare(a[posicion]);
-                }
-            }
-            
-        });
+    if (configuracion.noHeader) {
+        filas = datos;
+    } else {
+        encabezados = datos[0];
+        filas = datos.slice(1);
     }
 
-    return [encabezados, ...filas];
+    filas.sort((a, b) => {
+        
+        for (let criterio of configuracion.sortFields) {
+            let posicion;
+
+            if (configuracion.noHeader) {
+                posicion = parseInt(criterio.name);
+            } else {
+                posicion = encabezados.indexOf(criterio.name);
+            }
+
+            if (posicion < 0 || posicion >= (configuracion.noHeader ? datos[0].length : encabezados.length)) {
+                process.exitCode = 1;
+                console.log("Error: campo no existe");
+                return 0;
+            }
+
+            if (criterio.numeric) {
+                let numeroA = Number(a[posicion]);
+                let numeroB = Number(b[posicion]);
+
+                if (Number.isNaN(numeroA) || Number.isNaN(numeroB)) {
+                    process.exitCode = 1;
+                    console.log("El valor no es numerico");
+                    return 0;
+                }
+
+                if (numeroA !== numeroB) {
+                    if (criterio.descending === false) {
+                        return numeroA - numeroB;
+                    } else {
+                        return numeroB - numeroA;
+                    }
+                }
+            } else {
+                let comparacion = a[posicion].localeCompare(b[posicion]);
+
+                if (comparacion !== 0) {
+                    if (criterio.descending === false) {
+                        return comparacion;
+                    } else {
+                        return b[posicion].localeCompare(a[posicion]);
+                    }
+                }
+            }
+        }
+
+        return 0;
+    });
+
+    if (configuracion.noHeader) {
+        return filas;
+    } else {
+        return [encabezados, ...filas];
+    }
 }
 
 function serialize(datosOrdenados, configuracion) {
@@ -253,11 +284,18 @@ function writeOutput(texto, configuracion) {
     console.log(texto)
     fs.writeFileSync(configuracion.outputFile, texto)
 }
+
 const configuracion = parseArgs()
-console.log(configuracion)
 const texto = readInput(configuracion)
+console.log(configuracion)
 const datos = parseDelimited(texto, configuracion)
 const datosOrdenados = sortRows(datos, configuracion)
+
+if (datosOrdenados === undefined) {
+    process.exitCode = 1
+    process.exit()
+}
+
 console.log(datosOrdenados)
 const textoSalida = serialize(datosOrdenados, configuracion)
 console.log(textoSalida)
