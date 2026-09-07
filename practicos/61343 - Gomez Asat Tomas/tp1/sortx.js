@@ -83,3 +83,45 @@ if (criterios.length === 0) {
     error("no se especificó ningún criterio --by.");
 }
 //primer commit  
+
+let contenido;
+
+try {
+    contenido = fs.readFileSync(origen, "utf8");
+} catch (e) {
+    error(`no se puede leer el archivo de origen "${origen}".`);
+}
+
+if (contenido.includes('"')) {
+    error("la entrada contiene comillas dobles, lo cual no está permitido.");
+}
+
+const lineas = contenido.split(/\r?\n/);
+
+if (lineas.length > 0 && lineas[lineas.length - 1] === "") {
+    lineas.pop();
+}
+
+if (lineas.length === 0) {
+    error("el archivo de origen está vacío.");
+}
+const filas = lineas.map((linea, indice) => {
+    const campos = linea.split(delimiter);
+
+    if (indice === 0 && !noHeader) {
+        return campos;
+    }
+
+    return campos;
+});
+
+const cantidadCampos = filas[0].length;
+
+for (let i = 0; i < filas.length; i++) {
+    if (filas[i].length !== cantidadCampos) {
+        error(
+            `la fila ${i + 1} tiene ${filas[i].length} campos y se esperaban ${cantidadCampos}.`
+        );
+    }
+};
+// segundo commit
