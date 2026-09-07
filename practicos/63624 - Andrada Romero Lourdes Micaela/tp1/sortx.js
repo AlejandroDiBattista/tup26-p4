@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'fs'
 
 const HELP = `
 
@@ -35,7 +36,6 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-
 // función 1: leer args y construir config
 
 function parseArgs() {
@@ -131,5 +131,20 @@ function parseArgs() {
         delimiter,
         noHeader,
         sortFields
+    }
+}
+
+const config = parseArgs()
+console.log(readInput(config.inputFile))
+
+//función 2: leer el archivo de origen
+
+function readInput(inputFile) {
+    try {
+        const contenido = fs.readFileSync(inputFile, 'utf-8')
+        return contenido 
+    } catch (error) {
+        console.error('error: no se pudo leer el archivo de origen.')
+        process.exit(1)
     }
 }
