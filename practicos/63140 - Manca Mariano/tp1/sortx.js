@@ -157,61 +157,46 @@ function sortRows (header,  lineas, sortFields) {
             let valorB = b[i];
             let resultado= descending ? -1 : 1;
             if (numeric) {
-
                 if (isNaN(valorA) || isNaN(valorB)) {
-        throw new Error("un criterio numérico encuentra un valor no numérico");
-    }
+                    throw new Error("un criterio numérico encuentra un valor no numérico");
+                }
                 resultado *= Number(valorA) - Number(valorB);
-            }else {
+            } else {
                 resultado *= valorA.localeCompare(valorB);
-  
             }
             if (resultado !== 0) {
                 return resultado;
             }
         }
     });
-return filas;
+    return filas;
 }
 
 
- function serialize(header, filas, delimitador, noHeader) {
- let h = noHeader ? "" : header.join(delimitador) + "\n";
-let f = filas.map(fila => fila.join(delimitador)).join("\n");
-return h + f;
+function serialize(header, filas, delimitador, noHeader) {
+    let h = noHeader ? "" : header.join(delimitador) + "\n";
+    let f = filas.map(fila => fila.join(delimitador)).join("\n");
+    return h + f;
 }
 
 function writeOutput(outputFile, textoFinal) {
     try {
-           fs.writeFileSync(outputFile, textoFinal, "utf-8");
+        fs.writeFileSync(outputFile, textoFinal, "utf-8");
     } catch (error) {
         throw new Error("el archivo de destino no puede escribirse");
     }
  }
 
-
-
-
 try {
-
     let config = parseArgs();
-
     let texto = readInput( config.inputFile );
-
     let [header, lineas] = parseDelimited(texto, config.delimiter, config.noHeader, config.sortFields);
-
     let lineasOrdenadas = sortRows(header, lineas, config.sortFields);
-
     let textoFinal = serialize(header, lineasOrdenadas, config.delimiter, config.noHeader);
-
     writeOutput(  config.outputFile, textoFinal );
-
     console.log("¡Archivo ordenado con éxito!");
-
 } catch (error) {
-
     console.error(error.message);
-
     process.exit(1);
 }
       

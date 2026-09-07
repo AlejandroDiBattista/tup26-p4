@@ -7,9 +7,14 @@ import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const carpetaTp = dirname(fileURLToPath(import.meta.url));
-const legajoSolicitado = process.argv[2];
+const argumentosCli = process.argv.slice(2);
+const salidaJson = argumentosCli.includes('--json');
+const legajoSolicitado = argumentosCli.find(argumento => argumento !== '--json');
+if (legajoSolicitado !== undefined && !/^\d+$/.test(legajoSolicitado)) {
+    throw new Error('El legajo debe contener solo dígitos.');
+}
 const carpetaPracticos = join(carpetaTp, '..', '..','practicos');
-console.log(carpetaPracticos)
+
 function buscarAlumno(legajo) {
     const carpeta = readdirSync(carpetaPracticos, {withFileTypes: true})
         .find(entrada => entrada.isDirectory() && entrada.name.startsWith(`${legajo} - `));
@@ -159,6 +164,11 @@ function ejecutar(caso, programa) {
         const argumentos = caso.argumentos({entrada, salida});
         const proceso = spawnSync(process.execPath, [programa, ...argumentos], {
             encoding: 'utf8',
+            timeout: 2000,
+            killSignal: 'SIGKILL',
+            maxBuffer: 1024 * 1024,
+            cwd: carpetaTemporal,
+            env: {},
         });
 
         const resultado = {
@@ -188,6 +198,11 @@ function clasificarPrograma(programa) {
 
     const pruebaEjecucion = spawnSync(process.execPath, [programa, '--help'], {
         encoding: 'utf8',
+        timeout: 2000,
+        killSignal: 'SIGKILL',
+        maxBuffer: 1024 * 1024,
+        cwd: tmpdir(),
+        env: {},
     });
 
     if (pruebaEjecucion.error !== undefined || pruebaEjecucion.status !== 0) {
@@ -211,13 +226,26 @@ const alumnos = legajoSolicitado === undefined
     ? buscarTodosLosAlumnos()
     : [buscarAlumno(legajoSolicitado)].filter(Boolean);
 
+if (alumnos.length === 0 && salidaJson && legajoSolicitado) {
+    console.log(JSON.stringify([{legajo: legajoSolicitado, estado: 'pendiente'}]));
+    process.exit(0);
+}
+
 if (alumnos.length === 0) {
     console.error(`No se encontró un práctico para el legajo ${legajoSolicitado}`);
     process.exit(1);
 }
 
-console.log('# Resultados TP1\n');
-for (const alumno of alumnos) {
-    const estado = clasificarPrograma(alumno.programa);
-    console.log(`- ${alumno.legajo}: ${coloresEstado[estado]} ${estado}`);
+const resultados = alumnos.map(alumno => ({
+    legajo: alumno.legajo,
+    estado: clasificarPrograma(alumno.programa),
+}));
+
+if (salidaJson) {
+    console.log(JSON.stringify(resultados));
+} else {
+    console.log('# Resultados TP1\n');
+    for (const {legajo, estado} of resultados) {
+        console.log(`- ${legajo}: ${coloresEstado[estado]} ${estado}`);
+    }
 }

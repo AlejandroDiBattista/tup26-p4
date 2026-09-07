@@ -3,8 +3,10 @@ import { useT } from "@agent-native/core/client/i18n";
 import {
   IconCalendarEvent,
   IconChecklist,
+  IconChevronDown,
   IconFileUpload,
   IconPlus,
+  IconSearch,
   IconSettings,
   IconTrash,
   IconX,
@@ -15,6 +17,12 @@ import { toast } from "sonner";
 
 import { StudentIdentity } from "@/components/agenda/StudentIdentity";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -89,6 +97,10 @@ const WORK_OPTIONS: Array<{
   },
 ];
 
+function normalizeStudentSearch(value: string) {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
 function formatDate(value: string | null) {
   if (!value) return null;
   return new Intl.DateTimeFormat("es-AR", {
@@ -103,6 +115,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedWorkId = searchParams.get("trabajo") ?? "";
   const courseFilter = courseId ?? searchParams.get("curso") ?? "all";
+  const [studentQuery, setStudentQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
@@ -124,15 +137,23 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const deleteWork = useActionMutation("delete-assessment");
   const publishStatement = useActionMutation("publicar-enunciado-trabajo");
   const setResult = useActionMutation("set-assessment-result");
+  const checkTp1 = useActionMutation("comprobar-tp1");
+  const [checkErrors, setCheckErrors] = useState<Array<{ legajo: string; error?: string }>>([]);
 
   const works = data?.assessments ?? [];
   const rows = data?.rows ?? [];
   const courses = courseData?.courses ?? [];
   const selectedWork = works.find((work) => work.id === selectedWorkId) ?? null;
-  const visibleRows = useMemo(
-    () => rows.filter((row) => courseFilter === "all" || row.course.id === courseFilter),
-    [courseFilter, rows],
-  );
+  const visibleRows = useMemo(() => {
+    const terms = normalizeStudentSearch(studentQuery)
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean);
+    return rows.filter((row) => {
+      if (courseFilter !== "all" && row.course.id !== courseFilter) return false;
+      const student = normalizeStudentSearch(`${row.legajo} ${row.apellido} ${row.nombre}`);
+      return terms.every((term) => student.includes(term));
+    });
+  }, [courseFilter, rows, studentQuery]);
 
   useEffect(() => {
     if (!selectedWorkId && works[0]) {
@@ -286,6 +307,28 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
     );
   }
 
+  function handleCheckTp1() {
+    if (!selectedWork || !filteredRows.length) return;
+    setCheckErrors([]);
+    checkTp1.mutate(
+      { assessmentId: selectedWork.id, legajos: filteredRows.map((row) => row.legajo) },
+      {
+        onSuccess: (value) => {
+          const result = value as {
+            updated: number;
+            failed: number;
+            results: Array<{ legajo: string; error?: string }>;
+          };
+          setCheckErrors(result.results.filter((row) => row.error));
+          const message = t("agenda.tp1Checked", { count: result.updated });
+          if (result.failed) toast.warning(message);
+          else toast.success(message);
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
   function setStatus(row: WorkRow, status: WorkStatus) {
     if (!selectedWork) return;
     setResult.mutate(
@@ -335,7 +378,31 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   return (
     <section aria-labelledby="work-roster-title">
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-[minmax(15rem,1fr)_11rem]">
+        <div
+          className={cn(
+            "grid min-w-0 flex-1 gap-3",
+            courseId
+              ? "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+              : "sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)]",
+          )}
+        >
+          <div className="grid min-w-0 gap-1.5">
+            <Label htmlFor="work-student-search">{t("agenda.searchStudents")}</Label>
+            <div className="relative">
+              <IconSearch
+                aria-hidden="true"
+                className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id="work-student-search"
+                type="search"
+                value={studentQuery}
+                onChange={(event) => setStudentQuery(event.target.value)}
+                placeholder={t("agenda.searchWorkStudentsPlaceholder")}
+                className="h-9 ps-9"
+              />
+            </div>
+          </div>
           <div className="grid gap-1.5">
             <Label htmlFor="work-selector">{t("agenda.work")}</Label>
             <select
@@ -373,34 +440,71 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handlePublishStatement}
-            disabled={!selectedWork || publishStatement.isPending}
-          >
-            <IconFileUpload aria-hidden="true" />
-            {publishStatement.isPending
-              ? t("agenda.publishingWorkStatement")
-              : t("agenda.publishWorkStatement")}
-          </Button>
-          {selectedWork ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowManage(true)}
-              disabled={showManage}
-            >
-              <IconSettings aria-hidden="true" />
-              {t("agenda.manageWork")}
-            </Button>
-          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" disabled={!selectedWork}>
+                {t("agenda.actions")}
+                <IconChevronDown aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {selectedWork?.title
+                .normalize("NFD")
+                .replace(/\p{M}/gu, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, "") === "tp1" ? (
+                <DropdownMenuItem
+                  onSelect={handleCheckTp1}
+                  disabled={checkTp1.isPending || setResult.isPending || filteredRows.length === 0}
+                  title={t("agenda.checkTp1Hint")}
+                >
+                  <IconChecklist aria-hidden="true" />
+                  {checkTp1.isPending
+                    ? t("agenda.checkingTp1")
+                    : t("agenda.checkTp1", { count: filteredRows.length })}
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem
+                onSelect={handlePublishStatement}
+                disabled={!selectedWork || publishStatement.isPending}
+              >
+                <IconFileUpload aria-hidden="true" />
+                {publishStatement.isPending
+                  ? t("agenda.publishingWorkStatement")
+                  : t("agenda.publishWorkStatement")}
+              </DropdownMenuItem>
+              {selectedWork ? (
+                <DropdownMenuItem onSelect={() => setShowManage(true)} disabled={showManage}>
+                  <IconSettings aria-hidden="true" />
+                  {t("agenda.manageWork")}
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setShowCreate(true)} disabled={showCreate}>
             <IconPlus aria-hidden="true" />
             {t("agenda.newPractico")}
           </Button>
         </div>
       </div>
+
+      {checkTp1.isPending ? (
+        <p role="status" className="mb-4 text-sm text-muted-foreground">
+          {t("agenda.checkingTp1Hint")}
+        </p>
+      ) : null}
+      {checkErrors.length > 0 ? (
+        <div role="alert" className="mb-4 rounded-md border border-destructive/30 p-3 text-sm">
+          <p className="font-medium">{t("agenda.tp1CheckErrors")}</p>
+          <ul className="mt-2 list-inside list-disc">
+            {checkErrors.map((result) => (
+              <li key={result.legajo}>
+                {result.legajo}: {result.error}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {showCreate ? (
         <form
@@ -595,7 +699,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
 
           {filteredRows.length === 0 ? (
             <p className="border-y border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-              {t("agenda.noStudentsInWorkStatus")}
+              {t(studentQuery.trim() ? "agenda.noStudentsFound" : "agenda.noStudentsInWorkStatus")}
             </p>
           ) : (
             <>
@@ -716,6 +820,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
                                       type="button"
                                       aria-pressed={active}
                                       onClick={() => setStatus(row, option.value)}
+                                      disabled={checkTp1.isPending}
                                       className={cn(
                                         "min-h-9 rounded-md border px-2.5 text-xs font-medium outline-none transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-ring",
                                         active
@@ -736,6 +841,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
                                 key={`${selectedWork.id}:${row.legajo}:${cell?.score ?? ""}`}
                                 type="text"
                                 inputMode="decimal"
+                                disabled={checkTp1.isPending}
                                 defaultValue={cell?.score ?? ""}
                                 aria-label={t("agenda.scoreOf", { name: fullName })}
                                 onBlur={(event) => saveScore(row, event.target.value)}

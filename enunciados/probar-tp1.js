@@ -161,17 +161,23 @@ function ejecutar(caso, programa) {
             encoding: 'utf8',
         });
 
+        if (proceso.error !== undefined) {
+            throw proceso.error;
+        }
+        exigir(proceso.signal === null, `el proceso terminó por la señal ${proceso.signal}`);
+
         const resultado = {
             codigo: proceso.status ?? 1,
             salida: `${proceso.stdout ?? ''}${proceso.stderr ?? ''}`,
         };
 
         if (caso.esperado !== undefined) {
-            exigir(resultado.codigo === 0, `se esperaba código 0 y se obtuvo ${resultado.codigo}\n${resultado.salida}`);
-            const contenido = existsSync(salida) ? readFileSync(salida, 'utf8') : '<no se creó el archivo>';
+            exigir(resultado.codigo === 0, `se esperaba código 0 y se obtuvo ${resultado.codigo}`);
+            exigir(existsSync(salida), 'no se creó el archivo de salida');
+            const contenido = readFileSync(salida, 'utf8');
             exigir(
                 contenido === caso.esperado,
-                `el contenido de salida no coincide con el esperado\nEsperado:\n${caso.esperado}\nObtenido:\n${contenido}`,
+                'el contenido de salida no coincide con el esperado',
             );
         }
 
@@ -183,28 +189,31 @@ function ejecutar(caso, programa) {
 
 function clasificarPrograma(programa) {
     if (!existsSync(programa) || programaNoPresentado(programa)) {
-        return 'pendiente';
+        return {estado: 'pendiente', fallos: []};
     }
 
     const pruebaEjecucion = spawnSync(process.execPath, [programa, '--help'], {
         encoding: 'utf8',
     });
 
-    if (pruebaEjecucion.error !== undefined || pruebaEjecucion.status !== 0) {
-        return 'error';
-    }
+    const errorEjecucion = pruebaEjecucion.error !== undefined || pruebaEjecucion.status !== 0;
 
-    let aprobados = 0;
+    const fallos = [];
     for (const caso of casos) {
         try {
             ejecutar(caso, programa);
-            aprobados += 1;
-        } catch {
-            // El caso fallido se refleja en el estado general "falla".
+        } catch (error) {
+            fallos.push({
+                nombre: caso.nombre,
+                detalle: error instanceof Error ? error.message : String(error),
+            });
         }
     }
 
-    return aprobados === casos.length ? 'presentado' : 'falla';
+    return {
+        estado: errorEjecucion ? 'error' : fallos.length === 0 ? 'presentado' : 'falla',
+        fallos,
+    };
 }
 
 const alumnos = legajoSolicitado === undefined
@@ -218,6 +227,10 @@ if (alumnos.length === 0) {
 
 console.log('# Resultados TP1\n');
 for (const alumno of alumnos) {
-    const estado = clasificarPrograma(alumno.programa);
+    const {estado, fallos} = clasificarPrograma(alumno.programa);
     console.log(`- ${alumno.legajo}: ${coloresEstado[estado]} ${estado}`);
+    for (const fallo of fallos) {
+        console.log(`  - ❌ ${fallo.nombre}`);
+        console.log(fallo.detalle.split(/\r?\n/).map(linea => `    ${linea}`).join('\n'));
+    }
 }

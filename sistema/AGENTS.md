@@ -78,6 +78,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `publicar-enunciado-trabajo` | `assessmentId`                                           | Generates student folders, then copies the matching `enunciados` folder without overwriting existing work.      |
 | `set-assessment-result`      | `assessmentId`, `legajo`, `status?`, `score?`            | Status is pending/error/failure/presented; score is optional 1–10 only on graded work.                          |
 | `work-grid`                  | `course?`                                                | GET. Students × shared practicals.                                                                              |
+| `comprobar-tp1`              | `assessmentId`, `legajos`                                 | Runs `tools/probar-tp1.js` for selected roster students, saves TP1 statuses and verifies them. The UI uses the currently filtered students. |
 | `list-classes`               | `course`                                                 | GET. Includes generated and cancelled dates.                                                                    |
 | `generate-classes`           | `course`, `startDate`, `endDate`                         | Adds matching weekly dates without duplicates.                                                                  |
 | `create-class`               | `course`, `date`, `topic?`                               | Creates one date matching the schedule.                                                                         |
