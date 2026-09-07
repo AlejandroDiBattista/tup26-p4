@@ -34,7 +34,7 @@ EJEMPLOS:
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
     `
-    //console.log(HELP)
+  //console.log(HELP)
     
 // Escribir aqui la solución al enunciado.
 function parseArgs() {
@@ -55,11 +55,14 @@ function parseArgs() {
         if (args[i] === '-nh' || args[i] === '--no-header') {
             noHeader = true;
         }
+        if (args[i] === '-h' || args[i] === '--help') {
+            console.log(HELP);
+            process.exit(0);
+        }
     }
     return {inputFile,outputFile,sortFields,delimiter,noHeader};
 }
 const {inputFile,outputFile,sortFields,delimiter,noHeader} = parseArgs();
-console.log(inputFile,outputFile,sortFields,delimiter,noHeader);
 
 
 function readInput(filePath) {
@@ -72,7 +75,6 @@ function readInput(filePath) {
     }
 }
 const inputData = readInput(inputFile);
-console.log(inputData);
 
 
 function parseDelimited(text,delimiter) {
@@ -81,7 +83,6 @@ function parseDelimited(text,delimiter) {
     return parsedData;
 }
 const parsedData = parseDelimited(inputData, delimiter);
-console.log(parsedData);
 
 
 function sortRows(data, sortFields, noHeader) {
@@ -110,6 +111,20 @@ function sortRows(data, sortFields, noHeader) {
 }
 
 const sortedData= sortRows(parsedData, sortFields,noHeader);
-console.log(sortedData);
 
+function serialize(serializedData,delimiter) {
+    return serializedData.map(row => row.join(delimiter)).join('\n');
+}
+const texto = serialize(sortedData, delimiter);
+
+function writeOutput(filePath,Data){
+    try {
+        fs.writeFileSync(filePath, Data, 'utf8');
+    }catch(e){
+
+        console.error('Error al escribir el archivo:', filePath);
+        process.exit(1);
+    }
+}
+writeOutput(outputFile,texto);
 
