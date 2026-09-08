@@ -1,14 +1,6 @@
-<h1 align="center">Programación IV</h1>
-
-<p align="center">
-  <strong>Programación Web · TUP26</strong><br>
-  Ing. Alejandro Di Battista
-</p>
-
----
 # Trabajo práctico 2: Editor de CSV
 
-Desarrollar una aplicación de terminal con JavaScript, React e Ink que permita abrir, visualizar, editar, ordenar y guardar archivos CSV, tomando como referencia las siguientes pantallas:
+Desarrollar una aplicación de terminal con JavaScript, React e Ink que permita abrir, visualizar, editar y guardar archivos CSV, tomando como referencia las siguientes pantallas:
 
 **Visualización:** mostrar los datos del archivo en una tabla y permitir navegar entre sus celdas.
 
@@ -29,4 +21,3 @@ Usaremos el **formato más simple posible de CSV**: primera línea con cabecera,
 
 > [!IMPORTANT]
 > **Fecha de presentación:** hasta el próximo martes 15 de septiembre inclusive.
-
