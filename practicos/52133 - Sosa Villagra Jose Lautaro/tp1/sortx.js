@@ -112,11 +112,10 @@ function resolveDelimiter(text) {
 
 function readFile(path) {
     try {
-        return readFileSync(path, "utf8");
+        return new TextDecoder("utf-8").decode(readFileSync(filePath));
     } catch (error) {
         throw new Error('no se pudo leer el archivo: "' + path + '"');
     }
-
 }
 
 function  parseDelimitedFile(text, delimiter, noHeader) {
@@ -179,5 +178,74 @@ function  parseDelimitedFile(text, delimiter, noHeader) {
 	}
 
     return { header, rows }
+}
+
+function resolveFieldIndex(fieldName, header, noHeader) {
+    if (noHeader) {
+        // Sin el encabezado el campo "noHeader" la primera fila ya es el indice
+        column = Number(fieldName);
+        if (!Number.isInteger(column) || column < 0) {
+            throw new Error('índice de campo inválido: "' + fieldName + '"');
+        }
+
+        return column;
+    }
+
+    // Si el encabezado es un nombre busca el indice
+    const column = header.indexOf(fieldName); 
+    if (column === -1) {
+        throw new Error('el campo no existe: "' + fieldName + '"');
+    }
+    return column;
+}
+
+function sortRows(header, rows, sortFields, noHeader) {
+    // Resolver indice de la columna de cada criterio de ordenamiennto
+    const resolveFields = [];
+    for (const field of sortFields) {
+        resolveFields.push({
+            ...field,
+            column: resolveFieldIndex(field.name, header, noHeader)
+        })
+    }
+
+    // Comparacion de filas // FirstRow y SecondRow no hacen referencia a la primera o segunda fila del array rowsToSort
+    const compare = (firstRow, secondRow) => {
+        for (const field of resolveFields) {
+            const column = field.column;
+            const firstValue = firstRow[column];
+            const secondValue = secondRow[column];
+            let comparison;
+            if (field.numeric) {
+                const firstNumber = Number(firstValue);
+                const secondNumber = Number(secondValue);
+                if (Number.isNaN(firstNumber) || Number.isNaN(secondNumber)) {
+                    throw new Error('el campo "' + field.name + '" tiene un valor no numérico');
+                }
+                comparison = firstNumber - secondNumber;
+            }
+            else {
+                // Comparacion segun el orden del español
+                comparison = firstValue.localeCompare(secondValue, "es");
+            }
+
+            // Invierte el signo si el criterio es descendiente 
+            if (field.descending) {
+                comparison = -comparison;
+            }
+            
+            if (comparison !== 0) {
+                return comparison;
+            }
+        }
+        return 0;
+    }
+
+    const rowsToSort = [];
+    for (const row of rows) {
+        rowsToSort.push(row);
+    }
+
+    return rowsToSort.sort(compare);
 }
 
