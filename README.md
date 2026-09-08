@@ -8,6 +8,9 @@
 ---
 # Trabajo práctico 2: Editor de CSV
 
+> [!IMPORTANT]
+> **Fecha de presentación:** hasta el próximo martes 15 de septiembre inclusive.
+
 Desarrollar una aplicación de terminal con JavaScript, React e Ink que permita abrir, visualizar, editar, ordenar y guardar archivos CSV, tomando como referencia las siguientes pantallas:
 
 **Visualización:** mostrar los datos del archivo en una tabla y permitir navegar entre sus celdas.
@@ -27,6 +30,18 @@ Desarrollar una aplicación de terminal con JavaScript, React e Ink que permita 
 
 Usaremos el **formato más simple posible de CSV**: primera línea con cabecera, campos separados por coma y un registro por línea, con igual cantidad de campos en todas las filas. Los campos no contendrán caracteres especiales: comas, comillas ni saltos de línea internos; no será necesario implementar escapes ni campos entrecomillados.
 
-> [!IMPORTANT]
-> **Fecha de presentación:** hasta el próximo martes 15 de septiembre inclusive.
 
+> Nota:
+ Para configurar el proyecto y poder ejecutarlo:
+
+```bash
+npm install
+npm install --global tsx
+npm link
+```
+
+Luego se puede ejecutar el editor como comando con:
+
+```bash
+edit empleados.csv
+```
