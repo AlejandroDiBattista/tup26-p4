@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { copyFile, readFileSync, writeFileSync } from "node:fs";
+import { config } from "node:process";
 
 const HELP = `
 
@@ -112,7 +113,7 @@ function resolveDelimiter(text) {
 
 function readFile(path) {
     try {
-        return new TextDecoder("utf-8").decode(readFileSync(filePath));
+        return new TextDecoder("utf-8").decode(readFileSync(path));
     } catch (error) {
         throw new Error('no se pudo leer el archivo: "' + path + '"');
     }
@@ -183,7 +184,7 @@ function  parseDelimitedFile(text, delimiter, noHeader) {
 function resolveFieldIndex(fieldName, header, noHeader) {
     if (noHeader) {
         // Sin el encabezado el campo "noHeader" la primera fila ya es el indice
-        column = Number(fieldName);
+        const column = Number(fieldName);
         if (!Number.isInteger(column) || column < 0) {
             throw new Error('índice de campo inválido: "' + fieldName + '"');
         }
@@ -249,3 +250,53 @@ function sortRows(header, rows, sortFields, noHeader) {
     return rowsToSort.sort(compare);
 }
 
+// Reconstruccion de texto a partir de encabezado y filas
+function serialize(header, rows, delimiter, noHeader) {
+    const lines = [];
+    if (!noHeader) {
+        lines.push(header.join(delimiter));
+    }
+    
+    for (const row of rows) {
+        lines.push(row.join(delimiter));
+    }
+
+    return lines.join("\n");
+}
+
+function writeOutput(filePath, text) {
+    try {
+		writeFileSync(filePath, text, "utf8");
+	} catch (error) {
+		throw new Error(
+			'no se pudo escribir el archivo de destino: "' + filePath + '"',
+		);
+	}
+}
+
+function main() {
+    if (process.argv.includes('-h') || process.argv.includes('--help')) {
+        console.log(HELP);
+        process.exit(0);
+    }
+
+    // Toma los argumentos del usuario desde el indice 2
+    const commandLineArgs = [];
+    for (const argument of process.argv.slice(2)) {
+        commandLineArgs.push(argument);
+    }
+
+    try {
+        const config = parseArgs(commandLineArgs);
+        const text = readFile(config.inputFile);
+        const table = parseDelimitedFile(text, config.delimiter, config.noHeader);
+        const sortedRows = sortRows(table.header, table.rows, config.sortFields, config.noHeader);
+        const outputText = serialize(table.header, sortedRows, config.delimiter, config.noHeader);
+        writeOutput(config.outputFile, outputText);
+    } catch (error) {
+        console.error("Error: " + error.message);
+	    process.exit(1);
+    }
+}
+
+main();
