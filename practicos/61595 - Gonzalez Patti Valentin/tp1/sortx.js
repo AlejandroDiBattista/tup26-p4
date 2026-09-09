@@ -120,3 +120,13 @@ function parseArgs(args) {
 
   process.exit(0)
 }
+
+function readInput(inputFile) {
+  try{
+    return fs.readFileSync(inputFile, "utf-8")
+  } catch (error) {
+    throw new Error(`Error al leer el archivo de entrada: ${error.message}`);
+  }
+}
+
+
