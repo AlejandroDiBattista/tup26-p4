@@ -34,9 +34,6 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
-
 import fs from "node:fs"
  
 function parseArgs(args) {
