@@ -229,6 +229,28 @@ function sortRows(datos, config) {
   return { header: datos.header, rows: filas, cantColumnas: datos.cantColumnas }
 }
  
+function serialize(datos, config) {
+  let lineas = []
+ 
+  if (datos.header != null) {
+    lineas.push(datos.header.join(config.delimiter))
+  }
+ 
+  for (let i = 0; i < datos.rows.length; i++) {
+    lineas.push(datos.rows[i].join(config.delimiter))
+  }
+ 
+  return lineas.join("\n")
+}
+ 
+function writeOutput(config, texto) {
+  try {
+    fs.writeFileSync(config.outputFile, texto, "utf8")
+  } catch (e) {
+    throw new Error("No se pudo escribir el archivo de destino: " + config.outputFile)
+  }
+}
+ 
 function main() {
   try {
     let args = process.argv.slice(2)
@@ -242,8 +264,10 @@ function main() {
     let texto = readInput(config)
     let datos = parseDelimited(texto, config)
     let ordenado = sortRows(datos, config)
+    let salida = serialize(ordenado, config)
+    writeOutput(config, salida)
  
-    console.log(ordenado)
+    console.log("Listo. Se generó el archivo: " + config.outputFile)
   } catch (e) {
     console.error("Error: " + e.message)
     process.exit(1)
