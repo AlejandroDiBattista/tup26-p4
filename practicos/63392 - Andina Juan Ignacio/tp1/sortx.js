@@ -35,4 +35,25 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+function main() {
+    if (process.args.includes('-h') || process.args.includes('--help')) {
+        console.log(HELP);
+        process.exit(0);
+    }
+
+    try {
+        const config = parseArgs(process.argv.slice(2));
+    } catch (error) {
+        
+    }
+}
+
+function parseArgs(args) {
+    const config = {
+        inputFile: null, 
+        outputFile: null,
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    };  
+}
