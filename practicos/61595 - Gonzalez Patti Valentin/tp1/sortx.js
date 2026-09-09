@@ -129,4 +129,32 @@ function readInput(inputFile) {
   }
 }
 
+function parseDelimited(text, delimiter){
+  const normalizarTexto = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n"); //normaliza los saltos de linea
 
+  const limpiarTexto = normalizarTexto.replace(/\n+$/, ""); //elimina saltos de linea al final del texto
+
+  if (limpiarTexto === ""){
+    throw new Error("El archivo de entrada está vacío");
+  }
+
+  const lineas = limpiarTexto.split("\n");
+
+  const filas = lineas.map((linea, index) => {
+    if(linea.includes('"')){
+      throw new Error(`La fila ${index + 1} contiene comillas dobles, lo cual no esta permitido`)
+    }
+
+    return linea.split(delimiter);
+  })
+
+  const columnasEsperadas = filas[0].length;
+
+  for (let i = 1; i < filas.length; i++){
+    if(filas[i].length !== columnasEsperadas){
+      throw new Error(`La fila ${i + 1} tiene ${filas[i].length} campos, pero se esperaban ${columnasEsperadas}`);
+    }
+}
+
+  return filas;
+}
