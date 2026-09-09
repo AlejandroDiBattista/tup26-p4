@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const { readFileSync, writeFileSync } = require('node:fs');
+
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -154,9 +156,71 @@ function parseDelimited(texto, config) {
 }
 // 4. sortRows       → ordenar las filas.
 function sortRows(datos, config) {
+    const criterios = [];
+
+    for (let i = 0; i < config.sortFields.length; i++) {
+        const campo = config.sortFields[i];
+        let indice;
+
+        if (config.noHeader) {
+            if (!/^\d+$/.test(campo.name)) {
+                throw new Error("Sin encabezado, el campo debe ser un índice desde cero: " + campo.name);
+            }
+            indice = Number(campo.name);
+        } else {
+            indice = datos.encabezado.indexOf(campo.name);
+        }
+
+        if (!Number.isSafeInteger(indice) || indice < 0 || indice >= datos.cantidadCampos) {
+            throw new Error("El campo solicitado no existe: " + campo.name);
+        }
+
+        if (campo.numeric) {
+            for (let j = 0; j < datos.filas.length; j++) {
+                const valor = datos.filas[j][indice];
+                if (valor.trim() === "" || !Number.isFinite(Number(valor))) {
+                    const numeroFila = j + (config.noHeader ? 1 : 2);
+                    throw new Error("Valor no numérico en la fila " + numeroFila +
+                        ", campo " + campo.name + ": " + valor);
+                }
+            }
+        }
+
+        criterios.push({ indice, numeric: campo.numeric, descending: campo.descending });
+    }
+
+    datos.filas.sort(function (filaA, filaB) {
+        for (let i = 0; i < criterios.length; i++) {
+            const criterio = criterios[i];
+            const valorA = filaA[criterio.indice];
+            const valorB = filaB[criterio.indice];
+            let comparacion;
+
+            if (criterio.numeric) {
+                comparacion = Number(valorA) - Number(valorB);
+            } else {
+                comparacion = valorA.localeCompare(valorB, "es");
+            }
+
+            if (comparacion !== 0) {
+                return criterio.descending ? -comparacion : comparacion;
+            }
+        }
+        return 0;
+    });
+
+    return datos;
 }
 // 5. serialize      → reconstruir el texto delimitado.
 function serialize(datos, config) {
+    const lineas = [];
+    if (datos.encabezado !== null) {
+        lineas.push(datos.encabezado.join(config.delimiter));
+    }
+    for (let i = 0; i < datos.filas.length; i++) {
+        lineas.push(datos.filas[i].join(config.delimiter));
+    }
+    return lineas.join("\n");
 }
 // 6. writeOutput    → escribir el archivo de destino.
 function writeOutput(outputFile, texto) {
