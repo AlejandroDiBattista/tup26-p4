@@ -118,10 +118,48 @@ function readInput(inputFile) {
     }
 }
 // 3. parseDelimited → convertir el texto en filas y columnas.
+function parseDelimited(texto, config) {
+    if (texto.includes('"')) {
+        throw new Error("La entrada contiene comillas dobles, que no están admitidas");
+    }
 
+    texto = texto.replace(/^\uFEFF/, "");
+    if (texto.length === 0) {
+        throw new Error("El archivo de origen está vacío");
+    }
+
+    const lineas = texto.split(/\r\n|\n|\r/);
+    if (lineas[lineas.length - 1] === "") {
+        lineas.pop();
+    }
+
+    const filas = [];
+    const cantidadCampos = lineas[0].split(config.delimiter).length;
+
+    for (let i = 0; i < lineas.length; i++) {
+        const campos = lineas[i].split(config.delimiter);
+        if (campos.length !== cantidadCampos) {
+            throw new Error("La fila " + (i + 1) + " tiene " + campos.length +
+                " campos; se esperaban " + cantidadCampos);
+        }
+        filas.push(campos);
+    }
+
+    let encabezado = null;
+    if (!config.noHeader) {
+        encabezado = filas.shift();
+    }
+
+    return { encabezado, filas, cantidadCampos };
+}
 // 4. sortRows       → ordenar las filas.
+function sortRows(datos, config) {
+}
 // 5. serialize      → reconstruir el texto delimitado.
+function serialize(datos, config) {
+}
 // 6. writeOutput    → escribir el archivo de destino.
-
+function writeOutput(outputFile, texto) {
+}
 // Llamamos a la función
 parseArgs();
