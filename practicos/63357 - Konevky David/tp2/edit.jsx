@@ -21,15 +21,17 @@ const TECLAS = [
     {funcion: "Salir", tecla: "Esc"},
 ]
 
-function Table({data, columns, seleccionado}) {
+function Tabla({data, columns, inicio, seleccionado, tablaFilas}) {
     const anchoIndice = String(data.length).length + 1; // ancho de "#"
     const anchos = columns.map((col) =>
         Math.max(col.length, ...data.map((fila) => String(fila[col]).length))
     );
 
     const esColumnaActiva = (i) => i === seleccionado.columna;
-    const esFilaActiva = (filaIdx) => filaIdx === seleccionado.fila;
+    const esFilaActiva = (filaAbsoluto) => filaAbsoluto === seleccionado.fila;
     const esCeldaActiva = (filaIdx, i) => esFilaActiva(filaIdx) && esColumnaActiva(i);
+
+    const slicedData = data.slice(inicio, inicio + tablaFilas);
 
     return (
         <Box flexDirection="column">
@@ -43,14 +45,14 @@ function Table({data, columns, seleccionado}) {
                     </Box>
                 ))}
             </Box>
-            {data.map((fila, filaIdx) => (
+            {slicedData.map((fila, filaIdx) => (
                 <Box key={filaIdx}>
-                    <Box width={anchoIndice + 2} backgroundColor={esFilaActiva(filaIdx) ? COLORES.acentoDim : undefined}>
-                        <Text color={esFilaActiva(filaIdx) ? COLORES.acento : COLORES.titulo}>{filaIdx + 1}</Text>
+                    <Box width={anchoIndice + 2} backgroundColor={esFilaActiva(inicio + filaIdx) ? COLORES.acentoDim : undefined}>
+                        <Text color={esFilaActiva(inicio + filaIdx) ? COLORES.acento : COLORES.titulo}>{inicio + filaIdx + 1}</Text>
                     </Box>
                     {columns.map((col, i) => (
-                        <Box key={col} width={anchos[i] + 2} backgroundColor={esCeldaActiva(filaIdx, i) ? 'white' : undefined}>
-                            <Text color={esCeldaActiva(filaIdx, i) ? 'black' : COLORES.secundario}>{String(fila[col])}</Text>
+                        <Box key={col} width={anchos[i] + 2} backgroundColor={esCeldaActiva(inicio + filaIdx, i) ? 'white' : undefined}>
+                            <Text color={esCeldaActiva(inicio + filaIdx, i) ? 'black' : COLORES.secundario}>{String(fila[col])}</Text>
                         </Box>
                     ))}
                 </Box>
@@ -115,6 +117,8 @@ function App({ruta}) {
     const {exit} = useApp();
     const {columnas, filas} = useWindowSize();
     const [seleccionado, setSeleccionado] = useState({fila: 0, columna: 0});
+    const [inicio, setInicio] = useState(0);
+    const tablaFilas = filas - 7;
 
     useInput((tecla, key) => {
         if (key.escape) {
@@ -122,10 +126,18 @@ function App({ruta}) {
         }
 
         if (key.upArrow) {
-            setSeleccionado((s) => ({...s, fila: Math.max(0, s.fila - 1)}));
+            const nuevaFila = Math.max(0, seleccionado.fila - 1);
+            setSeleccionado((s) => ({...s, fila: nuevaFila}));
+            if (nuevaFila < inicio) {
+                setInicio(nuevaFila);
+            }
         }
         if (key.downArrow) {
-            setSeleccionado((s) => ({...s, fila: Math.min(TABLA_PLACEHOLDER.length - 1, s.fila + 1)}));
+            const nuevaFila = Math.min(TABLA_PLACEHOLDER.length - 1, seleccionado.fila + 1);
+            setSeleccionado((s) => ({...s, fila: nuevaFila}));
+            if (nuevaFila > inicio + tablaFilas - 1) {
+                setInicio(nuevaFila - tablaFilas + 1);
+            }
         }
         if (key.leftArrow) {
             setSeleccionado((s) => ({...s, columna: Math.max(0, s.columna - 1)}));
@@ -144,7 +156,7 @@ function App({ruta}) {
                 <Text dimColor>{rowAmount} filas · {columnAmount} columnas</Text>
             </Box>
             <Box flexGrow={1} paddingBottom={1}>
-                <Table data={TABLA_PLACEHOLDER} columns={COLUMNNAME_PLACEHOLDER} seleccionado={seleccionado}/>
+                <Tabla data={TABLA_PLACEHOLDER} columns={COLUMNNAME_PLACEHOLDER} seleccionado={seleccionado} inicio={inicio} tablaFilas={tablaFilas} />
             </Box>
             <Teclas />
         </Box>
