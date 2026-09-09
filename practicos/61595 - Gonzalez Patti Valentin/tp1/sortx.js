@@ -244,3 +244,28 @@ function writeOutput(outputFile, text) {
     throw new Error(`No se pudo escribir el archivo de destino: "${outputFile}".`);
   }
 }
+
+// Invocacion de las funciones en orden
+try {
+  const config = parseArgs(process.argv.slice(2));
+
+  if (config === null) {
+    process.exit(0);
+  }
+
+  const texto = readInput(config.inputFile);
+
+  const filas = parseDelimited(texto, config.delimiter);
+
+  const sortedFilas = sortRows(filas, config);
+
+  const outputText = serialize(sortedFilas, config.delimiter);
+
+  writeOutput(config.outputFile, outputText);
+
+  console.log(`Archivo ordenado correctamente: ${config.outputFile}`);
+
+} catch (error) {
+  console.error(`Error: ${error.message}`);
+  process.exit(1);
+}
