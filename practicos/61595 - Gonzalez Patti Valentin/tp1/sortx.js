@@ -232,3 +232,8 @@ function sortRows(filas, config) {
 
   return config.noHeader ? dataFilas : [header, ...dataFilas];
 }
+
+function serialize(filas, delimiter) {
+  return filas.map((fila) => fila.join(delimiter)).join("\n") + "\n";
+}
+
