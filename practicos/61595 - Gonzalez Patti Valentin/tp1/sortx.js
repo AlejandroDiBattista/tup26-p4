@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from "node:fs";
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -32,7 +32,91 @@ EJEMPLOS:
     sortx empleados.csv resultado.csv -b departamento -b salario:num:desc
     sortx datos.csv resultado.csv -nh -b 2:num:desc
     sortx datos.tsv salida.tsv -d "\t" -b nombre
-`
+`;
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+//Declaracion de funciones
+function parseArgs(args) {
+  const config = {
+    inputFile: null,
+    outputFile: null,
+    delimiter: ",",
+    noHeader: false,
+    sortFields: [],
+  };
+
+  if (args.includes("-h") || args.includes("--help")) {
+    if (args.length !== 1) {
+      throw new Error(
+        "La opción de ayuda no puede combinarse con otros argumentos",
+      );
+    }
+    console.info(HELP);
+    process.exit(0);
+  }
+
+  if (args.length < 2) {
+    throw new Error("Faltan ingresar argumentos de origen y destino");
+  }
+
+  config.inputFile = args[0];
+  config.outputFile = args[1];
+
+  for (let i = 2; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === "-b" || arg === "--by") {
+      const valor = args[++i];
+
+      if (!valor || valor.startsWith("-")) {
+        throw new Error("La opción -b necesita un valor");
+      }
+
+      const partes = valor.split(":");
+
+      if (partes.length > 3) {
+        throw new Error(`Criterio inválido: ${valor}`);
+      }
+
+      const nombre = partes[0];
+      const tipo = partes[1] || "alpha";
+      const orden = partes[2] || "asc";
+
+      if (!nombre) {
+        throw new Error("El campo de ordenamiento no puede estar vacío");
+      }
+
+      if (tipo !== "alpha" && tipo !== "num") {
+        throw new Error(`Tipo de ordenamiento inválido: ${tipo}`);
+      }
+
+      if (orden !== "asc" && orden !== "desc") {
+        throw new Error(`Orden de ordenamiento inválido: ${orden}`);
+      }
+
+      config.sortFields.push({ nombre, tipo, orden });
+    } else if (arg === "-d" || arg === "--delimiter") {
+      const valor = args[++i];
+
+      if (valor === undefined) {
+        throw new Error("La opcion --delimiter necesita un valor");
+      }
+
+      //Permite escribir "\t" desde la terminal
+      config.delimiter = valor === "\\t" ? "\t" : valor;
+
+      if ([...config.delimiter].length !== 1) {
+        throw new Error("El delimitador debe ser un solo caracter");
+      }
+    } else if (arg === "-nh" || arg === "--no-header") {
+      config.noHeader = true;
+    } else {
+      throw new Error(`Opción inválida: ${arg}`);
+    }
+  }
+
+  if (config.sortFields.length === 0) {
+    throw new Error("Debe especificarse al menos un criterio de orden");
+  }
+
+  process.exit(0)
+}
