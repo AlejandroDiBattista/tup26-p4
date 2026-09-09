@@ -118,7 +118,7 @@ function parseArgs(args) {
     throw new Error("Debe especificarse al menos un criterio de orden");
   }
 
-  process.exit(0);
+  return config;
 }
 
 function readInput(inputFile) {
@@ -193,28 +193,28 @@ function sortRows(filas, config) {
     return { ...campo, index };
   });
 
-  for (const campo of campoIndexes) {
+  for (const campo of indicesCampos) {
     if (!campo.numeric) continue;
 
-    for (let i = 0; i < dataFilas.length; i++) {
-      const value = dataFilas[i][campo.index].trim();
+    for (let i = 0; i < datosFilas.length; i++) {
+      const value = datosFilas[i][campo.index].trim();
 
       if (value === "" || !Number.isFinite(Number(value))) {
         throw new Error(
-          `El valor "${dataFilas[i][campo.index]}" de la columna "${campo.nombre}" no es numérico.`,
+          `El valor "${datosFilas[i][campo.index]}" de la columna "${campo.nombre}" no es numérico.`,
         );
       }
     }
   }
 
-  dataFilas.sort((a, b) => {
-    for (const campo of campoIndexes) {
+  datosFilas.sort((a, b) => {
+    for (const campo of indicesCampos) {
       const valueA = a[campo.index];
       const valueB = b[campo.index];
 
       let comparacion;
 
-      if (campo.numeric) {
+      if (campo.tipo === "num") {
         comparacion = Number(valueA) - Number(valueB);
       } else {
         comparacion = valueA.localeCompare(valueB, "es", {
@@ -223,14 +223,14 @@ function sortRows(filas, config) {
       }
 
       if (comparacion !== 0) {
-        return campo.descending ? -comparacion : comparacion;
+        return campo.orden === "desc" ? -comparacion : comparacion;
       }
     }
 
     return 0;
   });
 
-  return config.noHeader ? dataFilas : [header, ...dataFilas];
+  return config.noHeader ? datosFilas : [header, ...datosFilas];
 }
 
 function serialize(filas, delimiter) {
