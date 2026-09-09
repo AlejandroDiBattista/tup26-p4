@@ -134,6 +134,10 @@ function readInput(config) {
 }
  
 function parseDelimited(texto, config) {
+  if (texto.indexOf('"') != -1) {
+    throw new Error("El archivo contiene comillas dobles, que no están admitidas")
+  }
+ 
   let lineas = texto.split(/\r\n|\n/)
  
   while (lineas.length > 0 && lineas[lineas.length - 1] == "") {
@@ -157,6 +161,12 @@ function parseDelimited(texto, config) {
     cantColumnas = filas[0].length
   } else {
     cantColumnas = 0
+  }
+ 
+  for (let i = 0; i < filas.length; i++) {
+    if (filas[i].length != cantColumnas) {
+      throw new Error("La fila " + (i + 1) + " no tiene la misma cantidad de columnas que las demás")
+    }
   }
  
   return { header: encabezado, rows: filas, cantColumnas: cantColumnas }
