@@ -237,3 +237,10 @@ function serialize(filas, delimiter) {
   return filas.map((fila) => fila.join(delimiter)).join("\n") + "\n";
 }
 
+function writeOutput(outputFile, text) {
+  try {
+    fs.writeFileSync(outputFile, text, "utf8");
+  } catch (error) {
+    throw new Error(`No se pudo escribir el archivo de destino: "${outputFile}".`);
+  }
+}
