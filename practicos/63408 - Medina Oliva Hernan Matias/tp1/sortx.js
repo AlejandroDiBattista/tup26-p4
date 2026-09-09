@@ -224,6 +224,23 @@ function serialize(datos, config) {
 }
 // 6. writeOutput    → escribir el archivo de destino.
 function writeOutput(outputFile, texto) {
+    try {
+        writeFileSync(outputFile, texto, "utf8");
+    } catch (error) {
+        throw new Error("No se pudo escribir el archivo de destino " + outputFile + " (" + error.code + ")");
+    }
 }
-// Llamamos a la función
-parseArgs();
+
+try {
+    const config = parseArgs(process.argv.slice(2));
+    if (config !== undefined) {
+        const texto = readInput(config.inputFile);
+        const datos = parseDelimited(texto, config);
+        const ordenados = sortRows(datos, config);
+        const salida = serialize(ordenados, config);
+        writeOutput(config.outputFile, salida);
+    }
+} catch (error) {
+    console.error("Error: " + error.message);
+    process.exitCode = 1;
+}
