@@ -35,4 +35,20 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+// 1. parseArgs -> leer los argumentos y construir la configuración
+function parseArgs() {
+    const origen = process.argv[2];
+    const destino = process.argv[3];
+
+    // Acá está el IF que armaste vos:
+    if (origen === undefined || origen === '-h' || origen === '--help') {
+        console.log(HELP);
+        process.exit(0); 
+    }
+
+    console.log("El origen es:", origen);
+    console.log("El destino es:", destino);
+}
+
+// Llamamos a la función
+parseArgs();
