@@ -36,6 +36,7 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 console.log(HELP)
+
 import fs from "node:fs"
  
 function parseArgs(args) {
@@ -161,6 +162,63 @@ function parseDelimited(texto, config) {
   return { header: encabezado, rows: filas, cantColumnas: cantColumnas }
 }
  
+function sortRows(datos, config) {
+  let criterios = []
+ 
+  for (let i = 0; i < config.sortFields.length; i++) {
+    let campo = config.sortFields[i]
+    let indice
+ 
+    if (config.noHeader) {
+      indice = Number(campo.name)
+      if (isNaN(indice)) {
+        throw new Error("Sin encabezado, el campo debe ser un índice numérico: " + campo.name)
+      }
+    } else {
+      indice = datos.header.indexOf(campo.name)
+      if (indice == -1) {
+        throw new Error("No existe la columna: " + campo.name)
+      }
+    }
+ 
+    if (indice < 0 || indice >= datos.cantColumnas) {
+      throw new Error("El campo solicitado no existe: " + campo.name)
+    }
+ 
+    criterios.push({ indice: indice, numeric: campo.numeric, descending: campo.descending })
+  }
+ 
+  let filas = datos.rows.slice()
+ 
+  filas.sort(function (a, b) {
+    for (let i = 0; i < criterios.length; i++) {
+      let c = criterios[i]
+      let valorA = a[c.indice]
+      let valorB = b[c.indice]
+      let resultado = 0
+ 
+      if (c.numeric) {
+        let numA = Number(valorA)
+        let numB = Number(valorB)
+        if (isNaN(numA) || isNaN(numB)) {
+          throw new Error("Valor no numérico al ordenar la columna: '" + valorA + "' o '" + valorB + "'")
+        }
+        if (numA < numB) resultado = -1
+        else if (numA > numB) resultado = 1
+      } else {
+        resultado = String(valorA).localeCompare(String(valorB))
+      }
+ 
+      if (c.descending) resultado = resultado * -1
+ 
+      if (resultado != 0) return resultado
+    }
+    return 0
+  })
+ 
+  return { header: datos.header, rows: filas, cantColumnas: datos.cantColumnas }
+}
+ 
 function main() {
   try {
     let args = process.argv.slice(2)
@@ -173,8 +231,9 @@ function main() {
  
     let texto = readInput(config)
     let datos = parseDelimited(texto, config)
+    let ordenado = sortRows(datos, config)
  
-    console.log(datos)
+    console.log(ordenado)
   } catch (e) {
     console.error("Error: " + e.message)
     process.exit(1)
