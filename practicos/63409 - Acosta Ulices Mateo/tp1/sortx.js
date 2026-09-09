@@ -124,6 +124,43 @@ function parseArgs(args) {
   return config
 }
  
+function readInput(config) {
+  try {
+    return fs.readFileSync(config.inputFile, "utf8")
+  } catch (e) {
+    throw new Error("No se pudo leer el archivo de origen: " + config.inputFile)
+  }
+}
+ 
+function parseDelimited(texto, config) {
+  let lineas = texto.split(/\r\n|\n/)
+ 
+  while (lineas.length > 0 && lineas[lineas.length - 1] == "") {
+    lineas.pop()
+  }
+ 
+  let filas = []
+  for (let i = 0; i < lineas.length; i++) {
+    filas.push(lineas[i].split(config.delimiter))
+  }
+ 
+  let encabezado = null
+  if (config.noHeader == false) {
+    encabezado = filas.shift()
+  }
+ 
+  let cantColumnas
+  if (encabezado != null) {
+    cantColumnas = encabezado.length
+  } else if (filas.length > 0) {
+    cantColumnas = filas[0].length
+  } else {
+    cantColumnas = 0
+  }
+ 
+  return { header: encabezado, rows: filas, cantColumnas: cantColumnas }
+}
+ 
 function main() {
   try {
     let args = process.argv.slice(2)
@@ -134,7 +171,10 @@ function main() {
       process.exit(0)
     }
  
-    console.log(config)
+    let texto = readInput(config)
+    let datos = parseDelimited(texto, config)
+ 
+    console.log(datos)
   } catch (e) {
     console.error("Error: " + e.message)
     process.exit(1)
