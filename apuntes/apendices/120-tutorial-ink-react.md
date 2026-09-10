@@ -29,9 +29,9 @@ El estado no es cualquier variable. React debe conservarlo entre ejecuciones del
 ### JSX: una forma de escribir componentes
 
 Este fragmento muestra una ficha mínima:
-
-```jsxfunction Ficha({contacto}) {
-  return <Text>{contacto.apellido}, {contacto.nombre}</Text>;
+```jsx 
+function Ficha({contacto}){
+    return <Text>{contacto.apellido}, {contacto.nombre}</Text>;
 }
 ```
 
@@ -42,9 +42,7 @@ function Ficha({contacto}) {
   return React.createElement(
     Text,
     null,
-    contacto.apellido,
-    ', ',
-    contacto.nombre
+    contacto.apellido, ', ', contacto.nombre
   );
 }
 ```
@@ -456,11 +454,11 @@ export function Detalle({contacto}) {
 }
 
 export const campos = [
-  {name: 'nombre', label: 'Nombre', required: true},
+  {name: 'nombre',   label: 'Nombre',   required: true},
   {name: 'apellido', label: 'Apellido', required: true},
-  {name: 'legajo', label: 'Legajo', required: true},
+  {name: 'legajo',   label: 'Legajo',   required: true},
   {name: 'telefono', label: 'Teléfono'},
-  {name: 'github', label: 'GitHub'}
+  {name: 'github',   label: 'GitHub'}
 ];
 
 export function Formulario({contacto, onGuardar, onCancelar}) {
@@ -825,39 +823,4 @@ También conviene probar más de ocho contactos para observar el desplazamiento 
 
 Para inspeccionar la persistencia, abrí `contactos.json` después de una operación. Cada guardado reemplaza el array completo. Si querés editar ese archivo a mano, cerrá primero la agenda y respetá el formato de los datos.
 
-## 11. Extender el ejemplo
 
-Estas propuestas mantienen el mismo modelo de componentes y datos:
-
-- **Búsqueda por varias palabras:** separar términos y exigir que todos coincidan en alguno de los campos usando `every` y `some`.
-- **Ordenación por apellido y nombre:** ordenar una copia con `toSorted`, conservando el legajo como identidad.
-- **Deshacer una baja:** conservar el array anterior y restaurarlo mediante el mismo guardado JSON.
-- **Validación de GitHub:** acordar un formato para el usuario y mostrar un mensaje si no se cumple.
-- **Importación:** leer otro JSON, detectar legajos repetidos y definir si se rechazan o actualizan.
-- **Otro almacenamiento:** conservar los componentes y reemplazar las funciones de `archivo.js` por acceso a una base de datos.
-
-Si agregás propiedades que también sean objetos, revisá las copias: habrá que copiar los niveles que se modifiquen, no solamente el objeto exterior.
-
-## 12. Trabajo práctico
-
-Construí una agenda con estos cinco campos y el legajo como identificador. Usá `TextInput`, `SelectInput` y `Form` como componentes externos esenciales.
-
-La aplicación debe permitir crear, consultar, buscar, editar y eliminar; usar el panel de detalle como formulario; impedir legajos repetidos; descartar borradores al cancelar y persistir cada operación completada en JSON.
-
-Agregá dos extensiones:
-
-1. Búsqueda por varias palabras, que pueden coincidir en campos distintos.
-2. Una operación de deshacer la última eliminación, implementada mediante reemplazo inmutable del array.
-
-Entregá fuentes, `package.json`, `package-lock.json`, un JSON de contactos ficticios y un README con ejecución, teclas y supuestos. No incluyas `node_modules`.
-
-Explicá brevemente:
-
-- Qué responsabilidad cumple React y cuál cumple Ink.
-- Qué resuelve cada biblioteca externa y cómo recibe sus eventos la aplicación.
-- Qué datos son estado y cuáles se calculan.
-- Cómo se conserva la coherencia cuando se modifica un legajo.
-- Por qué las operaciones de alta, modificación y baja son inmutables.
-- Cuándo se escribe el archivo y qué ocurre al cancelar un formulario.
-
-**Criterio de finalización:** las operaciones funcionan tanto con varios contactos como con un array vacío, la ficha coincide con la selección y los cambios aceptados se recuperan al volver a abrir la aplicación.
