@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --import tsx
+ed#!/usr/bin/env -S node --import tsx
 
 import React from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
