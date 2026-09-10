@@ -6,14 +6,18 @@ import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
 
-const COLUMNNAME_PLACEHOLDER = ["nombre","apellido","edad","salario","departamento"];
-
-const TABLA_PLACEHOLDER = [
-  {nombre: "Juan", apellido: "Pérez", edad: 30, salario: 50000, departamento: "Ventas"},
-  {nombre: "María", apellido: "Gómez", edad: 25, salario: 60000, departamento: "Marketing"},
-  {nombre: "Pedro", apellido: "López", edad: 35, salario: 70000, departamento: "Finanzas"},
-  {nombre: "Ana", apellido: "Martínez", edad: 28, salario: 55000, departamento: "Recursos Humanos"},
-];
+async function parseFile(file) {
+    const data = await readFile(file, {encoding: 'utf-8'});
+    const [header, ...rows] = data.split(/\r?\n|\r/);
+    const parsedColumns = header.split(',').map((c) => c.trim());
+    const parsedData = rows
+    .filter((r) => r.trim() !== '')
+    .map((row) => {
+        const values = row.split(',').map((v) => v.trim());
+        return Object.fromEntries(parsedColumns.map((c, i) => [c, values[i]]));
+    });
+    return {parsedData, parsedColumns};
+}
 
 const TECLAS = [
     {funcion: "Abrir", tecla: "A"},
@@ -47,7 +51,7 @@ function Tabla({data, columns, inicio, seleccionado, tablaFilas}) {
                 ))}
             </Box>
             {slicedData.map((fila, filaIdx) => (
-                <Box key={filaIdx}>
+                <Box flexShrink={0} key={filaIdx}>
                     <Box width={anchoIndice + 2} backgroundColor={esFilaActiva(inicio + filaIdx) ? COLORES.acentoDim : undefined}>
                         <Text color={esFilaActiva(inicio + filaIdx) ? COLORES.acento : COLORES.titulo}>{inicio + filaIdx + 1}</Text>
                     </Box>
@@ -92,10 +96,6 @@ const COLORES = {
     acentoDim: '#5c4d2c',
 };
 
-const rutaArchivo = process.argv[2]; 
-
-const [rowAmount, columnAmount] = totalSize(TABLA_PLACEHOLDER);
-
 function totalSize(data) {
     const columnas = Object.keys(data[0]).length;
     const filas = data.length;
@@ -114,12 +114,12 @@ function Teclas() {
     );
 }
 
-function App({ruta}) {
+function App({ruta, data, columns, rowAmount, columnAmount}) {
     const {exit} = useApp();
     const {columnas, filas} = useWindowSize();
     const [seleccionado, setSeleccionado] = useState({fila: 0, columna: 0});
     const [inicio, setInicio] = useState(0);
-    const tablaFilas = filas - 8;
+    const tablaFilas = filas - 9;
 
     useInput((tecla, key) => {
         if (key.escape) {
@@ -134,7 +134,7 @@ function App({ruta}) {
             }
         }
         if (key.downArrow) {
-            const nuevaFila = Math.min(TABLA_PLACEHOLDER.length - 1, seleccionado.fila + 1);
+            const nuevaFila = Math.min(data.length - 1, seleccionado.fila + 1);
             setSeleccionado((s) => ({...s, fila: nuevaFila}));
             if (nuevaFila > inicio + tablaFilas - 1) {
                 setInicio(nuevaFila - tablaFilas + 1);
@@ -144,7 +144,7 @@ function App({ruta}) {
             setSeleccionado((s) => ({...s, columna: Math.max(0, s.columna - 1)}));
         }
         if (key.rightArrow) {
-            setSeleccionado((s) => ({...s, columna: Math.min(COLUMNNAME_PLACEHOLDER.length - 1, s.columna + 1)}));
+            setSeleccionado((s) => ({...s, columna: Math.min(columns.length - 1, s.columna + 1)}));
         }
 
         if (tecla.toLowerCase() === 'g') {}
@@ -157,16 +157,39 @@ function App({ruta}) {
                 <Text dimColor>{rowAmount} filas · {columnAmount} columnas</Text>
             </Box>
             <Box paddingBottom={1}>
-                <Text>Valor seleccionado &gt; {TABLA_PLACEHOLDER[seleccionado.fila][COLUMNNAME_PLACEHOLDER[seleccionado.columna]]}</Text>
+                <Text>Valor seleccionado &gt; {data[seleccionado.fila][columns[seleccionado.columna]]}</Text>
             </Box>
             <Box flexGrow={1} paddingBottom={1}>
-                <Tabla data={TABLA_PLACEHOLDER} columns={COLUMNNAME_PLACEHOLDER} seleccionado={seleccionado} inicio={inicio} tablaFilas={tablaFilas} />
+                <Tabla data={data} columns={columns} seleccionado={seleccionado} inicio={inicio} tablaFilas={tablaFilas} />
             </Box>
             <Teclas />
         </Box>
     );
 }
 
-const app = render(<App ruta={rutaArchivo} />);
-await app.waitUntilExit();
-console.clear();
+function logError(message) {
+    console.error(message);
+    process.exit(1);
+}
+
+async function init() {
+    const rutaArchivo = process.argv[2];
+    if (!rutaArchivo) logError('No se especificó un archivo');
+    let data;
+    try {
+        data = await parseFile(rutaArchivo);
+    } catch (error) {logError(`No se pudo leer "${rutaArchivo}": ${e.message}`)};
+
+    const [rowAmount, columnAmount] = totalSize(data.parsedData);
+    const app = render(<App 
+        ruta={rutaArchivo} 
+        data={data.parsedData} 
+        columns={data.parsedColumns} 
+        columnAmount={columnAmount} 
+        rowAmount={rowAmount} 
+    />);
+    await app.waitUntilExit();
+    console.clear();
+}
+
+init();
