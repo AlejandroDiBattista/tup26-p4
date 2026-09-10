@@ -49,8 +49,9 @@ function sortData(data, col, desc, numeric) {
 
 function App({inicial}) {
   const {exit} = useApp();
-  const {header, filename} = inicial;
+  const [header, setHeader] = useState(inicial.header);
   const [data, setData] = useState(inicial.data);
+  const [filename, setFilename] = useState(inicial.filename);
   const [selRow, setSelRow] = useState(0);
   const [selCol, setSelCol] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -80,12 +81,25 @@ function App({inicial}) {
     if (key.return && !sinFilas) setMode('edit');
     if (tecla === '<' && !sinFilas) setData((d) => sortData(d, selCol, false, isNumericCol(d, selCol)));
     if (tecla === '>' && !sinFilas) setData((d) => sortData(d, selCol, true, isNumericCol(d, selCol)));
+    if (tecla.toLowerCase() === 'a') setMode('open');
   });
 
   function confirmarEdicion(valor) {
     const nueva = data.map((f) => f.slice());
     nueva[selRow][selCol] = valor;
     setData(nueva);
+    setMode('view');
+  }
+
+  async function abrir(ruta) {
+    const texto = await readFile(ruta, 'utf8');
+    const {header: h, data: d} = parseCSV(texto);
+    setHeader(h);
+    setData(d);
+    setFilename(ruta);
+    setSelRow(0);
+    setSelCol(0);
+    setOffset(0);
     setMode('view');
   }
 
@@ -97,10 +111,12 @@ function App({inicial}) {
       </Box>
 
       <Box marginTop={1}>
-        <Text color={COLORES.acento}>Valor</Text>
+        <Text color={COLORES.acento}>{mode === 'open' ? 'Abrir' : 'Valor'}</Text>
         <Text color={COLORES.secundario}> {'>'} </Text>
         {mode === 'edit' ? (
           <TextInput defaultValue={data[selRow][selCol]} onSubmit={confirmarEdicion} />
+        ) : mode === 'open' ? (
+          <TextInput defaultValue={filename || ''} onSubmit={abrir} />
         ) : (
           <Text color={COLORES.titulo}>{sinFilas ? '(sin filas)' : data[selRow][selCol]}</Text>
         )}
@@ -134,7 +150,7 @@ function App({inicial}) {
       <Box marginTop={1} justifyContent="space-between">
         <Text color={COLORES.secundario}>
           {mode === 'view' ? (
-            <><Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;/&gt;</Text> ordenar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
+            <><Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;/&gt;</Text> ordenar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
           ) : (
             <><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</>
           )}
