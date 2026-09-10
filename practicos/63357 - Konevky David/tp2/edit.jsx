@@ -18,11 +18,12 @@ const TABLA_PLACEHOLDER = [
 const TECLAS = [
     {funcion: "Abrir", tecla: "A"},
     {funcion: "Guardar", tecla: "G"},
+    {funcion: "Editar", tecla: "Enter"},
     {funcion: "Salir", tecla: "Esc"},
 ]
 
 function Tabla({data, columns, inicio, seleccionado, tablaFilas}) {
-    const anchoIndice = String(data.length).length + 1; // ancho de "#"
+    const anchoIndice = String(data.length).length + 1;
     const anchos = columns.map((col) =>
         Math.max(col.length, ...data.map((fila) => String(fila[col]).length))
     );
@@ -118,7 +119,7 @@ function App({ruta}) {
     const {columnas, filas} = useWindowSize();
     const [seleccionado, setSeleccionado] = useState({fila: 0, columna: 0});
     const [inicio, setInicio] = useState(0);
-    const tablaFilas = filas - 7;
+    const tablaFilas = filas - 8;
 
     useInput((tecla, key) => {
         if (key.escape) {
@@ -151,9 +152,12 @@ function App({ruta}) {
 
     return (
         <Box width={columnas} height={filas} alignItems="stretch" flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo} paddingX={1}>
-            <Box justifyContent="space-between" paddingBottom={1}>
+            <Box justifyContent="space-between">
                 <Text bold>{basename(ruta)}</Text>
                 <Text dimColor>{rowAmount} filas · {columnAmount} columnas</Text>
+            </Box>
+            <Box paddingBottom={1}>
+                <Text>Valor seleccionado &gt; {TABLA_PLACEHOLDER[seleccionado.fila][COLUMNNAME_PLACEHOLDER[seleccionado.columna]]}</Text>
             </Box>
             <Box flexGrow={1} paddingBottom={1}>
                 <Tabla data={TABLA_PLACEHOLDER} columns={COLUMNNAME_PLACEHOLDER} seleccionado={seleccionado} inicio={inicio} tablaFilas={tablaFilas} />
