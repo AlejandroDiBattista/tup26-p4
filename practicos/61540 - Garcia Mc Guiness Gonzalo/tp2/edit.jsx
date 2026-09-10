@@ -6,10 +6,12 @@ import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
 
+const COLUMNAS = process.stdout.columns || 80;
+const FILAS    = process.stdout.rows || 24;
 
 const COLORES = {
     fondo:     '#161310',
-    borde:     '#7e300c',
+    borde:     '#726b61',
     titulo:    '#ede7db',
     secundario:'#ada79e',
     acento:    '#edbb64',
@@ -21,11 +23,23 @@ function App() {
     const [pidiendoArchivo, setPidiendoArchivo] = useState(!archivoInicial)
     const [nombreArchivo, setNombreArchivo] = useState('')
     const [contenido, setContenido] = useState('')
+    const [cabecera, setCabecera] = useState([])
+    const [filas, setFilas] = useState([])
+
+    const ancho = 4
+    const separacion = 2
+    const anchoColumna = Math.floor(
+        (COLUMNAS - ancho - separacion * cabecera.length) / cabecera.length
+    )
 
     async function abrirArchivo(nombre) {
         try {
             const datos = await readFile(nombre, 'utf-8')
-            setContenido(datos)
+            const lineas = datos.split(/\r?\n/).filter(l => l !== '')
+            const cabecera = lineas[0].split(',')
+            const filas = lineas.slice(1).map(l => l.split(','))
+            setCabecera(cabecera)
+            setFilas(filas)
             setNombreArchivo(nombre)
             setPidiendoArchivo(false)
         } catch {
@@ -59,10 +73,40 @@ function App() {
     }
 
     return (
-        <Box flexDirection="column" gap={2} borderStyle="round" borderColor={COLORES.borde}>
-            
-            <Text>Archivo: {nombreArchivo}</Text>  
-            <Text>{contenido}</Text>   
+        <Box flexDirection="column" width={COLUMNAS} borderStyle="round" borderColor={COLORES.borde}>
+            <Box flexDirection="row" gap={70} paddingBottom={2}>
+                <Text color={COLORES.titulo}>Archivo: {nombreArchivo}</Text>  
+                <Text color={COLORES.secundario}>
+                    Columnas: {cabecera.length} | Filas: {filas.length}
+                </Text>
+            </Box>
+            <Box flexDirection="row" gap={separacion}  >
+                <Box width={ancho}>
+                    <Text bold>N°</Text>
+                </Box>
+
+                {cabecera.map((nombre, indiceColumna) => (
+                    <Box key={indiceColumna} width={anchoColumna}>
+                        <Text bold>{nombre.toUpperCase()}</Text>
+                    </Box>
+                ))}
+            </Box>
+
+            <Box flexDirection="column">
+                {filas.map((fila, indiceFila) => (
+                    <Box key={indiceFila} flexDirection="row" gap={separacion}>
+                        <Box width={ancho}>
+                            <Text color={COLORES.secundario}>{indiceFila + 1}</Text>
+                        </Box>
+
+                        {fila.map((valor, indiceColumna) => (
+                            <Box key={indiceColumna} width={anchoColumna}>
+                                <Text color={COLORES.titulo} wrap="truncate-end">{valor}</Text>
+                            </Box>
+                        ))}
+                    </Box>
+                ))}
+            </Box>
                     
         </Box>   
     );
