@@ -45,6 +45,7 @@ function App({inicial}) {
   const widths = colWidths(header, data);
   const numAncho = String(data.length).length;
   const visibles = data.slice(offset, offset + visibleRows);
+  const sinFilas = data.length === 0;
 
   useEffect(() => {
     if (selRow < offset) setOffset(selRow);
@@ -55,8 +56,8 @@ function App({inicial}) {
     if (key.escape) exit();
     if (key.leftArrow) setSelCol((c) => Math.max(0, c - 1));
     if (key.rightArrow) setSelCol((c) => Math.min(header.length - 1, c + 1));
-    if (key.upArrow) setSelRow((r) => Math.max(0, r - 1));
-    if (key.downArrow) setSelRow((r) => Math.min(data.length - 1, r + 1));
+    if (key.upArrow && !sinFilas) setSelRow((r) => Math.max(0, r - 1));
+    if (key.downArrow && !sinFilas) setSelRow((r) => Math.min(data.length - 1, r + 1));
   });
 
   return (
@@ -64,6 +65,12 @@ function App({inicial}) {
       <Box justifyContent="space-between">
         <Text bold color={COLORES.titulo}>{filename}</Text>
         <Text color={COLORES.secundario}>{data.length} filas · {header.length} columnas</Text>
+      </Box>
+
+      <Box marginTop={1}>
+        <Text color={COLORES.acento}>Valor</Text>
+        <Text color={COLORES.secundario}> {'>'} </Text>
+        <Text color={COLORES.titulo}>{sinFilas ? '(sin filas)' : data[selRow][selCol]}</Text>
       </Box>
 
       <Box marginTop={1}>
@@ -91,8 +98,9 @@ function App({inicial}) {
         );
       })}
 
-      <Box marginTop={1}>
+      <Box marginTop={1} justifyContent="space-between">
         <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
+        <Text color={COLORES.secundario}>Fila {sinFilas ? '-' : selRow + 1} · Columna {selCol + 1}</Text>
       </Box>
     </Box>
   );
