@@ -3,6 +3,7 @@
 import React, {useState, useEffect} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
+import {TextInput} from '@inkjs/ui';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS = process.stdout.rows || 24;
@@ -37,10 +38,12 @@ function colWidths(header, data) {
 
 function App({inicial}) {
   const {exit} = useApp();
-  const {header, data, filename} = inicial;
+  const {header, filename} = inicial;
+  const [data, setData] = useState(inicial.data);
   const [selRow, setSelRow] = useState(0);
   const [selCol, setSelCol] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [mode, setMode] = useState('view');
   const visibleRows = Math.max(3, FILAS - 8);
   const widths = colWidths(header, data);
   const numAncho = String(data.length).length;
@@ -53,12 +56,25 @@ function App({inicial}) {
   }, [selRow]);
 
   useInput((tecla, key) => {
-    if (key.escape) exit();
+    if (key.escape) {
+      if (mode === 'view') exit();
+      else setMode('view');
+      return;
+    }
+    if (mode !== 'view') return;
     if (key.leftArrow) setSelCol((c) => Math.max(0, c - 1));
     if (key.rightArrow) setSelCol((c) => Math.min(header.length - 1, c + 1));
     if (key.upArrow && !sinFilas) setSelRow((r) => Math.max(0, r - 1));
     if (key.downArrow && !sinFilas) setSelRow((r) => Math.min(data.length - 1, r + 1));
+    if (key.return && !sinFilas) setMode('edit');
   });
+
+  function confirmarEdicion(valor) {
+    const nueva = data.map((f) => f.slice());
+    nueva[selRow][selCol] = valor;
+    setData(nueva);
+    setMode('view');
+  }
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -70,7 +86,11 @@ function App({inicial}) {
       <Box marginTop={1}>
         <Text color={COLORES.acento}>Valor</Text>
         <Text color={COLORES.secundario}> {'>'} </Text>
-        <Text color={COLORES.titulo}>{sinFilas ? '(sin filas)' : data[selRow][selCol]}</Text>
+        {mode === 'edit' ? (
+          <TextInput defaultValue={data[selRow][selCol]} onSubmit={confirmarEdicion} />
+        ) : (
+          <Text color={COLORES.titulo}>{sinFilas ? '(sin filas)' : data[selRow][selCol]}</Text>
+        )}
       </Box>
 
       <Box marginTop={1}>
@@ -99,7 +119,13 @@ function App({inicial}) {
       })}
 
       <Box marginTop={1} justifyContent="space-between">
-        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
+        <Text color={COLORES.secundario}>
+          {mode === 'view' ? (
+            <><Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
+          ) : (
+            <><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</>
+          )}
+        </Text>
         <Text color={COLORES.secundario}>Fila {sinFilas ? '-' : selRow + 1} · Columna {selCol + 1}</Text>
       </Box>
     </Box>
