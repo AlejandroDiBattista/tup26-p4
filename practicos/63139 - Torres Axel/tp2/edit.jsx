@@ -26,6 +26,11 @@ function App() {
   });
   const [contenido, setContenido] = useState("");
   const [rutaArchivo, setRutaArchivo] = useState(ruta_archivo);
+  const lineas = contenido.split("\n");
+  const cabecera = lineas[0];
+  const columnas = cabecera.split(",");
+  const seguidas = lineas.slice(1);
+  const filas = seguidas.map((fila) => fila.split(","));
   useEffect(() => {
     async function leerArchivo() {
       try {
@@ -47,8 +52,8 @@ function App() {
       alignItems="center"
     >
       <Box
-        width={40}
-        height={10}
+        width={60}
+        height={12}
         flexDirection="column"
         borderStyle="round"
         borderColor={COLORES.borde}
@@ -59,11 +64,19 @@ function App() {
             Editor CSV
           </Text>
         </Box>
+        <Box flexDirection="row" gap={2}>
+          {columnas.map((columna, indice) => (
+            <Box key={indice} width={12} flexShrink={0}>
+              <Text key={indice}>{columna}</Text>
+            </Box>
+          ))}
+        </Box>
         <Text color={COLORES.secundario}>
           <Text bold color={COLORES.acento}>
             {" "}
             Esc
-          </Text>{" "}
+          </Text>
+          {""}
           salir
         </Text>
       </Box>
