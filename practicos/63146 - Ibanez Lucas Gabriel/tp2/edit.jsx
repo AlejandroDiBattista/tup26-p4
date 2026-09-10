@@ -34,7 +34,25 @@ function parseArchivo(texto) {
     return{header, rows};
 }
 
-function App() {
+
+function App({archivo}) {
+    const [datos, setDatos] = React.useState({header: [], rows: []});
+    const [nombreArchivo, setNombreArchivo] = React.useState(archivo ?? null);
+    const [error, setError] = React.useState(null);
+
+const [cargado, setCargado] = React.useState(false);
+if (!cargado&&archivo) {
+    
+    const resultado = readArchivo(archivo);
+    if (resultado.exito) {
+        setDatos(parseArchivo(resultado.datos));
+        setError(null)
+
+    }else{
+        setError(`No se pudo leer el archivo`);
+    }
+setCargado(true);
+}
     const {exit} = useApp();
     
     useInput((tecla, key) => {
@@ -44,28 +62,29 @@ function App() {
     })
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1}>
+            <Text bold color={COLORES.titulo}>Editor CSV</Text>
+            <Text color={COLORES.secundario}>
+                Archivo: {nombreArchivo ?? "(ninguno)"} — {datos.rows.length} filas, {datos.header.length} columnas
+            </Text>
+            {error && <Text color="red">Error: {error}</Text>}
+            <Box marginTop={1} flexDirection="column">
+                <Text bold>{datos.header.join(" | ")}</Text>
+                {datos.rows.map((fila, i) => (
+                    <Text key={i}>{fila.join(" | ")}</Text>
+                ))}
+            </Box>
+            <Box marginTop={1}>
+                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
             </Box>
         </Box>
     );
 }
 
-const prueba = readArchivo('empleados.csv');
-if (prueba.exito) {
-    const {header, rows} = parseArchivo(prueba.datos);
-    console.log('Encabezado:', header);
-    console.log('Filas:', rows);
-} else {
-    console.error('No se pudo leer el archivo.');
-}
 
 
 
-const app = render(<App />);
+
+const app = render(<App archivo="empleados.csv" />);
 await app.waitUntilExit();
 console.clear();
