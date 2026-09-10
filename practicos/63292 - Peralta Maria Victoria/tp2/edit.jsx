@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 
@@ -34,14 +34,29 @@ function colWidths(header, data) {
     return w;
   });
 }
+
 function App({inicial}) {
   const {exit} = useApp();
   const {header, data, filename} = inicial;
+  const [selRow, setSelRow] = useState(0);
+  const [selCol, setSelCol] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const visibleRows = Math.max(3, FILAS - 8);
   const widths = colWidths(header, data);
   const numAncho = String(data.length).length;
+  const visibles = data.slice(offset, offset + visibleRows);
+
+  useEffect(() => {
+    if (selRow < offset) setOffset(selRow);
+    else if (selRow >= offset + visibleRows) setOffset(selRow - visibleRows + 1);
+  }, [selRow]);
 
   useInput((tecla, key) => {
     if (key.escape) exit();
+    if (key.leftArrow) setSelCol((c) => Math.max(0, c - 1));
+    if (key.rightArrow) setSelCol((c) => Math.min(header.length - 1, c + 1));
+    if (key.upArrow) setSelRow((r) => Math.max(0, r - 1));
+    if (key.downArrow) setSelRow((r) => Math.min(data.length - 1, r + 1));
   });
 
   return (
@@ -54,18 +69,27 @@ function App({inicial}) {
       <Box marginTop={1}>
         <Text>{' '.repeat(numAncho + 1)}</Text>
         {header.map((h, i) => (
-          <Text key={h} bold color={COLORES.acento}>{h.padEnd(widths[i] + 2)}</Text>
+          <Text key={h} bold backgroundColor={i === selCol ? COLORES.acento : undefined} color={i === selCol ? COLORES.fondo : COLORES.acento}>
+            {h.padEnd(widths[i] + 2)}
+          </Text>
         ))}
       </Box>
 
-      {data.map((f, ri) => (
-        <Box key={ri}>
-          <Text color={COLORES.secundario}>{String(ri + 1).padStart(numAncho)} </Text>
-          {f.map((v, ci) => (
-            <Text key={ci} color={COLORES.titulo}>{v.padEnd(widths[ci] + 2)}</Text>
-          ))}
-        </Box>
-      ))}
+      {visibles.map((f, vi) => {
+        const ri = offset + vi;
+        return (
+          <Box key={ri}>
+            <Text backgroundColor={ri === selRow ? COLORES.acento : undefined} color={ri === selRow ? COLORES.fondo : COLORES.secundario}>
+              {String(ri + 1).padStart(numAncho)}{' '}
+            </Text>
+            {f.map((v, ci) => (
+              <Text key={ci} backgroundColor={ri === selRow && ci === selCol ? COLORES.titulo : undefined} color={ri === selRow && ci === selCol ? COLORES.fondo : COLORES.titulo}>
+                {v.padEnd(widths[ci] + 2)}
+              </Text>
+            ))}
+          </Box>
+        );
+      })}
 
       <Box marginTop={1}>
         <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
