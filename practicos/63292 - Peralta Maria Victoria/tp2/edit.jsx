@@ -27,18 +27,49 @@ function parseCSV(texto) {
   return {header, data};
 }
 
+function colWidths(header, data) {
+  return header.map((h, i) => {
+    let w = h.length;
+    for (const f of data) w = Math.max(w, f[i].length);
+    return w;
+  });
+}
 function App({inicial}) {
   const {exit} = useApp();
+  const {header, data, filename} = inicial;
+  const widths = colWidths(header, data);
+  const numAncho = String(data.length).length;
+
   useInput((tecla, key) => {
     if (key.escape) exit();
   });
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Text color={COLORES.titulo}>
-        {inicial.filename} cargado: {inicial.data.length} filas, {inicial.header.length} columnas
-      </Text>
-      <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
+      <Box justifyContent="space-between">
+        <Text bold color={COLORES.titulo}>{filename}</Text>
+        <Text color={COLORES.secundario}>{data.length} filas · {header.length} columnas</Text>
+      </Box>
+
+      <Box marginTop={1}>
+        <Text>{' '.repeat(numAncho + 1)}</Text>
+        {header.map((h, i) => (
+          <Text key={h} bold color={COLORES.acento}>{h.padEnd(widths[i] + 2)}</Text>
+        ))}
+      </Box>
+
+      {data.map((f, ri) => (
+        <Box key={ri}>
+          <Text color={COLORES.secundario}>{String(ri + 1).padStart(numAncho)} </Text>
+          {f.map((v, ci) => (
+            <Text key={ci} color={COLORES.titulo}>{v.padEnd(widths[ci] + 2)}</Text>
+          ))}
+        </Box>
+      ))}
+
+      <Box marginTop={1}>
+        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
+      </Box>
     </Box>
   );
 }
