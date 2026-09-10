@@ -36,6 +36,17 @@ function colWidths(header, data) {
   });
 }
 
+function isNumericCol(data, col) {
+  return data.every((f) => f[col].trim() !== '' && !Number.isNaN(Number(f[col])));
+}
+
+function sortData(data, col, desc, numeric) {
+  return data.slice().sort((a, b) => {
+    const res = numeric ? Number(a[col]) - Number(b[col]) : a[col].localeCompare(b[col]);
+    return desc ? -res : res;
+  });
+}
+
 function App({inicial}) {
   const {exit} = useApp();
   const {header, filename} = inicial;
@@ -67,6 +78,8 @@ function App({inicial}) {
     if (key.upArrow && !sinFilas) setSelRow((r) => Math.max(0, r - 1));
     if (key.downArrow && !sinFilas) setSelRow((r) => Math.min(data.length - 1, r + 1));
     if (key.return && !sinFilas) setMode('edit');
+    if (tecla === '<' && !sinFilas) setData((d) => sortData(d, selCol, false, isNumericCol(d, selCol)));
+    if (tecla === '>' && !sinFilas) setData((d) => sortData(d, selCol, true, isNumericCol(d, selCol)));
   });
 
   function confirmarEdicion(valor) {
@@ -121,7 +134,7 @@ function App({inicial}) {
       <Box marginTop={1} justifyContent="space-between">
         <Text color={COLORES.secundario}>
           {mode === 'view' ? (
-            <><Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
+            <><Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;/&gt;</Text> ordenar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
           ) : (
             <><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</>
           )}
