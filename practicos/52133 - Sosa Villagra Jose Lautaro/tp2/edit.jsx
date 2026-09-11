@@ -4,7 +4,7 @@ import React from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
-import {basename} from 'node:path';
+import {basename, delimiter} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -16,6 +16,57 @@ const COLORES = {
     secundario:'#ada79e',
     acento:    '#edbb64',
 };
+
+const TABLE_WIDTH = COLUMNAS - 4;
+const VISIBLE_ROWS = Math.max(1, FILAS - 9);
+const COLUMN_GAP = 2;
+const PROMPT_LABELS = {
+    open: "Abrir",
+    save: "Guardar",
+    edit: "Editar",
+}
+const DELIMITER = ",";
+
+function parseCsv(Text) {
+    const normalized = text.split("\r\n").join("\n");
+    const allLines = normalized.split("\n");
+    
+    let lineCount = allLines.length;
+    if (lineCount > 0 && allLines[lineCount - 1] === "") {
+        lineCount--;
+    }
+    
+    if (lineCount === 0) {
+        throw new Error("El archivo esta vacio");
+    }
+
+    const lines = [];
+
+    for (const line of allLines.slice(0, lineCount)) {
+        lines.push(line);
+    }
+
+    // ["nombre,apellido,edad,salario,departamento",  "Paula,Acosta1,48,86200,Ingeniería", "Ignacio,Aguirre,53,109700,Finanzas"]
+    // ["nombre", "apellido", "edad", "salario", "departamento"]
+    const header = lines[0].split(DELIMITER);
+
+    const rows = [];
+    for (const line of lines.slice(1)) {
+        rows.push(line.split(DELIMITER));
+    }
+
+    for (const [index, row] of rows.entries()) {
+		if (row.length !== columnCount) {
+			throw new Error(
+				"la fila " +
+				(index + 1) +
+				" tiene una cantidad de campos distinta a las demás",
+			);
+		}
+	}
+
+    return { header, rows }
+}
 
 function App() {
     const {exit} = useApp();
@@ -41,3 +92,4 @@ function App() {
 const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
+
