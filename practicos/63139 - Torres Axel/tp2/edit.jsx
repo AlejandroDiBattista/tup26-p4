@@ -20,6 +20,18 @@ function App() {
   const { exit } = useApp();
 
   useInput((tecla, key) => {
+    if (abriendo) {
+      if (key.escape) {
+        setAbriendo(false);
+      }
+      if (key.return && rutaNueva.trim() !== "") {
+        setRutaArchivo(rutaNueva.trim());
+        setFilaSeleccionada(0);
+        setColumnaSeleccionada(0);
+        setAbriendo(false);
+      }
+      return;
+    }
     if (editando) {
       if (key.escape) {
         setEditando(false);
@@ -71,6 +83,11 @@ function App() {
       setFilaSeleccionada(0);
       return;
     }
+    if (tecla.toLocaleLowerCase() === "a") {
+      setRutaNueva("");
+      setAbriendo(true);
+      return;
+    }
     if (key.escape) {
       exit();
     }
@@ -108,11 +125,15 @@ function App() {
   const inicioFila = Math.max(0, filaSeleccionada - 4);
   const [editando, setEditando] = useState(false);
   const [textoEdicion, setTextoEdicion] = useState("");
+  const [abriendo, setAbriendo] = useState(false);
+  const [rutaNueva, setRutaNueva] = useState("");
+  const [archivoActual, setArchivoActual] = useState("");
   useEffect(() => {
     async function leerArchivo() {
       try {
         const texto = await readFile(rutaArchivo, "utf8");
         setContenido(texto);
+        setArchivoActual(rutaArchivo);
       } catch (error) {
         console.log("error al leer archivo", error.message);
       }
@@ -140,6 +161,7 @@ function App() {
             Editor CSV
           </Text>
         </Box>
+        <Text>Archivo:{archivoActual || "(ninguno)"}</Text>
         <Text>Columna:{columnaSeleccionada}</Text>
         <Text>Fila:{filaSeleccionada}</Text>
         <Text>valor:{valorSeleccionado}</Text>
@@ -178,9 +200,16 @@ function App() {
           );
         })}
         {editando && (
-          <Box flexDirection="colum">
+          <Box flexDirection="column">
             <Text>Editar celda:</Text>
             <TextInput defaultValue={textoEdicion} onChange={setTextoEdicion} />
+          </Box>
+        )}
+        {abriendo && (
+          <Box flexDirection="column">
+            <Text>Abrir CSV - Enter:Abrir|Esc:cancelar </Text>
+
+            <TextInput defaultValue={rutaNueva} onChange={setRutaNueva} />
           </Box>
         )}
         <Text color={COLORES.secundario}>
