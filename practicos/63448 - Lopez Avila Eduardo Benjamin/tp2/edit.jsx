@@ -32,6 +32,46 @@ async function parseFile(filePath) {
     }
 }
 
+function Header({ header }) {
+    return (
+        <Box flexDirection="row" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+            {header.map((campo, index) => (
+                <Box key={index} paddingX={1}>
+                    <Text color={COLORES.titulo}>{campo.toUpperCase()}</Text>
+                </Box>
+            ))}
+        </Box>
+    );
+}
+
+function Row({ fila }) {
+    return (
+        <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+            {fila.map((campo, index) => (
+                <Box key={index} paddingX={1}>
+                    <Text color={COLORES.secundario}>{campo}</Text>
+                </Box>
+            ))}
+        </Box>
+    );
+}
+
+function App({ ruta, data }) {
+    const {exit} = useApp();
+    
+    useInput((tecla, key) => {
+        if (key.escape) {
+            exit();
+        }
+    })
+    
+    return (
+        <Box>
+            <Header header={data.header} />
+                <Row key={data.filas.index} fila={data.filas} />
+        </Box>
+    );
+}
 async function main() {
     const args = process.argv.slice(2);
     if (args.length < 1) {
@@ -40,33 +80,7 @@ async function main() {
     }
     const filePath = args[0];
     const tabla = await parseFile(filePath);
-    console.log("Archivo CSV cargado correctamente.");
-    console.log("Encabezados:", tabla.header);
-    console.log("Número de filas:", tabla.filas);
+    await render(<App ruta={filePath} data={tabla} />);
 }
 
 main();
-
-function App() {
-    const {exit} = useApp();
-    
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
-
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-            </Box>
-        </Box>
-    );
-}
-// const app = render(<App />);
-// await app.waitUntilExit();
-// console.clear();
