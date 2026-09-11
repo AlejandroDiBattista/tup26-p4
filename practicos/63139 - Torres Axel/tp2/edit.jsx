@@ -40,6 +40,37 @@ function App() {
       }
       return;
     }
+    if (
+      tecla === "<" ||
+      tecla === ">" ||
+      tecla.toLocaleLowerCase() === "o" ||
+      tecla.toLocaleLowerCase() === "p"
+    ) {
+      const ascendente = tecla === "<" || tecla.toLocaleLowerCase() === "o";
+      const direccion = ascendente ? 1 : -1;
+      const filasOrdenadas = [...filas].sort((filaA, filaB) => {
+        const a = filaA[columnaSeleccionada] ?? "";
+        const b = filaB[columnaSeleccionada] ?? "";
+        const sonNumeros =
+          a.trim() !== "" &&
+          b.trim() !== "" &&
+          Number.isFinite(Number(a)) &&
+          Number.isFinite(Number(b));
+        const resultado = sonNumeros
+          ? Number(a) - Number(b)
+          : a.localeCompare(b, "es", {
+              numeric: true,
+              sensitivity: "base",
+            });
+        return resultado * direccion;
+      });
+      const nuevoContenido = [columnas, ...filasOrdenadas]
+        .map((fila) => fila.join(","))
+        .join("\n");
+      setContenido(nuevoContenido);
+      setFilaSeleccionada(0);
+      return;
+    }
     if (key.escape) {
       exit();
     }
@@ -68,7 +99,7 @@ function App() {
   const lineas = contenido.replace(/\r\n?/g, "\n").split("\n");
   const cabecera = lineas[0];
   const columnas = cabecera.split(",");
-  const seguidas = lineas.slice(1);
+  const seguidas = lineas.slice(1).filter((linea) => linea.trim() !== "");
   const filas = seguidas.map((fila) => fila.split(","));
   const [filaSeleccionada, setFilaSeleccionada] = useState(0);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
