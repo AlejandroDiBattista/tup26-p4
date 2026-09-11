@@ -20,6 +20,26 @@ function App() {
   const { exit } = useApp();
 
   useInput((tecla, key) => {
+    if (editando) {
+      if (key.escape) {
+        setEditando(false);
+      }
+      if (key.return) {
+        const nuevasFilas = filas.map((fila, i) =>
+          fila.map((celda, j) =>
+            i === filaSeleccionada && j === columnaSeleccionada
+              ? textoEdicion
+              : celda,
+          ),
+        );
+        const nuevoContenido = [columnas, ...nuevasFilas]
+          .map((fila) => fila.join(","))
+          .join("\n");
+        setContenido(nuevoContenido);
+        setEditando(false);
+      }
+      return;
+    }
     if (key.escape) {
       exit();
     }
@@ -37,6 +57,11 @@ function App() {
     if (key.upArrow || tecla.toLocaleLowerCase() === "w") {
       setFilaSeleccionada((actual) => Math.max(actual - 1, 0));
     }
+    if (key.return && !editando) {
+      setTextoEdicion(valorSeleccionado);
+      setEditando(true);
+      return;
+    }
   });
   const [contenido, setContenido] = useState("");
   const [rutaArchivo, setRutaArchivo] = useState(ruta_archivo);
@@ -50,6 +75,8 @@ function App() {
   const valorSeleccionado =
     filas[filaSeleccionada]?.[columnaSeleccionada] ?? "";
   const inicioFila = Math.max(0, filaSeleccionada - 4);
+  const [editando, setEditando] = useState(false);
+  const [textoEdicion, setTextoEdicion] = useState("");
   useEffect(() => {
     async function leerArchivo() {
       try {
@@ -119,6 +146,12 @@ function App() {
             </Box>
           );
         })}
+        {editando && (
+          <Box flexDirection="colum">
+            <Text>Editar celda:</Text>
+            <TextInput defaultValue={textoEdicion} onChange={setTextoEdicion} />
+          </Box>
+        )}
         <Text color={COLORES.secundario}>
           <Text bold color={COLORES.acento}>
             {" "}
