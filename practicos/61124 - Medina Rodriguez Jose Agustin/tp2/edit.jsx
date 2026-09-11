@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -48,46 +48,203 @@ function convertirCsv(contenido) {
     return {cabecera, filas};
 }
 
-function App({cabecera, filas}) {
-    const {exit} = useApp();
-    
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
-
+function FilaTabla({
+    celdas,
+    numero,
+    esCabecera = false,
+    esFilaSeleccionada = false,
+    columnaSeleccionada = 0,
+}) {
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box
-                    flexGrow={1}
-                    flexDirection="column"
-                    justifyContent="center"
-                    alignItems="center"
-                > 
-                   <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                   <Text color={COLORES.secundario}>
-                        {filas.length} filas · {cabecera.length} columnas
-                   </Text>
-               </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+        <Box>
+            <Box width={6} justifyContent="flex-end" paddingRight={2}>
+                <Text
+                    bold={esCabecera || esFilaSeleccionada}
+                    color={
+                        esFilaSeleccionada
+                            ? COLORES.acento
+                            : COLORES.secundario
+                    }
+                >
+                    {esCabecera ? '#' : numero}
+                </Text>
             </Box>
+
+            {celdas.map((celda, indice) => {
+                const celdaSeleccionada =
+                    !esCabecera &&
+                    esFilaSeleccionada &&
+                    indice === columnaSeleccionada;
+
+                const cabeceraSeleccionada =
+                    esCabecera &&
+                    indice === columnaSeleccionada;
+
+                return (
+                    <Box
+                        key={indice}
+                        flexBasis={0}
+                        flexGrow={1}
+                        paddingRight={1}
+                        backgroundColor={
+                            celdaSeleccionada
+                                ? COLORES.titulo
+                                : undefined
+                        }
+                    >
+                        <Text
+                            bold={esCabecera || celdaSeleccionada}
+                            color={
+                                celdaSeleccionada
+                                    ? COLORES.fondo
+                                    : cabeceraSeleccionada
+                                        ? COLORES.acento
+                                        : esCabecera
+                                            ? COLORES.secundario
+                                            : COLORES.titulo
+                            }
+                            wrap="truncate-end"
+                        >
+                            {esCabecera
+                                ? celda.toUpperCase()
+                                : celda}
+                        </Text>
+                    </Box>
+                );
+            })}
         </Box>
     );
+}
+
+function App({nombreArchivo, cabecera, filas}) {
+    const {exit} = useApp();
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+    const cantidadFilasVisibles = Math.max(1, FILAS - 8);
+    const inicioVisible = Math.max( 0,filaSeleccionada - cantidadFilasVisibles + 1);
+    const filasVisibles = filas.slice(inicioVisible,inicioVisible + cantidadFilasVisibles);
+    const valorSeleccionado = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
+   useInput((tecla, key) => {
+    if (key.escape) {
+        exit();
+        return;
+    }
+
+    if (key.upArrow) {
+        setFilaSeleccionada(actual =>
+            Math.max(0, actual - 1)
+        );
+    }
+
+    if (key.downArrow) {
+        setFilaSeleccionada(actual =>
+            Math.min(
+                Math.max(0, filas.length - 1),
+                actual + 1
+            )
+        );
+    }
+
+    if (key.leftArrow) {
+        setColumnaSeleccionada(actual =>
+            Math.max(0, actual - 1)
+        );
+    }
+
+    if (key.rightArrow) {
+        setColumnaSeleccionada(actual =>
+            Math.min(cabecera.length - 1, actual + 1)
+        );
+    }
+    })
+
+   return (
+    <Box
+        width={COLUMNAS}
+        height={FILAS}
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={COLORES.borde}
+        backgroundColor={COLORES.fondo}
+        paddingX={1}
+    >
+        <Box justifyContent="space-between">
+            <Text bold color={COLORES.titulo}>
+                {nombreArchivo}
+            </Text>
+
+            <Text color={COLORES.secundario}>
+                {filas.length} filas · {cabecera.length} columnas
+            </Text>
+        </Box>
+
+        <Box marginTop={1}>
+            <Text color={COLORES.secundario}>Valor › </Text>
+            <Text color={COLORES.titulo}>{valorSeleccionado}</Text>
+        </Box>
+
+        <Box marginTop={1} flexDirection="column">
+            <FilaTabla
+                celdas={cabecera}
+                esCabecera={true}
+                columnaSeleccionada={columnaSeleccionada}
+            />
+
+           {filasVisibles.map((fila, indice) => {
+               const indiceReal = inicioVisible + indice;
+
+           return (
+               <FilaTabla
+                   key={indiceReal}
+                   celdas={fila}
+                   numero={indiceReal + 1}
+                   esFilaSeleccionada={
+                       indiceReal === filaSeleccionada
+                   }
+                   columnaSeleccionada={columnaSeleccionada}
+               />
+            );
+})}
+        </Box>
+
+        <Box flexGrow={1} />
+        <Box justifyContent="space-between">
+             <Text color={COLORES.secundario}>
+             <Text bold color={COLORES.acento}>Esc</Text> salir
+            </Text>
+             <Text color={COLORES.secundario}>
+                Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
+            </Text>
+</Box>
+</Box>
+);
+}
+
+const rutaArchivo = process.argv[2];
+
+if (!rutaArchivo) {
+    console.error('Error: tenés que indicar un archivo CSV');
+    console.error('Uso: edit <archivo.csv>');
+    process.exit(1);
 }
 
 let cabecera;
 let filas;
 
 try {
-    const contenido = await readFile('empleados.csv', 'utf8');
+    const contenido = await readFile(rutaArchivo, 'utf8');
     ({cabecera, filas} = convertirCsv(contenido));
 } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
 }
-const app = render(<App cabecera={cabecera} filas={filas} />);
+const app = render(
+    <App
+        nombreArchivo={basename(rutaArchivo)}
+        cabecera={cabecera}
+        filas={filas}
+    />
+);
 
 await app.waitUntilExit();
 
