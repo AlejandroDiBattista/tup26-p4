@@ -8,6 +8,9 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
+const NombreArc = process.argv.slice(2);
+
+
 
 const COLORES = {
     fondo:     '#161310',
@@ -32,7 +35,10 @@ function App() {
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
                     <Text bold color={COLORES.titulo}>Editor CSV</Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                <Box flexDirection="row" justifyContent="space-between">
+                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                 <Text bold color={COLORES.secundario}>Archivo: {NombreArc}</Text>
+                </Box>
             </Box>
         </Box>
     );
