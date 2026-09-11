@@ -204,6 +204,9 @@ function App() {
           </Text>
         </Box>
         <Text>Archivo:{archivoActual || "(ninguno)"}</Text>
+        <Text>
+          Filas:{filas.length}|Columnas:{columnas.length}
+        </Text>
         <Text>Columna:{columnaSeleccionada}</Text>
         <Text>Fila:{filaSeleccionada}</Text>
         <Text>valor:{valorSeleccionado}</Text>
