@@ -47,6 +47,9 @@ function App() {
   const filas = seguidas.map((fila) => fila.split(","));
   const [filaSeleccionada, setFilaSeleccionada] = useState(0);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+  const valorSeleccionado =
+    filas[filaSeleccionada]?.[columnaSeleccionada] ?? "";
+  const inicioFila = Math.max(0, filaSeleccionada - 4);
   useEffect(() => {
     async function leerArchivo() {
       try {
@@ -81,6 +84,7 @@ function App() {
         </Box>
         <Text>Columna:{columnaSeleccionada}</Text>
         <Text>Fila:{filaSeleccionada}</Text>
+        <Text>valor:{valorSeleccionado}</Text>
         <Box flexDirection="row">
           <Box width={4} flexShrink={0} />
           {columnas.map((columna, indice) => (
@@ -89,28 +93,32 @@ function App() {
             </Box>
           ))}
         </Box>
-        {filas.slice(0, 5).map((fila, indiceFila) => (
-          <Box key={indiceFila} flexDirection="row">
-            <Box width={4} flexShrink={0}>
-              <Text>{indiceFila + 1}</Text>
+        {filas.slice(inicioFila, inicioFila + 5).map((fila, indiceVisible) => {
+          const indiceFila = inicioFila + indiceVisible;
+          return (
+            <Box key={indiceFila} flexDirection="row">
+              <Box width={4} flexShrink={0}>
+                <Text>{indiceFila + 1}</Text>
+              </Box>
+              {fila.map((celda, indiceColumna) => {
+                const Seleccionada =
+                  indiceFila == filaSeleccionada &&
+                  indiceColumna == columnaSeleccionada;
+                return (
+                  <Box key={indiceColumna} width={12} flexShrink={0}>
+                    <Text
+                      wrap="truncate"
+                      backgroundColor={Seleccionada ? "cyan" : undefined}
+                      color={Seleccionada ? "black" : undefined}
+                    >
+                      {celda || " "}
+                    </Text>
+                  </Box>
+                );
+              })}
             </Box>
-            <Box width={12} flexShrink={0}>
-              <Text wrap="truncate">{fila[0]}</Text>
-            </Box>
-            <Box width={12} flexShrink={0}>
-              <Text wrap="truncate">{fila[1]}</Text>
-            </Box>
-            <Box width={12} flexShrink={0}>
-              <Text wrap="truncate">{fila[2]}</Text>
-            </Box>
-            <Box width={12} flexShrink={0}>
-              <Text wrap="truncate">{fila[3]}</Text>
-            </Box>
-            <Box width={12} flexShrink={0}>
-              <Text wrap="truncate">{fila[4]}</Text>
-            </Box>
-          </Box>
-        ))}
+          );
+        })}
         <Text color={COLORES.secundario}>
           <Text bold color={COLORES.acento}>
             {" "}
