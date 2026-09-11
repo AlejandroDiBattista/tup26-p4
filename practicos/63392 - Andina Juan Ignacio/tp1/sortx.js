@@ -55,5 +55,49 @@ function parseArgs(args) {
         delimiter: ",",
         noHeader: false,
         sortFields: []
-    };  
+    };
+    const positional = [];
+
+    for (let i = 0; i < args.length; i++) {    
+        const argumento = args[i];
+        
+        if (argumento === '-b' || argumento === '--by') {
+            i++;
+            if (i >= args.length) {
+                throw new Error('Falta el criterio de ordenamiento después de ' + argumento);
+            }
+            config.sortFields.push(parseSortField(args[i]));
+        }
+        else if (argumento === '-d' || argumento === '--delimiter') {
+            i++;
+            if (i >= args.length) {
+                throw new Error('Falta el delimitador después de ' + argumento); 
+            }
+            config.delimiter =  resolveDelimiter(args[i]);
+            if(config.delimiter.length !== 1) 
+                throw new Error('El delimitador debe ser un solo carácter.'); 
+                
+        } else if (argumento === '-nh' || argumento === '--no-header') {
+            config.noHeader = true;
+        } else if (argumento.startsWith('-')) {
+            throw new Error('Opción desconocida: ' + argumento);
+        } else positional.push(argumento);
+
+    }
+    if (positional.length < 2) {
+        throw new Error('Faltan argumentos posicionales.');
+    }
+    config.inputFile = positional[0];
+    config.outputFile = positional[1];
+    return config;
+} 
+
+function parseSortField(sortFields) {
+    const [campo, tipo = 'alpha', orden = 'asc'] = sortFields.split(':');
+
+    return {
+        name: campo, 
+        numeric: tipo === 'num',
+        descendig: orden === 'desc',
+    }
 }
