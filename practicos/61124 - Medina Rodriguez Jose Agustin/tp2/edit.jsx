@@ -114,21 +114,71 @@ function FilaTabla({
             })}
         </Box>
     );
+} 
+
+function compararValores(valorA, valorB) {
+    const numeroA = Number(valorA);
+    const numeroB = Number(valorB);
+
+    const ambosSonNumeros =
+        valorA.trim() !== '' &&
+        valorB.trim() !== '' &&
+        Number.isFinite(numeroA) &&
+        Number.isFinite(numeroB);
+
+    if (ambosSonNumeros) {
+        return numeroA - numeroB;
+    }
+
+    return valorA.localeCompare(valorB, 'es', {
+        sensitivity: 'base',
+    });
 }
 
-function App({nombreArchivo, cabecera, filas}) {
+function App({nombreArchivo, cabecera, filasIniciales}) {
     const {exit} = useApp();
+    const [filas, setFilas] = useState(filasIniciales);
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const cantidadFilasVisibles = Math.max(1, FILAS - 8);
     const inicioVisible = Math.max( 0,filaSeleccionada - cantidadFilasVisibles + 1);
     const filasVisibles = filas.slice(inicioVisible,inicioVisible + cantidadFilasVisibles);
     const valorSeleccionado = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
+    const ordenarFilas = direccion => {
+    setFilas(filasActuales => {
+        const copia = [...filasActuales];
+
+        copia.sort((filaA, filaB) => {
+            const resultado = compararValores(
+                filaA[columnaSeleccionada],
+                filaB[columnaSeleccionada]
+            );
+
+            return direccion === 'ascendente'
+                ? resultado
+                : -resultado;
+        });
+
+        return copia;
+    });
+
+    setFilaSeleccionada(0);
+};
    useInput((tecla, key) => {
     if (key.escape) {
         exit();
         return;
     }
+
+    if (tecla === '<') {
+    ordenarFilas('ascendente');
+    return;
+}
+
+if (tecla === '>') {
+    ordenarFilas('descendente');
+    return;
+}
 
     if (key.upArrow) {
         setFilaSeleccionada(actual =>
@@ -208,13 +258,23 @@ function App({nombreArchivo, cabecera, filas}) {
         </Box>
 
         <Box flexGrow={1} />
-        <Box justifyContent="space-between">
-             <Text color={COLORES.secundario}>
-             <Text bold color={COLORES.acento}>Esc</Text> salir
-            </Text>
-             <Text color={COLORES.secundario}>
-                Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
-            </Text>
+       <Box justifyContent="space-between">
+    <Box>
+        <Text color={COLORES.secundario}>
+            <Text bold color={COLORES.acento}>Esc</Text> salir
+        </Text>
+
+        <Text color={COLORES.secundario}>
+            {' · '}
+            <Text bold color={COLORES.acento}>{'<'}</Text> ascendente
+            {' · '}
+            <Text bold color={COLORES.acento}>{'>'}</Text> descendente
+        </Text>
+    </Box>
+
+    <Text color={COLORES.secundario}>
+        Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
+    </Text>
 </Box>
 </Box>
 );
@@ -242,7 +302,7 @@ const app = render(
     <App
         nombreArchivo={basename(rutaArchivo)}
         cabecera={cabecera}
-        filas={filas}
+        filasIniciales={filas}
     />
 );
 
