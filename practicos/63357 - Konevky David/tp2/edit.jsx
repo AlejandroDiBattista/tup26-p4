@@ -113,42 +113,65 @@ function Teclas() {
         </Box>
     );
 }
-
-function App({ruta, data, columns, rowAmount, columnAmount}) {
+/* nav / edit / save */
+function App({ruta, data: dataInicial, columns, rowAmount, columnAmount}) {
     const {exit} = useApp();
     const {columnas, filas} = useWindowSize();
+    const [data, setData] = useState(dataInicial);
     const [seleccionado, setSeleccionado] = useState({fila: 0, columna: 0});
     const [inicio, setInicio] = useState(0);
+    const [modo, setModo] = useState('nav');
     const tablaFilas = filas - 9;
 
     useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
+        switch (modo) {
+            case "nav":
+                if (key.escape) {
+                    exit();
+                }
+                if (key.upArrow) {
+                    const nuevaFila = Math.max(0, seleccionado.fila - 1);
+                    setSeleccionado((s) => ({...s, fila: nuevaFila}));
+                    if (nuevaFila < inicio) {
+                        setInicio(nuevaFila);
+                    }
+                }
+                if (key.downArrow) {
+                    const nuevaFila = Math.min(data.length - 1, seleccionado.fila + 1);
+                    setSeleccionado((s) => ({...s, fila: nuevaFila}));
+                    if (nuevaFila > inicio + tablaFilas - 1) {
+                        setInicio(nuevaFila - tablaFilas + 1);
+                    }
+                }
+                if (key.leftArrow) {
+                    setSeleccionado((s) => ({...s, columna: Math.max(0, s.columna - 1)}));
+                }
+                if (key.rightArrow) {
+                    setSeleccionado((s) => ({...s, columna: Math.min(columns.length - 1, s.columna + 1)}));
+                }
+                if (key.return) {
+                    setModo('edit');
+                }
+                break;
+            case "edit":
+                if (key.escape) {
+                    setModo('nav');
+                }
+                break;
+            case "save":
+                if (key.escape) {
+                    setModo('edit');
+                }
+                break;
         }
-
-        if (key.upArrow) {
-            const nuevaFila = Math.max(0, seleccionado.fila - 1);
-            setSeleccionado((s) => ({...s, fila: nuevaFila}));
-            if (nuevaFila < inicio) {
-                setInicio(nuevaFila);
-            }
-        }
-        if (key.downArrow) {
-            const nuevaFila = Math.min(data.length - 1, seleccionado.fila + 1);
-            setSeleccionado((s) => ({...s, fila: nuevaFila}));
-            if (nuevaFila > inicio + tablaFilas - 1) {
-                setInicio(nuevaFila - tablaFilas + 1);
-            }
-        }
-        if (key.leftArrow) {
-            setSeleccionado((s) => ({...s, columna: Math.max(0, s.columna - 1)}));
-        }
-        if (key.rightArrow) {
-            setSeleccionado((s) => ({...s, columna: Math.min(columns.length - 1, s.columna + 1)}));
-        }
-
-        if (tecla.toLowerCase() === 'g') {}
     })
+
+    const confirmarEdicion = (valor) => {
+        setData((d) => d.map((fila, i) =>
+            i === seleccionado.fila ? {...fila, [columns[seleccionado.columna]]: valor} : fila
+        ));
+        setModo('nav');
+    };
 
     return (
         <Box width={columnas} height={filas} alignItems="stretch" flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo} paddingX={1}>
@@ -157,7 +180,16 @@ function App({ruta, data, columns, rowAmount, columnAmount}) {
                 <Text dimColor>{rowAmount} filas · {columnAmount} columnas</Text>
             </Box>
             <Box paddingBottom={1}>
-                <Text>Valor seleccionado &gt; {data[seleccionado.fila][columns[seleccionado.columna]]}</Text>
+                <Text>{modo === "edit" ? "Editar valor" : "Valor seleccionado"} <Text dimColor>&gt;</Text> </Text>
+                {modo === "edit" ? (
+                    <TextInput
+                        key={`${seleccionado.fila}-${seleccionado.columna}`}
+                        defaultValue={String(data[seleccionado.fila][columns[seleccionado.columna]])}
+                        onSubmit={confirmarEdicion}
+                    />
+                ) : (
+                    <Text>{data[seleccionado.fila][columns[seleccionado.columna]]}</Text>
+                )}
             </Box>
             <Box flexGrow={1} paddingBottom={1}>
                 <Tabla data={data} columns={columns} seleccionado={seleccionado} inicio={inicio} tablaFilas={tablaFilas} />
@@ -178,7 +210,7 @@ async function init() {
     let data;
     try {
         data = await parseFile(rutaArchivo);
-    } catch (error) {logError(`No se pudo leer "${rutaArchivo}": ${e.message}`)};
+    } catch (error) {logError(`No se pudo leer "${rutaArchivo}": ${error.message}`)};
 
     const [rowAmount, columnAmount] = totalSize(data.parsedData);
     const app = render(<App 
