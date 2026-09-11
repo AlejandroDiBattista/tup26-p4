@@ -20,6 +20,16 @@ function App() {
   const { exit } = useApp();
 
   useInput((tecla, key) => {
+    if (escribiendo) return;
+    if (guardando) {
+      if (key.escape) {
+        setGuardando(false);
+        setMensajeGuardado("");
+      } else if (key.return) {
+        guardarArchivo();
+      }
+      return;
+    }
     if (abriendo) {
       if (key.escape) {
         setAbriendo(false);
@@ -50,6 +60,12 @@ function App() {
         setContenido(nuevoContenido);
         setEditando(false);
       }
+      return;
+    }
+    if (tecla.toLocaleLowerCase() === "g") {
+      setRutaGuardar(archivoActual);
+      setMensajeGuardado("");
+      setGuardando(true);
       return;
     }
     if (
@@ -128,6 +144,10 @@ function App() {
   const [abriendo, setAbriendo] = useState(false);
   const [rutaNueva, setRutaNueva] = useState("");
   const [archivoActual, setArchivoActual] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [rutaGuardar, setRutaGuardar] = useState("");
+  const [escribiendo, setEscribiendo] = useState(false);
+  const [mensajeGuardado, setMensajeGuardado] = useState("");
   useEffect(() => {
     async function leerArchivo() {
       try {
@@ -142,6 +162,28 @@ function App() {
       leerArchivo();
     }
   }, [rutaArchivo]);
+  async function guardarArchivo() {
+    const nombre = rutaGuardar.trim();
+
+    if (!nombre) {
+      setMensajeGuardado("ingresa un nombre de archivo loco");
+      return;
+    }
+    setEscribiendo(true);
+    setMensajeGuardado("");
+    try {
+      const texto =
+        [columnas, ...filas].map((fila) => fila.join(",")).join("\n") + "\n";
+      await writeFile(nombre, texto, "utf8");
+      setArchivoActual(nombre);
+      setGuardando(false);
+      setMensajeGuardado(`Guardado: ${nombre}`);
+    } catch (error) {
+      setMensajeGuardado(`Error al guardar: ${error.message}`);
+    } finally {
+      setEscribiendo(false);
+    }
+  }
   return (
     <Box
       width={COLUMNAS}
@@ -199,6 +241,21 @@ function App() {
             </Box>
           );
         })}
+        {guardando && (
+          <Box flexDirection="column">
+            <Text>Guardar como - Enter: guardar| Esc:cancelar</Text>
+            <TextInput
+              defaultValue={rutaGuardar}
+              onChange={setRutaGuardar}
+              isDisabled={escribiendo}
+            />
+          </Box>
+        )}
+        {mensajeGuardado && (
+          <Text color="yellow" wrap="truncate">
+            {mensajeGuardado}
+          </Text>
+        )}
         {editando && (
           <Box flexDirection="column">
             <Text>Editar celda:</Text>
