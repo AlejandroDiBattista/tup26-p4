@@ -23,14 +23,30 @@ function App() {
     if (key.escape) {
       exit();
     }
+    if (key.rightArrow || tecla.toLocaleLowerCase() === "d") {
+      setColumnaSeleccionada((actual) =>
+        Math.min(actual + 1, columnas.length - 1),
+      );
+    }
+    if (key.leftArrow || tecla.toLocaleLowerCase() === "s") {
+      setColumnaSeleccionada((actual) => Math.max(actual - 1, 0));
+    }
+    if (key.downArrow || tecla.toLocaleLowerCase() === "x") {
+      setFilaSeleccionada((actual) => Math.min(actual + 1, filas.length - 1));
+    }
+    if (key.upArrow || tecla.toLocaleLowerCase() === "w") {
+      setFilaSeleccionada((actual) => Math.max(actual - 1, 0));
+    }
   });
   const [contenido, setContenido] = useState("");
   const [rutaArchivo, setRutaArchivo] = useState(ruta_archivo);
-  const lineas = contenido.split("\n");
+  const lineas = contenido.replace(/\r\n?/g, "\n").split("\n");
   const cabecera = lineas[0];
   const columnas = cabecera.split(",");
   const seguidas = lineas.slice(1);
   const filas = seguidas.map((fila) => fila.split(","));
+  const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+  const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
   useEffect(() => {
     async function leerArchivo() {
       try {
@@ -52,8 +68,7 @@ function App() {
       alignItems="center"
     >
       <Box
-        width={60}
-        height={12}
+        width={70}
         flexDirection="column"
         borderStyle="round"
         borderColor={COLORES.borde}
@@ -64,13 +79,38 @@ function App() {
             Editor CSV
           </Text>
         </Box>
-        <Box flexDirection="row" gap={2}>
+        <Text>Columna:{columnaSeleccionada}</Text>
+        <Text>Fila:{filaSeleccionada}</Text>
+        <Box flexDirection="row">
+          <Box width={4} flexShrink={0} />
           {columnas.map((columna, indice) => (
             <Box key={indice} width={12} flexShrink={0}>
               <Text key={indice}>{columna}</Text>
             </Box>
           ))}
         </Box>
+        {filas.slice(0, 5).map((fila, indiceFila) => (
+          <Box key={indiceFila} flexDirection="row">
+            <Box width={4} flexShrink={0}>
+              <Text>{indiceFila + 1}</Text>
+            </Box>
+            <Box width={12} flexShrink={0}>
+              <Text wrap="truncate">{fila[0]}</Text>
+            </Box>
+            <Box width={12} flexShrink={0}>
+              <Text wrap="truncate">{fila[1]}</Text>
+            </Box>
+            <Box width={12} flexShrink={0}>
+              <Text wrap="truncate">{fila[2]}</Text>
+            </Box>
+            <Box width={12} flexShrink={0}>
+              <Text wrap="truncate">{fila[3]}</Text>
+            </Box>
+            <Box width={12} flexShrink={0}>
+              <Text wrap="truncate">{fila[4]}</Text>
+            </Box>
+          </Box>
+        ))}
         <Text color={COLORES.secundario}>
           <Text bold color={COLORES.acento}>
             {" "}
