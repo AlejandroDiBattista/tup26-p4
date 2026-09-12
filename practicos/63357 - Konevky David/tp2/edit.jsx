@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React, {useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {render, Box, Text, useInput, useApp, useStdout} from "ink";
 import {readFile, writeFile} from "node:fs/promises";
 import {TextInput} from "@inkjs/ui";
@@ -125,7 +125,7 @@ function Teclas({modo, dataBool, seleccionado}) {
     );
 }
 
-function App({ruta: rutaInicial, data: dataInicial, columns: columnsInicial}) {
+function App({ruta: rutaInicial, data: dataInicial, columns: columnsInicial, errorInicial}) {
     const {exit} = useApp();
     const {columnas, filas} = useWindowSize();
     const [ruta, setRuta] = useState(rutaInicial);
@@ -137,13 +137,16 @@ function App({ruta: rutaInicial, data: dataInicial, columns: columnsInicial}) {
     const [seleccionado, setSeleccionado] = useState({fila: 0, columna: 0});
     const [inicio, setInicio] = useState(0);
     const [modo, setModo] = useState("nav");
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(errorInicial ?? null);
     const tablaFilas = filas - 9;
 
     useInput((tecla, key) => {
         switch (modo) {
             case "nav":
-                if (key.escape) exit();
+                if (key.escape) {
+                    exit();
+                    return;
+                }
                 if (tecla.toLowerCase() === "a") setModo("open");
                 if (!hayDatos) break;
                 if (key.upArrow) {
@@ -184,11 +187,7 @@ function App({ruta: rutaInicial, data: dataInicial, columns: columnsInicial}) {
                 }
                 break;
             case "edit":
-                if (key.escape) setModo("nav");
-                break;
             case "save":
-                if (key.escape) setModo("nav");
-                break;
             case "open":
                 if (key.escape) setModo("nav");
                 break;
@@ -287,22 +286,18 @@ function App({ruta: rutaInicial, data: dataInicial, columns: columnsInicial}) {
     );
 }
 
-function logError(message) {
-    console.error(message);
-    process.exit(1);
-}
-
 async function init() {
     const rutaArchivo = process.argv[2];
     let data = {parsedData: [], parsedColumns: []};
     let ruta = null;
+    let errorInicial = null;
 
     if (rutaArchivo) {
         try {
             data = await parseFile(rutaArchivo);
             ruta = rutaArchivo;
         } catch (error) {
-            logError(`No se pudo leer "${rutaArchivo}": ${error.message}`);
+            errorInicial = `No se pudo abrir "${rutaArchivo}": ${error.message}`;
         }
     }
 
@@ -310,6 +305,7 @@ async function init() {
         ruta={ruta}
         data={data.parsedData}
         columns={data.parsedColumns}
+        errorInicial={errorInicial}
     />);
     await app.waitUntilExit();
     console.clear();
