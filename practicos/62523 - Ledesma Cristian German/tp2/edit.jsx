@@ -5,6 +5,7 @@ import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
+import { text } from 'node:stream/consumers';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -16,8 +17,47 @@ const COLORES = {
     secundario:'#ada79e',
     acento:    '#edbb64',
 };
+    const archivoInicial = process.argv[2] || null;
+
+function procesarTxtCrudo(txtCrudo){
+
+    if(!txtCrudo || txtCrudo.trim() === ""){
+    return[];
+    } 
+    const lineas = txtCrudo.split(/\r??\n/);
+    const matriz = [];
+
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i];
+        if(i === lineas.length -1 && linea === "")continue;
+        
+        const columnas = linea.split(',');
+        matriz.push(columnas);
+    }
+    return matriz;
+}
 
 function App() {
+
+    const [nombreArchivo,setNombreArchivo] = React.useState(archivoInicial);
+    const [datos,setDatos] = React.useState([]);
+    const [filaSelec,setFilaselec] = React.useState(0);
+    const [columnselect,SetColumnSelect] = React.useState(0);
+
+    React.useEffect(()=> {
+        async function cargarArchivo() {
+            if (nombreArchivo !== null) {
+                try{
+                const texto = await readFile(nombreArchivo,'utf-8' );
+                const matrizConvertida = procesarTxtCrudo(texto);
+                
+                setDatos(matrizConvertida);
+                }catch (error) {}
+            }
+        } cargarArchivo();
+    },[nombreArchivo]);
+
+
     const {exit} = useApp();
     
     useInput((tecla, key) => {
