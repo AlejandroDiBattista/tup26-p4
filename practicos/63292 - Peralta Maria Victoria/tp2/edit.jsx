@@ -56,6 +56,7 @@ function App({inicial}) {
   const [selCol, setSelCol] = useState(0);
   const [offset, setOffset] = useState(0);
   const [mode, setMode] = useState('view');
+  const [error, setError] = useState(null);
   const visibleRows = Math.max(3, FILAS - 8);
   const widths = colWidths(header, data);
   const numAncho = String(data.length).length;
@@ -81,8 +82,8 @@ function App({inicial}) {
     if (key.return && !sinFilas) setMode('edit');
     if (tecla === '<' && !sinFilas) setData((d) => sortData(d, selCol, false, isNumericCol(d, selCol)));
     if (tecla === '>' && !sinFilas) setData((d) => sortData(d, selCol, true, isNumericCol(d, selCol)));
-    if (tecla.toLowerCase() === 'a') setMode('open');
-    if (tecla.toLowerCase() === 'g') setMode('save');
+    if (tecla.toLowerCase() === 'a') { setError(null); setMode('open'); }
+    if (tecla.toLowerCase() === 'g') { setError(null); setMode('save'); }
   });
 
   function confirmarEdicion(valor) {
@@ -93,22 +94,32 @@ function App({inicial}) {
   }
 
   async function abrir(ruta) {
-    const texto = await readFile(ruta, 'utf8');
-    const {header: h, data: d} = parseCSV(texto);
-    setHeader(h);
-    setData(d);
-    setFilename(ruta);
-    setSelRow(0);
-    setSelCol(0);
-    setOffset(0);
-    setMode('view');
+    try {
+      const texto = await readFile(ruta, 'utf8');
+      const {header: h, data: d} = parseCSV(texto);
+      setHeader(h);
+      setData(d);
+      setFilename(ruta);
+      setSelRow(0);
+      setSelCol(0);
+      setOffset(0);
+      setError(null);
+      setMode('view');
+    } catch (e) {
+      setError(`no se pudo abrir ${ruta}: ${e.message}`);
+    }
   }
 
   async function guardar(ruta) {
-    const texto = [header, ...data].map((f) => f.join(',')).join('\n') + '\n';
-    await writeFile(ruta, texto, 'utf8');
-    setFilename(ruta);
-    setMode('view');
+    try {
+      const texto = [header, ...data].map((f) => f.join(',')).join('\n') + '\n';
+      await writeFile(ruta, texto, 'utf8');
+      setFilename(ruta);
+      setError(null);
+      setMode('view');
+    } catch (e) {
+      setError(`no se pudo guardar ${ruta}: ${e.message}`);
+    }
   }
 
   return (
@@ -131,6 +142,8 @@ function App({inicial}) {
           <Text color={COLORES.titulo}>{sinFilas ? '(sin filas)' : data[selRow][selCol]}</Text>
         )}
       </Box>
+
+      {error && <Text color="red">{error}</Text>}
 
       <Box marginTop={1}>
         <Text>{' '.repeat(numAncho + 1)}</Text>
