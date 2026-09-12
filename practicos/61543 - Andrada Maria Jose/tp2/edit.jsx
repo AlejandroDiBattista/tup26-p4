@@ -41,3 +41,33 @@ function App() {
 const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
+
+
+/* Desarrollo */
+
+function parsearCSV(textoCSV) {
+    if (!textoCSV || textoCSV.trim() === '') {
+        return { cabecera: [], filas: [] };
+    }
+
+    const lineas = textoCSV
+    .trim()
+    .split(/\r?\n/)
+    .filter(linea => linea.trim().length > 0);
+
+    const cabecera = lineas[0]
+    .split(',')
+    .map(campo => campo.trim());
+
+    const filas = lineas.slice(1).map(linea => linea.split(',').map(campo => campo.trim()));
+
+    return { cabecera, filas };
+}
+
+function generarCSV(cabecera, filas) {
+    const lineaCabecera = cabecera.join(',');
+    const lineasFilas = filas.map(fila => fila.join(','));
+
+    return [lineaCabecera, ...lineasFilas].join('\n');
+
+}
