@@ -55,13 +55,10 @@ function App({inicial}) {
   const [selRow, setSelRow] = useState(0);
   const [selCol, setSelCol] = useState(0);
   const [offset, setOffset] = useState(0);
-  const [mode, setMode] = useState('view');
-  const [error, setError] = useState(null);
+  const [mode, setMode] = useState(inicial.header ? 'view' : 'open');
+  const [error, setError] = useState(inicial.error);
   const visibleRows = Math.max(3, FILAS - 8);
-  const widths = colWidths(header, data);
-  const numAncho = String(data.length).length;
-  const visibles = data.slice(offset, offset + visibleRows);
-  const sinFilas = data.length === 0;
+  const sinFilas = header ? data.length === 0 : true;
 
   useEffect(() => {
     if (selRow < offset) setOffset(selRow);
@@ -70,7 +67,7 @@ function App({inicial}) {
 
   useInput((tecla, key) => {
     if (key.escape) {
-      if (mode === 'view') exit();
+      if (mode === 'view' || !header) exit();
       else setMode('view');
       return;
     }
@@ -121,6 +118,27 @@ function App({inicial}) {
       setError(`no se pudo guardar ${ruta}: ${e.message}`);
     }
   }
+
+  if (!header) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <Text bold color={COLORES.titulo}>Editor CSV</Text>
+        <Box marginTop={1}>
+          <Text color={COLORES.acento}>Abrir</Text>
+          <Text color={COLORES.secundario}> {'>'} </Text>
+          <TextInput defaultValue="" onSubmit={abrir} />
+        </Box>
+        {error && <Text color="red">{error}</Text>}
+        <Box marginTop={1}>
+          <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  const widths = colWidths(header, data);
+  const numAncho = String(data.length).length;
+  const visibles = data.slice(offset, offset + visibleRows);
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -186,9 +204,19 @@ function App({inicial}) {
 
 async function main() {
   const archivo = process.argv[2];
-  const texto = await readFile(archivo, 'utf8');
-  const {header, data} = parseCSV(texto);
-  const app = render(<App inicial={{header, data, filename: archivo}} />);
+  let inicial = {header: null, data: [], filename: null, error: null};
+
+  if (archivo) {
+    try {
+      const texto = await readFile(archivo, 'utf8');
+      const {header, data} = parseCSV(texto);
+      inicial = {header, data, filename: archivo, error: null};
+    } catch (e) {
+      inicial = {header: null, data: [], filename: null, error: `no se pudo abrir ${archivo}: ${e.message}`};
+    }
+  }
+
+  const app = render(<App inicial={inicial} />);
   await app.waitUntilExit();
   console.clear();
 }
