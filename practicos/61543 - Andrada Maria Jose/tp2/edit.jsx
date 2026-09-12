@@ -17,27 +17,119 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+const archivoInicial = process.argv[2];
+
 function App() {
     const {exit} = useApp();
+    const [cabecera, setCabecera] = React.useState([]);
+    const [filas, setFilas] = React.useState([]);
+    const [filaSeleccionada, setFilaSeleccionada] = React.useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = React.useState(0);
+    const [filaInicio, setFilaInicio] = React.useState(0);
+
+
+    React.useEffect(() => {
+    if (!archivoInicial) {
+        return;
+    }
+
+    async function cargarArchivo() {
+        const textoCSV = await readFile(archivoInicial, 'utf-8');
+        const datos = parsearCSV(textoCSV);
+
+        setCabecera(datos.cabecera);
+        setFilas(datos.filas);
+    }
+
+    cargarArchivo();
+
+}, []);
+
+React.useEffect(() => {
+        if (filaSeleccionada < filaInicio) {
+        setFilaInicio(filaSeleccionada);
+    }
+
+        if (filaSeleccionada >= filaInicio + 10) {
+        setFilaInicio(filaSeleccionada - 9);
+    }
+
+}, [filaSeleccionada]);
     
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
-    })
+        
+        if (key.leftArrow) {
+            setColumnaSeleccionada(columna => Math.max(0, columna - 1));
+
+        }
+
+        if (key.rightArrow) {
+            setColumnaSeleccionada(columna => Math.min(cabecera.length - 1, columna + 1));
+        }
+
+        if (key.downArrow) {
+            setFilaSeleccionada(fila => Math.min(filas.length - 1, fila + 1));
+        }
+
+        if (key.upArrow)  {
+            setFilaSeleccionada(fila => Math.max(0, fila - 1));
+        }
+        
+    });
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+        <Box flexDirection="column">
+            <Box justifyContent="space-between">
+                <Text bold>{basename(archivoInicial || '')} </Text>
+                <Text>{filas.length} filas · {cabecera.length} columnas</Text>
             </Box>
+
+           <Box>
+            <Box width={5} justifyContent="center">
+                <Text bold>#</Text>
+            </Box>
+
+            {cabecera.map((columna, indiceColumna) => (
+                <Box key={indiceColumna} width={18}>
+                    <Text bold>{columna} </Text>
+                </Box>
+            ))}
+            </Box>
+
+            {filas.slice(filaInicio, filaInicio + 10).map((fila, indiceFila) => {
+                const numeroFila = filaInicio + indiceFila;
+
+                return (
+                    <Box key={numeroFila}>
+                        <Box width={5} justifyContent="center">
+                            <Text> {numeroFila + 1} </Text>
+                        </Box>
+
+                        {fila.map((campo, indiceColumna) => {
+                            const seleccionada =
+                            numeroFila === filaSeleccionada &&
+                            indiceColumna === columnaSeleccionada;
+
+                            return (
+                                <Box key={indiceColumna} width={18}>
+                                    <Text inverse={seleccionada}>
+                                        {campo}
+                                    </Text>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                );
+            })}
         </Box>
     );
-}
 
+}
+         
+                            
 const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
