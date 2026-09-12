@@ -25,13 +25,16 @@ function serializeCSV(data, columns) {
 }
 
 const TECLAS = [
-    {funcion: "Abrir", tecla: "A", tipo: ["nav"]},
+    {funcion: "Abrir", tecla: "A", tipo: ["nav"], showOnEmpty: true},
     {funcion: "Guardar", tecla: "G", tipo: ["nav"]},
     {funcion: "Guardar", tecla: "Enter", tipo: ["save"]},
     {funcion: "Editar", tecla: "Enter", tipo: ["nav"]},
+    {funcion: "Orden ascendente", tecla: "<", tipo: ["nav"]},
+    {funcion: "Orden descendente", tecla: ">", tipo: ["nav"]},
     {funcion: "Guardar campo", tecla: "Enter", tipo: ["edit"]},
-    {funcion: "Salir", tecla: "Esc", tipo: ["nav"]},
-    {funcion: "Volver", tecla: "Esc", tipo: ["edit", "save"]}
+    {funcion: "Guardar ruta", tecla: "Enter", tipo: ["open"]},
+    {funcion: "Salir", tecla: "Esc", tipo: ["nav"], showOnEmpty: true},
+    {funcion: "Volver", tecla: "Esc", tipo: ["edit", "save","open"], showOnEmpty: true}
 ]
 
 function Tabla({data, columns, inicio, seleccionado, tablaFilas}) {
@@ -104,30 +107,33 @@ const COLORES = {
     acentoDim: "#5c4d2c",
 };
 
-function totalSize(data) {
-    const columnas = Object.keys(data[0]).length;
-    const filas = data.length;
-    return [filas, columnas];
-}
-
-function Teclas({modo}) {
-    const teclas = TECLAS.filter((tecla) => tecla.tipo.includes(modo));
+function Teclas({modo, dataBool, seleccionado}) {
+    const teclas = TECLAS.filter((tecla) => tecla.tipo.includes(modo) && (dataBool || tecla.showOnEmpty));
     return (
-        <Box paddingTop={1}>
-            {teclas.map((tecla, i) => (
-                <Text key={i} color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>{tecla.tecla}</Text> {tecla.funcion}{i < teclas.length - 1 ? " · " : ""}
-                </Text>
-            ))}
+        <Box paddingTop={1} justifyContent="space-between">
+            <Box>
+                {teclas.map((tecla, i) => (
+                    <Text key={i} color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>{tecla.tecla}</Text> {tecla.funcion}{i < teclas.length - 1 ? " · " : ""}
+                    </Text>
+                ))}
+            </Box>
+            {dataBool && (
+                <Text dimColor>Fila {seleccionado.fila + 1} · Columna {seleccionado.columna + 1}</Text>
+            )}
         </Box>
     );
 }
 
-function App({ruta: rutaInicial, data: dataInicial, columns, rowAmount, columnAmount}) {
+function App({ruta: rutaInicial, data: dataInicial, columns: columnsInicial}) {
     const {exit} = useApp();
     const {columnas, filas} = useWindowSize();
     const [ruta, setRuta] = useState(rutaInicial);
-    const [data, setData] = useState(dataInicial);
+    const [data, setData] = useState(dataInicial ?? []);
+    const [columns, setColumns] = useState(columnsInicial ?? []);
+    const rowAmount = data.length;
+    const columnAmount = columns.length;
+    const hayDatos = data.length > 0;
     const [seleccionado, setSeleccionado] = useState({fila: 0, columna: 0});
     const [inicio, setInicio] = useState(0);
     const [modo, setModo] = useState("nav");
@@ -137,9 +143,9 @@ function App({ruta: rutaInicial, data: dataInicial, columns, rowAmount, columnAm
     useInput((tecla, key) => {
         switch (modo) {
             case "nav":
-                if (key.escape) {
-                    exit();
-                }
+                if (key.escape) exit();
+                if (tecla.toLowerCase() === "a") setModo("open");
+                if (!hayDatos) break;
                 if (key.upArrow) {
                     const nuevaFila = Math.max(0, seleccionado.fila - 1);
                     setSeleccionado((s) => ({...s, fila: nuevaFila}));
@@ -160,30 +166,31 @@ function App({ruta: rutaInicial, data: dataInicial, columns, rowAmount, columnAm
                 if (key.rightArrow) {
                     setSeleccionado((s) => ({...s, columna: Math.min(columns.length - 1, s.columna + 1)}));
                 }
-                if (key.return) {
-                    setModo("edit");
-                }
-                if (tecla.toLowerCase() === "g") {
-                    setModo("save");
-                }
-                if (tecla.toLowerCase() === "a") {
-                    setModo("open");
+                if (key.return) setModo("edit");
+                if (tecla.toLowerCase() === "g") setModo("save");
+                if (tecla === "<" || tecla === ">") {
+                    const col = columns[seleccionado.columna];
+                    const direccion = tecla === "<" ? 1 : -1;
+                    setData((d) => [...d].sort((a, b) => {
+                        const av = a[col];
+                        const bv = b[col];
+                        const an = Number(av);
+                        const bn = Number(bv);
+                        const comparacion = av !== "" && bv !== "" && !Number.isNaN(an) && !Number.isNaN(bn)
+                            ? an - bn
+                            : String(av).localeCompare(String(bv));
+                        return comparacion * direccion;
+                    }));
                 }
                 break;
             case "edit":
-                if (key.escape) {
-                    setModo("nav");
-                }
+                if (key.escape) setModo("nav");
                 break;
             case "save":
-                if (key.escape) {
-                    setModo("nav");
-                }
+                if (key.escape) setModo("nav");
                 break;
             case "open":
-                if (key.escape) {
-                    setModo("nav");
-                }
+                if (key.escape) setModo("nav");
                 break;
         }
     })
@@ -206,10 +213,28 @@ function App({ruta: rutaInicial, data: dataInicial, columns, rowAmount, columnAm
         setModo("nav");
     };
 
+    const confirmarAbrir = async (ruta) => {
+        try {
+            const data = await parseFile(ruta);
+            setData(data.parsedData);
+            setColumns(data.parsedColumns);
+            setRuta(ruta);
+            setSeleccionado((s) => ({
+                fila: Math.max(0, Math.min(s.fila, data.parsedData.length - 1)),
+                columna: Math.max(0, Math.min(s.columna, data.parsedColumns.length - 1)),
+            }));
+            setInicio(0);
+            setError(null);
+        } catch (e) {
+            setError(`No se pudo abrir "${ruta}": ${e.message}`);
+        }
+        setModo("nav");
+    };
+
     return (
         <Box width={columnas} height={filas} alignItems="stretch" flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo} paddingX={1}>
             <Box justifyContent="space-between">
-                <Text bold>{basename(ruta)}</Text>
+                <Text bold>{ruta ? basename(ruta) : "(sin archivo)"}</Text>
                 <Text dimColor>{rowAmount} filas · {columnAmount} columnas</Text>
             </Box>
             {error && (
@@ -222,6 +247,7 @@ function App({ruta: rutaInicial, data: dataInicial, columns, rowAmount, columnAm
                     {modo === "edit" && "Editar valor"}
                     {modo === "save" && "Guardar como"}
                     {modo === "nav" && "Valor seleccionado"}
+                    {modo === "open" && "Abrir archivo"}
                     {" "}<Text dimColor>&gt;</Text>{" "}
                 </Text>
                 {modo === "edit" && (
@@ -234,18 +260,29 @@ function App({ruta: rutaInicial, data: dataInicial, columns, rowAmount, columnAm
                 {modo === "save" && (
                     <TextInput
                         key="save"
-                        defaultValue={ruta}
+                        defaultValue={ruta || ""}
                         onSubmit={confirmarGuardado}
                     />
                 )}
                 {modo === "nav" && (
-                    <Text>{data[seleccionado.fila][columns[seleccionado.columna]]}</Text>
+                    <Text>
+                        {hayDatos
+                            ? String(data[seleccionado.fila][columns[seleccionado.columna]])
+                            : "(sin datos, presione A para abrir un archivo)"}
+                    </Text>
+                )}
+                {modo === "open" && (
+                    <TextInput
+                        key="open"
+                        defaultValue={ruta || ""}
+                        onSubmit={confirmarAbrir}
+                    />
                 )}
             </Box>
-            <Box flexGrow={1} paddingBottom={1}>
+            {hayDatos && <Box flexGrow={1} paddingBottom={1}>
                 <Tabla data={data} columns={columns} seleccionado={seleccionado} inicio={inicio} tablaFilas={tablaFilas} />
-            </Box>
-            <Teclas modo={modo} />
+            </Box>}
+            <Teclas modo={modo} dataBool={hayDatos} seleccionado={seleccionado} />
         </Box>
     );
 }
@@ -257,19 +294,22 @@ function logError(message) {
 
 async function init() {
     const rutaArchivo = process.argv[2];
-    if (!rutaArchivo) logError("No se especificó un archivo");
-    let data;
-    try {
-        data = await parseFile(rutaArchivo);
-    } catch (error) {logError(`No se pudo leer "${rutaArchivo}": ${error.message}`)};
+    let data = {parsedData: [], parsedColumns: []};
+    let ruta = null;
 
-    const [rowAmount, columnAmount] = totalSize(data.parsedData);
-    const app = render(<App 
-        ruta={rutaArchivo} 
-        data={data.parsedData} 
-        columns={data.parsedColumns} 
-        columnAmount={columnAmount} 
-        rowAmount={rowAmount} 
+    if (rutaArchivo) {
+        try {
+            data = await parseFile(rutaArchivo);
+            ruta = rutaArchivo;
+        } catch (error) {
+            logError(`No se pudo leer "${rutaArchivo}": ${error.message}`);
+        }
+    }
+
+    const app = render(<App
+        ruta={ruta}
+        data={data.parsedData}
+        columns={data.parsedColumns}
     />);
     await app.waitUntilExit();
     console.clear();
