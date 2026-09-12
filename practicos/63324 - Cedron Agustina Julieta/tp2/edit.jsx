@@ -41,9 +41,39 @@ const filas= lineasDeDatos.map(function(linea){
 return {cabecera: cabecera, filas: filas};
 }
 
+
 function App() {
     const {exit} = useApp();
     
+    //obtenemos la ruta del archivo que pasa el usuario por terminal
+    const rutaInicial= process.argv[2]||'';
+    // estados para almacenar el archivo, la cabecera y las filas
+    const [archivo, setArchivo]= useState(rutaInicial);
+    const [cabecera, setCabecera]= useState([]);
+    const [filas, setFilas]=useState([]);
+
+    //leer y el archivo csv al iniciar el programa
+    useEffect(function(){
+        async function cargarArchivo(){
+           if(rutaInicial){
+                try{
+                   //leemos el archivo en texto plano con codificacion utf-8
+                   const contenido = await readFile(rutaInicial, 'utf-8');
+                //desarmamos el csv
+                   const datos=parseCSV(contenido);
+                  //guardamos columnas y filas
+                  setCabecera(datos.cabecera);
+                  setFilas(datos.filas);
+                }catch(error){
+                console.error('Error al intenar leer el archivo: ',error)
+                }
+            }
+        }
+        cargarArchivo();
+    },[]);
+
+    
+        
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
