@@ -140,6 +140,8 @@ function App({nombreArchivo, cabecera, filasIniciales}) {
     const [filas, setFilas] = useState(filasIniciales);
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+    const [editando, setEditando] = useState(false);
+    const [valorEdicion, setValorEdicion] = useState('');
     const cantidadFilasVisibles = Math.max(1, FILAS - 8);
     const inicioVisible = Math.max( 0,filaSeleccionada - cantidadFilasVisibles + 1);
     const filasVisibles = filas.slice(inicioVisible,inicioVisible + cantidadFilasVisibles);
@@ -164,21 +166,63 @@ function App({nombreArchivo, cabecera, filasIniciales}) {
 
     setFilaSeleccionada(0);
 };
+const iniciarEdicion = () => {
+    setValorEdicion(
+        filas[filaSeleccionada]?.[columnaSeleccionada] ?? ''
+    );
+
+    setEditando(true);
+};
+const confirmarEdicion = () => {
+    setFilas(filasActuales =>
+        filasActuales.map((fila, indiceFila) => {
+            if (indiceFila !== filaSeleccionada) {
+                return fila;
+            }
+
+            return fila.map((celda, indiceColumna) =>
+                indiceColumna === columnaSeleccionada
+                    ? valorEdicion
+                    : celda
+            );
+        })
+    );
+
+    setEditando(false);
+};
+
+const cancelarEdicion = () => {
+    setValorEdicion('');
+    setEditando(false);
+};
    useInput((tecla, key) => {
+    if (editando) {
+        if (key.escape) {
+            cancelarEdicion();
+        }
+
+        return;
+    }
+
     if (key.escape) {
         exit();
         return;
     }
 
-    if (tecla === '<') {
-    ordenarFilas('ascendente');
-    return;
-}
+    if (key.return) {
+        iniciarEdicion();
+        return;
+    }
 
-if (tecla === '>') {
-    ordenarFilas('descendente');
-    return;
-}
+    if (tecla === '<') {
+        ordenarFilas('ascendente');
+        return;
+    }
+
+    if (tecla === '>') {
+        ordenarFilas('descendente');
+        return;
+    }
 
     if (key.upArrow) {
         setFilaSeleccionada(actual =>
@@ -229,9 +273,25 @@ if (tecla === '>') {
         </Box>
 
         <Box marginTop={1}>
+             {editando ? (
+        <>
+            <Text color={COLORES.secundario}>Editar › </Text>
+
+            <TextInput
+                defaultValue={valorEdicion}
+                onChange={setValorEdicion}
+                onSubmit={confirmarEdicion}
+            />
+        </>
+    ) : (
+        <>
             <Text color={COLORES.secundario}>Valor › </Text>
-            <Text color={COLORES.titulo}>{valorSeleccionado}</Text>
-        </Box>
+            <Text color={COLORES.titulo}>
+                {valorSeleccionado}
+            </Text>
+        </>
+    )}
+</Box>
 
         <Box marginTop={1} flexDirection="column">
             <FilaTabla
@@ -260,16 +320,26 @@ if (tecla === '>') {
         <Box flexGrow={1} />
        <Box justifyContent="space-between">
     <Box>
-        <Text color={COLORES.secundario}>
-            <Text bold color={COLORES.acento}>Esc</Text> salir
-        </Text>
+        {editando ? (
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>Enter</Text> guardar
+                {' · '}
+                <Text bold color={COLORES.acento}>Esc</Text> cancelar
+            </Text>
+        ) : (
+            <>
+                <Text color={COLORES.secundario}>
+                    <Text bold color={COLORES.acento}>Esc</Text> salir
+                </Text>
 
-        <Text color={COLORES.secundario}>
-            {' · '}
-            <Text bold color={COLORES.acento}>{'<'}</Text> ascendente
-            {' · '}
-            <Text bold color={COLORES.acento}>{'>'}</Text> descendente
-        </Text>
+                <Text color={COLORES.secundario}>
+                    {' · '}
+                    <Text bold color={COLORES.acento}>{'<'}</Text> ascendente
+                    {' · '}
+                    <Text bold color={COLORES.acento}>{'>'}</Text> descendente
+                </Text>
+            </>
+        )}
     </Box>
 
     <Text color={COLORES.secundario}>
