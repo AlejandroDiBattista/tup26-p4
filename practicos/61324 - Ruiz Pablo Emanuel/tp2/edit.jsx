@@ -39,6 +39,9 @@ function App() {
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [error, setError] = useState("");
 
+  const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+  const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+
   useEffect(() => {
     async function cargarArchivo() {
       try {
@@ -54,23 +57,34 @@ function App() {
     }
     cargarArchivo();
   }, []);
-
   useInput((tecla, key) => {
     if (key.escape) {
       exit();
     }
+    if (key.upArrow) {
+      setFilaSeleccionada((fila) => Math.max(0, fila - 1));
+    }
+
+    if (key.downArrow && filas.length > 0) {
+      setFilaSeleccionada((fila) => Math.min(filas.length - 1, fila + 1));
+    }
+
+    if (key.leftArrow) {
+      setColumnaSeleccionada((columna) => Math.max(0, columna - 1));
+    }
+
+    if (key.rightArrow && encabezados.length > 0) {
+      setColumnaSeleccionada((columna) =>
+        Math.min(encabezados.length - 1, columna + 1),
+      );
+    }
   });
 
   return (
-    <Box
-      width={COLUMNAS}
-      height={FILAS}
-      justifyContent="center"
-      alignItems="center"
-    >
+    <Box width={90} height={20} justifyContent="center" alignItems="center">
       <Box
-        width={COLUMNAS - 4}
-        height={10}
+        width={90}
+        height={20}
         flexDirection="column"
         borderStyle="round"
         borderColor={COLORES.borde}
@@ -78,18 +92,21 @@ function App() {
       >
         <Box
           flexGrow={1}
-          flexDirection="colum"
+          flexDirection="column"
           justifyContent="center"
           alignItems="center"
         >
           <Box
             flexGrow={1}
-            flexDirection="colum"
+            flexDirection="column"
             justifyContent="center"
             alignItems="center"
           >
             <Text bold color={COLORES.titulo}>
               {nombreArchivo || "Editor CSV"}
+            </Text>
+            <Text color={COLORES.secundario}>
+              Valor › {filas[filaSeleccionada]?.[columnaSeleccionada] || ""}
             </Text>
             {error ? (
               <Text color="red">{error}</Text>
@@ -101,23 +118,167 @@ function App() {
                   {encabezados.length} columnas
                 </Text>
 
-                <Text color={COLORES.titulo}>{encabezados.join(" | ")}</Text>
+                <Box>
+                  <Box width={8} flexShrink={0}>
+                    <Text bold color={COLORES.acento}>
+                      #
+                    </Text>
+                  </Box>
+
+                  <Box width={10}>
+                    <Text bold color={COLORES.acento}>
+                      {encabezados[0]}
+                    </Text>
+                  </Box>
+
+                  <Box width={10}>
+                    <Text bold color={COLORES.acento}>
+                      {encabezados[1]}
+                    </Text>
+                  </Box>
+
+                  <Box width={10}>
+                    <Text bold color={COLORES.acento}>
+                      {encabezados[2]}
+                    </Text>
+                  </Box>
+
+                  <Box width={15}>
+                    <Text bold color={COLORES.acento}>
+                      {encabezados[3]}
+                    </Text>
+                  </Box>
+
+                  <Box width={16}>
+                    <Text bold color={COLORES.acento}>
+                      {encabezados[4]}
+                    </Text>
+                  </Box>
+                </Box>
+
+                {filas.slice(0, 10).map((fila, index) => (
+                  <Box key={index} flexShrink={0}>
+                    <Box width={8} flexShrink={0}>
+                      <Text color={COLORES.secundario}>{index + 1}</Text>
+                    </Box>
+
+                    <Box width={10}>
+                      <Text
+                        color={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 0
+                            ? COLORES.fondo
+                            : COLORES.titulo
+                        }
+                        backgroundColor={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 0
+                            ? COLORES.acento
+                            : undefined
+                        }
+                      >
+                        {fila[0]}
+                      </Text>
+                    </Box>
+
+                    <Box width={10}>
+                      <Text
+                        color={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 1
+                            ? COLORES.fondo
+                            : COLORES.titulo
+                        }
+                        backgroundColor={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 1
+                            ? COLORES.acento
+                            : undefined
+                        }
+                      >
+                        {fila[1]}
+                      </Text>
+                    </Box>
+
+                    <Box width={10}>
+                      <Text
+                        color={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 2
+                            ? COLORES.fondo
+                            : COLORES.titulo
+                        }
+                        backgroundColor={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 2
+                            ? COLORES.acento
+                            : undefined
+                        }
+                      >
+                        {fila[2]}
+                      </Text>
+                    </Box>
+
+                    <Box width={15}>
+                      <Text
+                        color={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 3
+                            ? COLORES.fondo
+                            : COLORES.titulo
+                        }
+                        backgroundColor={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 3
+                            ? COLORES.acento
+                            : undefined
+                        }
+                      >
+                        {fila[3]}
+                      </Text>
+                    </Box>
+
+                    <Box width={16}>
+                      <Text
+                        color={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 4
+                            ? COLORES.fondo
+                            : COLORES.titulo
+                        }
+                        backgroundColor={
+                          filaSeleccionada === index &&
+                          columnaSeleccionada === 4
+                            ? COLORES.acento
+                            : undefined
+                        }
+                      >
+                        {fila[4]}
+                      </Text>
+                    </Box>
+                  </Box>
+                ))}
               </>
             )}
+            <Text color={COLORES.secundario}>
+              Fila {filaSeleccionada + 1} . Columna {columnaSeleccionada + 1}
+            </Text>
+
+            <Text color={COLORES.secundario}>
+              <Text bold color={COLORES.acento}>
+                {" "}
+                Esc
+              </Text>{" "}
+              salir
+            </Text>
           </Box>
         </Box>
-        <Text color={COLORES.secundario}>
-          <Text bold color={COLORES.acento}>
-            {" "}
-            Esc
-          </Text>{" "}
-          salir
-        </Text>
       </Box>
     </Box>
   );
 }
 
 const app = render(<App />);
-await app.waitUntilExit();
-console.clear();
+app.waitUntilExit().then(() => {
+  console.clear();
+});
