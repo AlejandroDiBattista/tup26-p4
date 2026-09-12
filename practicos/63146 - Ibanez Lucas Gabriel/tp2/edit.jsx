@@ -35,6 +35,26 @@ function parseArchivo(texto) {
     return { header, rows };
 }
 
+// ordena los datos
+function esNumero(rows, columna) {
+    return rows.every(fila => !isNaN(Number(fila[columna])))
+}
+
+function ordernar(rows, columna, descendente){
+    const numerico = esNumero(rows, columna)
+    const copia = [...rows]
+    copia.sort((a, b) => {
+        let diff;
+        if(numerico){
+            diff = Number(a[columna]) - Number(b[columna])
+        }else {
+            diff = a[columna].localeCompare(b[columna], "es")
+        }
+        return descendente ? -diff:diff
+    })
+    return copia;
+}
+
 // estados y abajo las teclas de manejo de la app
 function App({ archivo }) {
     const [datos, setDatos] = React.useState({ header: [], rows: [] });
@@ -66,6 +86,13 @@ function App({ archivo }) {
         if (key.downArrow) setFilaSeleccionada(f => Math.min(datos.rows.length - 1, f + 1));
         if (key.leftArrow) setColumnaSeleccionada(c => Math.max(0, c - 1));
         if (key.rightArrow) setColumnaSeleccionada(c => Math.min(datos.header.length - 1, c + 1));
+
+        if (tecla === "<") {
+        setDatos(d => ({ ...d, rows: ordernar(d.rows, columnaSeleccionada, false) }));
+    }
+    if (tecla === ">") {
+        setDatos(d => ({ ...d, rows: ordernar(d.rows, columnaSeleccionada, true) }));
+    }
     })
 
     const valorSeleccionado = datos.rows[filaSeleccionada]?.[columnaSeleccionada] ?? "";
