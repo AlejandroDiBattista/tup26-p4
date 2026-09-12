@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -8,7 +8,8 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
-const NombreArc = process.argv.slice(2);
+const ruta = process.argv[2];
+const NombreArc = process.argv[2] ? basename(ruta) : "No existe Archivo";
 
 
 
@@ -22,6 +23,16 @@ const COLORES = {
 
 function App() {
     const {exit} = useApp();
+    const [contenido, setContenido] = useState('');
+    
+
+    useEffect(() => {
+        async function leerArchivo() {
+            const data = await readFile(ruta, 'utf-8');
+            setContenido(data);
+        }
+        leerArchivo();
+    }, []);
     
     useInput((tecla, key) => {
         if (key.escape) {
@@ -32,8 +43,8 @@ function App() {
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                <Box>
+                    <Text bold color={COLORES.titulo}>{contenido}</Text>
                 </Box>
                 <Box flexDirection="row" justifyContent="space-between">
                  <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
