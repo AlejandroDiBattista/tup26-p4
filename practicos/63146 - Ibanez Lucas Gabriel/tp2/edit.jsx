@@ -1,77 +1,85 @@
 #!/usr/bin/env -S node --import tsx
 import fs from 'fs';
 import React from 'react';
-import {render, Box, Text, useInput, useApp} from 'ink';
+import { render, Box, Text, useInput, useApp } from 'ink';
 
 
 const COLUMNAS = process.stdout.columns || 80;
-const FILAS    = process.stdout.rows || 24;
+const FILAS = process.stdout.rows || 24;
 
 const COLORES = {
-    fondo:     '#161310',
-    borde:     '#726b61',
-    titulo:    '#ede7db',
-    secundario:'#ada79e',
-    acento:    '#edbb64',
+    fondo: '#161310',
+    borde: '#726b61',
+    titulo: '#ede7db',
+    secundario: '#ada79e',
+    acento: '#edbb64',
 };
-const ANCHOS_COLUMNAS =[10,20,10,12,18]
+const ANCHOS_COLUMNAS = [10, 20, 10, 12, 18]
 //funcion que lee el archivo de datos
 function readArchivo(filePath) {
     try {
         const texto = fs.readFileSync(filePath, 'utf-8');
-        return {exito:true, datos:texto};
+        return { exito: true, datos: texto };
     } catch (error) {
         console.error(`error al leer el archivo: ${error.message}`);
-        return {exito:false, datos:null};
+        return { exito: false, datos: null };
     }
-     }
+}
 
-     /// transformamos el texto en header y rows
+/// transformamos el texto en header y rows
 function parseArchivo(texto) {
     const lineas = texto.replace(/\r\n/g, "\n").split("\n").filter(l => l !== "");
     const filas = lineas.map(linea => linea.split(','));
     const header = filas[0];
     const rows = filas.slice(1);
-    return{header, rows};
+    return { header, rows };
 }
 
 // estados y abajo las teclas de manejo de la app
-function App({archivo}) {
-    const [datos, setDatos] = React.useState({header: [], rows: []});
+function App({ archivo }) {
+    const [datos, setDatos] = React.useState({ header: [], rows: [] });
     const [nombreArchivo, setNombreArchivo] = React.useState(archivo ?? null);
     const [error, setError] = React.useState(null);
-    const [filaSeleccionada,setFilaSeleccionada] = React.useState(0);
-    const [columnaSeleccionada,setColumnaSeleccionada] = React.useState(0);
+    const [filaSeleccionada, setFilaSeleccionada] = React.useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = React.useState(0);
 
-const [cargado, setCargado] = React.useState(false);
-if (!cargado&&archivo) {
-    
-    const resultado = readArchivo(archivo);
-    if (resultado.exito) {
-        setDatos(parseArchivo(resultado.datos));
-        setError(null)
+    const [cargado, setCargado] = React.useState(false);
+    if (!cargado && archivo) {
 
-    }else{
-        setError(`No se pudo leer el archivo`);
+        const resultado = readArchivo(archivo);
+        if (resultado.exito) {
+            setDatos(parseArchivo(resultado.datos));
+            setError(null)
+
+        } else {
+            setError(`No se pudo leer el archivo`);
+        }
+        setCargado(true);
     }
-setCargado(true);
-}
-    const {exit} = useApp();
-    
+    const { exit } = useApp();
+
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
-        if (key.upArrow)    setFilaSeleccionada(f => Math.max(0, f - 1));
-        if(key.downArrow)  setFilaSeleccionada(f => Math.min(datos.rows.length - 1, f + 1));
-        if (key.leftArrow)  setColumnaSeleccionada(c => Math.max(0, c - 1));
+        if (key.upArrow) setFilaSeleccionada(f => Math.max(0, f - 1));
+        if (key.downArrow) setFilaSeleccionada(f => Math.min(datos.rows.length - 1, f + 1));
+        if (key.leftArrow) setColumnaSeleccionada(c => Math.max(0, c - 1));
         if (key.rightArrow) setColumnaSeleccionada(c => Math.min(datos.header.length - 1, c + 1));
     })
 
     const valorSeleccionado = datos.rows[filaSeleccionada]?.[columnaSeleccionada] ?? "";
 
+    const LINEAS_RESERVADAS = 11;
+    const filasVisibles = Math.max(1, FILAS - LINEAS_RESERVADAS);
+    let inicio = filaSeleccionada - Math.floor(filasVisibles / 2);
+    inicio = Math.max(0, inicio);
+    inicio = Math.min(inicio, Math.max(0, datos.rows.length - filasVisibles));
+    const filasMostrar = datos.rows.slice(inicio, inicio + filasVisibles)
+
+
     return (
-        <Box width={COLUMNAS} height={undefined} flexDirection="column" padding={1} borderStyle="single" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1} borderStyle="single" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
             <Box justifyContent="space-between">
                 <Text bold color={COLORES.titulo}>{nombreArchivo ?? "(ninguno)"}</Text>
                 <Text bold color={COLORES.secundario}>
@@ -106,31 +114,34 @@ setCargado(true);
                         </Box>
                     ))}
                 </Box>
-                {datos.rows.map((fila, f) => (
-                    <Box key={f}>
-                        <Box width={4}>
-                            <Text
-                                backgroundColor={f === filaSeleccionada ? "black" : undefined}
-                                color={f === filaSeleccionada ? COLORES.acento : COLORES.secundario}
-                            >
-                                {f + 1}
-                            </Text>
+                {filasMostrar.map((fila, idx) => {
+                    const f = inicio + idx;
+                    return (
+                        <Box key={f}>
+                            <Box width={4}>
+                                <Text
+                                    backgroundColor={f === filaSeleccionada ? "black" : undefined}
+                                    color={f === filaSeleccionada ? COLORES.acento : COLORES.secundario}
+                                >
+                                    {f + 1}
+                                </Text>
+                            </Box>
+                            {fila.map((valor, c) => {
+                                const esSeleccionada = f === filaSeleccionada && c === columnaSeleccionada;
+                                return (
+                                    <Box key={c} width={ANCHOS_COLUMNAS[c] || 15}>
+                                        <Text
+                                            backgroundColor={esSeleccionada ? "white" : undefined}
+                                            color={esSeleccionada ? "black" : COLORES.titulo}
+                                        >
+                                            {valor}
+                                        </Text>
+                                    </Box>
+                                );
+                            })}
                         </Box>
-                        {fila.map((valor, c) => {
-                            const esSeleccionada = f === filaSeleccionada && c === columnaSeleccionada;
-                            return (
-                                <Box key={c} width={ANCHOS_COLUMNAS[c] || 15}>
-                                    <Text
-                                        backgroundColor={esSeleccionada ? "white" : undefined}
-                                        color={esSeleccionada ? "black" : COLORES.titulo}
-                                    >
-                                        {valor}
-                                    </Text>
-                                </Box>
-                            );
-                        })}
-                    </Box>
-                ))}
+                    );
+                })}
             </Box>
             <Box marginTop={1} justifyContent="space-between">
                 <Text color={COLORES.secundario}>
@@ -145,8 +156,8 @@ setCargado(true);
                     Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
                 </Text>
             </Box>
-            
-        
+
+
         </Box>
     );
 }
