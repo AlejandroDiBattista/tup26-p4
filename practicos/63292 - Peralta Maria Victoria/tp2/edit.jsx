@@ -82,6 +82,7 @@ function App({inicial}) {
     if (tecla === '<' && !sinFilas) setData((d) => sortData(d, selCol, false, isNumericCol(d, selCol)));
     if (tecla === '>' && !sinFilas) setData((d) => sortData(d, selCol, true, isNumericCol(d, selCol)));
     if (tecla.toLowerCase() === 'a') setMode('open');
+    if (tecla.toLowerCase() === 'g') setMode('save');
   });
 
   function confirmarEdicion(valor) {
@@ -103,6 +104,13 @@ function App({inicial}) {
     setMode('view');
   }
 
+  async function guardar(ruta) {
+    const texto = [header, ...data].map((f) => f.join(',')).join('\n') + '\n';
+    await writeFile(ruta, texto, 'utf8');
+    setFilename(ruta);
+    setMode('view');
+  }
+
   return (
     <Box flexDirection="column" padding={1}>
       <Box justifyContent="space-between">
@@ -111,12 +119,14 @@ function App({inicial}) {
       </Box>
 
       <Box marginTop={1}>
-        <Text color={COLORES.acento}>{mode === 'open' ? 'Abrir' : 'Valor'}</Text>
+        <Text color={COLORES.acento}>{mode === 'open' ? 'Abrir' : mode === 'save' ? 'Guardar' : 'Valor'}</Text>
         <Text color={COLORES.secundario}> {'>'} </Text>
         {mode === 'edit' ? (
           <TextInput defaultValue={data[selRow][selCol]} onSubmit={confirmarEdicion} />
         ) : mode === 'open' ? (
           <TextInput defaultValue={filename || ''} onSubmit={abrir} />
+        ) : mode === 'save' ? (
+          <TextInput defaultValue={filename || ''} onSubmit={guardar} />
         ) : (
           <Text color={COLORES.titulo}>{sinFilas ? '(sin filas)' : data[selRow][selCol]}</Text>
         )}
@@ -150,7 +160,7 @@ function App({inicial}) {
       <Box marginTop={1} justifyContent="space-between">
         <Text color={COLORES.secundario}>
           {mode === 'view' ? (
-            <><Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;/&gt;</Text> ordenar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
+            <><Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;/&gt;</Text> ordenar · <Text bold color={COLORES.acento}>Esc</Text> salir</>
           ) : (
             <><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</>
           )}
