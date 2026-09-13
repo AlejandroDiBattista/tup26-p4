@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
-import {basename} from 'node:path';
+
 
 
 const COLORES = {
@@ -31,6 +31,7 @@ function App() {
     const [modoEdicion, setModoEdicion] = useState(false)
     const [valorTemporal, setValorTemporal] = useState('')
 
+    const [accionActual, setAccionActual] = useState(null)
 
     const ancho = 4
     const separacion = 2
@@ -51,6 +52,21 @@ function App() {
             setPidiendoArchivo(false)
         } catch {
             setContenido('Error: no se pudo abrir el archivo')
+        }
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            const texto = [
+                cabecera.join(','), ...filas.map(f => f.join(','))
+            ].join('\n')
+
+            await writeFile(nombre, texto, 'utf-8')
+            setContenido('Archivo guardado correctamente')
+            setNombreArchivo(nombre)
+            setPidiendoArchivo(false)
+        } catch {
+            setContenido('Error: no se pudo guardar el archivo')
         }
     }
 
@@ -128,17 +144,63 @@ function App() {
             setValorTemporal(String(filas[filaActual]?.[columnaActual] ?? ''))
         }
 
+        if (tecla === 'a' || tecla === 'A') {
+            setAccionActual('abrir')
+            setPidiendoArchivo(true)
+            setNombreArchivo('')
+            return
+        }
+
+        if (tecla === 'g' || tecla === 'G') {
+            setAccionActual('guardar')
+            setPidiendoArchivo(true)
+            setNombreArchivo(nombreArchivo || '')
+            return
+        }
+
+        if (tecla === '<') {
+            const indice = columnaActual
+            const ordenadas = [...filas].sort((a, b) => {
+                const valorA = String(a[indice] ?? '').toLowerCase()
+                const valorB = String(b[indice] ?? '').toLowerCase()
+                return valorA.localeCompare(valorB)
+            })
+
+            setFilas(ordenadas)
+            return
+        }
+        if (tecla === '>') {
+            const indice = columnaActual
+            const ordenadas = [...filas].sort((a, b) => {
+                const valorA = String(a[indice] ?? '').toLowerCase()
+                const valorB = String(b[indice] ?? '').toLowerCase()
+                return valorB.localeCompare(valorA)
+            })
+            setFilas(ordenadas)
+        }
+
 
     })
 
     if (pidiendoArchivo) {
         return (
             <Box>
-                <Text>Ingrese el nombre del archivo a abrir: </Text>
+                <Text>
+                    {accionActual === 'abrir' 
+                    ? "Ingrese el nombre del archivo a abrir: " 
+                    : "Ingrese el nombre del archivo donde guardar: "}    
+                </Text>
+
                 <TextInput 
                     defaultValue={nombreArchivo}
                     onChange={setNombreArchivo}
-                    onSubmit={abrirArchivo} 
+                    onSubmit={(valor) => {
+                        if (accionActual === 'abrir') {
+                            abrirArchivo(valor)
+                        } else if (accionActual === 'guardar') {
+                            guardarArchivo(valor)
+                        }
+                    }} 
                 />
             </Box>
         )
@@ -178,11 +240,14 @@ function App() {
                                 <Box
                                     key={indiceColumna}
                                     width={anchoColumna}
-                                    backgroundColor={seleccionada ? COLORES.acento : undefined}>
+                                    backgroundColor={seleccionada ? COLORES.acento : undefined}
+                                >
                                     <Text
                                         color={seleccionada ? COLORES.fondo : COLORES.titulo}
                                         backgroundColor={seleccionada ? COLORES.acento : undefined}
-                                        wrap="truncate-end"> {textoVisible}
+                                        wrap="truncate-end"
+                                    >
+                                        {textoVisible}
                                     </Text>
                                 </Box>
                             )
@@ -190,8 +255,22 @@ function App() {
                     </Box>
                 ))}
             </Box>
+            
+            {contenido ? (
+                <Box paddingTop={1}>
+                    <Text color={COLORES.acento}>{contenido}</Text>
+                </Box>
+            ) : null}
 
-        </Box>   
+            <Box flexDirection="row" justifyContent="space-between" paddingTop={1}>
+                <Text color={COLORES.secundario}>A abrir</Text>
+                <Text color={COLORES.secundario}>G guardar</Text>
+                <Text color={COLORES.secundario}>Enter editar</Text>
+                <Text color={COLORES.secundario}>Esc salir</Text>
+                <Text color={COLORES.secundario}>‹ › ordenar</Text>
+            </Box>
+
+        </Box>         
     );
 }
 
