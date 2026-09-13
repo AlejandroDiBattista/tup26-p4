@@ -72,22 +72,43 @@ function App() {
     })
 
     return (
-    <Box flexDirection="column" width={COLUMNAS} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+    <Box flexDirection="column" width={120} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+
         <Box flexDirection="row" justifyContent="space-between">
-        <Text>{nombreArchivo}</Text>
-        <Text>{filas.length} filas · {encabezado.length} columnas</Text>
+            <Text>{nombreArchivo}</Text>
+            <Text>{filas.length} filas · {encabezado.length} columnas</Text>
         </Box>
-        
-        <Box width={COLUMNAS} justifyContent="center" alignItems="center">
-            <Box>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+
+        <Box flexDirection="row">
+            <Box width={4}>
+                <Text bold color={COLORES.titulo}>#</Text>
             </Box>
+            {encabezado.map((columna, indice) => (
+                <Box key={indice} width={20}>
+                    <Text bold color={COLORES.titulo}> {columna} </Text>
+                </Box>
+            ))}
         </Box>
+
+        <Box flexDirection="column">
+            {filas.map((fila, indiceFila) => (
+                <Box key={indiceFila} flexDirection="row">
+                    <Box width={4}>
+                        <Text>{indiceFila + 1}</Text>
+                    </Box>
+                    {fila.map((valor, indiceColumna) => (
+                        <Box key={indiceColumna} width={20}>
+                            <Text> {valor} </Text>
+                        </Box>
+                    ))}
+                </Box>
+            ))}
+        </Box>
+
+        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
     </Box>
-    );
+);
+
 }
 
 const app = render(<App />);
