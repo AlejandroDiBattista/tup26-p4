@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -25,14 +25,34 @@ function parseCSV(contenido) {
     return { headers, rows };
 }
 
-function App() {
+function App({archivoInicial}) {
     const {exit} = useApp();
-    
+    const [nombreArchivo, setNombreArchivo] = useState(archivoInicial || '');
+    const [headers, setHeaders] = useState([]);
+    const [filas, setFilas] = useState([]);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (!archivoInicial) return;
+        async function cargar() {
+            try {
+                const contenido = await readFile(archivoInicial, 'utf-8');
+                const parsed = parseCSV(contenido);
+                setHeaders(parsed.headers);
+                setFilas(parsed.rows);
+                setError(null);
+            } catch (err) {
+                setError('Error al abrir el archivo: ' + archivoInicial);
+            }
+        }
+        cargar();
+    }, [archivoInicial]);
+
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
-    })
+    });
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={60} height={20} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
@@ -46,6 +66,7 @@ function App() {
     );
 }
 
-const app = render(<App />);
+const archivoInicial = process.argv[2];
+const app = render(<App archivoInicial={archivoInicial} />);
 await app.waitUntilExit();
 console.clear();
