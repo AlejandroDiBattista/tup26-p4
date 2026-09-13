@@ -9,6 +9,8 @@ import { basename } from 'node:path';
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS = process.stdout.rows || 24;
 
+const FILAS_POR_PAGINA = 8             // cantidad máx. de líneas visibles
+
 const COLORES = {
     fondo: '#161310',
     borde: '#726b61',
@@ -47,11 +49,15 @@ function generarCSV(cabecera, filas) {
 function App() {
     const { exit } = useApp();
 
-    /* 2. estados y lectura del archivo */
+    /* estados y lectura del archivo */
     const [nombreArchivo, setNombreArchivo] = useState('');
     const [headers, setHeaders] = useState([]);
     const [rows, setRows] = useState([]);
     const [mensajeError, setMensajeError] = useState('');
+
+    /* guardar fila y columna seleccionada */
+    const [filaSelec, setFilaSelect] = useState(0);
+    const [colSelec, setColSelect] = useState(0);
 
     const cargarArchivo = async (ruta) => {                 // abrir y procesar el archivo csv
         try {
@@ -62,6 +68,9 @@ function App() {
             setRows(filas);
             setNombreArchivo(basename(ruta));               // basename("ruta/empleados.csv") -> "empleados.csv"
             setMensajeError('');
+
+            setFilaSelect(0);
+            setColSelect(0);
         } catch (error) {
             setMensajeError(`Error al abrir: ${error.message}`);
         }
@@ -74,17 +83,38 @@ function App() {
         }
     }, []);
 
-
-
-
-    useInput((tecla, key) => {
+    /* navegar con flechas del teclado */
+    useInput((input, key) => {
         if (key.escape) {
             exit();
         }
-    })
+
+        if (rows.length === 0) return;
+
+        if (key.upArrow) {
+            setFilaSelect(prev => Math.max(0, prev - 1));
+        }
+
+        if (key.downArrow) {
+            setFilaSelect(prev => Math.min(rows.length - 1, prev + 1));
+        }
+
+        if (key.leftArrow) {
+            setColSelect(prev => Math.max(0, prev - 1));
+        }
+
+        if (key.rightArrow) {
+            setColSelect(prev => Math.min(headers.length - 1, prev + 1));
+        }
+    });
+
+    /* calcular filas visibles según fila seleccionada */
+    const pagActual = Math.floor(filaSelec / FILAS_POR_PAGINA);
+    const inicioFila = pagActual * FILAS_POR_PAGINA;
+    const filasVisibles = rows.slice(inicioFila, inicioFila + FILAS_POR_PAGINA);
 
     return (
-        <Box width={COLUMNAS} height={FILAS} flexDirection='column' padding={1}>
+        <Box flexDirection='column' padding={1}>
             {/* información superior (nombre del archivo, filas, columnas) */}
             <Box justifyContent="space-between" marginBottom={1}>
                 <Text bold color={COLORES.titulo}>
@@ -98,43 +128,61 @@ function App() {
             {mensajeError ? <Text color="red">{mensajeError}</Text> : null}
 
             {/* tabla de datos */}
-            <Box flexDirection='column' flexGrow={1}>
+            <Box flexDirection='column'>
                 {/* encabezado */}
                 <Box marginBottom={1}>
                     <Box width={5}>
-                        {/* espacio para el número de fila */}
+                        {/* número de fila */}
                         <Text bold color={COLORES.acento}>#</Text>
                     </Box>
                     {/* nombre columnas */}
-                    {headers.map((h, i) => (
-                        <Box key={i} width={18}>
-                            <Text bold color={COLORES.acento}>
-                                {h.toUpperCase()}
+                    {headers.map((h, idxCol) => (
+                        <Box key={idxCol} width={18} overflow='hidden'>
+                            <Text bold color={idxCol === colSelec ? COLORES.acento : COLORES.secundario}>
+                                {h.toUpperCase().slice(0, 16).padEnd(18, '')}
                             </Text>
                         </Box>
                     ))}
                 </Box>
-                {/* fila de datos enumerados */}
-                {rows.map((row, idxFila) => (
-                    <Box key={idxFila}>
-                        <Box width={5}>
+
+                {/* filas visibles */}
+                {filasVisibles.map((row, indexRelativo) => {
+                    const idxFilaReal = inicioFila + indexRelativo;
+                    const filaSeleccionada = idxFilaReal === filaSelec;
+
+                    return (
+                        <Box key={idxFilaReal}>
                             {/* número de fila */}
-                            <Text color={COLORES.secundario}>{idxFila + 1}</Text>
-                        </Box>
-                        {/* celdas de la fila */}
-                        {row.map((cell, idxCol) => (
-                            <Box key={idxCol} width={18}>
-                                <Text color={COLORES.titulo}>{cell}</Text>
+                            <Box width={5}>
+                                <Text color={filaSeleccionada ? COLORES.acento : COLORES.secundario}>
+                                    {String(idxFilaReal + 1).padEnd(4, '')}
+                                </Text>
                             </Box>
-                        ))}
-                    </Box>
-                ))}
+                            {/* celdas de la fila */}
+                            {row.map((cell, idxCol) => {
+                                const celdaSeleccionada = filaSeleccionada && idxCol === colSelec;
+                                const textoLimpio = String(cell).slice(0, 16).padEnd(18, '');
+
+                                return (
+                                    <Box key={idxCol} width={18} overflow='hidden'>
+                                        <Text color={celdaSeleccionada ? '#000000' : COLORES.titulo} backgroundColor={celdaSeleccionada ? COLORES.acento : undefined}>
+                                            {textoLimpio}
+                                        </Text>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    );
+                })}
             </Box>
 
             {/* pie de página */}
-            <Box marginTop={1}>
+            <Box marginTop={1} justifyContent='space-between'>
                 <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>Esc</Text> salir
+                    <Text bold color={COLORES.acento}>Flechas</Text> mover | <Text bold color={COLORES.acento}>Esc</Text> salir
+                </Text>
+                <Text color={COLORES.secundario}>
+                    Posición: [{filaSelec + 1}, {colSelec + 1}]
                 </Text>
             </Box>
         </Box>
