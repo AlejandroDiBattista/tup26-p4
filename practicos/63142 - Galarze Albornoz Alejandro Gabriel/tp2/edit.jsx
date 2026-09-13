@@ -56,7 +56,48 @@ function App() {
         }
     };
 
+    const guardarCSV = async (path) => {
+        try {
+            const lineas = [
+                cabecera.join(','),
+                ...filas.map(f => f.join(',')),
+            ];
+            await writeFile(path, lineas.join('\n'), 'utf-8');
+            setNombreArchivo(basename(path));
+            setError('');
+            setModo('VER');
+        } catch (e) {
+            setError(`Error al guardar el archivo: ${e.message}`);
+        }
+    };
 
+    const guardarCelda = (nuevoValor) => {
+        const nuevasFilas = [...filas];
+        nuevasFilas[filaSel][colSel] = nuevoValor;
+        setFilas(nuevasFilas);
+        setModo('VER');
+    }
+
+    const ordenarAscendente = () => {
+        if(filas.length === 0) return;
+        const copia = [...filas];
+        copia.sort ((a,b) => a[colSel].localeCompare(b[colSel], undefined, {numeric: true}));
+        setFilas(copia);
+    };
+
+    
+    const ordenarDescendente = () => {
+        if(filas.length === 0) return;
+        const copia = [...filas];
+        copia.sort ((a,b) => b[colSel].localeCompare(a[colSel], undefined, {numeric: true}));
+        setFilas(copia);
+    }
+    
+    UseEffect(() => {
+        if (archivoInicial) {
+            cargarCSV(archivoInicial);
+        }
+    }, []);
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
