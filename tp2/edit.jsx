@@ -202,6 +202,129 @@ async function abrirArchivo(ruta) {
             }
         }
     });}
+    const colsVisiblesCant = encabezados.length ? columnasVisibles() : 0;
+    const encabezadosVisibles = encabezados.slice(scrollCol, scrollCol + colsVisiblesCant);
+    const anchosVisibles = anchos.slice(scrollCol, scrollCol + colsVisiblesCant);
+    const filasVisiblesData = filas.slice(scrollFila, scrollFila + filasVisibles);
+
+    return (
+        <Box
+            width={COLUMNAS}
+            height={FILAS}
+            justifyContent="center"
+            alignItems="center">
+                {modo === 'inicio' && (
+                <Box
+                    width={40}
+                    height={10}
+                    flexDirection="column"
+                    borderStyle="round"
+                    borderColor={COLORES.borde}
+                    backgroundColor={COLORES.fondo}>
+                    <Box
+                        flexGrow={1}
+                        justifyContent="center"
+                        alignItems="center">
+                        <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                    </Box>
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}> O</Text> abrir  
+                        <Text bold color={COLORES.acento}> Esc</Text> salir
+                    </Text>
+                    {mensaje ? <Text color={COLORES.acento}>{mensaje}</Text> : null}
+                </Box>
+            )}
+            {modo === 'abrir' && (
+                <Box
+                    width={50}
+                    height={6}
+                    flexDirection="column"
+                    borderStyle="round"
+                    borderColor={COLORES.acento}
+                    backgroundColor={COLORES.fondo}
+                    paddingX={1}>
+                    <Text color={COLORES.titulo}>Abrir archivo CSV:</Text>
+                    <TextInput placeholder="empleados.csv" onSubmit={(v) => abrirArchivo(v.trim())} />
+                    <Text color={COLORES.secundario}>Esc para cancelar</Text>
+                </Box>
+            )}
+            {(modo === 'tabla' || modo === 'editar' || modo === 'salir') && (
+                <Box
+                    width={COLUMNAS}
+                    height={FILAS}
+                    flexDirection="column"
+                    borderStyle="round"
+                    borderColor={COLORES.borde}
+                    backgroundColor={COLORES.fondo}
+                    paddingX={1}>
+                    <Text bold color={COLORES.titulo}>
+                        {basename(archivo)} — {filas.length} filas x {encabezados.length} columnas
+                        {modificado ? ' *' : ''}
+                    </Text>
+                    <Box flexDirection="row">
+                        {encabezadosVisibles.map((enc, i) => {
+                            const idxReal = scrollCol + i;
+                            const esOrdenada = idxReal === ordenColumna;
+                            return (
+                                <Text key={idxReal} bold color={esOrdenada ? COLORES.acento : COLORES.titulo}>
+                                    {ajustar(enc + (esOrdenada ? (ordenAsc ? ' ↑' : ' ↓') : ''), anchosVisibles[i])}{' '}
+                                </Text>
+                            );
+                        })}
+                    </Box>
+                    <Box flexDirection="column" flexGrow={1}>
+                        {filasVisiblesData.map((fila, fi) => {
+                            const idxFilaReal = scrollFila + fi;
+                            return (
+                                <Box key={idxFilaReal} flexDirection="row">
+                                    {fila.slice(scrollCol, scrollCol + colsVisiblesCant).map((val, ci) => {
+                                        const idxColReal = scrollCol + ci;
+                                        const esSel = idxFilaReal === filaSel && idxColReal === colSel;
+                                        return (
+                                            <Text
+                                                key={idxColReal}
+                                                backgroundColor={esSel ? COLORES.acento : undefined}
+                                                color={esSel ? COLORES.fondo : COLORES.secundario}>
+                                                {ajustar(val, anchosVisibles[ci])}{' '}
+                                            </Text>
+                                        );
+                                    })}
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                    <Box flexDirection="column">
+                        {filas.length > 0 && (
+                            <Text color={COLORES.secundario}>
+                                Celda [{filaSel + 1},{colSel + 1}]: {String(filas[filaSel]?.[colSel] ?? '')}
+                            </Text>
+                        )}
+
+                        {modo === 'editar' && (
+                            <Box>
+                                <Text color={COLORES.acento}>Editar [{filaSel + 1},{colSel + 1}]: </Text>
+                                <TextInput defaultValue={valorEdicion} onSubmit={confirmarEdicion} />
+                            </Box>
+                        )}
+                        {modo === 'salir' && (
+                            <Text color={COLORES.acento}>¿Salir sin guardar los cambios? (Y/N)</Text>
+                        )}
+                        {mensaje ? <Text color={COLORES.acento}>{mensaje}</Text> : null}
+                        {modo === 'tabla' && (
+                            <Text color={COLORES.secundario}>
+                                <Text bold color={COLORES.acento}> ↑↓←→</Text> mover
+                                <Text bold color={COLORES.acento}> Enter</Text> editar
+                                <Text bold color={COLORES.acento}> T</Text> ordenar
+                                <Text bold color={COLORES.acento}> G</Text> guardar
+                                <Text bold color={COLORES.acento}> Esc</Text> salir
+                            </Text>
+                        )}
+                    </Box>
+                </Box>
+            )}
+        </Box>
+    );
+
 
 
 
