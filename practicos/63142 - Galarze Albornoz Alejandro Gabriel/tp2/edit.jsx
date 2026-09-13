@@ -99,6 +99,36 @@ function App() {
         }
     }, []);
 
+    const paginaActual = Math.floor(filaSel / TAMANIO_PAGINA);
+    const indiceInicio = paginaActual * TAMANIO_PAGINA;
+    const filasPagina = filas.slice(indiceInicio, indiceInicio + TAMANIO_PAGINA);
+
+    useInput((input, key) => {
+        if (key.escape) {
+            if (modo !=="ABRIR") {
+                setModo("ABRIR");
+                setError('');
+            } else {
+            exit();
+            }
+            return;
+        }
+
+        if (modo === 'ABRIR') {
+            if (key.upArrow) setFilaSel(prev => Math.max(0, prev - 1));
+            if (key.downArrow) setFilaSel(prev => Math.min(filas.length - 1, prev + 1));
+            if (key.leftArrow) setColSel(prev => Math.max(0, prev - 1));
+            if (key.rightArrow) setColSel(prev => Math.min(cabecera.length - 1, prev + 1));
+            
+            if (input === 'a' || input === 'A') setModo('ABRIR');
+            if (input === 'g' || input === 'G') setModo('GUARDAR');
+            if (key.return && filas.length > 0) setModo('EDITAR');
+            if (input === '<') ordenarAscendente();
+            if (input === '>') ordenarDescendente();
+        }
+    });
+    
+
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
