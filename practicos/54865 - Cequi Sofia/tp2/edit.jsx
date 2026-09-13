@@ -19,6 +19,32 @@ const COLORES = {
 
 function App() {
     const {exit} = useApp();
+
+    const [archivo, setArchivo] = React.useState(null);
+    const [cabecera, setCabecera] = React.useState([]);
+    const [datos, setDatos] = React.useState([]);
+
+    async function abrirArchivo(nombre) {
+        const contenido = await readFile(nombre, "utf8");
+
+        const lineas = contenido.trim().split("\n");
+
+        const nuevaCabecera = lineas[0].split(",");
+
+        const nuevosDatos = lineas.slice(1).map(linea => linea.split(","));
+
+        setArchivo(nombre);
+        setCabecera(nuevaCabecera);
+        setDatos(nuevosDatos);
+
+    }
+
+    React.useEffect(() =>{
+        const archivoInicial = process.argv[2];
+
+        if (archivoInicial) {
+            abrirArchivo(archivoInicial)
+    }}, []);
     
     useInput((tecla, key) => {
         if (key.escape) {
