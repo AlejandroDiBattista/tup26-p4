@@ -21,17 +21,32 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+function parseDelimited (data,delimiter = ',') {
+ const texto = data.replace(/\r\n/g, "\n");
+ const lineas = texto.split("\n").filter(linea => linea !== "");
+ const filas = lineas.map(linea => linea.split(delimiter));
+
+ const header = filas[0];
+ const rows = filas.slice(1);
+ return {header,rows};}
+
 function App() {
     const {exit} = useApp();
-    const [contenido, setContenido] = useState('');
+    const [contenido, setContenido] = useState({header: [], rows: []});
     
 
     useEffect(() => {
         async function leerArchivo() {
             const data = await readFile(ruta, 'utf-8');
-            setContenido(data);
+            setContenido(parseDelimited(data));
         }
-        leerArchivo();
+        if (ruta != null) {
+            leerArchivo();
+        }
+        else {
+            setContenido("No se encontro un archivo a editar");
+        }
+            
     }, []);
     
     useInput((tecla, key) => {
@@ -44,7 +59,8 @@ function App() {
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box>
-                    <Text bold color={COLORES.titulo}>{contenido}</Text>
+                    <Text bold color={COLORES.titulo}>{contenido.header.join(' | ')}</Text>
+                    <Text bold color={COLORES.titulo}>{contenido.rows.map(fila => fila.join(' | ')).join('\n')}</Text>
                 </Box>
                 <Box flexDirection="row" justifyContent="space-between">
                  <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
