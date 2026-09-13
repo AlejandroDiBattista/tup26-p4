@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -37,7 +37,7 @@ for(let i = 0; i < textSeparado.length; i++)
 let encabezado = SeparadoFinal[0]
 let datos = SeparadoFinal.slice(1)
 
-function Datos() {
+function Datos({rows, column}) {
     return (
             <Box flexDirection="column">
                 {datos.map((fila, i) => (      
@@ -48,7 +48,7 @@ function Datos() {
                         </Box>
                         {fila.map((celda, j) => (
                             <Box width={ANCHOS[j]} key={j}>
-                            <Text wrap="truncate">{celda}  </Text>
+                            <Text wrap="truncate" inverse={i === rows && j === column}>{celda}  </Text>
                             </Box>
                         ))}
                         
@@ -60,11 +60,21 @@ function Datos() {
 
 function App() {
     const {exit} = useApp();
+    const [rows, setrows] = useState(0)
+    const [column, setcolumn] = useState(0)
     
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
+    
+
+    if (key.upArrow && rows > 0)  setrows(rows - 1);
+    if (key.downArrow && rows < datos.length - 1)  setrows(rows + 1)
+    if (key.leftArrow && column > 0)  setcolumn(column - 1);
+    if (key.rightArrow && column < encabezado.length - 1)  setcolumn(column + 1)
+    
+    
     })
 
     return (
@@ -86,8 +96,8 @@ function App() {
                 
                 </Box>
                 
-                <Datos />
-                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir</Text></Text>
+                <Datos rows={rows} column={column}/>
+                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir</Text></Text>
 
 
 
