@@ -77,8 +77,23 @@ function App() {
             setSelectedCol(0);
             setScrollOffset(0);
             setError(null);
+            setModo('normal');
         } catch (err) {
             setError('Error al leer el archivo: ' + nombre);
+            setModo('normal');
+        }
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            const contenido = serializeCSV(headers, rows);
+            await writeFile(nombre, contenido, 'utf-8');
+            setArchivo(nombre);
+            setError(null);
+            setModo('normal');
+        } catch (err) {
+            setError('Error al guardar el archivo: ' + nombre);
+            setModo('normal');
         }
     }
 
@@ -132,8 +147,66 @@ function App() {
             return;
         }
 
+        if (modo === 'guardando') {
+            if (key.escape) {
+                setModo('normal');
+                return;
+            }
+            if (key.return) {
+                const destino = textoInput.trim() || archivo || 'salida.csv';
+                guardarArchivo(destino);
+                return;
+            }
+            if (key.backspace || key.delete) {
+                setTextoInput(prev => prev.slice(0, -1));
+                return;
+            }
+            if (tecla && !key.ctrl && !key.meta) {
+                setTextoInput(prev => prev + tecla);
+            }
+            return;
+        }
+
+        if (modo === 'abriendo') {
+            if (key.escape) {
+                setModo('normal');
+                return;
+            }
+            if (key.return) {
+                const destino = textoInput.trim();
+                if (destino) {
+                    cargarArchivo(destino);
+                } else {
+                    setModo('normal');
+                }
+                return;
+            }
+            if (key.backspace || key.delete) {
+                setTextoInput(prev => prev.slice(0, -1));
+                return;
+            }
+            if (tecla && !key.ctrl && !key.meta) {
+                setTextoInput(prev => prev + tecla);
+            }
+            return;
+        }
+
         if (key.escape) {
             exit();
+            return;
+        }
+
+        if (tecla === 'a' || tecla === 'A') {
+            setError(null);
+            setModo('abriendo');
+            setTextoInput('');
+            return;
+        }
+
+        if (tecla === 'g' || tecla === 'G') {
+            setError(null);
+            setModo('guardando');
+            setTextoInput(archivo ? basename(archivo) : 'datos.csv');
             return;
         }
 
@@ -142,6 +215,7 @@ function App() {
         }
 
         if (key.return) {
+            setError(null);
             setModo('editando');
             setTextoInput(rows[selectedRow]?.[selectedCol] || '');
             return;
@@ -219,12 +293,25 @@ function App() {
             </Box>
 
             <Box marginY={1}>
-                {modo === 'editando' ? (
+                {modo === 'guardando' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Guardar › </Text>
+                        <Text color={COLORES.titulo}>{textoInput}▌</Text>
+                    </Box>
+                )}
+                {modo === 'abriendo' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Abrir › </Text>
+                        <Text color={COLORES.titulo}>{textoInput}▌</Text>
+                    </Box>
+                )}
+                {modo === 'editando' && (
                     <Box>
                         <Text bold color={COLORES.acento}>Editar › </Text>
                         <Text color={COLORES.titulo}>{textoInput}▌</Text>
                     </Box>
-                ) : (
+                )}
+                {modo === 'normal' && (
                     <Box>
                         <Text color={COLORES.secundario}>Valor › </Text>
                         <Text bold color={COLORES.titulo}>{valorCelda}</Text>
@@ -304,7 +391,15 @@ function App() {
             </Box>
 
             <Box justifyContent="space-between" marginTop={1}>
-                {modo === 'editando' ? (
+                {modo === 'guardando' ? (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> guardar · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                ) : modo === 'abriendo' ? (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> abrir · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                ) : modo === 'editando' ? (
                     <Text color={COLORES.secundario}>
                         <Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar
                     </Text>
