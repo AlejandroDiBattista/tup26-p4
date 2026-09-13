@@ -37,7 +37,7 @@ for(let i = 0; i < textSeparado.length; i++)
 let encabezado = SeparadoFinal[0]
 let datos = SeparadoFinal.slice(1)
 
-function Datos({rows, column}) {
+function Datos({rows, column, tabla}) {
 
 let inicio = 0;
 if (rows >= FILAS_VISIBLES) {
@@ -46,7 +46,7 @@ inicio = rows - FILAS_VISIBLES + 1;
 
     return (
             <Box flexDirection="column">
-                {datos.slice(inicio, inicio + FILAS_VISIBLES).map((fila, i) => (      
+                {tabla.slice(inicio, inicio + FILAS_VISIBLES).map((fila, i) => (      
 
                     <Box key={i} flexDirection="row">
                         <Box width={4}>
@@ -68,15 +68,33 @@ function App() {
     const {exit} = useApp();
     const [rows, setrows] = useState(0)
     const [column, setcolumn] = useState(0)
+    const [tabla, settabla] = useState(datos)
     
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
-    
+    if (tecla === '<') 
+        {
+            const copyTabla = [...tabla];
+            copyTabla.sort(function (a, b) {
+            return a[column].localeCompare(b[column]);
+            });
+            settabla(copyTabla)
+        }
+    if (tecla === '>') 
+        {
+            const copyTabla = [...tabla];
+            copyTabla.sort(function (a, b) {
+            return b[column].localeCompare(a[column]);
+            });
+            settabla(copyTabla)
+        }
+
+
 
     if (key.upArrow && rows > 0)  setrows(rows - 1);
-    if (key.downArrow && rows < datos.length - 1)  setrows(rows + 1)
+    if (key.downArrow && rows < tabla.length - 1)  setrows(rows + 1)
     if (key.leftArrow && column > 0)  setcolumn(column - 1);
     if (key.rightArrow && column < encabezado.length - 1)  setcolumn(column + 1)
     
@@ -88,9 +106,9 @@ function App() {
             <Box flexDirection="column">
                 <Box flexDirection="row" justifyContent="space-between">
                     <Text>{basename(archivoCsv)}</Text>
-                    <Text>{datos.length} filas ·  {encabezado.length} columnas</Text>
+                    <Text>{tabla.length} filas ·  {encabezado.length} columnas</Text>
                 </Box>
-                <Text>Valor › {datos[rows][column]}</Text>
+                <Text>Valor › {tabla[rows][column]}</Text>
                 <Box flexDirection="row"> 
                     <Box width={4}>
                     <Text color="green">#</Text>
@@ -103,7 +121,7 @@ function App() {
                 
                 </Box>
                 
-                <Datos rows={rows} column={column}/>
+                <Datos rows={rows} column={column} tabla={tabla}/>
                 <Box flexDirection="row" justifyContent="space-between">
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir  </Text></Text>
                 <Text>fila {rows + 1}  ·  columna {column + 1}</Text>
