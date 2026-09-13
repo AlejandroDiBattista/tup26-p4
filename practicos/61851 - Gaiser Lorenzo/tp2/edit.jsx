@@ -11,12 +11,25 @@ const partes = texto.replaceAll('\r\n', '\n').trim().split('\n');
 
 const cabecera = partes[0] || '';
 
+//solo 5 nombres de columnas 
 const titulos = cabecera.split(',');
-
 
 const filas = partes.slice(1) ; 
 
 const datos = filas.map(fila => fila.split(','));
+
+
+const anchos = titulos.map((titulo , i ) => {
+
+const listanombres = datos.map(fila => fila[i] || '');
+const cuenta = listanombres.map(nom => nom.length);
+return Math.max(titulo.length, ...cuenta);
+
+});
+
+
+
+
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -44,7 +57,7 @@ function App() {
             <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" >
                 {datos.map((fila, i) => (
-                    <Text key={i} bold color={COLORES.titulo}>{fila[0]}</Text>
+                    <Text key={i} bold color={COLORES.titulo}>{fila.map((campo, i ) => campo.padEnd(anchos[i])).join(' ')}</Text>
                 ))}
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
