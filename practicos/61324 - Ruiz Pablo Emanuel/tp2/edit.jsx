@@ -92,6 +92,39 @@ function App() {
         Math.min(encabezados.length - 1, columna + 1),
       );
     }
+    if (tecla === "<" && !editando) {
+      const filasOrdenadas = [...filas].sort((a, b) => {
+        const valorA = a[columnaSeleccionada];
+        const valorB = b[columnaSeleccionada];
+
+        const numeroA = Number(valorA);
+        const numeroB = Number(valorB);
+
+        if (!Number.isNaN(numeroA) && !Number.isNaN(numeroB)) {
+          return numeroA - numeroB;
+        }
+        return valorA.localeCompare(valorB);
+      });
+      setFilas(filasOrdenadas);
+      setFilaSeleccionada(0);
+    }
+
+    if (tecla === ">" && !editando) {
+      const filasOrdenadas = [...filas].sort((a, b) => {
+        const valorA = a[columnaSeleccionada];
+        const valorB = b[columnaSeleccionada];
+
+        const numeroA = Number(valorA);
+        const numeroB = Number(valorB);
+
+        if (!Number.isNaN(numeroA) && !Number.isNaN(numeroB)) {
+          return numeroB - numeroA;
+        }
+        return valorB.localeCompare(valorA);
+      });
+      setFilas(filasOrdenadas);
+      setFilaSeleccionada(0);
+    }
   });
 
   return (
