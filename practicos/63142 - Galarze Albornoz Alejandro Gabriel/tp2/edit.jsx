@@ -76,7 +76,7 @@ function App() {
         nuevasFilas[filaSel][colSel] = nuevoValor;
         setFilas(nuevasFilas);
         setModo('VER');
-    }
+    };
 
     const ordenarAscendente = () => {
         if(filas.length === 0) return;
@@ -93,7 +93,7 @@ function App() {
         setFilas(copia);
     }
     
-    UseEffect(() => {
+    useEffect(() => {
         if (archivoInicial) {
             cargarCSV(archivoInicial);
         }
@@ -105,8 +105,8 @@ function App() {
 
     useInput((input, key) => {
         if (key.escape) {
-            if (modo !=="ABRIR") {
-                setModo("ABRIR");
+            if (modo !=="VER") {
+                setModo("VER");
                 setError('');
             } else {
             exit();
@@ -114,7 +114,7 @@ function App() {
             return;
         }
 
-        if (modo === 'ABRIR') {
+        if (modo === 'VER') {
             if (key.upArrow) setFilaSel(prev => Math.max(0, prev - 1));
             if (key.downArrow) setFilaSel(prev => Math.min(filas.length - 1, prev + 1));
             if (key.leftArrow) setColSel(prev => Math.max(0, prev - 1));
@@ -127,18 +127,35 @@ function App() {
             if (input === '>') ordenarDescendente();
         }
     });
-    
 
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+    const valorCelda = filas[filaSel]?.[colSel] ?? '';
+
+    if (modo === 'ABRIR' || modo === 'GUARDAR') {
+        const esAbrir = modo ==='ABRIR';
+    
+        return (
+            <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center" backgroundColor={COLORES.fondo}>
+                <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} padding={1} width={50}>
+                    <Text bold color={COLORES.titulo}>
+                        {esAbrir ? 'Abrir archivo CSV' : 'Guardar archivo CSV'}
+                    </Text>
+
+                    <Box marginTop={1}>
+                        <Text color={COLORES.secundario}>Nombre del Archivo: </Text>
+                        <TextInput defaultValue={esAbrir ? '': nombreArchivo}
+                        onSubmit={(val) => esAbrir ? cargarCSV(val) : guardarCSV(val)} 
+                        />
+                    </Box>
+
+                    {error ? <Text color="red" marginTop={1}>{error}</Text> : null}
+
+                    <Text color={COLORES.secundario} marginTop={1}>
+                        <Text bold color={COLORES.acento}>[ENTER]</Text> Confirmar | <Text bold color={COLORES.acento}>[ESC]</Text> Cancelar
+                    </Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
-        </Box>
-    );
+        );
+    }       
 }
 
 const app = render(<App />);
