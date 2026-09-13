@@ -140,19 +140,68 @@ async function abrirArchivo(ruta) {
         } catch (e) {
             setMensaje('Error al guardar: ' + e.message);
         }
-    }    
-    useInput((tecla, key) => {
-    if (modo === 'inicio') {
-        if (tecla === 'o' || tecla === 'O') setModo('abrir');
-        if (key.escape) exit();
-        return;
     }
-    if (modo === 'abrir') {
-        if (key.escape) setModo('inicio');
-        return;
-    }
-    if (key.escape) exit(); // fallback para 'tabla' (se ampliará en commit 8)
-});}
+     useInput((tecla, key) => {
+        if (modo === 'inicio') {
+            if (tecla === 'o' || tecla === 'O') setModo('abrir');
+            if (key.escape) exit();
+            return;
+        }
+
+        if (modo === 'abrir') {
+            if (key.escape) setModo('inicio');
+            return;
+        }
+
+        if (modo === 'editar') {
+            if (key.escape) setModo('tabla');
+            return;
+        }
+
+        if (modo === 'salir') {
+            if (tecla === 'y' || tecla === 'Y') exit();
+            if (tecla === 'n' || tecla === 'N' || key.escape) setModo('tabla');
+            return;
+        }
+
+        if (modo === 'tabla') {
+            if (key.escape) {
+                if (modificado) setModo('salir');
+                else exit();
+                return;
+            }
+            if (key.upArrow) {
+                const f = Math.max(filaSel - 1, 0);
+                setFilaSel(f);
+                ajustarScroll(f, colSel);
+            }
+            if (key.downArrow) {
+                const f = Math.min(filaSel + 1, Math.max(filas.length - 1, 0));
+                setFilaSel(f);
+                ajustarScroll(f, colSel);
+            }
+            if (key.leftArrow) {
+                const c = Math.max(colSel - 1, 0);
+                setColSel(c);
+                ajustarScroll(filaSel, c);
+            }
+            if (key.rightArrow) {
+                const c = Math.min(colSel + 1, Math.max(encabezados.length - 1, 0));
+                setColSel(c);
+                ajustarScroll(filaSel, c);
+            }
+            if (key.return && filas.length > 0) {
+                setValorEdicion(filas[filaSel]?.[colSel] ?? '');
+                setModo('editar');
+            }
+            if ((tecla === 't' || tecla === 'T') && encabezados.length > 0) {
+                ordenarPorColumna(colSel);
+            }
+            if ((tecla === 'g' || tecla === 'G') && archivo) {
+                guardarArchivo();
+            }
+        }
+    });}
 
 
 
