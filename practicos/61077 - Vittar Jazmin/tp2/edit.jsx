@@ -19,10 +19,8 @@ const COLORES = {
     acento: '#edbb64',
 };
 
-
 /* leer y representar csv */
 function parsearCSV(textoCSV) {
-
     if (!textoCSV || textoCSV.trim() === '') {                  // si el texto está vacío o solo tiene espacios, devolver listas vacías
         return { cabecera: [], filas: [] };
     }
@@ -53,11 +51,19 @@ function App() {
     const [nombreArchivo, setNombreArchivo] = useState('');
     const [headers, setHeaders] = useState([]);
     const [rows, setRows] = useState([]);
-    const [mensajeError, setMensajeError] = useState('');
+    const [mensaje, setMensaje] = useState('');
+    const [rutaArchivo, setRutaArchivo] = useState('');
+
+    /* modo actual: tabla, abrir, guardar */
+    const [modo, setModo] = useState('tabla');
 
     /* guardar fila y columna seleccionada */
     const [filaSelec, setFilaSelect] = useState(0);
     const [colSelec, setColSelect] = useState(0);
+
+    /* modo edición de celda */
+    const [editando, setEditando] = useState(false);
+    const [valorEdicion, setValorEdicion] = useState('');
 
     const cargarArchivo = async (ruta) => {                 // abrir y procesar el archivo csv
         try {
@@ -67,12 +73,14 @@ function App() {
             setHeaders(cabecera);
             setRows(filas);
             setNombreArchivo(basename(ruta));               // basename("ruta/empleados.csv") -> "empleados.csv"
-            setMensajeError('');
+            setMensaje('');
+            setRutaArchivo(ruta);
 
             setFilaSelect(0);
             setColSelect(0);
+            setModo('tabla');
         } catch (error) {
-            setMensajeError(`Error al abrir: ${error.message}`);
+            setMensaje(`Error al abrir: ${error.message}`);
         }
     };
 
@@ -80,17 +88,50 @@ function App() {
         const archivoInicial = process.argv[2];
         if (archivoInicial) {
             cargarArchivo(archivoInicial);
+        } else {
+            setModo('abrir');
         }
     }, []);
 
-    /* navegar con flechas del teclado */
-    useInput((input, key) => {
-        if (key.escape) {
-            exit();
+    /* guardar cambios */
+    const guardarArchivo = async (destino) => {
+        if (!destino) {
+            setMensaje("Error: No hay nombre de archivo para guardar");
+            return;
         }
 
-        if (rows.length === 0) return;
+        try {
+            const contenidoCSV = generarCSV(headers, rows);
+            await writeFile(destino, contenidoCSV, 'utf-8');
 
+            setRutaArchivo(destino);
+            setNombreArchivo(basename(destino));
+            setMensaje("Guardado con éxito");
+            setModo('tabla');
+        } catch (error) {
+            setMensaje(`Error al guardar: ${error.message}`)
+            setModo('tabla');
+        }
+    };
+
+    /* navegar con flechas del teclado */
+    useInput((input, key) => {
+        if (key.escape) {       // salir si no se está editando
+            if (modo !== 'tabla') {
+                setModo('tabla');
+            } else if (editando) {
+                setEditando(false);
+            } else {
+                exit();
+            }
+            return;
+        }
+
+        if (modo !== 'tabla' || editando) return;       // si se pide nombre de archivo (abrir/guardar) o se está editando una celda, omitir navegación
+
+        if (rows.length === 0 && input !== 'a' && input !== 'A') return;
+
+        // flechas teclado
         if (key.upArrow) {
             setFilaSelect(prev => Math.max(0, prev - 1));
         }
@@ -106,7 +147,63 @@ function App() {
         if (key.rightArrow) {
             setColSelect(prev => Math.min(headers.length - 1, prev + 1));
         }
+
+        // activar edición
+        if (key.return && rows.length > 0) {
+            setValorEdicion(rows[filaSelec][colSelec] || '');
+            setEditando(true);
+        }
+
+        // abrir archivo
+        if (input === 'a' || input === 'A') {
+            setModo('abrir');
+            return;
+        }
+
+        // guardar archivo
+        if (input === 'g' || input === 'G') {
+            setModo('guardar');
+            return;
+        }
     });
+
+    /* confirmar edición al presionar enter */
+    const guardarEdicion = (nuevoValor) => {
+        const nuevasFilas = [...rows];
+        nuevasFilas[filaSelec][colSelec] = nuevoValor;
+        setRows(nuevasFilas);
+        setEditando(false);
+        setMensaje('Celda modificada');
+    };
+
+    /* pantalla interactiva para abrir y guardar */
+    if (modo === 'abrir') {
+        return (
+            <Box flexDirection="column" padding={1}>
+                <Text bold color={COLORES.titulo}>Abrir archivo CSV</Text>
+                <Box marginTop={1}>
+                    <Text color={COLORES.acento}>Ingrese la ruta del archivo: </Text>
+                    <TextInput defaultValue="" onSubmit={(valor) => cargarArchivo(valor.trim())} />
+                </Box>
+                {mensaje ? <Text color="red">{mensaje}</Text> : null}
+                <Text color={COLORES.secundario} marginTop={1}>Presione [Esc] para cancelar</Text>
+            </Box>
+        );
+    }
+
+    if (modo === 'guardar') {
+        return (
+            <Box flexDirection="column" padding={1}>
+                <Text bold color={COLORES.titulo}>Guardar archivo CSV</Text>
+                <Box marginTop={1}>
+                    <Text color={COLORES.acento}>Guardar como: </Text>
+                    <TextInput defaultValue={nombreArchivo || 'datos.csv'} onSubmit={(valor) => guardarArchivo(valor.trim())} />
+                </Box>
+                {mensaje ? <Text color="red">{mensaje}</Text> : null}
+                <Text color={COLORES.secundario} marginTop={1}>Presione [Esc] para cancelar</Text>
+            </Box>
+        );
+    }
 
     /* calcular filas visibles según fila seleccionada */
     const pagActual = Math.floor(filaSelec / FILAS_POR_PAGINA);
@@ -125,7 +222,8 @@ function App() {
                 </Text>
             </Box>
 
-            {mensajeError ? <Text color="red">{mensajeError}</Text> : null}
+            {/* mensaje de estado */}
+            {mensaje ? <Text color={COLORES.acento}>{mensaje}</Text> : null}
 
             {/* tabla de datos */}
             <Box flexDirection='column'>
@@ -161,13 +259,16 @@ function App() {
                             {/* celdas de la fila */}
                             {row.map((cell, idxCol) => {
                                 const celdaSeleccionada = filaSeleccionada && idxCol === colSelec;
-                                const textoLimpio = String(cell).slice(0, 16).padEnd(18, '');
 
                                 return (
                                     <Box key={idxCol} width={18} overflow='hidden'>
-                                        <Text color={celdaSeleccionada ? '#000000' : COLORES.titulo} backgroundColor={celdaSeleccionada ? COLORES.acento : undefined}>
-                                            {textoLimpio}
-                                        </Text>
+                                        {celdaSeleccionada && editando ? (
+                                            <TextInput defaultValue={valorEdicion} onSubmit={guardarEdicion} />
+                                        ) : (
+                                            <Text color={celdaSeleccionada ? '#000000' : COLORES.titulo} backgroundColor={celdaSeleccionada ? COLORES.acento : undefined}>
+                                                {String(cell).slice(0, 16).padEnd(18, '')}
+                                            </Text>
+                                        )}
                                     </Box>
                                 );
                             })}
@@ -179,10 +280,13 @@ function App() {
             {/* pie de página */}
             <Box marginTop={1} justifyContent='space-between'>
                 <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>Flechas</Text> mover | <Text bold color={COLORES.acento}>Esc</Text> salir
+                    <Text bold color={COLORES.acento}>A</Text> abrir •{' '}
+                    <Text bold color={COLORES.acento}>G</Text> guardar •{' '}
+                    <Text bold color={COLORES.acento}>Enter</Text> editar •{' '}
+                    <Text bold color={COLORES.acento}>Esc</Text> salir
                 </Text>
                 <Text color={COLORES.secundario}>
-                    Posición: [{filaSelec + 1}, {colSelec + 1}]
+                    Valor: {rows[filaSelec]?.[colSelec] ?? ''} | Posición: [{filaSelec + 1}, {colSelec + 1}]
                 </Text>
             </Box>
         </Box>
