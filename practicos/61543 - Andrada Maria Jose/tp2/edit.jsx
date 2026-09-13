@@ -26,6 +26,15 @@ function App() {
     const [filaSeleccionada, setFilaSeleccionada] = React.useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = React.useState(0);
     const [filaInicio, setFilaInicio] = React.useState(0);
+    const [editando, setEditando] = React.useState(false);
+    const [textoEditado, setTextoEditado] = React.useState('');
+    const [guardando, setGuardando] = React.useState(false);
+    const [nombreGuardado, setNombreGuardado] = React.useState('');
+    const [abriendo, setAbriendo] = React.useState(false);
+    const [nombreArchivo, setNombreArchivo] = React.useState('');
+    const [ordenAscendente, setOrdenAscendente] = React.useState(true);
+
+
 
 
     React.useEffect(() => {
@@ -56,7 +65,7 @@ React.useEffect(() => {
 
 }, [filaSeleccionada]);
     
-    useInput((tecla, key) => {
+    useInput(async (tecla, key) => {
         if (key.escape) {
             exit();
         }
@@ -77,14 +86,112 @@ React.useEffect(() => {
         if (key.upArrow)  {
             setFilaSeleccionada(fila => Math.max(0, fila - 1));
         }
+        if (tecla.toLowerCase() === 'g') {
+            setGuardando(true);
+        }
         
+        if (tecla.toLowerCase() === 'a') {
+            setAbriendo(true);
+        }
+
+        if (tecla === '<') {
+            const nuevasFilas = [...filas];
+
+            nuevasFilas.sort((a, b) => {
+                return a[columnaSeleccionada].localeCompare(
+                    b[columnaSeleccionada]
+                );
+            });
+
+            setFilas(nuevasFilas);
+        }
+
+        if (tecla === '>') {
+            const nuevasFilas = [...filas];
+
+            nuevasFilas.sort((a, b) => {
+                return b[columnaSeleccionada].localeCompare(
+                    a[columnaSeleccionada]
+                );
+            });
+
+            setFilas(nuevasFilas);
+        }
+
+        if (key.return && abriendo) {
+            const textoCSV = await readFile(nombreArchivo, 'utf-8');
+            const datos = parsearCSV(textoCSV);
+
+            setCabecera(datos.cabecera);
+            setFilas(datos.filas);
+            setAbriendo(false);
+            setNombreArchivo('');
+            return;
+        }
+
+        if (key.return && guardando) {
+            const textoCSV = generarCSV(cabecera, filas);
+            await writeFile(nombreGuardado, textoCSV, 'utf-8');
+            setGuardando(false);
+            setNombreGuardado('');
+            return;
+        }
+
+        if (key.return) {
+           if (!editando) {
+            setTextoEditado(filas[filaSeleccionada][columnaSeleccionada]);
+            setEditando(true);
+           } else {
+            const nuevasFilas = [...filas];
+            nuevasFilas[filaSeleccionada][columnaSeleccionada] = textoEditado;
+
+            setFilas(nuevasFilas);
+            setEditando(false);
+           }
+        }
     });
 
     return (
         <Box flexDirection="column">
+
+            {abriendo && (
+                <Box>
+                    <Text>Abrir {'>'}  </Text>
+                    <TextInput
+                    value={nombreArchivo}
+                    onChange={setNombreArchivo}
+
+                    />
+
+                </Box>
+            )}
+
+            {guardando && (
+                <Box>
+                    <Text>Guardar {'>'} </Text>
+                    <TextInput 
+                    value={nombreGuardado}
+                    onChange={setNombreGuardado}  
+                    />
+                </Box>
+            )}
+
+
             <Box justifyContent="space-between">
                 <Text bold>{basename(archivoInicial || '')} </Text>
                 <Text>{filas.length} filas · {cabecera.length} columnas</Text>
+            </Box>
+
+            <Box>
+                <Text>
+                Valor: {filas[filaSeleccionada]?.[columnaSeleccionada] || ''}
+                </Text>
+            </Box>
+
+            <Box>
+                <Text>
+                    Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}  
+                </Text>
             </Box>
 
            <Box>
@@ -115,9 +222,17 @@ React.useEffect(() => {
 
                             return (
                                 <Box key={indiceColumna} width={18}>
+                                    {seleccionada && editando ? (
+                                        <TextInput 
+                                        defaultValue={campo}
+                                        onChange={setTextoEditado} 
+                                        /> 
+                                    ) : (
                                     <Text inverse={seleccionada}>
                                         {campo}
                                     </Text>
+                                    )}
+                        
                                 </Box>
                             );
                         })}
