@@ -130,6 +130,21 @@ React.useEffect(() => {
         return;
     }
 
+    if (editando && key.return) {
+        const nuevasFilas = [...filas];
+        nuevasFilas[filaSeleccionada][columnaSeleccionada] = textoEditado;
+
+
+        setFilas(nuevasFilas);
+        setEditando(false);
+        return;
+    }
+
+    if (editando) {
+        return;
+    }
+
+
     if (key.leftArrow) {
         setColumnaSeleccionada(columna => Math.max(0, columna - 1));
     }
@@ -158,25 +173,39 @@ React.useEffect(() => {
         const nuevasFilas = [...filas];
 
         nuevasFilas.sort((a, b) => {
-            return a[columnaSeleccionada].localeCompare(
-                b[columnaSeleccionada]
-            );
+            const valorA = a[columnaSeleccionada];
+            const valorB = b[columnaSeleccionada];
+
+            if (!isNaN(valorA) && !isNaN(valorB)) {
+                return Number(valorA) - Number(valorB);
+            }
+
+            return valorA.localeCompare(valorB);
         });
 
         setFilas(nuevasFilas);
     }
 
-    if (tecla === '>') {
-        const nuevasFilas = [...filas];
+        if (tecla === '>') {
+            const nuevasFilas = [...filas];
 
-        nuevasFilas.sort((a, b) => {
-            return b[columnaSeleccionada].localeCompare(
-                a[columnaSeleccionada]
-            );
-        });
+            nuevasFilas.sort((a, b) => {
+                const valorA = a[columnaSeleccionada];
+                const valorB = b[columnaSeleccionada];
 
-        setFilas(nuevasFilas);
-    }
+                if (!isNaN(valorA) && !isNaN(valorB)) {
+                    return Number(valorB) - Number(valorA);
+                    
+                }
+
+                return valorB.localeCompare(valorA);
+            });
+
+            setFilas(nuevasFilas);
+        }
+
+
+    
 
     if (key.return) {
         if (!editando) {
@@ -242,11 +271,24 @@ React.useEffect(() => {
                 <Text bold>#</Text>
             </Box>
 
-            {cabecera.map((columna, indiceColumna) => (
-                <Box key={indiceColumna} width={18}>
-                    <Text bold>{columna} </Text>
-                </Box>
-            ))}
+            {cabecera.map((columna, indiceColumna) => {
+                const esColumnaSeleccionada =
+                indiceColumna === columnaSeleccionada;
+
+                return (
+                    <Box key={indiceColumna} width={18}>
+                        <Text
+                        bold
+                        color={esColumnaSeleccionada ? 'cyan' : undefined}
+                        inverse={esColumnaSeleccionada}
+                        >
+
+                            {columna.toUpperCase()}
+                        </Text>
+                        </Box>
+                );
+            })}
+                            
             </Box>
 
             {filas.slice(filaInicio, filaInicio + 10).map((fila, indiceFila) => {
@@ -255,7 +297,9 @@ React.useEffect(() => {
     return (
         <Box key={numeroFila}>
             <Box width={5} justifyContent="center">
-                <Text> {numeroFila + 1} </Text>
+                <Text color={numeroFila === filaSeleccionada ? 'cyan' : undefined}>
+                    {numeroFila + 1}
+                 </Text>
             </Box>
 
             {fila.map((campo, indiceColumna) => {
@@ -297,13 +341,15 @@ React.useEffect(() => {
 {!abriendo && !guardando && (
 
 <Box flexDirection="row">
-    <Text>
-        A Abrir   G Guardar   Enter Editar   {'<'} Asc   {'>'} Desc   Esc Salir
-    </Text>
 
-    <Text>
-       {'    '}Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}
-    </Text>
+   <Text>
+    <Text color="cyan">A</Text> Abrir   <Text color="cyan">G</Text> Guardar   <Text color="cyan">Enter</Text> Editar   <Text color="cyan">{'<'}</Text> Asc   <Text color="cyan">{'>'}</Text> Desc   <Text color="cyan">Esc</Text> Salir
+</Text>
+
+<Text>
+     {'    '}Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}
+</Text>
+
 </Box>
 )}
 
