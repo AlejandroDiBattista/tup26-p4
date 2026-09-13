@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -15,6 +15,8 @@ const COLORES = {
     titulo:    '#ede7db',
     secundario:'#ada79e',
     acento:    '#edbb64',
+    error:     '#ff6b6b',
+    exito:     '#7bd88f',
 };
 
 function convertirCsv(contenido) {
@@ -142,10 +144,30 @@ function App({nombreArchivo, cabecera, filasIniciales}) {
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const [editando, setEditando] = useState(false);
     const [valorEdicion, setValorEdicion] = useState('');
+    const [mensaje, setMensaje] = useState(null);
+    useEffect(() => {
+    if (mensaje?.tipo !== 'exito') {
+        return;
+    }
+
+    const temporizador = setTimeout(() => {
+        setMensaje(null);
+    }, 2000);
+
+    return () => {
+        clearTimeout(temporizador);
+    };
+    }, [mensaje]);
     const cantidadFilasVisibles = Math.max(1, FILAS - 8);
     const inicioVisible = Math.max( 0,filaSeleccionada - cantidadFilasVisibles + 1);
     const filasVisibles = filas.slice(inicioVisible,inicioVisible + cantidadFilasVisibles);
     const valorSeleccionado = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
+    const colorMensaje =
+    mensaje?.tipo === 'error'
+        ? COLORES.error
+        : mensaje?.tipo === 'exito'
+            ? COLORES.exito
+            : COLORES.secundario;
     const ordenarFilas = direccion => {
     setFilas(filasActuales => {
         const copia = [...filasActuales];
@@ -170,10 +192,18 @@ const iniciarEdicion = () => {
     setValorEdicion(
         filas[filaSeleccionada]?.[columnaSeleccionada] ?? ''
     );
-
+    setMensaje(null);
     setEditando(true);
 };
 const confirmarEdicion = () => {
+    if (valorEdicion.includes(',')) {
+    setMensaje({
+        tipo: 'error',
+        texto: 'El valor no puede contener comas',
+    });
+
+    return;
+}
     setFilas(filasActuales =>
         filasActuales.map((fila, indiceFila) => {
             if (indiceFila !== filaSeleccionada) {
@@ -187,12 +217,17 @@ const confirmarEdicion = () => {
             );
         })
     );
+    setMensaje({
+    tipo: 'exito',
+    texto: 'Celda actualizada',
+});
 
     setEditando(false);
 };
 
 const cancelarEdicion = () => {
     setValorEdicion('');
+    setMensaje(null);
     setEditando(false);
 };
    useInput((tecla, key) => {
@@ -285,13 +320,23 @@ const cancelarEdicion = () => {
         </>
     ) : (
         <>
-            <Text color={COLORES.secundario}>Valor › </Text>
-            <Text color={COLORES.titulo}>
-                {valorSeleccionado}
-            </Text>
+        <Text color={COLORES.secundario}>
+            Valor ›{' '}
+        </Text>
+        <Text color={COLORES.titulo}>
+            {valorSeleccionado}
+        </Text>
         </>
     )}
-</Box>
+        </Box>
+
+        <Box height={1}>
+           {mensaje && (
+        <Text color={colorMensaje}>
+            {mensaje.texto}
+        </Text>
+    )}
+        </Box> 
 
         <Box marginTop={1} flexDirection="column">
             <FilaTabla
