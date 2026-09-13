@@ -23,13 +23,21 @@ function App() {
     const [contenido, setContenido] = useState('')
     const [cabecera, setCabecera] = useState([])
     const [filas, setFilas] = useState([])
+    
     const [columnas, setColumnas] = useState(process.stdout.columns || 80)
+
+    const [filaActual, setFilaActual] = useState(0)
+    const [columnaActual, setColumnaActual] = useState(0)
+    const [modoEdicion, setModoEdicion] = useState(false)
+    const [valorTemporal, setValorTemporal] = useState('')
+
 
     const ancho = 4
     const separacion = 2
-    const anchoColumna = Math.floor(
+    const anchoColumna = cabecera.length ? Math.floor(
         (columnas - ancho - separacion * cabecera.length) / cabecera.length
-    )
+    ): columnas
+
 
     async function abrirArchivo(nombre) {
         try {
@@ -64,9 +72,63 @@ function App() {
     }, [])
 
     useInput((tecla, key) => {
+
+        if (pidiendoArchivo) return
+
+        if (modoEdicion) {
+            if (key.escape) {
+                setModoEdicion(false)
+                setValorTemporal('')
+                return
+            }
+            if (key.return) {
+                const copiaFilas = filas.map(f => [...f])
+                copiaFilas[filaActual][columnaActual] = valorTemporal
+                setFilas(copiaFilas)
+                setModoEdicion(false)
+                setValorTemporal('')
+                return
+            }
+
+            if (key.backspace || key.delete) {
+                setValorTemporal(v => v.slice(0, -1))
+                return
+            }
+            
+            if (tecla && tecla.length === 1) {
+                setValorTemporal( v => v + tecla)
+            }
+            return
+        }
+
         if (key.escape) {
             exit();
+            return
         }
+
+        if (key.upArrow) {
+            setFilaActual(f => Math.max(0, f -1))
+            return
+        }
+        if (key.downArrow) {
+            setFilaActual(f => Math.min(filas.length -1, f +1))
+            return
+        }
+        if (key.leftArrow) {
+            setColumnaActual(c => Math.max(0, c -1))
+            return
+        }
+        if (key.rightArrow) {
+            setColumnaActual(c => Math.min(cabecera.length -1, c +1))
+            return
+        }
+
+        if (key.return) {
+            setModoEdicion(true)
+            setValorTemporal(String(filas[filaActual]?.[columnaActual] ?? ''))
+        }
+
+
     })
 
     if (pidiendoArchivo) {
@@ -109,15 +171,26 @@ function App() {
                             <Text color={COLORES.secundario}>{indiceFila + 1}</Text>
                         </Box>
 
-                        {fila.map((valor, indiceColumna) => (
-                            <Box key={indiceColumna} width={anchoColumna}>
-                                <Text color={COLORES.titulo} wrap="truncate-end">{valor}</Text>
-                            </Box>
-                        ))}
+                        {fila.map((valor, indiceColumna) => {
+                            const seleccionada = indiceFila === filaActual && indiceColumna === columnaActual
+                            const textoVisible = seleccionada && modoEdicion ? valorTemporal : valor
+                            return (
+                                <Box
+                                    key={indiceColumna}
+                                    width={anchoColumna}
+                                    backgroundColor={seleccionada ? COLORES.acento : undefined}>
+                                    <Text
+                                        color={seleccionada ? COLORES.fondo : COLORES.titulo}
+                                        backgroundColor={seleccionada ? COLORES.acento : undefined}
+                                        wrap="truncate-end"> {textoVisible}
+                                    </Text>
+                                </Box>
+                            )
+                        })}
                     </Box>
                 ))}
             </Box>
-                    
+
         </Box>   
     );
 }
