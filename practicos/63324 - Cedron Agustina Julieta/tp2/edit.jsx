@@ -80,6 +80,14 @@ function App() {
     const [cabecera, setCabecera]= useState([]);
     const [filas, setFilas]=useState([]);
 
+    //guardar la posicion del cursor en la fila y columna
+    const [filaSeleccionada, setFilaSeleccionada]=useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada]=useState(0);
+    
+    //controlar el modo edicion y el texto que se edita
+    const [editando,setEditando]=useState(false);
+    const [valorEdicion, setValorEdicion]=useState('');
+
     //leer y el archivo csv al iniciar el programa
     useEffect(function(){
         async function cargarArchivo(){
@@ -102,9 +110,65 @@ function App() {
 
     //calculamos el ancho que le corresponde a cada columna
     const anchos= calcularAncho(cabecera, filas);
-    useInput((tecla, key) => {
-        if (key.escape) {
+    useInput(function(tecla, key) {
+        // si estamos editando y presionamos escape, se cancela
+        if (key.escape && editando) {
+            setEditando(false);
+            return;
+        }
+        //si no estamos editando, y tocamos escape, salimos
+        if (key.escape &&!editando) {
             exit();
+            return;
+        }
+        //al precionar enter sobre la celda podremos editar
+        if (key.return && !editando) {
+            const valorActual= filas[filaSeleccionada][columnaSeleccionada] || '';
+            setValorEdicion(valorActual);
+            setEditando(true);
+            return;
+        }
+        //para que las flechas no muevan la tabla, frenamos aqui
+        if (editando) {
+            return;
+        }
+
+        //flecha hacia abajo, baja una fila sin pasarse las 10 que se ven
+        if (key.downArrow) {
+            setFilaSeleccionada(function(actual){
+                const maxFilas=Math.min(filas.length,10)-1;
+                if (actual<maxFilas) {
+                    return actual +1;
+                }
+                return actual;
+            });
+        }
+        //flecha hacia arriba, sube una fila sin bajar de 0
+        if (key.upArrow) {
+            setFilaSeleccionada(function(actual){
+                if (actual>0) {
+                    return actual-1;
+                }
+                return actual;
+            });
+        }
+        //flecha derecha para avanzar una columna
+        if (key.rightArrow) {
+            setColumnaSeleccionada(function(actual){
+                if (actual<cabecera.length-1) {
+                    return actual +1;
+                }
+                return actual;
+            });
+        }
+        //flecha izquierda,retocede una columna sin bajar de 0
+        if (key.leftArrow) {
+            setColumnaSeleccionada(function(actual){
+                if (actual>0) {
+                    return actual -1;
+                }
+                return actual;
+            });
         }
     });
 
@@ -140,13 +204,45 @@ function App() {
                    <Box key={filaIndice} flexDirection="row">
                        {/* Recorremos las celdas de este renglón */}
                        {fila.map(function(celda, colIndice) {
+                        //verificamos si la celda coincide con la del cursor
+                        const estaSeleccionada=(filaIndice===filaSeleccionada && colIndice === columnaSeleccionada);
+                        //estilos por defecto
+                        let colorFondo=undefined;
+                        let colorTexto=COLORES.secundario;
+                        let negrita=false;
+
+                        //si coincide, cambiamos los colores para resaltar
+                        if (estaSeleccionada) {
+                            colorFondo=COLORES.acento;
+                            colorTexto=COLORES.fondo;
+                            negrita=true;
+                        }
                           return (
                   // La celda usa el mismo ancho que su columna para quedar perfectamente alineada
-                         <Box key={colIndice} width={anchos[colIndice]}>
-                            <Text color={COLORES.secundario}>{celda}</Text>
+                         <Box key={colIndice} width={anchos[colIndice]}
+                            backgroundColor={colorFondo}>
+                            {/*si es la celda actual y estamos editando, mostramos el input, si no el texto normal*/}
+                            {estaSeleccionada && editando && (
+                                <TextInput value={valorEdicion} onChange={setValorEdicion}
+                                onSubmit={function(nuevoValor){
+                                    const nuevasFilas=filas.map(function (r){return [...r];});
+                                    nuevasFilas[filaSeleccionada][columnaSeleccionada]=nuevoValor;
+                                    setFilas(nuevasFilas);
+                                    setEditando(false);
+                                        
+                                }}
+                               /> 
+                            )}
+                            {/*si no estamos editando, se muestra el texto normal*/}
+                            {(!estaSeleccionada || !editando)&& (
+                            <Text bold={negrita} color={colorTexto}>
+                                {/*usamos padEnd para rellenar con espacios vacios y limpiar letras viejas*/}
+                                {String(celda).padEnd(anchos[colIndice],' ')}
+                            </Text>
+                            )}
                         </Box>
-                            );
-                        })}
+                        );
+                    })}
                         </Box>
                     );
                 })}
@@ -154,9 +250,18 @@ function App() {
 
             {/* SECCIÓN 4: Barra inferior con la ayuda de teclas disponibles */}
             <Box marginTop={1}>
+                {/*atajos visibles mientras editamos una celda*/}
+                {editando &&(
                 <Text color={COLORES.secundario}>
-                 <Text bold color={COLORES.acento}>Esc</Text> Salir
+                 <Text bold color={COLORES.acento}>Enter</Text> Guardar | <Text bold color={COLORES.acento}>Esc</Text> Cancelar
                 </Text>
+                )}
+                {/*atajos visibles mientras navegamos por la grilla*/}
+                {!editando &&(
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse | <Text bold color={COLORES.acento}>Enter</Text> Editar | <Text bold color={COLORES.acento}>Esc</Text> Salir
+                        </Text>
+                )}
             </Box>
 
         </Box>
