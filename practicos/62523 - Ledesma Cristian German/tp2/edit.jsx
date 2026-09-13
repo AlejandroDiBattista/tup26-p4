@@ -64,15 +64,71 @@ function App() {
         if (key.escape) {
             exit();
         }
-    })
+        if (key.downArrow) {
+            if (filaSelec < datos.length -1) {
+                setFilaselec(filaSelec +1);
+            }
+        }
+        if (key.upArrow) {
+            if (filaSelec > 0 ) {
+                setFilaselec(filaSelec -1)
+            }
+        }
+        if (key.rightArrow) {
+            if (datos.length > 0 && columnselect < datos[0].length -1) {
+                SetColumnSelect(columnselect +1);
+            }
+        }
+        if (key.leftArrow) {
+            if (columnselect > 0) {
+                SetColumnSelect(columnselect -1);
+            }
+        }
+    } 
+)
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+            <Box width={COLUMNAS -2} height={FILAS -2} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+                <Box height={1} paddingX={1} >
+                    <Text bold color={COLORES.titulo}>
+                        Archivo: {nombreArchivo || "ninguno"}
+                    </Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                <Box flexGrow={1} padding={1} flexDirection="column"> 
+                {(() => {
+                        let inicio = 0;
+                        if (filaSelec >= 10) {
+                        inicio = filaSelec - 9;
+                }
+                let fin = inicio + 10;
+                const filasVisibles = datos.slice(inicio, fin);
+                        return filasVisibles.map((fila, indexFila) => (
+                        <Box key={indexFila} flexDirection='row'>
+                        {fila.map((celda, indexColumna) => {
+                        const posicionRealFila = indexFila + inicio;
+                        const esSeleccionada = (posicionRealFila === filaSelec && indexColumna === columnselect);
+                        return (
+                    <Box 
+                        key={indexColumna} 
+                        width={15} 
+                        paddingX={1}
+                        backgroundColor={esSeleccionada ? COLORES.acento : undefined}
+                    >
+                        <Text color={esSeleccionada ? '#000000' : COLORES.titulo}>
+                            {celda}
+                        </Text>
+                    </Box>
+                );
+                })}
+        </Box>
+        ));
+        })()}</Box>
+                <Box height={1} paddingX={1} borderStyle="single" borderTop borderColor={COLORES.borde}>
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Esc </Text> Salir
+                    </Text>
+                </Box>
             </Box>
         </Box>
     );
