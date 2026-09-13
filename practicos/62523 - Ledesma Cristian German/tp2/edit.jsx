@@ -88,12 +88,15 @@ function App() {
 )
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={COLUMNAS -2} height={FILAS -2} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box height={1} paddingX={1} >
-                    <Text bold color={COLORES.titulo}>
-                        Archivo: {nombreArchivo || "ninguno"}
-                    </Text>
+        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center" backgroundColor={COLORES.fondo}>
+            <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.fondo} backgroundColor={COLORES.fondo}>
+                <Box justifyContent="space-between" width="100%" paddingX={1} height={1} >
+                    <Text bold color={COLORES.titulo}>{nombreArchivo || "sin_nombre.cvs" }</Text>
+                    <Text bold color={COLORES.secundario}>{datos.length} filas · {datos[0]?.length || 0} columnas</Text>
+                </Box>
+                <Box paddingX={1} height={1} marginBottom={1}>
+                    <Text color={COLORES.secundario}>Valor ›</Text>
+                    <Text bold color={COLORES.titulo}>{datos[filaSelec]?.[columnselect] || ""}</Text>
                 </Box>
                 <Box flexGrow={1} padding={1} flexDirection="column"> 
                 {(() => {
@@ -109,12 +112,7 @@ function App() {
                         const posicionRealFila = indexFila + inicio;
                         const esSeleccionada = (posicionRealFila === filaSelec && indexColumna === columnselect);
                         return (
-                    <Box 
-                        key={indexColumna} 
-                        width={15} 
-                        paddingX={1}
-                        backgroundColor={esSeleccionada ? COLORES.acento : undefined}
-                    >
+                    <Box key={indexColumna} width={18} paddingX={1} backgroundColor={esSeleccionada ? COLORES.acento : undefined}>
                         <Text color={esSeleccionada ? '#000000' : COLORES.titulo}>
                             {celda}
                         </Text>
@@ -124,10 +122,22 @@ function App() {
         </Box>
         ));
         })()}</Box>
-                <Box height={1} paddingX={1} borderStyle="single" borderTop borderColor={COLORES.borde}>
-                    <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>Esc </Text> Salir
-                    </Text>
+                <Box justifyContent="space-between" width="100%" paddingX={1} height={1} marginTop={1}>
+                    <Box>
+                        <Text color={COLORES.secundario}>
+                            <Text bold color={COLORES.acento}>A</Text> abrir  ·  
+                            <Text bold color={COLORES.acento}>  G</Text> guardar  ·  
+                            <Text bold color={COLORES.acento}> Enter</Text> editar  ·  
+                            <Text bold color={COLORES.acento}> &lt;</Text> ascendente  ·  
+                            <Text bold color={COLORES.acento}> &gt;</Text> descendente  ·  
+                            <Text bold color={COLORES.acento}> Esc</Text> salir  ·  
+                        </Text>
+                    </Box>
+                    <Box>
+                        <Text color={COLORES.secundario}>
+                            Fila {filaSelec +1}  ·  Columna {columnselect +1}
+                        </Text>
+                    </Box>
                 </Box>
             </Box>
         </Box>
