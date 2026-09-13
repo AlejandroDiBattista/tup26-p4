@@ -35,10 +35,40 @@ function App() {
 
     const ancho = 4
     const separacion = 2
-    const anchoColumna = cabecera.length ? Math.floor(
-        (columnas - ancho - separacion * cabecera.length) / cabecera.length
-    ): columnas
 
+    const filasVisiblesMax = Math.max(4, Math.min(10, Math.floor((process.stdout.rows || 24) / 2)))
+    const columnasVisiblesMax = Math.max(2, Math.min(cabecera.length || 1, 6))
+
+    const filaInicio = Math.max(
+        0,
+        Math.min(
+            filaActual - Math.floor(filasVisiblesMax / 2),
+            Math.max(0, filas.length - filasVisiblesMax)
+        )
+    )
+
+    const columnaInicio = Math.max(
+        0,
+        Math.min(
+            columnaActual - Math.floor(columnasVisiblesMax / 2),
+            Math.max(0, cabecera.length - columnasVisiblesMax)
+        )
+    )
+
+    const columnasVisibles = cabecera.slice(columnaInicio, columnaInicio + columnasVisiblesMax)
+    const anchoColumna = columnasVisibles.length
+        ? Math.max(
+            10,
+            Math.floor(
+                (columnas - ancho - separacion * (columnasVisibles.length + 1) - 4) /
+                columnasVisibles.length
+            )
+        )
+        : 10
+
+    const filaActualReal = filas[filaActual]
+    const valorCeldaActual = filaActualReal?.[columnaActual] ?? ''
+    const nombreColumnaActual = cabecera[columnaActual] ?? ''
 
     async function abrirArchivo(nombre) {
         try {
@@ -50,6 +80,9 @@ function App() {
             setFilas(filas)
             setNombreArchivo(nombre)
             setPidiendoArchivo(false)
+            setContenido('')
+            setFilaActual(0)
+            setColumnaActual(0)
         } catch {
             setContenido('Error: no se pudo abrir el archivo')
         }
@@ -208,52 +241,82 @@ function App() {
 
     return (
         <Box flexDirection="column" width={columnas} borderStyle="round" borderColor={COLORES.borde}>
-            <Box flexDirection="row" justifyContent="space-between" paddingBottom={2}>
+            <Box flexDirection="row" justifyContent="space-between" paddingBottom={1}>
                 <Text color={COLORES.titulo}>Archivo: {nombreArchivo}</Text>  
                 <Text color={COLORES.secundario}>
                     Columnas: {cabecera.length} | Filas: {filas.length}
                 </Text>
             </Box>
+
+            <Box
+                flexDirection="row"
+                justifyContent="space-between"
+                borderStyle="single"
+                borderColor={COLORES.borde}
+            >
+                <Text color={COLORES.acento}>
+                    Celda: Fila: {filaActual + 1} / Columna: {columnaActual + 1}
+                </Text>
+                <Text color={COLORES.acento}>
+                    {nombreColumnaActual || 'columna'} = {String(valorCeldaActual || '').slice(0, 40)}
+                </Text>
+            </Box>
+
             <Box flexDirection="row" gap={separacion}  >
                 <Box width={ancho}>
                     <Text bold>N°</Text>
                 </Box>
 
-                {cabecera.map((nombre, indiceColumna) => (
-                    <Box key={indiceColumna} width={anchoColumna}>
-                        <Text bold>{nombre.toUpperCase()}</Text>
-                    </Box>
-                ))}
+                {columnasVisibles.map((nombre, indiceVisible) => {
+                    const indiceColumna = columnaInicio + indiceVisible
+                    const seleccionada = indiceColumna === columnaActual
+
+                    return (
+                        <Box key={indiceColumna} width={anchoColumna} backgroundColor={seleccionada ? COLORES.acento : undefined}>
+                            <Text bold color={seleccionada ? COLORES.fondo : COLORES.titulo} backgroundColor={seleccionada ? COLORES.acento : undefined} wrap="truncate-end">
+                                {String(nombre || '').toUpperCase()}
+                            </Text>
+                        </Box>
+                    )
+                })}
             </Box>
 
             <Box flexDirection="column">
-                {filas.map((fila, indiceFila) => (
-                    <Box key={indiceFila} flexDirection="row" gap={separacion}>
-                        <Box width={ancho}>
-                            <Text color={COLORES.secundario}>{indiceFila + 1}</Text>
-                        </Box>
+                {filas.slice(filaInicio, filaInicio + filasVisiblesMax).map((fila, indiceFilaVisible) => {
+                    const indiceFilaReal = filaInicio + indiceFilaVisible
+                    const filaSeleccionada = indiceFilaReal === filaActual
 
-                        {fila.map((valor, indiceColumna) => {
-                            const seleccionada = indiceFila === filaActual && indiceColumna === columnaActual
-                            const textoVisible = seleccionada && modoEdicion ? valorTemporal : valor
-                            return (
-                                <Box
-                                    key={indiceColumna}
-                                    width={anchoColumna}
-                                    backgroundColor={seleccionada ? COLORES.acento : undefined}
-                                >
-                                    <Text
-                                        color={seleccionada ? COLORES.fondo : COLORES.titulo}
+                    return (
+                        <Box key={indiceFilaReal} flexDirection="row" gap={separacion}>
+                            <Box width={ancho}>
+                                <Text color={filaSeleccionada ? COLORES.acento : COLORES.secundario}>{indiceFilaReal + 1}</Text>
+                            </Box>
+
+                            {columnasVisibles.map((_, indiceVisible) => {
+                                const indiceColumnaReal = columnaInicio + indiceVisible
+                                const valor = fila[indiceColumnaReal] ?? ''
+                                const seleccionada = filaSeleccionada && indiceColumnaReal === columnaActual
+                                const textoVisible = seleccionada && modoEdicion ? valorTemporal : valor
+
+                                return (
+                                    <Box
+                                        key={indiceColumnaReal}
+                                        width={anchoColumna}
                                         backgroundColor={seleccionada ? COLORES.acento : undefined}
-                                        wrap="truncate-end"
                                     >
-                                        {textoVisible}
-                                    </Text>
-                                </Box>
-                            )
-                        })}
-                    </Box>
-                ))}
+                                        <Text
+                                            color={seleccionada ? COLORES.fondo : COLORES.titulo}
+                                            backgroundColor={seleccionada ? COLORES.acento : undefined}
+                                            wrap="truncate-end"
+                                        >
+                                            {textoVisible}
+                                        </Text>
+                                    </Box>
+                                )
+                            })}
+                        </Box>
+                    )
+                })}
             </Box>
             
             {contenido ? (
