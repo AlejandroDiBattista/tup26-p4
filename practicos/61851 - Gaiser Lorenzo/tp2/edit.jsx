@@ -57,7 +57,12 @@ function App() {
             <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" >
                 {datos.map((fila, i) => (
-                    <Text key={i} bold color={COLORES.titulo}>{fila.map((campo, i ) => campo.padEnd(anchos[i])).join(' ')}</Text>
+                  <Box key={i} flexDirection="row" gap={1} >
+                    {fila.map((campo, j) => (
+                      <Text key={j} color={COLORES.titulo}>{campo.padEnd(anchos[j])}</Text>
+                    ))}   
+
+                 </Box>  
                 ))}
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
@@ -65,11 +70,7 @@ function App() {
         </Box>
     );
 }
-
-
-
-
-
+//{fila.map((campo, i ) => campo.padEnd(anchos[i])).join(' ')
 
 
 const app = render(<App />);
