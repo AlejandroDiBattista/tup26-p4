@@ -6,6 +6,18 @@ import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
 
+const texto = process.argv[2] ? await readFile(process.argv[2], 'utf-8') : '';
+const partes = texto.trim().split('\n')
+
+const cabecera = partes[0] || '';
+
+const titulos = cabecera.split(',');
+
+
+const filas = partes.slice(1) ; 
+
+
+
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
 
@@ -28,20 +40,26 @@ function App() {
 
      
 
-
+///aqui 
 
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>{process.argv[2] || 'Sin nombre'}</Text>
+                    <Text bold color={COLORES.titulo}>{`${titulos.length} columnas -- ${filas.length}  filas `}</Text>
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
         </Box>
     );
 }
+
+
+
+
+
+
 
 const app = render(<App />);
 await app.waitUntilExit();
