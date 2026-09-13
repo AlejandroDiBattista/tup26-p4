@@ -1,13 +1,9 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
-import {readFile, writeFile} from 'node:fs/promises';
-import {TextInput} from '@inkjs/ui';
+import {readFile} from 'node:fs/promises';
 import {basename} from 'node:path';
-
-const COLUMNAS = process.stdout.columns || 80;
-const FILAS    = process.stdout.rows || 24;
 
 const COLORES = {
     fondo:     '#161310',
@@ -32,24 +28,30 @@ async function parseFile(filePath) {
     }
 }
 
-function Header({ header }) {
+function Header({ header, anchos }) {
     return (
-        <Box flexDirection="row" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+        <Box flexDirection="row" marginBottom={1}>
+            <Box width={4} alignItems="flex-end" paddingRight={1}>
+                <Text color={COLORES.secundario} bold>N°</Text>
+            </Box>
             {header.map((campo, index) => (
-                <Box key={index} paddingX={1}>
-                    <Text color={COLORES.titulo}>{campo.toUpperCase()}</Text>
+                <Box key={index} width={anchos[index] + 2}>
+                    <Text color={COLORES.titulo} bold>{campo.toUpperCase()}</Text>
                 </Box>
             ))}
         </Box>
     );
 }
 
-function Row({ fila }) {
+function Row({ fila, indice, anchos }) {
     return (
-        <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+        <Box flexDirection="row">
+            <Box width={4} alignItems="flex-end" paddingRight={1}>
+                <Text color={COLORES.titulo}>{indice}</Text>
+            </Box>
             {fila.map((campo, index) => (
-                <Box key={index} paddingX={1}>
-                    <Text color={COLORES.secundario}>{campo}</Text>
+                <Box key={index} width={anchos[index] + 2}>
+                    <Text color={COLORES.titulo}>{campo}</Text>
                 </Box>
             ))}
         </Box>
@@ -63,15 +65,25 @@ function App({ ruta, data }) {
         if (key.escape) {
             exit();
         }
-    })
+    });
+
+    const anchos = useMemo(() => {
+        return data.header.map((col, i) => {
+            const maxFila = Math.max(...data.filas.map(f => (f[i] || '').length));
+            return Math.max(col.length, maxFila);
+        });
+    }, [data]);
     
     return (
-        <Box>
-            <Header header={data.header} />
-                <Row key={data.filas.index} fila={data.filas} />
+        <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} paddingX={1} paddingY={0}>
+            <Header header={data.header} anchos={anchos} />
+            {data.filas.map((fila, index) => (
+                <Row key={index} fila={fila} indice={index + 1} anchos={anchos} />
+            ))}
         </Box>
     );
 }
+
 async function main() {
     const args = process.argv.slice(2);
     if (args.length < 1) {
@@ -84,3 +96,7 @@ async function main() {
 }
 
 main();
+
+
+//Notas IA:
+//1: Tenia muchos problemas para calcular un ancho de columna flexible con respecto al contenido. Comparó la longitud de cada campo en cada fila y la longitud del encabezado para determinar el ancho máximo de cada columna. Y usar useMemo para evitar recalcularlo en cada renderizado.
