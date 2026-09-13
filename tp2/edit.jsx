@@ -46,25 +46,114 @@ function ajustar(texto, ancho) {
 //primer commit
 
 function App() {
-    const {exit} = useApp();
-    
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
+    const [modo, setModo] = useState('inicio');
+const [archivo, setArchivo] = useState('');
+const [encabezados, setEncabezados] = useState([]);
+const [filas, setFilas] = useState([]);
+const [mensaje, setMensaje] = useState('');
 
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-            </Box>
-        </Box>
-    );
+async function abrirArchivo(ruta) {
+    try {
+        const texto = await readFile(ruta, 'utf-8');
+        const datos = parsearCSV(texto);
+        setEncabezados(datos.encabezados);
+        setFilas(datos.filas);
+        setArchivo(ruta);
+        setMensaje('');
+        setModo('tabla');
+    } catch (e) {
+        setMensaje('No se pudo abrir: ' + e.message);
+        setModo('inicio');
+    }
 }
+//se declaran constantes 
+    const {exit} = useApp();
+    const [filaSel, setFilaSel] = useState(0);
+    const [colSel, setColSel] = useState(0);
+    const [scrollFila, setScrollFila] = useState(0);
+    const [scrollCol, setScrollCol] = useState(0);
+    const [valorEdicion, setValorEdicion] = useState('');
+    const [ordenColumna, setOrdenColumna] = useState(null);
+    const [ordenAsc, setOrdenAsc] = useState(true);
+    const [modificado, setModificado] = useState(false);
+    const filasVisibles = Math.max(FILAS - 8, 3);
+    const anchos = encabezados.length ? anchoColumnas(encabezados, filas) : [];
+    async function abrirArchivo(ruta) {
+        try {
+            const texto = await readFile(ruta, 'utf-8');
+            const datos = parsearCSV(texto);
+            setEncabezados(datos.encabezados);
+            setFilas(datos.filas);
+            setArchivo(ruta);
+            setMensaje('');
+            setModificado(false);
+            setFilaSel(0);
+            setColSel(0);
+            setScrollFila(0);
+            setScrollCol(0);
+            setModo('tabla');
+        } catch (e) {
+            setMensaje('No se pudo abrir: ' + e.message);
+            setModo('inicio');
+        }
+    }
+    function columnasVisibles() {
+        let total = 0, cant = 0;
+        for (let i = scrollCol; i < anchos.length; i++) {
+            total += anchos[i] + 1;
+            if (total > COLUMNAS - 6 && cant > 0) break;
+            cant++;
+        }
+        return Math.max(cant, 1);
+    }
+    function ajustarScroll(f, c) {
+        let sf = scrollFila, sc = scrollCol;
+        if (f < sf) sf = f;
+        if (f >= sf + filasVisibles) sf = f - filasVisibles + 1;
+        if (c < sc) sc = c;
+        while (c >= sc + columnasVisibles() && sc < c) sc++;
+        setScrollFila(sf);
+        setScrollCol(sc);
+    }
+    function confirmarEdicion(valor) {
+        const copia = filas.map(f => [...f]);
+        copia[filaSel][colSel] = valor;
+        setFilas(copia);
+        setModificado(true);
+        setModo('tabla');
+    }
+    function ordenarPorColumna(i) {
+        const asc = i === ordenColumna ? !ordenAsc : true;
+        const copia = [...filas].sort((a, b) => asc ? comparar(a[i], b[i]) : comparar(b[i], a[i]));
+        setFilas(copia);
+        setOrdenColumna(i);
+        setOrdenAsc(asc);
+        setFilaSel(0);
+        setScrollFila(0);
+        setModificado(true);
+    }
+    async function guardarArchivo() {
+        try {
+            await writeFile(archivo, serializarCSV(encabezados, filas), 'utf-8');
+            setModificado(false);
+            setMensaje('Guardado correctamente');
+        } catch (e) {
+            setMensaje('Error al guardar: ' + e.message);
+        }
+    }    
+    useInput((tecla, key) => {
+    if (modo === 'inicio') {
+        if (tecla === 'o' || tecla === 'O') setModo('abrir');
+        if (key.escape) exit();
+        return;
+    }
+    if (modo === 'abrir') {
+        if (key.escape) setModo('inicio');
+        return;
+    }
+    if (key.escape) exit(); // fallback para 'tabla' (se ampliará en commit 8)
+});}
+
 
 
 
