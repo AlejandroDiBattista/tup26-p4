@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile} from 'node:fs/promises';
 import {basename} from 'node:path';
@@ -28,32 +28,47 @@ async function parseFile(filePath) {
     }
 }
 
-function Header({ header, anchos }) {
+function Header({ header, anchos, colSeleccionada }) {
     return (
         <Box flexDirection="row" marginBottom={1}>
             <Box width={4} alignItems="flex-end" paddingRight={1}>
                 <Text color={COLORES.secundario} bold>N°</Text>
             </Box>
-            {header.map((campo, index) => (
-                <Box key={index} width={anchos[index] + 2}>
-                    <Text color={COLORES.titulo} bold>{campo.toUpperCase()}</Text>
-                </Box>
-            ))}
+            {header.map((campo, index) => {
+                const estaSeleccionada = index === colSeleccionada;
+                
+                return (
+                    <Box key={index} width={anchos[index] + 2}>
+                        <Text color={estaSeleccionada ? COLORES.acento : COLORES.titulo} bold>
+                            {campo.toUpperCase()}
+                        </Text>
+                    </Box>
+                )
+            })}
         </Box>
     );
 }
 
-function Row({ fila, indice, anchos }) {
+function Row({ fila, indice, anchos, filaSeleccionada, colSeleccionada }) {
     return (
         <Box flexDirection="row">
             <Box width={4} alignItems="flex-end" paddingRight={1}>
-                <Text color={COLORES.titulo}>{indice}</Text>
+                <Text color={filaSeleccionada ? COLORES.acento : COLORES.titulo}>{indice}</Text>
             </Box>
-            {fila.map((campo, index) => (
-                <Box key={index} width={anchos[index] + 2}>
-                    <Text color={COLORES.titulo}>{campo}</Text>
-                </Box>
-            ))}
+            {fila.map((campo, index) => {
+                const celdaSeleccionada = filaSeleccionada && index === colSeleccionada;
+                return (
+                    <Box 
+                        key={index} 
+                        width={anchos[index] + 2}
+                        backgroundColor={celdaSeleccionada ? COLORES.titulo : undefined}
+                    >
+                        <Text color={celdaSeleccionada ? COLORES.fondo : COLORES.titulo}>
+                            {campo}
+                        </Text>
+                    </Box>
+                );
+            })}
         </Box>
     );
 }
@@ -61,9 +76,24 @@ function Row({ fila, indice, anchos }) {
 function App({ ruta, data }) {
     const {exit} = useApp();
     
+    const [selectedRow, setSelectedRow] = useState(0);
+    const [selectedCol, setSelectedCol] = useState(0);
+    
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        }
+        if (key.upArrow) {
+            setSelectedRow((prev) => Math.max(0, prev - 1));
+        }
+        if (key.downArrow) {
+            setSelectedRow((prev) => Math.min(data.filas.length - 1, prev + 1));
+        }
+        if (key.leftArrow) {
+            setSelectedCol((prev) => Math.max(0, prev - 1));
+        }
+        if (key.rightArrow) {
+            setSelectedCol((prev) => Math.min(data.header.length - 1, prev + 1));
         }
     });
 
@@ -76,9 +106,16 @@ function App({ ruta, data }) {
     
     return (
         <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} paddingX={1} paddingY={0}>
-            <Header header={data.header} anchos={anchos} />
+            <Header header={data.header} anchos={anchos} colSeleccionada={selectedCol} />
             {data.filas.map((fila, index) => (
-                <Row key={index} fila={fila} indice={index + 1} anchos={anchos} />
+                <Row 
+                    key={index} 
+                    fila={fila} 
+                    indice={index + 1} 
+                    anchos={anchos} 
+                    filaSeleccionada={index === selectedRow}
+                    colSeleccionada={selectedCol}
+                />
             ))}
         </Box>
     );
@@ -96,7 +133,3 @@ async function main() {
 }
 
 main();
-
-
-//Notas IA:
-//1: Tenia muchos problemas para calcular un ancho de columna flexible con respecto al contenido. Comparó la longitud de cada campo en cada fila y la longitud del encabezado para determinar el ancho máximo de cada columna. Y usar useMemo para evitar recalcularlo en cada renderizado.
