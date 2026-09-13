@@ -59,25 +59,47 @@ function App() {
     }, []);
 
 
-
-
-
-
-
-    
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
+        if (key.downArrow) {
+            setFilaSeleccionada(Math.min(filaSeleccionada + 1, filas.length - 1));
+        }
+        if (key.upArrow) {
+            setFilaSeleccionada(Math.max(filaSeleccionada - 1, 0));
+        }
+        if (key.rightArrow) {
+            setColumnaSeleccionada(Math.min(columnaSeleccionada + 1, encabezado.length - 1));
+        }
+        if (key.leftArrow) {
+            setColumnaSeleccionada(Math.max(columnaSeleccionada - 1, 0));
+        }
+                if (tecla === '<') {
+                    const copia = filas.slice();
+                    copia.sort((filaA, filaB) => filaA[columnaSeleccionada].localeCompare(filaB[columnaSeleccionada]));
+                    setFilas(copia);
+                }
+                if (tecla === '>') {
+                    const copia = filas.slice();
+                    copia.sort((filaA, filaB) => filaB[columnaSeleccionada].localeCompare(filaA[columnaSeleccionada]));
+                    setFilas(copia);
+                }
+
     })
+
 
     return (
     <Box flexDirection="column" width={120} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
 
-        <Box flexDirection="row" justifyContent="space-between">
+        <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
             <Text>{nombreArchivo}</Text>
             <Text>{filas.length} filas · {encabezado.length} columnas</Text>
         </Box>
+
+            <Box marginBottom={1}>
+                <Text>Valor {'>'} {filas[filaSeleccionada]?.[columnaSeleccionada]}</Text>
+            </Box>
 
         <Box flexDirection="row">
             <Box width={4}>
@@ -90,22 +112,38 @@ function App() {
             ))}
         </Box>
 
-        <Box flexDirection="column">
+        <Box flexDirection="column" marginBottom={1}>
+
             {filas.map((fila, indiceFila) => (
                 <Box key={indiceFila} flexDirection="row">
                     <Box width={4}>
                         <Text>{indiceFila + 1}</Text>
                     </Box>
-                    {fila.map((valor, indiceColumna) => (
-                        <Box key={indiceColumna} width={20}>
-                            <Text> {valor} </Text>
-                        </Box>
-                    ))}
+                    {fila.map((valor, indiceColumna) => {
+                        const esSeleccionada = indiceFila === filaSeleccionada && indiceColumna === columnaSeleccionada;
+                        return (
+                            <Box key={indiceColumna} width={20}>
+                                <Text backgroundColor={esSeleccionada ? COLORES.acento : undefined}> {valor} </Text>
+                            </Box>
+                        );
+                    })}
+
                 </Box>
             ))}
         </Box>
 
-        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+        <Box flexDirection="row" justifyContent="space-between">
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>A</Text> abrir ·{' '}
+                <Text bold color={COLORES.acento}>G</Text> guardar ·{' '}
+                <Text bold color={COLORES.acento}>Enter</Text> editar ·{' '}
+                <Text bold color={COLORES.acento}>{'<'}</Text> ascendente ·{' '}
+                <Text bold color={COLORES.acento}>{'>'}</Text> descendente ·{' '}
+                <Text bold color={COLORES.acento}>Esc</Text> salir
+            </Text>
+            <Text color={COLORES.secundario}>Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}</Text>
+        </Box>
+
     </Box>
 );
 
