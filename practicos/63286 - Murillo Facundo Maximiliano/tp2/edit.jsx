@@ -17,6 +17,26 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+const leerEmpleados = await readFile(process.argv[2], "utf-8")
+const separarEmpleados = leerEmpleados.split("\n")
+// console.log(leerEmpleados);
+// console.log(separarEmpleados);
+
+const resultados = separarEmpleados.map(texto => texto.trim())
+// console.log(resultados)
+const separarFilas = resultados.map(resultados => resultados.split(","))
+console.log(separarFilas[0]);
+
+function mostrarDatos(){
+
+    const nombreArchivo = "empleados.csv"
+    const filas = resultados.length 
+    const columnas = separarFilas[0].length
+
+    return `Nombre de fila es : ${nombreArchivo} , filas: ${filas} y columnas: ${columnas}`
+
+}
+
 function App() {
     const {exit} = useApp();
     
@@ -26,6 +46,7 @@ function App() {
         }
     })
 
+
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
@@ -34,10 +55,23 @@ function App() {
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
+            <Box >
+                {/* {separarFilas.map((fila, indice) => (
+                    <Text key={indice}> {fila.map((col, indice) => (
+                        <Text key={indice}> 
+                            {col}
+                        </Text>
+                     ))}
+                    </Text>
+                ))} */}
+            </Box>
+            <Text>
+                {mostrarDatos()}
+            </Text>
         </Box>
     );
 }
 
 const app = render(<App />);
 await app.waitUntilExit();
-console.clear();
+console.clear(); 
