@@ -42,6 +42,9 @@ function App() {
   const [filaSeleccionada, setFilaSeleccionada] = useState(0);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
 
+  const [editando, setEditando] = useState(false);
+  const [valorEditado, setValorEditado] = useState("");
+
   useEffect(() => {
     async function cargarArchivo() {
       try {
@@ -59,7 +62,18 @@ function App() {
   }, []);
   useInput((tecla, key) => {
     if (key.escape) {
+      if (editando) {
+        setEditando(false);
+        return;
+      }
       exit();
+    }
+    if (key.return) {
+      setEditando(true);
+      setValorEditado(filas[filaSeleccionada]?.[columnaSeleccionada] || "");
+    }
+    if (editando) {
+      return;
     }
     if (key.upArrow) {
       setFilaSeleccionada((fila) => Math.max(0, fila - 1));
@@ -81,10 +95,15 @@ function App() {
   });
 
   return (
-    <Box width={90} height={20} justifyContent="center" alignItems="center">
+    <Box
+      width={COLUMNAS - 6}
+      height={FILAS}
+      justifyContent="center"
+      alignItems="center"
+    >
       <Box
-        width={90}
-        height={20}
+        width={COLUMNAS - 6}
+        height={FILAS}
         flexDirection="column"
         borderStyle="round"
         borderColor={COLORES.borde}
@@ -105,9 +124,32 @@ function App() {
             <Text bold color={COLORES.titulo}>
               {nombreArchivo || "Editor CSV"}
             </Text>
-            <Text color={COLORES.secundario}>
-              Valor › {filas[filaSeleccionada]?.[columnaSeleccionada] || ""}
-            </Text>
+            {editando ? (
+              <Box>
+                <Text color={COLORES.secundario}>Editar ›</Text>
+                <TextInput
+                  value={valorEditado}
+                  onChange={setValorEditado}
+                  onSubmit={() => {
+                    const nuevasFilas = [...filas];
+
+                    nuevasFilas[filaSeleccionada] = [
+                      ...nuevasFilas[filaSeleccionada],
+                    ];
+
+                    nuevasFilas[filaSeleccionada][columnaSeleccionada] =
+                      valorEditado;
+
+                    setFilas(nuevasFilas);
+                    setEditando(false);
+                  }}
+                />
+              </Box>
+            ) : (
+              <Text color={COLORES.secundario}>
+                Valor › {filas[filaSeleccionada]?.[columnaSeleccionada] || ""}
+              </Text>
+            )}
             {error ? (
               <Text color="red">{error}</Text>
             ) : (
