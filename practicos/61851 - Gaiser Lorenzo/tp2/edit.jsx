@@ -7,7 +7,7 @@ import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
 
 const texto = process.argv[2] ? await readFile(process.argv[2], 'utf-8') : '';
-const partes = texto.trim().split('\n')
+const partes = texto.replaceAll('\r\n', '\n').trim().split('\n');
 
 const cabecera = partes[0] || '';
 
@@ -16,7 +16,7 @@ const titulos = cabecera.split(',');
 
 const filas = partes.slice(1) ; 
 
-
+const datos = filas.map(fila => fila.split(','));
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -47,7 +47,7 @@ function App() {
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>{`${titulos.length} columnas -- ${filas.length}  filas `}</Text>
+                    <Text bold color={COLORES.titulo}>{filas.length}</Text>
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
