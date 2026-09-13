@@ -69,7 +69,30 @@ React.useEffect(() => {
     
    useInput(async (tecla, key) => {
     if (key.escape) {
-        exit();
+        if (abriendo) {
+            setAbriendo(false);
+            setNombreArchivo('');
+            setError('');
+            return;
+        }
+
+    if (guardando) {
+        setGuardando(false);
+        setNombreGuardado('');
+        setError('');
+        return;
+
+    }
+
+    if (editando) {
+        setEditando(false);
+        setTextoEditado('');
+        return;
+    }
+
+    exit();
+
+
     }
 
     if (key.return && abriendo) {
@@ -185,6 +208,7 @@ React.useEffect(() => {
                 </Box>
             )}
 
+
             {guardando && (
                 <Box>
                     <Text>Guardar {'>'} </Text>
@@ -207,15 +231,11 @@ React.useEffect(() => {
                 </Text>
             </Box>
 
-            <Box>
-                <Text>
-                    Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}  
-                </Text>
-            </Box>
-
+            
             {error && (
                 <Text>{error}</Text>
             )}
+           
 
            <Box>
             <Box width={5} justifyContent="center">
@@ -230,41 +250,65 @@ React.useEffect(() => {
             </Box>
 
             {filas.slice(filaInicio, filaInicio + 10).map((fila, indiceFila) => {
-                const numeroFila = filaInicio + indiceFila;
+    const numeroFila = filaInicio + indiceFila;
+
+    return (
+        <Box key={numeroFila}>
+            <Box width={5} justifyContent="center">
+                <Text> {numeroFila + 1} </Text>
+            </Box>
+
+            {fila.map((campo, indiceColumna) => {
+                const seleccionada =
+                    numeroFila === filaSeleccionada &&
+                    indiceColumna === columnaSeleccionada;
 
                 return (
-                    <Box key={numeroFila}>
-                        <Box width={5} justifyContent="center">
-                            <Text> {numeroFila + 1} </Text>
-                        </Box>
-
-                        {fila.map((campo, indiceColumna) => {
-                            const seleccionada =
-                            numeroFila === filaSeleccionada &&
-                            indiceColumna === columnaSeleccionada;
-
-                            return (
-                                <Box key={indiceColumna} width={18}>
-                                    {seleccionada && editando ? (
-                                        <TextInput 
-                                        defaultValue={campo}
-                                        onChange={setTextoEditado} 
-                                        /> 
-                                    ) : (
-                                    <Text inverse={seleccionada}>
-                                        {campo}
-                                    </Text>
-                                    )}
-                        
-                                </Box>
-                            );
-                        })}
+                    <Box key={indiceColumna} width={18}>
+                        {seleccionada && editando ? (
+                            <TextInput
+                                defaultValue={campo}
+                                onChange={setTextoEditado}
+                            />
+                        ) : (
+                            <Text inverse={seleccionada}>
+                                {campo}
+                            </Text>
+                        )}
                     </Box>
                 );
             })}
         </Box>
     );
+})}
 
+{abriendo && (
+    <Box justifyContent="center">
+        <Text>Enter Abrir · Esc Cancelar</Text>
+    </Box>
+)}
+
+{guardando && (
+    <Box justifyContent="center">
+        <Text>Enter Guardar · Esc Cancelar</Text>
+    </Box>
+)}
+
+{!abriendo && !guardando && (
+
+<Box flexDirection="row">
+    <Text>
+        A Abrir   G Guardar   Enter Editar   {'<'} Asc   {'>'} Desc   Esc Salir
+    </Text>
+
+    <Text>
+       {'    '}Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}
+    </Text>
+</Box>
+)}
+
+</Box>
+    );
 }
          
                             
