@@ -41,6 +41,34 @@ const filas= lineasDeDatos.map(function(linea){
 return {cabecera: cabecera, filas: filas};
 }
 
+//funcion para calcular el ancho de las columnas
+function calcularAncho(cabecera, filas){
+    //si no hay datos cargados, devolvemos un array vacio
+    if (cabecera.length===0) {
+        return[];
+    }
+    //usamos el indice para recorrer cada columna
+    const anchos = cabecera.map(function(titulo,colIndice){
+        //tomamos el largo del titulo como referencia
+        let maximo= titulo.length;
+        //revisamos el texto de la columna fila por fila
+        filas.forEach(function(fila){
+            let celda='';
+            //convertimos a texto si la celda tiene contenido
+            if (fila[colIndice]!== undefined && fila[colIndice]!==null){
+                celda = String(fila[colIndice]);
+            }
+            // si el texto es largo, se actualiza el ancho
+            if (celda.length>maximo) {
+                maximo= celda.length;
+            }
+        });
+        // agregamos 2 espacios extras para que no quede pegado al borde
+        return maximo + 2;
+    });
+    return anchos;
+}
+
 
 function App() {
     const {exit} = useApp();
