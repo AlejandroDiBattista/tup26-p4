@@ -32,7 +32,9 @@ function App() {
     const [nombreGuardado, setNombreGuardado] = React.useState('');
     const [abriendo, setAbriendo] = React.useState(false);
     const [nombreArchivo, setNombreArchivo] = React.useState('');
+    const [archivoActual, setArchivoActual] =React.useState(archivoInicial || '');
     const [ordenAscendente, setOrdenAscendente] = React.useState(true);
+    const [error, setError] = React.useState('');
 
 
 
@@ -65,91 +67,108 @@ React.useEffect(() => {
 
 }, [filaSeleccionada]);
     
-    useInput(async (tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-        
-        if (key.leftArrow) {
-            setColumnaSeleccionada(columna => Math.max(0, columna - 1));
+   useInput(async (tecla, key) => {
+    if (key.escape) {
+        exit();
+    }
 
-        }
-
-        if (key.rightArrow) {
-            setColumnaSeleccionada(columna => Math.min(cabecera.length - 1, columna + 1));
-        }
-
-        if (key.downArrow) {
-            setFilaSeleccionada(fila => Math.min(filas.length - 1, fila + 1));
-        }
-
-        if (key.upArrow)  {
-            setFilaSeleccionada(fila => Math.max(0, fila - 1));
-        }
-        if (tecla.toLowerCase() === 'g') {
-            setGuardando(true);
-        }
-        
-        if (tecla.toLowerCase() === 'a') {
-            setAbriendo(true);
-        }
-
-        if (tecla === '<') {
-            const nuevasFilas = [...filas];
-
-            nuevasFilas.sort((a, b) => {
-                return a[columnaSeleccionada].localeCompare(
-                    b[columnaSeleccionada]
-                );
-            });
-
-            setFilas(nuevasFilas);
-        }
-
-        if (tecla === '>') {
-            const nuevasFilas = [...filas];
-
-            nuevasFilas.sort((a, b) => {
-                return b[columnaSeleccionada].localeCompare(
-                    a[columnaSeleccionada]
-                );
-            });
-
-            setFilas(nuevasFilas);
-        }
-
-        if (key.return && abriendo) {
+    if (key.return && abriendo) {
+        try {
             const textoCSV = await readFile(nombreArchivo, 'utf-8');
             const datos = parsearCSV(textoCSV);
 
             setCabecera(datos.cabecera);
             setFilas(datos.filas);
+            setArchivoActual(nombreArchivo);
             setAbriendo(false);
             setNombreArchivo('');
-            return;
+            setError('');
+        } catch (error) {
+            setError('No se pudo abrir el archivo');
         }
+        return;
+    }
 
-        if (key.return && guardando) {
+    if (key.return && guardando) {
+        try {
             const textoCSV = generarCSV(cabecera, filas);
             await writeFile(nombreGuardado, textoCSV, 'utf-8');
+
             setGuardando(false);
             setNombreGuardado('');
-            return;
+            setError('');
+        } catch (error) {
+            setError('No se pudo guardar el archivo');
         }
+        return;
+    }
 
-        if (key.return) {
-           if (!editando) {
+    if (abriendo || guardando) {
+        return;
+    }
+
+    if (key.leftArrow) {
+        setColumnaSeleccionada(columna => Math.max(0, columna - 1));
+    }
+
+    if (key.rightArrow) {
+        setColumnaSeleccionada(columna => Math.min(cabecera.length - 1, columna + 1));
+    }
+
+    if (key.downArrow) {
+        setFilaSeleccionada(fila => Math.min(filas.length - 1, fila + 1));
+    }
+
+    if (key.upArrow) {
+        setFilaSeleccionada(fila => Math.max(0, fila - 1));
+    }
+
+    if (tecla.toLowerCase() === 'g') {
+        setGuardando(true);
+    }
+
+    if (tecla.toLowerCase() === 'a') {
+        setAbriendo(true);
+    }
+
+    if (tecla === '<') {
+        const nuevasFilas = [...filas];
+
+        nuevasFilas.sort((a, b) => {
+            return a[columnaSeleccionada].localeCompare(
+                b[columnaSeleccionada]
+            );
+        });
+
+        setFilas(nuevasFilas);
+    }
+
+    if (tecla === '>') {
+        const nuevasFilas = [...filas];
+
+        nuevasFilas.sort((a, b) => {
+            return b[columnaSeleccionada].localeCompare(
+                a[columnaSeleccionada]
+            );
+        });
+
+        setFilas(nuevasFilas);
+    }
+
+    if (key.return) {
+        if (!editando) {
             setTextoEditado(filas[filaSeleccionada][columnaSeleccionada]);
             setEditando(true);
-           } else {
+        } else {
             const nuevasFilas = [...filas];
             nuevasFilas[filaSeleccionada][columnaSeleccionada] = textoEditado;
 
             setFilas(nuevasFilas);
             setEditando(false);
-           }
         }
-    });
+    }
+});
+
 
     return (
         <Box flexDirection="column">
@@ -178,7 +197,7 @@ React.useEffect(() => {
 
 
             <Box justifyContent="space-between">
-                <Text bold>{basename(archivoInicial || '')} </Text>
+                <Text bold>{basename(archivoActual || '')} </Text>
                 <Text>{filas.length} filas · {cabecera.length} columnas</Text>
             </Box>
 
@@ -193,6 +212,10 @@ React.useEffect(() => {
                     Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}  
                 </Text>
             </Box>
+
+            {error && (
+                <Text>{error}</Text>
+            )}
 
            <Box>
             <Box width={5} justifyContent="center">
