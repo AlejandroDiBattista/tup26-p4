@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, { use, useState } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -39,35 +39,80 @@ function mostrarDatos(){
 
 function App() {
     const {exit} = useApp();
-    
+
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0)
+    const [colSeleccionada, setColSeleccionada] = useState(0)
+    const [inicioVisible, setInicioVisibile] = useState(0)
+    const cantidadVisible = 9
+    const filasVisibles = separarFilas.slice(inicioVisible, inicioVisible + cantidadVisible);
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
+        if (key.downArrow) {
+                setFilaSeleccionada(anterior =>
+                    anterior < separarFilas.length - 1
+                        ? anterior + 1
+                        : anterior
+                );
+
+                if (filaSeleccionada >= inicioVisible + cantidadVisible - 1) {
+                    setInicioVisibile(anterior => anterior + 1);
+                }
+        }
+        if(key.upArrow){
+             setFilaSeleccionada(anterior =>
+                    anterior > 0 ? anterior - 1 : anterior
+                );
+
+                if (filaSeleccionada <= inicioVisible && inicioVisible > 0) {
+                    setInicioVisibile(anterior => anterior - 1);
+                }
+        }
+        if(key.rightArrow){
+            setColSeleccionada(columna => columna < separarFilas[0].length - 1 ? columna + 1 : columna )
+        }
+        if(key.leftArrow){
+            setColSeleccionada(columna => columna > 0 ? columna - 1 : columna  )
+        }
     })
 
-
     return (
+        
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+            <Box flexDirection='column' padding={10}>
+                <Text>Fila seleccionada: {filaSeleccionada}</Text>
+                <Text>Columna seleccionada: {colSeleccionada}</Text>
+
+                <Text>
+                Fila: {filaSeleccionada} | Columna: {colSeleccionada} | {separarFilas[0][colSeleccionada]}:  
+                 {separarFilas[filaSeleccionada][colSeleccionada]}
+                </Text>
+                <Text>Inicio visible: {inicioVisible}</Text>
             </Box>
-            <Box >
-                {/* {separarFilas.map((fila, indice) => (
-                    <Text key={indice}> {fila.map((col, indice) => (
-                        <Text key={indice}> 
-                            {col}
-                        </Text>
-                     ))}
-                    </Text>
-                ))} */}
-            </Box>
-            <Text>
-                {mostrarDatos()}
-            </Text>
+            <Box flexDirection="column">
+
+                {filasVisibles.map((fila, indiceFila) => {
+
+                const indiceReal = inicioVisible + indiceFila;
+                return(
+                    <Box key={indiceReal}>
+                        <Text>{indiceReal}</Text>
+                        {fila.map((col, indiceCol) => (
+                            <Text key={indiceCol}
+                            inverse={indiceReal === filaSeleccionada && indiceCol === colSeleccionada}
+                            bold={indiceReal === filaSeleccionada && indiceCol === colSeleccionada}
+                            >
+                                {col.padStart(20)}
+                            </Text>
+                        )
+                    )}
+                    </Box>
+                )
+            }
+            )}
+            
+            </Box> 
         </Box>
     );
 }
