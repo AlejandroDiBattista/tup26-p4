@@ -100,26 +100,68 @@ function App() {
         cargarArchivo();
     },[]);
 
-    
-        
+    //calculamos el ancho que le corresponde a cada columna
+    const anchos= calcularAncho(cabecera, filas);
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
-    })
+    });
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+        // Contenedor principal que ocupa todo el ancho y alto de la terminal
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1} backgroundColor={COLORES.fondo}>
+            
+            {/* SECCIÓN 1: Barra superior con el nombre del archivo cargado */}
+            <Box marginBottom={1}>
+             <Text bold color={COLORES.titulo}>
+              Archivo: <Text color={COLORES.acento}>{basename(archivo) || 'Sin archivo'}</Text>
+             </Text>
             </Box>
+
+            {/* SECCIÓN 2: Fila de encabezados con borde para separar los títulos */}
+            <Box borderStyle="single" borderColor={COLORES.borde} paddingX={1}>
+              {cabecera.map(function(columna, colIndice) {
+            // Cada columna se dibuja en una caja con el ancho calculado previamente
+               return (
+                    <Box key={colIndice} width={anchos[colIndice]}>
+                       <Text bold color={COLORES.acento}>{columna}</Text>
+                 </Box>
+                    );
+                })}
+            </Box>
+
+            {/* SECCIÓN 3: Cuerpo de la tabla con los datos */}
+            <Box flexDirection="column" paddingX={1} flexGrow={1}>
+                {/* Mostramos por ahora las primeras 10 filas para probar la visualización */}
+                {filas.slice(0, 10).map(function(fila, filaIndice) {
+              return (
+                  // Cada renglón de la tabla se distribuye de forma horizontal
+                   <Box key={filaIndice} flexDirection="row">
+                       {/* Recorremos las celdas de este renglón */}
+                       {fila.map(function(celda, colIndice) {
+                          return (
+                  // La celda usa el mismo ancho que su columna para quedar perfectamente alineada
+                         <Box key={colIndice} width={anchos[colIndice]}>
+                            <Text color={COLORES.secundario}>{celda}</Text>
+                        </Box>
+                            );
+                        })}
+                        </Box>
+                    );
+                })}
+            </Box>
+
+            {/* SECCIÓN 4: Barra inferior con la ayuda de teclas disponibles */}
+            <Box marginTop={1}>
+                <Text color={COLORES.secundario}>
+                 <Text bold color={COLORES.acento}>Esc</Text> Salir
+                </Text>
+            </Box>
+
         </Box>
     );
 }
-
 const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
