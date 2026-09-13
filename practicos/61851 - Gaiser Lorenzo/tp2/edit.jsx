@@ -37,17 +37,15 @@ function App() {
             exit();
         }
     })
-
-     
-
 ///aqui 
-
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>{filas.length}</Text>
+            <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+                <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" >
+                {datos.map((fila, i) => (
+                    <Text key={i} bold color={COLORES.titulo}>{fila[0]}</Text>
+                ))}
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
