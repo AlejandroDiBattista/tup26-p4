@@ -33,12 +33,32 @@ function serializeCSV(headers, rows) {
     return lineas.join('\n');
 }
 
+function ordenarFilas(filas, indice, descendente) {
+    const copia = [...filas];
+    copia.sort((a, b) => {
+        const colA = a[indice] ?? '';
+        const colB = b[indice] ?? '';
+        const comp = colA.localeCompare(colB, 'es');
+        if (descendente) {
+            if (comp < 0) return 1;
+            else if (comp > 0) return -1;
+            else return 0;
+        } else {
+            if (comp < 0) return -1;
+            else if (comp > 0) return 1;
+            else return 0;
+        }
+    });
+    return copia;
+}
+
 function App({archivoInicial}) {
     const {exit} = useApp();
     const [nombreArchivo, setNombreArchivo] = useState(archivoInicial || '');
     const [headers, setHeaders] = useState([]);
     const [filas, setFilas] = useState([]);
     const [error, setError] = useState(null);
+    const [colSeleccionada, setColSeleccionada] = useState(0);
 
     useEffect(() => {
         if (!archivoInicial) return;
@@ -59,6 +79,12 @@ function App({archivoInicial}) {
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        }
+        if (tecla === '<') {
+            setFilas(ordenarFilas(filas, colSeleccionada, false));
+        }
+        if (tecla === '>') {
+            setFilas(ordenarFilas(filas, colSeleccionada, true));
         }
     });
     return (
