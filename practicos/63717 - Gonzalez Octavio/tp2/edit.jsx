@@ -17,6 +17,14 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+function parseCSV(contenido) {
+    const lineas = contenido.trim().split(/\r?\n/).filter(linea => linea.length > 0);
+    if (lineas.length === 0) return { headers: [], rows: [] };
+    const headers = lineas[0].split(',');
+    const rows = lineas.slice(1).map(linea => linea.split(','));
+    return { headers, rows };
+}
+
 function App() {
     const {exit} = useApp();
     
@@ -25,14 +33,14 @@ function App() {
             exit();
         }
     })
-
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+            <Box width={60} height={20} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
                     <Text bold color={COLORES.titulo}>Editor CSV</Text>
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Enter</Text> Guardar</Text>
             </Box>
         </Box>
     );
