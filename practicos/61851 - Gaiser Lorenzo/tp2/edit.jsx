@@ -26,11 +26,16 @@ function App() {
         }
     })
 
+     
+
+
+
+
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                    <Text bold color={COLORES.titulo}>{process.argv[2] || 'Sin nombre'}</Text>
                 </Box>
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
