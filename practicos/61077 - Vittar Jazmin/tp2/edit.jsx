@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { readFile, writeFile } from 'node:fs/promises';
 import { TextInput } from '@inkjs/ui';
@@ -19,6 +19,36 @@ const COLORES = {
 
 function App() {
     const { exit } = useApp();
+
+    /* 2. estados y lectura del archivo */
+    const [nombreArchivo, setNombreArchivo] = useState('');
+    const [headers, setHeaders] = useState([]);
+    const [rows, setRows] = useState([]);
+    const [mensajeError, setMensajeError] = useState('');
+
+    const cargarArchivo = async (ruta) => {                 // abrir y procesar el archivo csv
+        try {
+            const contenidoTexto = await readFile(ruta, 'utf-8');
+            const { cabecera, filas } = parsearCSV(contenidoTexto);
+
+            setHeaders(cabecera);
+            setRows(filas);
+            setNombreArchivo(basename(ruta));               // basename("ruta/empleados.csv") -> "empleados.csv"
+            setMensajeError('');
+        } catch (err) {
+            setMensajeError(`Error al abrir: ${err.message}`);
+        }
+    };
+
+    useEffect(() => {                               // verificar si se indicó un archivo a ejecutar
+        const archivoInicial = process.argv[2];
+        if (archivoInicial) {
+            cargarArchivo(archivoInicial);
+        }
+    }, []);
+
+
+
 
     useInput((tecla, key) => {
         if (key.escape) {
@@ -42,9 +72,8 @@ const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
 
-/* DESARROLLO */
 
-/* leer y representar csv */
+/* 1. leer y representar csv */
 function parsearCSV(textoCSV) {
 
     if (!textoCSV || textoCSV.trim() === '') {                  // si el texto está vacío o solo tiene espacios, devolver listas vacías
