@@ -8,6 +8,7 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
+const AnchoColumna = 10;
 const ruta = process.argv[2];
 const NombreArc = process.argv[2] ? basename(ruta) : "No existe Archivo";
 
@@ -18,7 +19,7 @@ const COLORES = {
     borde:     '#726b61',
     titulo:    '#ede7db',
     secundario:'#ada79e',
-    acento:    '#edbb64',
+    acento:    '#edbb64',   
 };
 
 function parseDelimited (data,delimiter = ',') {
@@ -57,11 +58,24 @@ function App() {
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box>
-                    <Text bold color={COLORES.titulo}>{contenido.header.join(' | ')}</Text>
-                    <Text bold color={COLORES.titulo}>{contenido.rows.map(fila => fila.join(' | ')).join('\n')}</Text>
-                </Box>
+            <Box width={70} height={17} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+             <Box flexDirection="column">
+                 <Box>
+                    {contenido.header.map((campoH,indiceH)=>( 
+                    <Box key={indiceH} width={AnchoColumna} marginRight={1}>
+                    <Text>{campoH}</Text>
+                    </Box>
+                    ))}
+                 </Box>
+                 {contenido.rows.map((fila, indice) => (
+                   <Box key={indice}>{
+                    fila.map((campo, indice) => (
+                     <Box key={indice} width={AnchoColumna} marginRight={1}>
+                        <Text>{campo}</Text>
+                     </Box>))}
+                   </Box>
+                 ))}
+             </Box>
                 <Box flexDirection="row" justifyContent="space-between">
                  <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
                  <Text bold color={COLORES.secundario}>Archivo: {NombreArc}</Text>
