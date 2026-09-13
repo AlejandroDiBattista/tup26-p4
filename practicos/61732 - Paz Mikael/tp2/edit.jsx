@@ -1,23 +1,23 @@
 #!/usr/bin/env -S node --import tsx
 
-import React, {useState, useEffect} from 'react';
-import {render, Box, Text, useInput, useApp} from 'ink';
-import {readFile, writeFile} from 'node:fs/promises';
-import {TextInput} from '@inkjs/ui';
-import {basename} from 'node:path';
+import React, { useState, useEffect } from 'react';
+import { render, Box, Text, useInput, useApp } from 'ink';
+import { readFile, writeFile } from 'node:fs/promises';
+import { TextInput } from '@inkjs/ui';
+import { basename } from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
-const FILAS    = process.stdout.rows || 24;
+const FILAS = process.stdout.rows || 24;
 
 const COLORES = {
-    fondo:     '#161310',
-    borde:     '#726b61',
-    titulo:    '#ede7db',
-    secundario:'#ada79e',
-    acento:    '#edbb64',
+    fondo: '#161310',
+    borde: '#726b61',
+    titulo: '#ede7db',
+    secundario: '#ada79e',
+    acento: '#edbb64',
     seleccion: '#ffffff',
-    textoSel:  '#000000',
-    fondoSel:  '#2a2218',
+    textoSel: '#000000',
+    fondoSel: '#2a2218',
 };
 
 function parseCSV(texto) {
@@ -26,11 +26,11 @@ function parseCSV(texto) {
         lineas.pop();
     }
     if (lineas.length === 0) {
-        return {headers: [], rows: []};
+        return { headers: [], rows: [] };
     }
     const headers = lineas[0].split(',');
     const rows = lineas.slice(1).map(l => l.split(','));
-    return {headers, rows};
+    return { headers, rows };
 }
 
 function serializeCSV(headers, rows) {
@@ -46,13 +46,15 @@ function esNumero(valor) {
 }
 
 function App() {
-    const {exit} = useApp();
+    const { exit } = useApp();
     const [archivo, setArchivo] = useState('');
     const [headers, setHeaders] = useState([]);
     const [rows, setRows] = useState([]);
     const [selectedRow, setSelectedRow] = useState(0);
     const [selectedCol, setSelectedCol] = useState(0);
     const [scrollOffset, setScrollOffset] = useState(0);
+    const [modo, setModo] = useState('normal');
+    const [textoInput, setTextoInput] = useState('');
     const [error, setError] = useState(null);
 
     const maxLineasVisibles = Math.min(13, Math.max(FILAS - 10, 8));
@@ -80,13 +82,78 @@ function App() {
         }
     }
 
+    function ordenarColumna(colIndex, ascendente) {
+        setRows(prevRows => {
+            const copia = [...prevRows];
+            const colEsNum = copia.every(r => esNumero(r[colIndex] || ''));
+            copia.sort((a, b) => {
+                const valA = a[colIndex] || '';
+                const valB = b[colIndex] || '';
+                let cmp = 0;
+                if (colEsNum) {
+                    const numA = Number(valA);
+                    const numB = Number(valB);
+                    cmp = numA - numB;
+                } else {
+                    cmp = valA.localeCompare(valB);
+                }
+                return ascendente ? cmp : -cmp;
+            });
+            return copia;
+        });
+    }
+
     useInput((tecla, key) => {
+        if (modo === 'editando') {
+            if (key.escape) {
+                setModo('normal');
+                return;
+            }
+            if (key.return) {
+                setRows(prevRows => {
+                    const nuevas = prevRows.map((fila, r) => {
+                        if (r !== selectedRow) return fila;
+                        const nuevaFila = [...fila];
+                        nuevaFila[selectedCol] = textoInput;
+                        return nuevaFila;
+                    });
+                    return nuevas;
+                });
+                setModo('normal');
+                return;
+            }
+            if (key.backspace || key.delete) {
+                setTextoInput(prev => prev.slice(0, -1));
+                return;
+            }
+            if (tecla && !key.ctrl && !key.meta) {
+                setTextoInput(prev => prev + tecla);
+            }
+            return;
+        }
+
         if (key.escape) {
             exit();
             return;
         }
 
         if (rows.length === 0 || headers.length === 0) {
+            return;
+        }
+
+        if (key.return) {
+            setModo('editando');
+            setTextoInput(rows[selectedRow]?.[selectedCol] || '');
+            return;
+        }
+
+        if (tecla === '<') {
+            ordenarColumna(selectedCol, true);
+            return;
+        }
+
+        if (tecla === '>') {
+            ordenarColumna(selectedCol, false);
             return;
         }
 
@@ -123,7 +190,7 @@ function App() {
         if (key.rightArrow) {
             setSelectedCol(prevCol => Math.min(headers.length - 1, prevCol + 1));
         }
-    }, {isActive: Boolean(process.stdin.isTTY)});
+    }, { isActive: Boolean(process.stdin.isTTY) });
 
     const colWidths = headers.map((h, colIndex) => {
         let max = h.length;
@@ -152,8 +219,17 @@ function App() {
             </Box>
 
             <Box marginY={1}>
-                <Text color={COLORES.secundario}>Valor › </Text>
-                <Text bold color={COLORES.titulo}>{valorCelda}</Text>
+                {modo === 'editando' ? (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Editar › </Text>
+                        <Text color={COLORES.titulo}>{textoInput}▌</Text>
+                    </Box>
+                ) : (
+                    <Box>
+                        <Text color={COLORES.secundario}>Valor › </Text>
+                        <Text bold color={COLORES.titulo}>{valorCelda}</Text>
+                    </Box>
+                )}
             </Box>
 
             {error && (
@@ -199,7 +275,7 @@ function App() {
                                     color={esFilaSeleccionada ? COLORES.acento : COLORES.secundario}
                                     backgroundColor={esFilaSeleccionada ? COLORES.fondoSel : undefined}
                                 >
-                                    {String(indiceFila + 1).padStart(3)}  
+                                    {String(indiceFila + 1).padStart(3)}
                                 </Text>
                             </Box>
 
@@ -228,9 +304,15 @@ function App() {
             </Box>
 
             <Box justifyContent="space-between" marginTop={1}>
-                <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;</Text> ascendente · <Text bold color={COLORES.acento}>&gt;</Text> descendente · <Text bold color={COLORES.acento}>Esc</Text> salir
-                </Text>
+                {modo === 'editando' ? (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                ) : (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;</Text> ascendente · <Text bold color={COLORES.acento}>&gt;</Text> descendente · <Text bold color={COLORES.acento}>Esc</Text> salir
+                    </Text>
+                )}
                 <Text color={COLORES.secundario}>
                     Fila {rows.length > 0 ? selectedRow + 1 : 0} · Columna {headers.length > 0 ? selectedCol + 1 : 0}
                 </Text>
