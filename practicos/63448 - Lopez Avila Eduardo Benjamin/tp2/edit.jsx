@@ -13,6 +13,8 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+const FILAS_POR_PAGINA = 24;
+
 async function parseFile(filePath) {
     try {
         const data = await readFile(filePath, 'utf8');
@@ -78,16 +80,30 @@ function App({ ruta, data }) {
     
     const [selectedRow, setSelectedRow] = useState(0);
     const [selectedCol, setSelectedCol] = useState(0);
+    const [windowStart, setWindowStart] = useState(0);
     
-    useInput((tecla, key) => {
+    useInput((_, key) => {
         if (key.escape) {
             exit();
         }
         if (key.upArrow) {
-            setSelectedRow((prev) => Math.max(0, prev - 1));
+            setSelectedRow((prev) => {
+                const next = Math.max(0, prev - 1);
+                setWindowStart((prevStart) => (next < prevStart ? next : prevStart));
+                return next;
+            });
         }
         if (key.downArrow) {
-            setSelectedRow((prev) => Math.min(data.filas.length - 1, prev + 1));
+            setSelectedRow((prev) => {
+                const next = Math.min(data.filas.length - 1, prev + 1);
+                setWindowStart((prevStart) => {
+                    if (next >= prevStart + FILAS_POR_PAGINA) {
+                        return next - FILAS_POR_PAGINA + 1;
+                    }
+                    return prevStart;
+                });
+                return next;
+            });
         }
         if (key.leftArrow) {
             setSelectedCol((prev) => Math.max(0, prev - 1));
@@ -103,20 +119,35 @@ function App({ ruta, data }) {
             return Math.max(col.length, maxFila);
         });
     }, [data]);
+
+    const filasVisibles = data.filas.slice(windowStart, windowStart + FILAS_POR_PAGINA);
     
     return (
         <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} paddingX={1} paddingY={0}>
+            <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
+                <Text bold color={COLORES.titulo}>{basename(ruta)}</Text>
+                <Text color={COLORES.secundario}>{data.filas.length} filas · {data.header.length} columnas</Text>
+            </Box>
             <Header header={data.header} anchos={anchos} colSeleccionada={selectedCol} />
-            {data.filas.map((fila, index) => (
-                <Row 
-                    key={index} 
-                    fila={fila} 
-                    indice={index + 1} 
-                    anchos={anchos} 
-                    filaSeleccionada={index === selectedRow}
-                    colSeleccionada={selectedCol}
-                />
-            ))}
+            {filasVisibles.map((fila, index) => {
+                const indiceReal = windowStart + index;
+                return (
+                    <Row 
+                        key={indiceReal} 
+                        fila={fila} 
+                        indice={indiceReal + 1} 
+                        anchos={anchos} 
+                        filaSeleccionada={indiceReal === selectedRow}
+                        colSeleccionada={selectedCol}
+                    />
+                );
+            })}
+            <Box flexDirection="row" justifyContent="space-between" marginTop={2}>
+                <Text color={COLORES.secundario}>
+                    <Text color={COLORES.acento} bold>A</Text> abrir · <Text color={COLORES.acento} bold>G</Text> guardar · <Text color={COLORES.acento} bold>Enter</Text> editar · <Text color={COLORES.secundario}>{'< >'} ordenar</Text> · <Text color={COLORES.acento} bold>Esc</Text> salir
+                </Text>
+                <Text color={COLORES.secundario}>Fila {selectedRow + 1} · Columna {selectedCol + 1}</Text>
+            </Box>
         </Box>
     );
 }
