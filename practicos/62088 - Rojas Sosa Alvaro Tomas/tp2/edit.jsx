@@ -8,6 +8,7 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
+const archivoCsv = process.argv[2]
 
 const COLORES = {
     fondo:     '#161310',
@@ -16,6 +17,46 @@ const COLORES = {
     secundario:'#ada79e',
     acento:    '#edbb64',
 };
+
+const ANCHOS = [15, 18, 8, 13, 18];
+
+const contenido = await readFile(archivoCsv, "utf8")
+
+const textolimpio = contenido.replaceAll("\r", "")
+let textSeparado = textolimpio.split("\n")
+textSeparado = textSeparado.filter(t => t !== "")
+
+let SeparadoFinal = []
+
+for(let i = 0; i < textSeparado.length; i++) 
+    {
+        let separado = textSeparado[i].split(",")
+        SeparadoFinal.push(separado)
+    }
+
+let encabezado = SeparadoFinal[0]
+let datos = SeparadoFinal.slice(1)
+
+function Datos() {
+    return (
+            <Box flexDirection="column">
+                {datos.map((fila, i) => (      
+
+                    <Box key={i} flexDirection="row">
+                        <Box width={4}>
+                        <Text>{i + 1}</Text>
+                        </Box>
+                        {fila.map((celda, j) => (
+                            <Box width={ANCHOS[j]} key={j}>
+                            <Text wrap="truncate">{celda}  </Text>
+                            </Box>
+                        ))}
+                        
+                    </Box>
+                ))}
+            </Box>
+            )
+}
 
 function App() {
     const {exit} = useApp();
@@ -28,11 +69,28 @@ function App() {
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+            <Box flexDirection="column">
+                <Box flexDirection="row" justifyContent="space-between">
+                    <Text>{basename(archivoCsv)}</Text>
+                    <Text>{datos.length} filas ·  {encabezado.length} columnas</Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                <Box flexDirection="row"> 
+                    <Box width={4}>
+                    <Text color="green">#</Text>
+                    </Box>
+                    {encabezado.map((celda, j) => (
+                    <Box width={ANCHOS[j]} key={j}>
+                    <Text color="green">{celda}  </Text>
+                    </Box>
+                    ))} 
+                
+                </Box>
+                
+                <Datos />
+                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir</Text></Text>
+
+
+
             </Box>
         </Box>
     );
