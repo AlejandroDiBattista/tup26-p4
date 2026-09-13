@@ -55,6 +55,8 @@ function App() {
     const [scrollOffset, setScrollOffset] = useState(0);
     const [error, setError] = useState(null);
 
+    const maxLineasVisibles = Math.min(13, Math.max(FILAS - 10, 8));
+
     useEffect(() => {
         const argArchivo = process.argv.slice(2).find(arg => !arg.startsWith('-'));
         if (argArchivo) {
@@ -81,6 +83,45 @@ function App() {
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+            return;
+        }
+
+        if (rows.length === 0 || headers.length === 0) {
+            return;
+        }
+
+        if (key.upArrow) {
+            setSelectedRow(prevRow => {
+                const nuevaFila = Math.max(0, prevRow - 1);
+                setScrollOffset(prevOffset => {
+                    if (nuevaFila < prevOffset) {
+                        return nuevaFila;
+                    }
+                    return prevOffset;
+                });
+                return nuevaFila;
+            });
+        }
+
+        if (key.downArrow) {
+            setSelectedRow(prevRow => {
+                const nuevaFila = Math.min(rows.length - 1, prevRow + 1);
+                setScrollOffset(prevOffset => {
+                    if (nuevaFila >= prevOffset + maxLineasVisibles) {
+                        return nuevaFila - maxLineasVisibles + 1;
+                    }
+                    return prevOffset;
+                });
+                return nuevaFila;
+            });
+        }
+
+        if (key.leftArrow) {
+            setSelectedCol(prevCol => Math.max(0, prevCol - 1));
+        }
+
+        if (key.rightArrow) {
+            setSelectedCol(prevCol => Math.min(headers.length - 1, prevCol + 1));
         }
     }, {isActive: Boolean(process.stdin.isTTY)});
 
@@ -100,7 +141,6 @@ function App() {
         return rows.every(r => esNumero(r[colIndex] || ''));
     });
 
-    const maxLineasVisibles = Math.max(FILAS - 9, 8);
     const visibleRows = rows.slice(scrollOffset, scrollOffset + maxLineasVisibles);
     const valorCelda = rows[selectedRow]?.[selectedCol] ?? '';
 
