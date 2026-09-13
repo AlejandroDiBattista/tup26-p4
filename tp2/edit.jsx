@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -201,13 +201,13 @@ async function abrirArchivo(ruta) {
                 guardarArchivo();
             }
         }
-    });}
+    });
     const colsVisiblesCant = encabezados.length ? columnasVisibles() : 0;
     const encabezadosVisibles = encabezados.slice(scrollCol, scrollCol + colsVisiblesCant);
     const anchosVisibles = anchos.slice(scrollCol, scrollCol + colsVisiblesCant);
     const filasVisiblesData = filas.slice(scrollFila, scrollFila + filasVisibles);
 
-    return (
+    return (    
         <Box
             width={COLUMNAS}
             height={FILAS}
@@ -324,12 +324,7 @@ async function abrirArchivo(ruta) {
             )}
         </Box>
     );
-
-
-
-
-
-
+}
 const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
