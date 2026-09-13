@@ -19,7 +19,7 @@ const COLORES = {
 };
 
 const ANCHOS = [15, 18, 8, 13, 18];
-
+const FILAS_VISIBLES = FILAS - 4
 const contenido = await readFile(archivoCsv, "utf8")
 
 const textolimpio = contenido.replaceAll("\r", "")
@@ -38,17 +38,23 @@ let encabezado = SeparadoFinal[0]
 let datos = SeparadoFinal.slice(1)
 
 function Datos({rows, column}) {
+
+let inicio = 0;
+if (rows >= FILAS_VISIBLES) {
+inicio = rows - FILAS_VISIBLES + 1;
+}
+
     return (
             <Box flexDirection="column">
-                {datos.map((fila, i) => (      
+                {datos.slice(inicio, inicio + FILAS_VISIBLES).map((fila, i) => (      
 
                     <Box key={i} flexDirection="row">
                         <Box width={4}>
-                        <Text>{i + 1}</Text>
+                        <Text>{inicio + i + 1}</Text>
                         </Box>
                         {fila.map((celda, j) => (
                             <Box width={ANCHOS[j]} key={j}>
-                            <Text wrap="truncate" inverse={i === rows && j === column}>{celda}  </Text>
+                            <Text wrap="truncate" inverse={inicio + i === rows && j === column}>{celda}  </Text>
                             </Box>
                         ))}
                         
@@ -84,6 +90,7 @@ function App() {
                     <Text>{basename(archivoCsv)}</Text>
                     <Text>{datos.length} filas ·  {encabezado.length} columnas</Text>
                 </Box>
+                <Text>Valor › {datos[rows][column]}</Text>
                 <Box flexDirection="row"> 
                     <Box width={4}>
                     <Text color="green">#</Text>
@@ -97,8 +104,10 @@ function App() {
                 </Box>
                 
                 <Datos rows={rows} column={column}/>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir</Text></Text>
-
+                <Box flexDirection="row" justifyContent="space-between">
+                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir  </Text></Text>
+                <Text>fila {rows + 1}  ·  columna {column + 1}</Text>
+                </Box>
 
 
             </Box>
