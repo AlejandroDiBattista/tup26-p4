@@ -25,6 +25,14 @@ function parseCSV(contenido) {
     return { headers, rows };
 }
 
+function serializeCSV(headers, rows) {
+    const lineas = [headers.join(',')];
+    for (let i = 0; i < rows.length; i++) {
+        lineas.push(rows[i].join(','));
+    }
+    return lineas.join('\n');
+}
+
 function App({archivoInicial}) {
     const {exit} = useApp();
     const [nombreArchivo, setNombreArchivo] = useState(archivoInicial || '');
