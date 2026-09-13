@@ -45,9 +45,16 @@ function App() {
     const [inicioVisible, setInicioVisibile] = useState(0)
     const cantidadVisible = 9
     const filasVisibles = separarFilas.slice(inicioVisible, inicioVisible + cantidadVisible);
+
+    const [editando, setEditando] = useState(false);
+    const [valorEdicion, setValorEdicion] = useState("");
     useInput((tecla, key) => {
         if (key.escape) {
-            exit();
+             if (editando) {
+                setEditando(false);
+            } else {
+                exit();
+            }
         }
         if (key.downArrow) {
                 setFilaSeleccionada(anterior =>
@@ -75,7 +82,12 @@ function App() {
         if(key.leftArrow){
             setColSeleccionada(columna => columna > 0 ? columna - 1 : columna  )
         }
+       if (key.return) {
+            setEditando(true);
+            setValorEdicion(separarFilas[filaSeleccionada][colSeleccionada])
+        }
     })
+    
 
     return (
         
@@ -88,7 +100,13 @@ function App() {
                 Fila: {filaSeleccionada} | Columna: {colSeleccionada} | {separarFilas[0][colSeleccionada]}:  
                  {separarFilas[filaSeleccionada][colSeleccionada]}
                 </Text>
-                <Text>Inicio visible: {inicioVisible}</Text>
+                <Text>Valor edición: {valorEdicion}</Text>
+                {editando && (
+                    <TextInput
+                    value={valorEdicion}
+                    onChange={setValorEdicion}
+                    />
+                )}
             </Box>
             <Box flexDirection="column">
 
