@@ -45,6 +45,18 @@ function App() {
         if (archivoInicial) {
             abrirArchivo(archivoInicial)
     }}, []);
+
+    <Box flexDirection="column">
+    <Fila fila={cabecera} seleccionada={-1} />
+
+    {datos.map((fila, indice) => (
+        <Fila
+            key={indice}
+            fila={fila}
+            seleccionada={-1}
+        />
+    ))}
+    </Box>
     
     useInput((tecla, key) => {
         if (key.escape) {
@@ -53,16 +65,63 @@ function App() {
     })
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-            </Box>
+    <Box
+        width={COLUMNAS}
+        height={FILAS}
+        flexDirection="column"
+        padding={1}
+    >
+        <Text color={COLORES.titulo} bold>
+            Editor CSV
+        </Text>
+
+        <Text color={COLORES.secundario}>
+            {archivo ?? "No se abrió ningún archivo"}
+        </Text>
+
+        <Box flexDirection="column">
+            <Fila fila={cabecera} seleccionada={-1} />
+
+            {datos.map((fila, indice) => (
+                <Fila
+                    key={indice}
+                    fila={fila}
+                    seleccionada={-1}
+                />
+            ))}
+        </Box>
+
+        <Text color={COLORES.secundario}>
+            Esc salir
+        </Text>
+    </Box>
+);
+}
+
+function Celda({valor, seleccionada}) {
+    return (
+        <Box width={15}>
+            <Text inverse={seleccionada}>
+                {valor}
+            </Text>
         </Box>
     );
 }
+
+function Fila({fila, seleccionada}) {
+    return (
+        <Box>
+            {fila.map((valor, columna) => (
+                <Celda
+                    key={columna}
+                    valor={valor}
+                    seleccionada={seleccionada === columna}
+                />
+            ))}
+        </Box>
+    );
+}
+
 
 const app = render(<App />);
 await app.waitUntilExit();
