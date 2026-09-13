@@ -122,6 +122,19 @@ async function abrirArchivo(ruta) {
         setModificado(true);
         setModo('tabla');
     }
+    function comparar(a, b) {
+        const numA = parseFloat(a);
+        const numB = parseFloat(b);
+       
+        const esNumA = !isNaN(numA) && a.trim() !== '';
+        const esNumB = !isNaN(numB) && b.trim() !== '';
+       
+        if (esNumA && esNumB) {
+            return numA - numB;
+  }
+
+  return a.localeCompare(b, 'es', { sensitivity: 'base' });
+}
     function ordenarPorColumna(i) {
         const asc = i === ordenColumna ? !ordenAsc : true;
         const copia = [...filas].sort((a, b) => asc ? comparar(a[i], b[i]) : comparar(b[i], a[i]));
