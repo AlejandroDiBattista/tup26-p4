@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { readFile, writeFile } from 'node:fs/promises';
 import { TextInput } from '@inkjs/ui';
@@ -17,63 +17,8 @@ const COLORES = {
     acento: '#edbb64',
 };
 
-function App() {
-    const { exit } = useApp();
 
-    /* 2. estados y lectura del archivo */
-    const [nombreArchivo, setNombreArchivo] = useState('');
-    const [headers, setHeaders] = useState([]);
-    const [rows, setRows] = useState([]);
-    const [mensajeError, setMensajeError] = useState('');
-
-    const cargarArchivo = async (ruta) => {                 // abrir y procesar el archivo csv
-        try {
-            const contenidoTexto = await readFile(ruta, 'utf-8');
-            const { cabecera, filas } = parsearCSV(contenidoTexto);
-
-            setHeaders(cabecera);
-            setRows(filas);
-            setNombreArchivo(basename(ruta));               // basename("ruta/empleados.csv") -> "empleados.csv"
-            setMensajeError('');
-        } catch (err) {
-            setMensajeError(`Error al abrir: ${err.message}`);
-        }
-    };
-
-    useEffect(() => {                               // verificar si se indicó un archivo a ejecutar
-        const archivoInicial = process.argv[2];
-        if (archivoInicial) {
-            cargarArchivo(archivoInicial);
-        }
-    }, []);
-
-
-
-
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
-
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-            </Box>
-        </Box>
-    );
-}
-
-const app = render(<App />);
-await app.waitUntilExit();
-console.clear();
-
-
-/* 1. leer y representar csv */
+/* leer y representar csv */
 function parsearCSV(textoCSV) {
 
     if (!textoCSV || textoCSV.trim() === '') {                  // si el texto está vacío o solo tiene espacios, devolver listas vacías
@@ -98,3 +43,104 @@ function generarCSV(cabecera, filas) {
 
     return [lineaCabecera, ...lineasFilas].join('\n');          // unir encabezado y filas con salto de línea
 }
+
+function App() {
+    const { exit } = useApp();
+
+    /* 2. estados y lectura del archivo */
+    const [nombreArchivo, setNombreArchivo] = useState('');
+    const [headers, setHeaders] = useState([]);
+    const [rows, setRows] = useState([]);
+    const [mensajeError, setMensajeError] = useState('');
+
+    const cargarArchivo = async (ruta) => {                 // abrir y procesar el archivo csv
+        try {
+            const contenidoTexto = await readFile(ruta, 'utf-8');
+            const { cabecera, filas } = parsearCSV(contenidoTexto);
+
+            setHeaders(cabecera);
+            setRows(filas);
+            setNombreArchivo(basename(ruta));               // basename("ruta/empleados.csv") -> "empleados.csv"
+            setMensajeError('');
+        } catch (error) {
+            setMensajeError(`Error al abrir: ${error.message}`);
+        }
+    };
+
+    useEffect(() => {                               // verificar si se indicó un archivo a ejecutar
+        const archivoInicial = process.argv[2];
+        if (archivoInicial) {
+            cargarArchivo(archivoInicial);
+        }
+    }, []);
+
+
+
+
+    useInput((tecla, key) => {
+        if (key.escape) {
+            exit();
+        }
+    })
+
+    return (
+        <Box width={COLUMNAS} height={FILAS} flexDirection='column' padding={1}>
+            {/* información superior (nombre del archivo, filas, columnas) */}
+            <Box justifyContent="space-between" marginBottom={1}>
+                <Text bold color={COLORES.titulo}>
+                    {nombreArchivo ? `Archivo: ${nombreArchivo}` : 'Sin archivo cargado'}
+                </Text>
+                <Text color={COLORES.secundario}>
+                    Filas: {rows.length} | Columnas: {headers.length}
+                </Text>
+            </Box>
+
+            {mensajeError ? <Text color="red">{mensajeError}</Text> : null}
+
+            {/* tabla de datos */}
+            <Box flexDirection='column' flexGrow={1}>
+                {/* encabezado */}
+                <Box marginBottom={1}>
+                    <Box width={5}>
+                        {/* espacio para el número de fila */}
+                        <Text bold color={COLORES.acento}>#</Text>
+                    </Box>
+                    {/* nombre columnas */}
+                    {headers.map((h, i) => (
+                        <Box key={i} width={18}>
+                            <Text bold color={COLORES.acento}>
+                                {h.toUpperCase()}
+                            </Text>
+                        </Box>
+                    ))}
+                </Box>
+                {/* fila de datos enumerados */}
+                {rows.map((row, idxFila) => (
+                    <Box key={idxFila}>
+                        <Box width={5}>
+                            {/* número de fila */}
+                            <Text color={COLORES.secundario}>{idxFila + 1}</Text>
+                        </Box>
+                        {/* celdas de la fila */}
+                        {row.map((cell, idxCol) => (
+                            <Box key={idxCol} width={18}>
+                                <Text color={COLORES.titulo}>{cell}</Text>
+                            </Box>
+                        ))}
+                    </Box>
+                ))}
+            </Box>
+
+            {/* pie de página */}
+            <Box marginTop={1}>
+                <Text color={COLORES.secundario}>
+                    <Text bold color={COLORES.acento}>Esc</Text> salir
+                </Text>
+            </Box>
+        </Box>
+    );
+}
+
+const app = render(<App />);
+await app.waitUntilExit();
+console.clear();
