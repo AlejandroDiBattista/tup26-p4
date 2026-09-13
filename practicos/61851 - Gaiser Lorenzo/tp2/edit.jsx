@@ -55,11 +55,20 @@ function App() {
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" >
-                {datos.map((fila, i) => (
+                <Box flexGrow={1} justifyContent="flex-start" alignItems="flex-start" flexDirection="column" >
+                    <Box flexDirection="row" gap={1} >
+                     {titulos.map((titulo, j) => (
+                      <Text key={j} color={COLORES.titulo} bold>
+                        {titulo.toUpperCase().padEnd(anchos[j])} 
+                      </Text>
+                    ))}
+                    </Box>
+                {datos.slice(0 , 15).map((fila, i) => (
                   <Box key={i} flexDirection="row" gap={1} >
                     {fila.map((campo, j) => (
-                      <Text key={j} color={COLORES.titulo}>{campo.padEnd(anchos[j])}</Text>
+                      <Text key={j} color={COLORES.titulo}>
+                        {campo.padEnd(anchos[j])}
+                      </Text>
                     ))}   
 
                  </Box>  
