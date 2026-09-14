@@ -126,6 +126,26 @@ function serialize(header, rows) {
     return lines.join("\n");
 }
 
+function formatCell(value, numeric){
+    if (numeric) {
+        return Number(value).toLocaleString("es-AR");
+    }
+    return value;
+}
+
+function measureColumns(header, rows) {
+    const columns = [];
+    for (let column = 0; column < header.length; column++) {
+        const numeric = isNumericColumn(rows, column);
+        let width = header[column].length;
+        for (const row of rows) {
+            width = Math.max(width, formatCell(row[column], numeric).length);
+        }
+        column.push({ numeric, width });
+    }
+    return columns;
+}
+
 function Table({ table, columns, cursor }) {
     const numberWidth = String(table.rows.length).length + 3;
     const shownRows = table.rows.slice(cursor.firstRow, cursor.firstRow + VISIBLE_ROWS);
@@ -171,6 +191,8 @@ function App({ initialTable, initialMessage }) {
     const [mode, setMode] = useState(initialTable ? 'view' : 'open');
     const [message, setMessage] = useState(initialMessage);
     const [cursor, setCursor] = useState({ row: 0, column: 0, firstRow: 0 });
+    
+    const columns = table ? measureColumns(table.header, table.rows) : [];
 
     useInput((tecla, key) => {
         if (key.escape) {
