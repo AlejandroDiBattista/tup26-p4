@@ -42,6 +42,19 @@ function App() {
         if (key.escape) {
             exit();
         }
+
+        if (key.upArrow) {
+            setSeleccion(prev => ({ ...prev, fila: Math.max(prev.fila - 1, 0) }));
+        }
+        if (key.downArrow) {
+            setSeleccion(prev => ({ ...prev, fila: Math.min(prev.fila + 1, datosCsv.length - 1) }));
+        }
+        if (key.leftArrow) {
+            setSeleccion(prev => ({ ...prev, columna: Math.max(prev.columna - 1, 0) }));
+        }
+        if (key.rightArrow) {
+            setSeleccion(prev => ({ ...prev, columna: Math.min(prev.columna + 1, datosCsv[0].length - 1) }));
+        }
     })
 
     return (
@@ -56,9 +69,14 @@ function App() {
                     ))}
                 </Box>
             ))}
+            <Box marginTop={1} paddingX={1} borderStyle="single" borderColor={COLORES.secundario}>
+                <Text color={COLORES.acento}> Posicion: [{seleccion.fila}, {seleccion.columna} | Valor: {datosCsv[seleccion.fila]?.[seleccion.columna]}]</Text>
+            </Box>
         </Box>
     );
 }
+
+
 
 const app = render(<App />);
 await app.waitUntilExit();
