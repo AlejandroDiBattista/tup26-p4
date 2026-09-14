@@ -35,19 +35,47 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-const args = process.argv.slice(2);
+// Escribir aqui la solución al enunciado.
 
-const origen = args[0];
-const destino = args[1];
+function parseArgs(args) {
 
-console.log("Origen:", origen);
-console.log("Destino:", destino);
+    const origen = args[0];
+    const destino = args[1];
 
-for (let i = 2; i < args.length; i++) {
+    const criterios = [];
+    let delimitador = ",";
+    let noHeader = false;
 
-    if (args[i] === "-b") {
-        console.log("Encontré la opción -b");
+    for (let i = 2; i < args.length; i++) {
+
+        if (args[i] === "-b" || args[i] === "--by") {
+            const criterio = args[i + 1];
+            criterios.push(criterio);
+            i++;
+        }
+
+        else if (args[i] === "-d" || args[i] === "--delimiter") {
+            delimitador = args[i + 1];
+            i++;
+        }
+
+        else if (args[i] === "-nh" || args[i] === "--no-header") {
+            noHeader = true;
+        }
     }
 
+    return {
+        origen,
+        destino,
+        criterios,
+        delimitador,
+        noHeader
+    };
 }
+
+const args = process.argv.slice(2);
+
+const config = parseArgs(args);
+
+console.log(config);
 //console.log(HELP)
