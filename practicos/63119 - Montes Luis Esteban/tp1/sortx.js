@@ -35,4 +35,19 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+const args = process.argv.slice(2);
+
+const origen = args[0];
+const destino = args[1];
+
+console.log("Origen:", origen);
+console.log("Destino:", destino);
+
+for (let i = 2; i < args.length; i++) {
+
+    if (args[i] === "-b") {
+        console.log("Encontré la opción -b");
+    }
+
+}
+//console.log(HELP)
