@@ -6,9 +6,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { TextInput } from '@inkjs/ui';
 import { basename } from 'node:path';
 
-const COLUMNAS = process.stdout.columns || 80;
-const FILAS = process.stdout.rows || 24;
-
 const FILAS_POR_PAGINA = 8             // cantidad máx. de líneas visibles
 
 const COLORES = {
@@ -117,10 +114,10 @@ function App() {
     /* navegar con flechas del teclado */
     useInput((input, key) => {
         if (key.escape) {       // salir si no se está editando
-            if (modo !== 'tabla') {
-                setModo('tabla');
-            } else if (editando) {
+            if (editando) {
                 setEditando(false);
+            } else if (modo !== 'tabla') {
+                setModo('tabla');
             } else {
                 exit();
             }
@@ -128,8 +125,6 @@ function App() {
         }
 
         if (modo !== 'tabla' || editando) return;       // si se pide nombre de archivo (abrir/guardar) o se está editando una celda, omitir navegación
-
-        if (rows.length === 0 && input !== 'a' && input !== 'A') return;
 
         // flechas teclado
         if (key.upArrow) {
@@ -163,6 +158,30 @@ function App() {
         // guardar archivo
         if (input === 'g' || input === 'G') {
             setModo('guardar');
+            return;
+        }
+
+        if (rows.length === 0) return;
+
+        // orden ascendente
+        if (input === '<') {
+            if (rows.length === 0) return;
+            const filasOrdenadas = [...rows].sort((a, b) =>
+                (a[colSelec] || '').localeCompare(b[colSelec] || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+            setRows(filasOrdenadas);
+            setMensaje(`Ordenado ascendente por col ${colSelec + 1}`);
+            return;
+        }
+
+        // orden descendente
+        if (input === '>') {
+            if (rows.length === 0) return;
+            const filasOrdenadas = [...rows].sort((a, b) =>
+                (b[colSelec] || '').localeCompare(a[colSelec] || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+            setRows(filasOrdenadas);
+            setMensaje(`Ordenado descendente por col ${colSelec + 1}`);
             return;
         }
     });
@@ -283,6 +302,8 @@ function App() {
                     <Text bold color={COLORES.acento}>A</Text> abrir •{' '}
                     <Text bold color={COLORES.acento}>G</Text> guardar •{' '}
                     <Text bold color={COLORES.acento}>Enter</Text> editar •{' '}
+                    <Text bold color={COLORES.acento}>&lt</Text> ascendente •{' '}
+                    <Text bold color={COLORES.acento}>&gt</Text> descendente •{' '}
                     <Text bold color={COLORES.acento}>Esc</Text> salir
                 </Text>
                 <Text color={COLORES.secundario}>
