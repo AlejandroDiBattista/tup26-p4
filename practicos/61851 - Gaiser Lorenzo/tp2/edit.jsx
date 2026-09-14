@@ -72,36 +72,45 @@ const inicio = Math.max(0, Math.min(fila - Math.floor(visibles / 2), datos.lengt
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="flex-start" alignItems="flex-start" flexDirection="column" >
-                    <Box width={COLUMNAS - 2} justifyContent="space-between">
-    <Text bold color={COLORES.titulo}>{basename(process.argv[2] || 'sin archivo')}</Text>
-    <Text color={COLORES.secundario}>{datos.length} filas · {titulos.length} columnas</Text>
-</Box>
-                    <Box flexDirection="row" gap={1} >
-                        <Text color={COLORES.titulo} bold>{'#'.padStart(3)}</Text>
-                     {titulos.map((titulo, j) => (
-                      <Text key={j} color={COLORES.titulo} bold>
-                        {titulo.toUpperCase().padEnd(anchos[j])} 
-                      </Text>
-                    ))}
-                    </Box>
-          {datos.slice(inicio, inicio + visibles).map((registro, i) => (
-                  <Box key={i} flexDirection="row" gap={1} >
-                    <Text color={COLORES.secundario}>{String(inicio + i + 1).padStart(3)}</Text>
-                    {registro.map((campo, j) => (
-                        
-                      <Text key={j} color={COLORES.titulo} backgroundColor={inicio +i === fila && j === columna ? COLORES.secundario : undefined}>
-                        {campo.padEnd(anchos[j])}
-                      </Text>
-                    ))}   
+                <Box flexGrow={1} justifyContent="flex-start" alignItems="flex-start" flexDirection="column">
 
-                 </Box>  
-                ))}
+                    <Box width={COLUMNAS - 2} justifyContent="space-between">
+                        <Text bold color={COLORES.titulo}>{basename(process.argv[2] || 'sin archivo')}</Text>
+                        <Text color={COLORES.secundario}>{datos.length} filas · {titulos.length} columnas</Text>
+                    </Box>
+
+                    <Box width={COLUMNAS - 2}>
+                        <Text color={COLORES.secundario}>Valor › </Text>
+                        <Text color={COLORES.titulo}>{datos[fila][columna]}</Text>
+                    </Box>
+
+                    <Box flexDirection="row" gap={1}>
+                        <Text color={COLORES.titulo} bold>{'#'.padStart(3)}</Text>
+                        {titulos.map((titulo, j) => (
+                            <Text key={j} color={COLORES.titulo} bold>{titulo.toUpperCase().padEnd(anchos[j])}</Text>
+                        ))}
+                    </Box>
+
+                    {datos.slice(inicio, inicio + visibles).map((registro, i) => (
+                        <Box key={i} flexDirection="row" gap={1}>
+                            <Text color={COLORES.secundario}>{String(inicio + i + 1).padStart(3)}</Text>
+                            {registro.map((campo, j) => (
+                                <Text key={j} color={COLORES.titulo} backgroundColor={inicio + i === fila && j === columna ? COLORES.secundario : undefined}>
+                                    {campo.padEnd(anchos[j])}
+                                </Text>
+                            ))}
+                        </Box>
+                    ))}
+
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                <Box width={COLUMNAS - 2} justifyContent="space-between">
+                    <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                    <Text color={COLORES.secundario}>Fila {fila + 1} · Columna {columna + 1}</Text>
+                </Box>
             </Box>
         </Box>
     );
+        
 }
 //{fila.map((campo, i ) => campo.padEnd(anchos[i])).join(' ')
 
