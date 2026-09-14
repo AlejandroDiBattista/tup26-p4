@@ -228,8 +228,8 @@ async function abrirArchivo(ruta) {
             alignItems="center">
                 {modo === 'inicio' && (
                 <Box
-                    width={40}
-                    height={10}
+                    width={COLUMNAS}
+                    height={FILAS}
                     flexDirection="column"
                     borderStyle="round"
                     borderColor={COLORES.borde}
