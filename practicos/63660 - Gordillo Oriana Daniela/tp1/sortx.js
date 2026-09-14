@@ -216,5 +216,15 @@ function sortRows(rows, sortFields, noHeader) {
     return !noHeader ? [header, ...dataRows] : dataRows;
 }
 
+function serialize(rows, delimiter) {
+    return rows.map(row => row.join(delimiter)).join('\n');
+}
+function writeOutput(filePath, content) {
+    try {
+        writeFileSync(filePath, content, 'utf8');
+    } catch {
+        throw new Error(`no se pudo escribir el archivo de destino: ${filePath}`);
+    }
+}
 
 
