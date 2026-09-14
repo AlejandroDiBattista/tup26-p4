@@ -48,6 +48,14 @@ function convertirCsv(contenido) {
     });
 
     return {cabecera, filas};
+} 
+
+function generarCsv(cabecera, filas) {
+    const lineas = [cabecera, ...filas];
+
+    return lineas
+        .map(fila => fila.join(','))
+        .join('\n') + '\n';
 }
 
 function FilaTabla({
@@ -142,8 +150,11 @@ function App({nombreArchivo, cabecera, filasIniciales}) {
     const [filas, setFilas] = useState(filasIniciales);
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
-    const [editando, setEditando] = useState(false);
+    const [modo, setModo] = useState('tabla');
+    const editando = modo === 'editar';
     const [valorEdicion, setValorEdicion] = useState('');
+    const [nombreDestino, setNombreDestino] = useState(nombreArchivo);
+    const guardando = modo === 'guardar';
     const [mensaje, setMensaje] = useState(null);
     useEffect(() => {
     if (mensaje?.tipo !== 'exito') {
@@ -158,7 +169,7 @@ function App({nombreArchivo, cabecera, filasIniciales}) {
         clearTimeout(temporizador);
     };
     }, [mensaje]);
-    const cantidadFilasVisibles = Math.max(1, FILAS - 8);
+    const cantidadFilasVisibles = Math.max(1, FILAS - 9);
     const inicioVisible = Math.max( 0,filaSeleccionada - cantidadFilasVisibles + 1);
     const filasVisibles = filas.slice(inicioVisible,inicioVisible + cantidadFilasVisibles);
     const valorSeleccionado = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
@@ -193,7 +204,7 @@ const iniciarEdicion = () => {
         filas[filaSeleccionada]?.[columnaSeleccionada] ?? ''
     );
     setMensaje(null);
-    setEditando(true);
+    setModo('editar');
 };
 const confirmarEdicion = () => {
     if (valorEdicion.includes(',')) {
@@ -222,13 +233,55 @@ const confirmarEdicion = () => {
     texto: 'Celda actualizada',
 });
 
-    setEditando(false);
+    setModo('tabla');
 };
 
 const cancelarEdicion = () => {
     setValorEdicion('');
     setMensaje(null);
-    setEditando(false);
+    setModo('tabla');
+};
+const iniciarGuardado = () => {
+    setNombreDestino(nombreArchivo);
+    setMensaje(null);
+    setModo('guardar');
+};
+
+const confirmarGuardado = async () => {
+    const destino = nombreDestino.trim();
+
+    if (destino === '') {
+        setMensaje({
+            tipo: 'error',
+            texto: 'Tenés que indicar un nombre de archivo',
+        });
+
+        return;
+    }
+
+    try {
+        const contenido = generarCsv(cabecera, filas);
+
+        await writeFile(destino, contenido, 'utf8');
+
+        setMensaje({
+            tipo: 'exito',
+            texto: `Archivo guardado como ${destino}`,
+        });
+
+        setModo('tabla');
+    } catch (error) {
+        setMensaje({
+            tipo: 'error',
+            texto: `No se pudo guardar: ${error.message}`,
+        });
+    }
+};
+
+const cancelarGuardado = () => {
+    setNombreDestino('');
+    setMensaje(null);
+    setModo('tabla');
 };
    useInput((tecla, key) => {
     if (editando) {
@@ -239,10 +292,23 @@ const cancelarEdicion = () => {
         return;
     }
 
+    if (guardando) {
+        if (key.escape) {
+            cancelarGuardado();
+        }
+
+    return;
+    }
+
     if (key.escape) {
         exit();
         return;
     }
+
+    if (tecla === 'g' || tecla === 'G') {
+        iniciarGuardado();
+        return;
+   }
 
     if (key.return) {
         iniciarEdicion();
@@ -308,9 +374,11 @@ const cancelarEdicion = () => {
         </Box>
 
         <Box marginTop={1}>
-             {editando ? (
+    {modo === 'editar' ? (
         <>
-            <Text color={COLORES.secundario}>Editar › </Text>
+            <Text color={COLORES.secundario}>
+                Editar ›{' '}
+            </Text>
 
             <TextInput
                 defaultValue={valorEdicion}
@@ -318,17 +386,30 @@ const cancelarEdicion = () => {
                 onSubmit={confirmarEdicion}
             />
         </>
+    ) : modo === 'guardar' ? (
+        <>
+            <Text color={COLORES.secundario}>
+                Guardar ›{' '}
+            </Text>
+
+            <TextInput
+                defaultValue={nombreDestino}
+                onChange={setNombreDestino}
+                onSubmit={confirmarGuardado}
+            />
+        </>
     ) : (
         <>
-        <Text color={COLORES.secundario}>
-            Valor ›{' '}
-        </Text>
-        <Text color={COLORES.titulo}>
-            {valorSeleccionado}
-        </Text>
+            <Text color={COLORES.secundario}>
+                Valor ›{' '}
+            </Text>
+
+            <Text color={COLORES.titulo}>
+                {valorSeleccionado}
+            </Text>
         </>
     )}
-        </Box>
+</Box>
 
         <Box height={1}>
            {mensaje && (
@@ -365,26 +446,34 @@ const cancelarEdicion = () => {
         <Box flexGrow={1} />
        <Box justifyContent="space-between">
     <Box>
-        {editando ? (
-            <Text color={COLORES.secundario}>
-                <Text bold color={COLORES.acento}>Enter</Text> guardar
-                {' · '}
-                <Text bold color={COLORES.acento}>Esc</Text> cancelar
-            </Text>
-        ) : (
-            <>
-                <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>Esc</Text> salir
-                </Text>
+        {modo === 'editar' ? (
+    <Text color={COLORES.secundario}>
+        <Text bold color={COLORES.acento}>Enter</Text> guardar
+        {' · '}
+        <Text bold color={COLORES.acento}>Esc</Text> cancelar
+    </Text>
+) : modo === 'guardar' ? (
+    <Text color={COLORES.secundario}>
+        <Text bold color={COLORES.acento}>Enter</Text> guardar archivo
+        {' · '}
+        <Text bold color={COLORES.acento}>Esc</Text> cancelar
+    </Text>
+) : (
+    <>
+        <Text color={COLORES.secundario}>
+            <Text bold color={COLORES.acento}>Esc</Text> salir
+        </Text>
 
-                <Text color={COLORES.secundario}>
-                    {' · '}
-                    <Text bold color={COLORES.acento}>{'<'}</Text> ascendente
-                    {' · '}
-                    <Text bold color={COLORES.acento}>{'>'}</Text> descendente
-                </Text>
-            </>
-        )}
+        <Text color={COLORES.secundario}>
+            {' · '}
+            <Text bold color={COLORES.acento}>G</Text> guardar
+            {' · '}
+            <Text bold color={COLORES.acento}>{'<'}</Text> ascendente
+            {' · '}
+            <Text bold color={COLORES.acento}>{'>'}</Text> descendente
+        </Text>
+    </>
+)}
     </Box>
 
     <Text color={COLORES.secundario}>
