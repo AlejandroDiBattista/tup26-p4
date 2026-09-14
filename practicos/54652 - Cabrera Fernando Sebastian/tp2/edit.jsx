@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState,useEffect} from'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -16,8 +16,30 @@ const COLORES = {
     secundario:'#ada79e',
     acento:    '#edbb64',
 };
+    const archivoInicial = process.argv[2] || null;
+ 
+    function App() {
+    const [archivo, setArchivo] = React.useState(archivoInicial);
+    const [filaActual, setFilaActual] = React.useState(0);
+    const [columnaActual, setColumnaActual] = React.useState(0);
+    const [filas, setFilas] = React.useState([]);
 
-function App() {
+    useEffect(() => {
+        const cargarArchivo = async() => {
+            try {
+                const contenido = await readFile(archivo, 'utf-8');
+                const filasLeidas = contenido.split('\n').map(fila => fila.split(','));
+                setFilas(filasLeidas);
+            }catch(error){
+                console.error(`Error al leer el archivo ${archivo}: ${error.message}`);
+            };
+        }
+        if(archivo){
+            cargarArchivo();
+        }
+    },[archivo]);
+    console.log(filas);
+
     const {exit} = useApp();
     
     useInput((tecla, key) => {
@@ -25,7 +47,6 @@ function App() {
             exit();
         }
     })
-
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
@@ -40,4 +61,3 @@ function App() {
 
 const app = render(<App />);
 await app.waitUntilExit();
-console.clear();
