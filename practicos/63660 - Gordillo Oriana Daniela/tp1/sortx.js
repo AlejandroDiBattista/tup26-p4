@@ -62,27 +62,27 @@ function parseArgs(args) {
     const sortFields = [];
 
     let i = 0;
-    while (i < args.lengh) {
+    while (i < args.length) {
         const arg = args[i];
         if (args === "-h" || arg === "--help") {
             console.log(HELP.trim());
             process.exit(0);
-        } else if (arg === "nh" || arg === "--no-header") {
+        } else if (arg === "-nh" || arg === "--no-header") {
             noHeader = true;
             i++;
         } else if (arg === "-d" || arg === "--delimiter") {
             const val = args[i + 1];
-            if (val === underfined) {
+            if (val === undefined) {
                 throw new Error("la opcion requiere un delimitador");
             }
-            delimiter = val === "//t" ? "/t" : val;
+            delimiter = val === "\\t" ? "\t" : val;
             if ([...delimiter].length !== 1) {
                 throw new Error("El delimitador dese ser un unico caracter");
             }
             i += 2;
         } else if (arg == "-b" || arg == "--by") {
             const val = args[i + 1];
-            if (val === underfined || val.startsWith("-")) {
+            if (val === undefined || val.startsWith("-")) {
                 throw new Error('la opcion ${args} requiere un criterio');
             }
             const parts = val.split(':');
@@ -157,6 +157,63 @@ function parseDelimited(content, delimiter) {
     }
 
     return rows;
+}
+function sortRows(rows, sortFields, noHeader) {
+    if (rows.length === 0) return [];
+
+    let header = null;
+    let dataRows = rows;
+
+    if (!noHeader) {
+        header = rows[0];
+        dataRows = rows.slice(1);
+    }
+
+    const resolvedFields = sortFields.map(sf => {
+        let colIndex;
+        if (!noHeader) {
+            colIndex = header.indexOf(sf.name);
+            if (colIndex === -1) {
+                throw new Error(`el campo solicitado no existe: ${sf.name}`);
+            }
+        } else {
+            colIndex = Number(sf.name);
+            if (Number.isNaN(colIndex) || colIndex < 0 || colIndex >= rows[0].length) {
+                throw new Error(`el campo solicitado no existe: ${sf.name}`);
+            }
+        }
+        return {
+            colIndex,
+            numeric: sf.numeric,
+            descending: sf.descending
+        };
+    });
+
+    dataRows.sort((rowA, rowB) => {
+        for (const sf of resolvedFields) {
+            const valAStr = rowA[sf.colIndex];
+            const valBStr = rowB[sf.colIndex];
+
+            let cmp = 0;
+            if (sf.numeric) {
+                const numA = Number(valAStr);
+                const numB = Number(valBStr);
+                if (Number.isNaN(numA) || Number.isNaN(numB)) {
+                    throw new Error('un criterio numérico encuentra un valor no numérico');
+                }
+                cmp = numA - numB;
+            } else {
+                cmp = valAStr.localeCompare(valBStr, 'es');
+            }
+
+            if (cmp !== 0) {
+                return sf.descending ? -cmp : cmp;
+            }
+        }
+        return 0;
+    });
+
+    return !noHeader ? [header, ...dataRows] : dataRows;
 }
 
 
