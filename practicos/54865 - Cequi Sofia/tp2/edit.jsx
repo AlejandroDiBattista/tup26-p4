@@ -231,7 +231,7 @@ function App() {
         {archivo && ` — ${datos.length} filas, ${cabecera.length} columnas`}
       </Text>
 
-      <Text color={COLORES.acento}>
+      <Text color={COLORES.acento} bold>
         [{filaSeleccionada + 1}, {cabecera[columnaSeleccionada]}] ={" "}
         {datos[filaSeleccionada]?.[columnaSeleccionada] ?? ""}
       </Text>
@@ -261,7 +261,7 @@ function App() {
 
       {modo === "normal" && (
         <Text color={COLORES.secundario}>
-          A abrir · G guardar · Enter editar · Esc salir
+          {"A abrir · G guardar · Enter editar · < ascendente · > descencendente Esc salir"}
         </Text>
       )}
 
