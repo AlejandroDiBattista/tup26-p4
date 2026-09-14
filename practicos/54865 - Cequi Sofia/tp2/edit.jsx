@@ -26,6 +26,9 @@ function App() {
   const [filaSeleccionada, setFilaSeleccionada] = React.useState(0);
   const [columnaSeleccionada, setColumnaSeleccionada] = React.useState(0);
 
+  const [modo, setModo] = React.useState("normal"); // "normal" | "abrir" | "guardar" | "editar"
+  const [error, setError] = React.useState(null);
+
   async function abrirArchivo(nombre) {
     const contenido = await readFile(nombre, "utf8");
 
@@ -40,6 +43,32 @@ function App() {
     setDatos(nuevosDatos);
   }
 
+  async function guardarArchivo(nombre) {
+    const lineas = [cabecera.join(","), ...datos.map((fila) => fila.join(","))];
+    await writeFile(nombre, lineas.join("\n") + "\n", "utf8");
+    setArchivo(nombre);
+  }
+
+  async function manejarSubmitAbrir(nombre) {
+    try {
+      await abrirArchivo(nombre);
+      setModo("normal");
+      setError(null);
+    } catch {
+      setError(`No se pudo abrir "${nombre}"`);
+    }
+  }
+
+  async function manejarSubmitGuardar(nombre) {
+    try {
+      await guardarArchivo(nombre);
+      setModo("normal");
+      setError(null);
+    } catch {
+      setError(`No se pudo guardar "${nombre}"`);
+    }
+  }
+
   React.useEffect(() => {
     const archivoInicial = process.argv[2];
 
@@ -49,23 +78,41 @@ function App() {
   }, []);
 
   useInput((tecla, key) => {
+    if (modo !== "normal") {
+      if (key.escape) {
+        setModo("normal");
+        setError(null);
+      }
+      return;
+    }
+
     if (key.escape) {
       exit();
     }
 
-    if (key.up) {
+    if (tecla === "a") {
+      setModo("abrir");
+      return;
+    }
+
+    if (tecla === "g") {
+      setModo("guardar");
+      return;
+    }
+
+    if (key.upArrow) {
       setFilaSeleccionada((fila) => Math.max(0, fila - 1));
     }
 
-    if (key.down) {
+    if (key.downArrow) {
       setFilaSeleccionada((fila) => Math.min(datos.length - 1, fila + 1));
     }
 
-    if (key.left) {
+    if (key.leftArrow) {
       setColumnaSeleccionada((columna) => Math.max(0, columna - 1));
     }
 
-    if (key.right) {
+    if (key.rightArrow) {
       setColumnaSeleccionada((columna) =>
         Math.min(cabecera.length - 1, columna + 1),
       );
@@ -105,7 +152,28 @@ function App() {
         ))}
       </Box>
 
-      <Text color={COLORES.secundario}>Esc salir</Text>
+      {modo === "normal" && (
+        <Text color={COLORES.secundario}>A abrir · G guardar · Esc salir</Text>
+      )}
+
+      {modo === "abrir" && (
+        <Box>
+          <Text color={COLORES.acento}>Abrir archivo: </Text>
+          <TextInput onSubmit={manejarSubmitAbrir} />
+        </Box>
+      )}
+
+      {modo === "guardar" && (
+        <Box>
+          <Text color={COLORES.acento}>Guardar como: </Text>
+          <TextInput
+            defaultValue={archivo ?? ""}
+            onSubmit={manejarSubmitGuardar}
+          />
+        </Box>
+      )}
+
+      {error && <Text color="red">{error}</Text>}
     </Box>
   );
 }
