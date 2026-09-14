@@ -18,10 +18,16 @@ function leerArchivo(ruta) {
 }
 
 function guardarArchivo(ruta, encabezados, filas) {
-    
+    const textoEncabezados = encabezados.join(',');
+    const textoFilas = filas.map(fila => fila.join(',')).join('\n');
+    const textoFinal = textoEncabezados + '\n' + textoFilas;
 }
 
-
+function recortarTexto(texto) {
+    let palabras = string(texto).split(' ');
+    if (palabras.length > 12) {
+        return palabras.substring(0, 12)+'...';
+}
 
 
 
