@@ -69,6 +69,70 @@ function App() {
     }
   }
 
+  function manejarSubmitEditar(nuevoValor) {
+    editarCelda(filaSeleccionada, columnaSeleccionada, nuevoValor);
+    setModo("normal");
+  }
+
+  function Celda({ valor, seleccionada }) {
+    return (
+      <Box width={15}>
+        <Text inverse={seleccionada}>{valor}</Text>
+      </Box>
+    );
+  }
+
+  function Fila({
+    fila,
+    indiceFila,
+    filaSeleccionada,
+    columnaSeleccionada,
+    numero,
+  }) {
+    return (
+      <Box>
+        <Box width={5}>
+          <Text color={COLORES.secundario}>{numero ?? ""}</Text>
+        </Box>
+        {fila.map((valor, columna) => (
+          <Celda
+            key={columna}
+            valor={valor}
+            seleccionada={
+              indiceFila === filaSeleccionada && columna === columnaSeleccionada
+            }
+          />
+        ))}
+      </Box>
+    );
+  }
+
+  function editarCelda(fila, columna, nuevoValor) {
+    setDatos((datosActuales) =>
+      datosActuales.map((filaActual, indiceFila) => {
+        if (indiceFila !== fila) return filaActual;
+        return filaActual.map((valorActual, indiceColumna) =>
+          indiceColumna === columna ? nuevoValor : valorActual,
+        );
+      }),
+    );
+  }
+
+  function ordenarPorColumna(columna, ascendente) {
+    setDatos((datosActuales) => {
+      const copia = [...datosActuales];
+      copia.sort((filaA, filaB) => {
+        const valorA = filaA[columna];
+        const valorB = filaB[columna];
+        const comparacion = valorA.localeCompare(valorB, undefined, {
+          numeric: true,
+        });
+        return ascendente ? comparacion : -comparacion;
+      });
+      return copia;
+    });
+  }
+
   React.useEffect(() => {
     const archivoInicial = process.argv[2];
 
@@ -90,6 +154,16 @@ function App() {
       exit();
     }
 
+    if (tecla === "<") {
+      ordenarPorColumna(columnaSeleccionada, true);
+      return;
+    }
+
+    if (tecla === ">") {
+      ordenarPorColumna(columnaSeleccionada, false);
+      return;
+    }
+
     if (tecla === "a") {
       setModo("abrir");
       return;
@@ -97,6 +171,11 @@ function App() {
 
     if (tecla === "g") {
       setModo("guardar");
+      return;
+    }
+
+    if (key.return) {
+      setModo("editar");
       return;
     }
 
@@ -127,10 +206,12 @@ function App() {
 
       <Text color={COLORES.secundario}>
         {archivo ?? "No se abrió ningún archivo"}
+        {archivo && ` — ${datos.length} filas, ${cabecera.length} columnas`}
       </Text>
 
       <Text color={COLORES.acento}>
-        Fila: {filaSeleccionada} | Columna: {columnaSeleccionada}
+        [{filaSeleccionada + 1}, {cabecera[columnaSeleccionada]}] ={" "}
+        {datos[filaSeleccionada]?.[columnaSeleccionada] ?? ""}
       </Text>
 
       <Box flexDirection="column">
@@ -148,12 +229,15 @@ function App() {
             indiceFila={indice}
             filaSeleccionada={filaSeleccionada}
             columnaSeleccionada={columnaSeleccionada}
+            numero={indice + 1}
           />
         ))}
       </Box>
 
       {modo === "normal" && (
-        <Text color={COLORES.secundario}>A abrir · G guardar · Esc salir</Text>
+        <Text color={COLORES.secundario}>
+          A abrir · G guardar · Enter editar · Esc salir
+        </Text>
       )}
 
       {modo === "abrir" && (
@@ -173,34 +257,23 @@ function App() {
         </Box>
       )}
 
+      {modo === "editar" && (
+        <Box>
+          <Text color={COLORES.acento}>
+            Editando [{filaSeleccionada}, {cabecera[columnaSeleccionada]}]:{" "}
+          </Text>
+          <TextInput
+            defaultValue={datos[filaSeleccionada][columnaSeleccionada]}
+            onSubmit={manejarSubmitEditar}
+          />
+        </Box>
+      )}
+
       {error && <Text color="red">{error}</Text>}
     </Box>
   );
 }
 
-function Celda({ valor, seleccionada }) {
-  return (
-    <Box width={15}>
-      <Text inverse={seleccionada}>{valor}</Text>
-    </Box>
-  );
-}
-
-function Fila({ fila, indiceFila, filaSeleccionada, columnaSeleccionada }) {
-  return (
-    <Box>
-      {fila.map((valor, columna) => (
-        <Celda
-          key={columna}
-          valor={valor}
-          seleccionada={
-            indiceFila === filaSeleccionada && columna === columnaSeleccionada
-          }
-        />
-      ))}
-    </Box>
-  );
-}
 const app = render(<App />);
 await app.waitUntilExit();
 console.clear();
