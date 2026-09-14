@@ -43,6 +43,8 @@ function App() {
     const [datos,setDatos] = React.useState([]);
     const [filaSelec,setFilaselec] = React.useState(0);
     const [columnselect,SetColumnSelect] = React.useState(0);
+    const [editando,setEditando] = React.useState(false);
+    const [valorEditado,setValorEditado] = React.useState("");
 
     React.useEffect(()=> {
         async function cargarArchivo() {
@@ -62,8 +64,13 @@ function App() {
     
     useInput((tecla, key) => {
         if (key.escape) {
-            exit();
+            if (editando) {
+                setEditando(false);
+            }else {
+                exit();
+            }
         }
+        if(!editando){
         if (key.downArrow) {
             if (filaSelec < datos.length -1) {
                 setFilaselec(filaSelec +1);
@@ -84,6 +91,11 @@ function App() {
                 SetColumnSelect(columnselect -1);
             }
         }
+        if (key.return) {
+            setValorEditado(datos[filaSelec]?.[columnselect] || "");
+            setEditando(true);
+        }
+    }
     } 
 )
 
@@ -96,7 +108,20 @@ function App() {
                 </Box>
                 <Box paddingX={1} height={1} marginBottom={1}>
                     <Text color={COLORES.secundario}>Valor ›</Text>
+                    {editando ? (
+                        <TextInput
+                        defaultValue={datos[filaSelec]?.[columnselect] || ""}
+                        value = {valorEditado}
+                        onChange={setValorEditado}
+                        onSubmit={(nuevoValor) => {
+                        const copiaDatos = [...datos];
+                        copiaDatos[filaSelec][columnselect] = nuevoValor;
+                        setDatos(copiaDatos);
+                        setEditando(false);
+                        }}
+                        />):(
                     <Text bold color={COLORES.titulo}>{datos[filaSelec]?.[columnselect] || ""}</Text>
+                    )}
                 </Box>
                 <Box flexGrow={1} padding={1} flexDirection="column"> 
                 {(() => {
@@ -124,6 +149,10 @@ function App() {
         })()}</Box>
                 <Box justifyContent="space-between" width="100%" paddingX={1} height={1} marginTop={1}>
                     <Box>
+                        {editando ? (<Text color={COLORES.secundario}>
+                            <Text bold color={COLORES.acento}>Enter</Text> guardar ·
+                            <Text bold color={COLORES.acento}> Esc</Text> cancelar
+                        </Text> ):(
                         <Text color={COLORES.secundario}>
                             <Text bold color={COLORES.acento}>A</Text> abrir  ·  
                             <Text bold color={COLORES.acento}>  G</Text> guardar  ·  
@@ -132,6 +161,7 @@ function App() {
                             <Text bold color={COLORES.acento}> &gt;</Text> descendente  ·  
                             <Text bold color={COLORES.acento}> Esc</Text> salir  ·  
                         </Text>
+                        )}
                     </Box>
                     <Box>
                         <Text color={COLORES.secundario}>
