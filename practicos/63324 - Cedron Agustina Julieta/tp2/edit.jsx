@@ -5,6 +5,7 @@ import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
+import { arch } from 'node:process';
  
 
 const COLUMNAS = process.stdout.columns || 80;
@@ -40,7 +41,14 @@ const filas= lineasDeDatos.map(function(linea){
 // devolvemos todo el objeto listo
 return {cabecera: cabecera, filas: filas};
 }
-
+//convertimos la cabecera y filas a texto plano csv
+function formatoCSV(cabecera, filas){
+    const lineaCabecera= cabecera.join(',');
+    const lineasDatos=filas.map(function(fila){
+        return fila.join(',');
+    });
+    return [lineaCabecera,...lineasDatos].join('\n')+'\n';
+}
 //funcion para calcular el ancho de las columnas
 function calcularAncho(cabecera, filas){
     //si no hay datos cargados, devolvemos un array vacio
@@ -87,7 +95,11 @@ function App() {
     //controlar el modo edicion y el texto que se edita
     const [editando,setEditando]=useState(false);
     const [valorEdicion, setValorEdicion]=useState('');
-
+    
+    //controlar el modo guardar archivoo
+    const [guardando, setGuardando]=useState(false);
+    const [nombreGuardar, setNombreGuardar]=useState('');
+    const [mensajeEstado, setMensajeEstado]=useState('');
     //leer y el archivo csv al iniciar el programa
     useEffect(function(){
         async function cargarArchivo(){
@@ -116,6 +128,11 @@ function App() {
             setEditando(false);
             return;
         }
+        // si estamos guardando y tocamos escape, se cancela
+        if (key.escape && guardando) {
+            setGuardando(false);
+            return;
+        }
         //si no estamos editando, y tocamos escape, salimos
         if (key.escape &&!editando) {
             exit();
@@ -129,15 +146,14 @@ function App() {
             return;
         }
         //para que las flechas no muevan la tabla, frenamos aqui
-        if (editando) {
+        if (editando|| guardando) {
             return;
         }
 
         //flecha hacia abajo, baja una fila sin pasarse las 10 que se ven
         if (key.downArrow) {
             setFilaSeleccionada(function(actual){
-                const maxFilas=Math.min(filas.length,10)-1;
-                if (actual<maxFilas) {
+                if (actual<filas.length - 1) {
                     return actual +1;
                 }
                 return actual;
@@ -200,8 +216,21 @@ function App() {
             return;
             
         }
+        //para guardar con la tecla G
+        if(tecla === 'g'|| tecla === 'G'){
+            setNombreGuardar(archivo || 'datos.csv');
+            setGuardando(true);
+            setMensajeEstado('');
+            return;
+        }
 
     });
+    //mostramos solamente 10 filas en pantalla
+    const FILAS_VISIBLES=10;
+    //calculamos desde que fila comenzar
+    const inicio=Math.max(0,Math.min(filaSeleccionada - Math.floor(FILAS_VISIBLES/2), filas.length - FILAS_VISIBLES));
+    const filasVisibles= filas.slice(inicio, inicio + FILAS_VISIBLES);
+
 
     return (
         // Contenedor principal que ocupa todo el ancho y alto de la terminal
@@ -240,7 +269,9 @@ function App() {
             {/* SECCIÓN 3: Cuerpo de la tabla con los datos */}
             <Box flexDirection="column" paddingX={1} flexGrow={1}>
                 {/* Mostramos por ahora las primeras 10 filas para probar la visualización */}
-                {filas.slice(0, 10).map(function(fila, filaIndice) {
+                {filasVisibles.map(function(fila,relativoIndice){
+                    const filaIndice= inicio + relativoIndice;
+                
               return (
                   // Cada renglón de la tabla se distribuye de forma horizontal
                    <Box key={filaIndice} flexDirection="row">
@@ -297,18 +328,41 @@ function App() {
             </Box>
 
             {/* SECCIÓN 4: Barra inferior con la ayuda de teclas disponibles */}
-            <Box marginTop={1}>
-                {/*atajos visibles mientras editamos una celda*/}
-                {editando &&(
-                <Text color={COLORES.secundario}>
-                 <Text bold color={COLORES.acento}>Enter</Text> Guardar | <Text bold color={COLORES.acento}>Esc</Text> Cancelar
-                </Text>
+            <Box marginTop={1} flexDirection="column">
+                {/*modo guardar archivo*/}
+                {guardando &&(
+                    <Box>
+                        <Text bold color= {COLORES.acento}>Guardar como: </Text>
+                        <TextInput value={nombreGuardar} onChange={setNombreGuardar}
+                        onSubmit={async function(nombreFinal){
+                            try {
+                                const contenido = formatoCSV(cabecera,filas);
+                                await writeFile(nombreFinal, contenido, 'utf-8');
+                                setArchivo(nombreFinal);
+                                setGuardando(false);
+                                setMensajeEstado(`Archivo guardado correctamente en ${nombreFinal}`);
+                            } catch (error) {
+                                setMensajeEstado(`No se pudo Guardar: ${error.message}`);
+                            }
+                        }}
+                        />
+                        </Box>
+                )}
+                {/*si no estamos por guradar, mostramos los atajos normales*/}
+                {!guardando && editando &&(
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> Guardar | <Text bold color={COLORES.acento}>Esc</Text> Cancelar
+                    </Text>
                 )}
                 {/*atajos visibles mientras navegamos por la grilla*/}
-                {!editando &&(
+                {!guardando && !editando &&(
                     <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse |<Text bold color={COLORES.acento}>&lt; &gt;</Text> Ordenar | <Text bold color={COLORES.acento}>Enter</Text> Editar | <Text bold color={COLORES.acento}>Esc</Text> Salir
+                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse |<Text bold color={COLORES.acento}>&lt; &gt;</Text> Ordenar | <Text bold color={COLORES.acento}>Enter</Text> Editar |<Text bold color={COLORES.acento}>G</Text> Guardar| <Text bold color={COLORES.acento}>Esc</Text> Salir
                         </Text>
+                )}
+                {/*mensaje de error*/}
+                {mensajeEstado!==''&&(
+                    <Text color={COLORES.acento}>{mensajeEstado}</Text>
                 )}
             </Box>
 
