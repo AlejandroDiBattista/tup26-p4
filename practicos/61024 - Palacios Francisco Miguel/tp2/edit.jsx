@@ -25,7 +25,7 @@ function App({tabla}) {
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const [editando, setEditando] = useState(false);
     const [datos, setDatos] = useState(tabla);
-    const valoractual = datos[filaSeleccionada][columnaSeleccionada];
+    const valorActual = datos[filaSeleccionada][columnaSeleccionada];
     
     useInput((tecla, key) => {
         if (key.escape) {
@@ -62,11 +62,23 @@ function App({tabla}) {
                     {fila.map((columna, indiceColumna) => (
                     <Text key={indiceColumna} color={indice === filaSeleccionada && indiceColumna === columnaSeleccionada ? COLORES.acento : undefined}>
                         {indice === filaSeleccionada && indiceColumna === columnaSeleccionada && editando ? (
-                            <TextInput defaultValue={valoractual} />
-                        ) : (
-                          columna
-                        )}
-                        {' | '}
+                            <TextInput defaultValue={valorActual}
+                            onSubmit={(valorNuevo) => {
+                            const nuevosDatos = datos.map((fila, indiceFila) =>
+                              indiceFila === filaSeleccionada
+                            ? fila.map((columna, indiceColumna) =>
+                                indiceColumna === columnaSeleccionada ? valorNuevo : columna
+                            )
+                            : fila
+                        );
+                    setDatos(nuevosDatos);
+                    setEditando(false);
+                    }}
+                    />
+                    ) : (
+                        columna
+                    )}
+                    {' | '}
                     </Text>
                 ))}
                 </Text>
