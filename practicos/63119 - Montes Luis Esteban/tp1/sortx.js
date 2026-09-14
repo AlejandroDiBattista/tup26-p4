@@ -74,7 +74,6 @@ function parseArgs(args) {
         noHeader
     };
 }
-
 function readInput(origen) {
     const contenido = fs.readFileSync(origen, "utf8");
 
@@ -89,13 +88,30 @@ function parseDelimited(contenido, delimitador) {
     return filas;
 }
 
+function sortRows(datos, encabezado, criterios) {
+    const campo = criterios[0];
+
+    const indiceColumna = encabezado.indexOf(campo);
+
+    datos.sort((filaA, filaB) => {
+        return filaA[indiceColumna].localeCompare(
+            filaB[indiceColumna]
+        );
+    });
+
+    return datos;
+}
+
 const args = process.argv.slice(2);
 
 const config = parseArgs(args);
 
 const contenido = readInput(config.origen);
 
-const filas = parseDelimited(contenido, config.delimitador);
+const filas = parseDelimited(
+    contenido,
+    config.delimitador
+);
 
 let encabezado;
 let datos;
@@ -108,7 +124,12 @@ if (config.noHeader) {
     datos = filas.slice(1);
 }
 
-console.log("Encabezado:", encabezado);
-console.log("Datos:", datos);
+const datosOrdenados = sortRows(
+    datos,
+    encabezado,
+    config.criterios
+);
 
+console.log("Encabezado:", encabezado);
+console.log("Datos ordenados:", datosOrdenados);
 // console.log(HELP);
