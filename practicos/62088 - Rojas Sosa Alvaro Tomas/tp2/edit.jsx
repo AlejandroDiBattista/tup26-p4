@@ -20,7 +20,18 @@ const COLORES = {
 
 const ANCHOS = [15, 18, 8, 13, 18];
 const FILAS_VISIBLES = FILAS - 4
-const contenido = await readFile(archivoCsv, "utf8")
+if (!archivoCsv) {
+    console.error("Error: falta el nombre del archivo. Uso: edit archivo.csv")
+    process.exit(1)
+}
+
+let contenido
+try {
+    contenido = await readFile(archivoCsv, "utf8")
+} catch (e) {
+    console.error("Error: no se pudo abrir el archivo " + archivoCsv)
+    process.exit(1)
+}
 
 const textolimpio = contenido.replaceAll("\r", "")
 let textSeparado = textolimpio.split("\n")
@@ -53,7 +64,7 @@ inicio = rows - FILAS_VISIBLES + 1;
                         <Text>{inicio + i + 1}</Text>
                         </Box>
                         {fila.map((celda, j) => (
-                            <Box width={ANCHOS[j]} key={j}>
+                            <Box width={ANCHOS[j] || 15} key={j}>
                             <Text wrap="truncate" inverse={inicio + i === rows && j === column}>{celda}  </Text>
                             </Box>
                         ))}
@@ -70,7 +81,7 @@ function App() {
     const [column, setcolumn] = useState(0)
     const [tabla, settabla] = useState(datos)
     const [modo, setmodo] = useState('normal')
-    
+    const [error, seterror] = useState('')
     
     useInput((tecla, key) => {
         if (key.escape) {
@@ -92,7 +103,8 @@ function App() {
             });
             settabla(copyTabla)
         }
-        
+    if (tecla === 'g' || tecla === 'G') { seterror(''); setmodo('guardando') }
+    if (tecla === 'a' || tecla === 'A') { seterror(''); setmodo('abriendo') }
 
     if (key.upArrow && rows > 0)  setrows(rows - 1);
     if (key.downArrow && rows < tabla.length - 1)  setrows(rows + 1)
@@ -102,6 +114,9 @@ function App() {
     
     }, {isActive: modo === 'normal'})
 
+    useInput((tecla, key) => {
+    if (key.escape) {setmodo('normal')}
+    }, {isActive: modo !== 'normal'})
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box flexDirection="column">
@@ -109,22 +124,71 @@ function App() {
                     <Text>{basename(archivoCsv)}</Text>
                     <Text>{tabla.length} filas ·  {encabezado.length} columnas</Text>
                 </Box>
-                {modo === 'editando'
-                ? <TextInput defaultValue={tabla[rows][column]} onSubmit={(valor) => {
-                    const copia = [...tabla];        
-                    copia[rows] = [...copia[rows]];        
-                    copia[rows][column] = valor;           
-                    settabla(copia);                       
-                    setmodo('normal');                     
+                {modo === 'normal' && <Text>Valor › {tabla[rows][column]}</Text>}
+                {error !== '' && <Text color="red">{error}</Text>}
+                {modo === 'editando' && <TextInput defaultValue={tabla[rows][column]} onSubmit={(valor) => {
+                const copia = [...tabla];
+                copia[rows] = [...copia[rows]];
+                copia[rows][column] = valor;
+                settabla(copia);
+                setmodo('normal');
+                }} />}
+
+                {modo === 'guardando' && (
+                <Box flexDirection="row">
+                <Text>Guardar › </Text>
+                <TextInput defaultValue={basename(archivoCsv)} onSubmit={async (valor) => {
+                try{
+                    const todo = [encabezado, ...tabla];
+                    const texto = todo.map(fila => fila.join(",")).join("\n");
+                    await writeFile(valor, texto)
+                    seterror('')
+                    } catch (e) {
+                    seterror('No se pudo guardar: ' + valor)
+                    }
+                    setmodo('normal')
+
+
                 }} />
-                : <Text>Valor › {tabla[rows][column]}</Text>
+                </Box>
+                )}
+                {modo === 'abriendo' && (
+                <Box flexDirection="row">
+                <Text>abrir › </Text>
+                <TextInput defaultValue={basename(archivoCsv)} onSubmit={async (valor) => {
+                try{
+                const nuevoContenido = await readFile(valor, "utf8");
+                const textolimpio = nuevoContenido.replaceAll("\r", "")
+                let textSeparado = textolimpio.split("\n")
+                textSeparado = textSeparado.filter(t => t !== "")
+
+                let SeparadoFinal = []
+
+                for(let i = 0; i < textSeparado.length; i++) 
+                    {
+                        let separado = textSeparado[i].split(",")
+                        SeparadoFinal.push(separado)
+                    }
+                encabezado = SeparadoFinal[0]        
+                settabla(SeparadoFinal.slice(1))     
+                setrows(0)                           
+                setcolumn(0)
+                seterror('')
+                } catch (e) {
+                seterror('No se pudo abrir: ' + valor)
                 }
-                <Box flexDirection="row"> 
+                setmodo('normal')
+
+
+                }} />
+                </Box>
+                )}
+                    <Box flexDirection="row"> 
                     <Box width={4}>
                     <Text color="green">#</Text>
                     </Box>
                     {encabezado.map((celda, j) => (
-                    <Box width={ANCHOS[j]} key={j}>
+                    <Box width={ANCHOS[j] || 15} key={j}>
                     <Text color="green">{celda}  </Text>
                     </Box>
                     ))} 
@@ -133,14 +197,19 @@ function App() {
                 
                 <Datos rows={rows} column={column} tabla={tabla}/>
                 <Box flexDirection="row" justifyContent="space-between">
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A abrir · G guardar · Enter editar · {'<'} ascendente · {'>'} descendente · Esc salir  </Text></Text>
+                {modo === 'normal' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>{'<'}</Text> ascendente · <Text bold color={COLORES.acento}>{'>'}</Text> descendente · <Text bold color={COLORES.acento}>Esc</Text> salir  </Text>}
+                {modo === 'editando' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text>}
+                {modo === 'guardando' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Enter</Text> guardar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text>}
+                {modo === 'abriendo' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Enter</Text> abrir · <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text>}
                 <Text>fila {rows + 1}  ·  columna {column + 1}</Text>
                 </Box>
 
 
             </Box>
-        </Box>
-    );
+                    </Box>
+                );
+    
+    
 }
 
 const app = render(<App />);
