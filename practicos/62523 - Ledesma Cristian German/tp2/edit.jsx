@@ -95,6 +95,36 @@ function App() {
             setValorEditado(datos[filaSelec]?.[columnselect] || "");
             setEditando(true);
         }
+        if (tecla === '<') {
+            if (datos.length >1) {
+                const encabezado = datos[0];
+                const filasParaOrdenar = datos.slice(1);
+                filasParaOrdenar.sort((filaA,filaB) => {
+                    const valorA = filaA[columnselect] || "";
+                    const valorB = filaB[columnselect] || "";
+                    if (!isNaN(valorA) && !isNaN(valorB) && valorA.trim() !== ""&& valorB.trim() !== "") {
+                        return Number(valorA) - Number(valorB);
+                    }
+                    return valorA.localeCompare(valorB,'es',{sensitivity: 'accent'});
+                });
+                setDatos([encabezado, ...filasParaOrdenar]);
+            }
+        }
+        if (tecla === '>') {
+            if (datos.length >1) {
+                const encabezado = datos[0];
+                const filasParaOrdenar = datos.slice(1);
+                filasParaOrdenar.sort((filaA,filaB) => {
+                    const valorA = filaA[columnselect] || "";
+                    const valorB = filaB[columnselect] || "";
+                    if (!isNaN(valorA) && !isNaN(valorB) && valorA.trim() !== ""&& valorB.trim() !== "") {
+                        return Number(valorB) - Number(valorA);
+                    }
+                    return valorB.localeCompare(valorA,'es',{sensitivity: 'accent'});
+                });
+                setDatos([encabezado, ...filasParaOrdenar]);
+            }
+        }
     }
     } 
 )
