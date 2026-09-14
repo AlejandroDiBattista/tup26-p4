@@ -155,7 +155,47 @@ function App() {
                 </Box>
             </Box>
         );
-    }       
+    }
+    
+    return (
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1} backgroundColor={COLORES.fondo}>
+            <Box flexDirection="column" marginBottom={1}>
+                <Text bold color={COLORES.titulo}>
+                    <Text color={COLORES.acento}>{nombreArchivo || 'Sin Archivo'}</Text>
+                </Text>
+                <Text color={COLORES.secundario}>
+                    Filas: {filas.length} | Columnas: {cabecera.length} 
+                </Text>
+                <Text color={COLORES.secundario}>
+                    Celda seleccionada: [{filaSel +1}, {colSel + 1}] ({cabecera[colSel] || ''}) = <Text bold color={COLORES.acento}>"{valorCelda}"</Text>
+                </Text>
+            </Box>
+
+            {/* Filas paginas */}
+            {filasPagina.map((fila, index) => {
+                const absIdx = indiceInicio + relIdx;
+                return (
+                    <Box key={absIdx}>
+                        <Box width={5}>
+                            <Text color={COLORES.secundario}>{absIdx + 1}</Text>
+                        </Box>
+                        {fila.map((celda, colIdx) => {
+                            const Seleccionada = absIdx === filaSel && colIdx === colSel;
+                            return (
+                                <Box key={colIdx} width={15}>
+                                    <Text backgroundColor={seleccionada ? COLORES.acento : undefined} color={seleccionada ? COLORES.fondo : COLORES.titulo} bold={seleccionada}>
+                                        {celda}
+                                    </Text>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                );
+            })}
+        </Box>
+
+        
+    );
 }
 
 const app = render(<App />);
