@@ -36,6 +36,14 @@ function procesarTxtCrudo(txtCrudo){
     }
     return matriz;
 }
+function convertirMatrizAtexto(matriz){
+    const lineas =[];
+    for (let i = 0; i < matriz.length; i++) {
+        const filaUnida = matriz[i].join(',');
+        lineas.push(filaUnida);
+    }
+    return lineas.join('\n');
+}
 
 function App() {
 
@@ -45,6 +53,11 @@ function App() {
     const [columnselect,SetColumnSelect] = React.useState(0);
     const [editando,setEditando] = React.useState(false);
     const [valorEditado,setValorEditado] = React.useState("");
+    const [guardando, setGuardando] = React.useState(false);
+    const [nombreGuardar, setNombreGuardar ] = React.useState("");
+    const [abriendo,setAbriendo] = React.useState(false);
+    const [nombreAbrir, setNombreAbrir] = React.useState("");
+    const [mensajeError, setMensajeError] = React.useState("");
 
     React.useEffect(()=> {
         async function cargarArchivo() {
@@ -54,7 +67,9 @@ function App() {
                 const matrizConvertida = procesarTxtCrudo(texto);
                 
                 setDatos(matrizConvertida);
-                }catch (error) {}
+                }catch (error) {
+                    setDatos([]);
+                    setMensajeError("Error: el archivo inicial no existe o esta corrupto");}
             }
         } cargarArchivo();
     },[nombreArchivo]);
@@ -66,12 +81,17 @@ function App() {
         if (key.escape) {
             if (editando) {
                 setEditando(false);
-            }else {
+            }else if (guardando) {
+                setGuardando(false);
+            }else if (abriendo) {
+                setAbriendo(false);
+            }else{
                 exit();
             }
         }
         if(!editando){
         if (key.downArrow) {
+            setMensajeError("");
             if (filaSelec < datos.length -1) {
                 setFilaselec(filaSelec +1);
             }
@@ -125,6 +145,17 @@ function App() {
                 setDatos([encabezado, ...filasParaOrdenar]);
             }
         }
+        if (tecla === 'g' || tecla === 'G') {
+            setMensajeError("");
+            setGuardando(true);
+        }
+        if (tecla === 'a' || tecla === 'A') {
+            if (!guardando) {
+                setMensajeError("");
+                setNombreAbrir("");
+                setAbriendo(true);
+            }
+        }
     }
     } 
 )
@@ -137,6 +168,54 @@ function App() {
                     <Text bold color={COLORES.secundario}>{datos.length} filas · {datos[0]?.length || 0} columnas</Text>
                 </Box>
                 <Box paddingX={1} height={1} marginBottom={1}>
+                    {mensajeError ? (
+                        <Text color="red" bold>{mensajeError}</Text>
+                    ) : abriendo ? (
+                        <> 
+                        <Text color={COLORES.acento}>Abrir › </Text>
+                        <TextInput
+                        value ={nombreAbrir}
+                        onChange={setNombreAbrir}
+                        onSubmit={async (nuevoArchivo) => {
+                            if (nuevoArchivo.trim() !== "") {
+                                try{
+                                const texto = await readFile(nuevoArchivo, 'utf-8');
+                                const matrizConvertida = procesarTxtCrudo(texto);
+                                setDatos(matrizConvertida);
+                                setNombreArchivo(nuevoArchivo);
+                                setFilaselec(0);
+                                SetColumnSelect(0);
+                                }catch(error){
+                                    setMensajeError(`Error: no se pudo abrir "${nuevoArchivo}" verifica la ruta`)
+                                }
+                            }
+                            setAbriendo(false);
+                        }}
+                        />
+                        </>
+                    ) : guardando ? (
+                        <>
+                        <Text color={COLORES.acento}>Guardar › </Text>
+                        <TextInput
+                        defaultValue={nombreArchivo || ""}
+                        value ={nombreGuardar}
+                        onChange={setNombreGuardar}
+                        onSubmit={async (nombreFinal)=>{
+                            if (nombreFinal.trim() !== "") {
+                                try{
+                                    const csvTexto = convertirMatrizAtexto(datos);
+                                    await writeFile(nombreFinal, csvTexto, 'utf-8');
+                                    setNombreArchivo(nombreFinal);
+                                }catch(error){
+                                setMensajeError("Error: no se pudo guardar el archivo. permiso denegado");
+                                }
+                            }
+                            setGuardando(false);
+                                }}
+                            />
+                        </> 
+                    ) : ( 
+                        <>
                     <Text color={COLORES.secundario}>Valor ›</Text>
                     {editando ? (
                         <TextInput
@@ -149,8 +228,11 @@ function App() {
                         setDatos(copiaDatos);
                         setEditando(false);
                         }}
-                        />):(
+                        />
+                    ):(
                     <Text bold color={COLORES.titulo}>{datos[filaSelec]?.[columnselect] || ""}</Text>
+                                )}
+                        </>
                     )}
                 </Box>
                 <Box flexGrow={1} padding={1} flexDirection="column"> 
@@ -160,26 +242,40 @@ function App() {
                         inicio = filaSelec - 9;
                 }
                 let fin = inicio + 10;
-                const filasVisibles = datos.slice(inicio, fin);
-                        return filasVisibles.map((fila, indexFila) => (
+                        const filasVisibles = datos.slice(inicio, fin);
+                    return filasVisibles.map((fila, indexFila) => {
+                        const numeroFilaReal = indexFila + inicio + 1;
+                        return (
                         <Box key={indexFila} flexDirection='row'>
-                        {fila.map((celda, indexColumna) => {
+                            <Box width={4} justifyContent="flex-end" paddingRight={1}>
+                                <Text color={COLORES.secundario}>
+                                    {indexFila + inicio === 0 ? "#" : numeroFilaReal -1}
+                                    </Text>
+                            </Box>
+                            {fila.map((celda, indexColumna) => {
                         const posicionRealFila = indexFila + inicio;
                         const esSeleccionada = (posicionRealFila === filaSelec && indexColumna === columnselect);
-                        return (
-                    <Box key={indexColumna} width={18} paddingX={1} backgroundColor={esSeleccionada ? COLORES.acento : undefined}>
-                        <Text color={esSeleccionada ? '#000000' : COLORES.titulo}>
+                    return (
+                        <Box key={indexColumna} width={18} paddingX={1} backgroundColor={esSeleccionada ? COLORES.acento : undefined}>
+                        <Text color={esSeleccionada ? "black" : COLORES.titulo}>
                             {celda}
                         </Text>
-                    </Box>
+                        </Box>
                 );
                 })}
         </Box>
-        ));
+        );
+        });
         })()}</Box>
                 <Box justifyContent="space-between" width="100%" paddingX={1} height={1} marginTop={1}>
                     <Box>
-                        {editando ? (<Text color={COLORES.secundario}>
+                        {editando ? (
+                            <Text color={COLORES.secundario}>
+                            <Text bold color={COLORES.acento}>Enter</Text> confirmar ·
+                            <Text bold color={COLORES.acento}> Esc</Text>  cancelar
+                            </Text>
+                            ) : guardando ? (
+                            <Text color={COLORES.secundario}>
                             <Text bold color={COLORES.acento}>Enter</Text> guardar ·
                             <Text bold color={COLORES.acento}> Esc</Text> cancelar
                         </Text> ):(
