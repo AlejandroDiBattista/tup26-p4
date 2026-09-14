@@ -26,7 +26,6 @@ function App() {
     useEffect(() => {
         async function cargarArchivo() {
             if (!archivo) return;
-
             try {
                 const contenido = await readFile(archivo, 'utf-8');
                 const lineas = contenido.trim().split('\n');
@@ -46,13 +45,17 @@ function App() {
     })
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" backgroundColor={COLORES.fondo}>
+            <Box marginBottom={1}><Text color={COLORES.titulo}>Archivo: {archivo || 'Ninguno'}</Text></Box>
+            {datosCsv.map((fila, i) => (
+                <Box key={i} flexDirection="row">
+                    {fila.map((celda, j) => (
+                        <Box key={j} width={20} height={3} borderStyle="round" borderColor={COLORES.borde} backgroundColor={seleccion.fila === i && seleccion.columna === j ? COLORES.acento : COLORES.fondo}>
+                            <Text>{celda}</Text>
+                        </Box>
+                    ))}
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-            </Box>
+            ))}
         </Box>
     );
 }
