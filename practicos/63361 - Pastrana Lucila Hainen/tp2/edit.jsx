@@ -24,6 +24,21 @@ const COLORES = {
  
 };
 
+function Fila({numero, fila}) {
+    return (
+        <Box flexDirection="row" gap={1}> 
+            <Text width={4}>{numero}</Text>
+            <Text width={13}>{fila[0]}</Text>
+            <Text width={15}>{fila[1]}</Text>
+            <Text width={6}>{fila[2]}</Text>
+            <Text width={11}>{fila[3]}</Text>
+            <Text width={20}>{fila[4]}</Text>
+    
+    </Box>
+    );
+}
+
+
 function App() {
     const {exit} = useApp();
     
@@ -31,24 +46,48 @@ function App() {
         if (key.escape) {
             exit();
         }
-    })
+    }); 
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-               
-                <Box flexDirection= " colum ">
-                    {filas.map((fila, indice) => (
-                          <Text  key={indice}>
-                            {fila.join(' | ')}
-                    </Text> 
+        <Box 
+          width={COLUMNAS} 
+          height={FILAS} 
+          flexDirection="column" 
+        >
 
-                    ))}
-                  
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+         
+            <Text bold color={COLORES.titulo}>
+                {basename(archivo)}
+            </Text>
+
+            <Text>
+              {filas.length - 1} filas, {filas[0].length} columnas 
+            </Text>
+
+
+            <Box flexDirection="row" gap={1}>
+                <Text bold width={4}>N°</Text>
+                <Text bold width={13}>nombre</Text>
+                <Text bold width={15}>apellido</Text>
+                <Text bold width={6}>edad</Text>
+                <Text bold width={11}>salario</Text>
+                <Text bold width={20}>departamento</Text>
             </Box>
-        </Box>
+                  
+
+
+            {filas.slice(1).map((fila, indice) => (
+              <Fila
+                  key={indice}
+                  numero={indice + 1}
+                  fila={fila}
+              />
+            ))}
+                  
+                <Text color={COLORES.secundario}>
+                    <Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+            </Box>
+        
     );
 }
 
