@@ -67,7 +67,8 @@ function App() {
     const {exit} = useApp();
     const [contenido, setContenido] = useState({header: [], rows: []});
     const anchos = calcularAnchos(contenido.header,contenido.rows);
-    
+    const [posicionC, setPosicionC] = useState(0);
+    const [posicionF, setPosicionF] = useState(0);
 
     useEffect(() => {
         async function leerArchivo() {
@@ -87,22 +88,52 @@ function App() {
         if (key.escape) {
             exit();
         }
+
+        if (key.upArrow){
+            setPosicionF(Math.max(0, posicionF -1));
+        }
+
+         if (key.downArrow){
+            setPosicionF(Math.min(contenido.rows.length -1, posicionF +1));
+        }
+
+         if (key.leftArrow){
+            setPosicionC(Math.max(0, posicionC -1));
+        }
+
+         if (key.rightArrow){
+            setPosicionC(Math.min(contenido.header.length -1, posicionC +1));
+        }
     })
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={70} /* height={16} */ flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
              <Box flexDirection="column">
+                <Box  flexDirection="row" justifyContent="space-between">
+                 <Text color={COLORES.secundario}>
+                 Filas: {contenido.rows.length} · Columnas: {contenido.header.length}
+                </Text>
+                 <Text color={COLORES.secundario}>
+                    filas {posicionF + 1} · columnas {posicionC + 1}
+                    </Text>
+                </Box>
                  <Box width="auto">
+                    <Box width={4} marginRight={1}>
+                            <Text> # </Text>
+                    </Box>
                     {contenido.header.map((campoH,indiceH)=>( 
                     <Box key={indiceH} width={anchos[indiceH]} marginRight={1}>
-                    <Text>{campoH.toUpperCase()}</Text>
+                    <Text color={COLORES.secundario}>{campoH.toUpperCase()}</Text>
                     </Box>
                     ))}
                  </Box>
-                 {contenido.rows.map((fila, indiceF) => (
-                   <Box key={indiceF}>{
-                    fila.map((campo, indiceC) => (
+                 {contenido.rows.slice(0,13).map((fila, indiceF) => (
+                   <Box key={indiceF}>
+                    <Box width={4} marginRight={1}>
+                        <Text> {indiceF + 1} </Text>
+                    </Box>
+                    {fila.map((campo, indiceC) => (
                      <Box key={indiceC} width={anchos[indiceC]} marginRight={1}>
                         <Text>{campo}</Text>
                      </Box>))}
