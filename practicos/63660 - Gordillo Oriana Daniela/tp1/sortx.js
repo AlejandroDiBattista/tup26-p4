@@ -226,5 +226,20 @@ function writeOutput(filePath, content) {
         throw new Error(`no se pudo escribir el archivo de destino: ${filePath}`);
     }
 }
+function main() {
+    try {
+        const rawArgs = process.argv.slice(2);
+        const config = parseArgs(rawArgs);
+        const rawText = readInput(config.inputFile);
+        const rows = parseDelimited(rawText, config.delimiter);
+        const sorted = sortRows(rows, config.sortFields, config.noHeader);
+        const outputText = serialize(sorted, config.delimiter);
+        writeOutput(config.outputFile, outputText);
+    } catch (err) {
+        console.error(err.message);
+        process.exit(1);
+    }
+}
+main();
 
 
