@@ -24,40 +24,27 @@
     ];
 
 
-    function personas() {
-        return (
-
-            <Box flexDirection="column">
-
-                {Personas.map((persona, personaindex) => {
-                    const Encabezado = personaindex === 0;
-                    return    <Box key={personaindex} flexDirection="row">
-                    {persona.map((dato, datoindex) => {
-                        return        <Box key={datoindex} width={15} borderStyle="single" >
-                            <Text 
-                            color = {Encabezado ? COLORES.titulo : COLORES.secundario}
-                            bold = {Encabezado}>
-                                {dato}</Text>
-                            </Box>
-                        })}
-                    </Box>
-                })
-                
-            }
-            </Box>
-        )
-            }
         
-            function Empleados({datos}) {
+            function Empleados({datos, filaSeleccionada, columnaSeleccionada}) {
                 return (
                     
                     <Box flexDirection="column">
-
+                        <Box><Text>Empleados.csv</Text></Box>
                 {datos.map((dato, datoindex) => {
                     const Encabezado = datoindex === 0;
+                
+
                     return    <Box key={datoindex} flexDirection="row">
+                        <Box width={5} borderStyle="single">
+                            <Text>{datoindex === 0 ? "#" : datoindex}</Text>
+                        </Box>
+
                     {dato.map((d, index) => {
-                        return        <Box key={index} width={15} borderStyle="single" >
+                        const Seleccionado = (datoindex===filaSeleccionada && index === columnaSeleccionada)
+                        return        <Box key={index} width={18} borderStyle="single"
+                         borderColor={Seleccionado ? COLORES.acento : undefined}
+                         backgroundColor={Seleccionado ? COLORES.acento : undefined}>
+                            
                             <Text 
                             color = {Encabezado ? COLORES.titulo : COLORES.secundario}
                             bold = {Encabezado}>
@@ -68,18 +55,35 @@
                 })
                 
             }
+            
+             <Box flexDirection="row">
+    <Text color={COLORES.acento}>A </Text><Text>abrir . </Text>
+    <Text color={COLORES.acento}>G </Text><Text>guardar . </Text>
+    <Text color={COLORES.acento}>Enter </Text><Text>editar . </Text>
+    <Text color={COLORES.acento}>← </Text><Text>ascendente . </Text>
+    <Text color={COLORES.acento}>→ </Text><Text>descendente . </Text>
+    <Text color={COLORES.acento}>↑ </Text><Text>arriba . </Text>
+    <Text color={COLORES.acento}>↓ </Text><Text>abajo . </Text>
+    <Text color={COLORES.acento}>Esc </Text><Text>salir </Text>
+</Box>
+<Box>
+    <Text color={COLORES.acento}> fila {datos.length} . Columna {datos[0]?.length} </Text>
+</Box>
             </Box>
-        )
+            )
     }
     
     function App() {
         
         const [datos, setDatos] = useState([["Cargando de datos..."]]);
+        const [filaSeleccionada, setFilaSeleccionada] = useState(1);
+        const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
          useEffect(() => {
           async function cargarDatos(){
 
               const contenido = await readFile("empleados.csv", "utf-8")
-                setDatos(contenido.split("\n").map(linea => linea.split(",")));
+              const contenidoLimpio = contenido.replace(/\r/g, "").trim();
+                setDatos(contenidoLimpio.split("\n").map(linea => linea.split(",")));
             }
           cargarDatos()}, []);
         
@@ -89,21 +93,31 @@
                     if (key.escape) {
                         exit();
                     }
+
+                    if (key.upArrow && filaSeleccionada > 1) {
+                        setFilaSeleccionada(filaSeleccionada -1);
+                    }
+                    if (key.downArrow && filaSeleccionada < datos.length - 1) {
+                        setFilaSeleccionada(filaSeleccionada +1);
+                    }
+                    if (key.leftArrow && columnaSeleccionada > 0) {
+                        setColumnaSeleccionada(columnaSeleccionada -1);
+                    }
+                    if (key.rightArrow && columnaSeleccionada < datos[0].length - 1) {
+                        setColumnaSeleccionada(columnaSeleccionada +1);
+                    }
                 })
 
+         
                 return (
-                    
-                    
-                    <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-                <Box width={"100%"} height={"100%"} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                    <Box flexGrow={1} justifyContent="center" alignItems="center">
-                  
-                        <Empleados datos={datos}/>
+                    <Box flexDirection="column" paddingX={1} paddingY={1}>
+                        <Empleados 
+                            datos={datos} 
+                            filaSeleccionada={filaSeleccionada} 
+                            columnaSeleccionada={columnaSeleccionada} 
+                        />
                     </Box>
-                    <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-                </Box>
-        </Box>
-    )
+                )
     }
 
     const app = render(<App />);
