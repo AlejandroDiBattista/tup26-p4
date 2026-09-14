@@ -69,6 +69,8 @@ function App() {
     const [rows, setrows] = useState(0)
     const [column, setcolumn] = useState(0)
     const [tabla, settabla] = useState(datos)
+    const [modo, setmodo] = useState('normal')
+    
     
     useInput((tecla, key) => {
         if (key.escape) {
@@ -90,16 +92,15 @@ function App() {
             });
             settabla(copyTabla)
         }
-
-
+        
 
     if (key.upArrow && rows > 0)  setrows(rows - 1);
     if (key.downArrow && rows < tabla.length - 1)  setrows(rows + 1)
     if (key.leftArrow && column > 0)  setcolumn(column - 1);
     if (key.rightArrow && column < encabezado.length - 1)  setcolumn(column + 1)
+    if (key.return) {setmodo('editando')}
     
-    
-    })
+    }, {isActive: modo === 'normal'})
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
@@ -108,7 +109,16 @@ function App() {
                     <Text>{basename(archivoCsv)}</Text>
                     <Text>{tabla.length} filas ·  {encabezado.length} columnas</Text>
                 </Box>
-                <Text>Valor › {tabla[rows][column]}</Text>
+                {modo === 'editando'
+                ? <TextInput defaultValue={tabla[rows][column]} onSubmit={(valor) => {
+                    const copia = [...tabla];        
+                    copia[rows] = [...copia[rows]];        
+                    copia[rows][column] = valor;           
+                    settabla(copia);                       
+                    setmodo('normal');                     
+                }} />
+                : <Text>Valor › {tabla[rows][column]}</Text>
+                }
                 <Box flexDirection="row"> 
                     <Box width={4}>
                     <Text color="green">#</Text>
