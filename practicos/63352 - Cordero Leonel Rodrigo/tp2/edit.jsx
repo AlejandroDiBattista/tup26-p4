@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { TextInput } from '@inkjs/ui';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
 const COLUMNS = process.stdout.columns || 80;
@@ -38,8 +38,8 @@ function App({ fileNameInitial }) {
     const [rowOffset, setRowOffset] = useState(0);
     const VISIBLE_ROWS = 12;
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [editValue, setEditValue] = useState('');
+    const [mode, setMode] = useState('normal');
+    const [inputValue, setInputValue] = useState('');
 
     useEffect(() => {
         if (fileNameInitial) {
@@ -83,55 +83,83 @@ function App({ fileNameInitial }) {
 
     useInput((input, key) => {
         if (key.escape) {
-            if (isEditing) {
-                setIsEditing(false);
+            if (mode !== 'normal') {
+                setMode('normal');
                 return;
             }
             exit();
         }
 
-        if (headers.length === 0) return;
+        if (mode !== 'normal') return;
 
-        if (isEditing) return;
-
-        if (key.return) {
-            setIsEditing(true);
-            setEditValue(rows[activeCell.row][activeCell.col]);
+        if (input.toLowerCase() === 'a') {
+            setMode('open');
+            setInputValue('');
             return;
         }
-            
-        if (input === '<') sortRows(activeCell.col, 'asc');
-        if (input === '>') sortRows(activeCell.col, 'desc');
 
-        if (key.upArrow) {
-            setActiveCell(prev => {
-                const newRow = Math.max(0, prev.row - 1);
-                if (newRow < rowOffset) setRowOffset(newRow);
-                return { ...prev, row: newRow };
-            });
-        }
-        if (key.downArrow) {
-            setActiveCell(prev => {
-                const newRow = Math.min(rows.length - 1, prev.row + 1);
-                if (newRow >= rowOffset + VISIBLE_ROWS) {
-                    setRowOffset(newRow - VISIBLE_ROWS + 1);
-                }
-                return { ...prev, row: newRow };
-            });
-        }
-        if (key.leftArrow) {
-            setActiveCell(prev => ({ ...prev, col: Math.max(0, prev.col - 1) }));
-        }
-        if (key.rightArrow) {
-            setActiveCell(prev => ({ ...prev, col: Math.min(headers.length - 1, prev.col + 1) }));
+        if (headers.length > 0) {
+            if (input.toLowerCase() === 'g') {
+                setMode('save');
+                setInputValue(fileName);
+                return;
+            }
+            
+            if (key.return) {
+                setMode('edit');
+                setInputValue(rows[activeCell.row][activeCell.col]);
+                return;
+            }
+                
+            if (input === '<') sortRows(activeCell.col, 'asc');
+            if (input === '>') sortRows(activeCell.col, 'desc');
+
+            if (key.upArrow) {
+                setActiveCell(prev => {
+                    const newRow = Math.max(0, prev.row - 1);
+                    if (newRow < rowOffset) setRowOffset(newRow);
+                    return { ...prev, row: newRow };
+                });
+            }
+            if (key.downArrow) {
+                setActiveCell(prev => {
+                    const newRow = Math.min(rows.length - 1, prev.row + 1);
+                    if (newRow >= rowOffset + VISIBLE_ROWS) {
+                        setRowOffset(newRow - VISIBLE_ROWS + 1);
+                    }
+                    return { ...prev, row: newRow };
+                });
+            }
+            if (key.leftArrow) {
+                setActiveCell(prev => ({ ...prev, col: Math.max(0, prev.col - 1) }));
+            }
+            if (key.rightArrow) {
+                setActiveCell(prev => ({ ...prev, col: Math.min(headers.length - 1, prev.col + 1) }));
+            }
         }
     });
 
-    const handleSubmitEdit = (newValue) => {
-        const updatedRows = [...rows];
-        updatedRows[activeCell.row][activeCell.col] = newValue;
-        setRows(updatedRows);
-        setIsEditing(false);
+    const handleSubmit = async (value) => {
+        if (mode === 'edit') {
+            const updatedRows = [...rows];
+            updatedRows[activeCell.row][activeCell.col] = value;
+            setRows(updatedRows);
+        } else if (mode === 'open') {
+            await uploadFile(value);
+        } else if (mode === 'save') {
+            try {
+                const csvContent = [
+                    headers.join(','),
+                    ...rows.map(r => r.join(','))
+                ].join('\n');
+                await writeFile(value, csvContent, 'utf-8');
+                setFileName(basename(value));
+                setError('');
+            } catch (err) {
+                setError(`Error al guardar: ${err.message}`);
+            }
+        }
+        setMode('normal');
     };
 
     const currentValue = (rows.length > 0 && rows[activeCell.row]) 
@@ -153,17 +181,28 @@ function App({ fileNameInitial }) {
             </Box>
 
             <Box paddingX={1} marginY={1}>
-                <Text color={COLORS.secondary}>Valor › </Text>
-                {isEditing ? (
-                    <Box backgroundColor={COLORS.highlight}>
-                        <TextInput 
-                            value={editValue} 
-                            onChange={setEditValue} 
-                            onSubmit={handleSubmitEdit} 
-                        />
-                    </Box>
-                ) : (
-                    <Text color={COLORS.title}>{currentValue}</Text>
+                {mode === 'normal' && (
+                    <Text color={COLORS.secondary}>Valor › <Text color={COLORS.title}>{currentValue}</Text></Text>
+                )}
+                {mode === 'edit' && (
+                    <>
+                        <Text color={COLORS.secondary}>Valor › </Text>
+                        <Box backgroundColor={COLORS.highlight}>
+                            <TextInput value={inputValue} onChange={setInputValue} onSubmit={handleSubmit} />
+                        </Box>
+                    </>
+                )}
+                {mode === 'save' && (
+                    <>
+                        <Text bold color={COLORS.accent}>Guardar › </Text>
+                        <TextInput value={inputValue} onChange={setInputValue} onSubmit={handleSubmit} />
+                    </>
+                )}
+                {mode === 'open' && (
+                    <>
+                        <Text bold color={COLORS.accent}>Abrir › </Text>
+                        <TextInput value={inputValue} onChange={setInputValue} onSubmit={handleSubmit} />
+                    </>
                 )}
             </Box>
             
@@ -225,9 +264,16 @@ function App({ fileNameInitial }) {
             </Box>
 
             <Box justifyContent="space-between" paddingX={1}>
-                <Text color={COLORS.secondary}>
-                    <Text bold color={COLORS.accent}>A</Text> abrir · <Text bold color={COLORS.accent}>G</Text> guardar · <Text bold color={COLORS.accent}>Enter</Text> editar · <Text bold color={COLORS.accent}>&lt;</Text> ascendente · <Text bold color={COLORS.accent}>&gt;</Text> descendente · <Text bold color={COLORS.accent}>Esc</Text> salir
-                </Text>
+                {mode === 'normal' ? (
+                    <Text color={COLORS.secondary}>
+                        <Text bold color={COLORS.accent}>A</Text> abrir · <Text bold color={COLORS.accent}>G</Text> guardar · <Text bold color={COLORS.accent}>Enter</Text> editar · <Text bold color={COLORS.accent}>&lt;</Text> ascendente · <Text bold color={COLORS.accent}>&gt;</Text> descendente · <Text bold color={COLORS.accent}>Esc</Text> salir
+                    </Text>
+                ) : (
+                    <Text color={COLORS.secondary}>
+                        <Text bold color={COLORS.accent}>Enter</Text> {mode === 'open' ? 'abrir' : mode === 'save' ? 'guardar' : 'editar'} · <Text bold color={COLORS.accent}>Esc</Text> cancelar
+                    </Text>
+                )}
+                
                 {headers.length > 0 ? (
                     <Text color={COLORS.secondary}>
                         Fila {activeCell.row + 1} · Columna {activeCell.col + 1}
