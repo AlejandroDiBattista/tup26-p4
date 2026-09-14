@@ -23,7 +23,7 @@ const TAMANIO_PAGINA = 8;
 function App() {
     const {exit} = useApp();
     
-    const [nombreArchivo, setNombreArchivo] = useState(basename(archivoInicial));
+    const [nombreArchivo, setNombreArchivo] = useState(archivoInicial ? basename(archivoInicial) : '');
     const [cabecera, setCabecera] = useState([]);
     const [filas, setFilas] = useState([]);
     const [error, setError] = useState('');
@@ -72,11 +72,15 @@ function App() {
     };
 
     const guardarCelda = (nuevoValor) => {
-        const nuevasFilas = [...filas];
-        nuevasFilas[filaSel][colSel] = nuevoValor;
+    const nuevasFilas = filas.map((fila, index) =>
+        index === filaSel
+            ? fila.map((celda, col) => col === colSel ? nuevoValor : celda)
+            : fila
+        );
+
         setFilas(nuevasFilas);
         setModo('VER');
-    };
+    };  
 
     const ordenarAscendente = () => {
         if(filas.length === 0) return;
@@ -169,18 +173,29 @@ function App() {
                 <Text color={COLORES.secundario}>
                     Celda seleccionada: [{filaSel +1}, {colSel + 1}] ({cabecera[colSel] || ''}) = <Text bold color={COLORES.acento}>"{valorCelda}"</Text>
                 </Text>
+                <Box>
+                    <Box width={5}>
+                        <Text> </Text>
+                    </Box>
+
+                    {cabecera.map((columna, index) => (
+                        <Box key={index} width={15}>
+                            <Text bold>{columna}</Text>
+                        </Box>
+                    ))}
+                </Box>
             </Box>
 
             {/* Filas paginas */}
             {filasPagina.map((fila, index) => {
-                const absIdx = indiceInicio + relIdx;
+                const absIdx = indiceInicio + index;
                 return (
                     <Box key={absIdx}>
                         <Box width={5}>
                             <Text color={COLORES.secundario}>{absIdx + 1}</Text>
                         </Box>
                         {fila.map((celda, colIdx) => {
-                            const Seleccionada = absIdx === filaSel && colIdx === colSel;
+                            const seleccionada = absIdx === filaSel && colIdx === colSel;
                             return (
                                 <Box key={colIdx} width={15}>
                                     <Text backgroundColor={seleccionada ? COLORES.acento : undefined} color={seleccionada ? COLORES.fondo : COLORES.titulo} bold={seleccionada}>
@@ -192,9 +207,23 @@ function App() {
                     </Box>
                 );
             })}
-        </Box>
 
-        
+        {/* Edición de celda */}
+        {modo === 'EDITAR' && (
+            <Box marginTop={1} borderStyle="single" borderColor={COLORES.acento} padding={1}>
+                <Text color={COLORES.secundario}>Editar Celda [{filaSel + 1}, {colSel +1}]: </Text>
+                <TextInput defaultValue={valorCelda} onSubmit={guardarCelda} />
+            </Box>
+        )}
+        {error ? <Text color="red">{error}</Text> : null}
+
+        {/* Barra de Atajos */}
+        <Box marginTop={1}>
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>[A]</Text> Abrir | <Text bold color={COLORES.acento}>[G]</Text> Guardar | <Text bold color={COLORES.acento}>[ENTER]</Text> Editar | <Text bold color={COLORES.acento}>[ESC]</Text> Salir
+            </Text>
+        </Box>
+    </Box>
     );
 }
 
