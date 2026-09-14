@@ -6,6 +6,25 @@ import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
 
+
+function leerArchivo(ruta) {
+    const contenido = fs.readFileSync(ruta, 'utf-8').trim();
+    const lineas = contenido.split('\n').filter(linea => linea.trim() !== '');
+
+    const encabezados = lineas[0].split(',');
+    const filas = lineas.slice(1).map(linea => linea.split(','));
+
+    return { encabezados, filas };
+}
+
+function guardarArchivo(ruta, encabezados, filas) {
+    
+}
+
+
+
+
+
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
 
