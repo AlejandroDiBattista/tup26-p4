@@ -18,6 +18,7 @@ const COLORES = {
 };
 
 const archivo = process.argv[2];
+const nombreArchivo = basename(archivo);
 
 function convertirACsv(datos) {
     return datos.map(fila => fila.join(',')).join('\n');
@@ -29,11 +30,22 @@ function App({tabla}) {
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const [editando, setEditando] = useState(false);
     const [datos, setDatos] = useState(tabla);
+    const cantidadFilas = datos.length;
+    const cantidadColumnas = datos[0].length;
     const valorActual = datos[filaSeleccionada][columnaSeleccionada];
 
     async function guardar() {
         const contenido = convertirACsv(datos);
         await writeFile(archivo, contenido, 'utf-8');
+    }
+
+    function ordenar() {
+        const encabezado = datos[0];
+        const filas = datos.slice(1);
+        const nuevasFilas = filas.sort((a, b) => {
+            return a[columnaSeleccionada].localeCompare(b[columnaSeleccionada]);
+        });
+        setDatos([encabezado, ...nuevasFilas]);
     }
     
     useInput((tecla, key) => {
@@ -47,6 +59,10 @@ function App({tabla}) {
 
         if (key.ctrl && tecla === 's') {
             guardar();
+        }
+
+        if (tecla === 's') {
+            ordenar();
         }
 
         if (key.downArrow) {
@@ -73,6 +89,10 @@ function App({tabla}) {
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
                     <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                    <Text color={COLORES.secundario}>{nombreArchivo}</Text>
+                    <Text color={COLORES.secundario}>
+                        Filas:{cantidadFilas} | Columnas:{cantidadColumnas}
+                    </Text>
                 </Box>
             {datos.map((fila, indice) => (
                 <Text key={indice}>
@@ -107,7 +127,7 @@ function App({tabla}) {
 }
 
 const contenido = await readFile(archivo, 'utf-8');
-const filas = contenido.split('\n');
+const filas = contenido.split('\n').filter(fila => fila.trim() !== '');
 const tabla = filas.map(fila => fila.split(','));
 
 
