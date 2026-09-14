@@ -145,17 +145,31 @@ function compararValores(valorA, valorB) {
     });
 }
 
-function App({nombreArchivo, cabecera, filasIniciales}) {
+function App({
+    nombreArchivoInicial,
+    cabeceraInicial,
+    filasIniciales,
+    mensajeInicial,
+}) {
     const {exit} = useApp();
-    const [filas, setFilas] = useState(filasIniciales);
+    const [nombreArchivo, setNombreArchivo] =
+    useState(nombreArchivoInicial);
+    const [cabecera, setCabecera] =
+    useState(cabeceraInicial);
+    const [filas, setFilas] =
+    useState(filasIniciales);
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
-    const [modo, setModo] = useState('tabla');
+    const [modo, setModo] = useState(
+    nombreArchivoInicial ? 'tabla' : 'abrir'
+    );
     const editando = modo === 'editar';
     const [valorEdicion, setValorEdicion] = useState('');
     const [nombreDestino, setNombreDestino] = useState(nombreArchivo);
     const guardando = modo === 'guardar';
-    const [mensaje, setMensaje] = useState(null);
+    const [nombreOrigen, setNombreOrigen] = useState('');
+    const abriendo = modo === 'abrir';
+    const [mensaje, setMensaje] = useState(mensajeInicial);
     useEffect(() => {
     if (mensaje?.tipo !== 'exito') {
         return;
@@ -283,6 +297,60 @@ const cancelarGuardado = () => {
     setMensaje(null);
     setModo('tabla');
 };
+const iniciarApertura = () => {
+    setNombreOrigen('');
+    setMensaje(null);
+    setModo('abrir');
+};
+
+const confirmarApertura = async () => {
+    const origen = nombreOrigen.trim();
+
+    if (origen === '') {
+        setMensaje({
+            tipo: 'error',
+            texto: 'Tenés que indicar un archivo CSV',
+        });
+
+        return;
+    }
+
+    try {
+        const contenido = await readFile(origen, 'utf8');
+        const datos = convertirCsv(contenido);
+
+        setNombreArchivo(basename(origen));
+        setCabecera(datos.cabecera);
+        setFilas(datos.filas);
+
+        setFilaSeleccionada(0);
+        setColumnaSeleccionada(0);
+
+        setMensaje({
+            tipo: 'exito',
+            texto: `Archivo abierto: ${basename(origen)}`,
+        });
+
+        setModo('tabla');
+    } catch (error) {
+        setMensaje({
+            tipo: 'error',
+            texto: `No se pudo abrir: ${error.message}`,
+        });
+    }
+};
+
+const cancelarApertura = () => {
+    setNombreOrigen('');
+    setMensaje(null);
+
+    if (nombreArchivo === '') {
+        exit();
+        return;
+    }
+
+    setModo('tabla');
+};
    useInput((tecla, key) => {
     if (editando) {
         if (key.escape) {
@@ -300,9 +368,22 @@ const cancelarGuardado = () => {
     return;
     }
 
+    if (abriendo) {
+        if (key.escape) {
+            cancelarApertura();
+           }
+
+    return;
+   }
+
     if (key.escape) {
         exit();
         return;
+    }
+
+    if (tecla === 'a' || tecla === 'A') {
+    iniciarApertura();
+    return;
     }
 
     if (tecla === 'g' || tecla === 'G') {
@@ -365,7 +446,7 @@ const cancelarGuardado = () => {
     >
         <Box justifyContent="space-between">
             <Text bold color={COLORES.titulo}>
-                {nombreArchivo}
+                {nombreArchivo || 'Editor CSV'}
             </Text>
 
             <Text color={COLORES.secundario}>
@@ -398,6 +479,18 @@ const cancelarGuardado = () => {
                 onSubmit={confirmarGuardado}
             />
         </>
+    ) : modo === 'abrir' ? (
+        <>
+            <Text color={COLORES.secundario}>
+                Abrir ›{' '}
+            </Text>
+
+            <TextInput
+                defaultValue={nombreOrigen}
+                onChange={setNombreOrigen}
+                onSubmit={confirmarApertura}
+            />
+        </>
     ) : (
         <>
             <Text color={COLORES.secundario}>
@@ -419,7 +512,7 @@ const cancelarGuardado = () => {
     )}
         </Box> 
 
-        <Box marginTop={1} flexDirection="column">
+      <Box flexDirection="column">
             <FilaTabla
                 celdas={cabecera}
                 esCabecera={true}
@@ -458,6 +551,12 @@ const cancelarGuardado = () => {
         {' · '}
         <Text bold color={COLORES.acento}>Esc</Text> cancelar
     </Text>
+    ) : modo === 'abrir' ? (
+    <Text color={COLORES.secundario}>
+        <Text bold color={COLORES.acento}>Enter</Text> abrir archivo
+        {' · '}
+        <Text bold color={COLORES.acento}>Esc</Text> cancelar
+    </Text>
 ) : (
     <>
         <Text color={COLORES.secundario}>
@@ -466,7 +565,11 @@ const cancelarGuardado = () => {
 
         <Text color={COLORES.secundario}>
             {' · '}
+            <Text bold color={COLORES.acento}>A</Text> abrir
+            {' · '}
             <Text bold color={COLORES.acento}>G</Text> guardar
+            {' · '}
+            <Text bold color={COLORES.acento}>Enter</Text> editar
             {' · '}
             <Text bold color={COLORES.acento}>{'<'}</Text> ascendente
             {' · '}
@@ -477,7 +580,9 @@ const cancelarGuardado = () => {
     </Box>
 
     <Text color={COLORES.secundario}>
-        Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
+        {nombreArchivo
+        ? `Fila ${filaSeleccionada + 1} · Columna ${columnaSeleccionada + 1}`
+        : 'Sin archivo abierto'}
     </Text>
 </Box>
 </Box>
@@ -486,27 +591,33 @@ const cancelarGuardado = () => {
 
 const rutaArchivo = process.argv[2];
 
-if (!rutaArchivo) {
-    console.error('Error: tenés que indicar un archivo CSV');
-    console.error('Uso: edit <archivo.csv>');
-    process.exit(1);
+let nombreArchivoInicial = '';
+let cabeceraInicial = [];
+let filasIniciales = [];
+let mensajeInicial = null;
+
+if (rutaArchivo) {
+    try {
+        const contenido = await readFile(rutaArchivo, 'utf8');
+        const datos = convertirCsv(contenido);
+
+        nombreArchivoInicial = basename(rutaArchivo);
+        cabeceraInicial = datos.cabecera;
+        filasIniciales = datos.filas;
+    } catch (error) {
+        mensajeInicial = {
+            tipo: 'error',
+            texto: `No se pudo abrir: ${error.message}`,
+        };
+    }
 }
 
-let cabecera;
-let filas;
-
-try {
-    const contenido = await readFile(rutaArchivo, 'utf8');
-    ({cabecera, filas} = convertirCsv(contenido));
-} catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
-}
 const app = render(
     <App
-        nombreArchivo={basename(rutaArchivo)}
-        cabecera={cabecera}
-        filasIniciales={filas}
+        nombreArchivoInicial={nombreArchivoInicial}
+        cabeceraInicial={cabeceraInicial}
+        filasIniciales={filasIniciales}
+        mensajeInicial={mensajeInicial}
     />
 );
 
