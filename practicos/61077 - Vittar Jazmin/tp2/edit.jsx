@@ -6,7 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { TextInput } from '@inkjs/ui';
 import { basename } from 'node:path';
 
-const FILAS_POR_PAGINA = 8             // cantidad máx. de líneas visibles
+const FILAS_POR_PAGINA = 13             // cantidad máx. de líneas visibles
 
 const COLORES = {
     fondo: '#161310',
@@ -14,6 +14,7 @@ const COLORES = {
     titulo: '#ede7db',
     secundario: '#ada79e',
     acento: '#edbb64',
+    seleccion: '#e0e0e0',
 };
 
 /* leer y representar csv */
@@ -106,7 +107,7 @@ function App() {
             setMensaje("Guardado con éxito");
             setModo('tabla');
         } catch (error) {
-            setMensaje(`Error al guardar: ${error.message}`)
+            setMensaje(`Error al guardar: ${error.message}`);
             setModo('tabla');
         }
     };
@@ -131,7 +132,7 @@ function App() {
             setFilaSelect(prev => Math.max(0, prev - 1));
         }
 
-        if (key.downArrow) {
+        if (key.downArrow && rows.length > 0) {
             setFilaSelect(prev => Math.min(rows.length - 1, prev + 1));
         }
 
@@ -139,7 +140,7 @@ function App() {
             setColSelect(prev => Math.max(0, prev - 1));
         }
 
-        if (key.rightArrow) {
+        if (key.rightArrow && headers.length > 0) {
             setColSelect(prev => Math.min(headers.length - 1, prev + 1));
         }
 
@@ -165,23 +166,19 @@ function App() {
 
         // orden ascendente
         if (input === '<') {
-            if (rows.length === 0) return;
             const filasOrdenadas = [...rows].sort((a, b) =>
                 (a[colSelec] || '').localeCompare(b[colSelec] || '', undefined, { numeric: true, sensitivity: 'base' })
             );
             setRows(filasOrdenadas);
-            setMensaje(`Ordenado ascendente por col ${colSelec + 1}`);
             return;
         }
 
         // orden descendente
         if (input === '>') {
-            if (rows.length === 0) return;
             const filasOrdenadas = [...rows].sort((a, b) =>
                 (b[colSelec] || '').localeCompare(a[colSelec] || '', undefined, { numeric: true, sensitivity: 'base' })
             );
             setRows(filasOrdenadas);
-            setMensaje(`Ordenado descendente por col ${colSelec + 1}`);
             return;
         }
     });
@@ -192,74 +189,76 @@ function App() {
         nuevasFilas[filaSelec][colSelec] = nuevoValor;
         setRows(nuevasFilas);
         setEditando(false);
-        setMensaje('Celda modificada');
     };
-
-    /* pantalla interactiva para abrir y guardar */
-    if (modo === 'abrir') {
-        return (
-            <Box flexDirection="column" padding={1}>
-                <Text bold color={COLORES.titulo}>Abrir archivo CSV</Text>
-                <Box marginTop={1}>
-                    <Text color={COLORES.acento}>Ingrese la ruta del archivo: </Text>
-                    <TextInput defaultValue="" onSubmit={(valor) => cargarArchivo(valor.trim())} />
-                </Box>
-                {mensaje ? <Text color="red">{mensaje}</Text> : null}
-                <Text color={COLORES.secundario} marginTop={1}>Presione [Esc] para cancelar</Text>
-            </Box>
-        );
-    }
-
-    if (modo === 'guardar') {
-        return (
-            <Box flexDirection="column" padding={1}>
-                <Text bold color={COLORES.titulo}>Guardar archivo CSV</Text>
-                <Box marginTop={1}>
-                    <Text color={COLORES.acento}>Guardar como: </Text>
-                    <TextInput defaultValue={nombreArchivo || 'datos.csv'} onSubmit={(valor) => guardarArchivo(valor.trim())} />
-                </Box>
-                {mensaje ? <Text color="red">{mensaje}</Text> : null}
-                <Text color={COLORES.secundario} marginTop={1}>Presione [Esc] para cancelar</Text>
-            </Box>
-        );
-    }
 
     /* calcular filas visibles según fila seleccionada */
     const pagActual = Math.floor(filaSelec / FILAS_POR_PAGINA);
     const inicioFila = pagActual * FILAS_POR_PAGINA;
     const filasVisibles = rows.slice(inicioFila, inicioFila + FILAS_POR_PAGINA);
+    const valorCeldaActual = rows[filaSelec]?.[colSelec] ?? '';
 
     return (
-        <Box flexDirection='column' padding={1}>
+        <Box borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo} flexDirection="column" padding={1}>
             {/* información superior (nombre del archivo, filas, columnas) */}
             <Box justifyContent="space-between" marginBottom={1}>
                 <Text bold color={COLORES.titulo}>
-                    {nombreArchivo ? `Archivo: ${nombreArchivo}` : 'Sin archivo cargado'}
+                    {nombreArchivo ? nombreArchivo : "Sin archivo"}
                 </Text>
                 <Text color={COLORES.secundario}>
-                    Filas: {rows.length} | Columnas: {headers.length}
+                    {rows.length} filas • {headers.length} columnas
                 </Text>
             </Box>
 
-            {/* mensaje de estado */}
-            {mensaje ? <Text color={COLORES.acento}>{mensaje}</Text> : null}
+            {/* vista guardar/abrir */}
+            <Box marginBottom={1}>
+                {modo === 'guardar' ? (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Guardar </Text>
+                        <Text color={COLORES.secundario}>&gt; </Text>
+                        <TextInput
+                            defaultValue={nombreArchivo || 'datos.csv'}
+                            onSubmit={(valor) => guardarArchivo(valor.trim())}
+                        />
+                    </Box>
+                ) : modo === 'abrir' ? (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Abrir </Text>
+                        <Text color={COLORES.secundario}>&gt; </Text>
+                        <TextInput
+                            defaultValue=""
+                            onSubmit={(valor) => cargarArchivo(valor.trim())}
+                        />
+                    </Box>
+                ) : (
+                    <Box>
+                        {/* fila mostrar el valor actual */}
+                        <Text color={COLORES.secundario}>Valor &gt; </Text>
+                        <Text bold color={COLORES.titulo}>{valorCeldaActual}</Text>
+                    </Box>
+                )}
+            </Box>
+            {/* mensaje de error (si hay) */}
+            {mensaje ? <Text color="red">{mensaje}</Text> : null}
 
             {/* tabla de datos */}
-            <Box flexDirection='column'>
+            <Box flexDirection="column">
                 {/* encabezado */}
-                <Box marginBottom={1}>
+                <Box>
                     <Box width={5}>
                         {/* número de fila */}
-                        <Text bold color={COLORES.acento}>#</Text>
+                        <Text bold color={COLORES.secundario}>#</Text>
                     </Box>
                     {/* nombre columnas */}
-                    {headers.map((h, idxCol) => (
-                        <Box key={idxCol} width={18} overflow='hidden'>
-                            <Text bold color={idxCol === colSelec ? COLORES.acento : COLORES.secundario}>
-                                {h.toUpperCase().slice(0, 16).padEnd(18, '')}
-                            </Text>
-                        </Box>
-                    ))}
+                    {headers.map((h, idxCol) => {
+                        const esColSelec = idxCol === colSelec;
+                        return (
+                            <Box key={idxCol} width={18} overflow="hidden">
+                                <Text bold color={esColSelec ? COLORES.acento : COLORES.secundario} backgroundColor={esColSelec ? '#000000' : undefined}>
+                                    {h.toUpperCase().padEnd(18, ' ')}
+                                </Text>
+                            </Box>
+                        );
+                    })}
                 </Box>
 
                 {/* filas visibles */}
@@ -271,8 +270,8 @@ function App() {
                         <Box key={idxFilaReal}>
                             {/* número de fila */}
                             <Box width={5}>
-                                <Text color={filaSeleccionada ? COLORES.acento : COLORES.secundario}>
-                                    {String(idxFilaReal + 1).padEnd(4, '')}
+                                <Text bold={filaSeleccionada} color={filaSeleccionada ? COLORES.acento : COLORES.secundario} backgroundColor={filaSeleccionada ? '#000000' : undefined}>
+                                    {String(idxFilaReal + 1).padEnd(3, ' ')}
                                 </Text>
                             </Box>
                             {/* celdas de la fila */}
@@ -284,8 +283,8 @@ function App() {
                                         {celdaSeleccionada && editando ? (
                                             <TextInput defaultValue={valorEdicion} onSubmit={guardarEdicion} />
                                         ) : (
-                                            <Text color={celdaSeleccionada ? '#000000' : COLORES.titulo} backgroundColor={celdaSeleccionada ? COLORES.acento : undefined}>
-                                                {String(cell).slice(0, 16).padEnd(18, '')}
+                                            <Text bold={celdaSeleccionada} color={celdaSeleccionada ? COLORES.secundario : COLORES.titulo} backgroundColor={celdaSeleccionada ? COLORES.seleccion : undefined}>
+                                                {String(cell).padEnd(18, ' ')}
                                             </Text>
                                         )}
                                     </Box>
@@ -302,15 +301,15 @@ function App() {
                     <Text bold color={COLORES.acento}>A</Text> abrir •{' '}
                     <Text bold color={COLORES.acento}>G</Text> guardar •{' '}
                     <Text bold color={COLORES.acento}>Enter</Text> editar •{' '}
-                    <Text bold color={COLORES.acento}>&lt</Text> ascendente •{' '}
-                    <Text bold color={COLORES.acento}>&gt</Text> descendente •{' '}
+                    <Text bold color={COLORES.acento}>&lt;</Text> ascendente •{' '}
+                    <Text bold color={COLORES.acento}>&gt;</Text> descendente •{' '}
                     <Text bold color={COLORES.acento}>Esc</Text> salir
                 </Text>
                 <Text color={COLORES.secundario}>
-                    Valor: {rows[filaSelec]?.[colSelec] ?? ''} | Posición: [{filaSelec + 1}, {colSelec + 1}]
+                    Fila {filaSelec + 1} • Columna {colSelec + 1}
                 </Text>
             </Box>
-        </Box>
+        </Box >
     );
 }
 
