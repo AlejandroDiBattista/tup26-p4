@@ -93,14 +93,14 @@ function App() {
         
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box flexDirection='column' padding={10}>
-                <Text>Fila seleccionada: {filaSeleccionada}</Text>
-                <Text>Columna seleccionada: {colSeleccionada}</Text>
+                <Text bold color={COLORES.acento}>Fila seleccionada: {filaSeleccionada}</Text>
+                <Text bold color={COLORES.acento}>Columna seleccionada: {colSeleccionada}</Text>
 
-                <Text>
+                <Text bold color={COLORES.acento}>
                 Fila: {filaSeleccionada} | Columna: {colSeleccionada} | {separarFilas[0][colSeleccionada]}:  
                  {separarFilas[filaSeleccionada][colSeleccionada]}
                 </Text>
-                <Text>Valor edición: {valorEdicion}</Text>
+                <Text bold color={COLORES.acento}>Valor edición: {valorEdicion}</Text>
                 {editando && (
                     <TextInput
                     value={valorEdicion}
@@ -108,14 +108,26 @@ function App() {
                     />
                 )}
             </Box>
-            <Box flexDirection="column">
-
+            <Box flexDirection="column" borderStyle="round">
+                 <Box>
+                     <Text bold
+                        color={COLORES.acento}>#</Text>
+                    {separarFilas[0].map((titulo, indice) => (
+                        <Text
+                        key={indice}
+                        bold
+                        color={COLORES.acento}
+                        >
+                        {titulo.padStart(20)}
+                        </Text>
+                    ))}
+                </Box>
                 {filasVisibles.map((fila, indiceFila) => {
 
                 const indiceReal = inicioVisible + indiceFila;
                 return(
                     <Box key={indiceReal}>
-                        <Text>{indiceReal}</Text>
+                        <Text bold>{indiceReal}</Text>
                         {fila.map((col, indiceCol) => (
                             <Text key={indiceCol}
                             inverse={indiceReal === filaSeleccionada && indiceCol === colSeleccionada}
