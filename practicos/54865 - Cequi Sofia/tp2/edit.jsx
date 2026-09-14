@@ -29,6 +29,18 @@ function App() {
   const [modo, setModo] = React.useState("normal"); // "normal" | "abrir" | "guardar" | "editar"
   const [error, setError] = React.useState(null);
 
+  const FILAS_RESERVADAS = 6; // título + info archivo + posición + cabecera tabla + ayuda + margen
+  const FILAS_VISIBLES = Math.max(1, FILAS - FILAS_RESERVADAS);
+  const inicioVentana = calcularInicioVentana(
+    filaSeleccionada,
+    datos.length,
+    FILAS_VISIBLES,
+  );
+  const datosVisibles = datos.slice(
+    inicioVentana,
+    inicioVentana + FILAS_VISIBLES,
+  );
+
   async function abrirArchivo(nombre) {
     const contenido = await readFile(nombre, "utf8");
 
@@ -133,6 +145,16 @@ function App() {
     });
   }
 
+  function calcularInicioVentana(seleccionada, total, visibles) {
+    if (total <= visibles) return 0;
+
+    let inicio = seleccionada - Math.floor(visibles / 2);
+    inicio = Math.max(0, inicio);
+    inicio = Math.min(inicio, total - visibles);
+
+    return inicio;
+  }
+
   React.useEffect(() => {
     const archivoInicial = process.argv[2];
 
@@ -222,16 +244,19 @@ function App() {
           columnaSeleccionada={columnaSeleccionada}
         />
 
-        {datos.map((fila, indice) => (
-          <Fila
-            key={indice}
-            fila={fila}
-            indiceFila={indice}
-            filaSeleccionada={filaSeleccionada}
-            columnaSeleccionada={columnaSeleccionada}
-            numero={indice + 1}
-          />
-        ))}
+        {datosVisibles.map((fila, indiceRelativo) => {
+          const indiceReal = inicioVentana + indiceRelativo;
+          return (
+            <Fila
+              key={indiceReal}
+              fila={fila}
+              indiceFila={indiceReal}
+              filaSeleccionada={filaSeleccionada}
+              columnaSeleccionada={columnaSeleccionada}
+              numero={indiceReal + 1}
+            />
+          );
+        })}
       </Box>
 
       {modo === "normal" && (
