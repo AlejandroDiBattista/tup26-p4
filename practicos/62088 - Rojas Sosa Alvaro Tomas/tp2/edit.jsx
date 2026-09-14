@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -8,6 +8,7 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
+const archivoCsv = process.argv[2]
 
 const COLORES = {
     fondo:     '#161310',
@@ -17,25 +18,198 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+const ANCHOS = [15, 18, 8, 13, 18];
+const FILAS_VISIBLES = FILAS - 4
+if (!archivoCsv) {
+    console.error("Error: falta el nombre del archivo. Uso: edit archivo.csv")
+    process.exit(1)
+}
+
+let contenido
+try {
+    contenido = await readFile(archivoCsv, "utf8")
+} catch (e) {
+    console.error("Error: no se pudo abrir el archivo " + archivoCsv)
+    process.exit(1)
+}
+
+const textolimpio = contenido.replaceAll("\r", "")
+let textSeparado = textolimpio.split("\n")
+textSeparado = textSeparado.filter(t => t !== "")
+
+let SeparadoFinal = []
+
+for(let i = 0; i < textSeparado.length; i++) 
+    {
+        let separado = textSeparado[i].split(",")
+        SeparadoFinal.push(separado)
+    }
+
+let encabezado = SeparadoFinal[0]
+let datos = SeparadoFinal.slice(1)
+
+function Datos({rows, column, tabla}) {
+
+let inicio = 0;
+if (rows >= FILAS_VISIBLES) {
+inicio = rows - FILAS_VISIBLES + 1;
+}
+
+    return (
+            <Box flexDirection="column">
+                {tabla.slice(inicio, inicio + FILAS_VISIBLES).map((fila, i) => (      
+
+                    <Box key={i} flexDirection="row">
+                        <Box width={4}>
+                        <Text>{inicio + i + 1}</Text>
+                        </Box>
+                        {fila.map((celda, j) => (
+                            <Box width={ANCHOS[j] || 15} key={j}>
+                            <Text wrap="truncate" inverse={inicio + i === rows && j === column}>{celda}  </Text>
+                            </Box>
+                        ))}
+                        
+                    </Box>
+                ))}
+            </Box>
+            )
+}
+
 function App() {
     const {exit} = useApp();
+    const [rows, setrows] = useState(0)
+    const [column, setcolumn] = useState(0)
+    const [tabla, settabla] = useState(datos)
+    const [modo, setmodo] = useState('normal')
+    const [error, seterror] = useState('')
     
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
-    })
+    if (tecla === '<') 
+        {
+            const copyTabla = [...tabla];
+            copyTabla.sort(function (a, b) {
+            return a[column].localeCompare(b[column]);
+            });
+            settabla(copyTabla)
+        }
+    if (tecla === '>') 
+        {
+            const copyTabla = [...tabla];
+            copyTabla.sort(function (a, b) {
+            return b[column].localeCompare(a[column]);
+            });
+            settabla(copyTabla)
+        }
+    if (tecla === 'g' || tecla === 'G') { seterror(''); setmodo('guardando') }
+    if (tecla === 'a' || tecla === 'A') { seterror(''); setmodo('abriendo') }
 
+    if (key.upArrow && rows > 0)  setrows(rows - 1);
+    if (key.downArrow && rows < tabla.length - 1)  setrows(rows + 1)
+    if (key.leftArrow && column > 0)  setcolumn(column - 1);
+    if (key.rightArrow && column < encabezado.length - 1)  setcolumn(column + 1)
+    if (key.return) {setmodo('editando')}
+    
+    }, {isActive: modo === 'normal'})
+
+    useInput((tecla, key) => {
+    if (key.escape) {setmodo('normal')}
+    }, {isActive: modo !== 'normal'})
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+            <Box flexDirection="column">
+                <Box flexDirection="row" justifyContent="space-between">
+                    <Text>{basename(archivoCsv)}</Text>
+                    <Text>{tabla.length} filas ·  {encabezado.length} columnas</Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                {modo === 'normal' && <Text>Valor › {tabla[rows][column]}</Text>}
+                {error !== '' && <Text color="red">{error}</Text>}
+                {modo === 'editando' && <TextInput defaultValue={tabla[rows][column]} onSubmit={(valor) => {
+                const copia = [...tabla];
+                copia[rows] = [...copia[rows]];
+                copia[rows][column] = valor;
+                settabla(copia);
+                setmodo('normal');
+                }} />}
+
+                {modo === 'guardando' && (
+                <Box flexDirection="row">
+                <Text>Guardar › </Text>
+                <TextInput defaultValue={basename(archivoCsv)} onSubmit={async (valor) => {
+                try{
+                    const todo = [encabezado, ...tabla];
+                    const texto = todo.map(fila => fila.join(",")).join("\n");
+                    await writeFile(valor, texto)
+                    seterror('')
+                    } catch (e) {
+                    seterror('No se pudo guardar: ' + valor)
+                    }
+                    setmodo('normal')
+
+
+                }} />
+                </Box>
+                )}
+                {modo === 'abriendo' && (
+                <Box flexDirection="row">
+                <Text>abrir › </Text>
+                <TextInput defaultValue={basename(archivoCsv)} onSubmit={async (valor) => {
+                try{
+                const nuevoContenido = await readFile(valor, "utf8");
+                const textolimpio = nuevoContenido.replaceAll("\r", "")
+                let textSeparado = textolimpio.split("\n")
+                textSeparado = textSeparado.filter(t => t !== "")
+
+                let SeparadoFinal = []
+
+                for(let i = 0; i < textSeparado.length; i++) 
+                    {
+                        let separado = textSeparado[i].split(",")
+                        SeparadoFinal.push(separado)
+                    }
+                encabezado = SeparadoFinal[0]        
+                settabla(SeparadoFinal.slice(1))     
+                setrows(0)                           
+                setcolumn(0)
+                seterror('')
+                } catch (e) {
+                seterror('No se pudo abrir: ' + valor)
+                }
+                setmodo('normal')
+
+
+                }} />
+                </Box>
+                )}
+                    <Box flexDirection="row"> 
+                    <Box width={4}>
+                    <Text color="green">#</Text>
+                    </Box>
+                    {encabezado.map((celda, j) => (
+                    <Box width={ANCHOS[j] || 15} key={j}>
+                    <Text color="green">{celda}  </Text>
+                    </Box>
+                    ))} 
+                
+                </Box>
+                
+                <Datos rows={rows} column={column} tabla={tabla}/>
+                <Box flexDirection="row" justifyContent="space-between">
+                {modo === 'normal' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>{'<'}</Text> ascendente · <Text bold color={COLORES.acento}>{'>'}</Text> descendente · <Text bold color={COLORES.acento}>Esc</Text> salir  </Text>}
+                {modo === 'editando' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text>}
+                {modo === 'guardando' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Enter</Text> guardar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text>}
+                {modo === 'abriendo' && <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Enter</Text> abrir · <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text>}
+                <Text>fila {rows + 1}  ·  columna {column + 1}</Text>
+                </Box>
+
+
             </Box>
-        </Box>
-    );
+                    </Box>
+                );
+    
+    
 }
 
 const app = render(<App />);
