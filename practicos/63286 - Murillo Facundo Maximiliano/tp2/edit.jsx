@@ -54,6 +54,9 @@ function App() {
     const [nombreGuardado, setNombreGuardado] = useState(""); 
     const [error, setError] = useState("");
 
+    const [abriendo, setAbriendo] = useState(false);
+    const [nombreAbrir, setNombreAbrir] = useState("");
+
     useInput((tecla, key) => {
         if (key.escape) {
              if (editando) {
@@ -61,7 +64,11 @@ function App() {
             } else if(guardando) {
 
                 setGuardando(false);
-            } 
+            } else if (abriendo) {
+            
+                setAbriendo(false);
+
+            }
             else {
                 exit();
             }
@@ -70,6 +77,9 @@ function App() {
             setGuardando(true)
        
 
+        }
+        if (tecla === "a") {
+            setAbriendo(true)
         }
         if (key.downArrow) {
                 setFilaSeleccionada(anterior =>
@@ -99,7 +109,10 @@ function App() {
         }
        if (key.return) {
 
-            if(guardando){
+            if (abriendo) {
+                abrirArchivo();
+            }
+            else if(guardando){
                     guardarArchivo()
 
             }
@@ -153,6 +166,24 @@ function App() {
                 setGuardando(false);
             }
         }
+        async function abrirArchivo() {
+            try {
+                const contenido = await readFile(nombreAbrir, "utf-8")// leer nombreAbrir
+                const procesarCSV = contenido.split("\n")// procesar el CSV
+                const actualizarContenido = procesarCSV.map(procesarCSV => procesarCSV.trim())// actualizar datos
+                const lineasLimpias = actualizarContenido.filter(linea => linea !== "");
+                const datosProcesados = lineasLimpias.map(linea => linea.split(","))
+                setDatos(datosProcesados)
+
+                setFilaSeleccionada(0);
+                setColSeleccionada(0);
+                setInicioVisibile(0);
+                setAbriendo(false);
+            } catch (error) {
+                setAbriendo(false)
+                setError("No se pudo abrir el archivo")
+            }
+        }
 
     return (
         
@@ -177,6 +208,12 @@ function App() {
                     value={nombreGuardado}
                     onChange={setNombreGuardado}
                 />
+                )}
+                {abriendo && (
+                    <TextInput
+                        value={nombreAbrir}
+                        onChange={setNombreAbrir}
+                    />
                 )}
             </Box>
             <Box flexDirection="column" borderStyle="round">
