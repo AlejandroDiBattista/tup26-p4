@@ -35,7 +35,9 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-// Escribir aqui la solución al enunciado.
+
+import fs from "node:fs";
+
 
 function parseArgs(args) {
 
@@ -73,9 +75,40 @@ function parseArgs(args) {
     };
 }
 
+function readInput(origen) {
+    const contenido = fs.readFileSync(origen, "utf8");
+
+    return contenido;
+}
+
+function parseDelimited(contenido, delimitador) {
+    const lineas = contenido.trimEnd().split(/\r?\n/);
+
+    const filas = lineas.map(linea => linea.split(delimitador));
+
+    return filas;
+}
+
 const args = process.argv.slice(2);
 
 const config = parseArgs(args);
 
-console.log(config);
-//console.log(HELP)
+const contenido = readInput(config.origen);
+
+const filas = parseDelimited(contenido, config.delimitador);
+
+let encabezado;
+let datos;
+
+if (config.noHeader) {
+    encabezado = null;
+    datos = filas;
+} else {
+    encabezado = filas[0];
+    datos = filas.slice(1);
+}
+
+console.log("Encabezado:", encabezado);
+console.log("Datos:", datos);
+
+// console.log(HELP);
