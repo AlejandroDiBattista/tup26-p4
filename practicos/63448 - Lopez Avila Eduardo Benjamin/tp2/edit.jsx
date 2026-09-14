@@ -45,7 +45,7 @@ function Header({ header, anchos, colSeleccionada }) {
                             {campo.toUpperCase()}
                         </Text>
                     </Box>
-                )
+                );
             })}
         </Box>
     );
@@ -78,6 +78,7 @@ function Row({ fila, indice, anchos, filaSeleccionada, colSeleccionada }) {
 function App({ ruta, data }) {
     const {exit} = useApp();
     
+    const [filas, setFilas] = useState(data.filas);
     const [selectedRow, setSelectedRow] = useState(0);
     const [selectedCol, setSelectedCol] = useState(0);
     const [windowStart, setWindowStart] = useState(0);
@@ -95,7 +96,7 @@ function App({ ruta, data }) {
         }
         if (key.downArrow) {
             setSelectedRow((prev) => {
-                const next = Math.min(data.filas.length - 1, prev + 1);
+                const next = Math.min(filas.length - 1, prev + 1);
                 setWindowStart((prevStart) => {
                     if (next >= prevStart + FILAS_POR_PAGINA) {
                         return next - FILAS_POR_PAGINA + 1;
@@ -111,22 +112,40 @@ function App({ ruta, data }) {
         if (key.rightArrow) {
             setSelectedCol((prev) => Math.min(data.header.length - 1, prev + 1));
         }
+        if (input === '<') {
+            setFilas((prevFilas) => {
+                return [...prevFilas].sort((a, b) => {
+                    const valA = a[selectedCol] ?? '';
+                    const valB = b[selectedCol] ?? '';
+                    return valA.localeCompare(valB, undefined, { numeric: true });
+                });
+            });
+        }
+        if (input === '>') {
+            setFilas((prevFilas) => {
+                return [...prevFilas].sort((a, b) => {
+                    const valA = a[selectedCol] ?? '';
+                    const valB = b[selectedCol] ?? '';
+                    return valB.localeCompare(valA, undefined, { numeric: true });
+                });
+            });
+        }
     });
 
     const anchos = useMemo(() => {
         return data.header.map((col, i) => {
-            const maxFila = Math.max(...data.filas.map(f => (f[i] || '').length));
+            const maxFila = Math.max(...filas.map(f => (f[i] || '').length));
             return Math.max(col.length, maxFila);
         });
-    }, [data]);
+    }, [data.header, filas]);
 
-    const filasVisibles = data.filas.slice(windowStart, windowStart + FILAS_POR_PAGINA);
+    const filasVisibles = filas.slice(windowStart, windowStart + FILAS_POR_PAGINA);
     
     return (
         <Box flexDirection="column" borderStyle="round" borderColor={COLORES.borde} paddingX={1} paddingY={0}>
             <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
                 <Text bold color={COLORES.titulo}>{basename(ruta)}</Text>
-                <Text color={COLORES.secundario}>{data.filas.length} filas · {data.header.length} columnas</Text>
+                <Text color={COLORES.secundario}>{filas.length} filas · {data.header.length} columnas</Text>
             </Box>
             <Header header={data.header} anchos={anchos} colSeleccionada={selectedCol} />
             {filasVisibles.map((fila, index) => {
@@ -144,7 +163,7 @@ function App({ ruta, data }) {
             })}
             <Box flexDirection="row" justifyContent="space-between" marginTop={2}>
                 <Text color={COLORES.secundario}>
-                    <Text color={COLORES.acento} bold>A</Text> abrir · <Text color={COLORES.acento} bold>G</Text> guardar · <Text color={COLORES.acento} bold>Enter</Text> editar · <Text color={COLORES.secundario}>{'< >'} ordenar</Text> · <Text color={COLORES.acento} bold>Esc</Text> salir
+                    <Text color={COLORES.acento} bold>A</Text> abrir · <Text color={COLORES.acento} bold>G</Text> guardar · <Text color={COLORES.acento} bold>Enter</Text> editar · <Text color={COLORES.acento} bold>{'<'}</Text> ascendente · <Text color={COLORES.acento} bold>{'>'}</Text> descendente · <Text color={COLORES.acento} bold>Esc</Text> salir
                 </Text>
                 <Text color={COLORES.secundario}>Fila {selectedRow + 1} · Columna {selectedCol + 1}</Text>
             </Box>
