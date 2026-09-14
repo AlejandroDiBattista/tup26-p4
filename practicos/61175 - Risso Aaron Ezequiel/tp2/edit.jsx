@@ -8,7 +8,6 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
-const AnchoColumna = 10;
 const ruta = process.argv[2];
 const NombreArc = process.argv[2] ? basename(ruta) : "No existe Archivo";
 
@@ -31,9 +30,43 @@ function parseDelimited (data,delimiter = ',') {
  const rows = filas.slice(1);
  return {header,rows};}
 
+ function maximaLongitud(array) {
+    let longitudes = array.map((valor) => {
+        return valor.length;
+    });
+
+    return Math.max(...longitudes);
+}
+
+function anchoColumna(titulo,palabras){
+    if(maximaLongitud(palabras) > titulo.length){
+        return maximaLongitud(palabras)
+    }
+    else{
+        return titulo.length;
+    }
+}
+
+function calcularAnchos(header,rows){
+    let anchos = [];
+    for (let i = 0; i < header.length; i++) {
+
+    let columna = rows.map((row) => {
+        return row[i];
+    });
+
+    let ancho = anchoColumna(header[i], columna);
+
+    anchos.push(ancho);
+}
+ return anchos;
+}
+
+
 function App() {
     const {exit} = useApp();
     const [contenido, setContenido] = useState({header: [], rows: []});
+    const anchos = calcularAnchos(contenido.header,contenido.rows);
     
 
     useEffect(() => {
@@ -58,19 +91,19 @@ function App() {
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={70} height={17} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+            <Box width={70} /* height={16} */ flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
              <Box flexDirection="column">
-                 <Box>
+                 <Box width="auto">
                     {contenido.header.map((campoH,indiceH)=>( 
-                    <Box key={indiceH} width={AnchoColumna} marginRight={1}>
-                    <Text>{campoH}</Text>
+                    <Box key={indiceH} width={anchos[indiceH]} marginRight={1}>
+                    <Text>{campoH.toUpperCase()}</Text>
                     </Box>
                     ))}
                  </Box>
-                 {contenido.rows.map((fila, indice) => (
-                   <Box key={indice}>{
-                    fila.map((campo, indice) => (
-                     <Box key={indice} width={AnchoColumna} marginRight={1}>
+                 {contenido.rows.map((fila, indiceF) => (
+                   <Box key={indiceF}>{
+                    fila.map((campo, indiceC) => (
+                     <Box key={indiceC} width={anchos[indiceC]} marginRight={1}>
                         <Text>{campo}</Text>
                      </Box>))}
                    </Box>
