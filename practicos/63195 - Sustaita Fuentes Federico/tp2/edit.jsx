@@ -69,7 +69,14 @@ function App() {
         await writeFile(nombre, contenido, 'utf-8');
         setModo('ver');
     }
-
+    async function editarcelda(valor) {
+        setDatos(d =>{
+            const copia = d.map(fila => [...fila])
+            copia[filasel][colsel]= valor
+            return copia
+        })
+        setModo('ver')
+    }
     const [modo, setModo] = useState('ver')
     const [cabecera, setCabecera] = useState(null);
     const [datos, setDatos] = useState(null);
@@ -84,20 +91,20 @@ function App() {
     },[])
 
     const {exit} = useApp();
-    useInput((tecla, key) => {
-        if (modo !== 'ver') return; // mientras se tipea el nombre, no proceses flechas acá
-
-        if (key.escape) {
-            exit();
-            return;
-        }
-        if (!datos) return;
-        if(tecla.toLowerCase()==='g'){setModo('guardar');return;}
-        if(key.downArrow)setFilasel(f => Math.min(f+1, datos.length-1));
-        if(key.rightArrow)setColsel(c => Math.min(c+1, cabecera.length-1));
-        if(key.upArrow)setFilasel(f => Math.max(f-1,0));
-        if(key.leftArrow)setColsel(c => Math.max(c-1,0));
-    })
+useInput((tecla, key) => {
+    if (modo !== 'ver') {
+        if (key.escape) setModo('ver'); // cancela y vuelve a ver la tabla
+        return;
+    }
+    if (key.escape) { exit(); return; }
+    if (!datos) return;
+    if (tecla.toLowerCase()==='g') { setModo('guardar'); return; }
+    if (key.return) { setModo('editar'); return; }
+    if(key.downArrow)setFilasel(f => Math.min(f+1, datos.length-1));
+    if(key.rightArrow)setColsel(c => Math.min(c+1, cabecera.length-1));
+    if(key.upArrow)setFilasel(f => Math.max(f-1,0));
+    if(key.leftArrow)setColsel(c => Math.max(c-1,0));
+})
 
     return (
         <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1}>
@@ -128,6 +135,12 @@ function App() {
                         <Box>
                             <Text color={COLORES.acento}>Guardar como: </Text>
                             <TextInput onSubmit={guardarcsv} />
+                        </Box>
+                    )}
+                    {modo === 'editar' && (
+                        <Box>
+                            <Text color={COLORES.acento}>Editar celda: </Text>
+                            <TextInput defaultValue={datos[filasel][colsel]} onSubmit={editarcelda} />
                         </Box>
                     )}
                 </>
