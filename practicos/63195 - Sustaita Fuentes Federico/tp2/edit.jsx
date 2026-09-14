@@ -65,9 +65,15 @@ function App() {
         .map((fila)=>fila.split(','))
     }
     async function guardarcsv(nombre) {
-        const contenido = [cabecera, ...datos].map(fila => fila.join(',')).join('\n') + '\n';
-        await writeFile(nombre, contenido, 'utf-8');
-        setModo('ver');
+        try {
+            const contenido = [cabecera, ...datos].map(fila => fila.join(',')).join('\n') + '\n';
+            await writeFile(nombre, contenido, 'utf-8');
+            setError('')
+            setModo('ver');
+        } catch {
+            setError(`No se pudo guardar "${nombre}"`)
+            setModo('ver')
+        }
     }
     async function editarcelda(valor) {
         setDatos(d =>{
@@ -78,19 +84,36 @@ function App() {
         setModo('ver')
     }
     async function abrircsv(nombre) {
-        const filas = await leercsv(nombre)
-        setCabecera(filas[0])
-        setDatos(filas.slice(1))
-        setFilasel(0)
-        setColsel(0)
-        setModo('ver')
+        try {
+            const filas = await leercsv(nombre)
+            setCabecera(filas[0])
+            setDatos(filas.slice(1))
+            setFilasel(0)
+            setColsel(0)
+            setOffset(0)
+            setError('')
+            setModo('ver')
+        } catch {
+            setError(`No se pudo abrir "${nombre}"`)
+            setModo('ver')
+        }
+    }
+    function ordenar(direccion) {
+        setDatos(d =>{
+            const copia = [...d]
+            copia.sort((a,b)=>{
+                const cmp = a[colsel].localeCompare(b[colsel], undefined, {numeric: true});
+            return direccion === 'asc' ? cmp : -cmp;
+            })
+            return copia;
+        })
     }
     const [modo, setModo] = useState('ver')
     const [cabecera, setCabecera] = useState(null);
     const [datos, setDatos] = useState(null);
     const [colsel, setColsel] = useState(0);
     const [filasel, setFilasel] = useState(0);
-
+    const [error, setError] = useState('');
     useEffect(()=>{
         abrircsv('empleados.csv')
     },[])
@@ -105,6 +128,8 @@ useInput((tecla, key) => {
     if (!datos) return;
     if (tecla.toLowerCase()==='a') { setModo('abrir'); return; }
     if (tecla.toLowerCase()==='g') { setModo('guardar'); return; }
+    if (tecla === '<') { ordenar('asc'); return; }
+    if (tecla === '>') { ordenar('desc'); return; }
     if (key.return) { setModo('editar'); return; }
     if(key.downArrow)setFilasel(f => Math.min(f+1, datos.length-1));
     if(key.rightArrow)setColsel(c => Math.min(c+1, cabecera.length-1));
@@ -154,6 +179,9 @@ useInput((tecla, key) => {
                             <Text color={COLORES.acento}>Abrir archivo: </Text>
                             <TextInput onSubmit={abrircsv} />
                         </Box>
+                    )}
+                    {error && (
+                        <Text color="#e06c75">{error}</Text>
                     )}
                 </>
             )}
