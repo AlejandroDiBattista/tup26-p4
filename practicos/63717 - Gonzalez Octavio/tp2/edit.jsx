@@ -61,26 +61,49 @@ function App({archivoInicial}) {
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [colSeleccionada, setColSeleccionada] = useState(0);
     const [desplazamiento, setDesplazamiento] = useState(0);
+    const [modo, setModo] = useState('normal');
+    const [valorEdicion, setValorEdicion] = useState('');
+    const [inputArchivo, setInputArchivo] = useState('');
 
-    const filaVisibles = FILAS - 6;
+    const filasVisibles = FILAS - 6;
+
+    async function abrirArchivo(nombre) {
+        try {
+            const contenido = await readFile(nombre, 'utf-8');
+            const parsed = parseCSV(contenido);
+            setHeaders(parsed.headers);
+            setFilas(parsed.rows);
+            setNombreArchivo(nombre);
+            setFilaSeleccionada(0);
+            setColSeleccionada(0);
+            setDesplazamiento(0);
+            setError(null);
+        } catch (err) {
+            setError('Error al abrir: ' + nombre);
+        }
+        setModo('normal');
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            const contenido = serializeCSV(headers, filas);
+            await writeFile(nombre, contenido, 'utf-8');
+            setNombreArchivo(nombre);
+            setError(null);
+        } catch (err) {
+            setError('Error al guardar: ' + nombre);
+        }
+        setModo('normal');
+    }
 
     useEffect(() => {
         if (!archivoInicial) return;
-        async function cargar() {
-            try {
-                const contenido = await readFile(archivoInicial, 'utf-8');
-                const parsed = parseCSV(contenido);
-                setHeaders(parsed.headers);
-                setFilas(parsed.rows);
-                setError(null);
-            } catch (err) {
-                setError('Error al abrir el archivo: ' + archivoInicial);
-            }
-        }
-        cargar();
+        abrirArchivo(archivoInicial);
     }, [archivoInicial]);
 
     useInput((tecla, key) => {
+        if (modo === 'edicion' || modo === 'abrir' || modo === 'guardar') return;
+
         if (key.escape) {
             exit();
         }
@@ -98,7 +121,7 @@ function App({archivoInicial}) {
         if (key.downArrow) {
             const nueva = Math.min(filas.length - 1, filaSeleccionada + 1);
             setFilaSeleccionada(nueva);
-            if (nueva >= desplazamiento + filaVisibles) setDesplazamiento(nueva - filaVisibles + 1);
+            if (nueva >= desplazamiento + filasVisibles) setDesplazamiento(nueva - filasVisibles + 1);
         }
         if (key.leftArrow) {
             setColSeleccionada(col => Math.max(0, col - 1));
@@ -106,10 +129,31 @@ function App({archivoInicial}) {
         if (key.rightArrow) {
             setColSeleccionada(col => Math.min(headers.length - 1, col + 1));
         }
+        if (key.return && filas.length > 0) {
+            setValorEdicion(filas[filaSeleccionada][colSeleccionada]);
+            setModo('edicion');
+        }
+        if (tecla === 'a' || tecla === 'A') {
+            setInputArchivo('');
+            setModo('abrir');
+        }
+        if (tecla === 'g' || tecla === 'G') {
+            setInputArchivo(nombreArchivo);
+            setModo('guardar');
+        }
     });
 
+    function confirmarEdicion(nuevoValor) {
+        const nuevasFilas = filas.map((fila, fi) => {
+            if (fi !== filaSeleccionada) return fila;
+            return fila.map((celda, ci) => ci === colSeleccionada ? nuevoValor : celda);
+        });
+        setFilas(nuevasFilas);
+        setModo('normal');
+    }
+
     const valorActual = filas[filaSeleccionada] ? filas[filaSeleccionada][colSeleccionada] : '';
-    const filasMostradas = filas.slice(desplazamiento, desplazamiento + filaVisibles);
+    const filasMostradas = filas.slice(desplazamiento, desplazamiento + filasVisibles);
 
     return (
         <Box width={COLUMNAS} height={FILAS} flexDirection="column">
@@ -151,18 +195,57 @@ function App({archivoInicial}) {
 
             {error && <Text color="red">{error}</Text>}
 
-            <Box flexDirection="row" borderStyle="single" borderColor={COLORES.borde}>
-                <Text color={COLORES.secundario}>
-                    {'  '}fila <Text color={COLORES.acento}>{filaSeleccionada + 1}</Text>
-                    {'  '}col <Text color={COLORES.acento}>{colSeleccionada + 1}</Text>
-                    {'  '}valor: <Text color={COLORES.titulo}>{valorActual}</Text>
-                </Text>
-                <Text color={COLORES.secundario}>
-                    {'  '}<Text bold color={COLORES.acento}>Esc</Text> salir
-                    {'  '}<Text bold color={COLORES.acento}>{'<'}</Text> asc
-                    {'  '}<Text bold color={COLORES.acento}>{'>'}</Text> desc
-                </Text>
-            </Box>
+            {modo === 'edicion' && (
+                <Box borderStyle="round" borderColor={COLORES.acento} flexDirection="row">
+                    <Text color={COLORES.secundario}> Editar: </Text>
+                    <TextInput
+                        value={valorEdicion}
+                        onChange={setValorEdicion}
+                        onSubmit={confirmarEdicion}
+                    />
+                    <Text color={COLORES.secundario}> Esc cancela</Text>
+                </Box>
+            )}
+
+            {modo === 'abrir' && (
+                <Box borderStyle="round" borderColor={COLORES.acento} flexDirection="row">
+                    <Text color={COLORES.secundario}> Abrir archivo: </Text>
+                    <TextInput
+                        value={inputArchivo}
+                        onChange={setInputArchivo}
+                        onSubmit={nombre => nombre ? abrirArchivo(nombre) : setModo('normal')}
+                    />
+                </Box>
+            )}
+
+            {modo === 'guardar' && (
+                <Box borderStyle="round" borderColor={COLORES.acento} flexDirection="row">
+                    <Text color={COLORES.secundario}> Guardar como: </Text>
+                    <TextInput
+                        value={inputArchivo}
+                        onChange={setInputArchivo}
+                        onSubmit={nombre => nombre ? guardarArchivo(nombre) : setModo('normal')}
+                    />
+                </Box>
+            )}
+
+            {modo === 'normal' && (
+                <Box flexDirection="row" borderStyle="single" borderColor={COLORES.borde}>
+                    <Text color={COLORES.secundario}>
+                        {'  '}fila <Text color={COLORES.acento}>{filaSeleccionada + 1}</Text>
+                        {'  '}col <Text color={COLORES.acento}>{colSeleccionada + 1}</Text>
+                        {'  '}valor: <Text color={COLORES.titulo}>{valorActual}</Text>
+                    </Text>
+                    <Text color={COLORES.secundario}>
+                        {'  '}<Text bold color={COLORES.acento}>Esc</Text> salir
+                        {'  '}<Text bold color={COLORES.acento}>Enter</Text> editar
+                        {'  '}<Text bold color={COLORES.acento}>A</Text> abrir
+                        {'  '}<Text bold color={COLORES.acento}>G</Text> guardar
+                        {'  '}<Text bold color={COLORES.acento}>{'<'}</Text> asc
+                        {'  '}<Text bold color={COLORES.acento}>{'>'}</Text> desc
+                    </Text>
+                </Box>
+            )}
         </Box>
     );
 }
