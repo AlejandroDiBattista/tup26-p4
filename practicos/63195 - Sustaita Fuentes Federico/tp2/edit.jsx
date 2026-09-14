@@ -77,6 +77,14 @@ function App() {
         })
         setModo('ver')
     }
+    async function abrircsv(nombre) {
+        const filas = await leercsv(nombre)
+        setCabecera(filas[0])
+        setDatos(filas.slice(1))
+        setFilasel(0)
+        setColsel(0)
+        setModo('ver')
+    }
     const [modo, setModo] = useState('ver')
     const [cabecera, setCabecera] = useState(null);
     const [datos, setDatos] = useState(null);
@@ -84,10 +92,7 @@ function App() {
     const [filasel, setFilasel] = useState(0);
 
     useEffect(()=>{
-        leercsv('empleados.csv').then((filas)=>{
-            setCabecera(filas[0]);
-            setDatos(filas.slice(1));
-        })
+        abrircsv('empleados.csv')
     },[])
 
     const {exit} = useApp();
@@ -98,6 +103,7 @@ useInput((tecla, key) => {
     }
     if (key.escape) { exit(); return; }
     if (!datos) return;
+    if (tecla.toLowerCase()==='a') { setModo('abrir'); return; }
     if (tecla.toLowerCase()==='g') { setModo('guardar'); return; }
     if (key.return) { setModo('editar'); return; }
     if(key.downArrow)setFilasel(f => Math.min(f+1, datos.length-1));
@@ -141,6 +147,12 @@ useInput((tecla, key) => {
                         <Box>
                             <Text color={COLORES.acento}>Editar celda: </Text>
                             <TextInput defaultValue={datos[filasel][colsel]} onSubmit={editarcelda} />
+                        </Box>
+                    )}
+                    {modo === 'abrir' && (
+                        <Box>
+                            <Text color={COLORES.acento}>Abrir archivo: </Text>
+                            <TextInput onSubmit={abrircsv} />
                         </Box>
                     )}
                 </>
