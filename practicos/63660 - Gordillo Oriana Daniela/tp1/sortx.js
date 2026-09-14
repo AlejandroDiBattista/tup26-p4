@@ -129,4 +129,35 @@ function parseArgs(args) {
     return { inputFile, outputFile, delimiter, noHeader, sortFields };
 }
 
+function readInput(filePath) {
+    try {
+        return readFileSync(filePath, 'utf8');
+    } catch {
+        throw new Error(`no se pudo leer el archivo de origen: ${filePath}`);
+    }
+}
+
+function parseDelimited(content, delimiter) {
+    if (content.includes('"')) {
+        throw new Error('la entrada contiene comillas dobles');
+    }
+
+    const lines = content.split(/\r?\n/).filter(line => line.length > 0);
+    if (lines.length === 0) {
+        return [];
+    }
+
+    const rows = lines.map(line => line.split(delimiter));
+    const cantidadCampos = rows[0].length;
+
+    for (let r = 0; r < rows.length; r += 1) {
+        if (rows[r].length !== cantidadCampos) {
+            throw new Error(`las filas tienen diferente cantidad de campos`);
+        }
+    }
+
+    return rows;
+}
+
+
 
