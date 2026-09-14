@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -44,11 +44,27 @@ const COLORES = {
 
 function App() {
     const {exit} = useApp();
-    
+    const [fila, setFila] = useState(0);
+    const [columna, setColumna] = useState(0);
+
     useInput((tecla, key) => {
         if (key.escape) {
+
             exit();
         }
+            if (key.downArrow) {
+                setFila(Math.min(fila + 1, datos.length - 1));
+            }
+            if (key.upArrow) {
+                setFila(Math.max(fila - 1, 0));
+            }
+            if (key.rightArrow) {
+                setColumna(Math.min(columna + 1, titulos.length - 1));
+            }
+            if (key.leftArrow) {
+                setColumna(Math.max(columna - 1, 0));
+            }
+
     })
 ///aqui 
 
@@ -63,10 +79,10 @@ function App() {
                       </Text>
                     ))}
                     </Box>
-                {datos.slice(0 , 15).map((fila, i) => (
+                {datos.slice(0 , 15).map((registro, i) => (
                   <Box key={i} flexDirection="row" gap={1} >
-                    {fila.map((campo, j) => (
-                      <Text key={j} color={COLORES.titulo}>
+                    {registro.map((campo, j) => (
+                      <Text key={j} color={COLORES.titulo} backgroundColor={i === fila && j === columna ? COLORES.secundario : undefined}>
                         {campo.padEnd(anchos[j])}
                       </Text>
                     ))}   
