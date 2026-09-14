@@ -228,9 +228,7 @@ function App() {
                 onEditSubmit={actualizarCelda}
                 nombreArchivo={nombreArchivo}
             />
-            <Box paddingY={1}>
-                <Text color={COLORES.acento}>ESTADO ACTUAL: {modo.toUpperCase()} </Text>
-            </Box>
+          
         </Box>
     )
 }
