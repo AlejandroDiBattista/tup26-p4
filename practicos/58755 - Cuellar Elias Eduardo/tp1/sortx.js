@@ -35,4 +35,188 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+import fs from "fs"
+
+function parseSortField(valor) {
+    const partes = valor.split(":")
+    const nombre = partes[0]
+    const tipo = partes[1] || "alpha"
+    const orden = partes[2] || "asc"
+
+    return {
+        name: nombre,
+        numeric: tipo === "num",
+        descending: orden === "desc"
+    }
+}
+
+function parseArgs(arg) {
+    let configuracion = {
+        delimiter: ",",
+        noHeader: false,
+        sortFields: []
+    }
+    let ubicacion = []
+
+    while (arg.length > 0) {
+        const opcion = arg.shift()
+        if (opcion === "--by" || opcion === "-b") {
+            let campo = arg.shift()
+            configuracion.sortFields.push(parseSortField(campo))   
+        } else if (opcion === "--delimiter" || opcion === "-d") {
+            let valor = arg.shift()
+            configuracion.delimiter = valor
+        } else if (opcion === "--no-header" || opcion === "-nh") {
+            configuracion.noHeader = true
+        } else if (opcion === "--help" || opcion === "-h") {
+            console.log(HELP)
+            process.exit(0)
+        } else if (opcion.startsWith("-")) {
+            console.error(`Error: opción desconocida "${opcion}".`)
+            process.exit(1)
+        } else {
+            ubicacion.push(opcion)
+        }
+    }
+
+    if (ubicacion.length < 1) {
+        console.error("Error: falta el archivo de origen.")
+        process.exit(1)
+    }
+    if (ubicacion.length < 2) {
+        console.error("Error: falta el archivo de destino.")
+        process.exit(1)
+    }
+
+    configuracion.inputFile = ubicacion[0]
+    configuracion.outputFile = ubicacion[1]
+
+    if (configuracion.sortFields.length === 0) {
+        console.error("Error: debe especificar al menos un criterio -b/--by.")
+        process.exit(1)
+    }
+
+    return configuracion
+}
+
+function readInput(inputFile) {
+    try {
+        const contenido = fs.readFileSync(inputFile, "utf8")
+        return contenido
+    } catch {
+        console.error(`Error: no se pudo leer el archivo "${inputFile}".`)
+        process.exit(1)
+    }
+}
+
+function parseDelimited(texto, delimiter) {
+   const lineas = texto.split(/\r?\n/).filter(linea => linea.trim() !== "")
+    const filas = []
+    let cantidadColumnas = null
+
+    for (const linea of lineas) {
+        if (linea.includes('"')) {
+            console.error("Error: la entrada contiene comillas dobles.")
+            process.exit(1)
+        }
+
+        const columnas = linea.split(delimiter)
+
+        if (cantidadColumnas === null) {
+            cantidadColumnas = columnas.length
+        } else if (columnas.length !== cantidadColumnas) {
+            console.error("Error: las filas tienen diferente cantidad de campos.")
+            process.exit(1)
+        }
+
+        filas.push(columnas)
+    }
+    return filas
+}
+
+function sortRows(filas, config) {
+    let header = null
+    let datos = filas
+
+    if (!config.noHeader) {
+        header = filas[0]
+        datos = filas.slice(1)
+    }
+
+    datos.sort((filaA, filaB) => {
+        for (const criterio of config.sortFields) {
+            const indice = obtenerIndiceColumna(criterio.name, header)
+            let valorA = filaA[indice]
+            let valorB = filaB[indice]
+            let comparacion
+
+            if (criterio.numeric) {
+                const numA = Number(valorA)
+                const numB = Number(valorB)
+                if (isNaN(numA) || isNaN(numB)) {
+                    console.error(`Error: valor no numérico en el campo "${criterio.name}".`)
+                    process.exit(1)
+                }
+                comparacion = numA - numB
+            } else {
+                comparacion = valorA.localeCompare(valorB)
+            }
+            if (criterio.descending) {
+                comparacion = -comparacion
+            }
+            if (comparacion !== 0) {
+                return comparacion
+            }
+        }
+        return 0
+    })
+
+    if (header !== null) {
+        return [header, ...datos]
+    }
+    return datos
+}
+
+function obtenerIndiceColumna(campo, header) {
+    if (header === null) {
+        const indice = Number(campo)
+        if (isNaN(indice)) {
+            console.error(`Error: el campo "${campo}" no es un índice válido.`)
+            process.exit(1)
+        }
+        return indice
+    }
+    const indice = header.indexOf(campo)
+    if (indice === -1) {
+        console.error(`Error: el campo "${campo}" no existe.`)
+        process.exit(1)
+    }
+    return indice
+}
+
+function serialize(filas, delimiter) {
+    const lineas = filas.map(fila => fila.join(delimiter))
+    return lineas.join("\n")
+}
+
+function writeOutput(outputFile, texto) {
+    try {
+        fs.writeFileSync(outputFile, texto)
+    } catch (error) {
+        console.error(`Error: no se pudo escribir el archivo "${outputFile}".`)
+        process.exit(1)
+    }
+}
+
+try {
+    const config = parseArgs(process.argv.slice(2))
+    const texto = readInput(config.inputFile)
+    const filas = parseDelimited(texto, config.delimiter)
+    const ordenadas = sortRows(filas, config)
+    const salida = serialize(ordenadas, config.delimiter)
+    writeOutput(config.outputFile, salida)
+} catch (error) {
+    console.error(`Error inesperado: ${error.message}`)
+    process.exit(1)
+}

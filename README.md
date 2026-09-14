@@ -6,84 +6,42 @@
 </p>
 
 ---
-
-Programación IV integra los conocimientos de programación y bases de datos en
-la construcción de aplicaciones web completas. La materia parte de los
-fundamentos de la plataforma web y avanza, de forma gradual, hacia soluciones
-con interfaz, servidor, persistencia, seguridad, pruebas y despliegue.
-
-> El objetivo es comprender qué ocurre debajo de cada herramienta para poder
-> diseñar, implementar y justificar una aplicación web integral.
-
-## Recorrido de aprendizaje
-La propuesta se organiza desde los principios técnicos hacia las herramientas
-de producción:
-
-1. **JavaScript moderno:** valores, estructuras de control, funciones,
-   colecciones, módulos, errores y asincronía.
-2. **Plataforma web:** navegador, servidor, URL, DNS, HTTP, HTTPS y JSON.
-3. **Interfaces:** HTML semántico, CSS, formularios, accesibilidad y diseño
-   responsive.
-4. **Programación en el navegador:** DOM, eventos, estado, almacenamiento local
-   y consumo de servicios con `fetch`.
-5. **Aplicaciones por componentes:** React y desarrollo full stack con Next.js.
-6. **Backend y datos:** Node.js, archivos, APIs orientadas a recursos, SQL y
-   bases de datos relacionales.
-7. **Calidad de producción:** validación, autenticación, autorización,
-   seguridad, pruebas, rendimiento, documentación y despliegue.
-8. **Aplicaciones generativas:** integración de modelos de inteligencia
-   artificial y herramientas y recursos mediante MCP.
-
-## Enfoque de trabajo
-La materia combina explicación conceptual, lectura y escritura de código,
-laboratorios interactivos y resolución de problemas. Los trabajos prácticos
-buscan que cada decisión pueda explicarse: cómo se representa la información,
-qué responsabilidad tiene cada capa y qué cambia cuando una solución pasa del
-navegador a una aplicación con servidor y persistencia.
-
-El primer enunciado disponible propone construir
-[`sortx`](./enunciados/tp1/enunciado.md), una herramienta de línea de comandos
-en JavaScript y sin dependencias externas. El ejercicio trabaja el análisis de
-argumentos, la lectura y escritura de archivos, la validación, el ordenamiento
-por múltiples criterios y la separación del programa en funciones.
-
-## Materiales del repositorio
-| Recurso                                                        | Contenido                                                                                                                                           |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Apuntes](./apuntes/chatgpt/)                                  | Desarrollo progresivo de JavaScript, tipos, estructuras de control, funciones, errores, expresiones regulares, archivos con Node.js y tokenización. |
-| [Prácticos](./practicos/)                                      | Enunciados y datos de entrada para las actividades evaluables.                                                                                      |
-| [Bibliografía](./bibliografia/bibliografia-programacion-iv.md) | Libros, documentación oficial y referencias para profundizar.                                                                                       |
-| [Laboratorios](./experimentos/)                                | Experiencias interactivas sobre lógica booleana, perceptrones, síntesis de circuitos, tokenización y árboles de juego.                              |
-| [Sistema docente](./sistema/)                                  | Aplicación para gestionar alumnos, comisiones, clases, asistencia y trabajos.                                                                       |
-
-También están disponibles ediciones compiladas de los apuntes en
-[formato EPUB](./apuntes/Apuntes-Tup26-P4-claude.epub) y
-[formato PDF](./apuntes/Apuntes-Tup26-P4-claude.pdf). El script
-ediciones del libro a partir de las fuentes Markdown.
-
-## Bibliografía principal
-- Marijn Haverbeke, [*Eloquent JavaScript*](./bibliografia/Javascript-elocuente.pdf/).
-- David Flanagan, [*JavaScript: The Definitive Guide*](./bibliografia/JavaScript-The-Definitive-Guide.pdf).
-- [MDN Web Docs](https://developer.mozilla.org/).
-- [Documentación de Node.js](https://nodejs.org/docs/latest/api/).
-- [Documentación de React](https://react.dev/learn).
-- [Documentación de Next.js](https://nextjs.org/docs).
+# Trabajo práctico 2: Editor de CSV
 
 > [!IMPORTANT]
-> ### Trabajo práctico 1
->
-> Ya está disponible el [enunciado del TP1](./enunciados/tp1/enunciado.md).
-> La entrega debe realizarse antes del **lunes 7 de septiembre de 2026**.
->
-> Para comenzar, consultá la documentación sobre [cómo crear el ambiente de
-> desarrollo](./como-crear-entorno-desarrollo.md).
->
-> Para conocer el procedimiento de entrega, revisá [cómo entregar los trabajos
-> prácticos](./como-entregar-practico.md).
+> **Fecha de presentación:** hasta el próximo martes 15 de septiembre inclusive.
 
----
+Desarrollar una aplicación de terminal con JavaScript, React e Ink que permita abrir, visualizar, editar, ordenar y guardar archivos CSV, tomando como referencia las siguientes pantallas:
 
-<p align="center">
-  <strong>Programación IV · Programación Web</strong><br>
-  Ing. Alejandro Di Battista
-</p>
+**Visualización:** mostrar los datos del archivo en una tabla y permitir navegar entre sus celdas.
+
+![Pantalla de visualización de los datos del CSV](mostrar.png)
+
+**Guardado:** al presionar **G**, solicitar el nombre del archivo donde se guardarán los datos.
+
+![Pantalla de guardado del archivo CSV](guardar.png)
+
+- Mostrar los datos en una tabla con cabecera y filas numeradas, el nombre del archivo y la cantidad de filas y columnas.
+- Si se ejecuta el comando con el nombre de un archivo CSV como argumento, abrirlo y mostrar sus datos directamente, sin volver a solicitar el nombre del archivo.
+- Navegar entre celdas con las flechas, resaltar la celda seleccionada y mostrar su valor y posición. Desplazar la vista cuando sea necesario.
+- Ordenar las filas por la columna seleccionada usando `<` para orden ascendente y `>` para orden descendente.
+- Implementar las acciones indicadas: **A** para abrir un archivo, **G** para guardar, **Enter** para editar la celda y **Esc** para cancelar una acción o salir.
+- Al usar **A** para abrir o **G** para guardar, pedir al usuario el nombre del archivo. Mostrar un mensaje si ocurre un error.
+
+Usaremos el **formato más simple posible de CSV**: primera línea con cabecera, campos separados por coma y un registro por línea, con igual cantidad de campos en todas las filas. Los campos no contendrán caracteres especiales: comas, comillas ni saltos de línea internos; no será necesario implementar escapes ni campos entrecomillados.
+
+
+> Nota:
+ Para configurar el proyecto y poder ejecutarlo:
+
+```bash
+npm install
+npm install --global tsx
+npm link
+```
+
+Luego se puede ejecutar el editor como comando con:
+
+```bash
+edit empleados.csv
+```

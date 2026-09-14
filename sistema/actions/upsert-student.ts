@@ -19,6 +19,10 @@ export default defineAction({
       .string()
       .optional()
       .describe("Usuario de GitHub. Acepta '@juan' o la URL del perfil."),
+    esColaborador: z
+      .boolean()
+      .optional()
+      .describe("Estado local de colaboración. false marca invitación pendiente si tiene GitHub."),
     course: z
       .string()
       .optional()
@@ -35,6 +39,7 @@ export default defineAction({
       nombre: args.nombre,
       telefono: args.telefono,
       github: args.github,
+      esColaborador: args.esColaborador,
       courseId,
     });
   },

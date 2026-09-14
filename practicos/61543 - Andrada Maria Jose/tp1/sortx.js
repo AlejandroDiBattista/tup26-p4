@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import fs from "fs";
 const HELP = `
 
 sortx — Ordena archivos de texto delimitados
@@ -35,4 +35,201 @@ EJEMPLOS:
 `
 
 // Escribir aqui la solución al enunciado.
-console.log(HELP)
+
+function parseArgs() {
+     const args = process.argv.slice(2);
+     const inputFile = args[0];
+     const outputFile = args[1];
+     const sortFields = [];
+     let noHeader = false;
+     let delimiter = ",";
+     if (args.includes("-h") || args.includes("--help")) {
+        console.log(HELP);
+        process.exit(0);
+     }
+
+     if(inputFile === undefined) {
+        throw new Error("Falta indicar el archivo de origen");
+     }
+     if (outputFile === undefined) {
+        throw new Error("Falta indicar el archivo de destino");
+     }
+
+     for (let i = 2; i < args.length; i++) {
+        if (args[i] === "-d" || args[i] === "--delimiter"){
+            if (args[i + 1] === undefined) {
+                throw new Error("Falta el valor de --delimiter");
+            }
+
+            delimiter = args[i + 1] === "\\t" ? "\t" : args[i + 1];
+
+            if(delimiter.length !== 1) {
+                throw new Error("El delimitador debe tener un solo caracter");
+            }
+
+            i++;
+
+        }         
+           else if (args[i] === "-b" || args[i] === "--by") {
+            if (args[i + 1] === undefined) {
+                throw new Error("Falta el valor de --by");
+            }
+            const criterio = args[i+1];
+            const partes = criterio.split(":");
+            const name = partes[0];
+            if (name === "") {
+                throw new Error("Falta el nombre del campo");
+            }
+            const tipo = partes[1] || "alpha";
+            const orden = partes[2] || "asc";
+            if (tipo !== "alpha" && tipo !== "num") {
+                throw new Error("El tipo debe ser alpha o num");
+            }
+
+            if (orden !== "asc" && orden !== "desc") {
+                throw new Error("El orden debe ser asc o desc");
+            }
+            const numeric = tipo === "num";
+            const descending = orden === "desc";
+            const campo = {name: name, numeric: numeric, descending: descending,};
+            sortFields.push(campo); 
+            i++;   
+        }
+       else if(args[i] === "-nh" || args[i] === "--no-header"){
+            noHeader = true;
+        }
+       else {
+        throw new Error("Opcion desconocida: " + args[i]);
+       }
+       
+}
+ if(sortFields.length === 0){
+    throw new Error("Falta indicar al menos un criterio de ordenamiento");
+ }
+    return {inputFile: inputFile, outputFile: outputFile, delimiter: delimiter, noHeader: noHeader, sortFields: sortFields};
+}
+const config = parseArgs();
+
+
+
+
+function readInput(inputFile){
+    try {
+    const contenido = fs.readFileSync(inputFile, "utf8");
+    return contenido;
+    } catch (error) {
+        throw new Error("No se pudo leer el archivo de origen");
+    }
+}
+const contenido = readInput(config.inputFile);
+const rows = parseDelimited(contenido, config.delimiter);
+const sortedRows = sortRows(rows, config);
+
+ 
+function parseDelimited(contenido, delimiter) {
+    if (contenido.includes('"')) {
+        throw new Error("El archivo contiene comillas dobles");
+    }
+    const filas = contenido.trim().split("\n");
+    const rows = [];
+    let cantidadColumnas;
+    for (let i = 0; i < filas.length; i++) {
+    const fila = filas[i].replace(/\r$/, "");
+    const columnas = fila.split(delimiter);
+    if (i === 0) {
+        cantidadColumnas = columnas.length;
+    }
+    if (columnas.length !== cantidadColumnas) {
+        throw new Error("Las filas tienen distinta cantidad de columnas");
+    }
+    rows.push(columnas); 
+    }
+ return rows;
+    
+}
+ 
+function sortRows(rows, config) {
+    const headers = config.noHeader ? null : rows[0];
+    const dataRows = config.noHeader ? rows : rows.slice(1);
+    dataRows.sort((a, b) => {
+        for (let i = 0; i < config.sortFields.length; i++){
+            const criterio = config.sortFields[i];
+            let indice;
+            if (config.noHeader) {
+                indice = Number(criterio.name);
+            } else {
+                indice = headers.indexOf(criterio.name);
+            }
+
+            if (indice === -1) {
+                throw new Error("El campo solicitado no existe");
+            }
+        
+        if (criterio.numeric) {
+            const valorA = Number(a[indice]);
+            const valorB = Number(b[indice]);
+            if (Number.isNaN(valorA) || Number.isNaN(valorB)){
+                throw new Error("El criterio numerico contiene un valor no numerico");
+            }
+
+            if(valorA < valorB) {
+                return criterio.descending ? 1 : -1;
+            }
+
+            if (valorA > valorB) {
+                return criterio.descending ? -1 : 1;
+            }
+            
+        }
+        
+        if (!criterio.numeric) {
+            const comparacion = a[indice].localeCompare(b[indice], "es");
+
+        if(comparacion !==0) {
+        if (criterio.descending) {
+            return -comparacion;
+        }
+        
+        return comparacion;
+        }
+    }
+        
+
+}
+ return 0;
+    });
+
+    if (config.noHeader) {
+        return dataRows;
+    }
+ return [headers, ...dataRows];
+
+}
+
+function serialize(rows, delimiter) {
+    const filas = rows.map((fila) => {
+        return fila.join(delimiter);
+        
+
+    });
+    return filas.join("\n");
+}
+
+const texto = serialize(sortedRows, config.delimiter);
+writeOutput(config.outputFile, texto);
+
+function writeOutput(outputFile, contenido){
+    try {
+    fs.writeFileSync(outputFile, contenido, "utf8");
+    } catch (error) {
+        throw new Error("No se pudo escribir el archivo de destino");
+    }
+}
+
+
+
+
+
+
+
+

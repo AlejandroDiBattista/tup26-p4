@@ -2,6 +2,7 @@
 // Static-import registry of every action file. Bundlers (Nitro, Rolldown)
 // see these imports and include the action modules in the server bundle.
 // The agent-chat plugin normalizes each module into an ActionEntry shape.
+import * as a_comprobar_tp1 from "../actions/comprobar-tp1";
 import * as a_course_grid from "../actions/course-grid";
 import * as a_course_summary from "../actions/course-summary";
 import * as a_create_assessment from "../actions/create-assessment";
@@ -62,6 +63,7 @@ import * as a_set_review_status from "@agent-native/core/review/actions/set-revi
 import * as a_send_review_thread_to_agent from "@agent-native/core/review/actions/send-review-thread-to-agent";
 
 const modules: Record<string, unknown> = {
+  "comprobar-tp1": a_comprobar_tp1,
   "course-grid": a_course_grid,
   "course-summary": a_course_summary,
   "create-assessment": a_create_assessment,

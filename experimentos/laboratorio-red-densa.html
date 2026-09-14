@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Aprender a ordenar · Red densa</title>
+  <style>:root{--paper:#f6f5ef;--surface:#fcfcf8;--ink:#233c36;--muted:#64746b;--line:#dce2d8;--green:#218457;--red:#d64c42;--blue:#547d9e;--gold:#ae8545;--display:Georgia,'Times New Roman',serif;--body:'Avenir Next',Avenir,'Segoe UI',sans-serif;font-family:var(--body);color:var(--ink);background:var(--paper);font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,select,input[type=range],input[type=checkbox],summary{cursor:pointer}button,a,input,select,summary,.network-scroll{outline-offset:4px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.network-scroll:focus-visible{outline:3px solid var(--blue)}button{transition:background .15s,color .15s,opacity .15s}button:disabled{opacity:.4;cursor:default}a{color:inherit}h1,h2,h3,p{margin:0}h2{font-size:18px;font-weight:600;letter-spacing:-.4px}main,.masthead,footer{max-width:1580px;margin:auto;padding-inline:clamp(20px,3.2vw,54px)}.masthead{height:77px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{display:flex;gap:10px;align-items:center;text-decoration:none;font-size:12px;letter-spacing:1.6px;font-weight:700}.brand-lu{margin-left:-10px;color:var(--green)}.brand-mark{display:flex;gap:3px;align-items:end;height:21px;margin-right:6px}.brand-mark i{display:block;width:4px;background:var(--ink);height:7px}.brand-mark i:nth-child(2){height:12px}.brand-mark i:nth-child(3){height:16px}.brand-mark i:nth-child(4){height:21px;background:var(--green)}.local-note{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}.local-note>span{height:6px;width:6px;background:var(--green);border-radius:50%}.intro{display:flex;justify-content:space-between;align-items:end;padding:32px 0 27px;gap:24px}.eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:700;color:var(--muted);margin-bottom:10px}h1{font-family:var(--display);font-weight:400;letter-spacing:-2.8px;font-size:clamp(40px,4.5vw,66px);line-height:1.07}h1 em{color:var(--green);font-weight:400}.intro-copy{font-size:14px;margin-top:14px;color:var(--muted);line-height:1.5}.intro-aside{font-size:12px;line-height:1.7;color:var(--muted);text-align:right;padding-bottom:2px}.controls{display:flex;gap:20px;align-items:center;margin-bottom:20px;flex-wrap:wrap}.button-group{display:flex;gap:8px;align-items:center}.button{border:1px solid var(--line);border-radius:6px;padding:11px 16px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600;min-height:42px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px}.button:hover:not(:disabled){background:#e8ede4}.button.primary{background:var(--ink);color:#f5f7ef;border-color:var(--ink);min-width:174px}.button.primary:hover{background:#345749}.button.quiet{background:transparent;border-color:transparent}.button.small{min-height:34px;padding:7px 11px;font-size:11px}.speed-control{border-left:1px solid var(--line);padding-left:20px;display:flex;gap:10px;align-items:center;font-size:11px;color:var(--muted)}select{color:var(--ink);border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:7px 24px 7px 9px;font-size:11px;min-height:34px}.model-button{margin-left:auto}.network-panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}.network-heading{display:flex;justify-content:space-between;gap:20px;padding:21px 24px 6px;align-items:center}.network-heading p{font-size:11px;color:var(--muted);margin-top:6px}.legend{display:flex;align-items:center;gap:18px;font-size:10px;color:var(--muted);flex-wrap:wrap}.legend>span{display:flex;align-items:center;gap:6px}.line-key{width:18px;height:3px;border-radius:2px;display:inline-block}.line-key.positive{background:var(--green)}.line-key.negative{background:var(--red)}.thickness-key i{display:block;width:18px;height:7px;background:var(--muted);clip-path:polygon(0 40%,100% 0,100% 100%,0 60%)}.check-label{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap}input[type=checkbox]{width:14px;height:14px;accent-color:var(--green);margin:0}.network-scroll{overflow:auto;overscroll-behavior-x:contain}.network-scroll>svg{display:block;width:100%;min-width:1000px;height:auto}.scroll-hint{display:none;font-size:10px;color:var(--muted);padding:12px 20px 0}.network-foot{display:flex;align-items:center;gap:18px;padding:3px 24px 14px;font-size:10px;color:var(--muted);flex-wrap:wrap}.network-foot>span:first-child{display:flex;align-items:center;gap:8px}.target-key{width:13px;height:2px;background:var(--ink);display:inline-block}.relu-note{margin-left:auto}.overflow-note{color:var(--red)}.inspector{border-top:1px solid var(--line);padding:10px 22px;display:flex;gap:16px;align-items:center;font-size:11px;background:#f2f5ee}.inspector label{color:var(--muted)}.inspector strong{font-variant-numeric:tabular-nums;font-weight:600;margin-left:6px}.inspect-value{min-width:120px}.inspect-delta{color:var(--muted)}.inspector-hint{margin-left:auto;color:var(--muted);font-size:10px}.learning-strip{position:relative;display:flex;align-items:center;gap:30px;font-size:12px;padding:18px 4px 20px;border-bottom:1px solid var(--line);color:var(--muted);flex-wrap:wrap}.learning-strip strong{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}.run-status{display:flex;gap:8px;align-items:center;min-width:155px;font-size:11px}.status-dot{height:7px;width:7px;display:block;background:#89958b;border-radius:50%}.status-dot.running{background:var(--green);animation:status-breathe 1.8s ease-in-out infinite}.status-dot.learned{background:var(--green)}.current-error{margin-left:auto;font-size:11px;display:flex;gap:8px;align-items:center}.current-error strong{font-size:18px}.training-progress{position:absolute;bottom:-1px;height:2px;left:0;right:0;overflow:hidden}.training-progress>div{height:100%;width:100%;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .2s}.experiment-grid{display:grid;grid-template-columns:.95fr 1.2fr;gap:48px;padding:30px 0}.section-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:21px}.section-heading .eyebrow{margin-bottom:8px}.input-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.input-control>label{font-size:11px;color:var(--blue);font-weight:600;display:block;margin-bottom:9px}.input-number-wrap{display:flex;align-items:baseline;gap:5px;border-bottom:1px solid var(--line);padding-bottom:7px}.input-number-wrap input{width:100%;min-width:0;font-size:25px;color:var(--ink);font-family:var(--display);background:transparent;border:0;padding:0}.input-number-wrap span{font-size:10px;color:var(--muted)}input[type=range]{width:100%;accent-color:var(--blue);margin:12px 0 0;height:18px}.expected-row{display:flex;gap:15px;align-items:center;font-size:11px;margin-top:20px}.expected-row>span{color:var(--muted)}.expected-row strong{font-weight:500;font-size:14px;word-spacing:7px;font-variant-numeric:tabular-nums}.auto-input{margin-top:17px}.help-copy{font-size:11px;color:var(--muted);line-height:1.65;margin-top:11px;max-width:450px}.loss-panel{padding-left:36px;border-left:1px solid var(--line);min-width:0}.loss-panel .section-heading{margin-bottom:10px}.loss-value{text-align:right;min-width:130px}.loss-value strong{font-size:20px;font-weight:500;display:block;font-variant-numeric:tabular-nums}.loss-value span{font-size:9px;color:var(--muted)}#loss-chart{width:100%;display:block;height:auto}.chart-note{font-size:10px;color:var(--muted);line-height:1.6}.test-section{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;border-top:1px solid var(--line);padding:25px 0}.test-section h2{font-size:16px}.test-section p:not(.evaluation-result){font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}.evaluation-result{flex-basis:100%;font-size:12px;padding:12px 16px;background:#e8eee2;border-radius:5px;line-height:1.7}.evaluation-result.needs-work{background:#f3e9dc}.explanation{border-block:1px solid var(--line);margin:0 0 30px}.explanation summary{list-style:none;font-size:12px;font-weight:600;padding:17px 0;display:flex;justify-content:space-between}.explanation summary::-webkit-details-marker{display:none}.explanation[open] summary>span{transform:rotate(45deg)}.explanation-content{display:grid;grid-template-columns:repeat(3,1fr);gap:25px;padding:8px 0 25px}.explanation-content h3{font-size:13px;margin-bottom:10px}.explanation-content p{font-size:12px;line-height:1.8;color:var(--muted)}.explanation-wide{grid-column:1/-1}footer{display:flex;justify-content:space-between;gap:20px;align-items:center;padding-bottom:25px;font-size:10px;color:var(--muted)}[hidden]{display:none!important}
+/* SVG styling: the edge attributes always contain the actual learned weights. */
+.edge{fill:none;stroke-linecap:round;transition:stroke .12s,stroke-width .12s,opacity .12s}.edge-hit{fill:none;stroke:transparent;stroke-width:17;cursor:pointer;pointer-events:stroke}.edge.selected{filter:drop-shadow(0 0 2px #547d9e70)}.edge-label{font-family:var(--body);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:5;stroke-linejoin:round;pointer-events:none}.node-circle{stroke-width:1.4;transition:fill .14s,stroke .14s}.node-number{font-family:var(--body);font-size:12px;font-weight:600;fill:var(--ink);text-anchor:middle;dominant-baseline:middle;font-variant-numeric:tabular-nums}.node-name{font-family:var(--body);font-size:12px;text-anchor:middle;fill:var(--muted)}.input-node .node-circle{stroke:var(--blue);fill:#edf2f4}.input-node .node-number{fill:#385d7a}.output-node .node-circle{stroke:var(--green)}.layer-label{font-family:var(--body);font-size:11px;text-anchor:middle;fill:var(--muted)}.stage-label{font-family:var(--body);font-size:10px;text-anchor:middle;letter-spacing:1px;fill:var(--muted)}.bar-fill{transform-box:fill-box;transform-origin:50% 100%;transition:transform .14s}.bar-label{font-family:var(--body);font-size:10px;fill:var(--muted)}.bar-overflow{font-family:var(--body);font-size:12px;fill:var(--red);font-weight:600}.bar-target{stroke:var(--ink);stroke-width:2;transition:transform .14s}.node-caption{font-size:10px;fill:var(--muted);font-family:var(--body);text-anchor:middle}.chart-text{font-family:var(--body);font-size:10px;fill:var(--muted)}
+@keyframes status-breathe{50%{opacity:.4}}
+@media(min-width:1600px){.network-scroll>svg{max-height:570px}.intro{padding-top:36px}}
+@media(max-width:1100px){.network-heading{align-items:start}.legend{max-width:280px;gap:10px 14px;justify-content:end}.network-heading p{max-width:320px;line-height:1.5}.inspector-hint{display:none}.experiment-grid{gap:28px}.loss-panel{padding-left:28px}.model-button{margin-left:0}.controls{gap:12px}.learning-strip{gap:18px}.current-error{margin-left:auto}}
+@media(max-width:760px){.masthead{height:60px}.local-note{font-size:10px}.intro{padding:25px 0 22px}.intro-aside{display:none}h1{letter-spacing:-2px}.intro-copy{font-size:12px}.controls{gap:12px}.button-group{width:100%}.button{font-size:11px;padding-inline:12px}.button.primary{min-width:155px}.speed-control{padding-left:0;border-left:0}.model-button{margin-left:auto;font-size:10px}.network-heading{padding:18px 17px 2px;display:block}.network-heading p{max-width:none}.legend{justify-content:start;max-width:none;margin-top:14px;font-size:10px;gap:12px}.scroll-hint{display:block}.network-scroll>svg{min-width:1060px}.network-foot{padding:8px 16px 13px;gap:8px}.relu-note{margin-left:0}.inspector{padding:11px 16px;gap:8px 12px;flex-wrap:wrap}.inspector label{font-size:10px}.inspector select{font-size:10px}.inspect-delta{font-size:10px}.learning-strip{gap:12px 20px}.run-status{min-width:auto;flex-basis:100%}.current-error{margin-left:0;flex-basis:100%;font-size:11px}.experiment-grid{grid-template-columns:1fr;gap:28px;padding-top:25px}.loss-panel{border-left:0;border-top:1px solid var(--line);padding:25px 0 0}.input-controls{gap:13px}.input-number-wrap input{font-size:26px}.section-heading h2{font-size:17px}.test-section{align-items:start}.test-section .button{width:100%}.explanation-content{grid-template-columns:1fr;gap:20px}footer{flex-direction:column;align-items:start;gap:8px}.loss-value strong{font-size:17px}.loss-value{min-width:100px}.brand{font-size:10px;letter-spacing:1px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Las conexiones densas son más finas; nunca se aplica una máscara. */
+.node-number{font-size:10px}.node-name{font-size:10px}.edge-hit{stroke-width:9}.edge-label{font-size:9px;stroke-width:3}.inspector{flex-wrap:wrap}.node-circle{stroke-width:1.2}.brand{letter-spacing:1.3px}.edge.selected{filter:none}
+
+.button-group{flex-wrap:wrap}.button[aria-pressed="true"]#train-max{background:var(--green);color:white;border-color:var(--green)}
+
+.architecture-control{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 20px;font-size:11px;color:var(--muted)}.architecture-control label{color:var(--ink);font-weight:600}.architecture-control select{min-width:65px}.architecture-model-note{margin-left:auto;font-size:10px}@media(max-width:760px){.architecture-model-note{margin-left:0}.architecture-control #architecture-help{flex-basis:100%}}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <a href="#inicio" class="brand" aria-label="Laboratorio ReLU, inicio"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>LABORATORIO DENSO</a>
+    <span class="local-note"><span></span>Un archivo. Sin conexión.</span>
+  </header>
+  <main id="inicio">
+    <section class="intro">
+      <div><p class="eyebrow">EXPERIMENTO 02 / RED TOTALMENTE CONECTADA</p><h1>Aprender a <em>ordenar.</em></h1><p class="intro-copy">Cuatro números, seis capas densas y ninguna regla de comparación predefinida.</p></div>
+      <p class="intro-aside">La red empieza sin saber ordenar.<br>Entrenala y observá cómo cambia.</p>
+    </section>
+
+    <section class="controls" aria-label="Controles de entrenamiento">
+      <div class="button-group"><button id="train" class="button primary" aria-pressed="false"><span id="train-icon" aria-hidden="true">▶</span><span id="train-label">Entrenar</span></button><button id="reset" class="button quiet">↺ Reiniciar</button></div>
+      <button id="pretrained" class="button quiet model-button">Ver modelo aprendido <span aria-hidden="true">↗</span></button>
+    </section>
+
+    <section class="architecture-control" aria-label="Arquitectura de la red"><label for="hidden-width">Neuronas por capa interior</label><select id="hidden-width" aria-describedby="architecture-help"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8" selected>8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option></select><span id="architecture-help">El mismo número en las 5 capas interiores. Cambiarlo reinicia el entrenamiento.</span><span class="architecture-model-note">El modelo guardado usa 8 neuronas por capa.</span></section>
+
+    <section class="network-panel" aria-labelledby="network-heading">
+      <div class="network-heading"><div><h2 id="network-heading">La red, en vivo</h2><p><span data-weight-count>320</span> conexiones completas y <span data-bias-count>44</span> sesgos aprendibles. Todos los nodos de cálculo usan ReLU. «Simplificar» oculta nodos interiores con valor &lt; 10 y pesos menores al 10% del máximo absoluto de su capa.</p></div><div class="legend"><span><i class="line-key positive"></i>Positivo</span><span><i class="line-key negative"></i>Negativo</span><span class="thickness-key" title="El grosor usa |peso| dividido por el máximo |peso| de su capa: de 1 a 6 unidades de dibujo."><i></i>Grosor = % del máximo de capa</span><label class="check-label"><input id="show-weights" type="checkbox"> Ver pesos</label><label class="check-label" title="Oculta nodos interiores con valor menor que 10 y sus conexiones, además de pesos menores al 10% del máximo absoluto de su capa. Desmarcá para ver la red completa."><input id="simplify" type="checkbox" checked> Simplificar</label></div></div>
+      <p class="scroll-hint">Deslizá la red hacia los costados para explorar todas las capas.</p>
+      <div class="network-scroll" tabindex="0" aria-label="Diagrama de la red. En pantallas pequeñas se puede desplazar horizontalmente."><svg id="network" viewBox="0 0 1520 565" role="group" aria-labelledby="diagram-title diagram-desc"><title id="diagram-title">Red de cuatro entradas y cuatro salidas, con seis capas ReLU</title><desc id="diagram-desc">44 neuronas y 320 conexiones. Verde indica peso positivo y rojo negativo. Con Simplificar activado se ocultan los nodos interiores con valor menor que 10, todas sus conexiones entrantes y salientes y las líneas cuyo peso absoluto es menor al 10% del máximo absoluto de su capa. Al desactivarlo se muestra toda la red. Los cálculos no cambian. Las barras representan valores de 0 a 100. La marca oscura en cada barra de salida señala el valor esperado. Los cruces de líneas no son uniones.</desc></svg></div>
+      <div class="network-foot"><span><i class="target-key"></i>Marca oscura en la salida: valor esperado</span><span id="overflow-note" class="overflow-note" hidden>Una salida supera 100: la barra está al máximo; el número muestra su valor real.</span><span class="relu-note">ReLU(z) = máx(0, z) · z = Σ(w·x) + b</span></div>
+    </section>
+
+    <div class="learning-strip"><div class="run-status"><span id="status-dot" class="status-dot"></span><span id="status" role="status">Lista para aprender</span></div><div><strong id="step-count">0</strong><span> pasos</span></div><div><strong id="sample-count">0</strong><span> ejemplos entrenados</span></div><div class="current-error"><span>Error del ejemplo visible</span><strong id="probe-error">—</strong><span> / 100</span></div></div>
+
+    <section class="experiment-grid">
+      <div class="input-panel"><div class="section-heading"><div><p class="eyebrow">01 / PROBÁ LA RED</p><h2>Tu ejemplo de entrada</h2></div><button id="random" class="button small">↻ Al azar</button></div><div id="input-controls" class="input-controls"></div><div class="expected-row"><span>Esperamos obtener</span><strong id="expected-values"></strong></div><label class="check-label auto-input"><input id="auto-example" type="checkbox">Cambiar el ejemplo visible cada segundo</label><p class="help-copy">Este ejemplo te permite observar el cambio. Para entrenar se generan otros 128 ejemplos aleatorios en cada paso.</p></div>
+      <div class="loss-panel"><div class="section-heading"><div><p class="eyebrow">02 / SEGUÍ EL APRENDIZAJE</p><h2>El error a lo largo del tiempo</h2></div><div class="loss-value"><strong id="validation-error">—</strong><span>error de validación / 100</span></div></div><svg id="loss-chart" viewBox="0 0 600 170" role="img" aria-label="Evolución del error de validación durante el entrenamiento"></svg><p class="chart-note">Error cuadrático medio raíz en 256 ejemplos fijos de validación. Escala logarítmica: más abajo es mejor.</p></div>
+    </section>
+
+    <section class="test-section"><div><h2>¿Aprendió con ejemplos que no vio?</h2><p>Probá 1.000 entradas nuevas. Se comparan las cuatro salidas con los valores realmente ordenados.</p></div><button id="evaluate" class="button">Comprobar aprendizaje <span aria-hidden="true">→</span></button><p id="evaluation-result" class="evaluation-result" role="status" hidden></p></section>
+
+    <details class="explanation"><summary>Qué sucede en cada paso de entrenamiento <span aria-hidden="true">+</span></summary><div class="explanation-content"><div><h3>1. Predecir</h3><p>Se generan entradas entre 0 y 100. Internamente se dividen por 100 y recorren la red: cada neurona suma sus entradas multiplicadas por sus pesos y aplica ReLU.</p></div><div><h3>2. Medir el error</h3><p>La respuesta esperada es una copia ordenada de la entrada. La pérdida es la media de los cuatro errores al cuadrado. La predicción nunca se ordena ni se corrige después.</p></div><div><h3>3. Ajustar los pesos</h3><p>Backpropagation calcula cuánto contribuye cada peso al error. Adam actualiza los <span data-weight-count>320</span> pesos y los <span data-bias-count>44</span> sesgos. Un paso procesa 128 ejemplos. Cada neurona recibe todas las salidas de la capa anterior. El botón «Entrenar» inicia el aprendizaje continuo hasta que pulses «Pausar»; agrupa los cálculos y refresca el dibujo periódicamente para mantener la página interactiva.</p></div><p class="explanation-wide">Podés elegir entre 1 y 32 neuronas por capa interior con el selector. Las cinco capas interiores usan el mismo ancho, y las entradas y salidas siguen siendo cuatro. Cambiar el ancho crea una red nueva, con pesos aleatorios y contadores en cero; conserva el ejemplo de entrada y los filtros visuales. Una red más ancha tiene más parámetros y puede entrenar más lentamente. La arquitectura actual es <span data-architecture>4 → 8 → 8 → 8 → 8 → 8 → 4</span>. Sus <span data-weight-count>320</span> conexiones se generan automáticamente como el producto de todas las neuronas de dos capas consecutivas. No hay bloques comparadores, pares elegidos de antemano, máscaras ni pesos congelados. Los <span data-weight-count>320</span> pesos y los <span data-bias-count>44</span> sesgos se ajustan únicamente por el error de las cuatro salidas finales.</p><p class="explanation-wide">Los pesos empiezan al azar, con valores positivos y negativos (inicialización He uniforme; menor escala en la capa final). Todos los sesgos ocultos empiezan en 0,1 y todos los de salida en 0,5, sin distinguir la posición que deberán aprender. Estos sesgos iniciales ayudan a activar ReLU. Después todos los coeficientes son libres. Reiniciar usa la misma semilla 2026 para repetir el experimento.</p><p class="explanation-wide">Un peso pequeño representa una influencia débil, no una conexión eliminada. Sin regularización o poda, una red densa no tiene por qué volverse dispersa: puede repartir el cálculo entre muchas conexiones. Con «Simplificar» activado, el dibujo oculta los nodos interiores cuyo valor para el ejemplo visible es menor que 10 (en la escala mostrada), junto con todas sus conexiones entrantes y salientes. También oculta las líneas cuyo peso absoluto es menor al 10% del mayor peso absoluto entre esas dos capas consecutivas, incluidas sus etiquetas. Este máximo se calcula con todos los pesos de la capa, incluso los ocultos, y se actualiza al entrenar. El grosor también usa esa proporción: ancho = 1 + 5 × (|peso| / máximo |peso| de la capa), de modo que el peso más fuerte de cada capa tiene el mismo grosor. Si todos los pesos de una capa son cero, se usa el ancho mínimo. Por ejemplo, si el mayor |peso| es 0,2, el umbral visual es 0,02. Al desactivarlo se muestran todos los nodos y las <span data-weight-count>320</span> conexiones. Es solo un filtro visual: todas las neuronas, pesos y sesgos siguen participando en el cálculo y entrenándose. Los nodos y conexiones reaparecen automáticamente cuando cumplen los umbrales. Los cuatro nodos de entrada y los cuatro de salida permanecen siempre visibles, incluso con valores menores que 10. Sus barras siguen mostrando los valores del ejemplo.</p><p class="explanation-wide">El aprendizaje es aproximado: que las salidas estén en orden no implica que coincidan con los números de entrada. La prueba informa ambas cosas y admite ±1 punto por salida. «Ver modelo aprendido» carga un ejemplo entrenado previamente con esta misma red densa; no simula pasos ni utiliza la red de comparadores. Las barras se limitan visualmente a 100, pero se muestra el valor numérico real si una predicción lo supera.</p></div></details>
+  </main>
+  <footer><span>ReLU / Laboratorio de ordenamiento</span><span><span data-architecture>4 → 8 → 8 → 8 → 8 → 8 → 4</span></span><span>Todo se calcula en este navegador.</span></footer>
+  <noscript>Este laboratorio necesita JavaScript activado para mostrar y entrenar la red.</noscript>
+  <script>// Red densa: ninguna conexión se elige según el problema de ordenamiento.
+function crearEstructura(ancho=8) {
+  if(!Number.isInteger(ancho)||ancho<1||ancho>32)throw new Error('Elegí entre 1 y 32 neuronas por capa interior.');
+const TAMANOS = [4,...Array(5).fill(ancho),4];
+const CAPAS = TAMANOS.map((size,l)=>Array.from({length:size},(_,i)=>l===0?`x${i+1}`:l===6?`y${i+1}`:`h${l}.${i+1}`));
+const NOMBRES=CAPAS.flat();
+const INDICE=new Map(NOMBRES.map((n,i)=>[n,i]));
+const CONEXIONES=[];
+for(let l=1;l<CAPAS.length;l++)for(const destino of CAPAS[l])for(const origen of CAPAS[l-1])CONEXIONES.push([origen,destino]);
+const ENTRANTES=NOMBRES.map(()=>[]);
+CONEXIONES.forEach(([a,b],peso)=>ENTRANTES[INDICE.get(b)].push({origen:INDICE.get(a),peso}));
+const SALIDAS=CAPAS.at(-1).map(n=>INDICE.get(n));
+const NUM_PESOS=CONEXIONES.length;
+const NUM_SESGOS=NOMBRES.length-4;
+const NUM_PARAMETROS=NUM_PESOS+NUM_SESGOS;
+  return {TAMANOS,CAPAS,NOMBRES,INDICE,CONEXIONES,ENTRANTES,SALIDAS,NUM_PESOS,NUM_SESGOS,NUM_PARAMETROS};
+}
+let {TAMANOS,CAPAS,NOMBRES,INDICE,CONEXIONES,ENTRANTES,SALIDAS,NUM_PESOS,NUM_SESGOS,NUM_PARAMETROS}=crearEstructura();
+function configurarArquitectura(ancho) {
+  ({TAMANOS,CAPAS,NOMBRES,INDICE,CONEXIONES,ENTRANTES,SALIDAS,NUM_PESOS,NUM_SESGOS,NUM_PARAMETROS}=crearEstructura(ancho));
+}
+function aleatorio(semilla){let s=semilla>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let n=Math.imul(s^(s>>>15),1|s);n^=n+Math.imul(n^(n>>>7),61|n);return((n^(n>>>14))>>>0)/4294967296;};}
+class RedOrdenadora {
+  constructor(semilla=2026,modelo=null){
+    this.estructura={TAMANOS,CAPAS,NOMBRES,INDICE,CONEXIONES,ENTRANTES,SALIDAS,NUM_PESOS,NUM_SESGOS,NUM_PARAMETROS};
+    this.parametros=new Float64Array(NUM_PARAMETROS);
+    this.pesos=this.parametros.subarray(0,NUM_PESOS);
+    this.sesgos=this.parametros.subarray(NUM_PESOS);
+    this.activaciones=new Float64Array(NOMBRES.length);
+    this.deltas=new Float64Array(NOMBRES.length);
+    if(modelo){if(modelo.pesos.length!==NUM_PESOS||modelo.sesgos.length!==NUM_SESGOS)throw new Error('El modelo no coincide con la cantidad de neuronas elegida.');this.pesos.set(modelo.pesos);this.sesgos.set(modelo.sesgos);return;}
+    const azar=aleatorio(semilla);
+    for(let l=1;l<CAPAS.length;l++){
+      const limite=Math.sqrt(6/TAMANOS[l-1])*(l===6?.1:1);
+      for(const nombre of CAPAS[l]){
+        const n=INDICE.get(nombre);
+        for(const {peso} of ENTRANTES[n])this.pesos[peso]=(2*azar()-1)*limite;
+        // El mismo sesgo inicial para todos los nodos de una capa, sin ordenar salidas.
+        this.sesgos[n-4]=l===6?.5:0.1;
+      }
+    }
+  }
+  forward(entrada){
+    const {ENTRANTES,SALIDAS}=this.estructura;
+    const a=this.activaciones;a.set(entrada,0);
+    for(let n=4;n<a.length;n++){
+      let z=this.sesgos[n-4];
+      for(const {origen,peso} of ENTRANTES[n])z+=a[origen]*this.pesos[peso];
+      a[n]=Math.max(0,z);
+    }
+    return SALIDAS.map(n=>a[n]);
+  }
+  predecir(entrada){return this.forward(entrada);}
+  backward(objetivo,gradiente){
+    const {ENTRANTES,SALIDAS,NUM_PESOS}=this.estructura;
+    const a=this.activaciones,d=this.deltas;d.fill(0);let perdida=0;
+    for(let i=0;i<4;i++){const error=a[SALIDAS[i]]-objetivo[i];perdida+=error*error/4;d[SALIDAS[i]]=error/2;}
+    for(let n=a.length-1;n>=4;n--){
+      if(a[n]<=0)continue;
+      gradiente[NUM_PESOS+n-4]+=d[n];
+      for(const {origen,peso} of ENTRANTES[n]){gradiente[peso]+=d[n]*a[origen];d[origen]+=d[n]*this.pesos[peso];}
+    }
+    return perdida;
+  }
+}
+const respuestaEsperada=x=>[...x].sort((a,b)=>a-b);
+function crearDatos(n,semilla){const r=aleatorio(semilla);return Array.from({length:n},()=>{const entrada=[r(),r(),r(),r()];return{entrada,objetivo:respuestaEsperada(entrada)};});}
+function evaluar(red,datos,tolerancia=.01){
+  let sum=0,abs=0,max=0,ok=0,ordered=0;
+  for(const {entrada,objetivo} of datos){const y=red.forward(entrada);let good=true,ord=true;for(let i=0;i<4;i++){const e=Math.abs(y[i]-objetivo[i]);sum+=e*e;abs+=e;max=Math.max(max,e);if(e>tolerancia)good=false;if(i&&y[i-1]>y[i]+1e-9)ord=false;}ok+=good;ordered+=ord;}
+  return{cantidad:datos.length,mse:sum/(4*datos.length),rmse:Math.sqrt(sum/(4*datos.length)),mae:abs/(4*datos.length),errorMaximo:max,casosDentroTolerancia:ok,casosOrdenados:ordered};
+}
+class EntrenadorInteractivo {
+  constructor(modelo=null,semilla=2026){
+    this.red=new RedOrdenadora(semilla,modelo);this.azar=aleatorio(semilla^0x125FA913);this.paso=0;this.ejemplos=0;
+    this.gradiente=new Float64Array(NUM_PARAMETROS);this.momento=new Float64Array(NUM_PARAMETROS);this.velocidad=new Float64Array(NUM_PARAMETROS);this.cambios=new Float64Array(NUM_PARAMETROS);this.b1=1;this.b2=1;this.perdida=0;
+  }
+  avanzar(){
+    this.gradiente.fill(0);let loss=0;
+    for(let i=0;i<128;i++){const x=[this.azar(),this.azar(),this.azar(),this.azar()];this.red.forward(x);loss+=this.red.backward(respuestaEsperada(x),this.gradiente);}
+    this.paso++;this.ejemplos+=128;this.perdida=loss/128;
+    const lr=.0015/Math.sqrt(1+this.paso/10000);this.b1*=.9;this.b2*=.999;
+    for(let j=0;j<this.red.parametros.length;j++){const g=this.gradiente[j]/128;this.momento[j]=.9*this.momento[j]+.1*g;this.velocidad[j]=.999*this.velocidad[j]+.001*g*g;const dw=-lr*(this.momento[j]/(1-this.b1))/(Math.sqrt(this.velocidad[j]/(1-this.b2))+1e-8);this.red.parametros[j]+=dw;this.cambios[j]=dw;}
+    if(![...this.red.parametros].every(Number.isFinite))throw new Error('Error numérico: reiniciá el entrenamiento.');
+  }
+}
+</script>
+  <script>'use strict';
+// Se incrusta el modelo aprendido anteriormente. Solo se usa al pulsar el botón.
+const MODELO_APRENDIDO = {"pesos": [-0.0005322606107198151, -0.8945551183370835, 0.8933728538443666, 0.0020005164219155814, -1.4276939087256701, -0.4048272462082151, 0.750981825089961, 0.4958658374314879, 0.29372713340639356, -0.14916352469935432, -0.7591495183056892, 0.594147650373002, 0.025703896770457133, -0.5295624179723749, -0.5221334779920702, 0.6717049099774342, 0.027679196594901513, 0.5907279380547129, 0.6024211859430904, -1.1869779943683838, -0.4500003504241158, 0.9052299701986745, -0.3143496516486898, 0.9597883828515696, 1.2400142288115616, 0.330423359311036, -0.6372905265930459, -0.4236620033885418, -0.06687762241641332, -0.022332825215707456, 0.2199375485107171, 0.9037303296676115, -1.3837928983726153, -0.05569219232794116, -1.019892528572151, -0.7592903160616623, 0.5101757285718154, -0.47321472277686943, 0.07849568240792912, 0.4210675668407982, 1.2123172714383863, 0.5860925131253865, 0.665040657030225, 0.5426867339609195, -0.3071997478502779, 0.4533065728190268, 0.06117321248160145, 0.1624843171718549, 1.2984554380740312, -0.18766268414922543, -0.02309218726112036, 0.419413043794807, 0.9841884477795407, 0.8192509061337924, 0.29288621382761, 0.17593527902523692, 0.281301642693087, -0.49366186822626396, -0.09612955480031338, 1.0202390297484787, 0.7870435516638004, 0.16733859300753795, 0.2790294193972636, 1.172248233020686, -0.30098567650970415, 0.8059628068627056, -0.7721046209651625, -0.8534759097332145, -0.09306159507974451, 1.0881631858157363, -1.2075323982941664, -0.2700162870899351, 0.8771260015493297, -0.38827255346806533, 0.4548997128871237, 0.3351490947340907, 0.5191706641544845, -0.2770693096347185, 1.0142350281443635, 0.44317542798692294, 1.390354644186549, -0.972096620480899, -0.1283101555639572, -0.2508025369093395, -0.4669320601777649, 0.7306241526982832, 0.526062837514815, 0.4560586598174573, 0.8346103170151842, -0.11079159975702618, 1.0004975606878421, 0.4130460690714978, 0.297409658105358, 0.10723913817218697, -0.20803761806177273, -0.6433576396820857, 0.8603270561342388, 0.5680184744511615, 0.1934897262044285, -0.8850425146089115, -0.004647816317333179, -0.08306381284086964, 0.759269475677496, 0.5916202853743008, 0.5774808005785023, 0.054545343573898064, 0.7203824101742804, 0.6679197433230849, -0.5392778397915077, 0.21518156625685306, 0.8563703376988123, -1.0710348899386033, 0.05459389447205871, -0.6576006616892893, 0.1819952076402417, 0.14324383433034865, -0.5360699386362335, -0.5093797321450003, -0.3487723325959891, -0.6073825837180857, 0.38303172602804025, -0.3770997980570176, -1.037806270467285, 0.052383736887077995, 0.5422637413096909, 0.6515443984571181, 0.5653275069837128, -0.20987488902140244, -0.839373127874557, -1.2963213927727908, -0.6189489446858236, 0.564043472589537, -2.359122056396219, 0.11686830052285903, 0.445625148591733, -0.06591927289103172, -0.11809827641998048, 0.5244167735001296, 0.9248129094736527, -0.5958873372239794, 0.3102453088405398, -0.46923230145993444, -0.13415749742015978, 0.9509234416865093, 1.7168932812598203, -0.3738955653346097, -0.3733833606109946, 0.3562488103956703, 0.02290968716168202, 1.1852891748662249, 0.3344251361584416, 0.3062779971523832, -0.5417327877729828, 0.42060427813769435, 0.3797837779652899, 0.08733929111809507, 1.4643279875665032, 0.3465003769108778, 0.4847355536261401, -0.8686079893841026, -0.2996560447320409, -0.27169904628967256, -0.1303019553396828, -0.49308299284093476, -1.1890080083774173, -0.2173276010885142, -0.0013052278509042069, 0.30756797541372405, -0.24188382089709257, -0.6930445486195105, -0.4874954778019842, -0.4091695347776046, 0.14839339317000405, 0.09104082346747681, -0.5013875835207805, -0.7634366468751556, -1.0298632698544747, 0.7106988117888514, 0.7348261204939938, 1.3962642502803453, 1.0503082095867897, -0.035906649039900485, -0.6136295676178902, -0.05867929988671544, 0.6010968285594785, 0.16234034142034667, -0.2952925512825503, -0.5394129489812853, -0.5663117748080215, -0.13282395149346485, 0.6286064371550194, 0.43264870213534784, 0.4248671233654455, -0.5526517885150893, 0.8202401358143853, -0.6076568392467623, -0.6951182652764983, -0.29581014731175104, -0.698252358658778, -0.6627094504815432, 1.8115164010291158, 0.27596209634756697, -0.8327983935430864, -0.18952619315091926, -0.8002664043939145, -0.40868920516684426, 0.08103729111772102, -0.6648138013466165, -0.5513791553999801, -0.7596371147963243, -0.15830020122214655, -0.5386575306143336, -0.22795636424191068, -0.051458282933916015, 0.3559217481402805, 0.5346284696718732, -0.2696830226620508, -0.09147812125915682, -0.6527200329548243, 0.6048494819718344, 0.32182288711678836, 0.8601306527747894, 0.31528132328174224, -0.13888131175663218, 0.6415133762370163, 0.24101090400422245, -0.5254341531770873, 0.5111833508292625, 0.32317321894719564, 0.3747316672936095, -0.2968363253793777, 0.8792795008679221, 0.3469403985212745, -0.14019240950476264, -0.843618330228902, 0.4657712552782479, 0.3492667933849481, 0.24798498819072218, -0.3437324767334915, -0.22097655011232956, 0.8368386604968293, 0.4948677378442661, -1.1160258749554717, 0.8719549756014034, 0.06503957381581224, -1.9985612950853675, -0.2897307810598475, -0.17139729055565134, -0.7990979071745151, 0.661177453444214, 0.5929175625844233, 0.5892901697520573, 0.7295358346765162, -0.43430915384831065, -0.4287401173939494, 0.9847937531966506, -1.3254283231279864, -0.35925487203216283, 0.4675838105212895, -0.22933713830280725, 0.6001473998236293, -0.22351048509959776, -0.10842115875383815, 0.5837567097676869, 1.242794639504571, 0.6417214828461472, -0.4028975576494532, 0.10476282567889834, -0.7885229307182479, 0.3014383307024064, -0.041935737123809276, 1.1126989942427359, -0.33778990623742966, 0.060623683242300025, 0.2965591974807218, 0.7801546299969757, -0.2715295769391041, 0.4431301169684472, 0.47137981872140045, 0.38693058393650726, 1.8516609449263095, -0.10183211407832488, 0.6482745712770432, 0.7852860787909626, 0.7524937507863383, -0.028713683816927064, -0.632347485132441, -0.14373174358341786, -0.21773291822710214, 0.22653472396711719, -0.0015549930569646875, -0.0004359329896817005, 0.1816110658482236, -0.35302836796432996, 0.08626017477921588, 0.048514257555539196, -0.016873171502635082, 0.021402599293140406, -0.22062806687955405, -0.05790806692931855, -0.29311073324980835, -0.20435178962494227, 0.11037582186762188, 0.15662185339092952, -0.027452029947090055, 0.14187095924757473, 0.22944877516842271, -0.007802776818362076, -0.2529853641259424, -0.22537544495335113, 0.11381033161771184, 0.12343181006720176, 0.2851925299296486, -0.4314879232611083, -0.015898700800081312, 0.24135462448445102, -0.05419679071118119, 0.008105038766573307, 0.15987090597507106, 0.05303142157216058], "sesgos": [0.0001929158790897011, -0.1533321784910291, 0.7753864710964535, -0.08253710832365892, 0.09623583988220007, 0.49087425836411946, 0.13602327180748194, 0.18687813299883468, 0.8267698592956442, -0.2411337093063003, -0.2570065958803617, 0.48946441997585727, 0.12799750712595379, -0.06700299174613407, -0.22576732921976764, 0.2601357546649972, -0.483404663210068, 0.08023854929555364, 0.06190077944914857, 0.21808452863706382, 0.38262797922547515, 0.1548515069171444, -0.22137898030271433, -0.006446629891173442, 0.3491192229968976, -0.11979543562242365, 0.12369124550058205, -0.22503946973085898, 0.07750722776237769, 0.33406456606489543, 0.05155281597563776, -0.08787436565197652, -0.44200795231121026, 0.3796265241923491, 0.0574845017628729, -0.5986215950471303, 0.4308186762059158, 0.3490137418036772, -0.47903306623700376, -0.05530365546415149, 0.39216144435793354, 0.6178364415198069, 0.6139461298328499, 0.10450300305558075], "pasos": 30000, "metricas": {"cantidad": 10000, "mse": 0.0007826532897952282, "rmse": 0.027975941267368076, "mae": 0.019252064401593397, "errorMaximo": 0.2008081383026823, "casosDentroTolerancia": 937, "casosOrdenados": 9926}, "ejemplo": [0.21512669294376463, 0.3930161795207239, 0.7017639690302554, 0.8942195285448908], "arquitectura": [4, 8, 8, 8, 8, 8, 4], "semilla": 2026, "tipo": "Densa, ReLU en todas las capas, todos los pesos y sesgos entrenables"};
+const $ = id => document.getElementById(id);
+const fmt = (n, digits = 2) => n.toLocaleString('es-AR', {maximumFractionDigits: digits, minimumFractionDigits: digits});
+const compact = n => Math.abs(n) < 1e-7 ? '0' : fmt(n, Math.abs(n) < 10 ? 1 : 0);
+const sub = s => s.startsWith('h') ? s : s.replace(/[1-8]/g, n => '₀₁₂₃₄₅₆₇₈'[Number(n)]);
+const NS = 'http://www.w3.org/2000/svg';
+const GREEN = '#218457', RED = '#d64c42';
+let CAPA_DEL_NODO = new Map(CAPAS.flatMap((nombres,capa)=>nombres.map(nombre=>[nombre,capa])));
+let CAPA_DEL_PESO = CONEXIONES.map(([,destino])=>CAPA_DEL_NODO.get(destino));
+
+const validacion = crearDatos(256, 2026 ^ 0x42A138B7);
+const azarVisible = aleatorio(563212);
+let entrenador = new EntrenadorInteractivo();
+let entradaVisible = [70, 20, 90, 40];
+let running = false, aprendido = false;
+let ultimoRender = 0;
+let frameId = null, ultimoEjemplo = 0;
+let historial = [], metricaValidacion = null, cuentaEvaluaciones = 0;
+const edgeElements = [], nodeElements = [], bars = [], controles = [];
+
+function svgElement(tag, attributes = {}, parent = $('network'), content) {
+  const el = document.createElementNS(NS, tag);
+  Object.entries(attributes).forEach(([name, value]) => el.setAttribute(name, value));
+  if (content !== undefined) el.textContent = content;
+  if (parent) parent.appendChild(el);
+  return el;
+}
+
+function crearDiagrama() {
+  const svg = $('network');
+  svg.replaceChildren();
+  edgeElements.length=0;nodeElements.length=0;bars.length=0;
+  const altura=Math.max(350,(TAMANOS[1]-1)*58);
+  svg.setAttribute('viewBox',`0 0 1520 ${altura+215}`);
+  svgElement('title',{id:'diagram-title'},svg,'Red de cuatro entradas y cuatro salidas, con seis capas ReLU');
+  svgElement('desc',{id:'diagram-desc'},svg,`${NUM_SESGOS} neuronas ReLU y ${NUM_PESOS} conexiones. Verde positivo, rojo negativo. Simplificar filtra solo el dibujo: nodos interiores menores que 10 y pesos menores al 10% del máximo absoluto de su capa. Las entradas y salidas siempre permanecen visibles. Las barras muestran valores entre 0 y 100.`);
+  const xs = [154, 334, 514, 694, 874, 1054, 1234];
+  const ys = CAPAS.map(layer => layer.map((_,j)=>130+(layer.length===1?altura/2:j*altura/(layer.length-1))));
+  const positions = {};
+  CAPAS.forEach((layer, l) => layer.forEach((name, j) => { positions[name] = [xs[l], ys[l][j]]; }));
+  const defs = svgElement('defs');
+  for (const [name, color] of [['positive', GREEN], ['negative', RED]]) {
+    const marker = svgElement('marker', {id: `arrow-${name}`, markerWidth: 8, markerHeight: 8, refX: 7, refY: 4, orient: 'auto', markerUnits: 'userSpaceOnUse'}, defs);
+    svgElement('path', {d: 'M0,0 L7,4 L0,8 Z', fill: color}, marker);
+  }
+  svgElement('text',{x:784,y:28,class:'stage-label'},svg,`${NUM_PESOS} CONEXIONES · TODAS LAS CAPAS COMPLETAMENTE CONECTADAS`);
+  xs.forEach((x,i) => {
+    svgElement('text',{x,y:72,class:'layer-label'},svg,i === 0 ? 'ENTRADAS' : i === 6 ? 'CAPA 6 · SALIDAS' : `CAPA ${i}`);
+    svgElement('text',{x,y:altura+184,class:'layer-label'},svg,i === 0 ? '4 valores · 0–100' : `${CAPAS[i].length} neuronas ReLU`);
+  });
+  svgElement('text',{x:1386,y:72,class:'layer-label'},svg,'ESPERADO');
+  [244,604,964].forEach(x => svgElement('line',{x1:x,y1:90,x2:x,y2:altura+155,stroke:'#e3e7df','stroke-dasharray':'3 8'}));
+
+  const edgeLayer = svgElement('g', {id:'connections'});
+  const labelLayer = svgElement('g', {id:'weight-labels', display:$('show-weights').checked?'inline':'none'});
+  CONEXIONES.forEach(([from,to], i) => {
+    const [x1,y1] = positions[from], [x2,y2] = positions[to];
+    const d = Math.hypot(x2-x1,y2-y1), ux = (x2-x1)/d, uy = (y2-y1)/d;
+    const sx=x1+ux*19, sy=y1+uy*19, tx=x2-ux*22, ty=y2-uy*22;
+    const path = `M${sx},${sy} L${tx},${ty}`;
+
+    const line = svgElement('path',{d:path,class:'edge','data-edge':i},edgeLayer);
+    const title = svgElement('title',{},line);
+    const t = .19 + (i % 8)*.073;
+    const label = svgElement('text',{x:sx+(tx-sx)*t,y:sy+(ty-sy)*t+3,'text-anchor':'middle',class:'edge-label'},labelLayer);
+    edgeElements.push({line,label,title,from,to});
+  });
+
+  CAPAS.forEach((layer,l) => layer.forEach(name => {
+    const [x,y]=positions[name];
+    const g=svgElement('g',{class:`neuron ${l===0?'input-node':l===6?'output-node':''}`,'data-node':name});
+    svgElement('text',{x,y:y-25,class:'node-name'},g,sub(name));
+    const circle=svgElement('circle',{cx:x,cy:y,r:19,class:'node-circle'},g);
+    const number=svgElement('text',{x,y:y+1,class:'node-number'},g,'0');
+    const title=svgElement('title',{},g);
+    nodeElements.push({g,name,circle,number,title,index:INDICE.get(name),layer:l});
+  }));
+
+  function agregarBarra(x,y,node,index,isOutput) {
+    const g=svgElement('g',{transform:`translate(${x},${y-36})`,'data-bar':node});
+    svgElement('rect',{x:0,y:0,width:17,height:72,rx:3,fill:'#e8ede5'},g);
+    [0,36,72].forEach(v=>svgElement('line',{x1:21,y1:v,x2:25,y2:v,stroke:'#abb8ac','stroke-width':1},g));
+    const fill=svgElement('rect',{x:1,y:0,width:15,height:72,rx:2,fill:isOutput?'#63a783':'#799cb7',class:'bar-fill'},g);
+    const target=isOutput?svgElement('line',{x1:-4,y1:0,x2:21,y2:0,class:'bar-target'},g):null;
+    const overflow=svgElement('text',{x:8,y:-8,'text-anchor':'middle',class:'bar-overflow'},g,'↑');
+    const expected=isOutput?svgElement('text',{x:1386,y:y+5,class:'node-number','data-expected':index},svg):null;
+    bars.push({node,index,isOutput,fill,target,overflow,expected});
+  }
+  CAPAS[0].forEach((name,i)=>agregarBarra(88,positions[name][1],name,i,false));
+  CAPAS[6].forEach((name,i)=>agregarBarra(1300,positions[name][1],name,i,true));
+  document.querySelectorAll('[data-weight-count]').forEach(el=>el.textContent=NUM_PESOS.toLocaleString('es-AR'));
+  document.querySelectorAll('[data-bias-count]').forEach(el=>el.textContent=NUM_SESGOS);
+  document.querySelectorAll('[data-architecture]').forEach(el=>el.textContent=TAMANOS.join(' → '));
+  $('pretrained').disabled=TAMANOS[1]!==8;
+  $('pretrained').title=TAMANOS[1]===8?'Cargar el modelo de 8 neuronas por capa':'El modelo guardado usa 8 neuronas por capa. Elegí 8 para cargarlo.';
+}
+
+function crearControles() {
+  entradaVisible.forEach((value,i)=>{
+    const wrap=document.createElement('div'); wrap.className='input-control';
+    const label=document.createElement('label'); label.htmlFor=`input-${i}`; label.textContent=`ENTRADA ${i+1}`;
+    const numberWrap=document.createElement('div'); numberWrap.className='input-number-wrap';
+    const number=document.createElement('input');
+    Object.assign(number,{id:`input-${i}`,type:'number',min:'0',max:'100',step:'0.1',value:String(value)});
+    number.setAttribute('aria-label',`Entrada ${i+1}, de 0 a 100`);
+    const unit=document.createElement('span'); unit.textContent='/100';
+    const slider=document.createElement('input');
+    Object.assign(slider,{type:'range',min:'0',max:'100',step:'0.1',value:String(value)});
+    slider.setAttribute('aria-label',`Barra de entrada ${i+1}`);
+    const actualizar=(raw,final=false)=>{
+      if(raw===''){if(!final)return;raw='0';}
+      const parsed=Number(raw);if(!Number.isFinite(parsed))return;
+      entradaVisible[i]=Math.max(0,Math.min(100,parsed));
+      slider.value=entradaVisible[i];
+      if(final||document.activeElement!==number)number.value=entradaVisible[i];
+      $('auto-example').checked=false;
+      renderizar();
+    };
+    number.addEventListener('input',()=>actualizar(number.value));
+    number.addEventListener('change',()=>actualizar(number.value,true));
+    slider.addEventListener('input',()=>actualizar(slider.value,true));
+    numberWrap.append(number,unit);wrap.append(label,numberWrap,slider);$('input-controls').append(wrap);
+    controles.push({number,slider});
+  });
+}
+
+function cambiarEjemplo() {
+  entradaVisible=Array.from({length:4},()=>Math.round(azarVisible()*1000)/10);
+  controles.forEach((c,i)=>{c.number.value=entradaVisible[i];c.slider.value=entradaVisible[i];});
+  renderizar();
+}
+
+function registrarValidacion() {
+  metricaValidacion=evaluar(entrenador.red,validacion,0.001);
+  historial.push({paso:entrenador.paso,error:metricaValidacion.rmse*100});
+  if(historial.length>500)historial=historial.filter((_,i)=>i%2===0||i===historial.length-1);
+  dibujarCurva();
+}
+
+function dibujarCurva() {
+  const chart=$('loss-chart');chart.replaceChildren();
+  const x0=48,x1=588,y0=12,y1=136;
+  const points=historial.length?historial:[{paso:0,error:1}];
+  const top=Math.ceil(Math.log10(Math.max(10,...points.map(p=>p.error))));
+  const bottom=Math.max(-16,Math.min(-1,Math.floor(Math.log10(Math.max(1e-16,points.at(-1).error)))));
+  const xMax=Math.max(100,entrenador.paso);
+  const x=p=>x0+(x1-x0)*p/xMax;
+  const y=e=>y0+(top-Math.log10(Math.max(10**bottom,e)))/(top-bottom)*(y1-y0);
+  for(let i=0;i<4;i++){
+    const exponent=top-(top-bottom)*i/3, yy=y0+(y1-y0)*i/3;
+    svgElement('line',{x1:x0,y1:yy,x2:x1,y2:yy,stroke:'#dce2d8','stroke-dasharray':'3 5'},chart);
+    const value=10**exponent;
+    svgElement('text',{x:x0-8,y:yy+3,'text-anchor':'end',class:'chart-text'},chart,value<.01?value.toExponential(0):fmt(value,value<1?2:0));
+  }
+  svgElement('text',{x:x0,y:158,class:'chart-text'},chart,'0');
+  svgElement('text',{x:x1,y:158,'text-anchor':'end',class:'chart-text'},chart,`${xMax.toLocaleString('es-AR')} pasos`);
+  if(points.length>1){
+    svgElement('path',{d:points.map((p,i)=>`${i?'L':'M'}${x(p.paso)},${y(p.error)}`).join(' '),fill:'none',stroke:GREEN,'stroke-width':2.2,'stroke-linecap':'round','stroke-linejoin':'round'},chart);
+  }else{
+    svgElement('text',{x:320,y:83,'text-anchor':'middle',class:'chart-text'},chart,aprendido?'Modelo previamente entrenado; sin historial de esta sesión.':'El recorrido aparece cuando empezás a entrenar.');
+  }
+  const last=points.at(-1);
+  svgElement('circle',{cx:x(last.paso),cy:y(last.error),r:3.5,fill:GREEN},chart);
+  chart.setAttribute('aria-label',`Error de validación actual: ${last.error.toExponential(3)} puntos. ${entrenador.paso} pasos de entrenamiento.`);
+}
+
+function renderizar() {
+  const red=entrenador.red;
+  const salida=red.forward(entradaVisible.map(v=>v/100)).map(v=>v*100);
+  const esperado=respuestaEsperada(entradaVisible);
+  const simplificar=$('simplify').checked;
+  // Máximo de todos los pesos entre dos capas consecutivas, incluidos los ocultos.
+  const maximosPorCapa=new Float64Array(CAPAS.length);
+  red.pesos.forEach((w,i)=>{const capa=CAPA_DEL_PESO[i];maximosPorCapa[capa]=Math.max(maximosPorCapa[capa],Math.abs(w));});
+  const nodoVisible=name=>!simplificar||CAPA_DEL_NODO.get(name)===0||CAPA_DEL_NODO.get(name)===CAPAS.length-1||red.activaciones[INDICE.get(name)]*100>=10;
+  nodeElements.forEach(({g,circle,number,title,index,layer,name})=>{
+    const value=red.activaciones[index]*100;
+    g.style.display=nodoVisible(name)?'':'none';
+    g.setAttribute('data-value',value);
+    number.textContent=compact(value);
+    title.textContent=`${sub(name)}: ${fmt(value,4)}${layer?` · ReLU · sesgo ${fmt(red.sesgos[index-4],5)}`:''}`;
+    if(layer>0){
+      const activity=Math.min(1,value/100);
+      const light=98-activity*20;
+      circle.setAttribute('fill',`hsl(145 25% ${light}%)`);
+      circle.setAttribute('stroke',value>1e-8?'#76947b':'#c3cabe');
+    }
+  });
+  edgeElements.forEach(({line,label,title,from,to},i)=>{
+    const w=red.pesos[i],positive=w>=0;
+    const maximo=maximosPorCapa[CAPA_DEL_PESO[i]];
+    const proporcion=maximo>0?Math.abs(w)/maximo:0;
+    const umbral=0.1*maximo;
+    const visible=!simplificar||(Math.abs(w)>=umbral&&nodoVisible(from)&&nodoVisible(to));
+    line.setAttribute('data-layer',CAPA_DEL_PESO[i]);
+    line.setAttribute('data-threshold',umbral);
+    for(const element of [line,label])element.style.display=visible?'':'none';
+    const color=positive?GREEN:RED;
+    line.setAttribute('stroke',color);
+    line.setAttribute('stroke-width',1+5*proporcion);
+    line.setAttribute('marker-end',`url(#arrow-${positive?'positive':'negative'})`);
+    line.setAttribute('data-weight',w);
+    line.style.opacity='.42';
+    label.textContent=`${positive?'+':''}${fmt(w,2)}`;label.setAttribute('fill',color);
+    title.textContent=`${sub(from)} → ${sub(to)}: peso ${w.toPrecision(7)} · ${fmt(proporcion*100,1)}% del máximo absoluto de la capa`;
+  });
+  bars.forEach(b=>{
+    const value=b.isOutput?salida[b.index]:entradaVisible[b.index];
+    b.fill.style.transform=`scaleY(${Math.max(0,Math.min(1,value/100))})`;
+    b.fill.setAttribute('data-value',value);
+    b.overflow.style.display=value>100.000001?'':'none';
+    if(b.target){b.target.setAttribute('transform',`translate(0,${72*(1-esperado[b.index]/100)})`);b.expected.textContent=fmt(esperado[b.index],1);}
+  });
+  $('overflow-note').hidden=!salida.some(v=>v>100.000001);
+  const mae=salida.reduce((s,v,i)=>s+Math.abs(v-esperado[i]),0)/4;
+  $('probe-error').textContent=fmt(mae,mae<.01?4:2);
+  $('expected-values').textContent=esperado.map(v=>fmt(v,1)).join(' · ');
+  $('step-count').textContent=entrenador.paso.toLocaleString('es-AR');
+  $('sample-count').textContent=entrenador.ejemplos.toLocaleString('es-AR');
+  $('validation-error').textContent=metricaValidacion?(metricaValidacion.rmse*100<1e-5?(metricaValidacion.rmse*100).toExponential(2):fmt(metricaValidacion.rmse*100,3)):'—';
+
+}
+
+function actualizarEstado(text) {
+  if(text)$('status').textContent=text;
+  $('status-dot').className=`status-dot ${running?'running':aprendido?'learned':''}`;
+  $('train-icon').textContent=running?'Ⅱ':'▶';
+  $('train-label').textContent=running?'Pausar':'Entrenar';
+  $('train').setAttribute('aria-pressed',String(running));
+}
+
+function pausar(text='Entrenamiento pausado') {
+  running=false;
+  if(frameId!==null)clearTimeout(frameId);
+  frameId=null;
+  actualizarEstado(text);
+}
+
+function avanzarPaso() {
+  entrenador.avanzar();
+  aprendido=false;
+  if(entrenador.paso%20===0||entrenador.paso===1)registrarValidacion();
+}
+
+function programarCiclo() {
+  frameId=setTimeout(()=>ciclo(performance.now()),0);
+}
+
+function ciclo(timestamp) {
+  frameId=null;
+  if(!running)return;
+  const inicio=performance.now();let cambios=0;
+  try{
+    // Cálculo continuo sin límite de pasos; ceder tiempo al navegador para poder pausar.
+    while(performance.now()-inicio<24){avanzarPaso();cambios++;}
+    if($('auto-example').checked&&timestamp-ultimoEjemplo>=1000){cambiarEjemplo();ultimoEjemplo=timestamp;}
+    if(cambios&&timestamp-ultimoRender>=100){renderizar();ultimoRender=timestamp;}
+  }catch(error){pausar(error.message);return;}
+  programarCiclo();
+}
+
+function iniciar() {
+  if(running){pausar();renderizar();return;}
+  running=true;ultimoEjemplo=performance.now();ultimoRender=0;
+  $('evaluation-result').hidden=true;
+  actualizarEstado('Aprendiendo con ejemplos aleatorios');
+  programarCiclo();
+}
+
+function reiniciar(pesos=null) {
+  pausar();entrenador=new EntrenadorInteractivo(pesos);aprendido=pesos!==null;
+  historial=[];$('evaluation-result').hidden=true;
+  registrarValidacion();renderizar();
+  actualizarEstado(aprendido?'Modelo previamente entrenado':'Lista para aprender');
+}
+
+function cambiarArquitectura() {
+  pausar();
+  configurarArquitectura(Number($('hidden-width').value));
+  CAPA_DEL_NODO=new Map(CAPAS.flatMap((nombres,capa)=>nombres.map(nombre=>[nombre,capa])));
+  CAPA_DEL_PESO=CONEXIONES.map(([,destino])=>CAPA_DEL_NODO.get(destino));
+  crearDiagrama();
+  reiniciar();
+  actualizarEstado(`Nueva red · ${TAMANOS[1]} neuronas por capa interior`);
+}
+
+function comprobar() {
+  pausar('Pausada para comprobar aprendizaje');
+  const datos=crearDatos(1000,(56473821+cuentaEvaluaciones++*7951)>>>0);
+  const m=evaluar(entrenador.red,datos,.01); // 0,01 × 100 = 1 punto.
+  const result=$('evaluation-result');result.hidden=false;
+  result.classList.toggle('needs-work',m.casosDentroTolerancia<1000);
+  result.textContent=`${m.casosDentroTolerancia.toLocaleString('es-AR')} de 1.000 ejemplos con las cuatro salidas correctas dentro de ±1 punto. ${m.casosOrdenados.toLocaleString('es-AR')} ejemplos con salidas en orden (con tolerancia numérica). Error medio: ${fmt(m.mae*100,6)} puntos. Error máximo: ${(m.errorMaximo*100).toExponential(3)} puntos.`;
+  renderizar();
+}
+
+$('hidden-width').addEventListener('change',cambiarArquitectura);
+$('train').addEventListener('click',()=>iniciar());
+$('reset').addEventListener('click',()=>reiniciar());
+$('pretrained').addEventListener('click',()=>reiniciar(MODELO_APRENDIDO));
+$('random').addEventListener('click',cambiarEjemplo);
+$('evaluate').addEventListener('click',comprobar);
+$('simplify').addEventListener('change',renderizar);
+$('show-weights').addEventListener('change',e=>$('weight-labels').setAttribute('display',e.target.checked?'inline':'none'));
+
+crearDiagrama();crearControles();registrarValidacion();renderizar();actualizarEstado();
+
+// API pequeña y legible para inspección didáctica y pruebas, sin dependencias.
+window.laboratorio = Object.freeze({
+  estado:()=>({arquitectura:[...TAMANOS],paso:entrenador.paso,ejemplos:entrenador.ejemplos,running,aprendido,
+    pesos:[...entrenador.red.pesos],cambios:[...entrenador.cambios],sesgos:[...entrenador.red.sesgos],
+    entrada:[...entradaVisible],salida:entrenador.red.predecir(entradaVisible.map(v=>v/100)).map(v=>v*100),
+    errorValidacion:metricaValidacion.rmse*100}),
+  predecir:entrada=>entrenador.red.predecir(entrada.map(v=>v/100)).map(v=>v*100),
+});
+</script>
+</body>
+</html>

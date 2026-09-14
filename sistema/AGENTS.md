@@ -78,6 +78,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `publicar-enunciado-trabajo` | `assessmentId`                                           | Generates student folders, then copies the matching `enunciados` folder without overwriting existing work.      |
 | `set-assessment-result`      | `assessmentId`, `legajo`, `status?`, `score?`            | Status is pending/error/failure/presented; score is optional 1–10 only on graded work.                          |
 | `work-grid`                  | `course?`                                                | GET. Students × shared practicals.                                                                              |
+| `comprobar-tp1`              | `assessmentId`, `legajos`                                 | Runs `tools/probar-tp1.js` for selected roster students, saves TP1 statuses and verifies them. The UI uses the currently filtered students. |
 | `list-classes`               | `course`                                                 | GET. Includes generated and cancelled dates.                                                                    |
 | `generate-classes`           | `course`, `startDate`, `endDate`                         | Adds matching weekly dates without duplicates.                                                                  |
 | `create-class`               | `course`, `date`, `topic?`                               | Creates one date matching the schedule.                                                                         |
@@ -101,6 +102,11 @@ call over one call per student.
 
 - Every practical starts as `pendiente`; other states are `error`, `falla` and
   `presentado`.
+- `upsert-student` accepts optional `esColaborador`. Setting it to `false`
+  marks a student with GitHub as `invitación pendiente` locally; it does not
+  send a GitHub invitation or change repository access. Clicking the GitHub
+  icon in the roster toggles between collaborator (green) and invitation
+  pending (yellow), provided the student has a GitHub account.
 - A parcial is a practical with `graded=true`. Its optional grade is 1–10.
   State and grade are independent; never infer an approval threshold.
 - Justified attendance does not count against the attendance percentage.
