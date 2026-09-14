@@ -35,7 +35,7 @@ EJEMPLOS:
 `
 
 import {
-    readFileSync,
+readFileSync,
     writeFileSync
 } from "node:fs";
 
