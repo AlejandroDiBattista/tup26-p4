@@ -34,6 +34,8 @@ function App() {
     const [archivo, setArchivo] = useState(null);
     const [cabecera, setCabecera] = useState([]);
     const [datos, setDatos] = useState([]);
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const [mensaje, setMensaje] = useState('');
 
     function cargarCSV(texto) {
@@ -76,6 +78,8 @@ function App() {
             cargarCSV(texto);
 
             setArchivo(nombre);
+            setFilaSeleccionada(0);
+            setColumnaSeleccionada(0);
             setMensaje(`Archivo abierto: ${basename(nombre)}`);
 
             return true;
@@ -98,6 +102,54 @@ function App() {
             exit();
         }
     });
+
+    const FILAS_VISIBLES = Math.max(
+        3,
+        FILAS - 12
+    );
+
+    const inicioFila = Math.max(
+        0,
+        Math.min(
+            filaSeleccionada -
+            Math.floor(FILAS_VISIBLES / 2),
+
+            Math.max(
+                0,
+                datos.length - FILAS_VISIBLES
+            )
+        )
+    );
+
+    const filasVisibles = datos.slice(
+        inicioFila,
+        inicioFila + FILAS_VISIBLES
+    );
+
+    const COLUMNAS_VISIBLES = Math.max(
+        1,
+        Math.floor(
+            (COLUMNAS - 8) / ANCHO_COLUMNA
+        )
+    );
+
+    const inicioColumna = Math.max(
+        0,
+        Math.min(
+            columnaSeleccionada -
+            Math.floor(COLUMNAS_VISIBLES / 2),
+
+            Math.max(
+                0,
+                cabecera.length - COLUMNAS_VISIBLES
+            )
+        )
+    );
+
+    const cabecerasVisibles = cabecera.slice(
+        inicioColumna,
+        inicioColumna + COLUMNAS_VISIBLES
+    );
 
     return (
         <Box
@@ -133,8 +185,11 @@ function App() {
                             #
                         </Text>
                     </Box>
-                    {cabecera.map((columna, indice) => (
-                        <Box key={indice} width={ANCHO_COLUMNA}>
+                    {cabecerasVisibles.map((columna, indice) => (
+                        <Box
+                            key={inicioColumna + indice}
+                            width={ANCHO_COLUMNA}
+                        >
                             <Text bold color={COLORES.acento}>
                                 {ajustarTexto(columna, ANCHO_COLUMNA)}
                             </Text>
@@ -142,22 +197,33 @@ function App() {
                     ))}
                 </Box>
 
-                {datos.map((fila, indiceFila) => (
-                    <Box key={indiceFila}>
-                        <Box width={5}>
-                            <Text color={COLORES.secundario}>
-                                {indiceFila + 1}
-                            </Text>
-                        </Box>
-                        {fila.map((celda, indiceColumna) => (
-                            <Box key={indiceColumna} width={ANCHO_COLUMNA}>
-                                <Text color={COLORES.titulo}>
-                                    {ajustarTexto(celda, ANCHO_COLUMNA)}
+                {filasVisibles.map((fila, indiceVisibleFila) => {
+                    const indiceFila = inicioFila + indiceVisibleFila;
+                    const celdasVisibles = fila.slice(
+                        inicioColumna,
+                        inicioColumna + COLUMNAS_VISIBLES
+                    );
+
+                    return (
+                        <Box key={indiceFila}>
+                            <Box width={5}>
+                                <Text color={COLORES.secundario}>
+                                    {indiceFila + 1}
                                 </Text>
                             </Box>
-                        ))}
-                    </Box>
-                ))}
+                            {celdasVisibles.map((celda, indiceVisibleColumna) => {
+                                const indiceColumna = inicioColumna + indiceVisibleColumna;
+                                return (
+                                    <Box key={indiceColumna} width={ANCHO_COLUMNA}>
+                                        <Text color={COLORES.titulo}>
+                                            {ajustarTexto(celda, ANCHO_COLUMNA)}
+                                        </Text>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    );
+                })}
 
                 <Box flexGrow={1} alignItems="flex-end">
                     <Text color={COLORES.secundario}>
