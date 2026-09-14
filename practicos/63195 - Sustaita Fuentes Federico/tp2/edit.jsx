@@ -18,7 +18,7 @@ const COLORES = {
 };
 
 // Solo dibuja la grilla. No sabe nada de "guardar" ni de teclas.
-function Tabla({cabecera, datos, filaSel, colSel}) {
+function Tabla({cabecera, datos, filaSel, colSel, offset}) {
     return (
         <Box flexDirection="column">
             <Box>
@@ -107,7 +107,7 @@ useInput((tecla, key) => {
 })
 
     return (
-        <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1}>
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
             {!datos ? (
                 <Text color={COLORES.secundario}>Cargando...</Text>
             ) : (
