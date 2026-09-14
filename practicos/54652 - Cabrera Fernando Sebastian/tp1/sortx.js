@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import fs from 'fs';
 const HELP = `
 
@@ -50,7 +49,7 @@ function parseArgs() {
             sortFields.push(criterio);
         }if (args[i] === '-d' || args[i] === '--delimiter') {
             const delim = args[i + 1];
-            delimiter = delim;
+            delimiter = delim === '\\t' ? '\t' : delim;
         }
         if (args[i] === '-nh' || args[i] === '--no-header') {
             noHeader = true;
@@ -78,7 +77,7 @@ const inputData = readInput(inputFile);
 
 
 function parseDelimited(text,delimiter) {
-    const lines = text.split('\n').map(line=> line.trimEnd());
+    const lines = text.split('\n').map(line => line.trimEnd()).filter(line => line !== '');
     const parsedData = lines.map(line => line.split(delimiter));
     return parsedData;
 }
@@ -127,4 +126,3 @@ function writeOutput(filePath,Data){
     }
 }
 writeOutput(outputFile,texto);
-
