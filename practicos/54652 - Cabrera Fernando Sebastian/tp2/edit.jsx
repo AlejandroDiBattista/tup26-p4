@@ -50,9 +50,11 @@ const COLORES = {
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                <Box flexGrow={1} flexDirection= "column">
+                    {filas.map((fila, i)=>( <Text key={i}>{fila.join(', ')}</Text> ))}
                 </Box>
+
+
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
         </Box>
