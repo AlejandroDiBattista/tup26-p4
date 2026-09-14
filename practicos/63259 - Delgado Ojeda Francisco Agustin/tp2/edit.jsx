@@ -100,8 +100,52 @@ function App() {
     useInput((input, key) => {
         if (key.escape) {
             exit();
+            return;
+        }
+
+        if (key.upArrow) {
+            setFilaSeleccionada(fila =>
+                Math.max(0, fila - 1)
+            );
+            setMensaje('');
+            return;
+        }
+
+        if (key.downArrow) {
+            setFilaSeleccionada(fila =>
+                Math.min(
+                    Math.max(0, datos.length - 1),
+                    fila + 1
+                )
+            );
+            setMensaje('');
+            return;
+        }
+
+        if (key.leftArrow) {
+            setColumnaSeleccionada(columna =>
+                Math.max(0, columna - 1)
+            );
+            setMensaje('');
+            return;
+        }
+
+        if (key.rightArrow) {
+            setColumnaSeleccionada(columna =>
+                Math.min(
+                    Math.max(0, cabecera.length - 1),
+                    columna + 1
+                )
+            );
+            setMensaje('');
+            return;
         }
     });
+
+    const valorSeleccionado =
+        datos[filaSeleccionada]?.[
+        columnaSeleccionada
+        ] ?? '';
 
     const FILAS_VISIBLES = Math.max(
         3,
@@ -213,9 +257,17 @@ function App() {
                             </Box>
                             {celdasVisibles.map((celda, indiceVisibleColumna) => {
                                 const indiceColumna = inicioColumna + indiceVisibleColumna;
+                                const seleccionada =
+                                    indiceFila === filaSeleccionada &&
+                                    indiceColumna === columnaSeleccionada;
+
                                 return (
                                     <Box key={indiceColumna} width={ANCHO_COLUMNA}>
-                                        <Text color={COLORES.titulo}>
+                                        <Text
+                                            bold={seleccionada}
+                                            color={seleccionada ? COLORES.fondo : COLORES.titulo}
+                                            backgroundColor={seleccionada ? COLORES.acento : undefined}
+                                        >
                                             {ajustarTexto(celda, ANCHO_COLUMNA)}
                                         </Text>
                                     </Box>
@@ -225,8 +277,28 @@ function App() {
                     );
                 })}
 
+                <Box marginTop={1} flexDirection="column">
+                    {datos.length > 0 && (
+                        <Text color={COLORES.secundario}>
+                            Celda: fila {filaSeleccionada + 1}, columna {columnaSeleccionada + 1}
+                            {' | '}
+                            Valor:{' '}
+                            <Text bold color={COLORES.acento}>
+                                {valorSeleccionado}
+                            </Text>
+                        </Text>
+                    )}
+                    {mensaje && (
+                        <Text color={COLORES.secundario}>
+                            {mensaje}
+                        </Text>
+                    )}
+                </Box>
+
                 <Box flexGrow={1} alignItems="flex-end">
                     <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Flechas</Text> mover
+                        {' | '}
                         <Text bold color={COLORES.acento}>Esc</Text> salir
                     </Text>
                 </Box>
