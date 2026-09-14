@@ -19,6 +19,10 @@ const COLORES = {
 
 const archivo = process.argv[2];
 
+function convertirACsv(datos) {
+    return datos.map(fila => fila.join(',')).join('\n');
+}
+
 function App({tabla}) {
     const {exit} = useApp();
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
@@ -26,10 +30,23 @@ function App({tabla}) {
     const [editando, setEditando] = useState(false);
     const [datos, setDatos] = useState(tabla);
     const valorActual = datos[filaSeleccionada][columnaSeleccionada];
+
+    async function guardar() {
+        const contenido = convertirACsv(datos);
+        await writeFile(archivo, contenido, 'utf-8');
+    }
     
     useInput((tecla, key) => {
         if (key.escape) {
-            exit();
+            if (editando) {
+                setEditando(false);
+            } else {
+                exit();
+            }
+        }
+
+        if (key.ctrl && tecla === 's') {
+            guardar();
         }
 
         if (key.downArrow) {
