@@ -17,15 +17,45 @@ const COLORES = {
     secundario: '#ada79e',
     acento: '#edbb64',
 };
+//parsearCSV convierte el CSV a datos con una estructura
+function parsearCSV(texto) {
+    const lineas = texto
+        .replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+        .split('\n')
+        .filter((linea, i, arr) => !(i === arr.length - 1 && linea === ''));
+
+    if (lineas.length === 0) return { cabecera: [], filas: [] };
+    const cabecera = lineas[0].split(',').map(celda => celda.trim());
+
+    const filas = lineas.slice(1).map(linea => {
+        const celdas = linea.split(',').map(celda => celda.trim());
+
+        const normalizacion = cabecera.map((x, i) => celdas[i] ?? '');
+        return normalizacion;
+    });
+
+    return { cabecera, filas };
+}
+// une los arrays de cabecera y filas en un string CSV
+function serializarCSV(cabecera, filas) {
+    const lineas = [
+        cabecera.join(','),
+        ...filas.map(fila => fila.join('\n')),
+    ];
+}
+//funcion de callback para sort
+function compararCeldas(a, b) {
+    const ta = a.trim();
+    const tb = b.trim();
+    const na = Number(ta);
+    const nb = Number(tb);
+    const ambosNum = ta !== '' && tb !== '' && !Number.isNaN(na) && !Number.isNaN(nb);
+    if (ambosNum) return na - nb;
+    return string(a).localCompare(String(b), 'es', { sensitivity: 'base' });
+}
 
 function App({ archivoInicial }) {
-    const { exit } = useApp();
 
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
 
     const [archivo, setArchivo] = useState(null);
     const [cabecera, setCabecera] = useState([]);
@@ -39,42 +69,7 @@ function App({ archivoInicial }) {
 
     const tieneDatos = cabecera.lenght > 0;
 
-    //parsearCSV convierte el CSV a datos con una estructura
-    function parsearCSV(texto) {
-        const lineas = texto
-            .replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-            .split('\n')
-            .filter((linea, i, arr) => !(i === arr.length - 1 && linea === ''));
 
-        if (lineas.length === 0) return { cabecera: [], filas: [] };
-        const cabecera = lineas[0].split(',').map(celda => celda.trim());
-
-        const filas = lineas.slice(1).map(linea => {
-            const celdas = linea.split(',').map(celda => celda.trim());
-
-            const normalizacion = cabecera.map((x, i) => celdas[i] ?? '');
-            return normalizacion;
-        });
-
-        return { cabecera, filas };
-    }
-    // une los arrays de cabecera y filas en un string CSV
-    function serializarCSV(cabecera, filas) {
-        const lineas = [
-            cabecera.join(','),
-            ...filas.map(fila => fila.join('\n')),
-        ];
-    }
-    //funcion de callback para sort
-    function compararCeldas(a, b) {
-        const ta = a.trim();
-        const tb = b.trim();
-        const na = Number(ta);
-        const nb = Number(tb);
-        const ambosNum = ta !== '' && tb !== '' && !Number.isNaN(na) && !Number.isNaN(nb);
-        if (ambosNum) return na - nb;
-        return string(a).localCompare(String(b), 'es', { sensitivity: 'base' });
-    }
 
     async function abrirArchivo(path) {
         try {
@@ -98,21 +93,17 @@ function App({ archivoInicial }) {
     useEffect(() => {
         if (!archivoInicial) return;
         abrirArchivo(archivoInicial).finally(() => setListo(true));
-    }, [archivoInicial])
+    }, [archivoInicial]);
+
     return (
-        <Box>
-            <Text>
-                Archivo inicial : {archivoInicial ?? 'ningun archivo - tenes que cargarlo primero.'}
-            </Text>
+        <Box flexDirection='column' width={COLUMNAS} height={FILAS} paddingX={1} backgroundColor={COLORES.fondo}>
+            <Box justifyContent='space-between'>
+                <Text bold>{archivo ? basename(archivo) : '(sin archivo)'}</Text>
+                <Text>{filas.length}`</Text>
+            </Box>
+
         </Box>
-        // <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-        //     <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-        //         <Box flexGrow={1} justifyContent="center" alignItems="center">
-        //             <Text bold color={COLORES.titulo}>Editor CSV</Text>
-        //         </Box>
-        //         <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-        //     </Box>
-        // </Box>
+
     );
 }
 const archivoInicial = process.argv[2] ?? null;
