@@ -50,15 +50,26 @@ function App() {
 
     const [editando, setEditando] = useState(false);
     const [valorEdicion, setValorEdicion] = useState("");
-
+    const [guardando, setGuardando] = useState(false);
+    const [nombreGuardado, setNombreGuardado] = useState(""); 
+    const [error, setError] = useState("");
 
     useInput((tecla, key) => {
         if (key.escape) {
              if (editando) {
                 setEditando(false);
-            } else {
+            } else if(guardando) {
+
+                setGuardando(false);
+            } 
+            else {
                 exit();
             }
+        }
+        if(tecla === "g") {
+            setGuardando(true)
+       
+
         }
         if (key.downArrow) {
                 setFilaSeleccionada(anterior =>
@@ -87,15 +98,20 @@ function App() {
             setColSeleccionada(columna => columna > 0 ? columna - 1 : columna  )
         }
        if (key.return) {
-            if(!editando){
+
+            if(guardando){
+                    guardarArchivo()
+
+            }
+            else if(editando){
+                 const datosEdicion = datos.map(fila => [...fila]);
+                 datosEdicion[filaSeleccionada][colSeleccionada] = valorEdicion;
+                 setDatos(datosEdicion)
+                 setEditando(false);
+            } else {
                 setEditando(true);
                 setValorEdicion(datos[filaSeleccionada][colSeleccionada])
-            } else {
-                const datosEdicion = datos.map(fila => [...fila]);
-                datosEdicion[filaSeleccionada][colSeleccionada] = valorEdicion;
-                setDatos(datosEdicion) 
-                setEditando(false);
-            }
+          }
         }
         if (tecla === "<") {
             const cabecera = datos[0];
@@ -123,7 +139,20 @@ function App() {
             setDatos([cabecera, ...filasOrdenadas])
         }
     })
-    
+            async function guardarArchivo() {
+            try {
+                const textoCsv = datos
+                    .map(fila => fila.join(","))
+                    .join("\n");
+
+                await writeFile(nombreGuardado, textoCsv, "utf8");
+                setGuardando(false);
+                } 
+            catch (error) {
+                setError("No se pudo guardar el archivo");
+                setGuardando(false);
+            }
+        }
 
     return (
         
@@ -133,8 +162,8 @@ function App() {
                 <Text bold color={COLORES.acento}>Columna seleccionada: {colSeleccionada}</Text>
 
                 <Text bold color={COLORES.acento}>
-                Fila: {filaSeleccionada} | Columna: {colSeleccionada} | {separarFilas[0][colSeleccionada]}:  
-                 {separarFilas[filaSeleccionada][colSeleccionada]}
+                Fila: {filaSeleccionada} | Columna: {colSeleccionada} | {datos[0][colSeleccionada]}:  
+                 {datos[filaSeleccionada][colSeleccionada]}
                 </Text>
                 <Text bold color={COLORES.acento}>Valor edición: {valorEdicion}</Text>
                 {editando && (
@@ -142,6 +171,12 @@ function App() {
                     value={valorEdicion}
                     onChange={setValorEdicion}
                     />
+                )}
+                 {guardando && (
+                <TextInput
+                    value={nombreGuardado}
+                    onChange={setNombreGuardado}
+                />
                 )}
             </Box>
             <Box flexDirection="column" borderStyle="round">
