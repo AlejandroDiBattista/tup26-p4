@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -19,6 +19,15 @@ const COLORES = {
 
 function App() {
     const {exit} = useApp();
+    const [archivo, setArchivo] = useState('')
+    const [cabeceras, setCabeceras] = useState([])
+    const [datos, setDatos] = useState([])
+
+    const [fila, setFila] = useState(0)
+    const [columna, setColumna] = useState(0)
+
+    const [modo, setModo] = useState("tabla")
+
     
     useInput((tecla, key) => {
         if (key.escape) {
