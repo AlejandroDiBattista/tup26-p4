@@ -44,10 +44,13 @@ function App() {
     const [colSeleccionada, setColSeleccionada] = useState(0)
     const [inicioVisible, setInicioVisibile] = useState(0)
     const cantidadVisible = 9
-    const filasVisibles = separarFilas.slice(inicioVisible, inicioVisible + cantidadVisible);
+    const [datos, setDatos] = useState(separarFilas)
+    const filasVisibles = datos.slice(inicioVisible, inicioVisible + cantidadVisible);
 
     const [editando, setEditando] = useState(false);
     const [valorEdicion, setValorEdicion] = useState("");
+
+
     useInput((tecla, key) => {
         if (key.escape) {
              if (editando) {
@@ -83,8 +86,22 @@ function App() {
             setColSeleccionada(columna => columna > 0 ? columna - 1 : columna  )
         }
        if (key.return) {
-            setEditando(true);
-            setValorEdicion(separarFilas[filaSeleccionada][colSeleccionada])
+            if(!editando){
+                setEditando(true);
+                setValorEdicion(datos[filaSeleccionada][colSeleccionada])
+            } else {
+                const datosEdicion = datos.map(fila => [...fila]);
+                datosEdicion[filaSeleccionada][colSeleccionada] = valorEdicion;
+                setDatos(datosEdicion) 
+                setEditando(false);
+            }
+        }
+        if (key === "<") {
+            // ordenar ascendente
+        }
+
+        if (key === ">") {
+            // ordenar descendente
         }
     })
     
