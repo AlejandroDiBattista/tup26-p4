@@ -170,6 +170,37 @@ function App() {
                 return actual;
             });
         }
+        //ordenar de manera ascendente
+        if (tecla==='<') {
+            const copia = filas.map(function(fila){
+                return[...fila];
+            });
+            copia.sort(function(a,b){
+                const valorA=a[columnaSeleccionada]||'';
+                const valorB=b[columnaSeleccionada]||'';
+                return valorA.localeCompare(valorB, undefined, {numeric: true});
+
+            });
+            setFilas(copia);
+            return;
+            
+        }
+        //ordenar de manera descendente
+        if (tecla==='>') {
+            const copia = filas.map(function(fila){
+                return[...fila];
+            });
+            copia.sort(function(a,b){
+                const valorA=a[columnaSeleccionada]||'';
+                const valorB=b[columnaSeleccionada]||'';
+                return valorB.localeCompare(valorA, undefined, {numeric: true});
+
+            });
+            setFilas(copia);
+            return;
+            
+        }
+
     });
 
     return (
@@ -177,14 +208,25 @@ function App() {
         <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1} backgroundColor={COLORES.fondo}>
             
             {/* SECCIÓN 1: Barra superior con el nombre del archivo cargado */}
-            <Box marginBottom={1}>
+            <Box marginBottom={1} justifyContent="space-between" width="100%">
+             <Box>
              <Text bold color={COLORES.titulo}>
               Archivo: <Text color={COLORES.acento}>{basename(archivo) || 'Sin archivo'}</Text>
+              <Text color={COLORES.secundario}> | Filas: {filas.length} | Columnas: {cabecera.length}</Text>
+             </Text>
+             </Box>
+             <Box>
+             <Text color= {COLORES.secundario}>
+                posicion: <Text color={COLORES.acento}>FILA {filaSeleccionada + 1}, Col {columnaSeleccionada + 1}</Text>
              </Text>
             </Box>
-
+            </Box>
             {/* SECCIÓN 2: Fila de encabezados con borde para separar los títulos */}
             <Box borderStyle="single" borderColor={COLORES.borde} paddingX={1}>
+              {/*columna inicial para le numero de fila*/}
+              <Box width={4}>
+               <Text bold color={COLORES.secundario}>#</Text>
+               </Box>
               {cabecera.map(function(columna, colIndice) {
             // Cada columna se dibuja en una caja con el ancho calculado previamente
                return (
@@ -202,6 +244,12 @@ function App() {
               return (
                   // Cada renglón de la tabla se distribuye de forma horizontal
                    <Box key={filaIndice} flexDirection="row">
+                    {/*numero de filas */}
+                    <Box width={4}>
+                        <Text color={COLORES.secundario}>
+                            {String(filaIndice + 1).padEnd(4,' ')}
+                        </Text>
+                        </Box>
                        {/* Recorremos las celdas de este renglón */}
                        {fila.map(function(celda, colIndice) {
                         //verificamos si la celda coincide con la del cursor
@@ -259,7 +307,7 @@ function App() {
                 {/*atajos visibles mientras navegamos por la grilla*/}
                 {!editando &&(
                     <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse | <Text bold color={COLORES.acento}>Enter</Text> Editar | <Text bold color={COLORES.acento}>Esc</Text> Salir
+                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse |<Text bold color={COLORES.acento}>&lt; &gt;</Text> Ordenar | <Text bold color={COLORES.acento}>Enter</Text> Editar | <Text bold color={COLORES.acento}>Esc</Text> Salir
                         </Text>
                 )}
             </Box>
