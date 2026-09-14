@@ -67,22 +67,26 @@ function App() {
 
     })
 ///aqui 
-
+const visibles = FILAS - 5;
+const inicio = Math.max(0, Math.min(fila - Math.floor(visibles / 2), datos.length - visibles));
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
                 <Box flexGrow={1} justifyContent="flex-start" alignItems="flex-start" flexDirection="column" >
                     <Box flexDirection="row" gap={1} >
+                        <Text color={COLORES.titulo} bold>{'#'.padStart(3)}</Text>
                      {titulos.map((titulo, j) => (
                       <Text key={j} color={COLORES.titulo} bold>
                         {titulo.toUpperCase().padEnd(anchos[j])} 
                       </Text>
                     ))}
                     </Box>
-                 {datos.slice(0, FILAS - 5).map((registro, i) => (
+          {datos.slice(inicio, inicio + visibles).map((registro, i) => (
                   <Box key={i} flexDirection="row" gap={1} >
+                    <Text color={COLORES.secundario}>{String(inicio + i + 1).padStart(3)}</Text>
                     {registro.map((campo, j) => (
-                      <Text key={j} color={COLORES.titulo} backgroundColor={i === fila && j === columna ? COLORES.secundario : undefined}>
+                        
+                      <Text key={j} color={COLORES.titulo} backgroundColor={inicio +i === fila && j === columna ? COLORES.secundario : undefined}>
                         {campo.padEnd(anchos[j])}
                       </Text>
                     ))}   
