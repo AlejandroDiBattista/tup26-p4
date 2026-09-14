@@ -24,7 +24,8 @@ const separarEmpleados = leerEmpleados.split("\n")
 
 const resultados = separarEmpleados.map(texto => texto.trim())
 // console.log(resultados)
-const separarFilas = resultados.map(resultados => resultados.split(","))
+const limpias = resultados.filter(linea => linea !== "");
+const separarFilas = limpias.map(resultados => resultados.split(","))
 console.log(separarFilas[0]);
 
 function mostrarDatos(){
@@ -96,12 +97,30 @@ function App() {
                 setEditando(false);
             }
         }
-        if (key === "<") {
-            // ordenar ascendente
+        if (tecla === "<") {
+            const cabecera = datos[0];
+            const filasOrdenadas = datos.slice(1);
+            filasOrdenadas.sort((a, b) =>
+                {if(colSeleccionada === 2 || colSeleccionada === 3){
+                  return Number(a[colSeleccionada]) - Number(b[colSeleccionada]);
+                } else{
+                    return a[colSeleccionada].localeCompare(b[colSeleccionada])
+                }}
+            )
+            setDatos([cabecera, ...filasOrdenadas])
         }
 
-        if (key === ">") {
-            // ordenar descendente
+        if (tecla === ">") {
+             const cabecera = datos[0];
+            const filasOrdenadas = datos.slice(1);
+            filasOrdenadas.sort((a, b) =>
+                {if(colSeleccionada === 2 || colSeleccionada === 3){
+                  return Number(b[colSeleccionada]) - Number(a[colSeleccionada]);
+                } else{
+                    return b[colSeleccionada].localeCompare(a[colSeleccionada])
+                }}
+            )
+            setDatos([cabecera, ...filasOrdenadas])
         }
     })
     
