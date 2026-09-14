@@ -79,7 +79,7 @@ function App() {
                       </Text>
                     ))}
                     </Box>
-                {datos.slice(0 , 15).map((registro, i) => (
+                 {datos.slice(0, FILAS - 5).map((registro, i) => (
                   <Box key={i} flexDirection="row" gap={1} >
                     {registro.map((campo, j) => (
                       <Text key={j} color={COLORES.titulo} backgroundColor={i === fila && j === columna ? COLORES.secundario : undefined}>
