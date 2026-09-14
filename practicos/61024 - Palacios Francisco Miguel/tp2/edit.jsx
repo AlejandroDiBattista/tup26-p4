@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -17,12 +17,37 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
-function App() {
+const archivo = process.argv[2];
+
+function App({tabla}) {
     const {exit} = useApp();
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+    const [editando, setEditando] = useState(false);
+    const [datos, setDatos] = useState(tabla);
+    const valoractual = datos[filaSeleccionada][columnaSeleccionada];
     
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        }
+
+        if (key.downArrow) {
+            setFilaSeleccionada(fila => Math.min(fila + 1, tabla.length - 1));
+        }
+        
+        if (key.upArrow) {
+            setFilaSeleccionada(fila => Math.max(fila - 1, 0));
+        }
+
+        if (key.rightArrow) {
+            setColumnaSeleccionada(columna => Math.min(columna + 1, tabla[0].length - 1));
+        }
+        if (key.leftArrow) {
+            setColumnaSeleccionada(columna => Math.max(columna - 1, 0));
+        }
+        if (key.return) {
+            setEditando(true);
         }
     })
 
@@ -32,12 +57,31 @@ function App() {
                 <Box flexGrow={1} justifyContent="center" alignItems="center">
                     <Text bold color={COLORES.titulo}>Editor CSV</Text>
                 </Box>
+            {datos.map((fila, indice) => (
+                <Text key={indice}>
+                    {fila.map((columna, indiceColumna) => (
+                    <Text key={indiceColumna} color={indice === filaSeleccionada && indiceColumna === columnaSeleccionada ? COLORES.acento : undefined}>
+                        {indice === filaSeleccionada && indiceColumna === columnaSeleccionada && editando ? (
+                            <TextInput defaultValue={valoractual} />
+                        ) : (
+                          columna
+                        )}
+                        {' | '}
+                    </Text>
+                ))}
+                </Text>
+            ))}
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
         </Box>
     );
 }
 
-const app = render(<App />);
+const contenido = await readFile(archivo, 'utf-8');
+const filas = contenido.split('\n');
+const tabla = filas.map(fila => fila.split(','));
+
+
+const app = render(<App tabla = {tabla} />);
 await app.waitUntilExit();
 console.clear();
