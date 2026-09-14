@@ -8,6 +8,7 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
+const FILAS_VISIBLES = Math.max(FILAS - 8, 5);
 
 const COLORES = {
     fondo:     '#161310',
@@ -36,7 +37,7 @@ function Tabla({cabecera, datos, filaSel, colSel, offset}) {
             </Box>
             {datos.map((fila, f) => (
                 <Box key={f}>
-                    <Text color={COLORES.secundario}>{f + 1}{'  '}</Text>
+                    <Text color={COLORES.secundario}>{offset + f + 1}{'  '}</Text>
                     {fila.map((valor, c) => {
                         const activa = f === filaSel && c === colSel;
                         return (
@@ -113,29 +114,47 @@ function App() {
     const [datos, setDatos] = useState(null);
     const [colsel, setColsel] = useState(0);
     const [filasel, setFilasel] = useState(0);
+    const [offset, setOffset] = useState(0);
     const [error, setError] = useState('');
     useEffect(()=>{
-        abrircsv('empleados.csv')
+        const archivoArg = process.argv[2];
+        if (archivoArg) {
+            abrircsv(archivoArg);
+        } else {
+            setModo('abrir');
+        }
     },[])
 
     const {exit} = useApp();
-useInput((tecla, key) => {
-    if (modo !== 'ver') {
-        if (key.escape) setModo('ver'); // cancela y vuelve a ver la tabla
-        return;
-    }
-    if (key.escape) { exit(); return; }
-    if (!datos) return;
-    if (tecla.toLowerCase()==='a') { setModo('abrir'); return; }
-    if (tecla.toLowerCase()==='g') { setModo('guardar'); return; }
-    if (tecla === '<') { ordenar('asc'); return; }
-    if (tecla === '>') { ordenar('desc'); return; }
-    if (key.return) { setModo('editar'); return; }
-    if(key.downArrow)setFilasel(f => Math.min(f+1, datos.length-1));
-    if(key.rightArrow)setColsel(c => Math.min(c+1, cabecera.length-1));
-    if(key.upArrow)setFilasel(f => Math.max(f-1,0));
-    if(key.leftArrow)setColsel(c => Math.max(c-1,0));
-})
+    useInput((tecla, key) => {
+        if (modo !== 'ver') {
+            if (key.escape) setModo('ver'); // cancela y vuelve a ver la tabla
+            return;
+        }
+        if (key.escape) { exit(); return; }
+        if (!datos) return;
+        if (tecla.toLowerCase()==='a') { setModo('abrir'); return; }
+        if (tecla.toLowerCase()==='g') { setModo('guardar'); return; }
+        if (tecla === '<') { ordenar('asc'); return; }
+        if (tecla === '>') { ordenar('desc'); return; }
+        if (key.return) { setModo('editar'); return; }
+        if(key.downArrow){
+            setFilasel(f => {
+                const nueva = Math.min(f+1, datos.length-1);
+                setOffset(o => nueva >= o + FILAS_VISIBLES ? nueva - FILAS_VISIBLES + 1 : o);
+                return nueva;
+            });
+        }
+        if(key.upArrow){
+            setFilasel(f => {
+                const nueva = Math.max(f-1, 0);
+                setOffset(o => nueva < o ? nueva : o);
+                return nueva;
+            });
+        }
+        if(key.rightArrow)setColsel(c => Math.min(c+1, cabecera.length-1));
+        if(key.leftArrow)setColsel(c => Math.max(c-1,0));
+    })
 
     return (
         <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
@@ -153,7 +172,13 @@ useInput((tecla, key) => {
                         </Text>
                     </Box>
 
-                    <Tabla cabecera={cabecera} datos={datos} filaSel={filasel} colSel={colsel} />
+                    <Tabla
+                        cabecera={cabecera}
+                        datos={datos.slice(offset, offset + FILAS_VISIBLES)}
+                        filaSel={filasel - offset}
+                        colSel={colsel}
+                        offset={offset}
+                    />
 
                     <Box justifyContent="space-between" marginTop={1}>
                         <Text color={COLORES.secundario}>
