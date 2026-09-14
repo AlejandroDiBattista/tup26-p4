@@ -31,7 +31,7 @@ function App() {
             const cabeceras = lineas[0].split(',');
             const filas = lineas.slice(1).map(linea => linea.split(','));
             setDatos({ nombre, cabeceras, filas });
-            setModo('edicion');
+            setModo('tabla');
             setMensaje('');
         } catch (error) {
             setMensaje('Error al cargar el archivo');
@@ -57,27 +57,57 @@ function App() {
             setMensaje('');
         }
     });
+    function formatoCelda(valor) {
+        return String(valor).slice(0, 9).padEnd(10);
+    }
+
+    if (modo === 'tabla') {
+    return (
+        <Box flexDirection="column" paddingX={1}>
+            <Text bold color={COLORES.titulo}>
+                {basename(datos.nombre)}
+            </Text>
+
+            <Text bold color={COLORES.acento}>
+                {'#'.padEnd(4)}
+                {datos.cabeceras.map(formatoCelda).join('')}
+            </Text>
+
+            {datos.filas.slice(0, 5).map((fila, indice) => (
+                <Text key={indice} color={COLORES.secundario}>
+                    {String(indice + 1).padEnd(4)}
+                    {fila.map(formatoCelda).join('')}
+                </Text>
+            ))}
+
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>Esc</Text> salir
+            </Text>
+        </Box>
+    );
+}
+    
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
             <Box
-                width={40}
-                height={10}
+                width={COLUMNAS - 2}
+                height={FILAS - 2}
                 flexDirection="column"
                 borderStyle="round"
                 borderColor={COLORES.borde}
                 backgroundColor={COLORES.fondo}
                 paddingX={1}
             >
-                <Box 
-                    flexGrow={1} 
-                    justifyContent="center" 
+                <Box
+
+                    justifyContent="center"
                     alignItems="center">
                     <Text bold color={COLORES.titulo}>Editor CSV</Text>
                 </Box>
 
                 {modo === 'inicio' && (
                     <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}> A</Text> abrir archivo
+                        <Text bold color={COLORES.acento}> A</Text> abrir archivo
                     </Text>
                 )}
 
@@ -92,13 +122,14 @@ function App() {
                     </Box>
                 )}
 
+                
 
+                {modo !== 'tabla' && (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Esc</Text> salir
+                    </Text>
+                )}
 
-
-
-
-
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
             </Box>
         </Box>
     );
