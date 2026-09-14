@@ -56,6 +56,38 @@ function calcularAnchos(cabecera, filas) {
     return anchos.map(a => Math.min(a, 20));
 }
 
+// me fijo si todos los valores de una columna se pueden interpretar
+// como numero, para poder ordenar numericamente en vez de por texto
+function esColumnaNumerica(filas, col) {
+    for (const fila of filas) {
+        if (fila[col].trim() === '' || isNaN(Number(fila[col]))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ordeno las filas segun la columna col. si ascendente es true ordena de
+// menor a mayor (o alfabeticamente si no es numerica), si no al reves
+function ordenarFilas(filas, col, ascendente) {
+    const copia = filas.slice(); // para no modificar el array original
+    const numerica = esColumnaNumerica(filas, col);
+
+    copia.sort((filaA, filaB) => {
+        let resultado;
+        if (numerica) {
+            resultado = Number(filaA[col]) - Number(filaB[col]);
+        } else {
+            resultado = filaA[col].localeCompare(filaB[col]);
+        }
+        return ascendente ? resultado : -resultado;
+    });
+
+    return copia;
+}
+
+
+
 // cuantas filas de datos entran en pantalla (le resto un par de lineas
 // que use para el borde, titulo, cabecera y el cartelito de abajo)
 const FILAS_VISIBLES = Math.max(FILAS - 6, 3);
@@ -130,37 +162,175 @@ function Tabla({nombreArchivo, cabecera, filas, filaSel, colSel}) {
     );
 }
 
-function App({nombreArchivo, cabecera, filas}) {
+// la app tiene 4 "modos" o pantallas distintas:
+// ver: la tabla normal, navegando con flechas (el modo por defecto)
+// abrir: pidiendo el nombre de un archivo para abrir
+// guardar: pidiendo el nombre de un archivo para guardar
+// editar: pidiendo el nuevo valor de la celda seleccionada
+function App({nombreArchivoInicial, cabeceraInicial, filasIniciales, errorInicial}) {
     const {exit} = useApp();
+    const [nombreArchivo, setNombreArchivo] = React.useState(nombreArchivoInicial);
+    const [cabecera, setCabecera] = React.useState(cabeceraInicial);
+    const [filas, setFilas] = React.useState(filasIniciales);
     const [filaSel, setFilaSel] = React.useState(0);
     const [colSel, setColSel] = React.useState(0);
 
+    // si todavia no se pudo cargar ningun archivo (no vino por argumento, o
+    // vino uno que fallo), arrancamos directamente pidiendo que abran uno
+    const [modo, setModo] = React.useState(cabeceraInicial ? 'ver' : 'abrir');
+    const [mensaje, setMensaje] = React.useState(errorInicial || '');
+
     useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        } else if (key.upArrow) {
-            setFilaSel(f => Math.max(f - 1, 0));
-        } else if (key.downArrow) {
-            setFilaSel(f => Math.min(f + 1, filas.length - 1));
-        } else if (key.leftArrow) {
-            setColSel(c => Math.max(c - 1, 0));
-        } else if (key.rightArrow) {
-            setColSel(c => Math.min(c + 1, cabecera.length - 1));
+        if (modo === 'ver') {
+            if (key.escape) {
+                exit();
+            } else if (key.upArrow) {
+                setFilaSel(f => Math.max(f - 1, 0));
+            } else if (key.downArrow) {
+                setFilaSel(f => Math.min(f + 1, filas.length - 1));
+            } else if (key.leftArrow) {
+                setColSel(c => Math.max(c - 1, 0));
+            } else if (key.rightArrow) {
+                setColSel(c => Math.min(c + 1, cabecera.length - 1));
+            } else if (tecla === '<') {
+                // ordenar ascendente por la columna donde esta parado el cursor
+                setFilas(filasActuales => ordenarFilas(filasActuales, colSel, true));
+            } else if (tecla === '>') {
+                // y descendente
+                setFilas(filasActuales => ordenarFilas(filasActuales, colSel, false));
+            } else if (tecla === 'a' || tecla === 'A') {
+                setMensaje('');
+                setModo('abrir');
+            } else if (tecla === 'g' || tecla === 'G') {
+                setMensaje('');
+                setModo('guardar');
+            } else if (key.return) {
+                setMensaje('');
+                setModo('editar');
+            }
+        } else {
+            // en abrir/guardar/editar, el TextInput de cada pantalla se encarga
+            // de las letras, aca solo nos importa el escape para cancelar
+            if (key.escape) {
+                if (modo === 'abrir' && !cabecera) {
+                    // si todavia no hay ningun archivo cargado no hay a donde
+                    // "volver", asi que escape directamente cierra la app
+                    exit();
+                } else {
+                    setMensaje('');
+                    setModo('ver');
+                }
+            }
         }
     })
 
+    // se llama cuando confirmo el nombre del archivo a abrir
+    async function manejarAbrir(nombre) {
+        try {
+            const texto = await readFile(nombre, 'utf-8');
+            const datos = parseCSV(texto);
+            setCabecera(datos.cabecera);
+            setFilas(datos.filas);
+            setNombreArchivo(basename(nombre));
+            setFilaSel(0);
+            setColSel(0);
+            setMensaje('');
+            setModo('ver');
+        } catch (error) {
+            setMensaje('no se pudo abrir "' + nombre + '": ' + error.message);
+        }
+    }
+
+    // se llama cuando confirmo el nombre del archivo a guardar
+    async function manejarGuardar(nombre) {
+        try {
+            const texto = serializeCSV(cabecera, filas);
+            await writeFile(nombre, texto, 'utf-8');
+            setNombreArchivo(basename(nombre));
+            setMensaje('');
+            setModo('ver');
+        } catch (error) {
+            setMensaje('no se pudo guardar "' + nombre + '": ' + error.message);
+        }
+    }
+
+    // se usa cuando se confirma el nuevo valor de la celda seleccionada
+    function manejarEditar(valorNuevo) {
+        // hago una copia de las filas (y de la fila que cambia) para no
+        // cambiar el estado directamente, sino react no hace el cambio
+        const copiaFilas = filas.map(fila => fila.slice());
+        copiaFilas[filaSel][colSel] = valorNuevo;
+        setFilas(copiaFilas);
+        setModo('ver');
+    }
+
     return (
         <Box width={COLUMNAS} flexDirection="column">
-            <Tabla nombreArchivo={nombreArchivo} cabecera={cabecera} filas={filas} filaSel={filaSel} colSel={colSel} />
+            {cabecera && (
+                <Tabla nombreArchivo={nombreArchivo} cabecera={cabecera} filas={filas} filaSel={filaSel} colSel={colSel} />
+            )}
+
+            {modo === 'abrir' && (
+                <Box>
+                    <Text color={COLORES.acento}>Abrir archivo: </Text>
+                    <TextInput placeholder="nombre.csv" onSubmit={manejarAbrir} />
+                </Box>
+            )}
+
+            {modo === 'guardar' && (
+                <Box>
+                    <Text color={COLORES.acento}>Guardar como: </Text>
+                    <TextInput defaultValue={nombreArchivo} onSubmit={manejarGuardar} />
+                </Box>
+            )}
+
+            {modo === 'editar' && (
+                <Box>
+                    <Text color={COLORES.acento}>Nuevo valor: </Text>
+                    <TextInput defaultValue={filas[filaSel][colSel]} onSubmit={manejarEditar} />
+                </Box>
+            )}
+
+            {mensaje !== '' && <Text color={COLORES.error}>{mensaje}</Text>}
+
+            {modo === 'ver' && (
+                <Text color={COLORES.secundario}>
+                    [A] abrir   [G] guardar   [Enter] editar   [{'<'} {'>'}] ordenar   [Esc] salir
+                </Text>
+            )}
         </Box>
     );
 }
 
-// cargo archivo que viene por argumento en la terminal
-const nombreArchivo = process.argv[2] || 'empleados.csv';
-const textoArchivo = await readFile(nombreArchivo, 'utf-8');
-const {cabecera, filas} = parseCSV(textoArchivo);
+// si se pasa un archivo por argumento tratamos de abrirlo, para
+// no tener que pedirlo de nuevo por pantalla. Si no hay argumento (o falla
+// la apertura) arrancamos igual y la propia app pide el archivo en modo 'abrir'
+const argArchivo = process.argv[2];
+let nombreArchivoInicial = '';o
+let cabeceraInicial = null;
+let filasIniciales = null;
+let errorInicial = '';
 
-const app = render(<App nombreArchivo={basename(nombreArchivo)} cabecera={cabecera} filas={filas} />);
+if (argArchivo) {
+    try {
+        const textoArchivo = await readFile(argArchivo, 'utf-8');
+        const datos = parseCSV(textoArchivo);
+        cabeceraInicial = datos.cabecera;
+        filasIniciales = datos.filas;
+        nombreArchivoInicial = basename(argArchivo);
+    } catch (error) {
+        errorInicial = 'no se pudo abrir "' + argArchivo + '": ' + error.message;
+    }
+}
+
+const app = render(
+    <App
+        nombreArchivoInicial={nombreArchivoInicial}
+        cabeceraInicial={cabeceraInicial}
+        filasIniciales={filasIniciales}
+        errorInicial={errorInicial}
+    />
+);
+
 await app.waitUntilExit();
 console.clear();
