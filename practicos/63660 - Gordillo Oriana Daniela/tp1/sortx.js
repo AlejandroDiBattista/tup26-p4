@@ -34,5 +34,24 @@ EJEMPLOS:
     sortx datos.tsv salida.tsv -d "\t" -b nombre
 `
 
-// Escribir aqui la solución al enunciado.
-console.log(HELP)
+import {
+    readFileSync,
+    writeFileSync
+} from "node:fs";
+
+const rawArgs =
+    process.argv.slice(2);
+
+if (rawArgs.includes(`-h`) ||
+    rawArgs.includes(`--help`)) {
+    console.log(HELP.trim());
+    process.exit(0);
+}
+//parseArgs:
+//function parseArgs (args){
+//  if (args.includes (`-h`) || 
+//    args.includes(`--help`)) {
+//        console.log(HELP.trim());
+//        process.exit(0);
+//    }
+//}
