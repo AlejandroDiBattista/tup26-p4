@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -9,6 +9,7 @@ import { fail } from 'node:assert';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
+const FILAS_VISIBLES = FILAS - 5;
 const archivo = process.argv[2]; 
 const datos = await readFile(archivo, 'utf8');
 const lineas = datos.trim().split('\n');
@@ -24,15 +25,26 @@ const COLORES = {
  
 };
 
-function Fila({numero, fila}) {
+function Fila({numero, fila, columnaSeleccionada, filaSeleccionada}) {
     return (
         <Box flexDirection="row" gap={1}> 
             <Text width={4}>{numero}</Text>
-            <Text width={13}>{fila[0]}</Text>
-            <Text width={15}>{fila[1]}</Text>
-            <Text width={6}>{fila[2]}</Text>
-            <Text width={11}>{fila[3]}</Text>
-            <Text width={20}>{fila[4]}</Text>
+
+            <Text width={13} inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 0}>
+            {fila[0]}
+            </Text>
+            <Text width={15}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada ===  1}>
+            {fila[1]}
+            </Text>
+            <Text width={6}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 2}>
+            {fila[2]}
+            </Text>
+            <Text width={11}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 3}>
+            {fila[3]}
+            </Text>
+            <Text width={20}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 4}>
+            {fila[4]}
+            </Text>
     
     </Box>
     );
@@ -41,11 +53,44 @@ function Fila({numero, fila}) {
 
 function App() {
     const {exit} = useApp();
+
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+    const [inicio, setInicio] = useState(0);
     
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
         }
+
+        if (key.leftArrow) {
+            setColumnaSeleccionada(Math.max(columnaSeleccionada - 1, 0))
+        }
+
+        if (key.rightArrow) {
+            setColumnaSeleccionada(Math.min(columnaSeleccionada + 1, 4));
+        }
+
+        if (key.upArrow) {
+            const nuevaFila = Math.max(filaSeleccionada -1, 0);
+
+            setFilaSeleccionada(nuevaFila);
+
+            if (nuevaFila < inicio) {
+                setInicio (inicio - 1);
+            }
+        }
+
+        if (key.downArrow) {
+            const nuevaFila = Math.min(filaSeleccionada + 1, filas.length - 2);
+            setFilaSeleccionada(nuevaFila);
+
+            if (nuevaFila >= inicio + FILAS_VISIBLES) {
+                setInicio(inicio + 1);
+            }
+        }
+
+
     }); 
 
     return (
@@ -76,11 +121,13 @@ function App() {
                   
 
 
-            {filas.slice(1).map((fila, indice) => (
+            {filas.slice(inicio + 1, inicio + FILAS_VISIBLES + 1).map((fila, indice) => (
               <Fila
                   key={indice}
-                  numero={indice + 1}
+                  numero={inicio + indice + 1}
                   fila={fila}
+                  columnaSeleccionada={columnaSeleccionada}
+                  filaSeleccionada={filaSeleccionada}
               />
             ))}
                   
