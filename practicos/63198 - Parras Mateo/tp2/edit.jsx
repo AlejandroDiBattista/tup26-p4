@@ -43,16 +43,19 @@ function calcularAnchos(cabecera, filas) {
     return anchos
 }
 
-const FilaTabla = ({valores, anchos, esCabecera}) => (
+const FilaTabla= ({valores, anchos, esCabecera, filaActiva, indiceFila})=> (
     <Box>
         {
-            valores.map((valor, i) => (
-                <Box key={i} width={anchos[i]}> 
-                    <Text bold={esCabecera} color={esCabecera ? COLORES.acento : COLORES.secundario}>
-                        {valor}
-                    </Text>
-                </Box>
-            ))
+            valores.map((valor, i)=>{
+                const seleccionada= !esCabecera && indiceFila === filaActiva
+                return (
+                    <Box key={i} width={anchos[i]} backgroundColor={seleccionada ? COLORES.acento : undefined}>
+                        <Text bold={esCabecera} color={esCabecera ? COLORES.acento : (seleccionada ? COLORES.fondo : COLORES.secundario)}>
+                            {valor}
+                        </Text>
+                    </Box>
+                )
+            })
         }
     </Box>
 )
@@ -61,6 +64,8 @@ function App() {
     const {exit} = useApp();
     
     const [datos, setDatos]= useState(null)
+    const [fila, setFila]= useState(0)
+    const [columna, setColumna]= useState(0)
     useEffect(() => {
         leerArchivo(nombreArchivo).then(resultado => {
             setDatos(resultado);
@@ -69,6 +74,21 @@ function App() {
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        }
+        if(!datos){
+            return
+        }
+        if (key.upArrow){
+            setFila(f=> Math.max(0, f - 1))
+        }
+        if (key.downArrow) {
+            setFila(f=> Math.min(datos.filas.length - 1, f+1))
+        }
+        if (key.leftArrow){
+            setColumna(c=> Math.max(0, c - 1))
+        }
+        if (key.rightArrow){
+            setColumna(c=> Math.min(datos.cabecera.length - 1, c + 1))
         }
     })
 
@@ -90,9 +110,12 @@ function App() {
             </Box>
             <Box marginTop={1} flexDirection="column">
                 <FilaTabla valores={datos.cabecera} anchos={anchos} esCabecera={true} />
-                {datos.filas.map((fila, i) => (
-                    <FilaTabla key={i} valores={fila} anchos={anchos} esCabecera={false} />
+                {datos.filas.map((valores, i) => (
+                    <FilaTabla key={i} valores={valores} anchos={anchos} esCabecera={false} filaActiva={fila} indiceFila={i} />
                 ))}
+            </Box>
+            <Box marginTop={1}>
+                <Text color={COLORES.secundario}>Fila {fila + 1} - Columna {columna + 1}</Text>
             </Box>
         </Box>
     );
