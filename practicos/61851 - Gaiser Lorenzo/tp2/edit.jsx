@@ -49,38 +49,54 @@ function comparar(x, y) {
     return x.localeCompare(y);
 }
 
-
+//
 function App() {
     const {exit} = useApp();
     const [fila, setFila] = useState(0);
     const [columna, setColumna] = useState(0);
     const [datos, setDatos] = useState(datosIniciales);
+    const [modo, setModo] = useState('navegando');
 
-    useInput((tecla, key) => {
-        if (key.escape) {
-
-            exit();
+        useInput((tecla, key) => {
+              if (key.escape) {
+            if (modo === 'navegando') {
+                exit();
+            } else {
+                setModo('navegando');
+            }
         }
-            if (key.downArrow) {
-                setFila(Math.min(fila + 1, datos.length - 1));
-            }
-            if (key.upArrow) {
-                setFila(Math.max(fila - 1, 0));
-            }
-            if (key.rightArrow) {
-                setColumna(Math.min(columna + 1, titulos.length - 1));            }
-            if (key.leftArrow) {
-                setColumna(Math.max(columna - 1, 0));
- }
-            if (tecla === '<') {
-              setDatos([...datos].sort((a, b) => comparar(a[columna], b[columna])));
-}
-             if (tecla === '>') {
-                 setDatos([...datos].sort((a, b) => comparar(b[columna], a[columna])));
-}
-
-    })
+        if (key.return) {
+            setModo('editando');
+        }
+        
+        if (key.downArrow) {
+            setFila(Math.min(fila + 1, datos.length - 1));
+        }
+        if (key.upArrow) {
+            setFila(Math.max(fila - 1, 0));
+        }
+        if (key.rightArrow) {
+            setColumna(Math.min(columna + 1, titulos.length - 1));
+        }
+        if (key.leftArrow) {
+            setColumna(Math.max(columna - 1, 0));
+        }
+        if (tecla === '<') {
+            setDatos([...datos].sort((a, b) => comparar(a[columna], b[columna])));
+        }
+        if (tecla === '>') {
+            setDatos([...datos].sort((a, b) => comparar(b[columna], a[columna])));
+        }
+    }, {isActive: modo === 'navegando'});
 ///aqui 
+
+
+function guardarCelda(valor) {
+    setDatos(datos.map((r, f) =>
+        f === fila ? r.map((c, k) => (k === columna ? valor : c)) : r
+    ));
+    setModo('navegando');
+}
 const visibles = FILAS - 5;
 const inicio = Math.max(0, Math.min(fila - Math.floor(visibles / 2), datos.length - visibles));
     return (
@@ -108,11 +124,17 @@ const inicio = Math.max(0, Math.min(fila - Math.floor(visibles / 2), datos.lengt
                     {datos.slice(inicio, inicio + visibles).map((registro, i) => (
                         <Box key={i} flexDirection="row" gap={1}>
                             <Text color={COLORES.secundario}>{String(inicio + i + 1).padStart(3)}</Text>
-                            {registro.map((campo, j) => (
-                                <Text key={j} color={COLORES.titulo} backgroundColor={inicio + i === fila && j === columna ? COLORES.secundario : undefined}>
-                                    {campo.padEnd(anchos[j])}
-                                </Text>
-                            ))}
+                            {registro.map((campo, j) =>
+                                modo === 'editando' && inicio + i === fila && j === columna ? (
+                                    <Box key={j} width={anchos[j]}>
+                                        <TextInput defaultValue={campo} onSubmit={guardarCelda} />
+                                    </Box>
+                                ) : (
+                                    <Text key={j} color={COLORES.titulo} backgroundColor={inicio + i === fila && j === columna ? COLORES.secundario : undefined}>
+                                        {campo.padEnd(anchos[j])}
+                                    </Text>
+                                )
+                            )}
                         </Box>
                     ))}
 
@@ -124,7 +146,6 @@ const inicio = Math.max(0, Math.min(fila - Math.floor(visibles / 2), datos.lengt
             </Box>
         </Box>
     );
-        
 }
 //{fila.map((campo, i ) => campo.padEnd(anchos[i])).join(' ')
 
