@@ -16,12 +16,12 @@ const titulos = cabecera.split(',');
 
 const filas = partes.slice(1) ; 
 
-const datos = filas.map(fila => fila.split(','));
+const datosIniciales = filas.map(fila => fila.split(','));
 
 
 const anchos = titulos.map((titulo , i ) => {
 
-const listanombres = datos.map(fila => fila[i] || '');
+const listanombres = datosIniciales.map(fila => fila[i] || '');
 const cuenta = listanombres.map(nom => nom.length);
 return Math.max(titulo.length, ...cuenta);
 
@@ -42,10 +42,19 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+function comparar(x, y) {
+    const nx = Number(x);
+    const ny = Number(y);
+    if (!isNaN(nx) && !isNaN(ny)) return nx - ny;
+    return x.localeCompare(y);
+}
+
+
 function App() {
     const {exit} = useApp();
     const [fila, setFila] = useState(0);
     const [columna, setColumna] = useState(0);
+    const [datos, setDatos] = useState(datosIniciales);
 
     useInput((tecla, key) => {
         if (key.escape) {
@@ -59,11 +68,16 @@ function App() {
                 setFila(Math.max(fila - 1, 0));
             }
             if (key.rightArrow) {
-                setColumna(Math.min(columna + 1, titulos.length - 1));
-            }
+                setColumna(Math.min(columna + 1, titulos.length - 1));            }
             if (key.leftArrow) {
                 setColumna(Math.max(columna - 1, 0));
-            }
+ }
+            if (tecla === '<') {
+              setDatos([...datos].sort((a, b) => comparar(a[columna], b[columna])));
+}
+             if (tecla === '>') {
+                 setDatos([...datos].sort((a, b) => comparar(b[columna], a[columna])));
+}
 
     })
 ///aqui 
