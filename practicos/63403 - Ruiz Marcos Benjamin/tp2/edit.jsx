@@ -51,7 +51,7 @@ function App() {
     if (key.escape && modo === 'normal') {    
         exit();
     }
-    else if (key.escape && modo === 'editar') {
+    else if (key.escape && modo !== 'editar') {
         setModo('normal');
     }
 
@@ -81,6 +81,10 @@ if (key.return && modo === 'normal') {
     setTexto(empleados[fila][columna]);
     setModo('editar');
 }
+if (tecla === 'g' && modo === 'normal') {
+    setTexto(archivo);
+    setModo('guardando');
+}
 
 });
 
@@ -98,25 +102,44 @@ return (
                 <Text bold color={COLORES.titulo}>{archivo}</Text>
                 <Text color={COLORES.secundario}>{empleados.length} filas · {encabezado.length} columnas</Text>
             </Box>
-            {modo === 'normal' ? (
+            {modo === 'normal' && (
     <Text color={COLORES.secundario}>Valor {'>'} {empleados[fila][columna]}</Text>
-) : (
+)}
+{modo === 'editar' && (
     <TextInput
         defaultValue={texto}
         onChange={setTexto}
         onSubmit={(valor) => {
-    const nuevosEmpleados = empleados.map((empleado, i) => {
-        if (i === fila) {
-            const nuevaFila = [...empleado];
-            nuevaFila[columna] = valor;
-            return nuevaFila;
-        }
-        return empleado;
-    });
-    setEmpleados(nuevosEmpleados);
-    setModo('normal');
-}}
+            const nuevosEmpleados = empleados.map((empleado, i) => {
+                if (i === fila) {
+                    const nuevaFila = [...empleado];
+                    nuevaFila[columna] = valor;
+                    return nuevaFila;
+                }
+                return empleado;
+            });
+            setEmpleados(nuevosEmpleados);
+            setModo('normal');
+        }}
     />
+)}
+{modo === 'guardando' && (
+    <Box>
+        <Text color={COLORES.secundario}>Guardar {'>'} </Text>
+        <TextInput
+            defaultValue={texto}
+            onChange={setTexto}
+            onSubmit={async (valor) => {
+                let unir = encabezado.join(',')
+                for (const empleado of empleados) {
+                    unir += '\r\n' + empleado.join(',');  
+                }
+                 await writeFile(valor, unir, 'utf-8');
+                    setArchivo(valor);
+                    setModo('normal');
+}}
+        />
+    </Box>
 )}
             <Box flexDirection="row">
                 {encabezado.map((columna) => (
