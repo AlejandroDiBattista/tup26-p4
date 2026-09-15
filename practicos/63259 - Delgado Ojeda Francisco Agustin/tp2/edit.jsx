@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
@@ -89,6 +89,93 @@ function App() {
         }
     }
 
+    function generarCSV() {
+        const lineas = [
+            cabecera.join(','),
+            ...datos.map(fila => fila.join(','))
+        ];
+
+        return lineas.join('\n');
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            if (!nombre.trim()) {
+                throw new Error('Debe indicar un nombre de archivo.');
+            }
+
+            const contenido = generarCSV();
+
+            await writeFile(nombre, contenido, 'utf8');
+
+            setArchivo(nombre);
+            setMensaje(`Archivo guardado: ${basename(nombre)}`);
+
+            return true;
+        } catch (error) {
+            setMensaje(`Error: ${error.message}`);
+            return false;
+        }
+    }
+
+    function ordenarDatos(direccion) {
+        if (datos.length === 0) {
+            return;
+        }
+
+        const columna = columnaSeleccionada;
+
+        const copia = [...datos];
+
+        copia.sort((a, b) => {
+            const valorA = a[columna] ?? '';
+            const valorB = b[columna] ?? '';
+
+            const numeroA = Number(valorA);
+            const numeroB = Number(valorB);
+
+            const sonNumeros =
+                valorA !== '' &&
+                valorB !== '' &&
+                !Number.isNaN(numeroA) &&
+                !Number.isNaN(numeroB);
+
+            let resultado;
+
+            if (sonNumeros) {
+                resultado = numeroA - numeroB;
+            } else {
+                resultado = valorA.localeCompare(
+                    valorB,
+                    'es',
+                    { sensitivity: 'base' }
+                );
+            }
+
+            if (direccion === 'desc') {
+                return -resultado;
+            }
+
+            return resultado;
+        });
+
+        setDatos(copia);
+        setFilaSeleccionada(0);
+
+        const nombreColumna =
+            cabecera[columnaSeleccionada] ?? '';
+
+        if (direccion === 'asc') {
+            setMensaje(
+                `Orden ascendente por: ${nombreColumna}`
+            );
+        } else {
+            setMensaje(
+                `Orden descendente por: ${nombreColumna}`
+            );
+        }
+    }
+
     useEffect(() => {
         const nombreArchivo = process.argv[2];
 
@@ -139,6 +226,15 @@ function App() {
             );
             setMensaje('');
             return;
+        }
+
+        if (input === '<') {
+            ordenarDatos('asc');
+            return;
+        }
+
+        if (input === '>') {
+            ordenarDatos('desc');
         }
     });
 
@@ -298,6 +394,10 @@ function App() {
                 <Box flexGrow={1} alignItems="flex-end">
                     <Text color={COLORES.secundario}>
                         <Text bold color={COLORES.acento}>Flechas</Text> mover
+                        {' | '}
+                        <Text bold color={COLORES.acento}>{'<'}</Text> asc
+                        {' | '}
+                        <Text bold color={COLORES.acento}>{'>'}</Text> desc
                         {' | '}
                         <Text bold color={COLORES.acento}>Esc</Text> salir
                     </Text>
