@@ -116,6 +116,12 @@ function App() {
         if (key.rightArrow) {
             handleArrowKey('right')
         }
+        if (tecla === '>') {
+            handleSortKey(tecla)
+        }
+        if (tecla === '<') {
+            handleSortKey(tecla)
+        }
     })
 
     const handleArrowKey = (key) => {
@@ -155,6 +161,30 @@ function App() {
                 column: selectedItem.column + 1
             })
         }
+    }
+
+    const handleSortKey = (key) => {
+        const orderedList = listData.slice(1).sort((a,b) => orderTable(a[selectedItem.column], b[selectedItem.column], key))
+
+        setListData([listData[0], ...orderedList])
+    }
+    
+    const orderTable = (a, b, direc) => {
+        const valueA = String(a ?? '')
+        const valueB = String(b ?? '')
+
+        if (direc === '<') {
+            return valueA.localeCompare(valueB, undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            })
+        } else {
+            return valueA.localeCompare(valueB, undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            }) * -1
+        }
+        
     }
 
     const totalCol = listData[0]?.length || 1;
@@ -242,7 +272,7 @@ function App() {
                 </Box>
                 <Box marginTop={1} flexDirection='row' justifyContent='space-between' width="100%">
                     <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-                    <Text color={COLORES.secundario} flexDirection={'end'}>Fila {selectedItem.row + 1} - Columna {selectedItem.column + 1}</Text>
+                    <Text color={COLORES.secundario} flexDirection={'end'}>Fila {selectedItem.row + listStart} - Columna {selectedItem.column + 1}</Text>
 
                 </Box>
             </Box>
