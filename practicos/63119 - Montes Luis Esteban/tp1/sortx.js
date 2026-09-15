@@ -40,6 +40,15 @@ import fs from "node:fs";
 
 
 function parseArgs(args) {
+    if (args.length === 0) {
+        console.error("Error: falta el archivo de origen.");
+        process.exit(1);
+    }
+
+    if (args.length === 1) {
+        console.error("Error: falta el archivo de destino.");
+        process.exit(1);
+    }
 
     const origen = args[0];
     const destino = args[1];
@@ -49,14 +58,22 @@ function parseArgs(args) {
     let noHeader = false;
 
     for (let i = 2; i < args.length; i++) {
-
         if (args[i] === "-b" || args[i] === "--by") {
-            const criterio = args[i + 1];
-            criterios.push(criterio);
+            if (args[i + 1] === undefined) {
+                console.error("Error: falta el criterio después de -b.");
+                process.exit(1);
+            }
+
+            criterios.push(args[i + 1]);
             i++;
         }
 
         else if (args[i] === "-d" || args[i] === "--delimiter") {
+            if (args[i + 1] === undefined) {
+                console.error("Error: falta el delimitador después de -d.");
+                process.exit(1);
+            }
+
             delimitador = args[i + 1];
             i++;
         }
@@ -64,6 +81,26 @@ function parseArgs(args) {
         else if (args[i] === "-nh" || args[i] === "--no-header") {
             noHeader = true;
         }
+
+        else if (args[i] === "-h" || args[i] === "--help") {
+            console.log(HELP);
+            process.exit(0);
+        }
+
+        else {
+            console.error("Error: opción desconocida:", args[i]);
+            process.exit(1);
+        }
+    }
+
+    if (criterios.length === 0) {
+        console.error("Error: debe indicar al menos un criterio con -b.");
+        process.exit(1);
+    }
+
+    if (delimitador.length !== 1) {
+        console.error("Error: el delimitador debe tener un solo carácter.");
+        process.exit(1);
     }
 
     return {
@@ -89,7 +126,8 @@ function parseDelimited(contenido, delimitador) {
     return filas;
 }
 
-function sortRows(datos, encabezado, criterios) {
+function sortRows(datos, encabezado, criterios, noHeader) {
+
     datos.sort((filaA, filaB) => {
 
         for (const criterio of criterios) {
@@ -99,7 +137,38 @@ function sortRows(datos, encabezado, criterios) {
             const tipo = partes[1] || "alpha";
             const orden = partes[2] || "asc";
 
-            const indiceColumna = encabezado.indexOf(campo);
+            if (tipo !== "alpha" && tipo !== "num") {
+                console.error("Error: tipo inválido:", tipo);
+                process.exit(1);
+            }
+
+            if (orden !== "asc" && orden !== "desc") {
+                console.error("Error: orden inválido:", orden);
+                process.exit(1);
+            }
+
+            let indiceColumna;
+
+            if (noHeader) {
+                indiceColumna = Number(campo);
+
+                if (
+                    !Number.isInteger(indiceColumna) ||
+                    indiceColumna < 0 ||
+                    indiceColumna >= filaA.length
+                ) {
+                    console.error("Error: índice de columna inválido:", campo);
+                    process.exit(1);
+                }
+
+            } else {
+                indiceColumna = encabezado.indexOf(campo);
+
+                if (indiceColumna === -1) {
+                    console.error("Error: campo inexistente:", campo);
+                    process.exit(1);
+                }
+            }
 
             let resultado;
 
@@ -107,7 +176,16 @@ function sortRows(datos, encabezado, criterios) {
                 const valorA = Number(filaA[indiceColumna]);
                 const valorB = Number(filaB[indiceColumna]);
 
+                if (Number.isNaN(valorA) || Number.isNaN(valorB)) {
+                    console.error(
+                        "Error: valor no numérico en el campo:",
+                        campo
+                    );
+                    process.exit(1);
+                }
+
                 resultado = valorA - valorB;
+
             } else {
                 const valorA = filaA[indiceColumna];
                 const valorB = filaB[indiceColumna];
@@ -176,7 +254,8 @@ if (config.noHeader) {
 const datosOrdenados = sortRows(
     datos,
     encabezado,
-    config.criterios
+    config.criterios,
+    config.noHeader
 );
 
 const textoSalida = serialize(
