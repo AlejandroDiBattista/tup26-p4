@@ -99,27 +99,38 @@ function App() {
     const [indiceColumna, setIndiceColumna] = React.useState(0);
 
     const [primeraFilaVisible, setPrimeraFilaVisible] = React.useState(0);
+    const [estaEditando, setEstaEditando] = React.useState(false)
+    const [textoEdicion, setTextoEdicion] = React.useState("");
+    const [registros, setRegistros] = React.useState(filas)
+    const copiaRegistros = [...registros]
+    const copiaFila = [...registros[indiceFila]]
     
     const {exit} = useApp();
 
     useInput((tecla, key) => {
 
         if (key.escape) {
+            if (estaEditando) {
+                setEstaEditando(false);
 
-            exit();
+            } else {
+                 exit();
+            }
+
+           
 
         }
-        else if (key.rightArrow) {
+        else if (key.rightArrow && !estaEditando) {
 
             setIndiceColumna(Math.min(indiceColumna + 1, cabecera.length - 1));
 
         }
-        else if (key.leftArrow) {
+        else if (key.leftArrow && !estaEditando) {
 
             setIndiceColumna(Math.max(indiceColumna - 1, 0));
 
         }
-        else if (key.downArrow) {
+        else if (key.downArrow && !estaEditando) {
 
             setIndiceFila(Math.min(indiceFila + 1, filas.length - 1));
         
@@ -127,7 +138,7 @@ function App() {
                 setPrimeraFilaVisible(primeraFilaVisible + 1)
             }
         }
-        else if (key.upArrow) {
+        else if (key.upArrow && !estaEditando) {
 
             setIndiceFila(Math.max(indiceFila - 1, 0));
         
@@ -135,8 +146,68 @@ function App() {
             
             setPrimeraFilaVisible(primeraFilaVisible- 1)
         }    
+            
+    }
+    else if (tecla === "<" && !estaEditando) {
+    const copiaRegistros = [...registros]
+
+    copiaRegistros.sort((a, b) => {
+        if (a[indiceColumna] === "" && b[indiceColumna] !== "") {
+            return 1
         }
 
+        if (a[indiceColumna] !== "" && b[indiceColumna] === "") {
+            return -1
+        }
+
+        if (a[indiceColumna] === "" && b[indiceColumna] === "") {
+            return 0
+        }
+
+        if (!isNaN(Number(a[indiceColumna])) && !isNaN(Number(b[indiceColumna]))) {
+            return Number(a[indiceColumna]) - Number(b[indiceColumna])
+        } else {
+            return a[indiceColumna].localeCompare(b[indiceColumna])
+        }
+    })
+
+    setRegistros(copiaRegistros)
+}
+else if (tecla === ">" && !estaEditando) {
+    const copiaRegistros = [...registros]
+
+    copiaRegistros.sort((a, b) => {
+        if (a[indiceColumna] === "" && b[indiceColumna] !== "") {
+            return 1
+        }
+
+        if (a[indiceColumna] !== "" && b[indiceColumna] === "") {
+            return -1
+        }
+
+        if (a[indiceColumna] === "" && b[indiceColumna] === "") {
+            return 0
+        }
+
+        if (!isNaN(Number(a[indiceColumna])) && !isNaN(Number(b[indiceColumna]))) {
+            return Number(b[indiceColumna]) - Number(a[indiceColumna])
+        } else {
+            return b[indiceColumna].localeCompare(a[indiceColumna])
+        }
+    })
+
+    setRegistros(copiaRegistros)
+}
+        else if (key.return && !estaEditando) {
+           
+
+            if (filas.length > 0) {
+                
+            
+            setEstaEditando(true)
+            setTextoEdicion(registros[indiceFila][indiceColumna]);
+        }
+     }
     });
 
     return (
@@ -184,7 +255,7 @@ function App() {
                 </Box>
 
 
-                {filas.slice(primeraFilaVisible, primeraFilaVisible + 5).map((fila, indice) => (
+                {registros.slice(primeraFilaVisible, primeraFilaVisible + 5).map((fila, indice) => (
 
                     <Box key={indice}>
 
@@ -211,8 +282,24 @@ function App() {
                 <Box flexGrow={1}></Box>
 
          {filas.length > 0 && (
-    <Text> Fila: {indiceFila + 1} Columna: {indiceColumna + 1} Valor: {filas[indiceFila][indiceColumna]}</Text>
+    <Text> Fila: {indiceFila + 1} Columna: {indiceColumna + 1} Valor: {registros[indiceFila][indiceColumna]}</Text>
+        
 )}
+        {estaEditando && (
+            <TextInput 
+            defaultValue={textoEdicion} 
+            onChange={setTextoEdicion} 
+            onSubmit={(valor) => {
+                const copiaRegistros = [...registros]
+                const copiaFila = [...registros[indiceFila]]
+                copiaFila[indiceColumna] = valor
+                copiaRegistros[indiceFila] = copiaFila
+
+                setRegistros(copiaRegistros)
+                setEstaEditando(false)
+            } }/>
+
+        )}
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
 
             </Box>
