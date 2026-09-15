@@ -193,20 +193,22 @@ return (
                     />
                 </Box>
             )}
+            
             <Box flexDirection="row">
+                <Box width={4}></Box>
                 {encabezado.map((columna) => (
-                    <Box key={columna} marginRight={2}>
+                    <Box key={columna} width={18}>
                         <Text>{columna}</Text>
                     </Box>
                 ))}
             </Box>
             {empleadosVisibles.map((empleado, indice) => (
                 <Box key={empleado[0]} flexDirection="row">
-                    <Box marginRight={2}><Text>{indice + inicio + 1}</Text></Box>
+                    <Box width={4}><Text>{indice + inicio + 1}</Text></Box>
                     {empleado.map((dato, columnaIndice) => {
                         const seleccionada = indice + inicio === fila && columnaIndice === columna;
                         return (
-                            <Box key={columnaIndice} marginRight={2}>
+                            <Box key={columnaIndice} width={18}>
                                 <Text
                                     backgroundColor={seleccionada ? COLORES.acento : undefined}
                                     color={seleccionada ? COLORES.fondo : undefined}
