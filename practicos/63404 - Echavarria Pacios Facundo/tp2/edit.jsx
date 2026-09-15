@@ -104,7 +104,58 @@ function App() {
         if (key.escape) {
             exit();
         }
+        if (key.upArrow) {
+            handleArrowKey('up')
+        }
+        if (key.downArrow) {
+            handleArrowKey('down')
+        }
+        if (key.leftArrow) {
+            handleArrowKey('left')
+        }
+        if (key.rightArrow) {
+            handleArrowKey('right')
+        }
     })
+
+    const handleArrowKey = (key) => {
+        if (key === 'up') {
+            if (selectedItem.row !== 0) {
+                setSelectedItem({
+                    row: selectedItem.row - 1,
+                    column: selectedItem.column
+                })
+            } else {
+                if (listStart > 1) {
+                    setListStart(listStart - 1)
+                }
+            }
+        }
+        if (key === 'down') {
+            if (selectedItem.row < (visibleRows - 1)) {
+                setSelectedItem({
+                    row: selectedItem.row + 1,
+                    column: selectedItem.column
+                })
+            } else {
+                if (listStart < listData.length - visibleRows) {
+                    setListStart(listStart + 1)
+                }
+            }
+        }
+        if(key === 'left' && selectedItem.column !== 0) {
+            setSelectedItem({
+                row: selectedItem.row,
+                column: selectedItem.column - 1
+            })
+        }
+        if(key === 'right' && selectedItem.column < listData[0].length - 1 ) {
+            setSelectedItem({
+                row: selectedItem.row,
+                column: selectedItem.column + 1
+            })
+        }
+    }
 
     const totalCol = listData[0]?.length || 1;
     const tableWidth = Math.max(40, (totalCol + 1) * COL_WIDTH + 4);
@@ -122,7 +173,7 @@ function App() {
                 {/* Header */}
                 <Box flexGrow={1} justifyContent="space-between">
                     <Text bold color={COLORES.titulo}>{params[0] ?? ''}</Text>
-                    <Text bold color={COLORES.titulo}>{`${listData.length} filas - ${listData[0].length} columnas`}</Text>
+                    <Text bold color={COLORES.titulo}>{`${listData.length - 1} filas - ${listData[0].length} columnas`}</Text>
                 </Box>
                     <Text marginTop={2} color={COLORES.titulo}>Valor{`> ${selectedValue}`}</Text>
                 {/* Data Table */}
@@ -166,7 +217,7 @@ function App() {
                                         color={iRow === selectedItem.row ? COLORES.acento : '#ada79e'}
                                         wrap="truncate"
                                     >
-                                        {iRow + 1}
+                                        {iRow + listStart}
                                     </Text>
                                 </Box>
                             {row.map((item, iCol) => {
