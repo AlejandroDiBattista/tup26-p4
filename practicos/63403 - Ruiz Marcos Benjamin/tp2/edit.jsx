@@ -27,6 +27,8 @@ function App() {
     const [archivo, setArchivo] = useState('');
     const [error, setError] = useState('');
     const [encabezado, setEncabezado] = useState([]);
+    const [inicio, setInicio] = useState(0);
+    const filasVisibles = FILAS - 8;
 
     useEffect(() => {
     async function cargar(){
@@ -55,11 +57,19 @@ function App() {
         setModo('normal');
     }
 
-    if (key.upArrow && fila > 0 && modo === 'normal') {
-    setFila(fila - 1);
+   if (key.upArrow && fila > 0 && modo === 'normal') {
+    const nuevaFila = fila - 1;
+    setFila(nuevaFila);
+    if (nuevaFila < inicio) {
+        setInicio(nuevaFila);
+    }
 }
 if (key.downArrow && fila < empleados.length - 1 && modo === 'normal') {
-    setFila(fila + 1);
+    const nuevaFila = fila + 1;
+    setFila(nuevaFila);
+    if (nuevaFila >= inicio + filasVisibles) {
+        setInicio(nuevaFila - filasVisibles + 1);
+    }
 }
 if (key.leftArrow && columna > 0 && modo === 'normal') {
     setColumna(columna - 1);
@@ -96,7 +106,7 @@ if (empleados.length === 0) {
     return <Text>Cargando...</Text>;
 }
 
-
+const empleadosVisibles = empleados.slice(inicio, inicio + filasVisibles);
 
 return (
     <Box width={COLUMNAS} justifyContent="center" alignItems="center">
@@ -190,11 +200,11 @@ return (
                     </Box>
                 ))}
             </Box>
-            {empleados.map((empleado, indice) => (
+            {empleadosVisibles.map((empleado, indice) => (
                 <Box key={empleado[0]} flexDirection="row">
-                    <Box marginRight={2}><Text>{indice + 1}</Text></Box>
+                    <Box marginRight={2}><Text>{indice + inicio + 1}</Text></Box>
                     {empleado.map((dato, columnaIndice) => {
-                        const seleccionada = indice === fila && columnaIndice === columna;
+                        const seleccionada = indice + inicio === fila && columnaIndice === columna;
                         return (
                             <Box key={columnaIndice} marginRight={2}>
                                 <Text
