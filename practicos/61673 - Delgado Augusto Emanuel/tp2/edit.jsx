@@ -35,12 +35,10 @@ function App() {
     const [archivo, setArchivo]   = useState(process.argv[2] ? basename(process.argv[2]) : '');
     const [cabecera, setCabecera] = useState([]);
     const [filas, setFilas]       = useState([]);
-
     const [fila, setFila]         = useState(0);
     const [col, setCol]           = useState(0);
     const [offset, setOffset]     = useState(0);
-
-    const [modo, setModo]         = useState('ver');
+    const [modo, setModo]         = useState('ver'); 
     const [error, setError]       = useState('');
     const filasVisibles = Math.max(5, FILAS - 7);
 
@@ -63,31 +61,48 @@ function App() {
         }
     };
 
-// al iniciar si se especificó un archivo por línea de comandos lo carga directamente
+    // guarda los datos actuales en el archivo especificado
+    const guardar = async (ruta) => {
+        try {
+            await writeFile(ruta, aCSV(cabecera, filas), 'utf-8');
+            setArchivo(basename(ruta));
+            setError('');
+            setModo('ver');
+        } catch (e) {
+            setError(e.message);
+            setModo('ver');
+        }
+    };
+
+
+    // al iniciar si se especificó un archivo por línea de comandos lo carga directamente
     useEffect(() => {
         if (process.argv[2]) {
             cargar(process.argv[2]);
         }
     }, []);
 
-    // Navegación con teclado
+    // navegación con teclado
     useInput((char, key) => {
+        // si estamos en un modo secundario, Esc cancela y vuelve a 'ver'
+        if (modo !== 'ver') {
+            if (key.escape) setModo('ver');
+            return;
+        }
         if (key.escape) return exit();
-        // Flecha ARRIBA: subir fila y ajustar scroll hacia arriba
+
+        // navegación con flechas
         if (key.upArrow && fila > 0) {
             setFila((f) => f - 1);
             if (fila - 1 < offset) setOffset(fila - 1);
         }
-        // Flecha ABAJO: bajar fila y ajustar scroll hacia abajo
         if (key.downArrow && fila < filas.length - 1) {
             setFila((f) => f + 1);
             if (fila + 1 >= offset + filasVisibles) setOffset(fila + 2 - filasVisibles);
         }
-        // Flecha IZQUIERDA: columna anterior
         if (key.leftArrow && col > 0) {
             setCol((c) => c - 1);
         }
-        // Flecha DERECHA: columna siguiente
         if (key.rightArrow && col < cabecera.length - 1) {
             setCol((c) => c + 1);
         }
@@ -110,10 +125,22 @@ function App() {
                 )}
             </Box>
             {/* Muestra el valor de la celda enfocada */}
-            <Box marginY={1}>
-                <Text color={COLORES.secundario}>
-                    Valor › <Text bold color={COLORES.titulo}>{valorCelda}</Text>
-                </Text>
+             <Box marginY={1}>
+                {modo === 'abrir' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Abrir › </Text>
+                        <TextInput placeholder="nombre archivo..." onSubmit={cargar} />
+                    </Box>
+                )}
+                {modo === 'guardar' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Guardar › </Text>
+                        <TextInput defaultValue={archivo} onSubmit={guardar} />
+                    </Box>
+                )}
+                {modo === 'ver' && (
+                    <Text color={COLORES.secundario}>Valor › <Text bold color={COLORES.titulo}>{valorCelda}</Text></Text>
+                )}
             </Box>
             {error ? <Text color="red">Error: {error}</Text> : null}
             {/* Cabecera de la tabla */}
@@ -124,7 +151,7 @@ function App() {
                     </Box>
                     {cabecera.map((c, i) => (
                         <Box key={i} width={anchos[i]}>
-                            {/* Resalta la columna activa con color de acento */}
+                            {/* Resalta la columna activa con color */}
                             <Text bold color={i === col ? COLORES.acento : COLORES.secundario}>
                                 {c.toUpperCase()}
                             </Text>
@@ -156,9 +183,15 @@ function App() {
             })}
             {/* Barra inferior con posición actual */}
             <Box marginTop={1} justifyContent="space-between">
+                {modo === 'ver' ? (
                 <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>Esc</Text> salir
+                    <Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Esc</Text> salir
                 </Text>
+                ) : (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> {modo === 'abrir' ? 'abrir' : 'guardar'} · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                )}
                 {cabecera.length > 0 && (
                     <Text color={COLORES.secundario}>Fila {fila + 1} · Columna {col + 1}</Text>
                 )}
