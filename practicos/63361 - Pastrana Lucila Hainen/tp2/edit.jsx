@@ -10,11 +10,16 @@ import { fail } from 'node:assert';
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
 const FILAS_VISIBLES = FILAS - 5;
-const archivo = process.argv[2]; 
-const datos = await readFile(archivo, 'utf8');
-const lineas = datos.trim().split('\n');
-const filas = lineas.map(linea => linea.split(',')); 
+const archivoInicial = process.argv[2];
 
+let filas = [];
+if  (archivoInicial) {
+    const datos = await readFile(archivoInicial, 'utf8');
+    const lineas = datos.trim().split('\n');
+    filas = lineas.map(linea => linea.split(',')); 
+
+    
+}
 const COLORES = {
     fondo:     '#161310',
     borde:     '#726b61',
@@ -60,8 +65,14 @@ function App() {
     const [filasActuales, setFilasActuales] = useState(filas);
     const [editando, setEditando] = useState(false);
     const [valorEditado, setValorEditado] = useState (''); 
+    const [nombreArchivo, setNombreArchivo] = useState(archivoInicial || '');
+    const [abriendo, setAbriendo] = useState(false);
+    const [archivoAbrir, setArchivoAbrir] = useState('');
+    const [guardando, setGuardando] = useState(false);
+    const [archivoAGuardar, setArchivoAGuardar] = useState('');
+    const [mensajeError, setMensajeError] = useState('');
     
-    useInput((tecla, key) => {
+    useInput(async (tecla, key) => {
         if (editando) {
             if (key.return) {
                 const nuevasFilas = [...filasActuales];
@@ -78,7 +89,91 @@ function App() {
             return;
         }
 
-<
+        if (abriendo) {
+            if (key.return) {
+
+                if (archivoAbrir === '') {
+                    setMensajeError('Ingrese un nombre de archivo');
+                     return;                   
+                }
+
+                try {
+                 const datos = await readFile(archivoAbrir, 'utf8');
+                 const lineas = datos.trim().split('\n');
+                 const nuevasFilas = lineas.map(linea => linea.split(','));
+
+                 setFilasActuales(nuevasFilas);
+                 setNombreArchivo(archivoAbrir);
+                 setFilaSeleccionada(0);
+                 setColumnaSeleccionada(0);
+                 setInicio(0);
+                 setAbriendo(false);
+                 setArchivoAbrir('');
+                 setMensajeError('');
+            } catch {
+                setMensajeError('Error al abrir el archivo');
+            }
+
+            return;
+            
+            }
+
+            if (key.escape) {
+                setAbriendo(false);
+                setArchivoAbrir('')
+            }
+
+            if (key.backspace) {
+                setArchivoAbrir(archivoAbrir.slice(0, -1));
+                return;
+
+            } else if (tecla) {
+                setArchivoAbrir(archivoAbrir + tecla);
+            }
+
+            return;
+        }
+
+        if (guardando) {
+            if (key.return) {
+                const datos = filasActuales.map(fila => fila.join(',')).join('\n');
+                await writeFile(archivoAGuardar, datos, 'utf8');
+
+                setNombreArchivo(archivoAGuardar);
+                setGuardando(false);
+                setArchivoAGuardar('');
+                return;
+            }
+
+            if (key.escape) {
+            setGuardando(false);
+            setArchivoAGuardar('');
+            return;
+            }
+
+            if (key.backspace) {
+            setArchivoAGuardar(archivoAGuardar.slice(0, -1));
+            } else if (tecla) {
+            setArchivoAGuardar(archivoAGuardar + tecla);
+            }
+
+            return;
+        }
+
+
+        if (tecla === 'a' || tecla === 'A') {
+            setAbriendo(true);
+            setArchivoAbrir('');
+            return;
+        }
+
+        if (tecla === 'g' || tecla === 'G') {
+            setGuardando(true);
+            setArchivoAGuardar('');
+            return;
+        }
+        
+
 
         if (tecla === '<') {
             const filasOrdenadas = filasActuales.slice(1);
@@ -163,11 +258,13 @@ function App() {
 
          
             <Text bold color={COLORES.titulo}>
-                {basename(archivo)}
+                {basename(nombreArchivo)}
             </Text>
 
             <Text>
-              {filasActuales.length - 1} filas, {filasActuales[0].length} columnas 
+                { filasActuales.length > 0
+              ? `${filasActuales.length - 1} filas, ${filasActuales[0].length} columnas`
+              : 'No hay archivo abierto'} 
             </Text>
 
 
@@ -198,6 +295,25 @@ function App() {
                     onChange={setValorEditado}
                 />
             
+            )}
+
+            {abriendo && (
+                 <Text>
+                   Archivo: {archivoAbrir}
+                </Text>
+            )}
+
+            {guardando && (
+                 <Text>
+                   Archivo: {archivoAGuardar}
+                 </Text>
+            )}
+
+            {mensajeError && (
+                <Text color="red">
+                    {mensajeError}
+                </Text>
+                
             )}
                   
                 <Text color={COLORES.secundario}>
