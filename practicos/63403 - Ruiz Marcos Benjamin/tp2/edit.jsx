@@ -48,34 +48,41 @@ function App() {
     }, []);
 
     useInput((tecla, key) => {
-    if (key.escape) {
+    if (key.escape && modo === 'normal') {    
         exit();
     }
-    if (key.upArrow && fila > 0) {
+    else if (key.escape && modo === 'editar') {
+        setModo('normal');
+    }
+
+    if (key.upArrow && fila > 0 && modo === 'normal') {
     setFila(fila - 1);
 }
-if (key.downArrow && fila < empleados.length - 1) {
+if (key.downArrow && fila < empleados.length - 1 && modo === 'normal') {
     setFila(fila + 1);
 }
-if (key.leftArrow && columna > 0) {
+if (key.leftArrow && columna > 0 && modo === 'normal') {
     setColumna(columna - 1);
 }
-if (key.rightArrow && columna < encabezado.length - 1) {
+if (key.rightArrow && columna < encabezado.length - 1 && modo === 'normal') {
     setColumna(columna + 1);
 }
-if (tecla === '<') {
+if (tecla === '<' && modo === 'normal') {
     const copia = [...empleados];
     copia.sort((a, b) => a[columna].localeCompare(b[columna]));
     setEmpleados(copia);
 }
-if (tecla === '>') {
+if (tecla === '>'&& modo === 'normal') {
     const copia = [...empleados];
     copia.sort((a, b) => b[columna].localeCompare(a[columna]));
     setEmpleados(copia);
 }
-    }
-    
-);
+if (key.return && modo === 'normal') {
+    setTexto(empleados[fila][columna]);
+    setModo('editar');
+}
+
+});
 
 
 if (empleados.length === 0) {
@@ -91,7 +98,26 @@ return (
                 <Text bold color={COLORES.titulo}>{archivo}</Text>
                 <Text color={COLORES.secundario}>{empleados.length} filas · {encabezado.length} columnas</Text>
             </Box>
-            <Text color={COLORES.secundario}>Valor {'>'} {empleados[fila][columna]}</Text>
+            {modo === 'normal' ? (
+    <Text color={COLORES.secundario}>Valor {'>'} {empleados[fila][columna]}</Text>
+) : (
+    <TextInput
+        defaultValue={texto}
+        onChange={setTexto}
+        onSubmit={(valor) => {
+    const nuevosEmpleados = empleados.map((empleado, i) => {
+        if (i === fila) {
+            const nuevaFila = [...empleado];
+            nuevaFila[columna] = valor;
+            return nuevaFila;
+        }
+        return empleado;
+    });
+    setEmpleados(nuevosEmpleados);
+    setModo('normal');
+}}
+    />
+)}
             <Box flexDirection="row">
                 {encabezado.map((columna) => (
                     <Box key={columna} marginRight={2}>
@@ -121,6 +147,7 @@ return (
         </Box>
     </Box>
 );
+
 }
 
 const app = render(<App />);
