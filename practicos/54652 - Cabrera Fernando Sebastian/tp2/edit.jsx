@@ -24,12 +24,15 @@ const COLORES = {
     const [columnaActual, setColumnaActual] = React.useState(0);
     const [filas, setFilas] = React.useState([]);
 
+
     useEffect(() => {
         const cargarArchivo = async() => {
             try {
                 const contenido = await readFile(archivo, 'utf-8');
-                const filasLeidas = contenido.split('\n').map(fila => fila.split(','));
-                setFilas(filasLeidas);
+                const filasLeidas = contenido.split('\n')
+                .map(fila=> fila.trimEnd())
+                .filter(fila => fila !=='')
+                .map(fila => fila.split(','));
             }catch(error){
                 console.error(`Error al leer el archivo ${archivo}: ${error.message}`);
             };
@@ -38,7 +41,7 @@ const COLORES = {
             cargarArchivo();
         }
     },[archivo]);
-    console.log(filas);
+    
 
     const {exit} = useApp();
     
@@ -47,18 +50,36 @@ const COLORES = {
             exit();
         }
     })
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} flexDirection= "column">
-                    {filas.map((fila, i)=>( <Text key={i}>{fila.join(', ')}</Text> ))}
-                </Box>
 
+    const encabezado = filas[0];
+    const datos =filas.slice(1);
 
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-            </Box>
+   return (
+    <Box width={COLUMNAS} height={FILAS} flexDirection="column">
+        <Box borderStyle="round" borderColor={COLORES.borde} paddingX={1}>
+            <Text bold color={COLORES.titulo}>{archivo || 'Sin archivo'}</Text>
         </Box>
-    );
+        <Box flexGrow={1} flexDirection="column" paddingX={1}>
+           {encabezado && (
+    <Box flexDirection="row">
+        <Text>{'   '}</Text>
+        {encabezado.map((col, j) => (
+            <Text key={j} bold color={COLORES.acento}>{col.padEnd(15)}</Text>
+        ))}
+    </Box>
+)}
+            {datos.map((fila, index) => (
+                <Box key ={index} flexDirection="row">
+                    <Text color={COLORES.secundario}>{String(index + 1).padStart(3) + ' '}</Text>
+                    {fila.map((celda, j)=>(
+                        <Text key={j}>{celda.padEnd(15)}</Text>
+                    ))}
+                </Box>
+            ))}
+        </Box>
+        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+    </Box>
+);
 }
 
 const app = render(<App />);
