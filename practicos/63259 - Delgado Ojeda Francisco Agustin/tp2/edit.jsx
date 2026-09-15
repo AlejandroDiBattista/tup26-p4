@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { readFile, writeFile } from 'node:fs/promises';
+import { TextInput } from '@inkjs/ui';
 import { basename } from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
@@ -32,10 +33,17 @@ function App() {
     const { exit } = useApp();
 
     const [archivo, setArchivo] = useState(null);
+
     const [cabecera, setCabecera] = useState([]);
     const [datos, setDatos] = useState([]);
+
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+
+    const [modo, setModo] = useState('normal');
+
+    const [entrada, setEntrada] = useState('');
+
     const [mensaje, setMensaje] = useState('');
 
     function cargarCSV(texto) {
@@ -80,6 +88,7 @@ function App() {
             setArchivo(nombre);
             setFilaSeleccionada(0);
             setColumnaSeleccionada(0);
+
             setMensaje(`Archivo abierto: ${basename(nombre)}`);
 
             return true;
@@ -185,8 +194,21 @@ function App() {
     }, []);
 
     useInput((input, key) => {
+
         if (key.escape) {
+
+            if (modo !== 'normal') {
+                setModo('normal');
+                setEntrada('');
+                setMensaje('Acción cancelada.');
+                return;
+            }
+
             exit();
+            return;
+        }
+
+        if (modo !== 'normal') {
             return;
         }
 
@@ -194,6 +216,7 @@ function App() {
             setFilaSeleccionada(fila =>
                 Math.max(0, fila - 1)
             );
+
             setMensaje('');
             return;
         }
@@ -205,6 +228,7 @@ function App() {
                     fila + 1
                 )
             );
+
             setMensaje('');
             return;
         }
@@ -213,6 +237,7 @@ function App() {
             setColumnaSeleccionada(columna =>
                 Math.max(0, columna - 1)
             );
+
             setMensaje('');
             return;
         }
@@ -224,6 +249,39 @@ function App() {
                     columna + 1
                 )
             );
+
+            setMensaje('');
+            return;
+        }
+
+        if (key.return) {
+            const valor =
+                datos[filaSeleccionada]?.[
+                columnaSeleccionada
+                ];
+
+            if (valor !== undefined) {
+                setEntrada(valor);
+                setModo('editar');
+                setMensaje('');
+            }
+
+            return;
+        }
+
+        if (input?.toLowerCase() === 'a') {
+            setEntrada('');
+            setModo('abrir');
+            setMensaje('');
+            return;
+        }
+
+        if (input?.toLowerCase() === 'g') {
+            setEntrada(
+                archivo ? basename(archivo) : ''
+            );
+
+            setModo('guardar');
             setMensaje('');
             return;
         }
@@ -298,6 +356,7 @@ function App() {
             flexDirection="column"
             padding={1}
         >
+
             <Box
                 flexDirection="column"
                 flexGrow={1}
@@ -306,103 +365,420 @@ function App() {
                 backgroundColor={COLORES.fondo}
                 paddingX={1}
             >
+
+
+
                 <Box justifyContent="space-between">
-                    <Text bold color={COLORES.titulo}>
+
+                    <Text
+                        bold
+                        color={COLORES.titulo}
+                    >
                         Editor CSV
                     </Text>
+
                     <Text color={COLORES.acento}>
-                        {archivo ? basename(archivo) : 'Sin archivo'}
+                        {archivo
+                            ? basename(archivo)
+                            : 'Sin archivo'}
                     </Text>
+
                 </Box>
 
+
+
                 <Text color={COLORES.secundario}>
-                    Filas: {datos.length} | Columnas: {cabecera.length}
+                    Filas: {datos.length}
+                    {' | '}
+                    Columnas: {cabecera.length}
                 </Text>
 
+
+
                 <Box marginTop={1}>
+
                     <Box width={5}>
-                        <Text bold color={COLORES.acento}>
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
                             #
                         </Text>
                     </Box>
-                    {cabecerasVisibles.map((columna, indice) => (
-                        <Box
-                            key={inicioColumna + indice}
-                            width={ANCHO_COLUMNA}
-                        >
-                            <Text bold color={COLORES.acento}>
-                                {ajustarTexto(columna, ANCHO_COLUMNA)}
-                            </Text>
-                        </Box>
-                    ))}
+
+                    {cabecerasVisibles.map(
+                        (columna, indice) => (
+
+                            <Box
+                                key={
+                                    inicioColumna +
+                                    indice
+                                }
+                                width={ANCHO_COLUMNA}
+                            >
+
+                                <Text
+                                    bold
+                                    color={COLORES.acento}
+                                >
+                                    {ajustarTexto(
+                                        columna,
+                                        ANCHO_COLUMNA
+                                    )}
+                                </Text>
+
+                            </Box>
+
+                        )
+                    )}
+
                 </Box>
 
-                {filasVisibles.map((fila, indiceVisibleFila) => {
-                    const indiceFila = inicioFila + indiceVisibleFila;
-                    const celdasVisibles = fila.slice(
-                        inicioColumna,
-                        inicioColumna + COLUMNAS_VISIBLES
-                    );
 
-                    return (
-                        <Box key={indiceFila}>
-                            <Box width={5}>
-                                <Text color={COLORES.secundario}>
-                                    {indiceFila + 1}
-                                </Text>
+
+                {filasVisibles.map(
+                    (fila, indiceVisibleFila) => {
+
+                        const indiceFila =
+                            inicioFila +
+                            indiceVisibleFila;
+
+                        const celdasVisibles =
+                            fila.slice(
+                                inicioColumna,
+                                inicioColumna +
+                                COLUMNAS_VISIBLES
+                            );
+
+                        return (
+
+                            <Box key={indiceFila}>
+
+
+
+                                <Box width={5}>
+
+                                    <Text
+                                        color={
+                                            COLORES.secundario
+                                        }
+                                    >
+                                        {indiceFila + 1}
+                                    </Text>
+
+                                </Box>
+
+
+
+                                {celdasVisibles.map(
+                                    (
+                                        celda,
+                                        indiceVisibleColumna
+                                    ) => {
+
+                                        const indiceColumna =
+                                            inicioColumna +
+                                            indiceVisibleColumna;
+
+                                        const seleccionada =
+                                            indiceFila ===
+                                            filaSeleccionada &&
+                                            indiceColumna ===
+                                            columnaSeleccionada;
+
+                                        return (
+
+                                            <Box
+                                                key={
+                                                    indiceColumna
+                                                }
+                                                width={
+                                                    ANCHO_COLUMNA
+                                                }
+                                            >
+
+                                                <Text
+                                                    bold={
+                                                        seleccionada
+                                                    }
+
+                                                    color={
+                                                        seleccionada
+                                                            ? COLORES.fondo
+                                                            : COLORES.titulo
+                                                    }
+
+                                                    backgroundColor={
+                                                        seleccionada
+                                                            ? COLORES.acento
+                                                            : undefined
+                                                    }
+                                                >
+
+                                                    {ajustarTexto(
+                                                        celda,
+                                                        ANCHO_COLUMNA
+                                                    )}
+
+                                                </Text>
+
+                                            </Box>
+
+                                        );
+                                    }
+                                )}
+
                             </Box>
-                            {celdasVisibles.map((celda, indiceVisibleColumna) => {
-                                const indiceColumna = inicioColumna + indiceVisibleColumna;
-                                const seleccionada =
-                                    indiceFila === filaSeleccionada &&
-                                    indiceColumna === columnaSeleccionada;
 
-                                return (
-                                    <Box key={indiceColumna} width={ANCHO_COLUMNA}>
-                                        <Text
-                                            bold={seleccionada}
-                                            color={seleccionada ? COLORES.fondo : COLORES.titulo}
-                                            backgroundColor={seleccionada ? COLORES.acento : undefined}
-                                        >
-                                            {ajustarTexto(celda, ANCHO_COLUMNA)}
-                                        </Text>
-                                    </Box>
-                                );
-                            })}
-                        </Box>
-                    );
-                })}
+                        );
+                    }
+                )}
 
-                <Box marginTop={1} flexDirection="column">
-                    {datos.length > 0 && (
-                        <Text color={COLORES.secundario}>
-                            Celda: fila {filaSeleccionada + 1}, columna {columnaSeleccionada + 1}
-                            {' | '}
-                            Valor:{' '}
-                            <Text bold color={COLORES.acento}>
-                                {valorSeleccionado}
+
+
+                <Box
+                    marginTop={1}
+                    flexDirection="column"
+                >
+
+
+
+                    {modo === 'editar' && (
+
+                        <Box>
+
+                            <Text color={COLORES.titulo}>
+                                Nuevo valor:{' '}
                             </Text>
-                        </Text>
+
+                            <TextInput
+                                value={entrada}
+                                onChange={setEntrada}
+
+                                onSubmit={nuevoValor => {
+
+                                    const copia =
+                                        datos.map(
+                                            fila => [...fila]
+                                        );
+
+                                    copia[
+                                        filaSeleccionada
+                                    ][
+                                        columnaSeleccionada
+                                    ] = nuevoValor;
+
+                                    setDatos(copia);
+
+                                    setModo('normal');
+
+                                    setEntrada('');
+
+                                    setMensaje(
+                                        'Celda modificada.'
+                                    );
+                                }}
+                            />
+
+                        </Box>
+
                     )}
+
+
+
+                    {modo === 'abrir' && (
+
+                        <Box>
+
+                            <Text color={COLORES.titulo}>
+                                Archivo a abrir:{' '}
+                            </Text>
+
+                            <TextInput
+                                value={entrada}
+                                onChange={setEntrada}
+
+                                onSubmit={async nombre => {
+
+                                    const ok =
+                                        await abrirArchivo(
+                                            nombre
+                                        );
+
+                                    if (ok) {
+                                        setModo(
+                                            'normal'
+                                        );
+
+                                        setEntrada('');
+                                    }
+                                }}
+                            />
+
+                        </Box>
+
+                    )}
+
+
+
+                    {modo === 'guardar' && (
+
+                        <Box>
+
+                            <Text color={COLORES.titulo}>
+                                Guardar como:{' '}
+                            </Text>
+
+                            <TextInput
+                                value={entrada}
+                                onChange={setEntrada}
+
+                                onSubmit={async nombre => {
+
+                                    const ok =
+                                        await guardarArchivo(
+                                            nombre
+                                        );
+
+                                    if (ok) {
+                                        setModo(
+                                            'normal'
+                                        );
+
+                                        setEntrada('');
+                                    }
+                                }}
+                            />
+
+                        </Box>
+
+                    )}
+
+
+
+                    {modo === 'normal' &&
+                        datos.length > 0 && (
+
+                            <Text
+                                color={
+                                    COLORES.secundario
+                                }
+                            >
+                                Celda: fila{' '}
+                                {filaSeleccionada + 1},
+                                columna{' '}
+                                {columnaSeleccionada + 1}
+
+                                {' | '}
+
+                                Valor:{' '}
+
+                                <Text
+                                    bold
+                                    color={COLORES.acento}
+                                >
+                                    {valorSeleccionado}
+                                </Text>
+
+                            </Text>
+
+                        )}
+
+
+
                     {mensaje && (
+
                         <Text color={COLORES.secundario}>
                             {mensaje}
                         </Text>
+
                     )}
+
                 </Box>
 
-                <Box flexGrow={1} alignItems="flex-end">
+
+
+                <Box
+                    flexGrow={1}
+                    alignItems="flex-end"
+                >
+
                     <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>Flechas</Text> mover
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            Flechas
+                        </Text>
+                        {' '}mover
+
                         {' | '}
-                        <Text bold color={COLORES.acento}>{'<'}</Text> asc
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            Enter
+                        </Text>
+                        {' '}editar
+
                         {' | '}
-                        <Text bold color={COLORES.acento}>{'>'}</Text> desc
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            A
+                        </Text>
+                        {' '}abrir
+
                         {' | '}
-                        <Text bold color={COLORES.acento}>Esc</Text> salir
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            G
+                        </Text>
+                        {' '}guardar
+
+                        {' | '}
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            {'<'}
+                        </Text>
+                        {' '}asc
+
+                        {' | '}
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            {'>'}
+                        </Text>
+                        {' '}desc
+
+                        {' | '}
+
+                        <Text
+                            bold
+                            color={COLORES.acento}
+                        >
+                            Esc
+                        </Text>
+                        {' '}salir
+
                     </Text>
+
                 </Box>
+
             </Box>
+
         </Box>
     );
 }
