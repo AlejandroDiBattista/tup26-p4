@@ -95,6 +95,11 @@ try {
 
 function App() {
 
+    const [indiceFila, setIndiceFila] = React.useState(0);
+    const [indiceColumna, setIndiceColumna] = React.useState(0);
+
+    const [primeraFilaVisible, setPrimeraFilaVisible] = React.useState(0);
+    
     const {exit} = useApp();
 
     useInput((tecla, key) => {
@@ -104,8 +109,35 @@ function App() {
             exit();
 
         }
+        else if (key.rightArrow) {
 
-    })
+            setIndiceColumna(Math.min(indiceColumna + 1, cabecera.length - 1));
+
+        }
+        else if (key.leftArrow) {
+
+            setIndiceColumna(Math.max(indiceColumna - 1, 0));
+
+        }
+        else if (key.downArrow) {
+
+            setIndiceFila(Math.min(indiceFila + 1, filas.length - 1));
+        
+            if (Math.min(indiceFila + 1, filas.length - 1) >=primeraFilaVisible + 5) {
+                setPrimeraFilaVisible(primeraFilaVisible + 1)
+            }
+        }
+        else if (key.upArrow) {
+
+            setIndiceFila(Math.max(indiceFila - 1, 0));
+        
+         if (Math.max(indiceFila - 1, 0) < primeraFilaVisible) {
+            
+            setPrimeraFilaVisible(primeraFilaVisible- 1)
+        }    
+        }
+
+    });
 
     return (
 
@@ -152,13 +184,13 @@ function App() {
                 </Box>
 
 
-                {filas.slice(0,5).map((fila, indice) => (
+                {filas.slice(primeraFilaVisible, primeraFilaVisible + 5).map((fila, indice) => (
 
                     <Box key={indice}>
 
                         <Box width={5}>
 
-                            <Text color={COLORES.secundario}>{indice + 1}</Text>
+                            <Text color={COLORES.secundario}>{indice + 1 + primeraFilaVisible}</Text>
 
                         </Box>
 
@@ -166,7 +198,7 @@ function App() {
 
                             <Box width={18} key={posicion}>
 
-                                <Text color={COLORES.titulo}>{dato}</Text>
+                                <Text color={indice + primeraFilaVisible === indiceFila && posicion === indiceColumna ? COLORES.acento : COLORES.titulo}>{dato}</Text>
 
                             </Box>
 
@@ -178,6 +210,9 @@ function App() {
 
                 <Box flexGrow={1}></Box>
 
+         {filas.length > 0 && (
+    <Text> Fila: {indiceFila + 1} Columna: {indiceColumna + 1} Valor: {filas[indiceFila][indiceColumna]}</Text>
+)}
                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
 
             </Box>
