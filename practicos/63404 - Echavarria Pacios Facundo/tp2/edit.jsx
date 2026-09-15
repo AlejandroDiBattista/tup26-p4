@@ -82,19 +82,23 @@ const CompleteFileExtraction = (fileName) => {
 //Si se ajecuta con el nombre del archivo hacer:
 let finishList = []
 if (params[0] !== undefined) {
-    const fileName = params.shift()
+    const fileName = params[0]
     finishList = CompleteFileExtraction(fileName)
 }
 
-const COL_WIDTH = 14;
+const COL_WIDTH = 20;
 
 function App() {
     const {exit} = useApp();
+    const visibleRows = 10
 
     const [listData, setListData] = useState(finishList ?? [])
     const [listStart, setListStart] = useState(1)
-
-    const visibleRows = 10
+    const [selectedItem, setSelectedItem] = useState({
+        row: 0,
+        column:0
+    })
+    const selectedValue = listData.slice(listStart, listStart + visibleRows)[selectedItem.row][selectedItem.column]
 
     useInput((tecla, key) => {
         if (key.escape) {
@@ -103,7 +107,7 @@ function App() {
     })
 
     const totalCol = listData[0]?.length || 1;
-    const tableWidth = Math.max(40, totalCol * COL_WIDTH + 4);
+    const tableWidth = Math.max(40, (totalCol + 1) * COL_WIDTH + 4);
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
@@ -116,43 +120,79 @@ function App() {
                 padding={1}
             >
                 {/* Header */}
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                <Box flexGrow={1} justifyContent="space-between">
+                    <Text bold color={COLORES.titulo}>{params[0] ?? ''}</Text>
+                    <Text bold color={COLORES.titulo}>{`${listData.length} filas - ${listData[0].length} columnas`}</Text>
                 </Box>
+                    <Text marginTop={2} color={COLORES.titulo}>Valor{`> ${selectedValue}`}</Text>
                 {/* Data Table */}
                 <Box flexDirection='column' marginTop={1}>
+                    {/* Encabezados */}
                     <Box flexDirection="row">
-                        {listData[0].map((item, iCol) => (
-                            <Box key={iCol} width={COL_WIDTH}>
+                        <Box width={4}>
+                            <Text
+                                bold={true}
+                                color={'#ede7db'}
+                                wrap="truncate"
+                                width={4}
+                                >
+                                #
+                            </Text>
+                        </Box>
+                        {listData[0].map((item, iCol) => {
+                            let selected = false
+                            if(iCol===selectedItem.column){
+                                selected = true
+                            }
+                            return (
+                            <Box key={iCol} width={COL_WIDTH} backgroundColor={selected ? 'black' : ''}>
                                 <Text
                                     bold={true}
-                                    color={'#ede7db'}
+                                    color={selected ? COLORES.acento : '#ede7db'}
                                     wrap="truncate"
                                     >
                                     {String(item)}
                                 </Text>
                             </Box>
-                        ))}
+                        )})}
                     </Box>
+                    {/* Datos de tabla */}
                     {listData.slice(listStart, listStart + visibleRows).map((row, iRow) => {
                         return (
                             <Box key={iRow} flexDirection="row">
-                            {row.map((item, iCol) => (
-                                <Box key={iCol} width={COL_WIDTH}>
-                                <Text
-                                    color={'#ada79e'}
-                                    wrap="truncate"
-                                >
-                                    {String(item)}
-                                </Text>
-                            </Box>
-                            ))}
+                                
+                                <Box key={iRow} width={4} backgroundColor={iRow === selectedItem.row ? 'black' : ''}>
+                                    <Text
+                                        color={iRow === selectedItem.row ? COLORES.acento : '#ada79e'}
+                                        wrap="truncate"
+                                    >
+                                        {iRow + 1}
+                                    </Text>
+                                </Box>
+                            {row.map((item, iCol) => {
+                                let selected = false
+                                if(iCol===selectedItem.column && iRow === selectedItem.row){
+                                    selected = true
+                                }
+                                return (
+                                <Box key={iCol} width={COL_WIDTH} backgroundColor={selected ? '#ede7db' : COLORES.fondo}>
+                                    <Text
+                                        color={'#ada79e'}
+                                        wrap="truncate"
+                                        width={COL_WIDTH}
+                                    >
+                                        {String(item)}
+                                    </Text>
+                                </Box>
+                            )})}
                         </Box>
                         );
                     })}
                 </Box>
-                <Box marginTop={1}>
+                <Box marginTop={1} flexDirection='row' justifyContent='space-between' width="100%">
                     <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                    <Text color={COLORES.secundario} flexDirection={'end'}>Fila {selectedItem.row + 1} - Columna {selectedItem.column + 1}</Text>
+
                 </Box>
             </Box>
         </Box>
