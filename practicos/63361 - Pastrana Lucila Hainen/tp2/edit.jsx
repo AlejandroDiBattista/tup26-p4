@@ -57,10 +57,34 @@ function App() {
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const [inicio, setInicio] = useState(0);
+    const [filasActuales, setFilasActuales] = useState(filas);
+    const [editando, setEditando] = useState(false);
+    const [valorEditado, setValorEditado] = useState (''); 
     
     useInput((tecla, key) => {
+        if (editando) {
+            if (key.return) {
+                const nuevasFilas = [...filasActuales];
+                nuevasFilas[filaSeleccionada + 1][columnaSeleccionada] = valorEditado;
+                setFilasActuales(nuevasFilas);
+                setEditando(false);
+
+            }
+
+            if (key.escape) {
+                setEditando(false);
+            }
+
+            return;
+        }
+
         if (key.escape) {
             exit();
+        }
+
+        if(key.return) {
+            setValorEditado(filasActuales [filaSeleccionada + 1][columnaSeleccionada]);
+            setEditando(true);
         }
 
         if (key.leftArrow) {
@@ -82,7 +106,7 @@ function App() {
         }
 
         if (key.downArrow) {
-            const nuevaFila = Math.min(filaSeleccionada + 1, filas.length - 2);
+            const nuevaFila = Math.min(filaSeleccionada + 1, filasActuales.length - 2);
             setFilaSeleccionada(nuevaFila);
 
             if (nuevaFila >= inicio + FILAS_VISIBLES) {
@@ -91,7 +115,9 @@ function App() {
         }
 
 
+
     }); 
+
 
     return (
         <Box 
@@ -106,7 +132,7 @@ function App() {
             </Text>
 
             <Text>
-              {filas.length - 1} filas, {filas[0].length} columnas 
+              {filasActuales.length - 1} filas, {filasActuales[0].length} columnas 
             </Text>
 
 
@@ -121,7 +147,7 @@ function App() {
                   
 
 
-            {filas.slice(inicio + 1, inicio + FILAS_VISIBLES + 1).map((fila, indice) => (
+            {filasActuales.slice(inicio + 1, inicio + FILAS_VISIBLES + 1).map((fila, indice) => (
               <Fila
                   key={indice}
                   numero={inicio + indice + 1}
@@ -130,6 +156,14 @@ function App() {
                   filaSeleccionada={filaSeleccionada}
               />
             ))}
+
+            {editando && (
+                <TextInput
+                    value={valorEditado}
+                    onChange={setValorEditado}
+                />
+            
+            )}
                   
                 <Text color={COLORES.secundario}>
                     <Text bold color={COLORES.acento}> Esc</Text> salir</Text>
