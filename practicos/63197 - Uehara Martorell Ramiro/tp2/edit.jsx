@@ -2,18 +2,19 @@
 
 import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
-import {readFile} from 'node:fs/promises';
+import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 
 const ANCHO = process.stdout.columns || 80;
 const ALTO = process.stdout.rows || 24;
 
 const COLORES = {
-    fondo:      '#161310',
-    borde:      '#726b61',
-    titulo:     '#ede7db',
+    fondo:      '#fffefd',
+    borde:      '#2600ff',
+    titulo:     '#1504d5',
     secundario: '#ada79e',
     acento:     '#edbb64',
+    error:      '#fb2100',
 };
 
 
@@ -24,6 +25,13 @@ function leerCsv(texto) {
     const cabecera = lineas[0].split(',');
     const filas = lineas.slice(1).map(linea => linea.split(','));
     return {cabecera, filas};
+
+}
+
+function armarCsv(cabecera, filas) {
+
+    const lineas = [cabecera.join(','), ...filas.map(fila => fila.join(','))];
+    return lineas.join('\n') + '\n';
 
 }
 
@@ -50,10 +58,21 @@ function ordenar(filas, columna, ascendente) {
 
 }
 
-function App({archivo, cabecera, filas: filasIniciales}) {
+function mensajeDeError(error) {
+
+    if (error.code === 'ENOENT') return 'no existe el archivo';
+    if (error.code === 'EACCES') return 'no tenes permisos';
+    return error.message;
+
+}
+
+function App({inicial}) {
 
     const {exit} = useApp();
-    const [filas, setFilas] = useState(filasIniciales);
+    const [archivo, setArchivo] = useState(inicial.archivo);
+    const [cabecera, setCabecera] = useState(inicial.cabecera);
+    const [filas, setFilas] = useState(inicial.filas);
+    const [error, setError] = useState(inicial.error);
     const [fila, setFila] = useState(0);        
     const [columna, setColumna] = useState(0);  
     const [inicio, setInicio] = useState(0);    
@@ -90,8 +109,46 @@ function App({archivo, cabecera, filas: filasIniciales}) {
 
         setFila(nuevaFila);
         setColumna(nuevaColumna);
+        setError(null);
+
         if (nuevaFila < inicio) setInicio(nuevaFila);
         if (nuevaFila >= inicio + visibles) setInicio(nuevaFila - visibles + 1);
+
+    }
+
+    async function abrir(nombre) {
+
+        setModo('ver');
+        if (nombre.trim() === '') return;
+
+        try {
+            const texto = await readFile(nombre, 'utf8');
+            const datos = leerCsv(texto);
+            setCabecera(datos.cabecera);
+            setFilas(datos.filas);
+            setArchivo(nombre);
+            setFila(0);
+            setColumna(0);
+            setInicio(0);
+            setError(null);
+        } catch (e) {
+            setError('no se pudo abrir "' + nombre + '": ' + mensajeDeError(e));
+        }
+
+    }
+
+    async function guardar(nombre) {
+
+        setModo('ver');
+        if (nombre.trim() === '') return;
+
+        try {
+            await writeFile(nombre, armarCsv(cabecera, filas), 'utf8');
+            setArchivo(nombre);
+            setError(null);
+        } catch (e) {
+            setError('no se pudo guardar "' + nombre + '": ' + mensajeDeError(e));
+        }
 
     }
 
@@ -124,6 +181,9 @@ function App({archivo, cabecera, filas: filasIniciales}) {
             mover(0, columna);
         }
 
+        if (tecla === 'a' || tecla === 'A') setModo('abrir');
+        if (tecla === 'g' || tecla === 'G') setModo('guardar');
+
     }, {isActive: modo === 'ver'});
 
 
@@ -143,7 +203,7 @@ function App({archivo, cabecera, filas: filasIniciales}) {
 
             <Box>
                 <Box flexGrow={1}>
-                    <Text bold color={COLORES.titulo}>{archivo}</Text>
+                    <Text bold color={COLORES.titulo}>{archivo || 'sin archivo'}</Text>
                 </Box>
                 <Text color={COLORES.secundario}>{filas.length} filas · {cabecera.length} columnas</Text>
             </Box>
@@ -151,12 +211,30 @@ function App({archivo, cabecera, filas: filasIniciales}) {
             <Text> </Text>
 
             <Box>
-                {modo === 'ver' ? (
+                {error && <Text color={COLORES.error}>Error › {error}</Text>}
+
+                {!error && modo === 'ver' && (
                     <Text color={COLORES.secundario}>Valor › <Text color={COLORES.titulo}>{valor}</Text></Text>
-                ) : (
+                )}
+
+                {!error && modo === 'editar' && (
                     <>
                         <Text bold color={COLORES.acento}>Editar › </Text>
                         <TextInput defaultValue={valor} onSubmit={editar} />
+                    </>
+                )}
+
+                {!error && modo === 'abrir' && (
+                    <>
+                        <Text bold color={COLORES.acento}>Abrir › </Text>
+                        <TextInput placeholder="nombre del archivo" onSubmit={abrir} />
+                    </>
+                )}
+
+                {!error && modo === 'guardar' && (
+                    <>
+                        <Text bold color={COLORES.acento}>Guardar › </Text>
+                        <TextInput defaultValue={archivo} onSubmit={guardar} />
                     </>
                 )}
             </Box>
@@ -196,6 +274,8 @@ function App({archivo, cabecera, filas: filasIniciales}) {
                 <Box flexGrow={1}>
                     {modo === 'ver' ? (
                         <Text wrap="truncate-end" color={COLORES.secundario}>
+                            <Text bold color={COLORES.acento}>A</Text> abrir ·{' '}
+                            <Text bold color={COLORES.acento}>G</Text> guardar ·{' '}
                             <Text bold color={COLORES.acento}>Enter</Text> editar ·{' '}
                             <Text bold color={COLORES.acento}>{'<'}</Text> izquierda ·{' '}
                             <Text bold color={COLORES.acento}>{'>'}</Text> derecha ·{' '}
@@ -217,9 +297,21 @@ function App({archivo, cabecera, filas: filasIniciales}) {
 }
 
 const nombre = process.argv[2];
-const texto = await readFile(nombre, 'utf8');
-const datos = leerCsv(texto);
-const app = render(<App archivo={nombre} cabecera={datos.cabecera} filas={datos.filas} />);
+const inicial = {archivo: '', cabecera: [], filas: [], error: null};
+
+if (nombre) {
+    try {
+        const texto = await readFile(nombre, 'utf8');
+        const datos = leerCsv(texto);
+        inicial.archivo = nombre;
+        inicial.cabecera = datos.cabecera;
+        inicial.filas = datos.filas;
+    } catch (e) {
+        inicial.error = 'no se pudo abrir "' + nombre + '": ' + mensajeDeError(e);
+    }
+}
+
+const app = render(<App inicial={inicial} />);
 await app.waitUntilExit();
 
 console.clear();
