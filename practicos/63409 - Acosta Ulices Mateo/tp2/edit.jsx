@@ -48,6 +48,7 @@ function App({archivoInicial}) {
     let [datos, setDatos] = useState(null)
     let [filaActual, setFilaActual] = useState(0)
     let [columnaActual, setColumnaActual] = useState(0)
+    let [pantalla, setPantalla] = useState('normal')
 
     useEffect(() => {
         if (archivoInicial) {
@@ -57,6 +58,16 @@ function App({archivoInicial}) {
             })
         }
     }, [])
+
+    function cambiarValor(valorNuevo) {
+        let filas = []
+        for (let i = 0; i < datos.filas.length; i++) {
+            filas.push(datos.filas[i].slice())
+        }
+        filas[filaActual][columnaActual] = valorNuevo
+        setDatos({encabezado: datos.encabezado, filas: filas})
+        setPantalla('normal')
+    }
 
     function ordenarPor(sentido) {
         let filas = datos.filas.slice()
@@ -78,13 +89,22 @@ function App({archivoInicial}) {
     }
 
     useInput((tecla, key) => {
+        if (pantalla != 'normal') {
+            if (key.escape) {
+                setPantalla('normal')
+            }
+            return
+        }
+
         if (key.escape) {
             exit()
             return
         }
         if (!datos) return
 
-        if (tecla == '<') {
+        if (key.return) {
+            setPantalla('editar')
+        } else if (tecla == '<') {
             ordenarPor('asc')
         } else if (tecla == '>') {
             ordenarPor('desc')
@@ -147,7 +167,15 @@ function App({archivoInicial}) {
                     </Box>
 
                     <Box marginTop={1}>
-                        <Text color={PALETA.gris}>Valor {'>'} <Text bold color={PALETA.texto}>{datos.filas[filaActual][columnaActual]}</Text></Text>
+                        {pantalla == 'editar' && (
+                            <Box>
+                                <Text color={PALETA.marca} bold>Editar {'>'} </Text>
+                                <TextInput defaultValue={datos.filas[filaActual][columnaActual]} onSubmit={cambiarValor} />
+                            </Box>
+                        )}
+                        {pantalla == 'normal' && (
+                            <Text color={PALETA.gris}>Valor {'>'} <Text bold color={PALETA.texto}>{datos.filas[filaActual][columnaActual]}</Text></Text>
+                        )}
                     </Box>
 
                     <Box marginTop={1} flexDirection="column">
@@ -197,10 +225,18 @@ function App({archivoInicial}) {
                     </Box>
 
                     <Box marginTop={1} justifyContent="space-between">
-                        <Text color={PALETA.gris}>
-                            <Text bold color={PALETA.marca}>{'<'}</Text> asc  <Text bold color={PALETA.marca}>{'>'}</Text> desc  <Text bold color={PALETA.marca}>Esc</Text> salir
-                        </Text>
-                        <Text color={PALETA.gris}>Fila {filaActual + 1} · Columna {columnaActual + 1}</Text>
+                        {pantalla == 'normal' ? (
+                            <Text color={PALETA.gris}>
+                                <Text bold color={PALETA.marca}>Enter</Text> editar  <Text bold color={PALETA.marca}>{'<'}</Text> asc  <Text bold color={PALETA.marca}>{'>'}</Text> desc  <Text bold color={PALETA.marca}>Esc</Text> salir
+                            </Text>
+                        ) : (
+                            <Text color={PALETA.gris}>
+                                <Text bold color={PALETA.marca}>Enter</Text> confirmar  <Text bold color={PALETA.marca}>Esc</Text> cancelar
+                            </Text>
+                        )}
+                        {pantalla == 'normal' && (
+                            <Text color={PALETA.gris}>Fila {filaActual + 1} · Columna {columnaActual + 1}</Text>
+                        )}
                     </Box>
                 </Box>
             )}
