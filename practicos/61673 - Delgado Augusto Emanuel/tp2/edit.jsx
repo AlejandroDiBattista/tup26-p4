@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -16,6 +16,18 @@ const COLORES = {
     secundario:'#ada79e',
     acento:    '#edbb64',
 };
+
+const parsearCSV = (txt) => {
+    const lineas = txt.replace(/\r/g, '').trim().split('\n');
+    return {
+        cabecera: lineas[0].split(','),
+        filas: lineas.slice(1).map((l) => l.split(','))
+    };
+};
+
+const aCSV = (cabecera, filas) =>
+    [cabecera.join(','), ...filas.map((f) => f.join(','))].join('\n') + '\n';
+
 
 function App() {
     const {exit} = useApp();
