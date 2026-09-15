@@ -35,8 +35,14 @@ function App() {
     const [archivo, setArchivo]   = useState(process.argv[2] ? basename(process.argv[2]) : '');
     const [cabecera, setCabecera] = useState([]);
     const [filas, setFilas]       = useState([]);
+
+    const [fila, setFila]         = useState(0);
+    const [col, setCol]           = useState(0);
+    const [offset, setOffset]     = useState(0);
+
     const [modo, setModo]         = useState('ver');
     const [error, setError]       = useState('');
+    const filasVisibles = Math.max(5, FILAS - 7);
 
      // función para leer y cargar un archivo CSV 
     const cargar = async (ruta) => {
@@ -46,6 +52,9 @@ function App() {
             setCabecera(res.cabecera);
             setFilas(res.filas);
             setArchivo(basename(ruta));
+            setFila(0);
+            setCol(0);
+            setOffset(0);
             setError('');
             setModo('ver');
         } catch (e) {
@@ -61,61 +70,102 @@ function App() {
         }
     }, []);
 
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
+    // Navegación con teclado
+    useInput((char, key) => {
+        if (key.escape) return exit();
+        // Flecha ARRIBA: subir fila y ajustar scroll hacia arriba
+        if (key.upArrow && fila > 0) {
+            setFila((f) => f - 1);
+            if (fila - 1 < offset) setOffset(fila - 1);
         }
-    })
+        // Flecha ABAJO: bajar fila y ajustar scroll hacia abajo
+        if (key.downArrow && fila < filas.length - 1) {
+            setFila((f) => f + 1);
+            if (fila + 1 >= offset + filasVisibles) setOffset(fila + 2 - filasVisibles);
+        }
+        // Flecha IZQUIERDA: columna anterior
+        if (key.leftArrow && col > 0) {
+            setCol((c) => c - 1);
+        }
+        // Flecha DERECHA: columna siguiente
+        if (key.rightArrow && col < cabecera.length - 1) {
+            setCol((c) => c + 1);
+        }
+    });
 
      const anchos = cabecera.map((c, i) =>
         Math.max(c.length, ...filas.map((f) => (f[i] || '').length)) + 3
     );
+    
+    // Valor de la celda actualmente seleccionada
+     const valorCelda = filas[fila]?.[col] ?? '';
 
     return (
         <Box flexDirection="column" width={COLUMNAS} paddingX={1} paddingTop={1}>
-            {/* cabecera superior */}
+            {/* Información superior */}
             <Box justifyContent="space-between">
                 <Text bold color={COLORES.titulo}>{archivo || 'editor.csv'}</Text>
                 {cabecera.length > 0 && (
                     <Text color={COLORES.secundario}>{filas.length} filas · {cabecera.length} columnas</Text>
                 )}
             </Box>
+            {/* Muestra el valor de la celda enfocada */}
+            <Box marginY={1}>
+                <Text color={COLORES.secundario}>
+                    Valor › <Text bold color={COLORES.titulo}>{valorCelda}</Text>
+                </Text>
+            </Box>
             {error ? <Text color="red">Error: {error}</Text> : null}
+            {/* Cabecera de la tabla */}
             {cabecera.length > 0 && (
-                <Box marginTop={1}>
+                <Box>
                     <Box width={5} justifyContent="flex-end" paddingRight={1}>
                         <Text bold color={COLORES.secundario}>#</Text>
                     </Box>
                     {cabecera.map((c, i) => (
                         <Box key={i} width={anchos[i]}>
-                            <Text bold color={COLORES.secundario}>{c.toUpperCase()}</Text>
+                            {/* Resalta la columna activa con color de acento */}
+                            <Text bold color={i === col ? COLORES.acento : COLORES.secundario}>
+                                {c.toUpperCase()}
+                            </Text>
                         </Box>
                     ))}
                 </Box>
             )}
-            {/* filas de datos numeradas */}
-            {filas.slice(0, filasVisibles).map((f, i) => (
-                <Box key={i}>
-                    <Box width={5} justifyContent="flex-end" paddingRight={1}>
-                        <Text bold color={COLORES.secundario}>{i + 1}</Text>
-                    </Box>
-                    {f.map((v, ci) => (
-                        <Box key={ci} width={anchos[ci]}>
-                            <Text color={COLORES.titulo}>{v}</Text>
+            {/* Filas con scroll según offset */}
+            {filas.slice(offset, offset + filasVisibles).map((f, i) => {
+                const ri = offset + i;
+                const esFila = ri === fila;
+                return (
+                    <Box key={ri}>
+                        <Box width={5} justifyContent="flex-end" paddingRight={1}>
+                            <Text bold color={esFila ? COLORES.acento : COLORES.secundario}>{ri + 1}</Text>
                         </Box>
-                    ))}
-                </Box>
-            ))}
-            {/* barra inferior */}
-            <Box marginTop={1}>
+                        {f.map((v, ci) => (
+                            <Box key={ci} width={anchos[ci]}>
+                                {/* Celda activa resaltada con fondo claro */}
+                                {esFila && ci === col ? (
+                                    <Text backgroundColor="#eae4d9" color="#161310" bold>{v}</Text>
+                                ) : (
+                                    <Text color={COLORES.titulo}>{v}</Text>
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
+                );
+            })}
+            {/* Barra inferior con posición actual */}
+            <Box marginTop={1} justifyContent="space-between">
                 <Text color={COLORES.secundario}>
                     <Text bold color={COLORES.acento}>Esc</Text> salir
                 </Text>
+                {cabecera.length > 0 && (
+                    <Text color={COLORES.secundario}>Fila {fila + 1} · Columna {col + 1}</Text>
+                )}
             </Box>
         </Box>
     );
 }
-
 
 const app = render(<App />);
 await app.waitUntilExit();
