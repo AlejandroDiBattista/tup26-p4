@@ -27,6 +27,7 @@ function App() {
     const [archivo, setArchivo] = useState('');
 
     const[modoAbrir, setModoAbrir] = useState(false);
+    const [modoGuardar, setModoGuardar] = useState(false);
     const [nombreArchivo, setNombreArchivo] = useState('');
     const [mensaje, setMensaje] = useState('');
 
@@ -61,9 +62,14 @@ function App() {
 
     useInput((tecla, key) => {
 
-        if((tecla === 'a' || tecla === 'A') && !editando){
+        if((tecla === 'a' || tecla === 'A') && !editando && !modoAbrir && !modoGuardar){
             setModoAbrir(true);
             setNombreArchivo('');
+            setMensaje('');
+        } 
+        if((tecla === 'g' || tecla === 'G') && !editando && !modoAbrir && !modoGuardar){
+            setModoGuardar(true);
+            setNombreArchivo(archivo || '');
             setMensaje('');
         }
         if (key.escape) {
@@ -74,12 +80,17 @@ function App() {
                 setModoAbrir(false);
                 setNombreArchivo('');
                 setMensaje('');
+            } else if(modoGuardar){
+                setModoGuardar(false);
+                setNombreArchivo('');
+                setMensaje('');
             }else{
                 exit();
             }
         }
-        if(key.return && modoAbrir){
-            readFile(nombreArchivo, 'utf-8').then((texto) => {
+        if(key.return){
+            if(modoAbrir) {
+                readFile(nombreArchivo, 'utf-8').then((texto) => {
             const filas = texto.trimEnd().split(/\r?\n/);
             const datosCSV = filas.map((fila) => fila.split(','));
 
@@ -90,13 +101,27 @@ function App() {
             setFilaSeleccionada(1);
             setColumnaSeleccionada(0);
             setFilaInicio(1);
+            setMensaje('');
         }).catch((error) => {
             setMensaje(`Error al abrir el archivo: ${error.message}`);
         });
-
         return;
+    }
+
+        if(modoGuardar){
+            const textoCSV = datos.map((fila) => fila.join(',')).join('\n');
+            writeFile(nombreArchivo, textoCSV, 'utf-8')
+                .then(() => {
+                    setArchivo(nombreArchivo);
+                    setModoGuardar(false);
+                    setNombreArchivo('');
+                    setMensaje('Archivo guardado con éxito.');
+                })
+                .catch((error) => {
+                    setMensaje(`Error al guardar el archivo: ${error.message}`);
+                });
+            return;
         }
-        if(key.return){
             if(editando){
                 const nuevosDatos = datos.map((fila) => [...fila]);
                 nuevosDatos[filaSeleccionada][columnaSeleccionada] = valorEditado;
@@ -107,13 +132,12 @@ function App() {
                 setValorEditado(datos[filaSeleccionada] [columnaSeleccionada])
                 setEditando(true);
             }
-        }
-        
+    }
 
         if (key.upArrow && filaSeleccionada > 1) {
         const nuevaFila = filaSeleccionada - 1;
-
         setFilaSeleccionada(nuevaFila);
+        setMensaje('');
 
         if (nuevaFila < filaInicio) {
         setFilaInicio(filaInicio - 1);
@@ -122,8 +146,8 @@ function App() {
 
         if (key.downArrow && filaSeleccionada < datos.length - 1) {
         const nuevaFila = filaSeleccionada + 1;
-
         setFilaSeleccionada(nuevaFila);
+        setMensaje('');
 
         if (nuevaFila >= filaInicio + FILAS_TABLA) {
         setFilaInicio(filaInicio + 1);
@@ -133,12 +157,16 @@ function App() {
 
         if(key.leftArrow && columnaSeleccionada > 0) {
             setColumnaSeleccionada(columnaSeleccionada - 1);
+            setMensaje('');
         }
 
         if(key.rightArrow && datos.length > 0 && columnaSeleccionada < datos[0].length - 1) {
             setColumnaSeleccionada(columnaSeleccionada + 1);
+            setMensaje('');
         }
     });
+
+    
 
 return (
     <Box width={COLUMNAS} height={FILAS} flexDirection="column" paddingX={1} backgroundColor={COLORES.fondo}>
@@ -151,7 +179,7 @@ return (
                 {datos.length > 0 ? datos.length - 1 : 0} filas | {datos.length > 0 ? datos[0].length : 0} columnas
             </Text>
 
-            {!modoAbrir && (
+            {!modoAbrir && !modoGuardar && (
                 <Text bold color={COLORES.acento}>
                     Fila: {filaSeleccionada} | Col: {columnaSeleccionada + 1}
                 </Text>
@@ -161,7 +189,24 @@ return (
         {modoAbrir && (
             <Box flexDirection="column" marginTop={1}>
                 <Text color={COLORES.titulo}>Abrir archivo: </Text>
-                <TextInput value={nombreArchivo} onChange={setNombreArchivo} />
+                <TextInput value={nombreArchivo} onChange={(texto) =>{
+                    if(texto !== nombreArchivo){
+                        setNombreArchivo(texto);
+                        setMensaje('');
+                    }
+                }}/>   
+            </Box>
+        )}
+
+        {modoGuardar && (
+            <Box flexDirection="column" marginTop={1}>
+                <Text color={COLORES.titulo}>Guardar como: </Text>
+                <TextInput value={nombreArchivo} onChange={(texto) =>{
+                    if(texto !== nombreArchivo){
+                        setNombreArchivo(texto);
+                        setMensaje('');
+                    }
+                }}/>
             </Box>
         )}
 
@@ -171,7 +216,7 @@ return (
             </Text>
         )}
 
-        {!modoAbrir && datos.length > 0 && (
+        {!modoAbrir && !modoGuardar && datos.length > 0 && (
             <Box flexDirection="column" flexGrow={1}> 
                 <Box>
                     <Text color={COLORES.secundario}>{'   '}</Text>
@@ -204,7 +249,7 @@ return (
                 })}
             </Box>
         )}
-        {!modoAbrir && (
+        {!modoAbrir && !modoGuardar && (
             <Box marginTop={1}>
                 <Text color={COLORES.secundario}>
                     <Text bold color={COLORES.titulo}>Flechas</Text> mover · <Text bold color={COLORES.titulo}>Enter</Text> editar · <Text bold color={COLORES.titulo}>A</Text> abrir · <Text bold color={COLORES.titulo}>G</Text> guardar · <Text bold color={COLORES.titulo}>Esc</Text> salir
@@ -213,6 +258,7 @@ return (
         )}
     </Box>
 );
+
 }
 
 const app = render(<App />);
