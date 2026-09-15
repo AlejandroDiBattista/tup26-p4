@@ -116,11 +116,12 @@ function App() {
     })
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
+    const [opening, setOpening] = useState(false)
 
     const selectedValue = listData.slice(listStart, listStart + visibleRows)[selectedItem.row][selectedItem.column]
 
     useInput((tecla, key) => {
-        if (!editing && !saving) {
+        if (!editing && !saving && !opening) {
             if (key.upArrow) {
                 handleArrowKey('up')
             }
@@ -140,10 +141,13 @@ function App() {
                 handleSortKey(tecla)
             }
             if (key.return) {
-                hanldeEnterKey()
+                setEditing(true)
             }
             if (tecla.toLowerCase() === 'g') {
-                handleGkey()
+                setSaving(true)
+            }
+            if (tecla.toLowerCase() === 'a') {
+                setOpening(true)
             }
         }
         if (key.escape) {
@@ -197,20 +201,13 @@ function App() {
     }
 
     const handleEscapeKey = (editing, saving) => {
-        if (!editing && !saving) {
+        if (!editing && !saving && !opening) {
             exit()
         }else {
             setEditing(false)
             setSaving(false)
+            setOpening(false)
         }
-    }
-
-    const hanldeEnterKey = () => {
-        setEditing(true)
-    }
-
-    const handleGkey = () => {
-        setSaving(!saving)
     }
 
     const orderTable = (a, b, direc) => {
@@ -255,14 +252,32 @@ function App() {
                             <Box>
                                 <Text bold color={COLORES.acento}>Guardar › </Text>
                                 <TextInput 
-                                defaultValue={'Copia.csv'} 
+                                defaultValue={'copia.csv'} 
                                 onSubmit={(newValue) => {
                                     writeOutput(newValue, serialize(listData, ','))
                                     setSaving(false)
                                 }} 
                                 />
                             </Box>
-                        ) : (  
+                        ) : opening ?
+                            (
+                            <Box>
+                                <Text bold color={COLORES.acento}>Abrir › </Text>
+                                <TextInput 
+                                defaultValue={''} 
+                                onSubmit={(newValue) => {
+                                    const newData = CompleteFileExtraction(newValue)
+                                    if (newData) {
+                                        setListData(newData)
+                                        setListStart(1)
+                                        setSelectedItem({row:0, column:0})
+                                    }
+                                    setOpening(false)
+                                }} 
+                                />
+                            </Box>
+                            )
+                        :(  
                             (<Box>
                                 <Text marginTop={2} color={COLORES.titulo}>Valor: </Text>
                                 {
@@ -350,7 +365,7 @@ function App() {
                 </Box>
                 <Box marginTop={1} flexDirection='row' justifyContent='space-between' width="100%">
                     {
-                        saving || editing ?
+                        saving || editing || opening?
                             (<Text color={COLORES.secundario}>
                                 <Text bold color={COLORES.acento}> Esc </Text> 
                                 Cancelar |
