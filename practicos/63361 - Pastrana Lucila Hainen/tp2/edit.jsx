@@ -78,6 +78,42 @@ function App() {
             return;
         }
 
+<
+
+        if (tecla === '<') {
+            const filasOrdenadas = filasActuales.slice(1);
+
+            filasOrdenadas.sort((a, b) => {
+
+                if (columnaSeleccionada === 2 ||  columnaSeleccionada === 3) {
+                    return Number (a[columnaSeleccionada]) - Number(b[columnaSeleccionada]);
+                } else {
+                    return a[columnaSeleccionada]. localeCompare(b[columnaSeleccionada]);
+                }
+
+            }); 
+        
+            setFilasActuales([filasActuales[0], ... filasOrdenadas]);
+
+            
+    }
+
+    if (tecla === '>') {
+        const filasOrdenadas = filasActuales.slice(1);
+
+        filasOrdenadas.sort((a,b) => {
+            if (columnaSeleccionada === 2 || columnaSeleccionada === 3) {
+                return Number(b[columnaSeleccionada]) - Number(a[columnaSeleccionada]);
+            } else {
+                return b[columnaSeleccionada].localeCompare (a[columnaSeleccionada]);
+            }
+        });
+
+        setFilasActuales([filasActuales[0], ... filasOrdenadas]);
+
+    }
+
+
         if (key.escape) {
             exit();
         }
@@ -113,7 +149,6 @@ function App() {
                 setInicio(inicio + 1);
             }
         }
-
 
 
     }); 
