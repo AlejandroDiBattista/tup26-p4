@@ -85,7 +85,10 @@ if (tecla === 'g' && modo === 'normal') {
     setTexto(archivo);
     setModo('guardando');
 }
-
+if (tecla === 'a' && modo === 'normal') {
+    setTexto('');
+    setModo('abriendo');
+}
 });
 
 
@@ -102,45 +105,84 @@ return (
                 <Text bold color={COLORES.titulo}>{archivo}</Text>
                 <Text color={COLORES.secundario}>{empleados.length} filas · {encabezado.length} columnas</Text>
             </Box>
+            {error !== '' && (<Text color="red">{error}</Text>)}
             {modo === 'normal' && (
-    <Text color={COLORES.secundario}>Valor {'>'} {empleados[fila][columna]}</Text>
-)}
-{modo === 'editar' && (
-    <TextInput
-        defaultValue={texto}
-        onChange={setTexto}
-        onSubmit={(valor) => {
-            const nuevosEmpleados = empleados.map((empleado, i) => {
-                if (i === fila) {
-                    const nuevaFila = [...empleado];
-                    nuevaFila[columna] = valor;
-                    return nuevaFila;
-                }
-                return empleado;
-            });
-            setEmpleados(nuevosEmpleados);
-            setModo('normal');
-        }}
-    />
-)}
-{modo === 'guardando' && (
-    <Box>
-        <Text color={COLORES.secundario}>Guardar {'>'} </Text>
-        <TextInput
-            defaultValue={texto}
-            onChange={setTexto}
-            onSubmit={async (valor) => {
-                let unir = encabezado.join(',')
-                for (const empleado of empleados) {
-                    unir += '\r\n' + empleado.join(',');  
-                }
-                 await writeFile(valor, unir, 'utf-8');
-                    setArchivo(valor);
-                    setModo('normal');
+                <Text color={COLORES.secundario}>Valor {'>'} {empleados[fila][columna]}</Text>
+            )}
+            {modo === 'editar' && (
+                <TextInput
+                    defaultValue={texto}
+                    onChange={setTexto}
+                    onSubmit={(valor) => {
+                        const nuevosEmpleados = empleados.map((empleado, i) => {
+                            if (i === fila) {
+                                const nuevaFila = [...empleado];
+                                nuevaFila[columna] = valor;
+                                return nuevaFila;
+                            }
+                            return empleado;
+                        });
+                        setEmpleados(nuevosEmpleados);
+                        setModo('normal');
+                    }}
+                />
+            )}
+            {modo === 'guardando' && (
+                <Box>
+                    <Text color={COLORES.secundario}>Guardar {'>'} </Text>
+                    <TextInput
+                        defaultValue={texto}
+                        onChange={setTexto}
+                        onSubmit={async (valor) => {
+                            try {
+                            let unir = encabezado.join(',');
+                            for (const empleado of empleados) {
+                                unir += '\r\n' + empleado.join(',');
+                            }
+                            await writeFile(valor, unir, 'utf-8');
+                            setArchivo(valor);
+                            setModo('normal');
+                            }
+                            catch (e) {
+                                setError(`No se pudo guardar el archivo: ${valor}`);
+                                setModo('normal');
+                            }
+                        }}
+                    />
+                </Box>
+            )}
+            {modo === 'abriendo' && (
+                <Box>
+                    <Text color={COLORES.secundario}>Abrir {'>'} </Text>
+                    <TextInput
+                        defaultValue={texto}
+                        onChange={setTexto}
+                        onSubmit={async (valor) => {
+    try {
+        const contenido = await readFile(valor, 'utf-8');
+        const lineas = contenido.split('\r\n');
+        const lineaEncabezado = lineas[0];
+        const datos = lineas.slice(1);
+        const columnas = lineaEncabezado.split(',');
+        let filas = [];
+        for (const dato of datos) {
+            if (dato.trim() === '') continue;
+            filas.push(dato.split(','));
+        }
+        setEncabezado(columnas);
+        setEmpleados(filas);
+        setArchivo(valor);
+        setFila(0);
+        setColumna(0);
+        setModo('normal');
+    } catch (e) {
+        setError(`No se pudo abrir el archivo: ${valor}`);
+        setModo('normal');
+    }
 }}
-        />
-    </Box>
-)}
+                    />
+                </Box>
+            )}
             <Box flexDirection="row">
                 {encabezado.map((columna) => (
                     <Box key={columna} marginRight={2}>
