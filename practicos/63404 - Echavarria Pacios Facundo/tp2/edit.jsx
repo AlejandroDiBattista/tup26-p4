@@ -20,12 +20,6 @@ const COLORES = {
 
 let params = process.argv.slice(2)
 
-//Funcion para mostar errores en consola
-const showConsoleError = (message) => {
-    console.error(`Error: ${message}`)
-    process.exit(1)
-}
-
 //Funcion para validar el nombre del archivo
 const validFileName = (fileName) => {
         let fileType = fileName.split('.').pop().toLowerCase()
@@ -46,7 +40,7 @@ const parseDelimited = (text, delimiter) => {
 
     for (const element of data) {
         if (data[0].length != element.length) {
-            showConsoleError("Todas las filas tiene que tener la misma cantidad de campos.")
+            throw new Error("Todas las filas tiene que tener la misma cantidad de campos.")
         }
     }
 
@@ -58,18 +52,18 @@ const readInput = (inputFile) => {
     try {
         const data = fs.readFileSync(inputFile, 'utf-8')
         if (data.includes('"')) {
-            showConsoleError("El archivo no puede contener comillas")
+            throw new Error("El archivo no puede contener comillas")
         }
         return data
     } catch (error) {
-        showConsoleError(error.message)
+        throw new Error(error.message)
     }
 }
 
 //Funcion completa para manejo del csv
 const CompleteFileExtraction = (fileName) => {
     if (!validFileName(fileName)) {
-        showConsoleError("El tipo de archivo no es .csv")
+        throw new Error("El tipo de archivo no es .csv")
     }
 
     let fileData = readInput(fileName)
@@ -98,7 +92,7 @@ const writeOutput = (outputFile, text) => {
     try {
         fs.writeFileSync(outputFile, text, 'utf-8')
     } catch (error) {
-        showConsoleError(error.message)
+        throw new Error(error.message)
     }
 }
 
@@ -117,8 +111,10 @@ function App() {
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
     const [opening, setOpening] = useState(false)
+    const [currentFileName, setCurrentFIleName] = useState(fileName)
+    const [error, setError] = useState(null)
 
-    const selectedValue = listData.slice(listStart, listStart + visibleRows)[selectedItem.row][selectedItem.column]
+    const selectedValue = listData.slice(listStart, listStart + visibleRows)[selectedItem.row][selectedItem.column] ?? ''
 
     useInput((tecla, key) => {
         if (!editing && !saving && !opening) {
@@ -151,7 +147,7 @@ function App() {
             }
         }
         if (key.escape) {
-            handleEscapeKey(editing, saving)
+            handleEscapeKey()
         }
     })
 
@@ -200,7 +196,7 @@ function App() {
         setListData([listData[0], ...orderedList])
     }
 
-    const handleEscapeKey = (editing, saving) => {
+    const handleEscapeKey = () => {
         if (!editing && !saving && !opening) {
             exit()
         }else {
@@ -243,9 +239,10 @@ function App() {
             >
                 {/* Header */}
                 <Box flexGrow={1} justifyContent="space-between">
-                    <Text bold color={COLORES.titulo}>{fileName}</Text>
+                    <Text bold color={COLORES.titulo}>{currentFileName}</Text>
                     <Text bold color={COLORES.titulo}>{`${listData.length - 1} filas | ${listData[0].length} columnas`}</Text>
                 </Box>
+                {error && <Text color="red" bold>Error: {error}</Text>}
                 <Box flexDirection='row'>
                     {
                         saving ? (
@@ -254,7 +251,12 @@ function App() {
                                 <TextInput 
                                 defaultValue={'copia.csv'} 
                                 onSubmit={(newValue) => {
-                                    writeOutput(newValue, serialize(listData, ','))
+                                    try {
+                                        writeOutput(newValue, serialize(listData, ','))
+                                        setError(null)
+                                    } catch (error) {
+                                        setError(error.message)
+                                    }
                                     setSaving(false)
                                 }} 
                                 />
@@ -266,11 +268,16 @@ function App() {
                                 <TextInput 
                                 defaultValue={''} 
                                 onSubmit={(newValue) => {
-                                    const newData = CompleteFileExtraction(newValue)
-                                    if (newData) {
-                                        setListData(newData)
-                                        setListStart(1)
-                                        setSelectedItem({row:0, column:0})
+                                    try {
+                                        const newData = CompleteFileExtraction(newValue)
+                                        setCurrentFIleName(newValue)
+                                        if (newData) {
+                                            setListData(newData)
+                                            setListStart(1)
+                                            setSelectedItem({row:0, column:0})
+                                        }
+                                    } catch (error) {
+                                        setError(error.message)
                                     }
                                     setOpening(false)
                                 }} 
