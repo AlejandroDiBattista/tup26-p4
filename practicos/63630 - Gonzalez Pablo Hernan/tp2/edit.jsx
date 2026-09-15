@@ -31,25 +31,44 @@ function App() {
 
 
     async function abrirArchivo(nombreDeArchivo) {
-    const contenido = await readFile(nombreDeArchivo, 'utf8');
-    const lineas = contenido.split(/\r?\n/);
-    const primeraLinea = lineas[0].split(',');
-    const restoDeLineas = lineas.slice(1)
-        .filter((linea) => linea !== '')
-        .map((linea) => linea.split(','));
+    try {
+        const contenido = await readFile(nombreDeArchivo, 'utf8');
+        const lineas = contenido.split(/\r?\n/);
+        const primeraLinea = lineas[0].split(',');
+        const restoDeLineas = lineas.slice(1)
+            .filter((linea) => linea !== '')
+            .map((linea) => linea.split(','));
 
-    setEncabezado(primeraLinea);
-    setFilas(restoDeLineas);
-    setNombreArchivo(nombreDeArchivo);
-}
+        setEncabezado(primeraLinea);
+        setFilas(restoDeLineas);
+        setNombreArchivo(nombreDeArchivo);
+        setError(null);
+    } catch (e) {
+        setError('No se pudo abrir el archivo: ' + nombreDeArchivo);
+    }
+    }
+
 
 async function guardarArchivo(nombreDeArchivo) {
-    const lineaEncabezado = encabezado.join(',');
-    const lineasDeDatos = filas.map((fila) => fila.join(','));
-    const contenido = [lineaEncabezado, ...lineasDeDatos].join('\n');
-    await writeFile(nombreDeArchivo, contenido, 'utf8');
-    setNombreArchivo(nombreDeArchivo);
+    try {
+        const lineaEncabezado = encabezado.join(',');
+        const lineasDeDatos = filas.map((fila) => fila.join(','));
+        const contenido = [lineaEncabezado, ...lineasDeDatos].join('\n');
+        await writeFile(nombreDeArchivo, contenido, 'utf8');
+        setNombreArchivo(nombreDeArchivo);
+        setError(null);
+    } catch (e) {
+        setError('No se pudo guardar el archivo: ' + nombreDeArchivo);
+    }
 }
+
+
+function editarCelda(nuevoValor) {
+    const copia = filas.map((fila) => fila.slice());
+    copia[filaSeleccionada][columnaSeleccionada] = nuevoValor;
+    setFilas(copia);
+}
+
 
 
 useEffect(() => {
@@ -58,6 +77,7 @@ useEffect(() => {
         abrirArchivo(archivo);
     }
 }, []);
+
 
 
     useInput((tecla, key) => {
@@ -94,6 +114,12 @@ useEffect(() => {
                     setModo('guardando');
                 }
 
+                if (key.return && modo === 'navegando') {
+                    setModo('editando');
+                }
+
+
+
                 if (tecla === '>') {
                     const copia = filas.slice();
                     copia.sort((filaA, filaB) => filaB[columnaSeleccionada].localeCompare(filaA[columnaSeleccionada]));
@@ -101,6 +127,14 @@ useEffect(() => {
                 }
 
     })
+
+    const filasVisibles = Math.max(FILAS - 10, 5);
+    let inicioVisible = 0;
+    if (filaSeleccionada >= filasVisibles) {
+        inicioVisible = filaSeleccionada - filasVisibles + 1;
+    }
+    const filasAMostrar = filas.slice(inicioVisible, inicioVisible + filasVisibles);
+
 
 
     return (
@@ -128,7 +162,18 @@ useEffect(() => {
                 }}
             />
         </Box>
-    ) : (
+    ) : modo === 'editando' ? (
+    <Box flexDirection="column">
+        <Text>Editar celda:</Text>
+        <TextInput
+            defaultValue={filas[filaSeleccionada]?.[columnaSeleccionada]}
+            onSubmit={(valor) => {
+                editarCelda(valor);
+                setModo('navegando');
+            }}
+        />
+    </Box>
+) : (
 
 
     <>
@@ -138,6 +183,13 @@ useEffect(() => {
             <Text>{nombreArchivo}</Text>
             <Text>{filas.length} filas · {encabezado.length} columnas</Text>
         </Box>
+
+        {error !== null && (
+            <Box marginBottom={1}>
+                <Text color="red">{error}</Text>
+            </Box>
+        )}
+
 
             <Box marginBottom={1}>
                 <Text>Valor {'>'} {filas[filaSeleccionada]?.[columnaSeleccionada]}</Text>
@@ -156,7 +208,10 @@ useEffect(() => {
 
         <Box flexDirection="column" marginBottom={1}>
 
-            {filas.map((fila, indiceFila) => (
+            {filasAMostrar.map((fila, indice) => {
+                const indiceFila = indice + inicioVisible;
+                return (
+
                 <Box key={indiceFila} flexDirection="row">
                     <Box width={4}>
                         <Text>{indiceFila + 1}</Text>
@@ -171,7 +226,9 @@ useEffect(() => {
                     })}
 
                 </Box>
-            ))}
+                );
+            })}
+
         </Box>
 
         <Box flexDirection="row" justifyContent="space-between">
@@ -186,11 +243,12 @@ useEffect(() => {
             <Text color={COLORES.secundario}>Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}</Text>
         </Box>
 
-    </>
-)}
+            </>
+    )}
 
     </Box>
 );
+
 
 }
 
