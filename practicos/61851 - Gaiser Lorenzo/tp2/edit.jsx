@@ -1,10 +1,36 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
+
+const texto = process.argv[2] ? await readFile(process.argv[2], 'utf-8') : '';
+const partes = texto.replaceAll('\r\n', '\n').trim().split('\n');
+
+const cabecera = partes[0] || '';
+
+//solo 5 nombres de columnas 
+const titulosIniciales = cabecera.split(',');
+
+const filas = partes.slice(1) ; 
+
+const datosIniciales = filas.map(fila => fila.split(','));
+
+
+function calcularAnchos(tits, dats) {
+    return tits.map((titulo, i) => {
+        const valores = dats.map(fila => fila[i] || '');
+        const largos = valores.map(v => v.length);
+        return Math.max(titulo.length, ...largos);
+    });
+}
+
+const anchosIniciales = calcularAnchos(titulosIniciales, datosIniciales);
+
+
+
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -17,26 +43,177 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+function comparar(x, y) {
+    const nx = Number(x);
+    const ny = Number(y);
+    if (!isNaN(nx) && !isNaN(ny)) return nx - ny;
+    return x.localeCompare(y);
+}
+
+//
 function App() {
     const {exit} = useApp();
-    
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
+    const [fila, setFila] = useState(0);
+    const [columna, setColumna] = useState(0);
+    const [datos, setDatos] = useState(datosIniciales);
+    const [modo, setModo] = useState('navegando');
+    const [archivo, setArchivo] = useState(process.argv[2] || '');
+    const [error, setError] = useState(''); 
+    const [titulos, setTitulos] = useState(titulosIniciales);
+const [anchos, setAnchos] = useState(anchosIniciales);                      
+        useInput((tecla, key) => {
+              if (key.escape) {
+            if (modo === 'navegando') {
+                exit();
+            } else {
+                setModo('navegando');
+            }
         }
-    })
+        if (key.return) {
+            setModo('editando');
+        }
+        
+        if (key.downArrow) {
+            setFila(Math.min(fila + 1, datos.length - 1));
+        }
+        if (key.upArrow) {
+            setFila(Math.max(fila - 1, 0));
+        }
+        if (key.rightArrow) {
+            setColumna(Math.min(columna + 1, titulos.length - 1));
+        }
+        if (key.leftArrow) {
+            setColumna(Math.max(columna - 1, 0));
+        }
+        if (tecla === '<') {
+            setDatos([...datos].sort((a, b) => comparar(a[columna], b[columna])));
+        }
+        if (tecla === '>') {
+            setDatos([...datos].sort((a, b) => comparar(b[columna], a[columna])));
+        }
+        if (tecla === 'g' || tecla === 'G') {
+            setModo('guardando');
+        }
+        if (tecla === 'a' || tecla === 'A') {
+            setModo('abriendo');
+        }
+    }, {isActive: modo === 'navegando'});
+///aqui 
+
+
+function guardarCelda(valor) {
+    setDatos(datos.map((r, f) =>
+        f === fila ? r.map((c, k) => (k === columna ? valor : c)) : r
+    ));
+    setModo('navegando');
+}
+const visibles = FILAS - 6;
+const inicio = Math.max(0, Math.min(fila - Math.floor(visibles / 2), datos.length - visibles));
+
+
+
+async function guardarArchivo(nombre) {
+    try {
+        const lineas = [titulos.join(','), ...datos.map(r => r.join(','))];
+        await writeFile(nombre, lineas.join('\n') + '\n', 'utf8');
+        setArchivo(nombre);
+        setError('');
+    } catch (e) {
+        setError('No se pudo guardar: ' + e.message);
+    }
+    setModo('navegando');
+}
+
+async function abrirArchivo(nombre) {
+    try {
+        const t = await readFile(nombre, 'utf8');
+        const p = t.replaceAll('\r\n', '\n').trim().split('\n');
+        const tits = p[0].split(',');
+        const dats = p.slice(1).map(l => l.split(','));
+        setTitulos(tits);
+        setDatos(dats);
+        setAnchos(calcularAnchos(tits, dats));
+        setArchivo(nombre);
+        setFila(0);
+        setColumna(0);
+        setError('');
+    } catch (e) {
+        setError('No se pudo abrir: ' + e.message);
+    }
+    setModo('navegando');
+}
+
+
 
     return (
         <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+            <Box width={COLUMNAS} height={FILAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+                <Box flexGrow={1} justifyContent="flex-start" alignItems="flex-start" flexDirection="column">
+
+                    <Box width={COLUMNAS - 2} justifyContent="space-between">
+                        <Text bold color={COLORES.titulo}>{basename(archivo || 'sin archivo')}</Text>
+                        <Text color={COLORES.secundario}>{datos.length} filas · {titulos.length} columnas</Text>
+                    </Box>
+
+                                    <Box width={COLUMNAS - 2}>
+                        {modo === 'guardando' ? (
+                            <>
+                                <Text bold color={COLORES.acento}>Guardar › </Text>
+                                <TextInput defaultValue={archivo} onSubmit={guardarArchivo} />
+                            </>
+                        ) : modo === 'abriendo' ? (
+                            <>
+                                <Text bold color={COLORES.acento}>Abrir › </Text>
+                                <TextInput defaultValue={archivo} onSubmit={abrirArchivo} />
+                            </>
+                        ) : (
+                            <>
+                                <Text color={COLORES.secundario}>Valor › </Text>
+                                <Text color={COLORES.titulo}>{datos[fila][columna]}</Text>
+                            </>
+                        )}
+                    </Box>
+
+                    <Box flexDirection="row" gap={1}>
+                        <Text color={COLORES.titulo} bold>{'#'.padStart(3)}</Text>
+                        {titulos.map((titulo, j) => (
+                            <Text key={j} color={COLORES.titulo} bold>{titulo.toUpperCase().padEnd(anchos[j])}</Text>
+                        ))}
+                    </Box>
+
+                    {datos.slice(inicio, inicio + visibles).map((registro, i) => (
+                        <Box key={i} flexDirection="row" gap={1}>
+                            <Text color={COLORES.secundario}>{String(inicio + i + 1).padStart(3)}</Text>
+                            {registro.map((campo, j) =>
+                                modo === 'editando' && inicio + i === fila && j === columna ? (
+                                    <Box key={j} width={anchos[j]}>
+                                        <TextInput defaultValue={campo} onSubmit={guardarCelda} />
+                                    </Box>
+                                ) : (
+                                    <Text key={j} color={COLORES.titulo} backgroundColor={inicio + i === fila && j === columna ? COLORES.secundario : undefined}>
+                                        {campo.padEnd(anchos[j])}
+                                    </Text>
+                                )
+                            )}
+                        </Box>
+                    ))}
+
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                  <Box width={COLUMNAS - 2} justifyContent="space-between">
+                    <Text color={COLORES.secundario}>
+                        {modo !== 'navegando'
+                            ? <><Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar</>
+                            : <><Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>Esc</Text> salir</>}
+                    </Text>
+                    <Text color={COLORES.secundario}>Fila {fila + 1} · Columna {columna + 1}</Text>
+                </Box>
+                {error ? <Text color="red">{error}</Text> : null}
             </Box>
         </Box>
     );
 }
+//{fila.map((campo, i ) => campo.padEnd(anchos[i])).join(' ')
+
 
 const app = render(<App />);
 await app.waitUntilExit();
