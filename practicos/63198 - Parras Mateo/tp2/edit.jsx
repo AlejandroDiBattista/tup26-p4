@@ -17,6 +17,17 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+
+function parsearCSV (archivo){
+    const lineas= archivo.trim().split("\n")
+    const cabecera= lineas[0].split(",")
+    const filas= lineas.slice(1).map(linea=> linea.split(","))
+    return {cabecera, filas};
+}
+async function leerArchivo(nombreArchivo) {
+    const contenido= await readFile(nombreArchivo, "utf-8")
+    return parsearCSV(contenido)
+}
 function App() {
     const {exit} = useApp();
     
