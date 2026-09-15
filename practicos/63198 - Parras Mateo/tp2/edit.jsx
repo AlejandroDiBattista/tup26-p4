@@ -43,6 +43,23 @@ function calcularAnchos(cabecera, filas) {
     return anchos
 }
 
+function ordenarFilas(filas, columna, ascendente){
+    const copia=[...filas]
+    copia.sort((a, b)=>{
+        const valorA=a[columna]
+        const valorB= b[columna]
+        const numA = Number(valorA)
+        const numB = Number(valorB)
+        let comparacion
+        if (!isNaN(numA) && !isNaN(numB)){
+            comparacion= numA - numB
+        }else{
+            comparacion= valorA.localeCompare(valorB)
+        }
+        return ascendente ? comparacion : -comparacion
+    })
+    return copia 
+}
 const FilaTabla= ({valores, anchos, esCabecera, filaActiva, indiceFila, columnaActiva})=> (
     <Box>
         {
@@ -89,6 +106,12 @@ function App() {
         }
         if (key.rightArrow){
             setColumna(c=> Math.min(datos.cabecera.length - 1, c + 1))
+        }
+        if (tecla==='<'){
+            setDatos(d=> ({...d, filas: ordenarFilas(d.filas, columna, true)}))
+        }
+        if (tecla==='>'){
+            setDatos(d=> ({...d, filas: ordenarFilas(d.filas, columna, false)}))
         }
     })
 
