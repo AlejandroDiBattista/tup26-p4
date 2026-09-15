@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -19,23 +19,108 @@ const COLORES = {
 
 function App() {
     const {exit} = useApp();
-    
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
+    const [empleados, setEmpleados] = useState([]);
+    const [modo, setModo] = useState('normal');
+    const [fila, setFila] = useState(0);
+    const [columna, setColumna] = useState(0);
+    const [texto, setTexto] = useState('');
+    const [archivo, setArchivo] = useState('');
+    const [error, setError] = useState('');
+    const [encabezado, setEncabezado] = useState([]);
 
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+    useEffect(() => {
+    async function cargar(){
+    const contenido = await readFile(process.argv[2], 'utf-8');
+    const lineas = contenido.split('\r\n');
+    const lineaEncabezado = lineas[0];
+    const datos = lineas.slice(1);
+    const columnas = lineaEncabezado.split(',');
+    let filas = []
+    for (const dato of datos) {
+        if (dato.trim() === '') continue;
+        filas.push(dato.split(','));
+    }
+    setEncabezado(columnas);
+    setEmpleados(filas);
+    setArchivo(process.argv[2]);
+    }
+    cargar();
+    }, []);
+
+    useInput((tecla, key) => {
+    if (key.escape) {
+        exit();
+    }
+    if (key.upArrow && fila > 0) {
+    setFila(fila - 1);
+}
+if (key.downArrow && fila < empleados.length - 1) {
+    setFila(fila + 1);
+}
+if (key.leftArrow && columna > 0) {
+    setColumna(columna - 1);
+}
+if (key.rightArrow && columna < encabezado.length - 1) {
+    setColumna(columna + 1);
+}
+if (tecla === '<') {
+    const copia = [...empleados];
+    copia.sort((a, b) => a[columna].localeCompare(b[columna]));
+    setEmpleados(copia);
+}
+if (tecla === '>') {
+    const copia = [...empleados];
+    copia.sort((a, b) => b[columna].localeCompare(a[columna]));
+    setEmpleados(copia);
+}
+    }
+    
+);
+
+
+if (empleados.length === 0) {
+    return <Text>Cargando...</Text>;
+}
+
+
+
+return (
+    <Box width={COLUMNAS} justifyContent="center" alignItems="center">
+        <Box width={COLUMNAS} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+            <Box justifyContent="space-between">
+                <Text bold color={COLORES.titulo}>{archivo}</Text>
+                <Text color={COLORES.secundario}>{empleados.length} filas · {encabezado.length} columnas</Text>
             </Box>
+            <Text color={COLORES.secundario}>Valor {'>'} {empleados[fila][columna]}</Text>
+            <Box flexDirection="row">
+                {encabezado.map((columna) => (
+                    <Box key={columna} marginRight={2}>
+                        <Text>{columna}</Text>
+                    </Box>
+                ))}
+            </Box>
+            {empleados.map((empleado, indice) => (
+                <Box key={empleado[0]} flexDirection="row">
+                    <Box marginRight={2}><Text>{indice + 1}</Text></Box>
+                    {empleado.map((dato, columnaIndice) => {
+                        const seleccionada = indice === fila && columnaIndice === columna;
+                        return (
+                            <Box key={columnaIndice} marginRight={2}>
+                                <Text
+                                    backgroundColor={seleccionada ? COLORES.acento : undefined}
+                                    color={seleccionada ? COLORES.fondo : undefined}
+                                >
+                                    {dato}
+                                </Text>
+                            </Box>
+                        );
+                    })}
+                </Box>
+            ))}
+            <Text color={COLORES.secundario}>Fila {fila + 1} · Columna {columna + 1}</Text>
         </Box>
-    );
+    </Box>
+);
 }
 
 const app = render(<App />);
