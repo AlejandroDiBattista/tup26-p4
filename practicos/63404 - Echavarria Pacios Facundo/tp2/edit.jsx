@@ -98,29 +98,36 @@ function App() {
         row: 0,
         column:0
     })
+    const [editing, setEditing] = useState(false)
+
     const selectedValue = listData.slice(listStart, listStart + visibleRows)[selectedItem.row][selectedItem.column]
 
     useInput((tecla, key) => {
+        if (!editing) {
+            if (key.upArrow) {
+                handleArrowKey('up')
+            }
+            if (key.downArrow) {
+                handleArrowKey('down')
+            }
+            if (key.leftArrow) {
+                handleArrowKey('left')
+            }
+            if (key.rightArrow) {
+                handleArrowKey('right')
+            }
+            if (tecla === '>') {
+                handleSortKey(tecla)
+            }
+            if (tecla === '<') {
+                handleSortKey(tecla)
+            }
+            if (key.return) {
+                hanldeEnterKey()
+            }
+        }
         if (key.escape) {
-            exit();
-        }
-        if (key.upArrow) {
-            handleArrowKey('up')
-        }
-        if (key.downArrow) {
-            handleArrowKey('down')
-        }
-        if (key.leftArrow) {
-            handleArrowKey('left')
-        }
-        if (key.rightArrow) {
-            handleArrowKey('right')
-        }
-        if (tecla === '>') {
-            handleSortKey(tecla)
-        }
-        if (tecla === '<') {
-            handleSortKey(tecla)
+            handleEscapeKey(editing)
         }
     })
 
@@ -168,7 +175,19 @@ function App() {
 
         setListData([listData[0], ...orderedList])
     }
+
+    const handleEscapeKey = (editing) => {
+        if (!editing) {
+            exit()
+        }else {
+            setEditing(!editing)
+        }
+    }
     
+    const hanldeEnterKey = () => {
+        setEditing(!editing)
+    }
+
     const orderTable = (a, b, direc) => {
         const valueA = String(a ?? '')
         const valueB = String(b ?? '')
@@ -203,9 +222,26 @@ function App() {
                 {/* Header */}
                 <Box flexGrow={1} justifyContent="space-between">
                     <Text bold color={COLORES.titulo}>{params[0] ?? ''}</Text>
-                    <Text bold color={COLORES.titulo}>{`${listData.length - 1} filas - ${listData[0].length} columnas`}</Text>
+                    <Text bold color={COLORES.titulo}>{`${listData.length - 1} filas | ${listData[0].length} columnas`}</Text>
                 </Box>
-                    <Text marginTop={2} color={COLORES.titulo}>Valor{`> ${selectedValue}`}</Text>
+                <Box flexDirection='row'>
+                    <Text marginTop={2} color={COLORES.titulo}>Valor: </Text>
+                    {
+                        editing ? (
+                            <TextInput 
+                            defaultValue={selectedValue} 
+                            onSubmit={(nuevoValor) => {
+                                let editedList = [...listData] 
+                                editedList[selectedItem.row + listStart][selectedItem.column] = nuevoValor
+                                setListData([...editedList])
+                                setEditing(false)
+                            }} 
+                            />
+                        ) : (
+                            <Text>{selectedValue}</Text>
+                        )
+                    }
+                </Box>
                 {/* Data Table */}
                 <Box flexDirection='column' marginTop={1}>
                     {/* Encabezados */}
@@ -271,8 +307,15 @@ function App() {
                     })}
                 </Box>
                 <Box marginTop={1} flexDirection='row' justifyContent='space-between' width="100%">
-                    <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-                    <Text color={COLORES.secundario} flexDirection={'end'}>Fila {selectedItem.row + listStart} - Columna {selectedItem.column + 1}</Text>
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}> Esc </Text> 
+                        salir |
+                        <Text bold color={COLORES.acento}> {`< `}</Text> 
+                        ascendente |
+                        <Text bold color={COLORES.acento}> {`> `}</Text> 
+                        descendente
+                    </Text>
+                    <Text color={COLORES.secundario} flexDirection={'end'}>Fila {selectedItem.row + listStart} | Columna {selectedItem.column + 1}</Text>
 
                 </Box>
             </Box>
