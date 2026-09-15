@@ -76,31 +76,80 @@ function parseArgs(args) {
 }
 function readInput(origen) {
     const contenido = fs.readFileSync(origen, "utf8");
-
     return contenido;
 }
 
 function parseDelimited(contenido, delimitador) {
     const lineas = contenido.trimEnd().split(/\r?\n/);
 
-    const filas = lineas.map(linea => linea.split(delimitador));
+    const filas = lineas.map(linea =>
+        linea.split(delimitador)
+    );
 
     return filas;
 }
 
 function sortRows(datos, encabezado, criterios) {
-    const campo = criterios[0];
-
-    const indiceColumna = encabezado.indexOf(campo);
-
     datos.sort((filaA, filaB) => {
-        return filaA[indiceColumna].localeCompare(
-            filaB[indiceColumna]
-        );
+
+        for (const criterio of criterios) {
+            const partes = criterio.split(":");
+
+            const campo = partes[0];
+            const tipo = partes[1] || "alpha";
+            const orden = partes[2] || "asc";
+
+            const indiceColumna = encabezado.indexOf(campo);
+
+            let resultado;
+
+            if (tipo === "num") {
+                const valorA = Number(filaA[indiceColumna]);
+                const valorB = Number(filaB[indiceColumna]);
+
+                resultado = valorA - valorB;
+            } else {
+                const valorA = filaA[indiceColumna];
+                const valorB = filaB[indiceColumna];
+
+                resultado = valorA.localeCompare(valorB);
+            }
+
+            if (orden === "desc") {
+                resultado = resultado * -1;
+            }
+
+            if (resultado !== 0) {
+                return resultado;
+            }
+        }
+
+        return 0;
     });
 
     return datos;
 }
+
+function serialize(encabezado, datos, delimitador) {
+    const filas = [];
+
+    if (encabezado !== null) {
+        filas.push(encabezado.join(delimitador));
+    }
+
+    for (const fila of datos) {
+        filas.push(fila.join(delimitador));
+    }
+
+    return filas.join("\n");
+}
+
+function writeOutput(destino, contenido) {
+    fs.writeFileSync(destino, contenido, "utf8");
+}
+
+
+// EJECUCIÓN PRINCIPAL
 
 const args = process.argv.slice(2);
 
@@ -130,6 +179,19 @@ const datosOrdenados = sortRows(
     config.criterios
 );
 
-console.log("Encabezado:", encabezado);
-console.log("Datos ordenados:", datosOrdenados);
+const textoSalida = serialize(
+    encabezado,
+    datosOrdenados,
+    config.delimitador
+);
+
+writeOutput(
+    config.destino,
+    textoSalida
+);
+
+console.log(
+    "Archivo generado correctamente:",
+    config.destino
+);
 // console.log(HELP);
