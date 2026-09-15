@@ -100,6 +100,11 @@ function App() {
     const [guardando, setGuardando]=useState(false);
     const [nombreGuardar, setNombreGuardar]=useState('');
     const [mensajeEstado, setMensajeEstado]=useState('');
+
+    //controlar el modo abrir archivo
+    const [abriendo, setAbriendo]=useState(false);
+    const [nombreAbrir, setNombreAbrir]=useState('');
+
     //leer y el archivo csv al iniciar el programa
     useEffect(function(){
         async function cargarArchivo(){
@@ -133,6 +138,11 @@ function App() {
             setGuardando(false);
             return;
         }
+        // si estamos abriendo y tocamos escape, se cancela
+        if(key.escape && abriendo){
+            setAbriendo(false);
+            return;
+        }
         //si no estamos editando, y tocamos escape, salimos
         if (key.escape &&!editando) {
             exit();
@@ -146,7 +156,7 @@ function App() {
             return;
         }
         //para que las flechas no muevan la tabla, frenamos aqui
-        if (editando|| guardando) {
+        if (editando|| guardando || abriendo) {
             return;
         }
 
@@ -223,6 +233,13 @@ function App() {
             setMensajeEstado('');
             return;
         }
+        //para abrir con la tecla A
+        if(tecla==='a'||tecla === 'A'){
+            setNombreAbrir('');
+            setAbriendo(true);
+            setMensajeEstado('');
+            return;
+        }
 
     });
     //mostramos solamente 10 filas en pantalla
@@ -230,6 +247,7 @@ function App() {
     //calculamos desde que fila comenzar
     const inicio=Math.max(0,Math.min(filaSeleccionada - Math.floor(FILAS_VISIBLES/2), filas.length - FILAS_VISIBLES));
     const filasVisibles= filas.slice(inicio, inicio + FILAS_VISIBLES);
+    const celdaActiva= (filas[filaSeleccionada] && filas [filaSeleccionada][columnaSeleccionada])|| '';
 
 
     return (
@@ -246,7 +264,7 @@ function App() {
              </Box>
              <Box>
              <Text color= {COLORES.secundario}>
-                posicion: <Text color={COLORES.acento}>FILA {filaSeleccionada + 1}, Col {columnaSeleccionada + 1}</Text>
+                posicion: <Text color={COLORES.acento}>FILA {filaSeleccionada + 1}, Col {columnaSeleccionada + 1}</Text> | Valor:<Text color={COLORES.acento}>"{celdaActiva}"</Text>
              </Text>
             </Box>
             </Box>
@@ -301,7 +319,7 @@ function App() {
                          <Box key={colIndice} width={anchos[colIndice]}
                             backgroundColor={colorFondo}>
                             {/*si es la celda actual y estamos editando, mostramos el input, si no el texto normal*/}
-                            {estaSeleccionada && editando && (
+                            {estaSeleccionada && editando && !abriendo && !guardando &&(
                                 <TextInput value={valorEdicion} onChange={setValorEdicion}
                                 onSubmit={function(nuevoValor){
                                     const nuevasFilas=filas.map(function (r){return [...r];});
@@ -313,10 +331,10 @@ function App() {
                                /> 
                             )}
                             {/*si no estamos editando, se muestra el texto normal*/}
-                            {(!estaSeleccionada || !editando)&& (
-                            <Text bold={negrita} color={colorTexto}>
+                            {(!estaSeleccionada || !editando || abriendo || guardando)&& (
+                            <Text bold={negrita} color={colorTexto} wrap="truncate">
                                 {/*usamos padEnd para rellenar con espacios vacios y limpiar letras viejas*/}
-                                {String(celda).padEnd(anchos[colIndice],' ')}
+                                {String(celda ?? '').replace(/[\r\n]/g,' ').padEnd(anchos[colIndice] ||10,' ')}
                             </Text>
                             )}
                         </Box>
@@ -329,6 +347,39 @@ function App() {
 
             {/* SECCIÓN 4: Barra inferior con la ayuda de teclas disponibles */}
             <Box marginTop={1} flexDirection="column">
+                {/*modo abrir archivo*/}
+                {abriendo && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Abrir archivo: </Text>
+                        <TextInput
+                        value={nombreAbrir}
+                        onChange={setNombreAbrir}
+                        onSubmit={async function(nombreFinal){
+                            try {
+                                const contenido= await readFile(nombreFinal, 'utf-8');
+                                const datos= parseCSV(contenido);
+                                setCabecera(datos.cabecera);
+                                setFilas(datos.filas);
+                                setArchivo(nombreFinal);
+                                setFilaSeleccionada(0);
+                                setColumnaSeleccionada(0);
+                                setAbriendo(false);
+                                setMensajeEstado(`Archivo cargado: ${nombreFinal}`);
+                                setTimeout(function(){
+                                    setMensajeEstado('');
+                                },3000);
+                                
+                            } catch (error) {
+                                setAbriendo(false);
+                                setMensajeEstado(`Error al abrir: ${error.message}`);
+                                setTimeout(function () {
+                                    setMensajeEstado('');
+                                },3000);
+                            }
+                        }}
+                        />
+                        </Box>
+                )}
                 {/*modo guardar archivo*/}
                 {guardando &&(
                     <Box>
@@ -341,23 +392,29 @@ function App() {
                                 setArchivo(nombreFinal);
                                 setGuardando(false);
                                 setMensajeEstado(`Archivo guardado correctamente en ${nombreFinal}`);
+                                setTimeout(function(){
+                                    setMensajeEstado('');
+                                },3000);
                             } catch (error) {
                                 setMensajeEstado(`No se pudo Guardar: ${error.message}`);
+                                setTimeout(function(){
+                                    setMensajeEstado('');
+                                },3000);
                             }
                         }}
                         />
                         </Box>
                 )}
                 {/*si no estamos por guradar, mostramos los atajos normales*/}
-                {!guardando && editando &&(
+                {!abriendo && !guardando && editando &&(
                     <Text color={COLORES.secundario}>
                         <Text bold color={COLORES.acento}>Enter</Text> Guardar | <Text bold color={COLORES.acento}>Esc</Text> Cancelar
                     </Text>
                 )}
                 {/*atajos visibles mientras navegamos por la grilla*/}
-                {!guardando && !editando &&(
+                {!abriendo && !guardando && !editando &&(
                     <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse |<Text bold color={COLORES.acento}>&lt; &gt;</Text> Ordenar | <Text bold color={COLORES.acento}>Enter</Text> Editar |<Text bold color={COLORES.acento}>G</Text> Guardar| <Text bold color={COLORES.acento}>Esc</Text> Salir
+                        <Text bold color={COLORES.acento}>Flechas</Text> Moverse |<Text bold color={COLORES.acento}>&lt; &gt;</Text> Ordenar | <Text bold color={COLORES.acento}>Enter</Text> Editar |<Text bold color={COLORES.acento}>A</Text> Abrir |<Text bold color={COLORES.acento}>G</Text> Guardar| <Text bold color={COLORES.acento}>Esc</Text> Salir
                         </Text>
                 )}
                 {/*mensaje de error*/}
