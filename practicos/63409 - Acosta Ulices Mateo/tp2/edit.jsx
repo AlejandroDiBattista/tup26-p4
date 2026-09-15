@@ -6,87 +6,135 @@ import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
 import {basename} from 'node:path';
 
-const COLUMNAS = process.stdout.columns || 80;
-const FILAS    = process.stdout.rows || 24;
+const ANCHO_TERM = process.stdout.columns || 80
+const ALTO_TERM  = process.stdout.rows || 24
 
-const COLORES = {
-    fondo:     '#161310',
-    borde:     '#726b61',
-    titulo:    '#ede7db',
-    secundario:'#ada79e',
-    acento:    '#edbb64',
-};
-
-function parsearCSV(texto) {
-    const lineas = texto.split(/\r\n|\n/).filter((l) => l.length > 0);
-    const header = lineas[0].split(',');
-    const filas = lineas.slice(1).map((l) => l.split(','));
-    return {header, filas};
+const PALETA = {
+    fondo: '#12181c',
+    linea: '#4d5a63',
+    texto: '#e6e2d3',
+    gris:  '#8f9a9e',
+    marca: '#7fb4ca',
 }
 
-function anchoDeColumnas(datos) {
-    return datos.header.map((titulo, i) => {
-        let ancho = titulo.length;
-        for (const fila of datos.filas) {
-            const valor = fila[i] || '';
-            if (valor.length > ancho) ancho = valor.length;
+function leerCSV(texto) {
+    let renglones = texto.split(/\r\n|\n/)
+    renglones = renglones.filter((r) => r.length > 0)
+    let encabezado = renglones[0].split(',')
+    let filas = []
+    for (let i = 1; i < renglones.length; i++) {
+        filas.push(renglones[i].split(','))
+    }
+    return {encabezado: encabezado, filas: filas}
+}
+
+function calcularAnchos(datos) {
+    let anchos = []
+    for (let col = 0; col < datos.encabezado.length; col++) {
+        let max = datos.encabezado[col].length
+        for (let fila = 0; fila < datos.filas.length; fila++) {
+            let valor = datos.filas[fila][col] || ''
+            if (valor.length > max) max = valor.length
         }
-        return ancho;
-    });
+        anchos.push(max)
+    }
+    return anchos
 }
 
 function App({archivoInicial}) {
-    const {exit} = useApp();
+    const {exit} = useApp()
 
-    const [archivo, setArchivo] = useState(archivoInicial || null);
-    const [datos, setDatos] = useState(null);
-    const [filaSel, setFilaSel] = useState(0);
-    const [colSel, setColSel] = useState(0);
+    let [nombreArchivo, setNombreArchivo] = useState(archivoInicial || null)
+    let [datos, setDatos] = useState(null)
+    let [filaActual, setFilaActual] = useState(0)
+    let [columnaActual, setColumnaActual] = useState(0)
 
     useEffect(() => {
         if (archivoInicial) {
             readFile(archivoInicial, 'utf8').then((texto) => {
-                setDatos(parsearCSV(texto));
-                setArchivo(archivoInicial);
-            });
+                setDatos(leerCSV(texto))
+                setNombreArchivo(archivoInicial)
+            })
         }
-    }, []);
+    }, [])
+
+    function ordenarPor(sentido) {
+        let filas = datos.filas.slice()
+        filas.sort((fila1, fila2) => {
+            let v1 = fila1[columnaActual]
+            let v2 = fila2[columnaActual]
+            let n1 = Number(v1)
+            let n2 = Number(v2)
+            let resultado
+            if (v1 != '' && v2 != '' && !isNaN(n1) && !isNaN(n2)) {
+                resultado = n1 - n2
+            } else {
+                resultado = v1.localeCompare(v2)
+            }
+            return sentido == 'asc' ? resultado : resultado * -1
+        })
+        setDatos({encabezado: datos.encabezado, filas: filas})
+        setFilaActual(0)
+    }
 
     useInput((tecla, key) => {
         if (key.escape) {
-            exit();
-        } else if (!datos) {
-            return;
-        } else if (key.upArrow) {
-            setFilaSel((f) => Math.max(0, f - 1));
-        } else if (key.downArrow) {
-            setFilaSel((f) => Math.min(datos.filas.length - 1, f + 1));
-        } else if (key.leftArrow) {
-            setColSel((c) => Math.max(0, c - 1));
-        } else if (key.rightArrow) {
-            setColSel((c) => Math.min(datos.header.length - 1, c + 1));
+            exit()
+            return
         }
-    });
+        if (!datos) return
 
-    const filasVisibles = Math.max(3, FILAS - 9);
-    let inicio = 0;
-    if (datos && filaSel >= filasVisibles) {
-        inicio = filaSel - filasVisibles + 1;
+        if (tecla == '<') {
+            ordenarPor('asc')
+        } else if (tecla == '>') {
+            ordenarPor('desc')
+        } else if (key.upArrow) {
+            setFilaActual((f) => f > 0 ? f - 1 : 0)
+        } else if (key.downArrow) {
+            setFilaActual((f) => f < datos.filas.length - 1 ? f + 1 : f)
+        } else if (key.leftArrow) {
+            setColumnaActual((c) => c > 0 ? c - 1 : 0)
+        } else if (key.rightArrow) {
+            setColumnaActual((c) => c < datos.encabezado.length - 1 ? c + 1 : c)
+        }
+    })
+
+    let cantidadFilas = ALTO_TERM - 9
+    if (cantidadFilas < 3) cantidadFilas = 3
+    let desde = 0
+    if (datos && filaActual >= cantidadFilas) {
+        desde = filaActual - cantidadFilas + 1
     }
 
-    const anchos = datos ? anchoDeColumnas(datos) : [];
-    const filasAMostrar = datos ? datos.filas.slice(inicio, inicio + filasVisibles) : [];
-    const anchoNumero = datos ? String(datos.filas.length).length : 1;
+    let anchos = datos ? calcularAnchos(datos) : []
+    let esNumerica = []
+    if (datos) {
+        for (let col = 0; col < datos.encabezado.length; col++) {
+            let numerica = true
+            let fila = 0
+            while (fila < datos.filas.length) {
+                let valor = datos.filas[fila][col]
+                if (valor == '' || isNaN(Number(valor))) {
+                    numerica = false
+                    break
+                }
+                fila = fila + 1
+            }
+            esNumerica.push(numerica)
+        }
+    }
+    let filasVisibles = datos ? datos.filas.slice(desde, desde + cantidadFilas) : []
+    let anchoIndice = datos ? String(datos.filas.length).length : 1
 
     return (
-        <Box width={COLUMNAS} flexDirection="column" padding={1}>
+        <Box width={ANCHO_TERM} flexDirection="column" padding={1}>
             {!datos && (
-                <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-                    <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+                <Box width={ANCHO_TERM} height={ALTO_TERM} justifyContent="center" alignItems="center">
+                    <Box width={40} height={10} flexDirection="column" borderStyle="single" borderColor={PALETA.linea} backgroundColor={PALETA.fondo}>
                         <Box flexGrow={1} justifyContent="center" alignItems="center">
-                            <Text bold color={COLORES.titulo}>Editor CSV</Text>
+                            <Text bold color={PALETA.texto}>Editor CSV</Text>
                         </Box>
-                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                        <Text color={PALETA.gris}><Text bold color={PALETA.marca}> Esc</Text> salir</Text>
                     </Box>
                 </Box>
             )}
@@ -94,67 +142,73 @@ function App({archivoInicial}) {
             {datos && (
                 <Box flexDirection="column">
                     <Box justifyContent="space-between">
-                        <Text bold color={COLORES.titulo}>{basename(archivo)}</Text>
-                        <Text color={COLORES.secundario}>{datos.filas.length} filas · {datos.header.length} columnas</Text>
+                        <Text bold color={PALETA.texto}>{basename(nombreArchivo)}</Text>
+                        <Text color={PALETA.gris}>{datos.filas.length} filas · {datos.encabezado.length} columnas</Text>
                     </Box>
 
                     <Box marginTop={1}>
-                        <Text color={COLORES.secundario}>Valor › <Text bold color={COLORES.titulo}>{datos.filas[filaSel][colSel]}</Text></Text>
+                        <Text color={PALETA.gris}>Valor {'>'} <Text bold color={PALETA.texto}>{datos.filas[filaActual][columnaActual]}</Text></Text>
                     </Box>
 
                     <Box marginTop={1} flexDirection="column">
                         <Box>
-                            <Text color={COLORES.secundario}>{' '.repeat(anchoNumero + 1)}</Text>
-                            {datos.header.map((titulo, i) => (
-                                <Text
-                                    key={i}
-                                    bold
-                                    color={i === colSel ? COLORES.fondo : COLORES.acento}
-                                    backgroundColor={i === colSel ? COLORES.acento : undefined}
-                                >
-                                    {' ' + titulo.toUpperCase().padEnd(anchos[i]) + ' '}
-                                </Text>
-                            ))}
+                            <Text color={PALETA.gris}>{' '.repeat(anchoIndice + 1)}</Text>
+                            {datos.encabezado.map((titulo, col) => {
+                                let texto = esNumerica[col] ? titulo.toUpperCase().padStart(anchos[col]) : titulo.toUpperCase().padEnd(anchos[col])
+                                return (
+                                    <Text
+                                        key={col}
+                                        bold
+                                        color={col == columnaActual ? PALETA.fondo : PALETA.marca}
+                                        backgroundColor={col == columnaActual ? PALETA.marca : undefined}
+                                    >
+                                        {' ' + texto + ' '}
+                                    </Text>
+                                )
+                            })}
                         </Box>
-                        {filasAMostrar.map((fila, i) => {
-                            const numeroFila = inicio + i;
-                            const esFilaSel = numeroFila === filaSel;
+                        {filasVisibles.map((fila, i) => {
+                            let numeroFila = desde + i
+                            let filaMarcada = numeroFila == filaActual
                             return (
                                 <Box key={numeroFila}>
                                     <Text
-                                        color={esFilaSel ? COLORES.fondo : COLORES.secundario}
-                                        backgroundColor={esFilaSel ? COLORES.acento : undefined}
+                                        color={filaMarcada ? PALETA.fondo : PALETA.gris}
+                                        backgroundColor={filaMarcada ? PALETA.marca : undefined}
                                     >
-                                        {String(numeroFila + 1).padStart(anchoNumero) + ' '}
+                                        {String(numeroFila + 1).padStart(anchoIndice) + ' '}
                                     </Text>
-                                    {fila.map((valor, c) => {
-                                        const esCeldaSel = esFilaSel && c === colSel;
+                                    {fila.map((valor, col) => {
+                                        let celdaMarcada = filaMarcada && col == columnaActual
+                                        let texto = esNumerica[col] ? valor.padStart(anchos[col]) : valor.padEnd(anchos[col])
                                         return (
                                             <Text
-                                                key={c}
-                                                color={esCeldaSel ? COLORES.fondo : COLORES.titulo}
-                                                backgroundColor={esCeldaSel ? '#ffffff' : undefined}
+                                                key={col}
+                                                color={celdaMarcada ? PALETA.fondo : PALETA.texto}
+                                                backgroundColor={celdaMarcada ? '#f0f0f0' : undefined}
                                             >
-                                                {' ' + valor.padEnd(anchos[c]) + ' '}
+                                                {' ' + texto + ' '}
                                             </Text>
-                                        );
+                                        )
                                     })}
                                 </Box>
-                            );
+                            )
                         })}
                     </Box>
 
                     <Box marginTop={1} justifyContent="space-between">
-                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}>Esc</Text> salir</Text>
-                        <Text color={COLORES.secundario}>Fila {filaSel + 1} · Columna {colSel + 1}</Text>
+                        <Text color={PALETA.gris}>
+                            <Text bold color={PALETA.marca}>{'<'}</Text> asc  <Text bold color={PALETA.marca}>{'>'}</Text> desc  <Text bold color={PALETA.marca}>Esc</Text> salir
+                        </Text>
+                        <Text color={PALETA.gris}>Fila {filaActual + 1} · Columna {columnaActual + 1}</Text>
                     </Box>
                 </Box>
             )}
         </Box>
-    );
+    )
 }
 
-const archivoInicial = process.argv[2];
-const app = render(<App archivoInicial={archivoInicial} />);
-await app.waitUntilExit();
-console.clear();
+const archivoInicial = process.argv[2]
+const app = render(<App archivoInicial={archivoInicial} />)
+await app.waitUntilExit()
+console.clear()
