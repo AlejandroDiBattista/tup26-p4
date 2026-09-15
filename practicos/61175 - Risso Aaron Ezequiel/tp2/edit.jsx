@@ -13,6 +13,7 @@ const NombreArc = process.argv[2] ? basename(ruta) : "No existe Archivo";
 
 
 
+
 const COLORES = {
     fondo:     '#161310',
     borde:     '#726b61',
@@ -62,6 +63,27 @@ function calcularAnchos(header,rows){
  return anchos;
 }
 
+function ordenarFilas (row,indiceC,desc){
+    const valor = row.map(fila => fila[indiceC]);
+    const tipodato = valor.every(valor => !isNaN(Number(valor)));
+
+    return row.slice().sort((a,b)=>{
+        const valorA = a[indiceC];
+        const valorB = b[indiceC];
+        let compara;
+
+        if(tipodato){
+            compara = Number(valorA) - Number(valorB);
+        }
+        else{
+            compara = valorA.localeCompare(valorB);
+        }
+
+        return desc ? -compara : compara;
+    });
+
+    
+}
 
 function App() {
     const {exit} = useApp();
@@ -69,6 +91,8 @@ function App() {
     const anchos = calcularAnchos(contenido.header,contenido.rows);
     const [posicionC, setPosicionC] = useState(0);
     const [posicionF, setPosicionF] = useState(0);
+    const [estado, setEstado] = useState("tabla");
+    const [editar, setEditar] = useState("");
 
     useEffect(() => {
         async function leerArchivo() {
@@ -83,8 +107,13 @@ function App() {
         }
             
     }, []);
+
+    const VentanaLimite = 13;
+    const valorInicial = Math.max(0, Math.min(posicionF -VentanaLimite +1, contenido.rows.length - VentanaLimite));
+    const posicionVer = contenido.rows.slice(valorInicial,valorInicial+VentanaLimite);
     
     useInput((tecla, key) => {
+        if (estado === "tabla") {
         if (key.escape) {
             exit();
         }
@@ -103,6 +132,44 @@ function App() {
 
          if (key.rightArrow){
             setPosicionC(Math.min(contenido.header.length -1, posicionC +1));
+        }
+        if (tecla === "<" || "*"){
+            setContenido({...contenido, rows: ordenarFilas(contenido.rows, posicionC, false)});
+        }
+        if (tecla === ">" || "¿"){
+            setContenido({...contenido, rows: ordenarFilas(contenido.rows, posicionC, true)});
+        }     
+        if (key.return) {
+            setEditar(contenido.rows[posicionF][posicionC]);
+            setEstado("editar")
+        }
+        }
+        else if(estado === "editar"){
+            if(key.escape){
+            setEstado("tabla");
+            }
+
+            if (key.backspace){
+                setEditar(editar.slice(0,-1));
+            }
+
+            else if(key.return){
+                const confirmar = contenido.rows.map((fila, indiceF) => {
+                if(indiceF !== posicionF){
+                    return fila;
+                }
+                return fila.map((campo, indiceC) =>{
+                    if(indiceC === posicionC){
+                        return editar;
+                    }
+                    return campo;
+                });
+              });
+              setContenido({...contenido, rows:confirmar});
+            }
+            else if (tecla){
+                setEditar(editar + tecla);
+            }
         }
     })
 
@@ -128,15 +195,18 @@ function App() {
                     </Box>
                     ))}
                  </Box>
-                 {contenido.rows.slice(0,13).map((fila, indiceF) => (
+                 {posicionVer.map((fila, indiceF) => (
                    <Box key={indiceF}>
                     <Box width={4} marginRight={1}>
-                        <Text> {indiceF + 1} </Text>
+                        <Text> {valorInicial + indiceF + 1} </Text>
                     </Box>
-                    {fila.map((campo, indiceC) => (
-                     <Box key={indiceC} width={anchos[indiceC]} marginRight={1}>
-                        <Text>{campo}</Text>
-                     </Box>))}
+                    {fila.map((campo, indiceC) => {
+                        const posicionA = indiceC === posicionC && valorInicial + indiceF === posicionF;
+                        return (
+                     <Box backgroundColor={indiceC === posicionC && valorInicial + indiceF === posicionF ? "white": undefined} 
+                     key={indiceC} width={anchos[indiceC]} marginRight={1}>
+                        <Text>{posicionA && estado === "editar" ? editar : campo}</Text>
+                     </Box>)})}
                    </Box>
                  ))}
              </Box>
