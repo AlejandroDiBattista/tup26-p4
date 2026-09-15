@@ -3,6 +3,7 @@
 import React, {useState} from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile} from 'node:fs/promises';
+import {TextInput} from '@inkjs/ui';
 
 const ANCHO = process.stdout.columns || 80;
 const ALTO = process.stdout.rows || 24;
@@ -57,6 +58,8 @@ function App({archivo, cabecera, filas: filasIniciales}) {
     const [columna, setColumna] = useState(0);  
     const [inicio, setInicio] = useState(0);    
 
+    const [modo, setModo] = useState('ver');
+
     const visibles = ALTO - 9;
 
     const numericas = cabecera.map((titulo, c) => filas.length > 0 && filas.every(f => esNumero(f[c])));
@@ -92,6 +95,16 @@ function App({archivo, cabecera, filas: filasIniciales}) {
 
     }
 
+    function editar(nuevoValor) {
+
+        const copia = [...filas];
+        copia[fila] = [...copia[fila]];
+        copia[fila][columna] = nuevoValor;
+        setFilas(copia);
+        setModo('ver');
+
+    }
+
     useInput((tecla, key) => {
 
         if (key.escape) exit();
@@ -99,6 +112,8 @@ function App({archivo, cabecera, filas: filasIniciales}) {
         if (key.downArrow) mover(Math.min(filas.length - 1, fila + 1), columna);
         if (key.leftArrow) mover(fila, Math.max(0, columna - 1));
         if (key.rightArrow) mover(fila, Math.min(cabecera.length - 1, columna + 1));
+        if (key.return && filas.length > 0) setModo('editar');
+
 
         if (tecla === '<') {
             setFilas(ordenar(filas, columna, true));
@@ -109,8 +124,14 @@ function App({archivo, cabecera, filas: filasIniciales}) {
             mover(0, columna);
         }
 
-    });
+    }, {isActive: modo === 'ver'});
 
+
+    useInput((tecla, key) => {
+
+        if (key.escape) setModo('ver');
+
+    }, {isActive: modo !== 'ver'});
     const valor = filas.length > 0 ? filas[fila][columna] : '';
     const visto = filas.slice(inicio, inicio + visibles);
 
@@ -130,7 +151,14 @@ function App({archivo, cabecera, filas: filasIniciales}) {
             <Text> </Text>
 
             <Box>
-                <Text color={COLORES.secundario}>Valor › <Text color={COLORES.titulo}>{valor}</Text></Text>
+                {modo === 'ver' ? (
+                    <Text color={COLORES.secundario}>Valor › <Text color={COLORES.titulo}>{valor}</Text></Text>
+                ) : (
+                    <>
+                        <Text bold color={COLORES.acento}>Editar › </Text>
+                        <TextInput defaultValue={valor} onSubmit={editar} />
+                    </>
+                )}
             </Box>
 
             <Text> </Text>
@@ -166,11 +194,19 @@ function App({archivo, cabecera, filas: filasIniciales}) {
             <Box flexGrow={1} />
             <Box>
                 <Box flexGrow={1}>
-                    <Text wrap="truncate-end" color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>{'<'}</Text> izquierda ·{' '}
-                        <Text bold color={COLORES.acento}>{'>'}</Text> derecha ·{' '}
-                        <Text bold color={COLORES.acento}>Esc</Text> salir
-                    </Text>
+                    {modo === 'ver' ? (
+                        <Text wrap="truncate-end" color={COLORES.secundario}>
+                            <Text bold color={COLORES.acento}>Enter</Text> editar ·{' '}
+                            <Text bold color={COLORES.acento}>{'<'}</Text> izquierda ·{' '}
+                            <Text bold color={COLORES.acento}>{'>'}</Text> derecha ·{' '}
+                            <Text bold color={COLORES.acento}>Esc</Text> salir
+                        </Text>
+                    ) : (
+                        <Text wrap="truncate-end" color={COLORES.secundario}>
+                            <Text bold color={COLORES.acento}>Enter</Text> confirmar ·{' '}
+                            <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                        </Text>
+                    )}
                 </Box>
                 <Text wrap="truncate-end" color={COLORES.secundario}>
                     Fila {fila + 1} · Columna {columna + 1}
