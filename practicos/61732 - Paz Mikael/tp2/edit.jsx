@@ -1,38 +1,416 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
-import {render, Box, Text, useInput, useApp} from 'ink';
-import {readFile, writeFile} from 'node:fs/promises';
-import {TextInput} from '@inkjs/ui';
-import {basename} from 'node:path';
+import React, { useState, useEffect } from 'react';
+import { render, Box, Text, useInput, useApp } from 'ink';
+import { readFile, writeFile } from 'node:fs/promises';
+import { TextInput } from '@inkjs/ui';
+import { basename } from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
-const FILAS    = process.stdout.rows || 24;
+const FILAS = process.stdout.rows || 24;
 
 const COLORES = {
-    fondo:     '#161310',
-    borde:     '#726b61',
-    titulo:    '#ede7db',
-    secundario:'#ada79e',
-    acento:    '#edbb64',
+    fondo: '#161310',
+    borde: '#726b61',
+    titulo: '#ede7db',
+    secundario: '#ada79e',
+    acento: '#edbb64',
+    seleccion: '#ffffff',
+    textoSel: '#000000',
+    fondoSel: '#2a2218',
 };
 
+function parseCSV(texto) {
+    const lineas = texto.split(/\r?\n/);
+    if (lineas.length > 0 && lineas[lineas.length - 1] === '') {
+        lineas.pop();
+    }
+    if (lineas.length === 0) {
+        return { headers: [], rows: [] };
+    }
+    const headers = lineas[0].split(',');
+    const rows = lineas.slice(1).map(l => l.split(','));
+    return { headers, rows };
+}
+
+function serializeCSV(headers, rows) {
+    const todas = [headers, ...rows];
+    return todas.map(fila => fila.join(',')).join('\n') + '\n';
+}
+
+function esNumero(valor) {
+    if (typeof valor !== 'string') return false;
+    const limpio = valor.trim();
+    if (limpio === '') return false;
+    return !isNaN(Number(limpio));
+}
+
 function App() {
-    const {exit} = useApp();
-    
+    const { exit } = useApp();
+    const [archivo, setArchivo] = useState('');
+    const [headers, setHeaders] = useState([]);
+    const [rows, setRows] = useState([]);
+    const [selectedRow, setSelectedRow] = useState(0);
+    const [selectedCol, setSelectedCol] = useState(0);
+    const [scrollOffset, setScrollOffset] = useState(0);
+    const [modo, setModo] = useState('normal');
+    const [textoInput, setTextoInput] = useState('');
+    const [error, setError] = useState(null);
+
+    const maxLineasVisibles = Math.min(13, Math.max(FILAS - 10, 8));
+
+    useEffect(() => {
+        const argArchivo = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+        if (argArchivo) {
+            cargarArchivo(argArchivo);
+        }
+    }, []);
+
+    async function cargarArchivo(nombre) {
+        try {
+            const contenido = await readFile(nombre, 'utf-8');
+            const parsed = parseCSV(contenido);
+            setArchivo(nombre);
+            setHeaders(parsed.headers);
+            setRows(parsed.rows);
+            setSelectedRow(0);
+            setSelectedCol(0);
+            setScrollOffset(0);
+            setError(null);
+            setModo('normal');
+        } catch (err) {
+            setError('Error al leer el archivo: ' + nombre);
+            setModo('normal');
+        }
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            const contenido = serializeCSV(headers, rows);
+            await writeFile(nombre, contenido, 'utf-8');
+            setArchivo(nombre);
+            setError(null);
+            setModo('normal');
+        } catch (err) {
+            setError('Error al guardar el archivo: ' + nombre);
+            setModo('normal');
+        }
+    }
+
+    function ordenarColumna(colIndex, ascendente) {
+        setRows(prevRows => {
+            const copia = [...prevRows];
+            const colEsNum = copia.every(r => esNumero(r[colIndex] || ''));
+            copia.sort((a, b) => {
+                const valA = a[colIndex] || '';
+                const valB = b[colIndex] || '';
+                let cmp = 0;
+                if (colEsNum) {
+                    const numA = Number(valA);
+                    const numB = Number(valB);
+                    cmp = numA - numB;
+                } else {
+                    cmp = valA.localeCompare(valB);
+                }
+                return ascendente ? cmp : -cmp;
+            });
+            return copia;
+        });
+    }
+
     useInput((tecla, key) => {
+        if (modo === 'editando') {
+            if (key.escape) {
+                setModo('normal');
+                return;
+            }
+            if (key.return) {
+                setRows(prevRows => {
+                    const nuevas = prevRows.map((fila, r) => {
+                        if (r !== selectedRow) return fila;
+                        const nuevaFila = [...fila];
+                        nuevaFila[selectedCol] = textoInput;
+                        return nuevaFila;
+                    });
+                    return nuevas;
+                });
+                setModo('normal');
+                return;
+            }
+            if (key.backspace || key.delete) {
+                setTextoInput(prev => prev.slice(0, -1));
+                return;
+            }
+            if (tecla && !key.ctrl && !key.meta) {
+                setTextoInput(prev => prev + tecla);
+            }
+            return;
+        }
+
+        if (modo === 'guardando') {
+            if (key.escape) {
+                setModo('normal');
+                return;
+            }
+            if (key.return) {
+                const destino = textoInput.trim() || archivo || 'salida.csv';
+                guardarArchivo(destino);
+                return;
+            }
+            if (key.backspace || key.delete) {
+                setTextoInput(prev => prev.slice(0, -1));
+                return;
+            }
+            if (tecla && !key.ctrl && !key.meta) {
+                setTextoInput(prev => prev + tecla);
+            }
+            return;
+        }
+
+        if (modo === 'abriendo') {
+            if (key.escape) {
+                setModo('normal');
+                return;
+            }
+            if (key.return) {
+                const destino = textoInput.trim();
+                if (destino) {
+                    cargarArchivo(destino);
+                } else {
+                    setModo('normal');
+                }
+                return;
+            }
+            if (key.backspace || key.delete) {
+                setTextoInput(prev => prev.slice(0, -1));
+                return;
+            }
+            if (tecla && !key.ctrl && !key.meta) {
+                setTextoInput(prev => prev + tecla);
+            }
+            return;
+        }
+
         if (key.escape) {
             exit();
+            return;
         }
-    })
+
+        if (tecla === 'a' || tecla === 'A') {
+            setError(null);
+            setModo('abriendo');
+            setTextoInput('');
+            return;
+        }
+
+        if (tecla === 'g' || tecla === 'G') {
+            setError(null);
+            setModo('guardando');
+            setTextoInput(archivo ? basename(archivo) : 'datos.csv');
+            return;
+        }
+
+        if (rows.length === 0 || headers.length === 0) {
+            return;
+        }
+
+        if (key.return) {
+            setError(null);
+            setModo('editando');
+            setTextoInput(rows[selectedRow]?.[selectedCol] || '');
+            return;
+        }
+
+        if (tecla === '<') {
+            ordenarColumna(selectedCol, true);
+            return;
+        }
+
+        if (tecla === '>') {
+            ordenarColumna(selectedCol, false);
+            return;
+        }
+
+        if (key.upArrow) {
+            setSelectedRow(prevRow => {
+                const nuevaFila = Math.max(0, prevRow - 1);
+                setScrollOffset(prevOffset => {
+                    if (nuevaFila < prevOffset) {
+                        return nuevaFila;
+                    }
+                    return prevOffset;
+                });
+                return nuevaFila;
+            });
+        }
+
+        if (key.downArrow) {
+            setSelectedRow(prevRow => {
+                const nuevaFila = Math.min(rows.length - 1, prevRow + 1);
+                setScrollOffset(prevOffset => {
+                    if (nuevaFila >= prevOffset + maxLineasVisibles) {
+                        return nuevaFila - maxLineasVisibles + 1;
+                    }
+                    return prevOffset;
+                });
+                return nuevaFila;
+            });
+        }
+
+        if (key.leftArrow) {
+            setSelectedCol(prevCol => Math.max(0, prevCol - 1));
+        }
+
+        if (key.rightArrow) {
+            setSelectedCol(prevCol => Math.min(headers.length - 1, prevCol + 1));
+        }
+    }, { isActive: Boolean(process.stdin.isTTY) });
+
+    const colWidths = headers.map((h, colIndex) => {
+        let max = h.length;
+        for (let r = 0; r < rows.length; r++) {
+            const val = rows[r][colIndex] || '';
+            if (val.length > max) {
+                max = val.length;
+            }
+        }
+        return Math.max(max + 2, 8);
+    });
+
+    const isColNumeric = headers.map((_, colIndex) => {
+        if (rows.length === 0) return false;
+        return rows.every(r => esNumero(r[colIndex] || ''));
+    });
+
+    const visibleRows = rows.slice(scrollOffset, scrollOffset + maxLineasVisibles);
+    const valorCelda = rows[selectedRow]?.[selectedCol] ?? '';
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" paddingX={2} paddingY={1}>
+            <Box justifyContent="space-between">
+                <Text bold color={COLORES.titulo}>{archivo ? basename(archivo) : 'Sin archivo'}</Text>
+                <Text color={COLORES.secundario}>{rows.length} filas · {headers.length} columnas</Text>
+            </Box>
+
+            <Box marginY={1}>
+                {modo === 'guardando' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Guardar › </Text>
+                        <Text color={COLORES.titulo}>{textoInput}▌</Text>
+                    </Box>
+                )}
+                {modo === 'abriendo' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Abrir › </Text>
+                        <Text color={COLORES.titulo}>{textoInput}▌</Text>
+                    </Box>
+                )}
+                {modo === 'editando' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Editar › </Text>
+                        <Text color={COLORES.titulo}>{textoInput}▌</Text>
+                    </Box>
+                )}
+                {modo === 'normal' && (
+                    <Box>
+                        <Text color={COLORES.secundario}>Valor › </Text>
+                        <Text bold color={COLORES.titulo}>{valorCelda}</Text>
+                    </Box>
+                )}
+            </Box>
+
+            {error && (
+                <Box marginBottom={1}>
+                    <Text color="red">{error}</Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+            )}
+
+            <Box flexDirection="column" flexGrow={1}>
+                {headers.length > 0 && (
+                    <Box marginBottom={1}>
+                        <Box width={5} justifyContent="flex-end">
+                            <Text color={COLORES.secundario}>#  </Text>
+                        </Box>
+                        {headers.map((h, i) => {
+                            const isSelected = i === selectedCol;
+                            const ancho = colWidths[i];
+                            const nombreCol = h.toUpperCase();
+                            return (
+                                <Box key={i} width={ancho}>
+                                    <Text
+                                        bold={isSelected}
+                                        color={isSelected ? COLORES.acento : COLORES.secundario}
+                                        backgroundColor={isSelected ? COLORES.fondoSel : undefined}
+                                    >
+                                        {isColNumeric[i] ? nombreCol.padStart(ancho - 1) + ' ' : nombreCol.padEnd(ancho)}
+                                    </Text>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                )}
+
+                {visibleRows.map((fila, indexRelativo) => {
+                    const indiceFila = scrollOffset + indexRelativo;
+                    const esFilaSeleccionada = indiceFila === selectedRow;
+
+                    return (
+                        <Box key={indiceFila}>
+                            <Box width={5} justifyContent="flex-end">
+                                <Text
+                                    bold={esFilaSeleccionada}
+                                    color={esFilaSeleccionada ? COLORES.acento : COLORES.secundario}
+                                    backgroundColor={esFilaSeleccionada ? COLORES.fondoSel : undefined}
+                                >
+                                    {String(indiceFila + 1).padStart(3)}
+                                </Text>
+                            </Box>
+
+                            {headers.map((_, colIndex) => {
+                                const esCeldaSeleccionada = esFilaSeleccionada && colIndex === selectedCol;
+                                const ancho = colWidths[colIndex];
+                                const valor = fila[colIndex] || '';
+                                const formateado = isColNumeric[colIndex]
+                                    ? valor.padStart(ancho - 1) + ' '
+                                    : valor.padEnd(ancho);
+
+                                return (
+                                    <Box key={colIndex} width={ancho}>
+                                        <Text
+                                            color={esCeldaSeleccionada ? COLORES.textoSel : COLORES.titulo}
+                                            backgroundColor={esCeldaSeleccionada ? COLORES.seleccion : undefined}
+                                        >
+                                            {formateado}
+                                        </Text>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    );
+                })}
+            </Box>
+
+            <Box justifyContent="space-between" marginTop={1}>
+                {modo === 'guardando' ? (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> guardar · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                ) : modo === 'abriendo' ? (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> abrir · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                ) : modo === 'editando' ? (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                    </Text>
+                ) : (
+                    <Text color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>&lt;</Text> ascendente · <Text bold color={COLORES.acento}>&gt;</Text> descendente · <Text bold color={COLORES.acento}>Esc</Text> salir
+                    </Text>
+                )}
+                <Text color={COLORES.secundario}>
+                    Fila {rows.length > 0 ? selectedRow + 1 : 0} · Columna {headers.length > 0 ? selectedCol + 1 : 0}
+                </Text>
             </Box>
         </Box>
     );
