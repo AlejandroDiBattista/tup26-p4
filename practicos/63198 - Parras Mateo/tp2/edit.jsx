@@ -43,11 +43,11 @@ function calcularAnchos(cabecera, filas) {
     return anchos
 }
 
-const FilaTabla= ({valores, anchos, esCabecera, filaActiva, indiceFila})=> (
+const FilaTabla= ({valores, anchos, esCabecera, filaActiva, indiceFila, columnaActiva})=> (
     <Box>
         {
             valores.map((valor, i)=>{
-                const seleccionada= !esCabecera && indiceFila === filaActiva
+                const seleccionada= !esCabecera && indiceFila === filaActiva && i=== columnaActiva
                 return (
                     <Box key={i} width={anchos[i]} backgroundColor={seleccionada ? COLORES.acento : undefined}>
                         <Text bold={esCabecera} color={esCabecera ? COLORES.acento : (seleccionada ? COLORES.fondo : COLORES.secundario)}>
@@ -101,6 +101,7 @@ function App() {
     }
 
     const anchos= calcularAnchos(datos.cabecera, datos.filas);
+    const valorSeleccionado= datos.filas[fila][columna]
 
     return (
         <Box width={COLUMNAS} height={FILAS} flexDirection="column" padding={1}>
@@ -108,10 +109,13 @@ function App() {
                 <Text bold color={COLORES.titulo}>{nombreArchivo}</Text>
                 <Text color={COLORES.secundario}>{datos.filas.length} filas · {datos.cabecera.length} columnas</Text>
             </Box>
+            <Box marginTop={1}>
+                <Text color={COLORES.secundario}>Valor ' <Text bold color={COLORES.titulo}>valorSeleccionado</Text></Text>
+            </Box>
             <Box marginTop={1} flexDirection="column">
                 <FilaTabla valores={datos.cabecera} anchos={anchos} esCabecera={true} />
                 {datos.filas.map((valores, i) => (
-                    <FilaTabla key={i} valores={valores} anchos={anchos} esCabecera={false} filaActiva={fila} indiceFila={i} />
+                    <FilaTabla key={i} valores={valores} anchos={anchos} esCabecera={false} filaActiva={fila} indiceFila={i} columnaActiva={columna} />
                 ))}
             </Box>
             <Box marginTop={1}>
