@@ -7,7 +7,6 @@ import {readFile} from 'node:fs/promises';
 const ANCHO = process.stdout.columns || 80;
 const ALTO = process.stdout.rows || 24;
 
-
 const COLORES = {
     fondo:      '#161310',
     borde:      '#726b61',
@@ -27,40 +26,55 @@ function leerCsv(texto) {
 
 }
 
-
 function esNumero(texto) {
+
     return texto.trim() !== '' && !isNaN(Number(texto));
 }
 
 
-function App({archivo, cabecera, filas}) {
+function ordenar(filas, columna, ascendente) {
+
+    const copia = [...filas];
+    copia.sort((a, b) => {
+        let resultado;
+        if (esNumero(a[columna]) && esNumero(b[columna])) {
+            resultado = Number(a[columna]) - Number(b[columna]);
+        } else {
+            resultado = a[columna].localeCompare(b[columna]);
+        }
+        return ascendente ? resultado : -resultado;
+    });
+
+    return copia;
+
+}
+
+function App({archivo, cabecera, filas: filasIniciales}) {
 
     const {exit} = useApp();
+    const [filas, setFilas] = useState(filasIniciales);
     const [fila, setFila] = useState(0);        
     const [columna, setColumna] = useState(0);  
     const [inicio, setInicio] = useState(0);    
 
     const visibles = ALTO - 9;
+
     const numericas = cabecera.map((titulo, c) => filas.length > 0 && filas.every(f => esNumero(f[c])));
 
     function textoDeCelda(valor, c) {
-
         if (numericas[c] && esNumero(valor)) return Number(valor).toLocaleString('es-AR');
         return valor;
-
     }
 
-    const anchos = cabecera.map((titulo, c) => {
 
+    const anchos = cabecera.map((titulo, c) => {
         let ancho = titulo.length;
         for (const f of filas) {
             ancho = Math.max(ancho, textoDeCelda(f[c], c).length);
-
         }
         return ancho;
+
     });
-
-
 
     function alinear(texto, c) {
 
@@ -69,15 +83,14 @@ function App({archivo, cabecera, filas}) {
 
     }
 
-
     function mover(nuevaFila, nuevaColumna) {
 
         setFila(nuevaFila);
         setColumna(nuevaColumna);
         if (nuevaFila < inicio) setInicio(nuevaFila);
         if (nuevaFila >= inicio + visibles) setInicio(nuevaFila - visibles + 1);
-    }
 
+    }
 
     useInput((tecla, key) => {
 
@@ -86,15 +99,24 @@ function App({archivo, cabecera, filas}) {
         if (key.downArrow) mover(Math.min(filas.length - 1, fila + 1), columna);
         if (key.leftArrow) mover(fila, Math.max(0, columna - 1));
         if (key.rightArrow) mover(fila, Math.min(cabecera.length - 1, columna + 1));
-    });
 
+        if (tecla === '<') {
+            setFilas(ordenar(filas, columna, true));
+            mover(0, columna);
+        }
+        if (tecla === '>') {
+            setFilas(ordenar(filas, columna, false));
+            mover(0, columna);
+        }
+
+    });
 
     const valor = filas.length > 0 ? filas[fila][columna] : '';
     const visto = filas.slice(inicio, inicio + visibles);
 
-    
-    return (
 
+
+    return (
         <Box width={ANCHO} height={ALTO} flexDirection="column" paddingX={1}
              borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
 
@@ -145,6 +167,8 @@ function App({archivo, cabecera, filas}) {
             <Box>
                 <Box flexGrow={1}>
                     <Text wrap="truncate-end" color={COLORES.secundario}>
+                        <Text bold color={COLORES.acento}>{'<'}</Text> izquierda ·{' '}
+                        <Text bold color={COLORES.acento}>{'>'}</Text> derecha ·{' '}
                         <Text bold color={COLORES.acento}>Esc</Text> salir
                     </Text>
                 </Box>
@@ -154,7 +178,6 @@ function App({archivo, cabecera, filas}) {
             </Box>
         </Box>
     );
-
 }
 
 const nombre = process.argv[2];
@@ -164,4 +187,3 @@ const app = render(<App archivo={nombre} cabecera={datos.cabecera} filas={datos.
 await app.waitUntilExit();
 
 console.clear();
-
