@@ -30,39 +30,45 @@ function App() {
     const [error, setError] = useState(null);
 
 
-    useEffect(() => {
-    const archivo = process.argv[2];
-    setNombreArchivo(archivo);
-
-    async function cargar() {
-
-        if(archivo != undefined){
-
-        const contenido = await readFile(archivo, 'utf8')
-        
-        const lineas = contenido.split(/\r?\n/);
-        const primeraLinea = lineas[0].split(',');
-        const restoDeLineas = lineas.slice(1)
+    async function abrirArchivo(nombreDeArchivo) {
+    const contenido = await readFile(nombreDeArchivo, 'utf8');
+    const lineas = contenido.split(/\r?\n/);
+    const primeraLinea = lineas[0].split(',');
+    const restoDeLineas = lineas.slice(1)
         .filter((linea) => linea !== '')
         .map((linea) => linea.split(','));
 
+    setEncabezado(primeraLinea);
+    setFilas(restoDeLineas);
+    setNombreArchivo(nombreDeArchivo);
+}
 
-        setEncabezado(primeraLinea);
-        setFilas(restoDeLineas);
+async function guardarArchivo(nombreDeArchivo) {
+    const lineaEncabezado = encabezado.join(',');
+    const lineasDeDatos = filas.map((fila) => fila.join(','));
+    const contenido = [lineaEncabezado, ...lineasDeDatos].join('\n');
+    await writeFile(nombreDeArchivo, contenido, 'utf8');
+    setNombreArchivo(nombreDeArchivo);
+}
 
 
-        }
-
+useEffect(() => {
+    const archivo = process.argv[2];
+    if (archivo !== undefined) {
+        abrirArchivo(archivo);
     }
-    cargar();
-
-    }, []);
+}, []);
 
 
     useInput((tecla, key) => {
         if (key.escape) {
-            exit();
+            if (modo === 'navegando') {
+                exit();
+            } else {
+                setModo('navegando');
+            }
         }
+
         if (key.downArrow) {
             setFilaSeleccionada(Math.min(filaSeleccionada + 1, filas.length - 1));
         }
@@ -80,6 +86,14 @@ function App() {
                     copia.sort((filaA, filaB) => filaA[columnaSeleccionada].localeCompare(filaB[columnaSeleccionada]));
                     setFilas(copia);
                 }
+                if (tecla === 'a' && modo === 'navegando') {
+                    setModo('abriendo');
+                }
+
+                if (tecla === 'g' && modo === 'navegando') {
+                    setModo('guardando');
+                }
+
                 if (tecla === '>') {
                     const copia = filas.slice();
                     copia.sort((filaA, filaB) => filaB[columnaSeleccionada].localeCompare(filaA[columnaSeleccionada]));
@@ -91,6 +105,34 @@ function App() {
 
     return (
     <Box flexDirection="column" width={120} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+
+        {modo === 'abriendo' ? (
+    <Box flexDirection="column">
+        <Text>Abrir archivo:</Text>
+        <TextInput
+            placeholder="nombre-de-archivo.csv"
+            onSubmit={(valor) => {
+                abrirArchivo(valor);
+                setModo('navegando');
+            }}
+        />
+    </Box>
+    ) : modo === 'guardando' ? (
+        <Box flexDirection="column">
+            <Text>Guardar archivo:</Text>
+            <TextInput
+                placeholder={nombreArchivo ?? 'nombre-de-archivo.csv'}
+                onSubmit={(valor) => {
+                    guardarArchivo(valor);
+                    setModo('navegando');
+                }}
+            />
+        </Box>
+    ) : (
+
+
+    <>
+
 
         <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
             <Text>{nombreArchivo}</Text>
@@ -143,6 +185,9 @@ function App() {
             </Text>
             <Text color={COLORES.secundario}>Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}</Text>
         </Box>
+
+    </>
+)}
 
     </Box>
 );
