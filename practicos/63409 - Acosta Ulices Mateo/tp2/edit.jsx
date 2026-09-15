@@ -28,6 +28,14 @@ function leerCSV(texto) {
     return {encabezado: encabezado, filas: filas}
 }
 
+function armarCSV(datos) {
+    let renglones = [datos.encabezado.join(',')]
+    for (let i = 0; i < datos.filas.length; i++) {
+        renglones.push(datos.filas[i].join(','))
+    }
+    return renglones.join('\n') + '\n'
+}
+
 function calcularAnchos(datos) {
     let anchos = []
     for (let col = 0; col < datos.encabezado.length; col++) {
@@ -48,16 +56,41 @@ function App({archivoInicial}) {
     let [datos, setDatos] = useState(null)
     let [filaActual, setFilaActual] = useState(0)
     let [columnaActual, setColumnaActual] = useState(0)
-    let [pantalla, setPantalla] = useState('normal')
+    let [pantalla, setPantalla] = useState(archivoInicial ? 'cargando' : 'abrir')
+    let [mensajeError, setMensajeError] = useState(null)
 
     useEffect(() => {
         if (archivoInicial) {
-            readFile(archivoInicial, 'utf8').then((texto) => {
-                setDatos(leerCSV(texto))
-                setNombreArchivo(archivoInicial)
-            })
+            abrirArchivo(archivoInicial)
         }
     }, [])
+
+    async function abrirArchivo(nombre) {
+        try {
+            let texto = await readFile(nombre, 'utf8')
+            setDatos(leerCSV(texto))
+            setNombreArchivo(nombre)
+            setFilaActual(0)
+            setColumnaActual(0)
+            setPantalla('normal')
+            setMensajeError(null)
+        } catch (e) {
+            setMensajeError('No pude abrir "' + nombre + '"')
+            setPantalla('abrir')
+        }
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            await writeFile(nombre, armarCSV(datos), 'utf8')
+            setNombreArchivo(nombre)
+            setPantalla('normal')
+            setMensajeError(null)
+        } catch (e) {
+            setMensajeError('No pude guardar "' + nombre + '"')
+            setPantalla('guardar')
+        }
+    }
 
     function cambiarValor(valorNuevo) {
         let filas = []
@@ -91,7 +124,12 @@ function App({archivoInicial}) {
     useInput((tecla, key) => {
         if (pantalla != 'normal') {
             if (key.escape) {
-                setPantalla('normal')
+                if (datos) {
+                    setPantalla('normal')
+                    setMensajeError(null)
+                } else {
+                    exit()
+                }
             }
             return
         }
@@ -102,7 +140,11 @@ function App({archivoInicial}) {
         }
         if (!datos) return
 
-        if (key.return) {
+        if (tecla == 'a' || tecla == 'A') {
+            setPantalla('abrir')
+        } else if (tecla == 'g' || tecla == 'G') {
+            setPantalla('guardar')
+        } else if (key.return) {
             setPantalla('editar')
         } else if (tecla == '<') {
             ordenarPor('asc')
@@ -148,98 +190,108 @@ function App({archivoInicial}) {
 
     return (
         <Box width={ANCHO_TERM} flexDirection="column" padding={1}>
-            {!datos && (
-                <Box width={ANCHO_TERM} height={ALTO_TERM} justifyContent="center" alignItems="center">
-                    <Box width={40} height={10} flexDirection="column" borderStyle="single" borderColor={PALETA.linea} backgroundColor={PALETA.fondo}>
-                        <Box flexGrow={1} justifyContent="center" alignItems="center">
-                            <Text bold color={PALETA.texto}>Editor CSV</Text>
-                        </Box>
-                        <Text color={PALETA.gris}><Text bold color={PALETA.marca}> Esc</Text> salir</Text>
+            <Box justifyContent="space-between">
+                <Text bold color={PALETA.texto}>{nombreArchivo ? basename(nombreArchivo) : 'Editor CSV'}</Text>
+                {datos && (
+                    <Text color={PALETA.gris}>{datos.filas.length} filas · {datos.encabezado.length} columnas</Text>
+                )}
+            </Box>
+
+            <Box marginTop={1}>
+                {pantalla == 'cargando' && (
+                    <Text color={PALETA.gris}>Abriendo {archivoInicial}...</Text>
+                )}
+                {pantalla == 'abrir' && (
+                    <Box>
+                        <Text color={PALETA.marca} bold>Abrir {'>'} </Text>
+                        <TextInput placeholder="nombre del archivo" onSubmit={abrirArchivo} />
                     </Box>
+                )}
+                {pantalla == 'guardar' && (
+                    <Box>
+                        <Text color={PALETA.marca} bold>Guardar {'>'} </Text>
+                        <TextInput defaultValue={nombreArchivo || ''} onSubmit={guardarArchivo} />
+                    </Box>
+                )}
+                {pantalla == 'editar' && (
+                    <Box>
+                        <Text color={PALETA.marca} bold>Editar {'>'} </Text>
+                        <TextInput defaultValue={datos.filas[filaActual][columnaActual]} onSubmit={cambiarValor} />
+                    </Box>
+                )}
+                {pantalla == 'normal' && datos && (
+                    <Text color={PALETA.gris}>Valor {'>'} <Text bold color={PALETA.texto}>{datos.filas[filaActual][columnaActual]}</Text></Text>
+                )}
+            </Box>
+
+            {mensajeError && (
+                <Box marginTop={1}>
+                    <Text color="red">{mensajeError}</Text>
                 </Box>
             )}
 
             {datos && (
-                <Box flexDirection="column">
-                    <Box justifyContent="space-between">
-                        <Text bold color={PALETA.texto}>{basename(nombreArchivo)}</Text>
-                        <Text color={PALETA.gris}>{datos.filas.length} filas · {datos.encabezado.length} columnas</Text>
-                    </Box>
-
-                    <Box marginTop={1}>
-                        {pantalla == 'editar' && (
-                            <Box>
-                                <Text color={PALETA.marca} bold>Editar {'>'} </Text>
-                                <TextInput defaultValue={datos.filas[filaActual][columnaActual]} onSubmit={cambiarValor} />
-                            </Box>
-                        )}
-                        {pantalla == 'normal' && (
-                            <Text color={PALETA.gris}>Valor {'>'} <Text bold color={PALETA.texto}>{datos.filas[filaActual][columnaActual]}</Text></Text>
-                        )}
-                    </Box>
-
-                    <Box marginTop={1} flexDirection="column">
-                        <Box>
-                            <Text color={PALETA.gris}>{' '.repeat(anchoIndice + 1)}</Text>
-                            {datos.encabezado.map((titulo, col) => {
-                                let texto = esNumerica[col] ? titulo.toUpperCase().padStart(anchos[col]) : titulo.toUpperCase().padEnd(anchos[col])
-                                return (
-                                    <Text
-                                        key={col}
-                                        bold
-                                        color={col == columnaActual ? PALETA.fondo : PALETA.marca}
-                                        backgroundColor={col == columnaActual ? PALETA.marca : undefined}
-                                    >
-                                        {' ' + texto + ' '}
-                                    </Text>
-                                )
-                            })}
-                        </Box>
-                        {filasVisibles.map((fila, i) => {
-                            let numeroFila = desde + i
-                            let filaMarcada = numeroFila == filaActual
+                <Box marginTop={1} flexDirection="column">
+                    <Box>
+                        <Text color={PALETA.gris}>{' '.repeat(anchoIndice + 1)}</Text>
+                        {datos.encabezado.map((titulo, col) => {
+                            let texto = esNumerica[col] ? titulo.toUpperCase().padStart(anchos[col]) : titulo.toUpperCase().padEnd(anchos[col])
                             return (
-                                <Box key={numeroFila}>
-                                    <Text
-                                        color={filaMarcada ? PALETA.fondo : PALETA.gris}
-                                        backgroundColor={filaMarcada ? PALETA.marca : undefined}
-                                    >
-                                        {String(numeroFila + 1).padStart(anchoIndice) + ' '}
-                                    </Text>
-                                    {fila.map((valor, col) => {
-                                        let celdaMarcada = filaMarcada && col == columnaActual
-                                        let texto = esNumerica[col] ? valor.padStart(anchos[col]) : valor.padEnd(anchos[col])
-                                        return (
-                                            <Text
-                                                key={col}
-                                                color={celdaMarcada ? PALETA.fondo : PALETA.texto}
-                                                backgroundColor={celdaMarcada ? '#f0f0f0' : undefined}
-                                            >
-                                                {' ' + texto + ' '}
-                                            </Text>
-                                        )
-                                    })}
-                                </Box>
+                                <Text
+                                    key={col}
+                                    bold
+                                    color={col == columnaActual ? PALETA.fondo : PALETA.marca}
+                                    backgroundColor={col == columnaActual ? PALETA.marca : undefined}
+                                >
+                                    {' ' + texto + ' '}
+                                </Text>
                             )
                         })}
                     </Box>
-
-                    <Box marginTop={1} justifyContent="space-between">
-                        {pantalla == 'normal' ? (
-                            <Text color={PALETA.gris}>
-                                <Text bold color={PALETA.marca}>Enter</Text> editar  <Text bold color={PALETA.marca}>{'<'}</Text> asc  <Text bold color={PALETA.marca}>{'>'}</Text> desc  <Text bold color={PALETA.marca}>Esc</Text> salir
-                            </Text>
-                        ) : (
-                            <Text color={PALETA.gris}>
-                                <Text bold color={PALETA.marca}>Enter</Text> confirmar  <Text bold color={PALETA.marca}>Esc</Text> cancelar
-                            </Text>
-                        )}
-                        {pantalla == 'normal' && (
-                            <Text color={PALETA.gris}>Fila {filaActual + 1} · Columna {columnaActual + 1}</Text>
-                        )}
-                    </Box>
+                    {filasVisibles.map((fila, i) => {
+                        let numeroFila = desde + i
+                        let filaMarcada = numeroFila == filaActual
+                        return (
+                            <Box key={numeroFila}>
+                                <Text
+                                    color={filaMarcada ? PALETA.fondo : PALETA.gris}
+                                    backgroundColor={filaMarcada ? PALETA.marca : undefined}
+                                >
+                                    {String(numeroFila + 1).padStart(anchoIndice) + ' '}
+                                </Text>
+                                {fila.map((valor, col) => {
+                                    let celdaMarcada = filaMarcada && col == columnaActual
+                                    let texto = esNumerica[col] ? valor.padStart(anchos[col]) : valor.padEnd(anchos[col])
+                                    return (
+                                        <Text
+                                            key={col}
+                                            color={celdaMarcada ? PALETA.fondo : PALETA.texto}
+                                            backgroundColor={celdaMarcada ? '#f0f0f0' : undefined}
+                                        >
+                                            {' ' + texto + ' '}
+                                        </Text>
+                                    )
+                                })}
+                            </Box>
+                        )
+                    })}
                 </Box>
             )}
+
+            <Box marginTop={1} justifyContent="space-between">
+                {pantalla == 'normal' ? (
+                    <Text color={PALETA.gris}>
+                        <Text bold color={PALETA.marca}>A</Text> abrir  <Text bold color={PALETA.marca}>G</Text> guardar  <Text bold color={PALETA.marca}>Enter</Text> editar  <Text bold color={PALETA.marca}>{'<'}</Text> asc  <Text bold color={PALETA.marca}>{'>'}</Text> desc  <Text bold color={PALETA.marca}>Esc</Text> salir
+                    </Text>
+                ) : (
+                    <Text color={PALETA.gris}>
+                        <Text bold color={PALETA.marca}>Enter</Text> confirmar  <Text bold color={PALETA.marca}>Esc</Text> cancelar
+                    </Text>
+                )}
+                {datos && pantalla == 'normal' && (
+                    <Text color={PALETA.gris}>Fila {filaActual + 1} · Columna {columnaActual + 1}</Text>
+                )}
+            </Box>
         </Box>
     )
 }
