@@ -85,6 +85,11 @@ function ordenarFilas (row,indiceC,desc){
     
 }
 
+function serialize(header, rows, delimiter) {
+    const tablaff = header !== null ? [header, ...rows] : rows;
+    return tablaff.map(row => row.join(delimiter)).join("\n");
+}
+
 function App() {
     const {exit} = useApp();
     const [contenido, setContenido] = useState({header: [], rows: []});
@@ -93,6 +98,10 @@ function App() {
     const [posicionF, setPosicionF] = useState(0);
     const [estado, setEstado] = useState("tabla");
     const [editar, setEditar] = useState("");
+    const [guardar, setGuardar] = useState("");
+    const [nombre, setNombre] = useState("");
+    const asc = "<";
+    const des = ">";
 
     useEffect(() => {
         async function leerArchivo() {
@@ -133,12 +142,20 @@ function App() {
          if (key.rightArrow){
             setPosicionC(Math.min(contenido.header.length -1, posicionC +1));
         }
-        if (tecla === "<" || "*"){
+        if (tecla === "<" || tecla === "*"){
             setContenido({...contenido, rows: ordenarFilas(contenido.rows, posicionC, false)});
         }
-        if (tecla === ">" || "¿"){
+        if (tecla === ">" || tecla === "¿"){
             setContenido({...contenido, rows: ordenarFilas(contenido.rows, posicionC, true)});
-        }     
+        } 
+        if(tecla === "a" || tecla === "A"){
+            setEstado("abrir");
+        }
+        else if(estado === "abrir"){
+            if(key.escape){
+                setEstado("tabla");
+            }
+        }    
         if (key.return) {
             setEditar(contenido.rows[posicionF][posicionC]);
             setEstado("editar")
@@ -166,11 +183,20 @@ function App() {
                 });
               });
               setContenido({...contenido, rows:confirmar});
+              setEstado("tabla");
             }
             else if (tecla){
                 setEditar(editar + tecla);
             }
-        }
+            }
+            if(tecla === "g" || tecla === "G"){
+            setEstado("guardar")
+            }
+            else if(estado === "guardar"){
+                if(key.escape){
+                setEstado("tabla");
+            }
+            }
     })
 
     return (
@@ -211,8 +237,34 @@ function App() {
                  ))}
              </Box>
                 <Box flexDirection="row" justifyContent="space-between">
-                 <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-                 <Text bold color={COLORES.secundario}>Archivo: {NombreArc}</Text>
+                    {estado === "guardar" ? (
+                      <Box>
+                       <Text color={COLORES.acento}>Guardar como: </Text>
+                       <TextInput value={guardar} onChange={setGuardar} 
+                        onSubmit={async (valor) => {
+                        const datos = serialize(contenido.header, contenido.rows, ",");
+                        await writeFile(valor, datos, "utf-8");
+                        setEstado("tabla");}}></TextInput>
+                      </Box>
+                    ) : estado === "abrir" ? (
+                      <Box>
+                        <Text color={COLORES.acento}>Abrir archivo: </Text>
+                        <TextInput value={nombre} onChange={setNombre} 
+                        onSubmit={async (valor) => {
+                        const datos = await readFile(valor, "utf-8");
+                        setContenido(parseDelimited(datos));
+                        setEstado("tabla");}}></TextInput>
+                      </Box>   
+                    ) : (
+                       <>
+                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> A</Text> Abrir</Text>
+                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> G</Text> Guardar</Text>
+                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> {asc}</Text> asc</Text>
+                        <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> {des}</Text> desc</Text>
+                        <Text bold color={COLORES.secundario}>{NombreArc}</Text>
+                       </>
+                    )}
                 </Box>
             </Box>
         </Box>
