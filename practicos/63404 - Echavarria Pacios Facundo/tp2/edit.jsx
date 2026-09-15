@@ -81,9 +81,25 @@ const CompleteFileExtraction = (fileName) => {
 
 //Si se ajecuta con el nombre del archivo hacer:
 let finishList = []
+let fileName = params[0]
 if (params[0] !== undefined) {
-    const fileName = params[0]
     finishList = CompleteFileExtraction(fileName)
+}
+
+//Funcion para pasar de array a csv
+const serialize = (data, delimiter) => {
+    data = data.map(e => e.join(delimiter))
+
+    return data.join('\n')
+}
+
+//Funcion para guardar archivos
+const writeOutput = (outputFile, text) => {
+    try {
+        fs.writeFileSync(outputFile, text, 'utf-8')
+    } catch (error) {
+        showConsoleError(error.message)
+    }
 }
 
 const COL_WIDTH = 20;
@@ -99,11 +115,12 @@ function App() {
         column:0
     })
     const [editing, setEditing] = useState(false)
+    const [saving, setSaving] = useState(false)
 
     const selectedValue = listData.slice(listStart, listStart + visibleRows)[selectedItem.row][selectedItem.column]
 
     useInput((tecla, key) => {
-        if (!editing) {
+        if (!editing && !saving) {
             if (key.upArrow) {
                 handleArrowKey('up')
             }
@@ -125,9 +142,12 @@ function App() {
             if (key.return) {
                 hanldeEnterKey()
             }
+            if (tecla.toLowerCase() === 'g') {
+                handleGkey()
+            }
         }
         if (key.escape) {
-            handleEscapeKey(editing)
+            handleEscapeKey(editing, saving)
         }
     })
 
@@ -176,16 +196,21 @@ function App() {
         setListData([listData[0], ...orderedList])
     }
 
-    const handleEscapeKey = (editing) => {
-        if (!editing) {
+    const handleEscapeKey = (editing, saving) => {
+        if (!editing && !saving) {
             exit()
         }else {
-            setEditing(!editing)
+            setEditing(false)
+            setSaving(false)
         }
     }
-    
+
     const hanldeEnterKey = () => {
-        setEditing(!editing)
+        setEditing(true)
+    }
+
+    const handleGkey = () => {
+        setSaving(!saving)
     }
 
     const orderTable = (a, b, direc) => {
@@ -221,24 +246,41 @@ function App() {
             >
                 {/* Header */}
                 <Box flexGrow={1} justifyContent="space-between">
-                    <Text bold color={COLORES.titulo}>{params[0] ?? ''}</Text>
+                    <Text bold color={COLORES.titulo}>{fileName}</Text>
                     <Text bold color={COLORES.titulo}>{`${listData.length - 1} filas | ${listData[0].length} columnas`}</Text>
                 </Box>
                 <Box flexDirection='row'>
-                    <Text marginTop={2} color={COLORES.titulo}>Valor: </Text>
                     {
-                        editing ? (
-                            <TextInput 
-                            defaultValue={selectedValue} 
-                            onSubmit={(nuevoValor) => {
-                                let editedList = [...listData] 
-                                editedList[selectedItem.row + listStart][selectedItem.column] = nuevoValor
-                                setListData([...editedList])
-                                setEditing(false)
-                            }} 
-                            />
-                        ) : (
-                            <Text>{selectedValue}</Text>
+                        saving ? (
+                            <Box>
+                                <Text bold color={COLORES.acento}>Guardar › </Text>
+                                <TextInput 
+                                defaultValue={'Copia.csv'} 
+                                onSubmit={(newValue) => {
+                                    writeOutput(newValue, serialize(listData, ','))
+                                    setSaving(false)
+                                }} 
+                                />
+                            </Box>
+                        ) : (  
+                            (<Box>
+                                <Text marginTop={2} color={COLORES.titulo}>Valor: </Text>
+                                {
+                                    editing ? (
+                                        <TextInput 
+                                        defaultValue={selectedValue} 
+                                        onSubmit={(newValue) => {
+                                            let editedList = [...listData] 
+                                            editedList[selectedItem.row + listStart][selectedItem.column] = newValue
+                                            setListData([...editedList])
+                                            setEditing(false)
+                                        }} 
+                                        />
+                                    ) : (
+                                        <Text>{selectedValue}</Text>
+                                    )
+                                }
+                            </Box>)
                         )
                     }
                 </Box>
@@ -307,14 +349,29 @@ function App() {
                     })}
                 </Box>
                 <Box marginTop={1} flexDirection='row' justifyContent='space-between' width="100%">
-                    <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}> Esc </Text> 
-                        salir |
-                        <Text bold color={COLORES.acento}> {`< `}</Text> 
-                        ascendente |
-                        <Text bold color={COLORES.acento}> {`> `}</Text> 
-                        descendente
-                    </Text>
+                    {
+                        saving || editing ?
+                            (<Text color={COLORES.secundario}>
+                                <Text bold color={COLORES.acento}> Esc </Text> 
+                                Cancelar |
+                                <Text bold color={COLORES.acento}> Enter </Text> 
+                                Confirmar
+                            </Text>)
+                        : (<Text color={COLORES.secundario}>
+                                <Text bold color={COLORES.acento}> Esc </Text> 
+                                salir |
+                                <Text bold color={COLORES.acento}> {`< `}</Text> 
+                                ascendente |
+                                <Text bold color={COLORES.acento}> {`> `}</Text> 
+                                descendente |
+                                <Text bold color={COLORES.acento}> A </Text> 
+                                abrir |
+                                <Text bold color={COLORES.acento}> G </Text> 
+                                guardar |
+                                <Text bold color={COLORES.acento}> Enter </Text> 
+                                editar
+                            </Text>)
+                    }
                     <Text color={COLORES.secundario} flexDirection={'end'}>Fila {selectedItem.row + listStart} | Columna {selectedItem.column + 1}</Text>
 
                 </Box>
