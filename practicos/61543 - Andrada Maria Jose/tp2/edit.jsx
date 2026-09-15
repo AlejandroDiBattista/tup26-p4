@@ -8,7 +8,7 @@ import {basename} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
-
+const ANCHOS = [14, 14, 8, 14, 20];
 const COLORES = {
     fondo:     '#161310',
     borde:     '#726b61',
@@ -163,6 +163,8 @@ React.useEffect(() => {
 
     if (tecla.toLowerCase() === 'g') {
         setGuardando(true);
+        setNombreGuardado(archivoActual);
+
     }
 
     if (tecla.toLowerCase() === 'a') {
@@ -223,11 +225,17 @@ React.useEffect(() => {
 
 
     return (
-        <Box flexDirection="column">
+        <Box 
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="gray"
+        paddingX={1}
+        backgroundColor={COLORES.fondo}
+    >
 
             {abriendo && (
                 <Box>
-                    <Text>Abrir {'>'}  </Text>
+                    <Text color="yellow">Abrir {'>'} </Text>
                     <TextInput
                     value={nombreArchivo}
                     onChange={setNombreArchivo}
@@ -237,28 +245,32 @@ React.useEffect(() => {
                 </Box>
             )}
 
+            <Box justifyContent="space-between">
+                <Text bold color="white">{basename(archivoActual || '')} </Text>
+                <Text>{filas.length} filas · {cabecera.length} columnas</Text>
+            </Box>
 
             {guardando && (
                 <Box>
-                    <Text>Guardar {'>'} </Text>
+                    <Text color="yellow">Guardar {'>'} </Text>
                     <TextInput 
-                    value={nombreGuardado}
+                    defaultValue={nombreGuardado}
                     onChange={setNombreGuardado}  
                     />
                 </Box>
             )}
 
 
-            <Box justifyContent="space-between">
-                <Text bold>{basename(archivoActual || '')} </Text>
-                <Text>{filas.length} filas · {cabecera.length} columnas</Text>
+            {!abriendo && !guardando && (
+             <Box>
+            <Text>
+            <Text color="gray">Valor:</Text>{' '}
+            <Text color="white">
+                {filas[filaSeleccionada]?.[columnaSeleccionada] || ''}
+            </Text>
+            </Text>
             </Box>
-
-            <Box>
-                <Text>
-                Valor: {filas[filaSeleccionada]?.[columnaSeleccionada] || ''}
-                </Text>
-            </Box>
+)}
 
             
             {error && (
@@ -276,15 +288,14 @@ React.useEffect(() => {
                 indiceColumna === columnaSeleccionada;
 
                 return (
-                    <Box key={indiceColumna} width={18}>
+                    <Box key={indiceColumna} width={ANCHOS[indiceColumna]}>
                         <Text
                         bold
-                        color={esColumnaSeleccionada ? 'cyan' : undefined}
-                        inverse={esColumnaSeleccionada}
-                        >
-
-                            {columna.toUpperCase()}
-                        </Text>
+                        color={esColumnaSeleccionada ? 'yellow' : undefined}
+                        backgroundColor={esColumnaSeleccionada ? 'black' : undefined}
+                >
+                        {columna.toUpperCase()}
+                       </Text>
                         </Box>
                 );
             })}
@@ -297,9 +308,14 @@ React.useEffect(() => {
     return (
         <Box key={numeroFila}>
             <Box width={5} justifyContent="center">
-                <Text color={numeroFila === filaSeleccionada ? 'cyan' : undefined}>
+                <Text
+                     color={numeroFila === filaSeleccionada ? 'yellow' : undefined}
+                    backgroundColor={numeroFila === filaSeleccionada ? 'black' : undefined}
+                > 
                     {numeroFila + 1}
-                 </Text>
+            </Text>
+
+
             </Box>
 
             {fila.map((campo, indiceColumna) => {
@@ -308,16 +324,21 @@ React.useEffect(() => {
                     indiceColumna === columnaSeleccionada;
 
                 return (
-                    <Box key={indiceColumna} width={18}>
+                    <Box key={indiceColumna} width={ANCHOS[indiceColumna]}>
                         {seleccionada && editando ? (
                             <TextInput
                                 defaultValue={campo}
                                 onChange={setTextoEditado}
                             />
                         ) : (
-                            <Text inverse={seleccionada}>
-                                {campo}
-                            </Text>
+                           <Text
+                           color={seleccionada ? 'black' : undefined}
+                           backgroundColor={seleccionada ? 'white' : undefined}
+                           wrap="truncate"
+                           >
+                           {campo}
+                           </Text>
+                           
                         )}
                     </Box>
                 );
@@ -327,24 +348,42 @@ React.useEffect(() => {
 })}
 
 {abriendo && (
-    <Box justifyContent="center">
-        <Text>Enter Abrir · Esc Cancelar</Text>
+   <Box flexDirection="row"  justifyContent="space-between">
+   <Text>
+    <Text color="yellow">Enter</Text> abrir · <Text color="yellow">Esc</Text> cancelar
+</Text>
+
+    <Text>
+         Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}
+    </Text>
+
     </Box>
 )}
 
 {guardando && (
-    <Box justifyContent="center">
-        <Text>Enter Guardar · Esc Cancelar</Text>
+    <Box flexDirection="row" justifyContent="space-between">
+        <Text>
+            <Text color="yellow">Enter</Text> guardar · <Text color="yellow">Esc</Text> cancelar
+        </Text>
+
+        <Text>
+            Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}
+        </Text>
     </Box>
 )}
 
+
+
+
 {!abriendo && !guardando && (
 
-<Box flexDirection="row">
+   <Box flexDirection="row" justifyContent="space-between">
 
-   <Text>
-    <Text color="cyan">A</Text> Abrir   <Text color="cyan">G</Text> Guardar   <Text color="cyan">Enter</Text> Editar   <Text color="cyan">{'<'}</Text> Asc   <Text color="cyan">{'>'}</Text> Desc   <Text color="cyan">Esc</Text> Salir
+   
+<Text>
+    <Text color="yellow">A</Text> abrir · <Text color="yellow">G</Text> guardar · <Text color="yellow">Enter</Text> editar · <Text color="yellow">{'<'}</Text> ascendente · <Text color="yellow">{'>'}</Text> descendente · <Text color="yellow">Esc</Text> salir
 </Text>
+
 
 <Text>
      {'    '}Fila: {filaSeleccionada + 1} · Columna: {columnaSeleccionada + 1}
