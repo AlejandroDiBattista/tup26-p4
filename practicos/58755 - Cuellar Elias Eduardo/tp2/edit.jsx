@@ -1,20 +1,20 @@
 #!/usr/bin/env -S node --import tsx
 
-import React, {useState, useEffect} from 'react';
-import {render, Box, Text, useInput, useApp} from 'ink';
-import {readFile, writeFile} from 'node:fs/promises';
-import {TextInput} from '@inkjs/ui';
-import {basename} from 'node:path';
+import React, { useState, useEffect } from 'react';
+import { render, Box, Text, useInput, useApp } from 'ink';
+import { readFile, writeFile } from 'node:fs/promises';
+import { TextInput } from '@inkjs/ui';
+import { basename } from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
-const FILAS    = process.stdout.rows || 24;
+const FILAS = process.stdout.rows || 24;
 
 const COLORES = {
-    fondo:     '#161310',
-    borde:     '#726b61',
-    titulo:    '#ede7db',
-    secundario:'#ada79e',
-    acento:    '#edbb64',
+    fondo: '#161310',
+    borde: '#726b61',
+    titulo: '#ede7db',
+    secundario: '#ada79e',
+    acento: '#edbb64',
 };
 
 function parseCSV(texto) {
@@ -23,7 +23,7 @@ function parseCSV(texto) {
 }
 
 function App() {
-    const {exit} = useApp();
+    const { exit } = useApp();
     const [filas, setFilas] = useState(null)
     const [archivo, setArchivo] = useState(null)
 
@@ -51,10 +51,20 @@ function App() {
 
     return (
         <Box flexDirection="column">
-            <Text bold color={COLORES.titulo}>{basename(archivo)}</Text>
-            {filas.map((fila, i) => (
-                <Text key={i}>{fila.join("  ")}</Text>
-            ))}
+            <Text bold color={COLORES.titulo}>
+                {basename(archivo)}   {filas.length - 1} filas · {filas[0].length} columnas
+            </Text>
+            {filas.map((fila, i) => {
+                const numero = i === 0 ? "" : String(i)
+                const numeroConEspacio = numero.padStart(3) + "  "
+
+                return (
+                    <Text key={i}>
+                        {numeroConEspacio}
+                        {fila.map((valor, col) => rellenar(valor, anchos[col]) + "  ").join("")}
+                    </Text>
+                )
+            })}
         </Box>
     )
 }
