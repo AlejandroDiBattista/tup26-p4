@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de contactos</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px;
+            overflow: hidden;
+            color: #172033;
+            background: #eef2f7;
+            font-family: system-ui, sans-serif;
+        }
+
+        main {
+            display: flex;
+            height: calc(100vh - 64px);
+            max-width: 1200px;
+            margin: auto;
+            overflow: hidden;
+            border: 1px solid #d8e0ea;
+            border-radius: 20px;
+            background: white;
+            /* box-shadow: 0 24px 64px #26375218; */
+
+            aside {
+                display: flex;
+                flex: 1;
+                flex-direction: column;
+                min-width: 0;
+                min-height: 0;
+                border-right: 1px solid #d8e0ea;
+
+                > input {
+                    width: calc(100% - 20px);
+                    margin: 10px;
+                    padding: 11px;
+                    border: 1px solid #bdc8d7;
+                    border-radius: 10px;
+                    font: inherit;
+
+                    &:focus {
+                        border-color: #315efb;
+                        outline: 3px solid #315efb24;
+                    }
+                }
+
+                nav {
+                    flex: 1;
+                    min-height: 0;
+                    overflow-y: auto;
+
+                    button {
+                        all: unset;
+                        width: 100%;
+                        padding: 15px;
+                        border-bottom: 1px solid #edf0f5;
+                        cursor: pointer;
+
+                        &:hover { background: #f4f7fc; }
+                        &.seleccionado {
+                            color: #173baf;
+                            background: #e8eeff;
+                        }
+                    }
+                }
+            }
+
+            section {
+                flex: 2;
+                min-width: 0;
+                overflow-y: auto;
+                padding: 64px;
+                background: #f8fafc;
+
+                h1 { margin: 0 0 32px; letter-spacing: -1px; }
+                dl {
+                    margin: 0;
+                    overflow: hidden;
+                    border: 1px solid #dce3ec;
+                    border-radius: 12px;
+                    background: white;
+
+                    dt { 
+                        margin: 0;
+                        padding: 16px 16px 4px;
+                        color: #657087; 
+                        font-size: 14px; 
+                        font-weight: 700; 
+                    }
+                    dd {
+                        margin: 0;
+                        padding: 0 16px 16px;
+                        border-bottom: 1px solid #edf0f5;
+                    }
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <aside>
+            <input id="buscar" type="search" placeholder="Buscar por nombre o apellido" autocomplete="off">
+            <nav id="maestro"></nav>
+        </aside>
+
+        <section>
+            <article id="detalle"></article>
+        </section>
+    </main>
+
+    <script id="datos-contactos" type="application/json">
+    [
+        { "id": 1, "nombre": "Ana", "apellido": "García", "telefono": "381 555-1001", "email": "ana.garcia@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 2, "nombre": "Bruno", "apellido": "Acosta", "telefono": "381 555-1002", "email": "bruno.acosta@example.com", "ciudad": "Yerba Buena" },
+        { "id": 3, "nombre": "Camila", "apellido": "Medina", "telefono": "381 555-1003", "email": "camila.medina@example.com", "ciudad": "Tafí Viejo" },
+        { "id": 4, "nombre": "Carlos", "apellido": "Rodríguez", "telefono": "381 555-1004", "email": "carlos.rodriguez@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 5, "nombre": "Diego", "apellido": "Torres", "telefono": "381 555-1005", "email": "diego.torres@example.com", "ciudad": "Banda del Río Salí" },
+        { "id": 6, "nombre": "Elena", "apellido": "Paz", "telefono": "381 555-1006", "email": "elena.paz@example.com", "ciudad": "Yerba Buena" },
+        { "id": 7, "nombre": "Federico", "apellido": "Herrera", "telefono": "381 555-1007", "email": "federico.herrera@example.com", "ciudad": "Lules" },
+        { "id": 8, "nombre": "Inés", "apellido": "López", "telefono": "381 555-1008", "email": "ines.lopez@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 9, "nombre": "Joaquín", "apellido": "Sánchez", "telefono": "381 555-1009", "email": "joaquin.sanchez@example.com", "ciudad": "Tafí Viejo" },
+        { "id": 10, "nombre": "Juan", "apellido": "Pérez", "telefono": "381 555-1010", "email": "juan.perez@example.com", "ciudad": "Yerba Buena" },
+        { "id": 11, "nombre": "Julieta", "apellido": "Rojas", "telefono": "381 555-1011", "email": "julieta.rojas@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 12, "nombre": "Laura", "apellido": "Díaz", "telefono": "381 555-1012", "email": "laura.diaz@example.com", "ciudad": "Concepción" },
+        { "id": 13, "nombre": "Lucía", "apellido": "Fernández", "telefono": "381 555-1013", "email": "lucia.fernandez@example.com", "ciudad": "Yerba Buena" },
+        { "id": 14, "nombre": "María", "apellido": "López", "telefono": "381 555-1014", "email": "maria.lopez@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 15, "nombre": "Martín", "apellido": "Moreno", "telefono": "381 555-1015", "email": "martin.moreno@example.com", "ciudad": "Monteros" },
+        { "id": 16, "nombre": "Nicolás", "apellido": "Ruiz", "telefono": "381 555-1016", "email": "nicolas.ruiz@example.com", "ciudad": "Yerba Buena" },
+        { "id": 17, "nombre": "Sofía", "apellido": "Romero", "telefono": "381 555-1017", "email": "sofia.romero@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 18, "nombre": "Valentina", "apellido": "Álvarez", "telefono": "381 555-1018", "email": "valentina.alvarez@example.com", "ciudad": "Tafí Viejo" },
+        { "id": 19, "nombre": "Valentina", "apellido": "Gómez", "telefono": "381 555-1019", "email": "valentina.gomez@example.com", "ciudad": "Tafí Viejo" },
+        { "id": 20, "nombre": "Juan", "apellido": "Pérez", "telefono": "381 555-1010", "email": "juan.perez@example.com", "ciudad": "Yerba Buena" },
+        { "id": 21, "nombre": "Julieta", "apellido": "Rojas", "telefono": "381 555-1011", "email": "julieta.rojas@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 22, "nombre": "Laura", "apellido": "Díaz", "telefono": "381 555-1012", "email": "laura.diaz@example.com", "ciudad": "Concepción" },
+        { "id": 23, "nombre": "Lucía", "apellido": "Fernández", "telefono": "381 555-1013", "email": "lucia.fernandez@example.com", "ciudad": "Yerba Buena" },
+        { "id": 24, "nombre": "María", "apellido": "López", "telefono": "381 555-1014", "email": "maria.lopez@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 25, "nombre": "Martín", "apellido": "Moreno", "telefono": "381 555-1015", "email": "martin.moreno@example.com", "ciudad": "Monteros" },
+        { "id": 26, "nombre": "Nicolás", "apellido": "Ruiz", "telefono": "381 555-1016", "email": "nicolas.ruiz@example.com", "ciudad": "Yerba Buena" },
+        { "id": 27, "nombre": "Sofía", "apellido": "Romero", "telefono": "381 555-1017", "email": "sofia.romero@example.com", "ciudad": "San Miguel de Tucumán" },
+        { "id": 28, "nombre": "Valentina", "apellido": "Álvarez", "telefono": "381 555-1018", "email": "valentina.alvarez@example.com", "ciudad": "Tafí Viejo" }
+    ]
+    </script>
+
+    <script>
+        function h(tipo, atributos = {}, ...hijos) {
+            const elemento = document.createElement(tipo);
+            for (const [nombre, valor] of Object.entries(atributos)) {
+                elemento.setAttribute(nombre, valor);
+            }
+            elemento.append(...hijos.flat());
+            return elemento;
+        }
+
+        const contactos = JSON.parse(document.querySelector('#datos-contactos').textContent);
+        const buscar  = document.querySelector('#buscar');
+        const maestro = document.querySelector('#maestro');
+        const detalle = document.querySelector('#detalle');
+
+        let filtrados = contactos;
+        let seleccion = 0;
+
+        function Campo({ etiqueta, valor }) {
+            return [h('dt', {}, etiqueta), h('dd', {}, valor)];
+        }
+
+        function Contacto({ contacto, indice, seleccionado }) {
+            return h( 'button',
+                { type: 'button', 'data-indice': indice, class: seleccionado ? 'seleccionado' : '' },
+                `${contacto.apellido}, ${contacto.nombre}`
+            );
+        }
+
+        function Maestro({ contactos, seleccion }) {
+            return contactos.map((contacto, indice) =>
+                Contacto({ contacto, indice, seleccionado: indice === seleccion })
+            );
+        }
+
+        function Detalle({ contacto }) {
+            if (!contacto) {
+                return h('p', {}, 'No encontramos contactos. Probá con otro nombre o apellido.');
+            }
+
+            return h('div',{},
+                    h('h1', {}, `${contacto.nombre} ${contacto.apellido}`),
+                    h('dl', {},
+                        Campo({ etiqueta: 'Teléfono', valor: contacto.telefono }),
+                        Campo({ etiqueta: 'Correo electrónico', valor: contacto.email }),
+                        Campo({ etiqueta: 'Ciudad',   valor: contacto.ciudad }),
+                        Campo({ etiqueta: 'Número de contacto', valor: contacto.id })
+                    )
+                );
+        }
+
+        function render() {
+            maestro.replaceChildren(...Maestro({ contactos: filtrados, seleccion }));
+            detalle.replaceChildren(Detalle({ contacto: filtrados[seleccion] }));
+        }
+
+        function seleccionar(indice, enfocar = false) {
+            if (!filtrados.length) return;
+            seleccion = Math.max(0, Math.min(indice, filtrados.length - 1));
+            render();
+            if (enfocar) {
+                const boton = maestro.querySelector(`[data-indice="${seleccion}"]`);
+                boton?.focus({ preventScroll: true });
+                boton?.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function normalizar(texto) {
+            return texto
+                .toLocaleLowerCase('es')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        buscar.addEventListener('input', () => {
+            const filtro = normalizar(buscar.value.trim());
+            filtrados = contactos.filter(({ nombre, apellido }) =>
+                normalizar(`${nombre} ${apellido}`).includes(filtro)
+            );
+            seleccion = 0;
+            render();
+        });
+
+        buscar.addEventListener('keydown', (evento) => {
+            if (evento.key === 'Enter' && filtrados.length) {
+                evento.preventDefault();
+                seleccionar(seleccion, true);
+            }
+        });
+
+        maestro.addEventListener('click', (evento) => {
+            const boton = evento.target.closest('button');
+            if (boton) seleccionar(Number(boton.dataset.indice), true);
+        });
+
+        maestro.addEventListener('keydown', (evento) => {
+            if (evento.key === 'ArrowDown' || evento.key === 'ArrowUp') {
+                evento.preventDefault();
+                seleccionar(seleccion + (evento.key === 'ArrowDown' ? 1 : -1), true);
+            }
+            if (evento.key === 'Escape') buscar.focus();
+        });
+
+        render();
+    </script>
+</body>
+</html>

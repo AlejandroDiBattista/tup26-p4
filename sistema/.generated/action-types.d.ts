@@ -14,6 +14,7 @@ type ActionEntry<T> = T extends { default: { run: (...args: infer A) => infer R 
 declare global {
   interface AgentNativeActionRegistry {
     "comprobar-tp1": ActionEntry<typeof import("../actions/comprobar-tp1")>;
+    "comprobar-tp2": ActionEntry<typeof import("../actions/comprobar-tp2")>;
     "course-grid": ActionEntry<typeof import("../actions/course-grid")>;
     "course-summary": ActionEntry<typeof import("../actions/course-summary")>;
     "create-assessment": ActionEntry<typeof import("../actions/create-assessment")>;

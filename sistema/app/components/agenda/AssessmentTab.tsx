@@ -138,12 +138,16 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const publishStatement = useActionMutation("publicar-enunciado-trabajo");
   const setResult = useActionMutation("set-assessment-result");
   const checkTp1 = useActionMutation("comprobar-tp1");
+  const checkTp2 = useActionMutation("comprobar-tp2");
+  const checking = checkTp1.isPending || checkTp2.isPending;
+  const [checkDetails, setCheckDetails] = useState<Array<{ legajo: string; detalle?: string }>>([]);
   const [checkErrors, setCheckErrors] = useState<Array<{ legajo: string; error?: string }>>([]);
 
   const works = data?.assessments ?? [];
   const rows = data?.rows ?? [];
   const courses = courseData?.courses ?? [];
   const selectedWork = works.find((work) => work.id === selectedWorkId) ?? null;
+  const checkableWork = selectedWork?.title.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const visibleRows = useMemo(() => {
     const terms = normalizeStudentSearch(studentQuery)
       .split(/[^\p{L}\p{N}]+/u)
@@ -196,6 +200,8 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
 
   useEffect(() => {
     setStatusFilter("todos");
+    setCheckErrors([]);
+    setCheckDetails([]);
   }, [selectedWorkId]);
 
   function cellFor(row: WorkRow) {
@@ -307,20 +313,23 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
     );
   }
 
-  function handleCheckTp1() {
+  function handleCheckWork() {
     if (!selectedWork || !filteredRows.length) return;
     setCheckErrors([]);
-    checkTp1.mutate(
+    setCheckDetails([]);
+    const mutation = checkableWork === "tp2" ? checkTp2 : checkTp1;
+    mutation.mutate(
       { assessmentId: selectedWork.id, legajos: filteredRows.map((row) => row.legajo) },
       {
         onSuccess: (value) => {
           const result = value as {
             updated: number;
             failed: number;
-            results: Array<{ legajo: string; error?: string }>;
+            results: Array<{ legajo: string; error?: string; detalle?: string }>;
           };
           setCheckErrors(result.results.filter((row) => row.error));
-          const message = t("agenda.tp1Checked", { count: result.updated });
+          setCheckDetails(result.results.filter((row) => row.detalle));
+          const message = t(checkableWork === "tp2" ? "agenda.tp2Checked" : "agenda.tp1Checked", { count: result.updated });
           if (result.failed) toast.warning(message);
           else toast.success(message);
         },
@@ -410,7 +419,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
               value={selectedWork?.id ?? ""}
               onChange={(event) => selectWork(event.target.value)}
               className={selectClass}
-              disabled={works.length === 0}
+              disabled={works.length === 0 || checking}
             >
               {works.length === 0 ? <option value="">{t("agenda.noPracticos")}</option> : null}
               {works.map((work) => (
@@ -448,20 +457,16 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {selectedWork?.title
-                .normalize("NFD")
-                .replace(/\p{M}/gu, "")
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, "") === "tp1" ? (
+              {checkableWork === "tp1" || checkableWork === "tp2" ? (
                 <DropdownMenuItem
-                  onSelect={handleCheckTp1}
-                  disabled={checkTp1.isPending || setResult.isPending || filteredRows.length === 0}
-                  title={t("agenda.checkTp1Hint")}
+                  onSelect={handleCheckWork}
+                  disabled={checking || setResult.isPending || filteredRows.length === 0}
+                  title={t(checkableWork === "tp2" ? "agenda.checkTp2Hint" : "agenda.checkTp1Hint")}
                 >
                   <IconChecklist aria-hidden="true" />
-                  {checkTp1.isPending
-                    ? t("agenda.checkingTp1")
-                    : t("agenda.checkTp1", { count: filteredRows.length })}
+                  {checking
+                    ? t(checkableWork === "tp2" ? "agenda.checkingTp2" : "agenda.checkingTp1")
+                    : t(checkableWork === "tp2" ? "agenda.checkTp2" : "agenda.checkTp1", { count: filteredRows.length })}
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem
@@ -488,10 +493,21 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
         </div>
       </div>
 
-      {checkTp1.isPending ? (
+      {checking ? (
         <p role="status" className="mb-4 text-sm text-muted-foreground">
           {t("agenda.checkingTp1Hint")}
         </p>
+      ) : null}
+      {checkableWork === "tp2" ? (
+        <p className="mb-4 text-sm text-muted-foreground">{t("agenda.checkTp2Hint")}</p>
+      ) : null}
+      {checkDetails.length > 0 ? (
+        <details className="mb-4 rounded-md border p-3 text-sm">
+          <summary className="cursor-pointer">{t("agenda.checkDetails")}</summary>
+          <ul className="mt-2 list-inside list-disc">
+            {checkDetails.map(result => <li key={result.legajo} className="whitespace-pre-wrap break-words">{result.legajo}: {result.detalle}</li>)}
+          </ul>
+        </details>
       ) : null}
       {checkErrors.length > 0 ? (
         <div role="alert" className="mb-4 rounded-md border border-destructive/30 p-3 text-sm">
@@ -727,6 +743,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
                             key={`${selectedWork.id}:${row.legajo}:${cell?.score ?? ""}:mobile`}
                             type="text"
                             inputMode="decimal"
+                            disabled={checking}
                             defaultValue={cell?.score ?? ""}
                             aria-label={t("agenda.scoreOf", { name: fullName })}
                             onBlur={(event) => saveScore(row, event.target.value)}
@@ -750,6 +767,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
                               type="button"
                               aria-pressed={active}
                               onClick={() => setStatus(row, option.value)}
+                              disabled={checking}
                               className={cn(
                                 "min-h-10 rounded-md border px-2 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                 active
@@ -820,7 +838,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
                                       type="button"
                                       aria-pressed={active}
                                       onClick={() => setStatus(row, option.value)}
-                                      disabled={checkTp1.isPending}
+                                      disabled={checking}
                                       className={cn(
                                         "min-h-9 rounded-md border px-2.5 text-xs font-medium outline-none transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-ring",
                                         active
@@ -841,7 +859,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
                                 key={`${selectedWork.id}:${row.legajo}:${cell?.score ?? ""}`}
                                 type="text"
                                 inputMode="decimal"
-                                disabled={checkTp1.isPending}
+                                disabled={checking}
                                 defaultValue={cell?.score ?? ""}
                                 aria-label={t("agenda.scoreOf", { name: fullName })}
                                 onBlur={(event) => saveScore(row, event.target.value)}
