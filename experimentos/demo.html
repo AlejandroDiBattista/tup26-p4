@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de contactos</title>
+    <style>
+        :root {
+            font-family: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
+            color: #32253f;
+            background: #f3f3f2;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            height: 100vh;
+            height: 100dvh;
+            padding: clamp(12px, 4vw, 64px);
+            overflow: hidden;
+        }
+        .agenda {
+            height: 100%;
+            max-width: 1280px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            background: #a29dc9;
+            border-radius: 30px;
+            padding: clamp(16px, 3vw, 40px);
+            box-shadow: 0 30px 55px #332c4326;
+            overflow: hidden;
+        }
+        header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding-bottom: 30px;
+            color: #fffefa;
+        }
+        .marca { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+        .simbolo { font-size: 36px; font-weight: 400; line-height: 1; }
+        h1 { margin: 22px 0 6px; font-size: clamp(25px, 3vw, 36px); font-weight: 600; letter-spacing: -1px; }
+        header p { margin: 0; font-size: 13px; }
+        .contador { background: #443052; padding: 12px 20px; border-radius: 30px; font-size: 13px; white-space: nowrap; }
+        main {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+            gap: 22px;
+            flex: 1;
+            min-height: 0;
+        }
+        .izquierda, .derecha {
+            min-height: 0;
+            min-width: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #70668f transparent;
+            border-radius: 25px;
+        }
+        .izquierda { background: #918bb8; padding: 14px; }
+        .lista-titulo { margin: 8px 10px 18px; color: #fffefa; font-size: 14px; font-weight: 600; }
+        #contactos { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+        button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 12px;
+            border: 0;
+            border-radius: 15px;
+            background: transparent;
+            color: #fffefa;
+            text-align: left;
+            font: inherit;
+            font-size: 14px;
+            overflow-wrap: anywhere;
+            cursor: pointer;
+            transition: background 150ms ease, color 150ms ease;
+        }
+        button:hover { background: #a6a0c8; }
+        button[aria-pressed="true"] { background: #d0fa73; color: #32253f; font-weight: 600; }
+        button:focus-visible, .derecha:focus-visible { outline: 3px solid #443052; outline-offset: -3px; }
+        .iniciales { flex-shrink: 0; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ffffff24; font-size: 11px; font-weight: 600; }
+        button[aria-pressed="true"] .iniciales { background: #32253f10; }
+        .derecha { background: #fffefa; }
+        .perfil { padding: 32px; border-bottom: 1px solid #eeecf2; }
+        .avatar { width: 70px; height: 70px; display: grid; place-items: center; background: #d0fa73; border-radius: 23px; font-size: 24px; margin-bottom: 20px; }
+        h2 { margin: 0 0 6px; font-size: clamp(22px, 3vw, 30px); font-weight: 600; letter-spacing: -.7px; overflow-wrap: anywhere; }
+        .perfil p { color: #756a87; font-size: 13px; margin: 0; }
+        .formulario { padding: 32px; }
+        .campo { margin-bottom: 28px; }
+        .campo:last-child { margin-bottom: 0; }
+        label { display: block; margin-bottom: 10px; color: #746a84; font-size: 12px; }
+        input { width: 100%; min-width: 0; padding: 15px 16px; border: 1px solid #e8e5ef; border-radius: 12px; background: #f6f5f9; color: #32253f; font: inherit; font-size: 16px; }
+        input:focus { outline: 2px solid #918bb8; outline-offset: 2px; }
+        @media (max-width: 600px) {
+            .agenda { padding: 16px; border-radius: 20px; }
+            header { padding-bottom: 20px; }
+            .contador { padding: 8px 10px; font-size: 11px; }
+            main { gap: 10px; }
+            .izquierda { padding: 6px; }
+            button { padding: 12px 8px; font-size: 12px; }
+            button .iniciales { display: none; }
+            .perfil, .formulario { padding: 20px 14px; }
+            .lista-titulo { margin: 10px 6px; font-size: 12px; }
+        }
+        @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+    </style>
+</head>
+<body>
+    <div class="agenda">
+    <header>
+        <div>
+            <div class="marca"><span class="simbolo" aria-hidden="true">◎</span> Mi agenda</div>
+            <h1>Tus contactos</h1>
+            <p>Las personas, siempre cerca.</p>
+        </div>
+        <span class="contador">20 contactos</span>
+    </header>
+    <main>
+        <nav class="izquierda" aria-label="Contactos">
+            <h2 class="lista-titulo">Todos los contactos</h2>
+            <ul id="contactos"></ul>
+        </nav>
+        <section class="derecha" aria-label="Detalle del contacto" tabindex="0">
+            <div class="perfil">
+                <div class="avatar" id="avatar" aria-hidden="true"></div>
+                <h2 id="titulo-detalle" aria-live="polite"></h2>
+                <p>Información de contacto</p>
+            </div>
+            <form class="formulario" aria-labelledby="titulo-detalle">
+                <div class="campo">
+                    <label for="nombre">Nombre</label>
+                    <input id="nombre" name="nombre" readonly>
+                </div>
+                <div class="campo">
+                    <label for="apellido">Apellido</label>
+                    <input id="apellido" name="apellido" readonly>
+                </div>
+                <div class="campo">
+                    <label for="telefono">Teléfono</label>
+                    <input id="telefono" name="telefono" type="tel" readonly>
+                </div>
+            </form>
+        </section>
+    </main>
+    </div>
+    <script>
+        // Datos ficticios para el ejemplo.
+        const contactos = [
+            { nombre: 'Ana', apellido: 'García', telefono: '381 555-0101' },
+            { nombre: 'Bruno', apellido: 'López', telefono: '381 555-0102' },
+            { nombre: 'Carla', apellido: 'Martínez', telefono: '381 555-0103' },
+            { nombre: 'Diego', apellido: 'Pérez', telefono: '381 555-0104' },
+            { nombre: 'Elena', apellido: 'Rodríguez', telefono: '381 555-0105' },
+            { nombre: 'Facundo', apellido: 'Gómez', telefono: '381 555-0106' },
+            { nombre: 'Gabriela', apellido: 'Fernández', telefono: '381 555-0107' },
+            { nombre: 'Hugo', apellido: 'Sánchez', telefono: '381 555-0108' },
+            { nombre: 'Inés', apellido: 'Romero', telefono: '381 555-0109' },
+            { nombre: 'Julián', apellido: 'Díaz', telefono: '381 555-0110' },
+            { nombre: 'Laura', apellido: 'Torres', telefono: '381 555-0111' },
+            { nombre: 'Mateo', apellido: 'Álvarez', telefono: '381 555-0112' },
+            { nombre: 'Natalia', apellido: 'Ruiz', telefono: '381 555-0113' },
+            { nombre: 'Oscar', apellido: 'Ramírez', telefono: '381 555-0114' },
+            { nombre: 'Paula', apellido: 'Flores', telefono: '381 555-0115' },
+            { nombre: 'Ricardo', apellido: 'Acosta', telefono: '381 555-0116' },
+            { nombre: 'Sofía', apellido: 'Medina', telefono: '381 555-0117' },
+            { nombre: 'Tomás', apellido: 'Herrera', telefono: '381 555-0118' },
+            { nombre: 'Valentina', apellido: 'Castro', telefono: '381 555-0119' },
+            { nombre: 'Walter', apellido: 'Molina', telefono: '381 555-0120' }
+        ];
+
+        const lista = document.getElementById('contactos');
+
+        function seleccionarContacto(indice) {
+            const contacto = contactos[indice];
+            document.getElementById('titulo-detalle').textContent = `${contacto.nombre} ${contacto.apellido}`;
+            document.getElementById('avatar').textContent = contacto.nombre[0] + contacto.apellido[0];
+            document.getElementById('nombre').value = contacto.nombre;
+            document.getElementById('apellido').value = contacto.apellido;
+            document.getElementById('telefono').value = contacto.telefono;
+
+            lista.querySelectorAll('button').forEach((boton, posicion) => {
+                boton.setAttribute('aria-pressed', posicion === indice);
+            });
+        }
+
+        contactos.forEach((contacto, indice) => {
+            const item = document.createElement('li');
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            const iniciales = document.createElement('span');
+            iniciales.className = 'iniciales';
+            iniciales.setAttribute('aria-hidden', 'true');
+            iniciales.textContent = contacto.nombre[0] + contacto.apellido[0];
+            const nombreCompleto = document.createElement('span');
+            nombreCompleto.textContent = `${contacto.nombre} ${contacto.apellido}`;
+            boton.append(iniciales, nombreCompleto);
+            boton.addEventListener('click', () => seleccionarContacto(indice));
+            item.appendChild(boton);
+            lista.appendChild(item);
+        });
+
+        seleccionarContacto(0);
+    </script>
+    <p style="color:rgba(193, 135, 53, 0.748)"></p>
+</body>
+</html>

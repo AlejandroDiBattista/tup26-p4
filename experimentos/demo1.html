@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de contactos</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            flex: 0 0 72px;
+            display: grid;
+            place-items: center;
+            background: blue;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .panel-izquierdo {
+            background: red;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .panel-derecho {
+            background: green;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .panel-izquierdo h2 {
+            color: white;
+            font-size: 1rem;
+            margin: 0 0 12px;
+        }
+
+        #contactos {
+            display: grid;
+            gap: 8px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #contactos button {
+            width: 100%;
+            padding: 12px;
+            border: 0;
+            border-radius: 6px;
+            background: white;
+            color: #222;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+        }
+
+        #contactos button:hover,
+        #contactos button[aria-pressed="true"] {
+            background: #ffe066;
+            font-weight: bold;
+        }
+
+        .formulario {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 24px;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .formulario h2 {
+            margin: 0 0 24px;
+        }
+
+        .campo {
+            margin-bottom: 18px;
+        }
+
+        .campo:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            background: #f5f5f5;
+            color: #222;
+            font: inherit;
+        }
+        /* Estilo inspirado en el dashboard financiero de referencia */
+        body {
+            padding: clamp(12px, 4vw, 64px);
+            background: #f6eee8;
+            color: #282238;
+            font-family: "Trebuchet MS", Arial, sans-serif;
+        }
+        header {
+            flex: 0 0 96px;
+            justify-content: flex-start;
+            padding: 0 clamp(22px, 4vw, 42px);
+            border-radius: 26px 26px 0 0;
+            background: #fffaf6;
+            color: #282238;
+        }
+        header h1 { font-size: clamp(1.25rem, 3vw, 1.8rem); letter-spacing: -.04em; }
+        main {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+            gap: 16px;
+            padding: 0 clamp(14px, 2.5vw, 30px) clamp(14px, 2.5vw, 30px);
+            border-radius: 0 0 26px 26px;
+            background: #fffaf6;
+            box-shadow: 0 22px 45px #6d526024;
+        }
+        .panel-izquierdo, .panel-derecho { border-radius: 18px; scrollbar-color: #b5a8c4 transparent; }
+        .panel-izquierdo { background: #faf3ee; padding: 18px 12px; }
+        .panel-derecho { background: #f4e9e3; padding: 18px; }
+        .panel-izquierdo h2 { color: #49345b; margin: 8px 10px 18px; font-size: .85rem; text-transform: none; letter-spacing: 0; }
+        #contactos { gap: 6px; }
+        #contactos button { padding: 12px; border-radius: 10px; color: #433552; background: transparent; }
+        #contactos button:hover { background: #eee3f8; }
+        #contactos button[aria-pressed="true"] { background: #7952d6; color: #fff; box-shadow: 0 5px 10px #7952d638; }
+        .formulario { max-width: none; margin: 0; padding: clamp(22px, 4vw, 38px); border-radius: 16px; background: #fffdfb; box-shadow: 0 6px 16px #6d52601c; }
+        .formulario h2 { color: #282238; font-size: clamp(1.35rem, 3vw, 1.9rem); }
+        label { color: #756d7b; letter-spacing: .03em; text-transform: none; }
+        input { border-color: #eadfe7; border-radius: 10px; background: #faf7f5; color: #282238; }
+        input:focus { outline-color: #7952d6; }
+        #contactos button:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: -3px;
+        }
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            header { flex-basis: 72px; padding: 0 18px; }
+            main { gap: 10px; padding: 0 10px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Agenda de contactos</h1>
+    </header>
+    <main>
+        <nav class="panel-izquierdo" aria-label="Lista de contactos">
+            <h2>Contactos (20)</h2>
+            <ul id="contactos"></ul>
+        </nav>
+        <section class="panel-derecho" aria-label="Detalle del contacto">
+            <form class="formulario">
+                <h2 id="titulo-detalle">Detalle del contacto</h2>
+                <div class="campo">
+                    <label for="nombre">Nombre</label>
+                    <input id="nombre" readonly>
+                </div>
+                <div class="campo">
+                    <label for="apellido">Apellido</label>
+                    <input id="apellido" readonly>
+                </div>
+                <div class="campo">
+                    <label for="telefono">Teléfono</label>
+                    <input id="telefono" type="tel" readonly>
+                </div>
+                <div class="campo">
+                    <label for="direccion">Dirección</label>
+                    <input id="direccion" readonly>
+                </div>
+            </form>
+        </section>
+    </main>
+    <script>
+        const contactos = [
+            ['Ana', 'García', '381 555-0101', 'San Martín 101'],
+            ['Bruno', 'López', '381 555-0102', 'Belgrano 202'],
+            ['Carla', 'Martínez', '381 555-0103', 'Rivadavia 303'],
+            ['Diego', 'Pérez', '381 555-0104', 'Maipú 404'],
+            ['Elena', 'Rodríguez', '381 555-0105', 'Junín 505'],
+            ['Facundo', 'Gómez', '381 555-0106', 'Laprida 606'],
+            ['Gabriela', 'Fernández', '381 555-0107', 'Córdoba 707'],
+            ['Hugo', 'Sánchez', '381 555-0108', 'Mendoza 808'],
+            ['Inés', 'Romero', '381 555-0109', 'Salta 909'],
+            ['Julián', 'Díaz', '381 555-0110', 'Tucumán 1010'],
+            ['Laura', 'Torres', '381 555-0111', 'Alberdi 1111'],
+            ['Mateo', 'Álvarez', '381 555-0112', 'España 1212'],
+            ['Natalia', 'Ruiz', '381 555-0113', 'Ayacucho 1313'],
+            ['Oscar', 'Ramírez', '381 555-0114', 'Sarmiento 1414'],
+            ['Paula', 'Flores', '381 555-0115', 'Lules 1515'],
+            ['Ricardo', 'Acosta', '381 555-0116', 'Yerba Buena 1616'],
+            ['Sofía', 'Medina', '381 555-0117', 'Mate de Luna 1717'],
+            ['Tomás', 'Herrera', '381 555-0118', 'Las Heras 1818'],
+            ['Valentina', 'Castro', '381 555-0119', '25 de Mayo 1919'],
+            ['Walter', 'Molina', '381 555-0120', 'Crisóstomo Álvarez 2020']
+        ];
+
+        const lista = document.getElementById('contactos');
+        const campos = ['nombre', 'apellido', 'telefono', 'direccion'];
+
+        function mostrarContacto(indice) {
+            const contacto = contactos[indice];
+            campos.forEach((campo, posicion) => {
+                document.getElementById(campo).value = contacto[posicion];
+            });
+            document.getElementById('titulo-detalle').textContent = `${contacto[0]} ${contacto[1]}`;
+            lista.querySelectorAll('button').forEach((boton, posicion) => {
+                boton.setAttribute('aria-pressed', posicion === indice);
+            });
+        }
+
+        contactos.forEach((contacto, indice) => {
+            const item = document.createElement('li');
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.textContent = `${contacto[0]} ${contacto[1]}`;
+            boton.addEventListener('click', () => mostrarContacto(indice));
+            item.appendChild(boton);
+            lista.appendChild(item);
+        });
+
+        function mantenerVisible(elemento, contenedor) {
+            const elementoRect = elemento.getBoundingClientRect();
+            const contenedorRect = contenedor.getBoundingClientRect();
+            const margen = 8;
+
+            if (elementoRect.top < contenedorRect.top + margen) {
+                contenedor.scrollTop -= contenedorRect.top + margen - elementoRect.top;
+            } else if (elementoRect.bottom > contenedorRect.bottom - margen) {
+                contenedor.scrollTop += elementoRect.bottom - (contenedorRect.bottom - margen);
+            }
+        }
+
+        // Permite recorrer el maestro con las teclas del cursor.
+        lista.addEventListener('keydown', (evento) => {
+            const botones = [...lista.querySelectorAll('button')];
+            const actual = botones.indexOf(document.activeElement);
+            if (actual === -1) return;
+
+            if (evento.key === 'Tab') {
+                evento.preventDefault();
+                return;
+            }
+
+            if (evento.key === 'Enter') {
+                evento.preventDefault();
+                document.getElementById('nombre').focus();
+                return;
+            }
+
+            let siguiente = actual;
+            if (evento.key === 'ArrowDown' || evento.key === 'ArrowRight') {
+                siguiente = Math.min(actual + 1, botones.length - 1);
+            } else if (evento.key === 'ArrowUp' || evento.key === 'ArrowLeft') {
+                siguiente = Math.max(actual - 1, 0);
+            } else if (evento.key === 'Home') {
+                siguiente = 0;
+            } else if (evento.key === 'End') {
+                siguiente = botones.length - 1;
+            } else {
+                return;
+            }
+
+            evento.preventDefault();
+            // Evita que el navegador recentre toda la lista al enfocar.
+            botones[siguiente].focus({ preventScroll: true });
+            mantenerVisible(botones[siguiente], document.querySelector('.panel-izquierdo'));
+            mostrarContacto(siguiente);
+        });
+
+        const panelDetalle = document.querySelector('.panel-derecho');
+        panelDetalle.addEventListener('keydown', (evento) => {
+            if (evento.key === 'Tab') {
+                evento.preventDefault();
+                return;
+            }
+            if (evento.key === 'Escape') {
+                evento.preventDefault();
+                const seleccionado = lista.querySelector('button[aria-pressed="true"]');
+                if (seleccionado) seleccionado.focus({ preventScroll: true });
+                mantenerVisible(seleccionado, document.querySelector('.panel-izquierdo'));
+            }
+        });
+
+        mostrarContacto(0);
+    </script>
+</body>
+</html>

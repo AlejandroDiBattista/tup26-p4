@@ -29,18 +29,28 @@ export async function comprobarTp1(
   legajos: string[],
   ejecutar = ejecutarPruebaTp1,
 ) {
+  return comprobarTrabajo(ownerEmail, assessmentId, legajos, "tp1", ejecutar);
+}
+
+export async function comprobarTrabajo(
+  ownerEmail: string,
+  assessmentId: string,
+  legajos: string[],
+  trabajo: "tp1" | "tp2",
+  ejecutar: (legajo: string) => Promise<z.infer<typeof resultSchema> & { detalle?: string; lineas?: number }>,
+) {
   const assessment = await getAssessment(ownerEmail, assessmentId);
-  if (normalizar_identificador_enunciado(assessment.title) !== "tp1") {
-    throw new Error("Esta comprobación solo está disponible para TP1.");
+  if (normalizar_identificador_enunciado(assessment.title) !== trabajo) {
+    throw new Error(`Esta comprobación solo está disponible para ${trabajo.toUpperCase()}.`);
   }
   const roster = await listStudents(ownerEmail);
   const allowed = new Set(roster.map((student) => student.legajo));
   const selected = [...new Set(legajos)];
   if (!selected.length || selected.some((legajo) => !/^\d+$/.test(legajo) || !allowed.has(legajo))) {
-    throw new Error("Seleccioná alumnos de tu padrón para comprobar TP1.");
+    throw new Error(`Seleccioná alumnos de tu padrón para comprobar ${trabajo.toUpperCase()}.`);
   }
 
-  const results: Array<{ legajo: string; status?: z.infer<typeof resultSchema>["estado"]; error?: string }> = [];
+  const results: Array<{ legajo: string; status?: z.infer<typeof resultSchema>["estado"]; error?: string; detalle?: string; lineas?: number }> = [];
   let next = 0;
   // Keep the server responsive and bound the number of student processes.
   await Promise.all(Array.from({ length: Math.min(4, selected.length) }, async () => {
@@ -48,7 +58,8 @@ export async function comprobarTp1(
       const legajo = selected[next++];
       try {
         const result = await ejecutar(legajo);
-        results.push({ legajo, status: result.estado });
+        if (result.legajo !== legajo) throw new Error("La prueba devolvió otro legajo.");
+        results.push({ legajo, status: result.estado, ...(result.detalle ? { detalle: result.detalle } : {}), ...(result.lineas !== undefined ? { lineas: result.lineas } : {}) });
       } catch {
         results.push({ legajo, error: "No se pudo ejecutar la comprobación. El estado no se modificó." });
       }

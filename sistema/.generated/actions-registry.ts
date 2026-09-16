@@ -3,6 +3,7 @@
 // see these imports and include the action modules in the server bundle.
 // The agent-chat plugin normalizes each module into an ActionEntry shape.
 import * as a_comprobar_tp1 from "../actions/comprobar-tp1";
+import * as a_comprobar_tp2 from "../actions/comprobar-tp2";
 import * as a_course_grid from "../actions/course-grid";
 import * as a_course_summary from "../actions/course-summary";
 import * as a_create_assessment from "../actions/create-assessment";
@@ -64,6 +65,7 @@ import * as a_send_review_thread_to_agent from "@agent-native/core/review/action
 
 const modules: Record<string, unknown> = {
   "comprobar-tp1": a_comprobar_tp1,
+  "comprobar-tp2": a_comprobar_tp2,
   "course-grid": a_course_grid,
   "course-summary": a_course_summary,
   "create-assessment": a_create_assessment,
