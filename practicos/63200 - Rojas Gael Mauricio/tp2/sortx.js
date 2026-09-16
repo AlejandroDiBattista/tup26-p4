@@ -27,10 +27,25 @@ function App({ filePath }) {
   const widths = colWidths(data.headers, data.rows);
 
   useInput((input, key) => {
+    // Navegación
     if (key.upArrow) setRow(r => Math.max(0, r - 1));
     if (key.downArrow) setRow(r => Math.min(data.rows.length - 1, r + 1));
     if (key.leftArrow) setCol(c => Math.max(0, c - 1));
     if (key.rightArrow) setCol(c => Math.min(data.headers.length - 1, c + 1));
+
+    // Ordenamiento
+    if (input === '<' || input === '>') {
+      const dir = input === '<' ? 1 : -1;
+      setData(prev => {
+        const sorted = [...prev.rows].sort((a, b) => {
+          const va = a[col], vb = b[col];
+          const na = Number(va), nb = Number(vb);
+          const cmp = (!isNaN(na) && !isNaN(nb)) ? na - nb : va.localeCompare(vb);
+          return cmp * dir;
+        });
+        return { ...prev, rows: sorted };
+      });
+    }
   });
 
   const value = data.rows[row]?.[col] ?? '';
