@@ -30,6 +30,8 @@ function App() {
     const [filaInicio, setFilaInicio] = useState(0);
     const [abriendo, setAbriendo] = useState(false);
     const [guardando, setGuardando] = useState(false);
+    const [editando, setEditando] = useState(false);
+    const [textoEditado, setTextoEditado] = useState('');
 
     useEffect(() => {
         const archivoInicial = process.argv[2];
@@ -60,6 +62,7 @@ function App() {
             setColumnaSeleccionada(0);
             setFilaInicio(0);
             setAbriendo(false);
+            setEditando(false);
         } catch {
             setError('No se pudo abrir el archivo');
         }
@@ -94,12 +97,45 @@ function App() {
         guardarArchivo(destino);
     }
 
+    function confirmarEdicion(valor) {
+        const nuevas = [];
+        for (let i = 0; i < filas.length; i++) {
+            if (i !== filaSeleccionada) {
+                nuevas.push(filas[i]);
+                continue;
+            }
+            const copia = filas[i].slice();
+            copia[columnaSeleccionada] = valor;
+            nuevas.push(copia);
+        }
+        setFilas(nuevas);
+        setEditando(false);
+        setTextoEditado('');
+    }
+
+    function ordenarPorColumna(descendente) {
+        const copia = filas.map(fila => fila.slice());
+        copia.sort((izq, der) => {
+            const cmp = compararValores(izq[columnaSeleccionada], der[columnaSeleccionada]);
+            return descendente ? -cmp : cmp;
+        });
+        setFilas(copia);
+    }
+
     useInput((tecla, key) => {
         if (abriendo || guardando) {
             if (key.escape) {
                 setAbriendo(false);
                 setGuardando(false);
                 setError('');
+            }
+            return;
+        }
+
+        if (editando) {
+            if (key.escape) {
+                setEditando(false);
+                setTextoEditado('');
             }
             return;
         }
@@ -126,6 +162,25 @@ function App() {
             return;
         }
 
+        if (key.return) {
+            if (filas.length === 0) {
+                return;
+            }
+            setTextoEditado(filas[filaSeleccionada][columnaSeleccionada] ?? '');
+            setEditando(true);
+            setError('');
+            return;
+        }
+
+        if (tecla === '<') {
+            ordenarPorColumna(false);
+            return;
+        }
+        if (tecla === '>') {
+            ordenarPorColumna(true);
+            return;
+        }
+
         if (tecla === 'a' || tecla === 'A') {
             setAbriendo(true);
             setGuardando(false);
@@ -140,12 +195,17 @@ function App() {
     });
 
     const visibles = filas.slice(filaInicio, filaInicio + FILAS_VISIBLES);
-    const valorActual = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
+    const valorActual = editando
+        ? textoEditado
+        : (filas[filaSeleccionada]?.[columnaSeleccionada] ?? '');
 
     let atajos = (
         <Text color={COLORES.secundario}>
             <Text bold color={COLORES.acento}>A</Text> abrir ·{' '}
             <Text bold color={COLORES.acento}>G</Text> guardar ·{' '}
+            <Text bold color={COLORES.acento}>Enter</Text> editar ·{' '}
+            <Text bold color={COLORES.acento}>{'<'}</Text> ascendente ·{' '}
+            <Text bold color={COLORES.acento}>{'>'}</Text> descendente ·{' '}
             <Text bold color={COLORES.acento}>Esc</Text> salir
         </Text>
     );
@@ -160,6 +220,13 @@ function App() {
         atajos = (
             <Text color={COLORES.secundario}>
                 <Text bold color={COLORES.acento}>Enter</Text> guardar ·{' '}
+                <Text bold color={COLORES.acento}>Esc</Text> cancelar
+            </Text>
+        );
+    } else if (editando) {
+        atajos = (
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>Enter</Text> confirmar ·{' '}
                 <Text bold color={COLORES.acento}>Esc</Text> cancelar
             </Text>
         );
@@ -249,13 +316,22 @@ function App() {
 
                             return (
                                 <Box key={indiceColumna} width={anchoDeColumna(cabecera[indiceColumna])}>
-                                    <Text
-                                        color={seleccionada ? COLORES.fondo : COLORES.titulo}
-                                        backgroundColor={seleccionada ? COLORES.celda : undefined}
-                                        wrap="truncate"
-                                    >
-                                        {celda}
-                                    </Text>
+                                    {seleccionada && editando ? (
+                                        <TextInput
+                                            key={`celda-${numeroFila}-${indiceColumna}`}
+                                            defaultValue={celda}
+                                            onChange={setTextoEditado}
+                                            onSubmit={confirmarEdicion}
+                                        />
+                                    ) : (
+                                        <Text
+                                            color={seleccionada ? COLORES.fondo : COLORES.titulo}
+                                            backgroundColor={seleccionada ? COLORES.celda : undefined}
+                                            wrap="truncate"
+                                        >
+                                            {celda}
+                                        </Text>
+                                    )}
                                 </Box>
                             );
                         })}
@@ -323,4 +399,13 @@ function armarCsv(cabecera, filas) {
         lineas.push(fila.join(','));
     }
     return lineas.join('\n') + '\n';
+}
+
+function compararValores(a, b) {
+    const numA = Number(a);
+    const numB = Number(b);
+    if (Number.isFinite(numA) && Number.isFinite(numB)) {
+        return numA - numB;
+    }
+    return String(a).localeCompare(String(b));
 }
