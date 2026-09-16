@@ -37,9 +37,19 @@ function App() {
         }
     }, [])
 
+    const [seleccion, setSeleccion] = useState({ fila: 1, columna: 0 })
+
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        } else if (key.downArrow) {
+            setSeleccion(prev => ({ ...prev, fila: Math.min(prev.fila + 1, filas.length - 1) }))
+        } else if (key.upArrow) {
+            setSeleccion(prev => ({ ...prev, fila: Math.max(prev.fila - 1, 1) }))
+        } else if (key.rightArrow) {
+            setSeleccion(prev => ({ ...prev, columna: Math.min(prev.columna + 1, filas[0].length - 1) }))
+        } else if (key.leftArrow) {
+            setSeleccion(prev => ({ ...prev, columna: Math.max(prev.columna - 1, 0) }))
         }
     })
 
@@ -59,10 +69,18 @@ function App() {
                 const numeroConEspacio = numero.padStart(3) + "  "
 
                 return (
-                    <Text key={i}>
-                        {numeroConEspacio}
-                        {fila.map((valor, col) => rellenar(valor, anchos[col]) + "  ").join("")}
-                    </Text>
+                    <Box key={i}>
+                        <Text>{numeroConEspacio}</Text>
+                        {fila.map((valor, col) => {
+                            const esSeleccionada = i === seleccion.fila && col === seleccion.columna
+                            const texto = rellenar(valor, anchos[col]) + "  "
+
+                            if (esSeleccionada) {
+                                return <Text key={col} backgroundColor={COLORES.acento} color={COLORES.fondo}>{texto}</Text>
+                            }
+                            return <Text key={col}>{texto}</Text>
+                        })}
+                    </Box>
                 )
             })}
         </Box>
