@@ -7,6 +7,7 @@ import {basename} from 'node:path'
 
 const ANCHO = process.stdout.columns || 80
 const ALTO = process.stdout.rows || 24
+const PAGE = 11
 
 const PALETA = {
   fondo: '#161310',
@@ -14,6 +15,7 @@ const PALETA = {
   claro: '#ede7db',
   tenue: '#ada79e',
   marca: '#edbb64',
+  foco: '#ece6dc',
 }
 
 function parseRecords(raw) {
@@ -43,6 +45,11 @@ function toCsv(columnas, registros) {
   return [cabeza, ...cuerpo].join('\n') + '\n'
 }
 
+function anchoCampo(nombre) {
+  const n = String(nombre || '').length
+  return Math.max(10, Math.min(18, n + 8))
+}
+
 const estadoInicial = {
   modo: 'idle',
   ruta: '',
@@ -50,6 +57,16 @@ const estadoInicial = {
   registros: [],
   buffer: '',
   aviso: '',
+  cursor: {fila: 0, col: 0},
+}
+
+function moverCursor(cursor, dir, maxFila, maxCol) {
+  const next = {...cursor}
+  if (dir === 'up') next.fila = Math.max(0, cursor.fila - 1)
+  if (dir === 'down') next.fila = Math.min(maxFila, cursor.fila + 1)
+  if (dir === 'left') next.col = Math.max(0, cursor.col - 1)
+  if (dir === 'right') next.col = Math.min(maxCol, cursor.col + 1)
+  return next
 }
 
 function reducir(estado, accion) {
@@ -63,6 +80,7 @@ function reducir(estado, accion) {
         registros: accion.registros,
         buffer: '',
         aviso: '',
+        cursor: {fila: 0, col: 0},
       }
     case 'SAVED':
       return {
@@ -92,9 +110,112 @@ function reducir(estado, accion) {
       return {...estado, buffer: estado.buffer.slice(0, -1)}
     case 'CANCEL':
       return {...estado, modo: 'idle', buffer: '', aviso: ''}
+    case 'MOVE': {
+      const maxFila = Math.max(0, estado.registros.length - 1)
+      const maxCol = Math.max(0, estado.columnas.length - 1)
+      return {
+        ...estado,
+        cursor: moverCursor(estado.cursor, accion.dir, maxFila, maxCol),
+      }
+    }
     default:
       return estado
   }
+}
+
+function BarraSuperior({ruta, registros, columnas}) {
+  return (
+    <Box flexDirection="column">
+      <Text bold color={PALETA.claro}>
+        {ruta ? basename(ruta) : '(ningun archivo)'}
+      </Text>
+      <Text color={PALETA.tenue}>
+        {registros.length} registros / {columnas.length} campos
+      </Text>
+    </Box>
+  )
+}
+
+function Grilla({columnas, registros, cursor, desde}) {
+  const visibles = registros.slice(desde, desde + PAGE)
+
+  return (
+    <Box flexDirection="column" marginTop={1}>
+      <Box>
+        <Box width={4}>
+          <Text bold color={PALETA.tenue}>#</Text>
+        </Box>
+        {columnas.map((nombre, idx) => {
+          const activa = idx === cursor.col
+          return (
+            <Box key={nombre} width={anchoCampo(nombre)}>
+              <Text
+                bold
+                inverse={activa}
+                color={activa ? PALETA.marca : PALETA.tenue}
+              >
+                {nombre.toUpperCase()}
+              </Text>
+            </Box>
+          )
+        })}
+      </Box>
+
+      {visibles.map((fila, offset) => {
+        const real = desde + offset
+        const filaActiva = real === cursor.fila
+        return (
+          <Box key={real}>
+            <Box width={4}>
+              <Text inverse={filaActiva} color={filaActiva ? PALETA.marca : PALETA.tenue}>
+                {real + 1}
+              </Text>
+            </Box>
+            {columnas.map((nombre, idx) => {
+              const celdaActiva = filaActiva && idx === cursor.col
+              return (
+                <Box key={nombre} width={anchoCampo(nombre)}>
+                  <Text
+                    color={celdaActiva ? PALETA.fondo : PALETA.claro}
+                    backgroundColor={celdaActiva ? PALETA.foco : undefined}
+                    wrap="truncate"
+                  >
+                    {fila[nombre] ?? ''}
+                  </Text>
+                </Box>
+              )
+            })}
+          </Box>
+        )
+      })}
+    </Box>
+  )
+}
+
+function BarraInferior({modo, cursor}) {
+  const atajos = modo === 'open' || modo === 'save'
+    ? (
+      <Text color={PALETA.tenue}>
+        <Text bold color={PALETA.marca}>Enter</Text> confirmar{'  '}
+        <Text bold color={PALETA.marca}>Esc</Text> cancelar
+      </Text>
+    )
+    : (
+      <Text color={PALETA.tenue}>
+        <Text bold color={PALETA.marca}>A</Text> abrir{'  '}
+        <Text bold color={PALETA.marca}>G</Text> guardar{'  '}
+        <Text bold color={PALETA.marca}>Esc</Text> salir
+      </Text>
+    )
+
+  return (
+    <Box marginTop={1} justifyContent="space-between">
+      {atajos}
+      <Text color={PALETA.tenue}>
+        Fila {cursor.fila + 1} / Columna {cursor.col + 1}
+      </Text>
+    </Box>
+  )
 }
 
 function App() {
@@ -161,6 +282,23 @@ function App() {
       return
     }
 
+    if (key.upArrow) {
+      dispatch({type: 'MOVE', dir: 'up'})
+      return
+    }
+    if (key.downArrow) {
+      dispatch({type: 'MOVE', dir: 'down'})
+      return
+    }
+    if (key.leftArrow) {
+      dispatch({type: 'MOVE', dir: 'left'})
+      return
+    }
+    if (key.rightArrow) {
+      dispatch({type: 'MOVE', dir: 'right'})
+      return
+    }
+
     if (input === 'a' || input === 'A') {
       dispatch({type: 'PROMPT', modo: 'open', buffer: ''})
       return
@@ -171,10 +309,10 @@ function App() {
     }
   })
 
-  const preview = estado.registros
-    .slice(0, 4)
-    .map((fila, i) => `${i + 1}. ${estado.columnas.map((c) => fila[c]).join(' | ')}`)
-    .join('\n')
+  const pagina = Math.floor(estado.cursor.fila / PAGE)
+  const desde = pagina * PAGE
+  const nombreCol = estado.columnas[estado.cursor.col]
+  const valorActual = nombreCol ? (estado.registros[estado.cursor.fila]?.[nombreCol] ?? '') : ''
 
   return (
     <Box
@@ -187,12 +325,7 @@ function App() {
       paddingX={1}
       paddingY={1}
     >
-      <Text bold color={PALETA.claro}>
-        {estado.ruta ? basename(estado.ruta) : '(ningun archivo)'}
-      </Text>
-      <Text color={PALETA.tenue}>
-        {estado.registros.length} registros / {estado.columnas.length} campos
-      </Text>
+      <BarraSuperior ruta={estado.ruta} registros={estado.registros} columnas={estado.columnas} />
 
       {estado.aviso ? <Text color={PALETA.marca}>{estado.aviso}</Text> : null}
 
@@ -201,17 +334,20 @@ function App() {
       ) : estado.modo === 'save' ? (
         <Text color={PALETA.marca}>Guardar &gt; {estado.buffer}</Text>
       ) : (
-        <Text color={PALETA.tenue}>
-          <Text bold color={PALETA.marca}>A</Text> abrir{'  '}
-          <Text bold color={PALETA.marca}>G</Text> guardar{'  '}
-          <Text bold color={PALETA.marca}>Esc</Text> salir
+        <Text>
+          <Text color={PALETA.tenue}>Valor &gt; </Text>
+          <Text bold color={PALETA.claro}>{valorActual}</Text>
         </Text>
       )}
 
-      <Box marginTop={1} flexDirection="column">
-        <Text color={PALETA.tenue}>vista previa (sin grilla todavia)</Text>
-        <Text color={PALETA.claro}>{preview || 'sin datos'}</Text>
-      </Box>
+      <Grilla
+        columnas={estado.columnas}
+        registros={estado.registros}
+        cursor={estado.cursor}
+        desde={desde}
+      />
+
+      <BarraInferior modo={estado.modo} cursor={estado.cursor} />
     </Box>
   )
 }
