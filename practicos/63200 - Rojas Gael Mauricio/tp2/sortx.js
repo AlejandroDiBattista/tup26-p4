@@ -23,10 +23,32 @@ function App({ filePath }) {
   });
   const [row, setRow] = useState(0);
   const [col, setCol] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
 
   const widths = colWidths(data.headers, data.rows);
+  const value = data.rows[row]?.[col] ?? '';
 
   useInput((input, key) => {
+    // Mientras se edita una celda, las teclas van todas al texto de edición
+    if (editing) {
+      if (key.return) {
+        setData(prev => {
+          const rows = prev.rows.map(r => [...r]);
+          rows[row][col] = editValue;
+          return { ...prev, rows };
+        });
+        setEditing(false);
+      } else if (key.escape) {
+        setEditing(false);
+      } else if (key.backspace || key.delete) {
+        setEditValue(v => v.slice(0, -1));
+      } else if (input) {
+        setEditValue(v => v + input);
+      }
+      return;
+    }
+
     // Navegación
     if (key.upArrow) setRow(r => Math.max(0, r - 1));
     if (key.downArrow) setRow(r => Math.min(data.rows.length - 1, r + 1));
@@ -46,16 +68,22 @@ function App({ filePath }) {
         return { ...prev, rows: sorted };
       });
     }
-  });
 
-  const value = data.rows[row]?.[col] ?? '';
+    // Entrar en modo edición
+    if (key.return) {
+      setEditValue(value);
+      setEditing(true);
+    }
+  });
 
   return React.createElement(Box, { flexDirection: 'column' },
     React.createElement(Box, { justifyContent: 'space-between' },
       React.createElement(Text, { bold: true }, filePath),
       React.createElement(Text, {}, `${data.rows.length} filas · ${data.headers.length} columnas`)
     ),
-    React.createElement(Text, { color: 'yellow' }, `Valor > ${value}`),
+    React.createElement(Text, { color: 'yellow' },
+      editing ? `Editar > ${editValue}` : `Valor > ${value}`
+    ),
     React.createElement(Box, {},
       React.createElement(Text, {}, '   '),
       ...data.headers.map((h, i) =>
@@ -74,7 +102,11 @@ function App({ filePath }) {
       )
     ),
     React.createElement(Box, { justifyContent: 'space-between', marginTop: 1 },
-      React.createElement(Text, { dimColor: true }, 'A abrir · G guardar · Enter editar · < ascendente · > descendente · Esc salir'),
+      React.createElement(Text, { dimColor: true },
+        editing
+          ? 'Enter guardar · Esc cancelar'
+          : 'A abrir · G guardar · Enter editar · < ascendente · > descendente · Esc salir'
+      ),
       React.createElement(Text, { dimColor: true }, `Fila ${row + 1} · Columna ${col + 1}`)
     )
   );
