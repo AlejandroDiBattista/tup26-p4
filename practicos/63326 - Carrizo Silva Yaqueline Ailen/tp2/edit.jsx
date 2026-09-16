@@ -17,8 +17,6 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
-// const FILAS_TABLA = 12;
-
 function App() {
     const {exit} = useApp();
     const FILAS_TABLA = Math.max(1, FILAS - 6);
@@ -38,6 +36,26 @@ function App() {
 
     const [editando, setEditando] = useState(false);
     const [valorEditado, setValorEditado] = useState('');
+
+    const ordenarDatos = (ascendente) => {
+        if (datos.length <= 1) { 
+            return; 
+        } 
+        const encabezado = datos[0]; 
+        const filasAOrdenar = datos.slice(1); 
+        filasAOrdenar.sort((a, b) => { 
+            const valorFilaA = a[columnaSeleccionada] || ''; 
+            const valorFilaB = b[columnaSeleccionada] || ''; 
+            
+            if (ascendente) { 
+                return valorFilaA.localeCompare(valorFilaB, undefined, {numeric: true}); 
+            } 
+                return valorFilaB.localeCompare(valorFilaA, undefined, {numeric: true}); 
+            }); 
+            setDatos([encabezado, ...filasAOrdenar]); 
+            setMensaje( `Ordenado ${ascendente ? 'ascendente' : 'descendente'} por columna ${columnaSeleccionada + 1}`
+            ); 
+    };
 
     useEffect(() => {
         const nombreArchivo = process.argv[2];
@@ -60,8 +78,9 @@ function App() {
             });
     }, []);
 
-    useInput((tecla, key) => {
 
+
+    useInput((tecla, key) => {
         if((tecla === 'a' || tecla === 'A') && !editando && !modoAbrir && !modoGuardar){
             setModoAbrir(true);
             setNombreArchivo('');
@@ -106,7 +125,7 @@ function App() {
             setMensaje(`Error al abrir el archivo: ${error.message}`);
         });
         return;
-    }
+        }
 
         if(modoGuardar){
             const textoCSV = datos.map((fila) => fila.join(',')).join('\n');
@@ -132,7 +151,7 @@ function App() {
                 setValorEditado(datos[filaSeleccionada] [columnaSeleccionada])
                 setEditando(true);
             }
-    }
+        }
 
         if (key.upArrow && filaSeleccionada > 1) {
         const nuevaFila = filaSeleccionada - 1;
@@ -164,9 +183,15 @@ function App() {
             setColumnaSeleccionada(columnaSeleccionada + 1);
             setMensaje('');
         }
-    });
 
-    
+        if(tecla === '<' && !editando && !modoAbrir && !modoGuardar){
+            ordenarDatos(true);
+        }
+        if(tecla === '>' && !editando && !modoAbrir && !modoGuardar){
+            ordenarDatos(false);
+        }
+
+    });
 
 return (
     <Box width={COLUMNAS} height={FILAS} flexDirection="column" paddingX={1} backgroundColor={COLORES.fondo}>
@@ -181,7 +206,7 @@ return (
 
             {!modoAbrir && !modoGuardar && (
                 <Text bold color={COLORES.acento}>
-                    Fila: {filaSeleccionada} | Col: {columnaSeleccionada + 1}
+                    Valor: {datos[filaSeleccionada]?.[columnaSeleccionada] || ''} | Fila: {filaSeleccionada} | Col: {columnaSeleccionada + 1}
                 </Text>
             )}
         </Box>
@@ -252,7 +277,7 @@ return (
         {!modoAbrir && !modoGuardar && (
             <Box marginTop={1}>
                 <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.titulo}>Flechas</Text> mover · <Text bold color={COLORES.titulo}>Enter</Text> editar · <Text bold color={COLORES.titulo}>A</Text> abrir · <Text bold color={COLORES.titulo}>G</Text> guardar · <Text bold color={COLORES.titulo}>Esc</Text> salir
+                    <Text bold color={COLORES.titulo}>Flechas</Text> mover · <Text bold color={COLORES.titulo}>Enter</Text> editar · <Text bold color={COLORES.titulo}>A</Text> abrir · <Text bold color={COLORES.titulo}>G</Text> guardar · <Text bold color={COLORES.titulo}>&lt; &gt;</Text> ordenar · <Text bold color={COLORES.titulo}>Esc</Text> salir
                 </Text>
             </Box>
         )}
