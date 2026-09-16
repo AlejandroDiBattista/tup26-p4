@@ -16,6 +16,7 @@ const COLORES = {
     titulo:    '#ede7db',
     secundario:'#ada79e',
     acento:    '#edbb64',
+    celda:     '#d6d1c8',
 };
 
 function App() {
@@ -24,6 +25,9 @@ function App() {
     const [filas, setFilas] = useState([]);
     const [ruta, setRuta] = useState('');
     const [error, setError] = useState('');
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+    const [filaInicio, setFilaInicio] = useState(0);
 
     useEffect(() => {
         const archivoInicial = process.argv[2];
@@ -33,6 +37,15 @@ function App() {
         abrirArchivo(archivoInicial);
     }, []);
 
+    useEffect(() => {
+        if (filaSeleccionada < filaInicio) {
+            setFilaInicio(filaSeleccionada);
+        }
+        if (filaSeleccionada >= filaInicio + FILAS_VISIBLES) {
+            setFilaInicio(filaSeleccionada - FILAS_VISIBLES + 1);
+        }
+    }, [filaSeleccionada, filaInicio]);
+
     async function abrirArchivo(nombre) {
         try {
             const texto = await readFile(nombre, 'utf8');
@@ -41,6 +54,9 @@ function App() {
             setFilas(datos.filas);
             setRuta(nombre);
             setError('');
+            setFilaSeleccionada(0);
+            setColumnaSeleccionada(0);
+            setFilaInicio(0);
         } catch {
             setError('No se pudo abrir el archivo');
         }
@@ -49,11 +65,28 @@ function App() {
     useInput((_tecla, key) => {
         if (key.escape) {
             exit();
+            return;
+        }
+
+        if (key.upArrow) {
+            setFilaSeleccionada(fila => Math.max(0, fila - 1));
+            return;
+        }
+        if (key.downArrow) {
+            setFilaSeleccionada(fila => Math.min(Math.max(filas.length - 1, 0), fila + 1));
+            return;
+        }
+        if (key.leftArrow) {
+            setColumnaSeleccionada(columna => Math.max(0, columna - 1));
+            return;
+        }
+        if (key.rightArrow) {
+            setColumnaSeleccionada(columna => Math.min(Math.max(cabecera.length - 1, 0), columna + 1));
         }
     });
 
-    const visibles = filas.slice(0, FILAS_VISIBLES);
-    const valorActual = visibles[0]?.[0] ?? '';
+    const visibles = filas.slice(filaInicio, filaInicio + FILAS_VISIBLES);
+    const valorActual = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
 
     return (
         <Box
@@ -87,33 +120,62 @@ function App() {
                 <Box width={5}>
                     <Text bold color={COLORES.secundario}>#</Text>
                 </Box>
-                {cabecera.map((nombre, indice) => (
-                    <Box key={indice} width={anchoDeColumna(nombre)}>
-                        <Text bold color={COLORES.secundario}>
-                            {nombre.toUpperCase()}
-                        </Text>
-                    </Box>
-                ))}
-            </Box>
-
-            {visibles.map((fila, indice) => (
-                <Box key={indice}>
-                    <Box width={5}>
-                        <Text color={COLORES.secundario}>{indice + 1}</Text>
-                    </Box>
-                    {fila.map((celda, indiceColumna) => (
-                        <Box key={indiceColumna} width={anchoDeColumna(cabecera[indiceColumna])}>
-                            <Text color={COLORES.titulo} wrap="truncate">
-                                {celda}
+                {cabecera.map((nombre, indice) => {
+                    const esColumna = indice === columnaSeleccionada;
+                    return (
+                        <Box key={indice} width={anchoDeColumna(nombre)}>
+                            <Text
+                                bold
+                                color={esColumna ? COLORES.acento : COLORES.secundario}
+                                backgroundColor={esColumna ? '#000000' : undefined}
+                            >
+                                {nombre.toUpperCase()}
                             </Text>
                         </Box>
-                    ))}
-                </Box>
-            ))}
+                    );
+                })}
+            </Box>
+
+            {visibles.map((fila, indiceVisible) => {
+                const numeroFila = filaInicio + indiceVisible;
+                const esFila = numeroFila === filaSeleccionada;
+
+                return (
+                    <Box key={numeroFila}>
+                        <Box width={5}>
+                            <Text
+                                color={esFila ? COLORES.acento : COLORES.secundario}
+                                backgroundColor={esFila ? '#000000' : undefined}
+                            >
+                                {numeroFila + 1}
+                            </Text>
+                        </Box>
+                        {fila.map((celda, indiceColumna) => {
+                            const seleccionada =
+                                esFila && indiceColumna === columnaSeleccionada;
+
+                            return (
+                                <Box key={indiceColumna} width={anchoDeColumna(cabecera[indiceColumna])}>
+                                    <Text
+                                        color={seleccionada ? COLORES.fondo : COLORES.titulo}
+                                        backgroundColor={seleccionada ? COLORES.celda : undefined}
+                                        wrap="truncate"
+                                    >
+                                        {celda}
+                                    </Text>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                );
+            })}
 
             <Box marginTop={1} justifyContent="space-between">
                 <Text color={COLORES.secundario}>
                     <Text bold color={COLORES.acento}>Esc</Text> salir
+                </Text>
+                <Text color={COLORES.secundario}>
+                    Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
                 </Text>
             </Box>
         </Box>
