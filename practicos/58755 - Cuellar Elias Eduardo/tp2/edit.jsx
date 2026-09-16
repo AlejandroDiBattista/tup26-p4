@@ -62,6 +62,9 @@ function App() {
     return (
         <Box flexDirection="column">
             <Text bold color={COLORES.titulo}>
+                <Text color={COLORES.secundario}>
+                    Valor › <Text color={COLORES.titulo}>{filas[seleccion.fila][seleccion.columna]}</Text>
+                </Text>
                 {basename(archivo)}   {filas.length - 1} filas · {filas[0].length} columnas
             </Text>
             {filas.map((fila, i) => {
@@ -83,7 +86,14 @@ function App() {
                     </Box>
                 )
             })}
+
+            <Text color={COLORES.secundario}>
+                A abrir · G guardar · Enter editar · {"<"} ascendente · {">"} descendente · Esc salir{"   "}
+                Fila {seleccion.fila} · Columna {seleccion.columna + 1}
+            </Text>
+
         </Box>
+
     )
 }
 
