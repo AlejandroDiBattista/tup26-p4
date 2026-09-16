@@ -141,9 +141,45 @@ function measureColumns(header, rows) {
         for (const row of rows) {
             width = Math.max(width, formatCell(row[column], numeric).length);
         }
-        column.push({ numeric, width });
+        columns.push({ numeric, width });
     }
     return columns;
+}
+
+async function loadCsv(path) {
+    let text;
+
+    try {
+        text = await readFile(path, 'utf8');
+    } catch (error) {
+        throw new Error('no se pudo leer el archivo: "' + path + '"');
+    }
+
+    const table = parseCsv(text);
+    
+    return {
+        fileName: path,
+        header: table.header,
+        rows: table.rows,
+    }
+}
+
+async function saveCsv(path, header, rows) {
+    try {
+        await writeFile(path, serialize(header, rows), 'utf8');
+    } catch (error) {
+        throw new Error('no se pudo escribir el archivo: "' + path + '"');
+    }
+}
+
+function adjustFirstRow(firstRow, selectedRow) {
+    if (selectedRow < firstRow) {
+        return selectedRow;
+    }
+    if (selectedRow >= firstRow + VISIBLE_ROWS) {
+        return selectedRow - VISIBLE_ROWS + 1;
+    }
+    return firstRow;
 }
 
 function Table({ table, columns, cursor }) {
@@ -193,12 +229,126 @@ function App({ initialTable, initialMessage }) {
     const [cursor, setCursor] = useState({ row: 0, column: 0, firstRow: 0 });
     
     const columns = table ? measureColumns(table.header, table.rows) : [];
+    const hasRows = table !== null && table.rows.length > 0;
+    const currentValue = hasRows ? table.rows[cursor.row][cursor.column] : '';
+    
+    function moveTo(row, column) {
+        const newRow = Math.min(Math.max(row, 0), Math.max(table.rows.length - 1, 0));
+        const newColumn = Math.min(Math.max(column, 0), table.header.length - 1);
+        setCursor({ row: newRow, column: newColumn, firstRow: adjustFirstRow(cursor.firstRow, newRow) });
+    }
 
-    useInput((tecla, key) => {
+    function sortBy(descending) {
+        setTable({
+            ...table,
+            rows: sortRows(table.rows, cursor.column, descending),
+        });
+    }
+
+    function cancel() {
+        if (table === null) {
+            exit();
+            return;
+        }
+        setMessage(null);
+        setMode('view');
+    }
+
+    async function openFile(path) {
+        try {
+            const newTable = await loadCsv(path);
+            setTable(newTable);
+            setCursor({ row: 0, column: 0, firstRow: 0 });
+            setMessage(null);
+            setMode('view');
+        } catch (error) {
+            setMessage('Error: ' + error.message);
+        }
+    }
+
+    async function saveFile(path) {
+        try {
+            await saveCsv(path, table.header, table.rows);
+            setTable({ ...table, fileName: path });
+            setMessage(null);
+            setMode('view');
+        } catch (error) {
+            setMessage('Error: ' + error.message);
+        }
+    }
+
+    function editCell(value) {
+        const newRow = [...table.rows[cursor.row]];
+        newRow[cursor.column] = value;
+        const newRows = [...table.rows];
+        newRows[cursor.row] = newRow;
+        setTable({ ...table, rows: newRows });
+        setMessage(null);
+        setMode('view');
+    }
+
+    function handleSubmit(value) {
+        if (mode === 'edit') {
+            editCell(value);
+        }
+        else if (mode === 'open') {
+            openFile(value);
+        }
+        else {
+            saveFile(value);
+        }
+    }
+
+    useInput((input, key) => {
+        if (mode !== 'view') {
+            if (key.escape) {
+                cancel();
+            }
+            return;
+        }
+
         if (key.escape) {
             exit();
         }
+        else if (key.upArrow) {
+            moveTo(cursor.row - 1, cursor.column);
+        }
+        else if (key.downArrow) {
+            moveTo(cursor.row + 1, cursor.column);
+        }
+        else if (key.leftArrow) {
+            moveTo(cursor.row, cursor.column - 1);
+        }
+        else if (key.rightArrow) {
+            moveTo(cursor.row, cursor.column + 1);
+        }
+        else if (input === '<') {
+            sortBy(false);
+        }
+        else if (input === '>') {
+            sortBy(true);
+        }
+        else if (input === 'a' || input === 'A') {
+            setMessage(null);
+            setMode('open');
+        }
+        else if (input === 'g' || input === 'G') {
+            setMessage(null);
+            setMode('save');
+        }
+        else if (key.return && hasRows) {
+            setMessage(null);
+            setMode('edit');
+        }
     })
+
+    let defaultValue = '';
+    if (mode === 'save') {
+        defaultValue = table.fileName;
+    }
+    else if (mode === 'edit') {
+        defaultValue = currentValue;
+    }
 
     let hints = [
         { key: 'A', label: 'abrir' },
@@ -260,7 +410,17 @@ function App({ initialTable, initialMessage }) {
     );
 }
 
-const app = render(<App />);
+const initialFile = process.argv[2];
+let initialTable = null;
+let initialMessage = null;
+if (initialFile) {
+    try {
+        initialTable = await loadCsv(initialFile);
+    } catch (error) {
+        initialMessage = 'Error: ' + error.message;
+    }
+}
+
+const app = render(<App initialTable={initialTable} initialMessage={initialMessage} />);
 await app.waitUntilExit();
 console.clear();
-
