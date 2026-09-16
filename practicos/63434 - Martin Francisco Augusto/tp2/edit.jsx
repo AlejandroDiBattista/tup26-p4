@@ -28,6 +28,8 @@ function App() {
     const [filaSeleccionada, setFilaSeleccionada] = useState(0);
     const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
     const [filaInicio, setFilaInicio] = useState(0);
+    const [abriendo, setAbriendo] = useState(false);
+    const [guardando, setGuardando] = useState(false);
 
     useEffect(() => {
         const archivoInicial = process.argv[2];
@@ -57,12 +59,51 @@ function App() {
             setFilaSeleccionada(0);
             setColumnaSeleccionada(0);
             setFilaInicio(0);
+            setAbriendo(false);
         } catch {
             setError('No se pudo abrir el archivo');
         }
     }
 
-    useInput((_tecla, key) => {
+    async function guardarArchivo(nombre) {
+        try {
+            await writeFile(nombre, armarCsv(cabecera, filas), 'utf8');
+            setRuta(nombre);
+            setError('');
+            setGuardando(false);
+        } catch {
+            setError('No se pudo guardar el archivo');
+        }
+    }
+
+    function confirmarAbrir(valor) {
+        const destino = String(valor || '').trim();
+        if (!destino) {
+            setError('Falta el nombre del archivo');
+            return;
+        }
+        abrirArchivo(destino);
+    }
+
+    function confirmarGuardar(valor) {
+        const destino = String(valor || '').trim();
+        if (!destino) {
+            setError('Falta el nombre del archivo');
+            return;
+        }
+        guardarArchivo(destino);
+    }
+
+    useInput((tecla, key) => {
+        if (abriendo || guardando) {
+            if (key.escape) {
+                setAbriendo(false);
+                setGuardando(false);
+                setError('');
+            }
+            return;
+        }
+
         if (key.escape) {
             exit();
             return;
@@ -82,11 +123,47 @@ function App() {
         }
         if (key.rightArrow) {
             setColumnaSeleccionada(columna => Math.min(Math.max(cabecera.length - 1, 0), columna + 1));
+            return;
+        }
+
+        if (tecla === 'a' || tecla === 'A') {
+            setAbriendo(true);
+            setGuardando(false);
+            setError('');
+            return;
+        }
+        if (tecla === 'g' || tecla === 'G') {
+            setGuardando(true);
+            setAbriendo(false);
+            setError('');
         }
     });
 
     const visibles = filas.slice(filaInicio, filaInicio + FILAS_VISIBLES);
     const valorActual = filas[filaSeleccionada]?.[columnaSeleccionada] ?? '';
+
+    let atajos = (
+        <Text color={COLORES.secundario}>
+            <Text bold color={COLORES.acento}>A</Text> abrir ·{' '}
+            <Text bold color={COLORES.acento}>G</Text> guardar ·{' '}
+            <Text bold color={COLORES.acento}>Esc</Text> salir
+        </Text>
+    );
+    if (abriendo) {
+        atajos = (
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>Enter</Text> abrir ·{' '}
+                <Text bold color={COLORES.acento}>Esc</Text> cancelar
+            </Text>
+        );
+    } else if (guardando) {
+        atajos = (
+            <Text color={COLORES.secundario}>
+                <Text bold color={COLORES.acento}>Enter</Text> guardar ·{' '}
+                <Text bold color={COLORES.acento}>Esc</Text> cancelar
+            </Text>
+        );
+    }
 
     return (
         <Box
@@ -107,10 +184,26 @@ function App() {
                 </Text>
             </Box>
 
-            <Box>
-                <Text color={COLORES.secundario}>Valor {'>'} </Text>
-                <Text color={COLORES.titulo}>{valorActual}</Text>
-            </Box>
+            {abriendo ? (
+                <Box>
+                    <Text color={COLORES.acento}>Abrir {'>'} </Text>
+                    <TextInput key="abrir" defaultValue="" onSubmit={confirmarAbrir} />
+                </Box>
+            ) : guardando ? (
+                <Box>
+                    <Text color={COLORES.acento}>Guardar {'>'} </Text>
+                    <TextInput
+                        key="guardar"
+                        defaultValue={ruta ? basename(ruta) : ''}
+                        onSubmit={confirmarGuardar}
+                    />
+                </Box>
+            ) : (
+                <Box>
+                    <Text color={COLORES.secundario}>Valor {'>'} </Text>
+                    <Text color={COLORES.titulo}>{valorActual}</Text>
+                </Box>
+            )}
 
             {error ? (
                 <Text color={COLORES.acento}>{error}</Text>
@@ -171,9 +264,7 @@ function App() {
             })}
 
             <Box marginTop={1} justifyContent="space-between">
-                <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>Esc</Text> salir
-                </Text>
+                {atajos}
                 <Text color={COLORES.secundario}>
                     Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}
                 </Text>
@@ -224,4 +315,12 @@ function parsearCsv(texto) {
     }
 
     return {cabecera, filas};
+}
+
+function armarCsv(cabecera, filas) {
+    const lineas = [cabecera.join(',')];
+    for (const fila of filas) {
+        lineas.push(fila.join(','));
+    }
+    return lineas.join('\n') + '\n';
 }
