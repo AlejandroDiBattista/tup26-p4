@@ -106,6 +106,10 @@ function App() {
         if (key.rightArrow && col < cabecera.length - 1) {
             setCol((c) => c + 1);
         }
+        // Enter para editar celda
+        if (key.return && filas.length) setModo('editar');
+        if (char?.toLowerCase() === 'a') setModo('abrir');
+        if (char?.toLowerCase() === 'g') setModo('guardar');
     });
 
      const anchos = cabecera.map((c, i) =>
@@ -136,6 +140,23 @@ function App() {
                     <Box>
                         <Text bold color={COLORES.acento}>Guardar › </Text>
                         <TextInput defaultValue={archivo} onSubmit={guardar} />
+                    </Box>
+                )}
+                 {/* edición con TextInput para modificar el valor de la celda */}
+                {modo === 'editar' && (
+                    <Box>
+                        <Text bold color={COLORES.acento}>Editar › </Text>
+                        <TextInput
+                            defaultValue={valorCelda}
+                            onSubmit={(val) => {
+                                // Reemplazo del valor modificado en la fila y columna actual
+                                const copia = filas.map((r, ri) =>
+                                    ri === fila ? r.map((c, ci) => (ci === col ? val : c)) : r
+                                );
+                                setFilas(copia);
+                                setModo('ver');
+                            }}
+                        />
                     </Box>
                 )}
                 {modo === 'ver' && (
@@ -185,11 +206,11 @@ function App() {
             <Box marginTop={1} justifyContent="space-between">
                 {modo === 'ver' ? (
                 <Text color={COLORES.secundario}>
-                    <Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Esc</Text> salir
+                    <Text bold color={COLORES.acento}>A</Text> abrir · <Text bold color={COLORES.acento}>G</Text> guardar · <Text bold color={COLORES.acento}>Enter</Text> editar · <Text bold color={COLORES.acento}>Esc</Text> salir
                 </Text>
                 ) : (
                     <Text color={COLORES.secundario}>
-                        <Text bold color={COLORES.acento}>Enter</Text> {modo === 'abrir' ? 'abrir' : 'guardar'} · <Text bold color={COLORES.acento}>Esc</Text> cancelar
+                        <Text bold color={COLORES.acento}>Enter</Text> confirmar · <Text bold color={COLORES.acento}>Esc</Text> cancelar
                     </Text>
                 )}
                 {cabecera.length > 0 && (
