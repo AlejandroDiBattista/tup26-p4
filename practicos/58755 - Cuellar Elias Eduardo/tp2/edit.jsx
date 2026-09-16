@@ -47,6 +47,8 @@ function App() {
         return <Text color={COLORES.secundario}>Cargando...</Text>
     }
 
+    const anchos = calcularAnchos(filas)
+
     return (
         <Box flexDirection="column">
             <Text bold color={COLORES.titulo}>{basename(archivo)}</Text>
@@ -56,6 +58,28 @@ function App() {
         </Box>
     )
 }
+
+function calcularAnchos(filas) {
+    const cantidadColumnas = filas[0].length
+    const anchos = []
+
+    for (let col = 0; col < cantidadColumnas; col++) {
+        let maximo = 0
+        for (const fila of filas) {
+            if (fila[col].length > maximo) {
+                maximo = fila[col].length
+            }
+        }
+        anchos.push(maximo)
+    }
+
+    return anchos
+}
+
+function rellenar(texto, ancho) {
+    return texto.padEnd(ancho)
+}
+
 
 const app = render(<App />);
 await app.waitUntilExit();
