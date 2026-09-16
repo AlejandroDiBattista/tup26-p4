@@ -28,6 +28,11 @@ async function leerArchivo(nombreArchivo) {
     const contenido= await readFile(nombreArchivo, "utf-8")
     return parsearCSV(contenido)
 }
+function armarCSV(cabecera, filas){
+    const lineaCabecera= cabecera.join(",")
+    const lineasFilas=filas.map(fila => fila.join(","))
+    return [lineaCabecera, ...lineasFilas].join("\n")
+}
 
 function calcularAnchos(cabecera, filas) {
     const anchos= []
@@ -83,14 +88,61 @@ function App() {
     const [datos, setDatos]= useState(null)
     const [fila, setFila]= useState(0)
     const [columna, setColumna]= useState(0)
+    const [modo, setModo]= useState("ver") 
+    const [mensaje, setMensaje]= useState("")
     useEffect(() => {
         leerArchivo(nombreArchivo).then(resultado => {
             setDatos(resultado);
         })
     }, [])
+
+    async function manejarAbrir(nombre){
+        try {
+            const resultado = await leerArchivo(nombre)
+            setDatos(resultado)
+            setFila(0)
+            setColumna(0)
+            setModo("ver")
+            setMensaje("")
+        } catch (error) {
+            setMensaje("No se pudo abrir el archivo: "+ nombre)
+        }
+    }
+
+    async function manejarGuardar(nombre){
+        try{
+            const contenido = armarCSV(datos.cabecera, datos.filas)
+            await writeFile(nombre, contenido, "utf-8")
+            setModo("ver")
+            setMensaje("")
+        } catch (error) {
+            setMensaje("No se pudo guardar el archivo: "+ nombre)
+        }
+    }
+
+    function manejarEditar(nuevoValor) {
+        const filasNuevas= datos.filas.map((valores, i)=> {
+            if (i !== fila){
+                return valores
+            }
+            return valores.map((valor, j) => j === columna ? nuevoValor : valor)
+        })
+        setDatos({...datos, filas: filasNuevas})
+        setModo("ver")
+    }
+
     useInput((tecla, key) => {
         if (key.escape) {
-            exit();
+            if (modo !== "ver"){
+                setModo("ver")
+                setMensaje("")
+            }else{
+                exit();
+            }
+            return
+        }
+        if (modo !== "ver"){
+            return
         }
         if(!datos){
             return
@@ -107,11 +159,20 @@ function App() {
         if (key.rightArrow){
             setColumna(c=> Math.min(datos.cabecera.length - 1, c + 1))
         }
-        if (tecla==='<'){
+        if (tecla==="<"){
             setDatos(d=> ({...d, filas: ordenarFilas(d.filas, columna, true)}))
         }
-        if (tecla==='>'){
+        if (tecla===">"){
             setDatos(d=> ({...d, filas: ordenarFilas(d.filas, columna, false)}))
+        }
+        if (tecla==="a" || tecla=== "A"){
+            setModo("abrir")
+        }
+        if (tecla==="g" || tecla=== "G"){
+            setModo("guardar")
+        }
+        if (key.return){
+            setModo("editar")
         }
     })
 
@@ -132,9 +193,28 @@ function App() {
                 <Text bold color={COLORES.titulo}>{nombreArchivo}</Text>
                 <Text color={COLORES.secundario}>{datos.filas.length} filas · {datos.cabecera.length} columnas</Text>
             </Box>
-            <Box marginTop={1}>
-                <Text color={COLORES.secundario}>Valor ' <Text bold color={COLORES.titulo}>valorSeleccionado</Text></Text>
-            </Box>
+            {(modo=== "abrir" || modo === "guardar") && (
+                <Box marginTop={1}>
+                    <Text bold color={COLORES.acento}> {modo === "abrir" ? "Abrir" : "Guardar"} </Text>
+                    <TextInput onSubmit={modo=== "abrir" ? manejarAbrir:manejarGuardar} />
+                </Box>
+            )}
+            {modo === "editar" && (
+                <Box marginTop={1}>
+                    <Text bold color={COLORES.acento}>Editar </Text>
+                    <TextInput defaultValue={valorSeleccionado} onSubmit={manejarEditar} />
+                </Box>
+            )}
+            {mensaje !== "" && (
+                <Box marginTop={1}>
+                    <Text color ="red">{mensaje}</Text>
+                </Box>
+            )}
+            {modo === "ver" && (
+                <Box marginTop={1}>
+                    <Text color={COLORES.secundario}>Valor  <Text bold color={COLORES.titulo}>{valorSeleccionado}</Text></Text>
+                </Box>
+            )}
             <Box marginTop={1} flexDirection="column">
                 <FilaTabla valores={datos.cabecera} anchos={anchos} esCabecera={true} />
                 {datos.filas.map((valores, i) => (
