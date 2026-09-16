@@ -32,23 +32,30 @@ const COLORES = {
 
 function Fila({numero, fila, columnaSeleccionada, filaSeleccionada}) {
     return (
-        <Box flexDirection="row" gap={1}> 
-            <Text width={4}>{numero}</Text>
+        <Box flexDirection="row"> 
+            <Text width={4}>
+            {String(numero).padEnd(4)}
+            </Text>
 
-            <Text width={13} inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 0}>
-            {fila[0]}
+            <Text 
+            inverse={filaSeleccionada === numero -1 && columnaSeleccionada === 0}>
+             {fila[0].padEnd(15)}
             </Text>
-            <Text width={15}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada ===  1}>
-            {fila[1]}
+            <Text 
+            inverse={filaSeleccionada === numero -1 && columnaSeleccionada ===  1}>
+             {fila[1].padEnd(15)}
             </Text>
-            <Text width={6}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 2}>
-            {fila[2]}
+            <Text 
+            inverse={filaSeleccionada === numero -1 && columnaSeleccionada === 2}>
+             {fila[2].padEnd(7)}
             </Text>
-            <Text width={11}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 3}>
-            {fila[3]}
+            <Text 
+            inverse={filaSeleccionada === numero -1 && columnaSeleccionada === 3}>
+             {fila[3].padEnd(11)}
             </Text>
-            <Text width={20}inverse= {filaSeleccionada === numero -1 && columnaSeleccionada === 4}>
-            {fila[4]}
+            <Text 
+            inverse={filaSeleccionada === numero -1 && columnaSeleccionada === 4}>
+             {fila[4].padEnd(20)}
             </Text>
     
     </Box>
@@ -268,17 +275,33 @@ function App() {
             </Text>
 
 
-            <Box flexDirection="row" gap={1}>
-                <Text bold width={4}>N°</Text>
-                <Text bold width={13}>nombre</Text>
-                <Text bold width={15}>apellido</Text>
-                <Text bold width={6}>edad</Text>
-                <Text bold width={11}>salario</Text>
-                <Text bold width={20}>departamento</Text>
+            <Box flexDirection="row">
+                <Text bold>
+                    {'#'.padEnd(4)}
+                </Text>
+
+                <Text bold>
+                    {'NOMBRE'.padEnd(15)}
+                </Text>
+
+                <Text bold>
+                    {'APELLIDO'.padEnd(15)}
+                </Text>
+
+                <Text bold>
+                    {'EDAD'.padEnd(7)}
+                </Text>
+
+                <Text bold>
+                    {'SALARIO'.padEnd(11)}
+                </Text>
+
+                <Text bold>
+                    {'DEPARTAMENTO'.padEnd(20)}
+
+                </Text>
             </Box>
                   
-
-
             {filasActuales.slice(inicio + 1, inicio + FILAS_VISIBLES + 1).map((fila, indice) => (
               <Fila
                   key={indice}
