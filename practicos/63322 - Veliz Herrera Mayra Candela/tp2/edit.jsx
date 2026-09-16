@@ -50,6 +50,21 @@ function anchoCampo(nombre) {
   return Math.max(10, Math.min(18, n + 8))
 }
 
+function campoDe(estado) {
+  return estado.columnas[estado.cursor.col]
+}
+
+function ordenarRegistros(registros, columna, dir) {
+  const copia = registros.slice()
+  copia.sort((a, b) => {
+    const izq = String(a[columna] ?? '')
+    const der = String(b[columna] ?? '')
+    const cmp = izq.localeCompare(der, 'es', {numeric: true, sensitivity: 'base'})
+    return dir === 'desc' ? -cmp : cmp
+  })
+  return copia
+}
+
 const estadoInicial = {
   modo: 'idle',
   ruta: '',
@@ -118,6 +133,34 @@ function reducir(estado, accion) {
         cursor: moverCursor(estado.cursor, accion.dir, maxFila, maxCol),
       }
     }
+    case 'START_EDIT': {
+      if (estado.registros.length === 0) {
+        return estado
+      }
+      const col = campoDe(estado)
+      const valor = estado.registros[estado.cursor.fila]?.[col] ?? ''
+      return {...estado, modo: 'edit', buffer: valor, aviso: ''}
+    }
+    case 'COMMIT_EDIT': {
+      const col = campoDe(estado)
+      const registros = estado.registros.map((fila, i) => {
+        if (i !== estado.cursor.fila) {
+          return fila
+        }
+        return {...fila, [col]: estado.buffer}
+      })
+      return {...estado, registros, modo: 'idle', buffer: ''}
+    }
+    case 'SORT': {
+      const col = campoDe(estado)
+      if (!col) {
+        return estado
+      }
+      return {
+        ...estado,
+        registros: ordenarRegistros(estado.registros, col, accion.dir),
+      }
+    }
     default:
       return estado
   }
@@ -136,7 +179,7 @@ function BarraSuperior({ruta, registros, columnas}) {
   )
 }
 
-function Grilla({columnas, registros, cursor, desde}) {
+function Grilla({columnas, registros, cursor, desde, modo, buffer}) {
   const visibles = registros.slice(desde, desde + PAGE)
 
   return (
@@ -173,6 +216,7 @@ function Grilla({columnas, registros, cursor, desde}) {
             </Box>
             {columnas.map((nombre, idx) => {
               const celdaActiva = filaActiva && idx === cursor.col
+              const texto = celdaActiva && modo === 'edit' ? buffer : (fila[nombre] ?? '')
               return (
                 <Box key={nombre} width={anchoCampo(nombre)}>
                   <Text
@@ -180,7 +224,7 @@ function Grilla({columnas, registros, cursor, desde}) {
                     backgroundColor={celdaActiva ? PALETA.foco : undefined}
                     wrap="truncate"
                   >
-                    {fila[nombre] ?? ''}
+                    {texto}
                   </Text>
                 </Box>
               )
@@ -193,20 +237,32 @@ function Grilla({columnas, registros, cursor, desde}) {
 }
 
 function BarraInferior({modo, cursor}) {
-  const atajos = modo === 'open' || modo === 'save'
-    ? (
+  let atajos = (
+    <Text color={PALETA.tenue}>
+      <Text bold color={PALETA.marca}>A</Text> abrir{' · '}
+      <Text bold color={PALETA.marca}>G</Text> guardar{' · '}
+      <Text bold color={PALETA.marca}>Enter</Text> editar{' · '}
+      <Text bold color={PALETA.marca}>&lt;</Text> asc{' · '}
+      <Text bold color={PALETA.marca}>&gt;</Text> desc{' · '}
+      <Text bold color={PALETA.marca}>Esc</Text> salir
+    </Text>
+  )
+
+  if (modo === 'open' || modo === 'save') {
+    atajos = (
       <Text color={PALETA.tenue}>
-        <Text bold color={PALETA.marca}>Enter</Text> confirmar{'  '}
+        <Text bold color={PALETA.marca}>Enter</Text> {modo === 'open' ? 'abrir' : 'guardar'}{' · '}
         <Text bold color={PALETA.marca}>Esc</Text> cancelar
       </Text>
     )
-    : (
+  } else if (modo === 'edit') {
+    atajos = (
       <Text color={PALETA.tenue}>
-        <Text bold color={PALETA.marca}>A</Text> abrir{'  '}
-        <Text bold color={PALETA.marca}>G</Text> guardar{'  '}
-        <Text bold color={PALETA.marca}>Esc</Text> salir
+        <Text bold color={PALETA.marca}>Enter</Text> confirmar{' · '}
+        <Text bold color={PALETA.marca}>Esc</Text> cancelar
       </Text>
     )
+  }
 
   return (
     <Box marginTop={1} justifyContent="space-between">
@@ -277,6 +333,25 @@ function App() {
       return
     }
 
+    if (estado.modo === 'edit') {
+      if (key.escape) {
+        dispatch({type: 'CANCEL'})
+        return
+      }
+      if (key.return) {
+        dispatch({type: 'COMMIT_EDIT'})
+        return
+      }
+      if (key.backspace || key.delete) {
+        dispatch({type: 'BACKSPACE'})
+        return
+      }
+      if (input && input.length === 1 && !key.ctrl && !key.meta) {
+        dispatch({type: 'TYPE', char: input})
+      }
+      return
+    }
+
     if (key.escape) {
       exit()
       return
@@ -299,6 +374,20 @@ function App() {
       return
     }
 
+    if (key.return) {
+      dispatch({type: 'START_EDIT'})
+      return
+    }
+
+    if (input === '<') {
+      dispatch({type: 'SORT', dir: 'asc'})
+      return
+    }
+    if (input === '>') {
+      dispatch({type: 'SORT', dir: 'desc'})
+      return
+    }
+
     if (input === 'a' || input === 'A') {
       dispatch({type: 'PROMPT', modo: 'open', buffer: ''})
       return
@@ -312,7 +401,8 @@ function App() {
   const pagina = Math.floor(estado.cursor.fila / PAGE)
   const desde = pagina * PAGE
   const nombreCol = estado.columnas[estado.cursor.col]
-  const valorActual = nombreCol ? (estado.registros[estado.cursor.fila]?.[nombreCol] ?? '') : ''
+  const valorTabla = nombreCol ? (estado.registros[estado.cursor.fila]?.[nombreCol] ?? '') : ''
+  const valorActual = estado.modo === 'edit' ? estado.buffer : valorTabla
 
   return (
     <Box
@@ -345,6 +435,8 @@ function App() {
         registros={estado.registros}
         cursor={estado.cursor}
         desde={desde}
+        modo={estado.modo}
+        buffer={estado.buffer}
       />
 
       <BarraInferior modo={estado.modo} cursor={estado.cursor} />
