@@ -83,55 +83,41 @@ function App() {
    const archivoInicial = process.argv[2];
 
     useEffect(() => {
-
         if (archivoInicial) {
             abrirCSV(archivoInicial);
         }
-
     }, []);
 
     useInput((input, key) => {
         if (key.escape) {
-
             if (modo !== 'tabla') {
-
                 setModo('tabla');
                 setMensaje('');
 
             } else {
-
                 exit();
-
             }
-
             return;
         }
         if (modo !== 'tabla') {
             return;
         }
         if (key.upArrow && datos.length > 0) {
-
             setFila(actual => {
-
                 const nuevaFila = Math.max(
                     0,
                     actual - 1
                 );
-
                 if (nuevaFila < scrollFila) {
                     setScrollFila(nuevaFila);
                 }
-
                 return nuevaFila;
-
             });
-
         }
 
         if (key.downArrow && datos.length > 0) {
 
             setFila(actual => {
-
                 const nuevaFila = Math.min(
                     datos.length - 1,
                     actual + 1
@@ -141,20 +127,136 @@ function App() {
                     nuevaFila >=
                     scrollFila + filasVisibles
                 ) {
-
                     setScrollFila(
                         nuevaFila - filasVisibles + 1
                     );
+                }
+                return nuevaFila;
+            });
+        }
+          if (key.leftArrow && cabeceras.length > 0) {
+            setColumna(actual => {
+                const nuevaColumna = Math.max(
+                    0,
+                    actual - 1
+                );
+                if (
+                    nuevaColumna < scrollColumna
+                ) {
+                    setScrollColumna(nuevaColumna);
+                }
+                return nuevaColumna;
+            });
+        }
+        if (key.rightArrow && cabeceras.length > 0) {
+            setColumna(actual => {
+                const nuevaColumna = Math.min(
+                    cabeceras.length - 1,
+                    actual + 1
+                );
 
+                if (
+                    nuevaColumna >=
+                    scrollColumna + columnasVisibles
+                ) {
+
+                    setScrollColumna(
+                        nuevaColumna -
+                        columnasVisibles +
+                        1
+                    );
                 }
 
-                return nuevaFila;
-
+                return nuevaColumna;
             });
+        }
+
+        if (input.toLowerCase() === 'a') {
+            setModo('abrir');
+            setMensaje('');
 
         }
 
+        if (input.toLowerCase() === 'g') {
+            setModo('guardar');
+            setMensaje('');
 
+        }
+
+        if (key.return && datos.length > 0) {
+            setModo('editar');
+            setMensaje('');
+
+        }
+
+        if (input === '<' && datos.length > 0) {
+            const copia = [...datos];
+            copia.sort((a, b) => {
+                const valorA = a[columna] ?? '';
+                const valorB = b[columna] ?? '';
+                const numeroA = Number(valorA);
+                const numeroB = Number(valorB);
+                if (
+                    valorA !== '' &&
+                    valorB !== '' &&
+                    !Number.isNaN(numeroA) &&
+                    !Number.isNaN(numeroB)
+                ) {
+                    return numeroA - numeroB;
+                }
+                return valorA.localeCompare(
+                    valorB,
+                    'es',
+                    {
+                        sensitivity: 'base'
+                    }
+                );
+            });
+            setDatos(copia);
+            setFila(0);
+            setScrollFila(0);
+        }
+        if (input === '>' && datos.length > 0) {
+            const copia = [...datos];
+            copia.sort((a, b) => {
+                const valorA = a[columna] ?? '';
+                const valorB = b[columna] ?? '';
+                const numeroA = Number(valorA);
+                const numeroB = Number(valorB);
+
+
+                if (
+                    valorA !== '' &&
+                    valorB !== '' &&
+                    !Number.isNaN(numeroA) &&
+                    !Number.isNaN(numeroB)
+                ) {
+                    return numeroB - numeroA;
+                }
+                return valorB.localeCompare(
+                    valorA,
+                    'es',
+                    {
+                        sensitivity: 'base'
+                    }
+                );
+            });
+            setDatos(copia);
+            setFila(0);
+            setScrollFila(0);
+        }
+    });
+    const valorSeleccionado =
+        datos[fila]?.[columna] ?? '';
+
+    const datosVisibles = datos.slice(
+        scrollFila,
+        scrollFila + filasVisibles
+    );
+    const cabecerasVisibles = cabeceras.slice(
+        scrollColumna,
+        scrollColumna + columnasVisibles
+    );
   return (
     <Box
       width={COLUMNAS}
