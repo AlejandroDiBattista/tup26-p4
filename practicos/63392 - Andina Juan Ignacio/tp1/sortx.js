@@ -59,6 +59,22 @@ function main() {
 
 function parseDelimited(text, delimiter) {
     const splitedText = text.split('\n');
+    
+    let lineCaunt = splitedText.length;
+    if (lineCaunt > 0 && splitedText[lineCaunt - 1] === '') {
+        lineCaunt--;
+    }
+
+    const lines = [];
+    for (const line of splitedText.slice(0, lineCaunt)) {
+        lines.push(line);
+    }
+
+    for (const line of lines) {
+        if (line.includes('"')) {
+            throw new Error("No se permiten comillas dobles");
+        }
+    }
 }
 
 function readFile(path) {
