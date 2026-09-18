@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 const HELP = `
 
@@ -36,15 +38,34 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 function main() {
-    if (process.args.includes('-h') || process.args.includes('--help')) {
+    if (process.argv.includes('-h') || process.argv.includes('--help')) {
         console.log(HELP);
         process.exit(0);
+    } 
+     
+    const comandLineOptions = [];
+    for (const option of process.argv.slice(2)) {
+        comandLineOptions.push(option);
     }
 
     try {
-        const config = parseArgs(process.argv.slice(2));
+        const config = parseArgs(comandLineOptions);
+        const text = readFile(config.inputFile);
+        const table = parseDelimited(text, config.delimiter);
     } catch (error) {
         
+    }
+}
+
+function parseDelimited(text, delimiter) {
+    const splitedText = text.split('\n');
+}
+
+function readFile(path) {
+    try {
+        return new TextDecoder('utf-8').decode(readFileSync(path));
+    } catch (error) {
+        throw new Error('No se puedo leer el archivo');
     }
 }
 
@@ -101,3 +122,5 @@ function parseSortField(sortFields) {
         descendig: orden === 'desc',
     }
 }
+
+main();
