@@ -68,6 +68,12 @@ function ordenarPorColumna(filas, columna, descendente) {
     return [header, ...datos]
 }
 
+function actualizarCelda(filas, fila, columna, nuevoValor) {
+    const copia = filas.map(f => [...f])
+    copia[fila][columna] = nuevoValor
+    return copia
+}
+
 function App() {
     const { exit } = useApp();
     const [filas, setFilas] = useState(null)
@@ -128,6 +134,8 @@ function App() {
             setFilas(prev => ordenarPorColumna(prev, seleccion.columna, false))
         } else if (tecla === ">") {
             setFilas(prev => ordenarPorColumna(prev, seleccion.columna, true))
+        } else if (key.return) {
+            setModo("editar")
         }
 
     }, { isActive: modo === "ver" && filas !== null })
@@ -137,7 +145,7 @@ function App() {
             setModo("ver")
             setMensajeError(null)
         }
-    }, { isActive: modo === "abrir" || modo === "guardar" })
+    }, { isActive: modo === "abrir" || modo === "guardar" || modo === "editar"  })
 
     if (modo === "abrir" || modo === "guardar") {
         return (
@@ -154,6 +162,26 @@ function App() {
                     }}
                 />
                 {mensajeError && <Text color="red">{mensajeError}</Text>}
+                <Text color={COLORES.secundario}>Enter guardar · Esc cancelar</Text>
+            </Box>
+        )
+    }
+
+    if (modo === "editar") {
+        const valorActual = filas[seleccion.fila][seleccion.columna]
+        return (
+            <Box flexDirection="column">
+                <Text bold color={COLORES.titulo}>
+                    Editar › {filas[0][seleccion.columna]}
+                </Text>
+                <TextInput
+                    placeholder={valorActual}
+                    defaultValue={valorActual}
+                    onSubmit={(valor) => {
+                        setFilas(prev => actualizarCelda(prev, seleccion.fila, seleccion.columna, valor))
+                        setModo("ver")
+                    }}
+                />
                 <Text color={COLORES.secundario}>Enter guardar · Esc cancelar</Text>
             </Box>
         )
