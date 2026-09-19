@@ -43,6 +43,31 @@ function rellenar(texto, ancho) {
     return texto.padEnd(ancho)
 }
 
+function ordenarPorColumna(filas, columna, descendente) {
+    const header = filas[0]
+    const datos = filas.slice(1)
+
+    datos.sort((filaA, filaB) => {
+        const valorA = filaA[columna]
+        const valorB = filaB[columna]
+
+        const numA = Number(valorA)
+        const numB = Number(valorB)
+        const esNumerico = !isNaN(numA) && !isNaN(numB)
+
+        let comparacion
+        if (esNumerico) {
+            comparacion = numA - numB
+        } else {
+            comparacion = valorA.localeCompare(valorB)
+        }
+
+        return descendente ? -comparacion : comparacion
+    })
+
+    return [header, ...datos]
+}
+
 function App() {
     const { exit } = useApp();
     const [filas, setFilas] = useState(null)
@@ -99,7 +124,12 @@ function App() {
             setSeleccion(prev => ({ ...prev, columna: Math.min(prev.columna + 1, filas[0].length - 1) }))
         } else if (key.leftArrow) {
             setSeleccion(prev => ({ ...prev, columna: Math.max(prev.columna - 1, 0) }))
+        } else if (tecla === "<") {
+            setFilas(prev => ordenarPorColumna(prev, seleccion.columna, false))
+        } else if (tecla === ">") {
+            setFilas(prev => ordenarPorColumna(prev, seleccion.columna, true))
         }
+
     }, { isActive: modo === "ver" && filas !== null })
 
     useInput((tecla, key) => {
@@ -183,6 +213,8 @@ function App() {
             </Text>
         </Box>
     )
+
+
 }
 
 const app = render(<App />);
