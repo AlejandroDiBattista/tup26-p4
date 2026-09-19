@@ -22,20 +22,20 @@ function parseCSV(texto) {
     return lineas.map(linea => linea.split(","))
 }
 
+function serializeCSV(filas) {
+    return filas.map(fila => fila.join(",")).join("\n")
+}
+
 function calcularAnchos(filas) {
     const cantidadColumnas = filas[0].length
     const anchos = []
-
     for (let col = 0; col < cantidadColumnas; col++) {
         let maximo = 0
         for (const fila of filas) {
-            if (fila[col].length > maximo) {
-                maximo = fila[col].length
-            }
+            if (fila[col].length > maximo) maximo = fila[col].length
         }
         anchos.push(maximo)
     }
-
     return anchos
 }
 
@@ -48,20 +48,49 @@ function App() {
     const [filas, setFilas] = useState(null)
     const [archivo, setArchivo] = useState(null)
     const [seleccion, setSeleccion] = useState({ fila: 1, columna: 0 })
+    const [modo, setModo] = useState("ver")           // "ver" | "abrir" | "guardar"
+    const [mensajeError, setMensajeError] = useState(null)
 
     useEffect(() => {
         const nombreArchivo = process.argv[2]
         if (nombreArchivo) {
-            readFile(nombreArchivo, "utf8").then(texto => {
-                setFilas(parseCSV(texto))
-                setArchivo(nombreArchivo)
-            })
+            abrirArchivo(nombreArchivo)
+        } else {
+            setModo("abrir")
         }
     }, [])
+
+    async function abrirArchivo(nombre) {
+        try {
+            const texto = await readFile(nombre, "utf8")
+            setFilas(parseCSV(texto))
+            setArchivo(nombre)
+            setMensajeError(null)
+            setSeleccion({ fila: 1, columna: 0 })
+            setModo("ver")
+        } catch (error) {
+            setMensajeError(`No se pudo abrir "${nombre}".`)
+        }
+    }
+
+    async function guardarArchivo(nombre) {
+        try {
+            await writeFile(nombre, serializeCSV(filas))
+            setArchivo(nombre)
+            setMensajeError(null)
+            setModo("ver")
+        } catch (error) {
+            setMensajeError(`No se pudo guardar "${nombre}".`)
+        }
+    }
 
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        } else if (tecla === "a" || tecla === "A") {
+            setModo("abrir")
+        } else if (tecla === "g" || tecla === "G") {
+            setModo("guardar")
         } else if (key.downArrow) {
             setSeleccion(prev => ({ ...prev, fila: Math.min(prev.fila + 1, filas.length - 1) }))
         } else if (key.upArrow) {
@@ -71,14 +100,40 @@ function App() {
         } else if (key.leftArrow) {
             setSeleccion(prev => ({ ...prev, columna: Math.max(prev.columna - 1, 0) }))
         }
-    })
+    }, { isActive: modo === "ver" && filas !== null })
+
+    useInput((tecla, key) => {
+        if (key.escape) {
+            setModo("ver")
+            setMensajeError(null)
+        }
+    }, { isActive: modo === "abrir" || modo === "guardar" })
+
+    if (modo === "abrir" || modo === "guardar") {
+        return (
+            <Box flexDirection="column">
+                <Text bold color={COLORES.titulo}>
+                    {modo === "abrir" ? "Abrir" : "Guardar"} › {archivo ? basename(archivo) : ""}
+                </Text>
+                <TextInput
+                    placeholder="nombre-del-archivo.csv"
+                    defaultValue={archivo ? basename(archivo) : ""}
+                    onSubmit={(valor) => {
+                        if (modo === "abrir") abrirArchivo(valor)
+                        else guardarArchivo(valor)
+                    }}
+                />
+                {mensajeError && <Text color="red">{mensajeError}</Text>}
+                <Text color={COLORES.secundario}>Enter guardar · Esc cancelar</Text>
+            </Box>
+        )
+    }
 
     if (filas === null) {
         return <Text color={COLORES.secundario}>Cargando...</Text>
     }
 
     const anchos = calcularAnchos(filas)
-
     const alturaDisponible = Math.max(5, FILAS - 6)
     let inicio = Math.max(1, seleccion.fila - Math.floor(alturaDisponible / 2))
     let fin = Math.min(filas.length, inicio + alturaDisponible)
@@ -106,9 +161,7 @@ function App() {
 
             {filasVisibles.map((fila, idx) => {
                 const i = inicio + idx
-                const numero = String(i)
-                const numeroConEspacio = numero.padStart(3) + "  "
-
+                const numeroConEspacio = String(i).padStart(3) + "  "
                 return (
                     <Box key={i}>
                         <Text>{numeroConEspacio}</Text>
