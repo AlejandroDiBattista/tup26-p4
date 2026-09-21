@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contactos</title>
+    <style>
+      body {
+        max-width: 760px;
+        margin: 48px auto;
+        padding: 0 20px;
+        font: 16px/1.5 system-ui, sans-serif;
+        color: #222;
+        background: #fff;
+      }
+
+      h1, h2 { font-size: 1.25rem; }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input, select {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 10px;
+        font: inherit;
+        color: inherit;
+        background: white;
+        border: 1px solid #888;
+        border-radius: 0;
+      }
+
+      .panels {
+        display: flex;
+        gap: 24px;
+        margin-top: 20px;
+      }
+
+      .panels > * {
+        flex: 1;
+        min-width: 0;
+      }
+
+      select {
+        height: 320px;
+        padding: 4px;
+      }
+
+      option { padding: 8px; }
+
+      h2 { margin-top: 0; }
+
+      dt, .hint {
+        color: #666;
+        font-size: 0.85rem;
+      }
+
+      dd {
+        margin: 0 0 16px;
+        overflow-wrap: anywhere;
+      }
+
+      a { color: inherit; }
+
+      :focus-visible {
+        outline: 2px solid #222;
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Contactos</h1>
+      <div id="app"></div>
+    </main>
+
+    <script type="module">
+      import { html, reactive } from 'https://esm.sh/@arrow-js/core';
+      const app = document.querySelector('#app');
+
+        try {
+            const response = await fetch('./usuarios.json');
+
+        if (!response.ok) {
+          throw new Error('No se pudieron cargar los contactos.');
+        }
+
+        const contacts = await response.json();
+        contacts.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+        const state = reactive({
+          query: '',
+          selected: contacts[0]?.id ?? null,
+        });
+
+        const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+        function results() {
+          const query = normalize(state.query.trim());
+
+          return contacts.filter((contact) =>
+            normalize(`${contact.name} ${contact.email} ${contact.phone}`).includes( query, ),
+          );
+        }
+
+        function search(value) {
+          state.query = value;
+          const matches = results();
+
+          if (!matches.some((contact) => contact.id === state.selected)) {
+            state.selected = matches[0]?.id ?? null;
+          }
+
+          syncSelection();
+        }
+
+        function syncSelection() {
+          requestAnimationFrame(() => {
+            document.querySelector('#contacts').value = state.selected ?? '';
+          });
+        }
+
+        // El select nativo resuelve flechas, Inicio, Fin y selección accesible.
+        function keyboard(event) {
+          if (event.isComposing || event.ctrlKey || event.altKey || event.metaKey) {
+            return;
+          }
+
+          if (event.key === 'Escape') {
+            search('');
+            const input = document.querySelector('#search');
+            input.value = '';
+            input.focus();
+          } else if (event.target.id === 'search'   && event.key === 'ArrowDown') {
+            event.preventDefault();
+            document.querySelector('#contacts').focus();
+          } else if (event.target.id === 'contacts' && event.key === 'Enter'    ) {
+            event.preventDefault();
+            document.querySelector('#detail').focus();
+          }
+        }
+
+        function detail() {
+          const contact = contacts.find((item) => item.id === state.selected);
+
+          if (!contact) {
+            return html`<p>Sin resultados.</p>`;
+          }
+
+          return html`
+            <h2>${contact.name}</h2>
+            <dl>
+              <dt>Correo</dt>
+              <dd><a href="${`mailto:${contact.email}`}">${contact.email}</a></dd>
+              <dt>Teléfono</dt>
+              <dd>${contact.phone}</dd>
+              <dt>Empresa</dt>
+              <dd>${contact.company.name}</dd>
+              <dt>Ciudad</dt>
+              <dd>${contact.address.city}</dd>
+            </dl>
+          `;
+        }
+
+        // app.replaceChildren();
+        // app.removeAttribute('role');
+
+        html`
+          <div @keydown="${keyboard}">
+            <label for="search">Buscar</label>
+            <input
+              id="search"
+              type="search"
+              placeholder="Nombre, correo o teléfono"
+              aria-controls="contacts"
+              @input="${(event) => search(event.target.value)}"
+            />
+
+            <div class="panels">
+              <select
+                id="contacts"
+                size="10"
+                aria-label="Contactos"
+                @change="${(event) => { state.selected = Number(event.target.value); }}"
+              >
+                ${contacts.map((contact) => {
+                  // Conservar las opciones evita perderlas al pasar por cero resultados.
+                  const excluded = () => !results().includes(contact);
+
+                  return html`
+                    <option value="${contact.id}" hidden="${excluded}" disabled="${excluded}" >
+                      ${contact.name}
+                    </option>
+                  `;
+                })}
+              </select>
+
+              <section id="detail" tabindex="0" aria-label="Detalle del contacto" >
+                ${detail}
+              </section>
+            </div>
+
+            <p class="hint" role="status" >
+              ${() => `${results().length} contactos`}
+            </p>
+          </div>
+        `(app);
+
+        syncSelection();
+      } catch (error) {
+        app.textContent = 'No se pudo cargar el visor. Revisá la conexión y abrí la página desde un servidor HTTP.';
+        console.error(error);
+      }
+    </script>
+  </body>
+</html>
