@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contadores</title>
+    <style>
+      body {
+        max-width: 560px;
+        margin: 40px auto;
+        padding: 16px;
+        font: 16px/1.5 system-ui;
+        color: #293d34;
+        background: #f3f6f3;
+      }
+
+      form, li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      input, button {
+        padding: 10px;
+        font: inherit;
+        border: 1px solid #9aaba0;
+        border-radius: 8px;
+        background: white;
+      }
+
+      input, .mostrar {
+        flex: 1;
+        min-width: 0;
+      }
+
+      button {
+        cursor: pointer;
+        background: #e5eee7;
+      }
+
+      button:hover {
+        background: #d2e3d6;
+      }
+
+      :focus-visible {
+        outline: 2px solid #35734d;
+        outline-offset: 2px;
+      }
+
+      ul {
+        padding: 0;
+        list-style: none;
+      }
+
+      li {
+        margin: 12px 0;
+        padding: 4px;
+        border-radius: 12px;
+        background: white;
+      }
+
+      li button {
+        text-align: center;
+        flex: 0 0 36px;
+        height: 36px;
+        box-sizing: border-box;
+        padding: 0 0 3px; /* Compensa la posición visual de los símbolos. */
+        border: 0;
+        color: #35734d;
+        font: 24px/1 system-ui;
+      }
+
+      li button:last-child {
+        color: #a34b4b;
+        background: #faeeee;
+      }
+
+      .mostrar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      .mostrar span {
+        font-size: 1.6rem;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      import { html, reactive } from 'https://esm.sh/@arrow-js/core';
+
+      const estado = reactive({
+        contadores: [{ titulo: 'Cuenta', valor: 0 }],
+      });
+
+      function agregar(evento) {
+        evento.preventDefault();
+
+        const campo  = document.getElementById('titulo');
+        const titulo = campo.value.trim();
+
+        if (!titulo) return;
+
+        estado.contadores.push({ titulo, valor: 0 });
+        campo.value = '';
+        campo.focus();
+      }
+
+      function eliminar(contador) {
+        estado.contadores = estado.contadores.filter((item) => item !== contador);
+      }
+
+      function Contador(contador) {
+        return html`<li>
+            <button type="button" title="Disminuir" aria-label="Disminuir" @click="${() => contador.valor--}">−</button>
+            <span class="mostrar">
+              <b>${() => contador.titulo}:</b>
+              ${() => contador.valor}
+            </span>
+            <button type="button" title="Incrementar" aria-label="Incrementar" @click="${() => contador.valor++}">+</button>
+            <button type="button" title="Eliminar" aria-label="Eliminar" @click="${() => eliminar(contador)}">×</button>
+          </li>`;
+      }
+
+      const vista = html`
+        <h1>Contadores</h1>
+
+        <form @submit="${agregar}">
+          <input id="titulo" name="titulo" placeholder="Nuevo contador" aria-label="Título" />
+          <button type="submit">➕ Agregar</button>
+        </form>
+
+        <ul>
+          ${() => estado.contadores.length ? estado.contadores.map(Contador) : ''}
+        </ul>
+      `;
+
+      vista(document.getElementById('app'));
+    </script>
+  </body>
+</html>
