@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
 
 const HELP = `
 
@@ -51,13 +50,13 @@ function main() {
     try {
         const config = parseArgs(comandLineOptions);
         const text = readFile(config.inputFile);
-        const table = parseDelimited(text, config.delimiter);
+        const table = parseDelimited(text, config.delimiter, config.noHeader);
     } catch (error) {
         
     }
 }
 
-function parseDelimited(text, delimiter) {
+function parseDelimited(text, delimiter, noHeader) {
     const splitedText = text.split('\n');
     
     let lineCaunt = splitedText.length;
@@ -75,6 +74,41 @@ function parseDelimited(text, delimiter) {
             throw new Error("No se permiten comillas dobles");
         }
     }
+
+    let header = null;
+    let firsDataLine = 0;
+    if (!noHeader) { 
+        header = lines[0].split(delimiter);
+        firsDataLine = 1;
+    }
+
+    const rows = [];
+    for (const line of lines.slice(firsDataLine)) {
+        rows.push(line.split(delimiter));    
+    }
+
+    let columsCount = 0;
+    if (header !== null) {
+        columsCount = header.length; 
+    } else if (rows.length > 0) {
+        columsCount = rows[0].length;
+    }
+
+    for (const [index, row] of rows.entries()) {
+        if (row.length !== columsCount) {
+            throw new Error(
+				"la fila " +
+				(index + 1) +
+				" tiene una cantidad de campos distinta a las demás",
+			);
+        }   
+    }
+
+    return { header, rows };
+    // return {
+    //     header: [ "nombre", "apellido", "edad" ],
+    //     rows: [ [ "jose", "lanza", "38"], ["Juan Ignacio", "Andina", "27" ] ]
+    // }
 }
 
 function readFile(path) {
