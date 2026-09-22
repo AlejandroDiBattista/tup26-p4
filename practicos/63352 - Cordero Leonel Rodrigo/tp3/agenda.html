@@ -470,6 +470,8 @@
 
     const formulario = reactive({
       abierto: false,
+      modo: 'alta', // 'alta' | 'edicion'
+      editandoId: null,
       apellido: '',
       nombre: '',
       legajo: '',
@@ -489,15 +491,40 @@
       }
     }
 
-    function abrirAlta() {
-      Object.assign(formulario, formularioVacio(), { abierto: true })
+    function mostrarDialogo() {
       const dialog = document.getElementById('dialogo-alumno')
       if (dialog && !dialog.open) dialog.showModal()
       queueMicrotask(() => dialog?.querySelector('input')?.focus())
     }
 
+    function abrirAlta() {
+      Object.assign(formulario, formularioVacio(), {
+        abierto: true,
+        modo: 'alta',
+        editandoId: null,
+      })
+      mostrarDialogo()
+    }
+
+    function abrirEdicion(alumno) {
+      Object.assign(formulario, {
+        abierto: true,
+        modo: 'edicion',
+        editandoId: alumno.id,
+        apellido: alumno.apellido ?? '',
+        nombre: alumno.nombre ?? '',
+        legajo: alumno.legajo ?? '',
+        comision: alumno.comision ?? '',
+        telefono: alumno.telefono ?? '',
+        github: alumno.github ?? '',
+      })
+      mostrarDialogo()
+    }
+
     function cerrarFormulario() {
       formulario.abierto = false
+      formulario.modo = 'alta'
+      formulario.editandoId = null
       const dialog = document.getElementById('dialogo-alumno')
       if (dialog?.open) dialog.close()
     }
@@ -534,11 +561,29 @@
       const datos = leerFormulario()
       if (!validarFormulario(datos)) return
 
-      estado.alumnos.push({
-        id: siguienteId(),
-        ...datos,
-        favorito: false,
-      })
+      if (formulario.modo === 'edicion' && formulario.editandoId != null) {
+        const alumno = estado.alumnos.find(a => a.id === formulario.editandoId)
+        if (!alumno) return
+        Object.assign(alumno, datos)
+      } else {
+        estado.alumnos.push({
+          id: siguienteId(),
+          ...datos,
+          favorito: false,
+        })
+      }
+
+      estado.revision++
+      persistir()
+      cerrarFormulario()
+    }
+
+    function eliminarAlumno() {
+      if (formulario.modo !== 'edicion' || formulario.editandoId == null) return
+      const id = formulario.editandoId
+      const indice = estado.alumnos.findIndex(a => a.id === id)
+      if (indice === -1) return
+      estado.alumnos.splice(indice, 1)
       estado.revision++
       persistir()
       cerrarFormulario()
@@ -562,9 +607,15 @@
           class="tarjeta"
           tabindex="0"
           aria-label="${() => `${alumno.apellido} ${alumno.nombre}`}"
+          @click="${() => abrirEdicion(alumno)}"
           @keydown="${e => {
+            if (e.target !== e.currentTarget) return
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              abrirEdicion(alumno)
+              return
+            }
             if (e.key === ' ' || e.code === 'Space') {
-              if (e.target !== e.currentTarget) return
               alternarFavorito(alumno.id, e)
             }
           }}"
@@ -612,12 +663,22 @@
       <dialog
         id="dialogo-alumno"
         class="dialogo"
-        @close="${() => { formulario.abierto = false }}"
-        @cancel="${() => { formulario.abierto = false }}"
+        @close="${() => {
+          formulario.abierto = false
+          formulario.modo = 'alta'
+          formulario.editandoId = null
+        }}"
+        @cancel="${() => {
+          formulario.abierto = false
+          formulario.modo = 'alta'
+          formulario.editandoId = null
+        }}"
       >
         <div class="dialogo-cabecera">
-          <h2>Agregar alumno</h2>
-          <p>Completá los datos del nuevo alumno.</p>
+          <h2>${() => formulario.modo === 'edicion' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p>${() => formulario.modo === 'edicion'
+            ? 'Actualizá los datos del alumno.'
+            : 'Completá los datos del nuevo alumno.'}</p>
         </div>
         <form @submit="${guardarAlumno}">
           <div class="campos">
@@ -682,6 +743,17 @@
             </label>
           </div>
           <div class="acciones-form">
+            <div class="acciones-izq">
+              ${() => formulario.modo === 'edicion'
+                ? html`
+                  <button
+                    type="button"
+                    class="btn btn-peligro"
+                    @click="${() => eliminarAlumno()}"
+                  >Eliminar</button>
+                `
+                : ''}
+            </div>
             <button type="submit" class="btn btn-primario">Guardar</button>
             <button type="button" class="btn btn-secundario" @click="${() => cerrarFormulario()}">Cancelar</button>
           </div>
