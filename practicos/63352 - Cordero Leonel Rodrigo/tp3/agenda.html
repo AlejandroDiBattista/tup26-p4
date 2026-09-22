@@ -4,28 +4,228 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --bg: #f3f4f1;
+      --card-bg: #f7f7f5;
+      --card-border: #e4e5e1;
+      --text: #2a2c2a;
+      --text-muted: #8a8e88;
+      --text-soft: #5c605c;
+      --star: #c9a227;
+      --radius: 18px;
+      --font-serif: "Libre Baskerville", "Times New Roman", serif;
+      --font-sans: "Source Sans 3", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    h1 {
+      margin: 0 0 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .lista {
+      display: grid;
+      grid-template-columns: repeat(3, 360px);
+      justify-content: center;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      @media (max-width: 1120px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      @media (max-width: 700px) {
+        grid-template-columns: 1fr;
+      }
+
+      & > li {
+        min-width: 0;
+      }
+    }
+
+    /* —— Tarjeta —— */
+    .tarjeta {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 100%;
+      padding: 22px 22px 16px;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &:focus-visible {
+        border-color: #2f3530;
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2f3530;
+      }
+
+      & header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      & .nombre {
+        margin: 0;
+        font-size: 1.35rem;
+        line-height: 1.25;
+        color: var(--text);
+
+        & strong {
+          font-family: var(--font-serif);
+          font-weight: 700;
+        }
+
+        & span {
+          font-family: var(--font-sans);
+          font-weight: 400;
+          color: var(--text-soft);
+        }
+      }
+
+      & .favorito {
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        margin: -4px -4px 0 0;
+        padding: 0;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+
+        & svg {
+          width: 20px;
+          height: 20px;
+          fill: none;
+          stroke: currentColor;
+          stroke-width: 1.6;
+        }
+
+        &[aria-pressed="true"] {
+          color: var(--star);
+
+          & svg {
+            fill: currentColor;
+            stroke: currentColor;
+          }
+        }
+
+        &:focus-visible {
+          outline: 2px solid #2f3530;
+          outline-offset: 2px;
+        }
+      }
+
+      & address {
+        margin: 0;
+        font-style: normal;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      & .telefono {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text);
+      }
+
+      & .github {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+      }
+
+      & footer {
+        margin-top: auto;
+        padding-top: 14px;
+        border-top: 1px solid #e6e7e3;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import { html } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
+
+    function estrella() {
+      return html`
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3.6l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.9 7.2 18.5l.9-5.4L4.2 9.3l5.4-.8L12 3.6z"/>
+        </svg>
+      `
+    }
+
+    function tarjeta(alumno) {
+      return html`
+        <article
+          class="tarjeta"
+          tabindex="0"
+          aria-label="${() => `${alumno.apellido} ${alumno.nombre}`}"
+        >
+          <header>
+            <h2 class="nombre">
+              <strong>${() => alumno.apellido}</strong>
+              <span> ${() => alumno.nombre}</span>
+            </h2>
+            <button
+              type="button"
+              class="favorito"
+              aria-label="Marcar favorito"
+              aria-pressed="${() => alumno.favorito ? 'true' : 'false'}"
+            >${estrella()}</button>
+          </header>
+          <address>
+            <span class="telefono">${() => alumno.telefono}</span>
+            <span class="github">${() => `@${alumno.github}`}</span>
+          </address>
+          <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+        </article>
+      `
+    }
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+      <h1>Agenda</h1>
+      <ul class="lista">
+        ${alumnos.map(a => html`<li>${tarjeta(a)}</li>`)}
       </ul>
     `(app)
   </script>
