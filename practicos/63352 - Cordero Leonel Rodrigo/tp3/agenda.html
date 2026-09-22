@@ -16,6 +16,7 @@
       --text-muted: #8a8e88;
       --text-soft: #5c605c;
       --star: #c9a227;
+      --primary: #2f3a32;
       --radius: 18px;
       --font-serif: "Libre Baskerville", "Times New Roman", serif;
       --font-sans: "Source Sans 3", system-ui, sans-serif;
@@ -25,25 +26,94 @@
 
     body {
       margin: 0;
-      padding: 32px 20px;
+      padding: 28px 20px 40px;
       font-family: var(--font-sans);
       font-size: 16px;
       color: var(--text);
       background: var(--bg);
     }
 
-    main {
+    #app {
       width: 1104px;
       max-width: 100%;
       margin: auto;
     }
 
-    h1 {
-      margin: 0 0 24px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+    /* —— Cabecera —— */
+    .cabecera {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+
+      & h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      & .acciones {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      & .buscar {
+        width: 260px;
+        max-width: 100%;
+        height: 42px;
+        padding: 0 14px;
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        background: #fff;
+        font: inherit;
+        color: var(--text);
+        outline: none;
+
+        &::placeholder {
+          color: var(--text-muted);
+        }
+
+        &:focus {
+          border-color: #2f3530;
+        }
+      }
+
+      & .agregar {
+        height: 42px;
+        padding: 0 16px;
+        border: none;
+        border-radius: 12px;
+        background: var(--primary);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:focus-visible {
+          outline: 2px solid #2f3530;
+          outline-offset: 2px;
+        }
+      }
+
+      @media (max-width: 700px) {
+        & .acciones {
+          width: 100%;
+        }
+
+        & .buscar {
+          flex: 1;
+          width: auto;
+        }
+      }
     }
 
+    /* —— Lista —— */
     .lista {
       display: grid;
       grid-template-columns: repeat(3, 360px);
@@ -64,6 +134,13 @@
       & > li {
         min-width: 0;
       }
+    }
+
+    .vacio {
+      margin: 48px 0 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.05rem;
     }
 
     /* —— Tarjeta —— */
@@ -179,11 +256,88 @@
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  <div id="app"></div>
 
   <script type="module">
-    import { html } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import datosIniciales from './alumnos.json' with { type: 'json' }
+
+    const STORAGE_KEY = 'agenda-alumnos'
+
+    function cargarAlumnos() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length) return parsed
+        }
+      } catch (_) { /* storage inválido: usar JSON */ }
+      const copia = structuredClone(datosIniciales)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(copia))
+      return copia
+    }
+
+    function persistir() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.alumnos))
+    }
+
+    function normalizar(texto) {
+      return String(texto ?? '')
+        .normalize('NFD')
+        .replace(/\p{M}/gu, '')
+        .toLowerCase()
+    }
+
+    function compararNombre(a, b) {
+      const porApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido), 'es')
+      if (porApellido !== 0) return porApellido
+      return normalizar(a.nombre).localeCompare(normalizar(b.nombre), 'es')
+    }
+
+    function coincide(alumno, busqueda) {
+      const q = normalizar(busqueda).trim()
+      if (!q) return true
+      const campos = [
+        alumno.apellido,
+        alumno.nombre,
+        alumno.legajo,
+        alumno.comision,
+        alumno.telefono,
+        alumno.github,
+      ]
+      return campos.some(c => normalizar(c).includes(q))
+    }
+
+    function listarVisibles() {
+      // Lectura intencional para invalidar la vista al mutar favoritos u orden.
+      void estado.revision
+      return estado.alumnos
+        .filter(a => coincide(a, estado.busqueda))
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+          return compararNombre(a, b)
+        })
+    }
+
+    function alternarFavorito(id, evento) {
+      evento?.stopPropagation()
+      evento?.preventDefault()
+      const alumno = estado.alumnos.find(a => a.id === id)
+      if (!alumno) return
+      alumno.favorito = !alumno.favorito
+      estado.revision++
+      persistir()
+    }
+
+    const estado = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: '',
+      revision: 0,
+    })
+
+    function actualizarBusqueda(valor) {
+      estado.busqueda = valor
+    }
 
     function estrella() {
       return html`
@@ -199,6 +353,12 @@
           class="tarjeta"
           tabindex="0"
           aria-label="${() => `${alumno.apellido} ${alumno.nombre}`}"
+          @keydown="${e => {
+            if (e.key === ' ' || e.code === 'Space') {
+              if (e.target !== e.currentTarget) return
+              alternarFavorito(alumno.id, e)
+            }
+          }}"
         >
           <header>
             <h2 class="nombre">
@@ -208,8 +368,9 @@
             <button
               type="button"
               class="favorito"
-              aria-label="Marcar favorito"
+              aria-label="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar favorito'}"
               aria-pressed="${() => alumno.favorito ? 'true' : 'false'}"
+              @click="${e => alternarFavorito(alumno.id, e)}"
             >${estrella()}</button>
           </header>
           <address>
@@ -221,13 +382,43 @@
       `
     }
 
-    const app = document.getElementById('app')
     html`
-      <h1>Agenda</h1>
-      <ul class="lista">
-        ${alumnos.map(a => html`<li>${tarjeta(a)}</li>`)}
-      </ul>
-    `(app)
+      <header class="cabecera">
+        <h1>Agenda</h1>
+        <div class="acciones">
+          <input
+            class="buscar"
+            type="search"
+            placeholder="Buscar alumno..."
+            aria-label="Buscar alumno"
+            @input="${e => actualizarBusqueda(e.target.value)}"
+          />
+          <button type="button" class="agregar">+ Agregar</button>
+        </div>
+      </header>
+      <main>
+        <section id="listado" aria-label="Listado de alumnos"></section>
+      </main>
+    `(document.getElementById('app'))
+
+    const listado = document.getElementById('listado')
+
+    // Remount completo: Arrow reutiliza nodos de listas por índice al filtrar/reordenar.
+    watch(() => {
+      void estado.busqueda
+      void estado.revision
+      const visibles = listarVisibles()
+      listado.replaceChildren()
+      if (!visibles.length) {
+        html`<p class="vacio">No hay alumnos para mostrar.</p>`(listado)
+        return
+      }
+      html`
+        <ul class="lista">
+          ${visibles.map(a => html`<li>${tarjeta(a)}</li>`)}
+        </ul>
+      `(listado)
+    })
   </script>
 </body>
 </html>
