@@ -36,17 +36,26 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    const state = reactive({
+      busqueda: '',
+      alumnos: alumnos,
+    })
+
+    const alumnosFiltrados = () => state.alumnos.filter(a =>
+      `${a.apellido} ${a.nombre}`.toLowerCase().includes(state.busqueda.toLowerCase())
+    )
+
     const app = document.getElementById('app')
     html`
       <div class="header_container">
         <h1>Agenda</h1>
         <div class="">
-         <input class="search_input" placeholder="Buscar alumno..." />
+         <input class="search_input" placeholder="Buscar alumno..." @input="${e => state.busqueda = e.target.value}" />
          <button class="add_button">+ Agregar</button>
         </div>
       </div>
       <ul>
-        ${alumnos.map(a => html`<li>
+        ${() => alumnosFiltrados().map(a => html`<li>
           <span class="card_name">
             <span><b>${a.apellido}</b> ${a.nombre}</span>
             <svg class="card_star" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
