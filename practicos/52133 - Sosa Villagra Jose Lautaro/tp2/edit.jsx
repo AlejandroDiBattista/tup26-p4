@@ -1,10 +1,6 @@
 #!/usr/bin/env -S node --import tsx
 
-<<<<<<< HEAD
-import React from 'react';
-=======
 import React, { useState } from 'react';
->>>>>>> parent of 5a1b03e (Delete practicos/52133 - Sosa Villagra Jose Lautaro/tp2/edit.jsx)
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
@@ -21,24 +17,6 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
-<<<<<<< HEAD
-function App() {
-    const {exit} = useApp();
-    
-    useInput((tecla, key) => {
-        if (key.escape) {
-            exit();
-        }
-    })
-
-    return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
-                </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
-=======
 const TABLE_WIDTH = COLUMNAS - 4;
 const VISIBLE_ROWS = Math.max(1, FILAS - 9);
 const COLUMN_GAP = 2;
@@ -427,17 +405,11 @@ function App({ initialTable, initialMessage }) {
                         <Text color={COLORES.secundario}>Fila {cursor.row + 1} · Columna {cursor.column + 1}</Text>
                     </Box>
                 )}
->>>>>>> parent of 5a1b03e (Delete practicos/52133 - Sosa Villagra Jose Lautaro/tp2/edit.jsx)
             </Box>
         </Box>
     );
 }
 
-<<<<<<< HEAD
-const app = render(<App />);
-await app.waitUntilExit();
-console.clear();
-=======
 const initialFile = process.argv[2];
 let initialTable = null;
 let initialMessage = null;
@@ -452,4 +424,3 @@ if (initialFile) {
 const app = render(<App initialTable={initialTable} initialMessage={initialMessage} />);
 await app.waitUntilExit();
 console.clear();
->>>>>>> parent of 5a1b03e (Delete practicos/52133 - Sosa Villagra Jose Lautaro/tp2/edit.jsx)
