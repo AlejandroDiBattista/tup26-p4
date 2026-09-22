@@ -253,6 +253,139 @@
         color: var(--text-muted);
       }
     }
+
+    /* —— Diálogo / formulario —— */
+    .dialogo {
+      width: min(640px, calc(100vw - 32px));
+      margin: auto;
+      padding: 0;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      background: #f3f3f1;
+      box-shadow: 0 16px 48px rgb(0 0 0 / 18%);
+      color: var(--text);
+
+      &::backdrop {
+        background: rgb(40 44 40 / 35%);
+        backdrop-filter: blur(2px);
+      }
+
+      &[open] {
+        display: flex;
+        flex-direction: column;
+      }
+
+      & .dialogo-cabecera {
+        padding: 22px 24px 16px;
+        border-bottom: 1px solid #e4e5e1;
+
+        & h2 {
+          margin: 0;
+          font-size: 1.35rem;
+          font-weight: 700;
+        }
+
+        & p {
+          margin: 6px 0 0;
+          color: var(--text-muted);
+          font-size: 0.95rem;
+        }
+      }
+
+      & form {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      & .campos {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 18px;
+        padding: 20px 24px 8px;
+
+        @media (max-width: 560px) {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      & label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-soft);
+
+        & input {
+          height: 44px;
+          padding: 0 14px;
+          border: 1px solid transparent;
+          border-radius: 12px;
+          background: #e9eae7;
+          font: inherit;
+          font-weight: 400;
+          color: var(--text);
+          outline: none;
+
+          &:focus {
+            border-color: #1f2420;
+            background: #ecece9;
+          }
+        }
+      }
+
+      & .acciones-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 18px 24px 22px;
+        border-top: 1px solid #e4e5e1;
+        margin-top: 12px;
+      }
+
+      & .acciones-izq {
+        margin-right: auto;
+      }
+
+      & .btn {
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 12px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:focus-visible {
+          outline: 2px solid #2f3530;
+          outline-offset: 2px;
+        }
+      }
+
+      & .btn-primario {
+        border: none;
+        background: var(--primary);
+        color: #fff;
+      }
+
+      & .btn-secundario {
+        border: 1px solid #d5d7d2;
+        background: #fff;
+        color: var(--text);
+      }
+
+      & .btn-peligro {
+        border: 1px solid #e0c8c8;
+        background: #fff;
+        color: #c0392b;
+      }
+
+      & .btn-peligro[hidden] {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -335,6 +468,82 @@
       revision: 0,
     })
 
+    const formulario = reactive({
+      abierto: false,
+      apellido: '',
+      nombre: '',
+      legajo: '',
+      comision: '',
+      telefono: '',
+      github: '',
+    })
+
+    function formularioVacio() {
+      return {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: '',
+      }
+    }
+
+    function abrirAlta() {
+      Object.assign(formulario, formularioVacio(), { abierto: true })
+      const dialog = document.getElementById('dialogo-alumno')
+      if (dialog && !dialog.open) dialog.showModal()
+      queueMicrotask(() => dialog?.querySelector('input')?.focus())
+    }
+
+    function cerrarFormulario() {
+      formulario.abierto = false
+      const dialog = document.getElementById('dialogo-alumno')
+      if (dialog?.open) dialog.close()
+    }
+
+    function leerFormulario() {
+      return {
+        apellido: formulario.apellido.trim(),
+        nombre: formulario.nombre.trim(),
+        legajo: formulario.legajo.trim(),
+        comision: formulario.comision.trim(),
+        telefono: formulario.telefono.trim(),
+        github: formulario.github.trim().replace(/^@/, ''),
+      }
+    }
+
+    function validarFormulario(datos) {
+      const faltantes = Object.entries(datos)
+        .filter(([, valor]) => !valor)
+        .map(([campo]) => campo)
+      if (faltantes.length) {
+        alert('Completá todos los campos del alumno.')
+        return false
+      }
+      return true
+    }
+
+    function siguienteId() {
+      const max = estado.alumnos.reduce((acc, a) => Math.max(acc, Number(a.id) || 0), 0)
+      return max + 1
+    }
+
+    function guardarAlumno(evento) {
+      evento.preventDefault()
+      const datos = leerFormulario()
+      if (!validarFormulario(datos)) return
+
+      estado.alumnos.push({
+        id: siguienteId(),
+        ...datos,
+        favorito: false,
+      })
+      estado.revision++
+      persistir()
+      cerrarFormulario()
+    }
+
     function actualizarBusqueda(valor) {
       estado.busqueda = valor
     }
@@ -393,12 +602,91 @@
             aria-label="Buscar alumno"
             @input="${e => actualizarBusqueda(e.target.value)}"
           />
-          <button type="button" class="agregar">+ Agregar</button>
+          <button type="button" class="agregar" @click="${() => abrirAlta()}">+ Agregar</button>
         </div>
       </header>
       <main>
         <section id="listado" aria-label="Listado de alumnos"></section>
       </main>
+
+      <dialog
+        id="dialogo-alumno"
+        class="dialogo"
+        @close="${() => { formulario.abierto = false }}"
+        @cancel="${() => { formulario.abierto = false }}"
+      >
+        <div class="dialogo-cabecera">
+          <h2>Agregar alumno</h2>
+          <p>Completá los datos del nuevo alumno.</p>
+        </div>
+        <form @submit="${guardarAlumno}">
+          <div class="campos">
+            <label>
+              Apellido
+              <input
+                name="apellido"
+                required
+                autocomplete="family-name"
+                value="${() => formulario.apellido}"
+                @input="${e => { formulario.apellido = e.target.value }}"
+              />
+            </label>
+            <label>
+              Nombre
+              <input
+                name="nombre"
+                required
+                autocomplete="given-name"
+                value="${() => formulario.nombre}"
+                @input="${e => { formulario.nombre = e.target.value }}"
+              />
+            </label>
+            <label>
+              Legajo
+              <input
+                name="legajo"
+                required
+                inputmode="numeric"
+                value="${() => formulario.legajo}"
+                @input="${e => { formulario.legajo = e.target.value }}"
+              />
+            </label>
+            <label>
+              Comisión
+              <input
+                name="comision"
+                required
+                value="${() => formulario.comision}"
+                @input="${e => { formulario.comision = e.target.value }}"
+              />
+            </label>
+            <label>
+              Teléfono
+              <input
+                name="telefono"
+                required
+                autocomplete="tel"
+                value="${() => formulario.telefono}"
+                @input="${e => { formulario.telefono = e.target.value }}"
+              />
+            </label>
+            <label>
+              GitHub
+              <input
+                name="github"
+                required
+                autocomplete="username"
+                value="${() => formulario.github}"
+                @input="${e => { formulario.github = e.target.value }}"
+              />
+            </label>
+          </div>
+          <div class="acciones-form">
+            <button type="submit" class="btn btn-primario">Guardar</button>
+            <button type="button" class="btn btn-secundario" @click="${() => cerrarFormulario()}">Cancelar</button>
+          </div>
+        </form>
+      </dialog>
     `(document.getElementById('app'))
 
     const listado = document.getElementById('listado')
