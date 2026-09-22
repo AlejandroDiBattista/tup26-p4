@@ -14,6 +14,22 @@
     ul { display: grid; grid-template-columns: repeat(3, 22.5rem); justify-content: center; gap: 0.75rem; padding: 0; list-style: none; }
     li { min-width: 0; padding: 1.25rem; border: 1px solid #d9ded9; border-radius: 1rem; background: white;}
     li b { font-weight: bold; font-size:1.4rem; color:black;}
+    .dialog_overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.35); justify-content: center; align-items: center; padding: 1.25rem; z-index: 10; }
+    .dialog_overlay.open { display: flex; }
+    dialog { position: static; width: 40rem; max-width: 100%; margin: 0; padding: 2rem; border: none; border-radius: 1.5rem; background: #f5f6f4; box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.2); }
+    .dialog_title { margin: 0 0 0.25rem; font-size: 1.5rem; }
+    .dialog_subtitle { margin: 0 0 1.5rem; color: rgba(0, 0, 0, 0.5); font-size: 0.9375rem; }
+    .dialog_grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 1.5rem; margin-bottom: 1.75rem; }
+    .dialog_field { display: flex; flex-direction: column; gap: 0.5rem; }
+    .dialog_field label { font-weight: 600; font-size: 0.875rem; }
+    .dialog_field input { height: 2.75rem; padding: 0 1rem; border: 1px solid #d9ded9; border-radius: 0.75rem; background: white; font: inherit; font-size: 0.9375rem; }
+    .dialog_field input:focus { outline: 2px solid #304035; outline-offset: -1px; }
+    .dialog_footer { display: flex; justify-content: space-between; align-items: center; }
+    .dialog_delete { border: none; background: none; color: #c0392b; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; padding: 0.5rem; }
+    .dialog_actions { display: flex; gap: 0.75rem; }
+    .dialog_save { height: 2.75rem; padding: 0 1.5rem; border: none; border-radius: 9999px; background: #304035; color: white; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
+    .dialog_cancel { height: 2.75rem; padding: 0 1.5rem; border: 1px solid #d9ded9; border-radius: 9999px; background: white; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
+
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
     .header_container { display:flex; justify-content:space-between;}
@@ -42,14 +58,59 @@
       storageAlumnos = alumnos
       localStorage.setItem('alumnos', JSON.stringify(alumnos))
     }
+    const alumnoVacio = () => ({
+      id: 0,
+      legajo: '',
+      apellido: '',
+      nombre: '',
+      comision: '',
+      telefono: '',
+      github: '',
+      favorito: false
+    })
+
     const state = reactive({
       busqueda: '',
       alumnos: storageAlumnos,
+      dialogAbierto: false,
+      modoEdicion: false,
+      alumnoActual: alumnoVacio()
     })
 
     watch(() => {
       localStorage.setItem('alumnos', JSON.stringify(state.alumnos))
     })
+
+    function abrirAgregar() {
+      state.modoEdicion = false
+      state.alumnoActual = alumnoVacio()
+      state.dialogAbierto = true
+    }
+
+    function abrirEdicion(alumno) {
+      state.modoEdicion = true
+      state.alumnoActual = { ...alumno }
+      state.dialogAbierto = true
+    }
+
+    function cerrarDialog() {
+      state.dialogAbierto = false
+    }
+
+    function guardarAlumno() {
+      if (state.modoEdicion) {
+        const alumno = state.alumnos.find(a => a.id === state.alumnoActual.id)
+        Object.assign(alumno, state.alumnoActual)
+      } else {
+        state.alumnos.push({ ...state.alumnoActual, id: state.alumnos.length + 1 })
+      }
+      cerrarDialog()
+    }
+
+    function eliminarAlumno() {
+      state.alumnos = state.alumnos.filter(a => a.id !== state.alumnoActual.id)
+      cerrarDialog()
+    }
 
 
     const alumnosFiltrados = () => state.alumnos.filter(a =>
@@ -62,14 +123,14 @@
         <h1>Agenda</h1>
         <div class="">
          <input class="search_input" placeholder="Buscar alumno..." @input="${e => state.busqueda = e.target.value}" />
-         <button class="add_button">+ Agregar</button>
+         <button class="add_button" @click="${() => abrirAgregar()}">+ Agregar</button>
         </div>
       </div>
       <ul>
-        ${() => alumnosFiltrados().map(a => html`<li>
+        ${() => alumnosFiltrados().map(a => html`<li @click="${() => abrirEdicion(a)}">
           <span class="card_name">
             <span><b>${a.apellido}</b> ${a.nombre}</span>
-            <svg class="${a.favorito ? 'card_star card_star-filled' : 'card_star'}" @click="${() => a.favorito = !a.favorito}" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="${a.favorito ? 'card_star card_star-filled' : 'card_star'}" @click="${e => { e.stopPropagation(); a.favorito = !a.favorito }}" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </span>
@@ -78,6 +139,47 @@
           <span class="card_meta">${a.comision} &bull; ${a.legajo}</span>
           </li>`)}
       </ul>
+      <div class="${() => state.dialogAbierto ? 'dialog_overlay open' : 'dialog_overlay'}" @click="${e => { if (e.target === e.currentTarget) cerrarDialog() }}">
+        <dialog open>
+          <h2 class="dialog_title">${() => state.modoEdicion ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p class="dialog_subtitle">${() => state.modoEdicion ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
+          <div class="dialog_grid">
+            <div class="dialog_field">
+              <label>Apellido</label>
+              <input .value="${() => state.alumnoActual.apellido}" @input="${e => state.alumnoActual.apellido = e.target.value}" />
+            </div>
+            <div class="dialog_field">
+              <label>Nombre</label>
+              <input .value="${() => state.alumnoActual.nombre}" @input="${e => state.alumnoActual.nombre = e.target.value}" />
+            </div>
+            <div class="dialog_field">
+              <label>Legajo</label>
+              <input .value="${() => state.alumnoActual.legajo}" @input="${e => state.alumnoActual.legajo = e.target.value}" />
+            </div>
+            <div class="dialog_field">
+              <label>Comisión</label>
+              <input .value="${() => state.alumnoActual.comision}" @input="${e => state.alumnoActual.comision = e.target.value}" />
+            </div>
+            <div class="dialog_field">
+              <label>Teléfono</label>
+              <input .value="${() => state.alumnoActual.telefono}" @input="${e => state.alumnoActual.telefono = e.target.value}" />
+            </div>
+            <div class="dialog_field">
+              <label>GitHub</label>
+              <input .value="${() => state.alumnoActual.github}" @input="${e => state.alumnoActual.github = e.target.value}" />
+            </div>
+          </div>
+          <div class="dialog_footer">
+            ${() => state.modoEdicion
+              ? html`<button class="dialog_delete" @click="${() => eliminarAlumno()}">Eliminar</button>`
+              : html`<span></span>`}
+            <div class="dialog_actions">
+              <button class="dialog_save" @click="${() => guardarAlumno()}">Guardar</button>
+              <button class="dialog_cancel" @click="${() => cerrarDialog()}">Cancelar</button>
+            </div>
+          </div>
+        </dialog>
+      </div>
     `(app)
   </script>
 </body>
