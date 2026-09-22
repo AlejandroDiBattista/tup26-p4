@@ -23,7 +23,8 @@
 
     .card_name { display: flex; justify-content: space-between; padding-bottom: 2.75rem; color:rgba(0, 0, 0, 0.6); font-weight: 500;}
     .card_name b { font-family: "Source Serif 4", serif; }
-    .card_star { width: 1.25rem; height: 1.25rem; flex-shrink: 0; stroke: #d9ded9; fill: none; }
+    .card_star { width: 1.25rem; height: 1.25rem; flex-shrink: 0; stroke: #d9ded9; fill: none; cursor: pointer; }
+    .card_star-filled { fill: #8A7B4E; stroke: #8A7B4E; }
     .card_phone { display: block; font-weight: bold; padding-bottom: 0.25rem; }
     .card_github { display: block; opacity: 0.6; }
     .card_meta { display: block; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #d9ded9; letter-spacing: 0.05em; font-weight: 600; font-size: 0.875rem; opacity: 0.8; }
@@ -36,13 +37,23 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    let storageAlumnos = JSON.parse(localStorage.getItem('alumnos'));
+    if (!storageAlumnos) {
+      storageAlumnos = alumnos
+      localStorage.setItem('alumnos', JSON.stringify(alumnos))
+    }
     const state = reactive({
       busqueda: '',
-      alumnos: alumnos,
+      alumnos: storageAlumnos,
     })
 
+    watch(() => {
+      localStorage.setItem('alumnos', JSON.stringify(state.alumnos))
+    })
+
+
     const alumnosFiltrados = () => state.alumnos.filter(a =>
-      `${a.apellido} ${a.nombre}`.toLowerCase().includes(state.busqueda.toLowerCase())
+      `${a.apellido} ${a.nombre} ${a.legajo}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(state.busqueda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
     )
 
     const app = document.getElementById('app')
@@ -58,7 +69,7 @@
         ${() => alumnosFiltrados().map(a => html`<li>
           <span class="card_name">
             <span><b>${a.apellido}</b> ${a.nombre}</span>
-            <svg class="card_star" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="${a.favorito ? 'card_star card_star-filled' : 'card_star'}" @click="${() => a.favorito = !a.favorito}" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </span>
