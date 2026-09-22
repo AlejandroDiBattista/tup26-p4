@@ -3,15 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; font-family: "Inter", sans-serif; }
     main { width: 1104px; max-width: 100%; margin: auto; }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white;}
+    li b { font-weight: bold; font-size:1.4rem; color:black;}
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    .header_container { display:flex; justify-content:space-between;}
+
+    .card_name { display: flex; justify-content: space-between; padding-bottom: 2.75rem; color:rgba(0, 0, 0, 0.6); font-weight: 500;}
+    .card_name b { font-family: "Source Serif 4", serif; }
+    .card_star { width: 20px; height: 20px; flex-shrink: 0; stroke: #d9ded9; fill: none; }
+    .card_phone { display: block; font-weight: bold; padding-bottom: 0.25rem; }
+    .card_github { display: block; opacity: 0.6; }
+    .card_meta { display: block; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #d9ded9; letter-spacing: 0.05em; font-weight: 600; font-size: 0.875rem; opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -23,9 +35,25 @@
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <div class="header_container">
+        <h1>Agenda</h1>
+        <div class="">
+         <input />
+         <button>+ Agregar</button>
+        </div>
+      </div>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${alumnos.map(a => html`<li>
+          <span class="card_name">
+            <span><b>${a.apellido}</b> ${a.nombre}</span>
+            <svg class="card_star" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </span>
+          <span class="card_phone">${a.telefono}</span>
+          <span class="card_github">@${a.github}</span>
+          <span class="card_meta">${a.comision} &bull; ${a.legajo}</span>
+          </li>`)}
       </ul>
     `(app)
   </script>
