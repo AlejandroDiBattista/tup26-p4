@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolve } from "node:dns";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const HELP = `
@@ -49,11 +50,44 @@ function main() {
 
     try {
         const config = parseArgs(comandLineOptions);
-        const text = readFile(config.inputFile);
+        const text = readInput(config.inputFile);
         const table = parseDelimited(text, config.delimiter, config.noHeader);
+        const sortedRows = sortRows(table.header, table.rows, config.sortFields, config.noHeader);
+
     } catch (error) {
         
     }
+}
+
+function sortRows(header, rows, sortFields, noHeader) {
+    // obtener indice de columnas,
+    const resolveFields = [];
+    for (const field of sortFields) {
+        sortFields.push({
+            name: field.name,
+            numeric: field.numeric,
+            descendig: field.descendig,
+            columna: resolveFieldIndex(field.name, header, noHeader)
+        });        
+    }
+}
+
+function resolveFieldIndex(name, header, noHeader) {
+    if (noHeader) {
+        const column = Number(name);
+        if (!Number.isInteger(column) || column < 0) {
+            throw new Error('índice de campo inválido: "' + name + '"');
+        }
+
+        return column;
+    }
+
+    const column = header.indexOf(name);
+    if (column === - 1) {
+        throw new Error('el campo no existe: "' + name + '"');
+    }
+
+    return column;
 }
 
 function parseDelimited(text, delimiter, noHeader) {
@@ -111,7 +145,7 @@ function parseDelimited(text, delimiter, noHeader) {
     // }
 }
 
-function readFile(path) {
+function readInput(path) {
     try {
         return new TextDecoder('utf-8').decode(readFileSync(path));
     } catch (error) {
@@ -137,7 +171,7 @@ function parseArgs(args) {
             if (i >= args.length) {
                 throw new Error('Falta el criterio de ordenamiento después de ' + argumento);
             }
-            config.sortFields.push(parseSortField(args[i]));
+            config.sortFields.push(parseSortFields(args[i]));
         }
         else if (argumento === '-d' || argumento === '--delimiter') {
             i++;
@@ -163,7 +197,7 @@ function parseArgs(args) {
     return config;
 } 
 
-function parseSortField(sortFields) {
+function parseSortFields(sortFields) {
     const [campo, tipo = 'alpha', orden = 'asc'] = sortFields.split(':');
 
     return {
