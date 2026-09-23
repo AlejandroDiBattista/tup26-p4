@@ -7,47 +7,267 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
   <title>Agenda</title>
-  <style>
-    body { margin: 0; padding: 2rem 1.25rem; font: 1rem sans-serif; background: #f5f6f4; font-family: "Inter", sans-serif; }
-    main { width: 69rem; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 1.5rem; }
-    ul { display: grid; grid-template-columns: repeat(3, 22.5rem); justify-content: center; gap: 0.75rem; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 1.25rem; border: 1px solid #d9ded9; border-radius: 1rem; background: white;}
-    li b { font-weight: bold; font-size:1.4rem; color:black;}
-    .dialog_overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.35); justify-content: center; align-items: center; padding: 1.25rem; z-index: 10; }
-    .dialog_overlay.open { display: flex; }
-    dialog { position: static; width: 40rem; max-width: 100%; margin: 0; padding: 2rem; border: none; border-radius: 1.5rem; background: #f5f6f4; box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.2); }
-    .dialog_title { margin: 0 0 0.25rem; font-size: 1.5rem; }
-    .dialog_subtitle { margin: 0 0 1.5rem; color: rgba(0, 0, 0, 0.5); font-size: 0.9375rem; }
-    .dialog_grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 1.5rem; margin-bottom: 1.75rem; }
-    .dialog_field { display: flex; flex-direction: column; gap: 0.5rem; }
-    .dialog_field label { font-weight: 600; font-size: 0.875rem; }
-    .dialog_field input { height: 2.75rem; padding: 0 1rem; border: 1px solid #d9ded9; border-radius: 0.75rem; background: white; font: inherit; font-size: 0.9375rem; }
-    .dialog_field input:focus { outline: 2px solid #304035; outline-offset: -1px; }
-    .dialog_footer { display: flex; justify-content: space-between; align-items: center; }
-    .dialog_delete { border: none; background: none; color: #c0392b; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; padding: 0.5rem; }
-    .dialog_actions { display: flex; gap: 0.75rem; }
-    .dialog_save { height: 2.75rem; padding: 0 1.5rem; border: none; border-radius: 9999px; background: #304035; color: white; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
-    .dialog_cancel { height: 2.75rem; padding: 0 1.5rem; border: 1px solid #d9ded9; border-radius: 9999px; background: white; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
+<style>
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem;
+    font: 1rem sans-serif;
+    font-family: "Inter", sans-serif;
+    background: #f5f6f4;
+  }
 
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
-    .header_container { display:flex; justify-content:space-between;}
-    .search_input { height: 2.5rem; padding: 0 1.25rem; border: 1px solid #d9ded9; border-radius: 9999px; background: white; font: inherit; font-size: 0.9375rem; }
-    .search_input::placeholder { color: rgba(0, 0, 0, 0.4); }
-    .add_button { height: 2.5rem; padding: 0 1.25rem 0 1rem; border: none; border-radius: 9999px; background: #304035; color: white; font: inherit; font-size: 0.9375rem; font-weight: 600; cursor: pointer; }
+  #app {
+    width: 69rem;
+    max-width: 100%;
+    margin: auto;
+  }
 
-    .card_name { display: flex; justify-content: space-between; padding-bottom: 2.75rem; color:rgba(0, 0, 0, 0.6); font-weight: 500;}
-    .card_name b { font-family: "Source Serif 4", serif; }
-    .card_star { width: 1.25rem; height: 1.25rem; flex-shrink: 0; stroke: #d9ded9; fill: none; cursor: pointer; }
-    .card_star-filled { fill: #8A7B4E; stroke: #8A7B4E; }
-    .card_phone { display: block; font-weight: bold; padding-bottom: 0.25rem; }
-    .card_github { display: block; opacity: 0.6; }
-    .card_meta { display: block; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #d9ded9; letter-spacing: 0.05em; font-weight: 600; font-size: 0.875rem; opacity: 0.8; }
-  </style>
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h1 {
+      margin: 0 0 1.5rem;
+    }
+
+    .search_input {
+      height: 2.5rem;
+      padding: 0 1.25rem;
+      border: 1px solid #d9ded9;
+      border-radius: 9999px;
+      background: white;
+      font: inherit;
+      font-size: 0.9375rem;
+
+      &::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    .add_button {
+      height: 2.5rem;
+      padding: 0 1.25rem 0 1rem;
+      border: none;
+      border-radius: 9999px;
+      background: #304035;
+      color: white;
+      font: inherit;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  main {
+    section {
+      display: grid;
+      grid-template-columns: repeat(3, 22.5rem);
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 0;
+      list-style: none;
+      cursor: pointer;
+
+      article {
+        min-width: 0;
+        padding: 1.25rem;
+        border: 1px solid #d9ded9;
+        border-radius: 1rem;
+        background: white;
+
+        &:focus-visible {
+          outline: 2px solid #304035;
+          outline-offset: 2px;
+        }
+
+        address {
+          font-style: normal;
+        }
+
+        .card_name {
+          display: flex;
+          justify-content: space-between;
+          padding-bottom: 2.75rem;
+          color: rgba(0, 0, 0, 0.6);
+          font-weight: 500;
+
+          b {
+            font-family: "Source Serif 4", serif;
+            font-weight: bold;
+            font-size: 1.4rem;
+            color: black;
+          }
+
+          .card_star {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+            stroke: #d9ded9;
+            fill: none;
+            cursor: pointer;
+
+            &.card_star-filled {
+              fill: #8A7B4E;
+              stroke: #8A7B4E;
+            }
+          }
+        }
+
+        .card_phone {
+          display: block;
+          padding-bottom: 0.25rem;
+          font-weight: bold;
+        }
+
+        .card_github {
+          display: block;
+          opacity: 0.6;
+        }
+
+        .card_meta {
+          display: block;
+          padding-top: 1rem;
+          margin-top: 1rem;
+          border-top: 1px solid #d9ded9;
+          letter-spacing: 0.05em;
+          font-weight: 600;
+          font-size: 0.875rem;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+
+  dialog {
+      width: 40rem;
+      max-width: calc(100% - 2.5rem);
+      box-sizing: border-box;
+      padding: 2rem;
+      border: none;
+      border-radius: 1.5rem;
+      background: #f5f6f4;
+      box-shadow:
+        0 0 0 0.5rem rgba(255, 255, 255, 0.7),
+        0 1.5rem 3rem rgba(0, 0, 0, 0.2);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+
+      .dialog_title {
+        margin: 0 0 0.25rem;
+        font-size: 1.5rem;
+      }
+
+      .dialog_subtitle {
+        margin: 0 0 1.5rem;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.9375rem;
+      }
+
+      .dialog_grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem 1.5rem;
+        margin-bottom: 1.75rem;
+      }
+
+      .dialog_field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        label {
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+
+        input {
+          height: 2.75rem;
+          padding: 0 1rem;
+          border: 1px solid #d9ded9;
+          border-radius: 0.75rem;
+          background: white;
+          font: inherit;
+          font-size: 0.9375rem;
+
+          &:focus {
+            outline: 2px solid #304035;
+            outline-offset: -1px;
+          }
+
+          &.invalid {
+            border-color: #c0392b;
+          }
+        }
+
+        .dialog_error {
+          margin: 0;
+          color: #c0392b;
+          font-size: 0.8125rem;
+        }
+      }
+
+      .dialog_footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .dialog_delete {
+        padding: 0.5rem;
+        border: none;
+        background: none;
+        color: #c0392b;
+        font: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .dialog_actions {
+        display: flex;
+        gap: 0.75rem;
+
+        button {
+          height: 2.75rem;
+          padding: 0 1.5rem;
+          border-radius: 9999px;
+          font: inherit;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .dialog_save {
+          border: none;
+          background: #304035;
+          color: white;
+        }
+
+        .dialog_cancel {
+          border: 1px solid #d9ded9;
+          background: white;
+        }
+      }
+  }
+
+  @media (max-width: 1120px) {
+    main section {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 700px) {
+    main section {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 </head>
 <body>
-  <main id="app"></main>
+  <div id="app"></div>
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
@@ -74,7 +294,8 @@
       alumnos: storageAlumnos,
       dialogAbierto: false,
       modoEdicion: false,
-      alumnoActual: alumnoVacio()
+      alumnoActual: alumnoVacio(),
+      errores: {}
     })
 
     watch(() => {
@@ -84,12 +305,14 @@
     function abrirAgregar() {
       state.modoEdicion = false
       state.alumnoActual = alumnoVacio()
+      state.errores = {}
       state.dialogAbierto = true
     }
 
     function abrirEdicion(alumno) {
       state.modoEdicion = true
       state.alumnoActual = { ...alumno }
+      state.errores = {}
       state.dialogAbierto = true
     }
 
@@ -97,12 +320,42 @@
       state.dialogAbierto = false
     }
 
+    function setLegajo(valor) {
+      state.alumnoActual.legajo = valor.replace(/\D/g, '')
+    }
+
+    function validarAlumno() {
+      const errores = {}
+      const a = state.alumnoActual
+
+      if (!a.apellido.trim()) errores.apellido = 'El apellido es obligatorio.'
+      if (!a.nombre.trim()) errores.nombre = 'El nombre es obligatorio.'
+
+      if (!a.legajo.trim()) {
+        errores.legajo = 'El legajo es obligatorio.'
+      } else if (!/^\d+$/.test(a.legajo)) {
+        errores.legajo = 'El legajo debe ser numérico.'
+      } else if (state.alumnos.some(o => o.id !== a.id && o.legajo === a.legajo)) {
+        errores.legajo = 'Ya existe un alumno con ese legajo.'
+      }
+
+      const digitos = a.telefono.replace(/\D/g, '')
+      if (digitos && digitos.length !== 10) errores.telefono = 'El teléfono debe tener 10 dígitos.'
+
+      state.errores = errores
+      return Object.keys(errores).length === 0
+    }
+
     function guardarAlumno() {
+      if (!validarAlumno()) return
+      const d = state.alumnoActual.telefono.replace(/\D/g, '')
+      if (d) state.alumnoActual.telefono = `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`
+
       if (state.modoEdicion) {
         const alumno = state.alumnos.find(a => a.id === state.alumnoActual.id)
         Object.assign(alumno, state.alumnoActual)
       } else {
-        state.alumnos.push({ ...state.alumnoActual, id: state.alumnos.length + 1 })
+        state.alumnos.push({ ...state.alumnoActual, id: Math.max(0, ...state.alumnos.map(o => o.id)) + 1 })
       }
       cerrarDialog()
     }
@@ -115,72 +368,99 @@
 
     const alumnosFiltrados = () => state.alumnos.filter(a =>
       `${a.apellido} ${a.nombre} ${a.legajo}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(state.busqueda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
-    )
+    ).sort((a, b) =>
+      Number(b.favorito) - Number(a.favorito) ||
+      a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
+      a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+    );
 
     const app = document.getElementById('app')
     html`
-      <div class="header_container">
+      <header class="header_container">
         <h1>Agenda</h1>
         <div class="">
          <input class="search_input" placeholder="Buscar alumno..." @input="${e => state.busqueda = e.target.value}" />
          <button class="add_button" @click="${() => abrirAgregar()}">+ Agregar</button>
         </div>
-      </div>
-      <ul>
-        ${() => alumnosFiltrados().map(a => html`<li @click="${() => abrirEdicion(a)}">
-          <span class="card_name">
-            <span><b>${a.apellido}</b> ${a.nombre}</span>
-            <svg class="${a.favorito ? 'card_star card_star-filled' : 'card_star'}" @click="${e => { e.stopPropagation(); a.favorito = !a.favorito }}" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </span>
-          <span class="card_phone">${a.telefono}</span>
-          <span class="card_github">@${a.github}</span>
-          <span class="card_meta">${a.comision} &bull; ${a.legajo}</span>
-          </li>`)}
-      </ul>
-      <div class="${() => state.dialogAbierto ? 'dialog_overlay open' : 'dialog_overlay'}" @click="${e => { if (e.target === e.currentTarget) cerrarDialog() }}">
-        <dialog open>
+      </header>
+      <main>
+      <section>
+        ${() => alumnosFiltrados().map(a => html`
+          <article tabindex="0" @click="${() => abrirEdicion(a)}" @keydown="${e => {
+              if (e.target !== e.currentTarget) return
+              if (e.key === 'Enter') abrirEdicion(a)
+              else if (e.key === ' ') { e.preventDefault(); a.favorito = !a.favorito }
+            }}">
+            <span class="card_name">
+              <span><b>${a.apellido}</b> ${a.nombre}</span>
+              <svg class="${a.favorito ? 'card_star card_star-filled' : 'card_star'}" @click="${e => { e.stopPropagation(); a.favorito = !a.favorito }}" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            <address>
+              <span class="card_phone">${a.telefono}</span>
+              <span class="card_github">@${a.github}</span>
+            </address>
+            <span class="card_meta">${a.comision} &bull; ${a.legajo}</span>
+          </article>`)}
+          ${() => alumnosFiltrados().length === 0 ? html`<p>No se encontraron alumnos.</p>` : ''}
+      </section>
+      </main>
+      <dialog id="dialog" @close="${() => { state.dialogAbierto = false }}" @click="${e => {
+          const r = e.currentTarget.getBoundingClientRect()
+          if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) cerrarDialog()
+        }}">
+        <form @submit="${e => { e.preventDefault(); guardarAlumno() }}">
           <h2 class="dialog_title">${() => state.modoEdicion ? 'Editar alumno' : 'Agregar alumno'}</h2>
           <p class="dialog_subtitle">${() => state.modoEdicion ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
           <div class="dialog_grid">
             <div class="dialog_field">
-              <label>Apellido</label>
-              <input .value="${() => state.alumnoActual.apellido}" @input="${e => state.alumnoActual.apellido = e.target.value}" />
+              <label for="f-apellido">Apellido</label>
+              <input id="f-apellido" class="${() => state.errores.apellido ? 'invalid' : ''}" placeholder="Gómez" .value="${() => state.alumnoActual.apellido}" @input="${e => state.alumnoActual.apellido = e.target.value}" />
+              ${() => state.errores.apellido ? html`<p class="dialog_error">${state.errores.apellido}</p>` : ''}
             </div>
             <div class="dialog_field">
-              <label>Nombre</label>
-              <input .value="${() => state.alumnoActual.nombre}" @input="${e => state.alumnoActual.nombre = e.target.value}" />
+              <label for="f-nombre">Nombre</label>
+              <input id="f-nombre" class="${() => state.errores.nombre ? 'invalid' : ''}" placeholder="Juan" .value="${() => state.alumnoActual.nombre}" @input="${e => state.alumnoActual.nombre = e.target.value}" />
+              ${() => state.errores.nombre ? html`<p class="dialog_error">${state.errores.nombre}</p>` : ''}
             </div>
             <div class="dialog_field">
-              <label>Legajo</label>
-              <input .value="${() => state.alumnoActual.legajo}" @input="${e => state.alumnoActual.legajo = e.target.value}" />
+              <label for="f-legajo">Legajo</label>
+              <input id="f-legajo" class="${() => state.errores.legajo ? 'invalid' : ''}" inputmode="numeric" placeholder="65000" .value="${() => state.alumnoActual.legajo}" @input="${e => { setLegajo(e.target.value); e.target.value = state.alumnoActual.legajo }}" />
+              ${() => state.errores.legajo ? html`<p class="dialog_error">${state.errores.legajo}</p>` : ''}
             </div>
             <div class="dialog_field">
-              <label>Comisión</label>
-              <input .value="${() => state.alumnoActual.comision}" @input="${e => state.alumnoActual.comision = e.target.value}" />
+              <label for="f-comision">Comisión</label>
+              <input id="f-comision" placeholder="C1" .value="${() => state.alumnoActual.comision}" @input="${e => state.alumnoActual.comision = e.target.value}" />
             </div>
             <div class="dialog_field">
-              <label>Teléfono</label>
-              <input .value="${() => state.alumnoActual.telefono}" @input="${e => state.alumnoActual.telefono = e.target.value}" />
+              <label for="f-telefono">Teléfono</label>
+              <input id="f-telefono" class="${() => state.errores.telefono ? 'invalid' : ''}" placeholder="(381) 555-6666" .value="${() => state.alumnoActual.telefono}" @input="${e => state.alumnoActual.telefono = e.target.value}" />
+              ${() => state.errores.telefono ? html`<p class="dialog_error">${state.errores.telefono}</p>` : ''}
             </div>
             <div class="dialog_field">
-              <label>GitHub</label>
-              <input .value="${() => state.alumnoActual.github}" @input="${e => state.alumnoActual.github = e.target.value}" />
+              <label for="f-github">GitHub</label>
+              <input id="f-github" placeholder="jgomez" .value="${() => state.alumnoActual.github}" @input="${e => state.alumnoActual.github = e.target.value}" />
             </div>
           </div>
-          <div class="dialog_footer">
+          <footer class="dialog_footer">
             ${() => state.modoEdicion
-              ? html`<button class="dialog_delete" @click="${() => eliminarAlumno()}">Eliminar</button>`
+              ? html`<button type="button" class="dialog_delete" @click="${() => eliminarAlumno()}">Eliminar</button>`
               : html`<span></span>`}
             <div class="dialog_actions">
-              <button class="dialog_save" @click="${() => guardarAlumno()}">Guardar</button>
-              <button class="dialog_cancel" @click="${() => cerrarDialog()}">Cancelar</button>
+              <button type="submit" class="dialog_save">Guardar</button>
+              <button type="button" class="dialog_cancel" @click="${() => cerrarDialog()}">Cancelar</button>
             </div>
-          </div>
-        </dialog>
-      </div>
+          </footer>
+        </form>
+      </dialog>
     `(app)
+
+    const dialog = document.getElementById('dialog')
+    watch(() => {
+      if (state.dialogAbierto && !dialog.open) dialog.showModal()
+      else if (!state.dialogAbierto && dialog.open) dialog.close()
+    })
   </script>
 </body>
 </html>
