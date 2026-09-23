@@ -9,7 +9,63 @@
     main { width: 1104px; max-width: 100%; margin: auto; }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    
+    /*cada tarjeta individual*/
+    li.tarjeta{
+      min-width: 0;
+      padding: 22px 24px;
+      border: 1px solid #e1e4dc;
+      border-radius: 18px;
+      background: #ffffff;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      cursor: pointer;
+    }
+  /*cabecera para el nombre y estrella */
+  .tarjeta-cabecera{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  /*nombre y apellido*/
+  .nombre{
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: #2b3321;
+  }
+  .nombre .apellido{
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #171d12;
+  }
+  /*boton de la estrellita*/
+  .btn-fav{
+    background: none;
+    border:none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color:#736b46;
+    line-height: 1;
+    padding: 0;
+  }
+  /*telefono y github*/
+  .tarjeta-contacto .telefono{
+    font-weight: 600;
+    color:#222a1d;
+  }
+  /*pie de la tarjeta*/
+  .tarjeta-pie{
+    border-top: 1px solid #edf0e9;
+    padding-top: 12px;
+    font-size: 0.85rem;
+    color: #7a8275;
+    font-weight: 500;
+  }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
   </style>
@@ -22,10 +78,74 @@
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const clave_storgae='agenda_alumnos'
+
+    //obtener los datos del localstorage o del json inicial
+    const datosGuardados= localStorage.getItem(clave_storgae)
+    let listaInicial
+    //verificar si tenemos datos guardados
+    if (datosGuardados) {
+      listaInicial=JSON.parse(datosGuardados)
+    } else{
+      listaInicial=alumnos
+    }
+
+    //si no habia nada, guardamos la lista del json
+    if (!datosGuardados) {
+      localStorage.setItem(clave_storgae, JSON.stringify(listaInicial))
+    }
+
+    //crear el estado reactivo con arrowjs
+    const estado= reactive({
+      alumnos:listaInicial,
+      busqueda:''
+    })
+    //guardar automaticamente cada vez que la lista cambie
+    watch(function(){
+      localStorage.setItem(clave_storgae, JSON.stringify(estado.alumnos))
+    })
+    //mostrar en pantalla de forma provisoria
+
     html`
-      <h1>Alumnos</h1>
+      <h1>Alumnos (${function(){ return estado.alumnos.length}})</h1>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+      ${function(){
+        return estado.alumnos.map(function(alumno){
+          return html `
+          <!-- tabindex hace que el elemento pueda seleccionarse con la tecla tab -->
+          <li tabindex="0" class="tarjeta">
+
+            <!-- appelido, nombre y estrellita -->
+            <div class="tarjeta-cabecera">
+              <h2 class="nombre">
+                <span class="apellido">${alumno.apellido}</span> ${alumno.nombre}
+              </h2>
+
+              <!--boton de favorito -->
+              <button type="button" class="btn-fav" aria-label="Marcar favorito">
+              ${function(){
+                if (alumno.favorito) {
+                  return '★'
+                } else{
+                  return '☆'
+                }
+              }}
+              </button>
+            </div>
+
+              <!-- telefono y github -->
+              <div class="tarjeta-contacto">
+                <p class="telefono">${alumno.telefono}</p>
+                <p class="github">@${alumno.github}</p>
+              </div>
+
+              <!--comision y legajo-->
+              <div class="tarjeta-pie">
+                <span>${alumno.comision} · ${alumno.legajo}</span>
+                </div> 
+          </li>`
+        })
+      }}
       </ul>
     `(app)
   </script>
