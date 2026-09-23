@@ -142,6 +142,7 @@ Agregamos al módulo:
 ```js
 import alumnos from './alumnos.json' with { type: 'json' }
 const claveAlumnos = 'tp3-alumnos'
+
 function CargarAlumnos() {
   try {
     const guardados = JSON.parse(localStorage.getItem(claveAlumnos))
@@ -283,11 +284,11 @@ Agregamos el diálogo entre `main` y `script`:
     <header><h2 id="titulo-editor">Agregar alumno</h2><p>Completá los datos.</p></header>
     <div class="campos">
       <label>Apellido<input name="apellido" required></label>
-      <label>Nombre<input name="nombre" required></label>
-      <label>Legajo<input name="legajo" required></label>
+      <label>Nombre  <input name="nombre"   required></label>
+      <label>Legajo  <input name="legajo"   required></label>
       <label>Comisión<input name="comision" required></label>
       <label>Teléfono<input name="telefono" type="tel" required></label>
-      <label>GitHub<input name="github" required></label>
+      <label>GitHub  <input name="github"   required></label>
     </div>
     <footer><button type="submit">Agregar</button><button type="button">Cancelar</button></footer>
   </form>
@@ -327,18 +328,28 @@ Dejamos vacío el contenido de `dialog` y trasladamos su formulario a esta funci
 
 ```js
 function Formulario({ onGuardar }) {
-  const borrador = reactive({ apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' })
+  const borrador = reactive({ 
+    apellido: '', nombre:   '', 
+    legajo:   '', comision: '', 
+    telefono: '', github:   '' 
+  })
+    
   const Campo = (nombre, etiqueta) => html`
     <label>${etiqueta}<input name="${nombre}" required
-      type="${nombre === 'telefono' ? 'tel' : 'text'}"
+      type  ="${nombre === 'telefono' ? 'tel' : 'text'}"
       .value="${() => borrador[nombre]}"
       @input="${e => borrador[nombre] = e.target.value}"></label>`
-  function alCerrar(e) { e.currentTarget.closest('dialog').close() }
+  
   function alGuardar(e) {
     e.preventDefault()
     onGuardar({ ...borrador })
     alCerrar(e)
   }
+
+  function alCerrar(e) { 
+    e.currentTarget.closest('dialog').close() 
+  }
+
   return html`
     <form @submit="${alGuardar}">
       <header><h2 id="titulo-editor">Agregar alumno</h2><p>Completá los datos.</p></header>
@@ -353,11 +364,13 @@ function Formulario({ onGuardar }) {
       </footer>
     </form>`
 }
+
 function Agregar(datos) {
   const id = Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1
   estado.alumnos = [...estado.alumnos, reactive({ ...datos, id, favorito: false })]
   estado.busqueda = ''
 }
+
 function Editar() {
   editor.replaceChildren()
   Formulario({ onGuardar: Agregar })(editor)
@@ -378,12 +391,12 @@ Vamos a abrir el mismo formulario desde una ficha. Editamos una copia para que C
 Cambiamos la firma a `Formulario(alumno, { onGuardar })` y reemplazamos la inicialización del borrador por:
 
 ```js
-const esNuevo = !alumno
+const esNuevo  = !alumno
 const borrador = reactive({
   id: alumno?.id,
-  apellido: alumno?.apellido ?? '', nombre: alumno?.nombre ?? '',
-  legajo: alumno?.legajo ?? '', comision: alumno?.comision ?? '',
-  telefono: alumno?.telefono ?? '', github: alumno?.github ?? ''
+  apellido: alumno?.apellido ?? '', nombre:   alumno?.nombre   ?? '',
+  legajo:   alumno?.legajo   ?? '', comision: alumno?.comision ?? '',
+  telefono: alumno?.telefono ?? '', github:   alumno?.github   ?? ''
 })
 ```
 
@@ -397,6 +410,7 @@ function Guardar({ id, ...datos }) {
   if (alumno) Object.assign(alumno, datos)
   else Agregar(datos)
 }
+
 function Editar(alumno) {
   editor.replaceChildren()
   Formulario(alumno, { onGuardar: Guardar })(editor)
@@ -410,6 +424,7 @@ Dentro de `Alumno`, antes de su `return`, incorporamos:
 function alEditar(e) {
   if (!e.target.closest('button')) Editar(alumno)
 }
+
 function alEditarConTeclado(e) {
   if (e.target === e.currentTarget && e.key === 'Enter') {
     e.preventDefault()
