@@ -55,13 +55,23 @@
       import alumnos from "./alumnos.json" with { type: "json" };
 
       const app = document.getElementById("app");
+      const CLAVE_STORAGE = "agenda-63139";
+
+      const guardados = localStorage.getItem(CLAVE_STORAGE);
+      const datosIniciales =
+        guardados !== null ? JSON.parse(guardados) : alumnos;
+
       const estado = reactive({
         busqueda: "",
-        alumnos: alumnos.map((a) => ({
+        alumnos: datosIniciales.map((a) => ({
           ...a,
           favorito: Boolean(a.favorito),
         })),
       });
+      watch(() => {
+        localStorage.setItem(CLAVE_STORAGE, JSON.stringify(estado.alumnos));
+      });
+
       function normalizar(texto) {
         return String(texto ?? "")
           .normalize("NFD")
