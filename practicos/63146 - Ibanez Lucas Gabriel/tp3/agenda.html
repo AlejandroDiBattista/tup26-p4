@@ -103,6 +103,10 @@
     .estrella {
       font-size: 26px;
       line-height: 1;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
     }
 
     .datos {
@@ -157,16 +161,25 @@
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
-
-    console.log(alumnos)
 
     const app = document.getElementById('app')
 
+    const alumnosGuardados = localStorage.getItem('alumnos')
+
     const estado = reactive({
+      alumnos: alumnosGuardados
+        ? JSON.parse(alumnosGuardados)
+        : alumnos,
       busqueda: ''
     })
+
+    if (!alumnosGuardados) {
+      localStorage.setItem('alumnos', JSON.stringify(alumnos))
+    }
+
+   
 
     const normalizar = texto => {
       return texto
@@ -175,24 +188,67 @@
         .replace(/[\u0300-\u036f]/g, '')
     }
 
+    const ordenarAlumnos = lista => {
+      return [...lista].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return b.favorito - a.favorito
+        }
+
+        const apellidoA = normalizar(a.apellido)
+        const apellidoB = normalizar(b.apellido)
+
+        const comparacionApellido = apellidoA.localeCompare(apellidoB)
+
+        if (comparacionApellido !== 0) {
+          return comparacionApellido
+        }
+
+        return normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+      })
+    }
+
     const alumnosFiltrados = () => {
       const busqueda = normalizar(estado.busqueda.trim())
 
-      if (!busqueda) {
-        return alumnos
+      let lista = estado.alumnos
+
+      if (busqueda) {
+        lista = lista.filter(a => {
+          return [
+            a.apellido,
+            a.nombre,
+            a.legajo,
+            a.comision,
+            a.telefono,
+            a.github
+          ].some(dato =>
+            normalizar(String(dato)).includes(busqueda)
+          )
+        })
       }
 
-      return alumnos.filter(a => {
-        return [
-          a.apellido,
-          a.nombre,
-          a.legajo,
-          a.comision,
-          a.telefono,
-          a.github
-        ].some(dato => normalizar(String(dato)).includes(busqueda))
-      })
+      return ordenarAlumnos(lista)
     }
+
+    const cambiarFavorito = id => {
+  const alumnosActualizados = estado.alumnos.map(alumno => {
+    if (alumno.id === id) {
+      return {
+        ...alumno,
+        favorito: !alumno.favorito
+      }
+    }
+
+    return alumno
+  })
+
+  estado.alumnos = alumnosActualizados
+
+  localStorage.setItem(
+    'alumnos',
+    JSON.stringify(estado.alumnos)
+  )
+}
 
     const vistaAlumnos = () => {
       const lista = alumnosFiltrados()
@@ -209,7 +265,15 @@
         <li>
           <div class="card-header">
             <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
-            <span class="estrella">☆</span>
+
+            <button
+              class="estrella"
+              type="button"
+              aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+              @click="${() => cambiarFavorito(a.id)}"
+            >
+              ${() => a.favorito ? '★' : '☆'}
+            </button>
           </div>
 
           <div class="datos">
@@ -222,8 +286,8 @@
           <div class="card-footer">
             <p>${a.comision} · ${a.legajo}</p>
           </div>
-        </li>
-      `)
+        `
+      ).map(card => card)
     }
 
     html`
@@ -246,7 +310,7 @@
 
       <section>
         <ul>
-          ${vistaAlumnos}
+          ${() => vistaAlumnos()}
         </ul>
       </section>
     `(app)
