@@ -190,8 +190,29 @@
 
     const app = document.getElementById('app')
 
+    const normalizeText = (value = '') =>
+      String(value)
+        .normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase()
+		.trim()
+
+
+	const sortAlumnos = (items) => {
+		return [...items].sort((a, b) => {
+			if (a.favorito !== b.favorito) {
+				return Number(b.favorito) - Number(a.favorito)
+			}
+
+			const aKey = normalizeText(`${a.apellido} ${a.nombre}`)
+			const bKey = normalizeText(`${b.apellido} ${b.nombre}`)
+
+			return aKey.localeCompare(bKey, 'es', {sensitivity: 'base'})
+		})
+	}
+
     const state = reactive({
-      alumnos: [],
+      alumnos: sortAlumnos(alumnosSeed),
       search: '',
       modalOpen: false,
       editingId: null,
@@ -204,13 +225,35 @@
         github: ''
       }
     })
-    
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+
+	const renderAlumnos = () => {
+		const alumnos = sortAlumnos(state.alumnos)
+
+		return html`
+			<div class="card-grid">
+				${alumnos.map(alumno => html`
+				<article class="card">
+					<header class="card-header>
+						<h2 class="name">${alumno.apellido} ${alumno.nombre}</h2>
+						<button type="button" class="favorite-toggle ${alumno.favorito ? 'is-favorite' : ''}">
+							★
+						</button>
+					</header>
+					<address class="card-body">
+      			      <span class="detail">${alumno.telefono}</span>
+      			      <span class="detail detail--github">@${alumno.github}</span>
+      			    </address>
+				
+      			    <footer class="card-footer">
+      			      ${alumno.comision}
+      			    </footer>
+      			  </article>
+      			`)}
+			</div>
+		`
+	}
+
+	html`${renderAlumnos()}`(app)
   </script>
 </body>
 </html>
