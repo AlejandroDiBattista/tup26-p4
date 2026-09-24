@@ -5,13 +5,100 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --fondo:   #f5f6f4;
+      --tarjeta: #ffffff;
+      --borde:   #e3e6e1;
+      --texto:   #1f2a1f;
+      --suave:   #6b7280;
+      --tenue:   #9ca3af;
+      --acento:  #8a8556;
+      --oscuro:  #23301f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px system-ui, sans-serif;
+      background: var(--fondo);
+      color: var(--texto);
+    }
+
+    main { width: 1160px; max-width: 100%; margin: auto; }
+    .principal {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+
+      & h1 { margin: 0 auto 0 0; font-size: 32px; }
+    }
+    .agenda {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      @media (max-width: 1000px) { grid-template-columns: repeat(2, 1fr); }
+      @media (max-width: 680px)  { grid-template-columns: 1fr; }
+    }
+    .tarjeta {
+      height: 100%;
+      padding: 18px 20px;
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      background: var(--tarjeta);
+
+      & header {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      & h2 {
+        margin: 0 auto 0 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.25;
+
+        & span {
+          font-size: 17px;
+          font-weight: 400;
+          color: var(--suave);
+        }
+      }
+
+      & address {
+        margin-top: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--borde);
+        font-style: normal;
+
+        & .telefono { font-weight: 600; }
+        & .github   { display: block; margin-top: 4px; color: var(--suave); }
+      }
+
+      & footer {
+        margin-top: 10px;
+        font-size: 12px;
+        letter-spacing: 1.5px;
+        color: var(--tenue);
+      }
+    }
+    .favorito {
+      padding: 0;
+      border: 0;
+      background: none;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--acento);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -22,10 +109,42 @@
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const CLAVE = 'agenda-alumnos'
+    const guardado = localStorage.getItem(CLAVE)
+    const iniciales = guardado ? JSON.parse(guardado) : alumnos
+
+    const estado = reactive({ alumnos: iniciales })
+    watch(() => {
+      localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos))
+    })
+    window.estado = estado
+    function comparar(a, b) {
+      if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+      const porApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+      if (porApellido !== 0) return porApellido
+      return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+    }
+    const tarjeta = (a) => html`
+      <li>
+        <article class="tarjeta">
+          <header>
+            <h2>${a.apellido} <span>${a.nombre}</span></h2>
+            <button class="favorito">${a.favorito ? '\u2605' : '\u2606'}</button>
+          </header>
+          <address>
+            <span class="telefono">${a.telefono}</span>
+            <span class="github">@${a.github}</span>
+          </address>
+          <footer>${a.comision} \u00b7 ${a.legajo}</footer>
+        </article>
+      </li>
+    `
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+      <header class="principal">
+        <h1>Agenda</h1>
+      </header>
+      <ul class="agenda">
+        ${() => [...estado.alumnos].sort(comparar).map(tarjeta)}
       </ul>
     `(app)
   </script>
