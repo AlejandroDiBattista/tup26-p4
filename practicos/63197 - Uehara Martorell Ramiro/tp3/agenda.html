@@ -6,12 +6,13 @@
   <title>Agenda</title>
   <style>
     :root {
-      --fondo: #f4f4f2;
-      --tarjeta: #fdfdfa;
-      --borde: #dcdfdb;
-      --texto: #25302a;
-      --suave: #5d655f;
-      --acento: #2e3b31;
+      --fondo: #eef1f0;
+      --tarjeta: #ffffff;
+      --borde: #d3dad7;
+      --texto: #1f2a2e;
+      --suave: #62706f;
+      --acento: #274043;
+      --estrella: #b08a3e;
     }
 
     * { box-sizing: border-box; }
@@ -19,7 +20,7 @@
     body {
       margin: 0;
       padding: 32px 20px;
-      font: 15px/1.4 system-ui, sans-serif;
+      font: 15px/1.4 "Helvetica Neue", Arial, sans-serif;
       color: var(--texto);
       background: var(--fondo);
     }
@@ -39,16 +40,39 @@
       flex-direction: column;
       padding: 20px 20px 14px;
       border: 1px solid var(--borde);
-      border-radius: 16px;
+      border-radius: 12px;
       background: var(--tarjeta);
+      box-shadow: 0 2px 6px rgb(0 0 0 / .05);
+      transition: box-shadow .2s;
 
-      & h2 {
-        margin: 0 0 24px;
-        font-family: Georgia, serif;
-        font-size: 24px;
-        color: var(--acento);
+      &:hover { box-shadow: 0 6px 16px rgb(0 0 0 / .10); }
 
-        & span { font: 15px system-ui, sans-serif; color: var(--suave); }
+        & header {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-height: 64px;
+
+        & h2 {
+          flex: 1;
+          margin: 0;
+          font-family: Palatino, "Book Antiqua", serif;
+          font-size: 24px;
+          line-height: 1.2;
+          color: var(--acento);
+
+          & span { font: 15px "Helvetica Neue", Arial, sans-serif; }
+        }
+
+        & button {
+          padding: 0;
+          border: 0;
+          background: none;
+          font-size: 24px;
+          line-height: 1;
+          color: var(--estrella);
+          cursor: pointer;
+        }
       }
 
       & address {
@@ -99,9 +123,52 @@
 })
 
 
+
+
+
+    function comparar(a, b) {
+      if (a.favorito !== b.favorito) return b.favorito - a.favorito
+
+      const porApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+      if (porApellido !== 0) return porApellido
+
+      return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+    }
+
+    function alumnosOrdenados() {
+      return [...estado.alumnos].sort(comparar)
+    }
+
+
+
+
+
+    function guardar() {
+      localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos))
+    }
+
+    function alternarFavorito(alumno) {
+      alumno.favorito = !alumno.favorito
+      guardar()
+    }
+
+    function estrella(alumno) {
+      if (alumno.favorito) return '★'
+      return '☆'
+    }
+
+
+
+
+
     const Tarjeta = alumno => html`
       <article>
-        <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
+        <header>
+          <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
+          <button type="button" @click="${() => alternarFavorito(alumno)}">
+            ${() => estrella(alumno)}
+          </button>
+        </header>
         <address>
           <p>${() => alumno.telefono}</p>
           <p>@${() => alumno.github}</p>
@@ -113,7 +180,7 @@
     html`
       <h1>Agenda</h1>
       <section>
-        ${() => estado.alumnos.map(a => Tarjeta(a).key(a.id))}
+        ${() => alumnosOrdenados().map(a => Tarjeta(a).key(a.id))}
       </section>
     `(document.getElementById('app'))
 
