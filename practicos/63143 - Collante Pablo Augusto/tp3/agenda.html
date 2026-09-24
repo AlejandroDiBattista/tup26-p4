@@ -92,6 +92,13 @@
           margin: 0;
         }
       }
+
+      &:focus {
+        outline: 2px solid #edbb64;
+        border-color: #edbb64;
+      }
+
+
     }
 
     .buscador {
@@ -154,6 +161,22 @@
       });
     }
 
+    function alternarFavorito(id){
+      const indice = estado.alumnos.findIndex(a => a.id === id);
+      if (indice !== -1) {
+        estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+      }
+    }
+
+    function manejarTecladoTarjeta(e, id) {
+      if (e.key === " "){
+        e.preventDefault();
+        alternarFavorito(id);
+      } else if (e.key === "Enter") {
+        console.log("");
+      }
+    }
+
     const app = document.getElementById('app')
     html`
     <header class="encabezado">
@@ -171,10 +194,10 @@
           }
           
           return visible.map(a => html`
-          <article class="tarjeta">
+          <article class="tarjeta" tabindex="0" @keydown="${(e) => manejarTecladoTarjeta(e, a.id)}">
             <header>
               <h2>${a.apellido}, ${a.nombre}</h2>
-              <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito">
+              <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito" @click="${() => alternarFavorito(a.id)}" tabindex="-1">
                 ${a.favorito ? "★" : "☆"}
               </button>
             </header>
