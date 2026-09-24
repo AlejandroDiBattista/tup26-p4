@@ -84,14 +84,25 @@
 
     const filtrados = () => {
       const busqueda = normalizar(estado.busqueda.trim())
-      return estado.alumnos.filter(alumno =>
-        normalizar(Object.values(alumno).join(' ')).includes(busqueda))
+      return estado.alumnos
+        .filter(alumno =>
+          normalizar(Object.values(alumno).join(' ')).includes(busqueda))
+        .sort(CompararAlumnos)
+    }
+
+    function CompararAlumnos(a, b) {
+      return Number(b.favorito) - Number(a.favorito)
+        || a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+        || a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
     }
 
     function Alumno(alumno) {
       return html`
         <article class="alumno">
-          <button class="favorito" type="button">☆</button>
+          <button class="favorito" type="button"
+            @click="${() => alumno.favorito = !alumno.favorito}">
+            ${() => alumno.favorito ? '★' : '☆'}
+          </button>
           <header><h2>${() => alumno.apellido}</h2><p>${() => alumno.nombre}</p></header>
           <address><span>${() => alumno.telefono}</span><span>@${() => alumno.github}</span></address>
           <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
