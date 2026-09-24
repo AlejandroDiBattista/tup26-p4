@@ -90,7 +90,19 @@
     // Crear el estado reactivo con arrowjs
     const estado = reactive({
       alumnos: listaInicial,
-      busqueda: ''
+      busqueda: '',
+      modalAbierto:false,
+      modoEdicion:false,
+      alumnoForm:{
+        id:'',
+        apellido:'',
+        nombre:'',
+        legajo:'',
+        comision:'',
+        telefono:'',
+        github:'',
+        favorito:false        
+      }
     })
 
     // Guardar automaticamente cada vez que la lista cambie
@@ -112,12 +124,24 @@
     // Funcion para filtrar
     function obtenerAlumnos() {
       const termino = normalizar(estado.busqueda.trim())
-      if (!termino) return estado.alumnos
-      return estado.alumnos.filter(a =>
+      let lista= estado.alumnos
+      if (termino) {
+        lista= lista.filter(a=>
         normalizar(a.nombre).includes(termino) ||
         normalizar(a.apellido).includes(termino)
       )
-      
+      }
+      return [...lista].sort((a,b)=>{
+        //los favorito primero
+        if (a.favorito!==b.favorito) {
+          return a.favorito ?-1:1
+        }
+        //apellido, sin distinguir mayusuculas y minusculas
+        const compApellido=a.apellido.localeCompare(b.apellido, 'es',{sensitivity: 'base'})
+      if (comApellido !==0)return compApellido
+      })
+      return a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'})
+
     }
 
     // Alternar favorito
@@ -130,7 +154,67 @@
         estado.alumnos = copia
       }
     }
-      
+    //abrir para crear un alumno nuevo
+    function abrirModalNuevo(){
+      estado.modoEdicion=false
+      estado.alumnoForm={
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        apellido:'',
+        nombre:'',
+        legajo:'',
+        comision:'',
+        telefono:'',
+        github:'',
+        favorito:false  
+      }
+      estado.modalAbierto=true
+    }
+    // abrir para editar un alumno existente
+    function abrirModalEdicion(){
+      estado.modoEdicion=true
+      estado.alumnoForm={...alumno}
+      estado.modalAbiert=true
+    }
+    // cerrar modal
+    function cerrarModal(){
+      estado.modalAbierto=false
+    }
+    
+    // guardar alumno
+    function guardarAlumno(evento){
+      evento.preventDefault()
+      const copia=[...estado.alumnos]
+      if (estado.modoEdicion) {
+        const index= copia.findIndex(a=>a.id=== estado.alumnoForm.id || a.legajo=== estado.alumnoForm.legajo)
+        if (index!==-1) {
+          copia[index]={...estado.alumnoForm}
+        }
+      }else{
+        copia.push({...estado.alumnoForm})
+      }
+      estado.alumnos=copia
+      cerrarModal()
+    }
+    // eliminar alumno
+    function eliminarAlumno(){
+      if (confirm(`¿Eliminar a ${estado.alumnoForm.nombre} ${estado.alumnoForm.apellido}?`)) {
+       estados.alumnos= estado.alumnos.filter(a=>
+        a.id ? a.id !== estado.alumnoForm.id : a.legajo !== estado.alumnoForm.legajo
+       ) 
+       cerrarModal()
+      }
+    }
+    //accesibilidad con teclado en las tarjetas
+    function manejarTarjeta(eventi,alumno){
+      if (evento.key ==='Enter') {
+        evento.preventDefault()
+        abrirModalEdicion(alumno)
+      }else if (evento.key=== ' ') {
+        evento.preventDefault()
+        alternarFavorito(evento.alumno.legajo)
+      }
+    }
+
     html`
       <h1>Alumnos (${() => obtenerAlumnos().length})</h1>
       <input
