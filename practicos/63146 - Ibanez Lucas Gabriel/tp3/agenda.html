@@ -134,6 +134,72 @@
       text-align: center;
     }
 
+    dialog {
+      width: 400px;
+      max-width: calc(100% - 40px);
+      padding: 24px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .formulario {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .formulario h2 {
+      margin: 0 0 6px;
+    }
+
+    .formulario label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .formulario input {
+      height: 40px;
+      box-sizing: border-box;
+      padding: 0 10px;
+      border: 1px solid #d9ded9;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    .formulario input:focus {
+      outline: none;
+      border-color: #999;
+    }
+
+    .acciones-formulario {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .acciones-formulario button {
+      height: 40px;
+      padding: 0 16px;
+      border: 1px solid #d9ded9;
+      border-radius: 8px;
+      background: white;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .acciones-formulario .guardar {
+      border-color: #000;
+      background: #000;
+      color: white;
+    }
+
     @media (max-width: 700px) {
       .agenda-header {
         align-items: stretch;
@@ -178,8 +244,6 @@
     if (!alumnosGuardados) {
       localStorage.setItem('alumnos', JSON.stringify(alumnos))
     }
-
-   
 
     const normalizar = texto => {
       return texto
@@ -231,66 +295,129 @@
     }
 
     const cambiarFavorito = id => {
-  const alumnosActualizados = estado.alumnos.map(alumno => {
-    if (alumno.id === id) {
-      return {
-        ...alumno,
-        favorito: !alumno.favorito
-      }
+      const alumnosActualizados = estado.alumnos.map(alumno => {
+        if (alumno.id === id) {
+          return {
+            ...alumno,
+            favorito: !alumno.favorito
+          }
+        }
+
+        return alumno
+      })
+
+      estado.alumnos = alumnosActualizados
+
+      localStorage.setItem(
+        'alumnos',
+        JSON.stringify(estado.alumnos)
+      )
     }
 
-    return alumno
-  })
+    const agregarAlumno = event => {
+  event.preventDefault()
 
-  estado.alumnos = alumnosActualizados
+  const formulario = event.target
+  const datos = new FormData(formulario)
+
+  const apellido = datos.get('apellido').trim()
+  const nombre = datos.get('nombre').trim()
+  const legajo = datos.get('legajo').trim()
+  const comision = datos.get('comision').trim()
+  const telefono = datos.get('telefono').trim()
+  const github = datos.get('github').trim()
+
+  if (
+    !apellido ||
+    !nombre ||
+    !legajo ||
+    !comision ||
+    !telefono ||
+    !github
+  ) {
+    alert('Todos los campos son obligatorios.')
+    return
+  }
+
+  const legajoExiste = estado.alumnos.some(
+    alumno => alumno.legajo === legajo
+  )
+
+  if (legajoExiste) {
+    alert('Ya existe un alumno con ese legajo.')
+    return
+  }
+
+  const nuevoAlumno = {
+    id: Date.now(),
+    apellido,
+    nombre,
+    legajo,
+    comision,
+    telefono,
+    github,
+    favorito: false
+  }
+
+  estado.alumnos = [
+    ...estado.alumnos,
+    nuevoAlumno
+  ]
 
   localStorage.setItem(
     'alumnos',
     JSON.stringify(estado.alumnos)
   )
+
+  formulario.reset()
+
+  document
+    .getElementById('dialogo-agregar')
+    .close()
 }
+    
 
     const vistaAlumnos = () => {
-  const lista = alumnosFiltrados()
+      const lista = alumnosFiltrados()
 
-  if (lista.length === 0) {
-    return [
-      html`
-        <li class="sin-resultados">
-          No hay alumnos para mostrar.
+      if (lista.length === 0) {
+        return [
+          html`
+            <li class="sin-resultados">
+              No hay alumnos para mostrar.
+            </li>
+          `
+        ]
+      }
+
+      return lista.map(a => html`
+        <li>
+          <div class="card-header">
+            <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
+
+            <button
+              class="estrella"
+              type="button"
+              aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+              @click="${() => cambiarFavorito(a.id)}"
+            >
+              ${() => a.favorito ? '★' : '☆'}
+            </button>
+          </div>
+
+          <div class="datos">
+            <p>${a.telefono}</p>
+            <p>${a.github}</p>
+          </div>
+
+          <hr class="separador">
+
+          <div class="card-footer">
+            <p>${a.comision} · ${a.legajo}</p>
+          </div>
         </li>
-      `
-    ]
-  }
-
-  return lista.map(a => html`
-    <li>
-      <div class="card-header">
-        <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
-
-        <button
-          class="estrella"
-          type="button"
-          aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
-          @click="${() => cambiarFavorito(a.id)}"
-        >
-          ${() => a.favorito ? '★' : '☆'}
-        </button>
-      </div>
-
-      <div class="datos">
-        <p>${a.telefono}</p>
-        <p>${a.github}</p>
-      </div>
-
-      <hr class="separador">
-
-      <div class="card-footer">
-        <p>${a.comision} · ${a.legajo}</p>
-      </div>
-    </li>
-  `.key(a.id))
-}
+      `.key(a.id))
+    }
 
     html`
       <header class="agenda-header">
@@ -304,7 +431,11 @@
             @input="${event => estado.busqueda = event.target.value}"
           >
 
-          <button class="agregar" type="button">
+          <button
+            class="agregar"
+            type="button"
+            @click="${() => document.getElementById('dialogo-agregar').showModal()}"
+          >
             + Agregar
           </button>
         </div>
@@ -315,6 +446,85 @@
           ${() => vistaAlumnos()}
         </ul>
       </section>
+
+      <dialog id="dialogo-agregar">
+        <form
+          class="formulario"
+          @submit="${agregarAlumno}"
+        >
+          <h2>Agregar alumno</h2>
+
+          <label>
+            Apellido
+            <input
+              type="text"
+              name="apellido"
+              required
+            >
+          </label>
+
+          <label>
+            Nombre
+            <input
+              type="text"
+              name="nombre"
+              required
+            >
+          </label>
+
+          <label>
+            Legajo
+            <input
+              type="text"
+              name="legajo"
+              required
+            >
+          </label>
+
+          <label>
+            Comisión
+            <input
+              type="text"
+              name="comision"
+              required
+            >
+          </label>
+
+          <label>
+            Teléfono
+            <input
+              type="tel"
+              name="telefono"
+              required
+            >
+          </label>
+
+          <label>
+            Usuario de GitHub
+            <input
+              type="text"
+              name="github"
+              required
+            >
+          </label>
+
+          <div class="acciones-formulario">
+            <button
+              type="button"
+              @click="${() => document.getElementById('dialogo-agregar').close()}"
+            >
+              Cancelar
+            </button>
+
+            <button
+              class="guardar"
+              type="submit"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
