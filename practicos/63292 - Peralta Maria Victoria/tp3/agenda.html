@@ -79,6 +79,15 @@
       alumnos: CargarAlumnos().map(alumno => reactive(alumno))
     })
 
+    const normalizar = texto =>
+      texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+    const filtrados = () => {
+      const busqueda = normalizar(estado.busqueda.trim())
+      return estado.alumnos.filter(alumno =>
+        normalizar(Object.values(alumno).join(' ')).includes(busqueda))
+    }
+
     function Alumno(alumno) {
       return html`
         <article class="alumno">
@@ -93,12 +102,19 @@
       <header class="cabecera">
         <h1>Agenda</h1>
         <div class="acciones">
-          <input class="buscador" type="search" placeholder="Buscar alumno…">
+          <input class="buscador" type="search" placeholder="Buscar alumno…"
+            .value="${() => estado.busqueda}"
+            @input="${e => estado.busqueda = e.target.value}">
           <button class="agregar" type="button">+ Agregar</button>
         </div>
       </header>
       <div id="lista-alumnos">
-        ${() => estado.alumnos.map(alumno => Alumno(alumno).key(alumno.id))}
+        ${() => {
+          const lista = filtrados()
+          return lista.length
+            ? lista.map(alumno => Alumno(alumno).key(alumno.id))
+            : [html`<p>No se encontraron alumnos.</p>`.key('sin-resultados')]
+        }}
       </div>
     `(app)
   </script>
