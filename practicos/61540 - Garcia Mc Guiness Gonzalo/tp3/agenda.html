@@ -5,23 +5,206 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --bg: #edf0ec;
+      --panel: #f5f3f1;
+      --line: #d5d8d3;
+      --line-strong: #c0c5bf;
+      --text: #2b2d2b;
+      --muted: #5d625f;
+      --primary: #2e3d38;
+      --favorite: #d6be88;
+      --danger: #d85d5d;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    body { padding: 18px 20px 40px; }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3.2rem);
+      letter-spacing: -0.05em;
+      font-weight: 700;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search {
+      width: min(320px, 42vw);
+      min-width: 200px;
+      height: 42px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      padding: 0 18px;
+      color: var(--text);
+    }
+
+    .search::placeholder { color: #7b7e7a; }
+
+    .primary-button {
+      min-height: 42px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 999px;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      min-height: 220px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.14);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .name {
+      margin: 0;
+      font-size: clamp(1.5rem, 2vw, 2.1rem);
+      line-height: 1.2;
+      letter-spacing: -0.04em;
+      font-weight: 700;
+    }
+
+    .favorite-toggle {
+      border: none;
+      background: transparent;
+      color: var(--favorite);
+      font-size: 1.6rem;
+      cursor: pointer;
+      opacity: 0.4;
+    }
+
+    .favorite-toggle.is-favorite {
+      opacity: 1;
+    }
+
+    .card-body {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-style: normal;
+    }
+
+    .detail {
+      color: var(--text);
+      font-size: 1.04rem;
+    }
+
+    .detail--github {
+      color: var(--muted);
+    }
+
+    .card-footer {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 28px 18px;
+      text-align: center;
+      border: 1px dashed var(--line-strong);
+      border-radius: 18px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.1);
+    }
+
+    @media (max-width: 920px) {
+      .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .card-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  <main class="page">
+    <header class="topbar">
+      <h1 class="title">Agenda</h1>
+
+      <div class="topbar-actions">
+        <input class="search" type="search" placeholder="Buscar alumno...">
+        <button class="primary-button" type="button">+ Agregar</button>
+      </div>
+    </header>
+
+    <section id="app" aria-live="polite"></section>
+  </main>
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+
     const app = document.getElementById('app')
+
+    const state = reactive({
+      alumnos: [],
+      search: '',
+      modalOpen: false,
+      editingId: null,
+      form: {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
+      }
+    })
+    
     html`
       <h1>Alumnos</h1>
       <ul>
