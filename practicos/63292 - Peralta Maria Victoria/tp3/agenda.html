@@ -55,64 +55,52 @@
       }
       & h2, & p, & span { overflow-wrap: anywhere; }
     }
-
-    .alumno,
-    .alumno p,
-    .alumno footer,
-    .alumno > header,
-    .alumno > address,
-    .alumno > footer span {
-      overflow-wrap: anywhere;
-    }
   </style>
 </head>
 <body>
-  <main id="app">
-    <header class="cabecera">
-      <h1>Agenda</h1>
-      <div class="acciones">
-        <input class="buscador" type="search" placeholder="Buscar alumno…">
-        <button class="agregar" type="button">+ Agregar</button>
+  <main id="app"></main>
+
+  <script type="module">
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnos from './alumnos.json' with { type: 'json' }
+
+    const app = document.getElementById('app')
+    const claveAlumnos = 'tp3-alumnos'
+
+    function CargarAlumnos() {
+      try {
+        const guardados = JSON.parse(localStorage.getItem(claveAlumnos))
+        return Array.isArray(guardados) ? guardados : alumnos
+      } catch { return alumnos }
+    }
+
+    const estado = reactive({
+      busqueda: '',
+      alumnos: CargarAlumnos().map(alumno => reactive(alumno))
+    })
+
+    function Alumno(alumno) {
+      return html`
+        <article class="alumno">
+          <button class="favorito" type="button">☆</button>
+          <header><h2>${() => alumno.apellido}</h2><p>${() => alumno.nombre}</p></header>
+          <address><span>${() => alumno.telefono}</span><span>@${() => alumno.github}</span></address>
+          <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+        </article>`
+    }
+
+    html`
+      <header class="cabecera">
+        <h1>Agenda</h1>
+        <div class="acciones">
+          <input class="buscador" type="search" placeholder="Buscar alumno…">
+          <button class="agregar" type="button">+ Agregar</button>
+        </div>
+      </header>
+      <div id="lista-alumnos">
+        ${() => estado.alumnos.map(alumno => Alumno(alumno).key(alumno.id))}
       </div>
-    </header>
-    <div id="lista-alumnos">
-      <article class="alumno">
-        <button class="favorito" type="button">☆</button>
-        <header><h2>Pérez</h2><p>Ana</p></header>
-        <address><span>(381) 555-0100</span><span>@anaperez</span></address>
-        <footer>C1 · 12345</footer>
-      </article>
-      <article class="alumno">
-        <button class="favorito" type="button">☆</button>
-        <header><h2>García</h2><p>Luis</p></header>
-        <address><span>(381) 555-0101</span><span>@luisgarcia</span></address>
-        <footer>C1 · 12346</footer>
-      </article>
-      <article class="alumno">
-        <button class="favorito" type="button">★</button>
-        <header><h2>Molina</h2><p>Sofía</p></header>
-        <address><span>(381) 555-0102</span><span>@sofiamolina</span></address>
-        <footer>C3 · 12347</footer>
-      </article>
-      <article class="alumno">
-        <button class="favorito" type="button">☆</button>
-        <header><h2>Román</h2><p>Julián</p></header>
-        <address><span>(381) 555-0103</span><span>@julianroman</span></address>
-        <footer>C3 · 12348</footer>
-      </article>
-      <article class="alumno">
-        <button class="favorito" type="button">☆</button>
-        <header><h2>Sosa</h2><p>Martina</p></header>
-        <address><span>(381) 555-0104</span><span>@martinasosa</span></address>
-        <footer>C2 · 12349</footer>
-      </article>
-      <article class="alumno">
-        <button class="favorito" type="button">☆</button>
-        <header><h2>Vittar</h2><p>Juan</p></header>
-        <address><span>(381) 555-0105</span><span>@juanvittar</span></address>
-        <footer>C1 · 12350</footer>
-      </article>
-    </div>
-  </main>
+    `(app)
+  </script>
 </body>
 </html>
