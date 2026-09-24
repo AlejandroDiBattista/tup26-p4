@@ -69,7 +69,7 @@
           & input { width: 100%; min-width: 0; padding: 9px; border: 1px solid #d9e0da; border-radius: 9px; }
           @media (max-width: 520px) { grid-template-columns: 1fr; }
         }
-        & > footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #d9e0da; }
+        & > footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #d9e0da; & > .eliminar { margin-right: auto; color: #b42318; } }
         & button { padding: 8px 14px; border: 1px solid #d9e0da; border-radius: 10px; }
         & button[type="submit"] { background: #2d4034; color: white; }
       }
@@ -148,7 +148,7 @@
         </article>`
     }
 
-    function Formulario(alumno, { onGuardar }) {
+    function Formulario(alumno, { onGuardar, onEliminar }) {
       const esNuevo = !alumno
       const borrador = reactive({
         id: alumno?.id,
@@ -173,6 +173,11 @@
         e.currentTarget.closest('dialog').close()
       }
 
+      function alEliminar(e) {
+        onEliminar({ id: alumno.id })
+        alCerrar(e)
+      }
+
       return html`
         <form @submit="${alGuardar}">
           <header><h2 id="titulo-editor">${esNuevo ? 'Agregar' : 'Editar'} alumno</h2><p>${esNuevo ? 'Completá' : 'Actualizá'} los datos.</p></header>
@@ -182,6 +187,7 @@
             ${Campo('telefono', 'Teléfono')} ${Campo('github', 'GitHub')}
           </div>
           <footer>
+            ${!esNuevo && html`<button class="eliminar" type="button" @click="${alEliminar}">Eliminar</button>`}
             <button type="submit">${esNuevo ? 'Agregar' : 'Guardar'}</button>
             <button type="button" @click="${alCerrar}">Cancelar</button>
           </footer>
@@ -200,9 +206,13 @@
       else Agregar(datos)
     }
 
+    function Eliminar({ id }) {
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== id)
+    }
+
     function Editar(alumno) {
       editor.replaceChildren()
-      Formulario(alumno, { onGuardar: Guardar })(editor)
+      Formulario(alumno, { onGuardar: Guardar, onEliminar: Eliminar })(editor)
       editor.showModal()
     }
 
