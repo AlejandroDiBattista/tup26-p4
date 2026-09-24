@@ -251,44 +251,46 @@
 }
 
     const vistaAlumnos = () => {
-      const lista = alumnosFiltrados()
+  const lista = alumnosFiltrados()
 
-      if (lista.length === 0) {
-        return html`
-          <li class="sin-resultados">
-            No hay alumnos para mostrar.
-          </li>
-        `
-      }
+  if (lista.length === 0) {
+    return [
+      html`
+        <li class="sin-resultados">
+          No hay alumnos para mostrar.
+        </li>
+      `
+    ]
+  }
 
-      return lista.map(a => html`
-        <li>
-          <div class="card-header">
-            <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
+  return lista.map(a => html`
+    <li>
+      <div class="card-header">
+        <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
 
-            <button
-              class="estrella"
-              type="button"
-              aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
-              @click="${() => cambiarFavorito(a.id)}"
-            >
-              ${() => a.favorito ? '★' : '☆'}
-            </button>
-          </div>
+        <button
+          class="estrella"
+          type="button"
+          aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+          @click="${() => cambiarFavorito(a.id)}"
+        >
+          ${() => a.favorito ? '★' : '☆'}
+        </button>
+      </div>
 
-          <div class="datos">
-            <p>${a.telefono}</p>
-            <p>${a.github}</p>
-          </div>
+      <div class="datos">
+        <p>${a.telefono}</p>
+        <p>${a.github}</p>
+      </div>
 
-          <hr class="separador">
+      <hr class="separador">
 
-          <div class="card-footer">
-            <p>${a.comision} · ${a.legajo}</p>
-          </div>
-        `
-      ).map(card => card)
-    }
+      <div class="card-footer">
+        <p>${a.comision} · ${a.legajo}</p>
+      </div>
+    </li>
+  `.key(a.id))
+}
 
     html`
       <header class="agenda-header">
