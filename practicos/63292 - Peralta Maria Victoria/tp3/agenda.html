@@ -124,8 +124,20 @@
     }
 
     function Alumno(alumno) {
+      function alEditar(e) {
+        if (!e.target.closest('button')) Editar(alumno)
+      }
+
+      function alEditarConTeclado(e) {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          if (e.key === 'Enter') Editar(alumno)
+          else alumno.favorito = !alumno.favorito
+        }
+      }
+
       return html`
-        <article class="alumno">
+        <article class="alumno" tabindex="0" @click="${alEditar}" @keydown="${alEditarConTeclado}">
           <button class="favorito" type="button"
             @click="${() => alumno.favorito = !alumno.favorito}">
             ${() => alumno.favorito ? '★' : '☆'}
@@ -136,11 +148,13 @@
         </article>`
     }
 
-    function Formulario({ onGuardar }) {
+    function Formulario(alumno, { onGuardar }) {
+      const esNuevo = !alumno
       const borrador = reactive({
-        apellido: '', nombre:   '',
-        legajo:   '', comision: '',
-        telefono: '', github:   ''
+        id: alumno?.id,
+        apellido: alumno?.apellido ?? '', nombre:   alumno?.nombre   ?? '',
+        legajo:   alumno?.legajo   ?? '', comision: alumno?.comision ?? '',
+        telefono: alumno?.telefono ?? '', github:   alumno?.github   ?? ''
       })
 
       const Campo = (nombre, etiqueta) => html`
@@ -161,14 +175,14 @@
 
       return html`
         <form @submit="${alGuardar}">
-          <header><h2 id="titulo-editor">Agregar alumno</h2><p>Completá los datos.</p></header>
+          <header><h2 id="titulo-editor">${esNuevo ? 'Agregar' : 'Editar'} alumno</h2><p>${esNuevo ? 'Completá' : 'Actualizá'} los datos.</p></header>
           <div class="campos">
             ${Campo('apellido', 'Apellido')} ${Campo('nombre', 'Nombre')}
             ${Campo('legajo', 'Legajo')} ${Campo('comision', 'Comisión')}
             ${Campo('telefono', 'Teléfono')} ${Campo('github', 'GitHub')}
           </div>
           <footer>
-            <button type="submit">Agregar</button>
+            <button type="submit">${esNuevo ? 'Agregar' : 'Guardar'}</button>
             <button type="button" @click="${alCerrar}">Cancelar</button>
           </footer>
         </form>`
@@ -180,9 +194,15 @@
       estado.busqueda = ''
     }
 
-    function Editar() {
+    function Guardar({ id, ...datos }) {
+      const alumno = estado.alumnos.find(alumno => alumno.id === id)
+      if (alumno) Object.assign(alumno, datos)
+      else Agregar(datos)
+    }
+
+    function Editar(alumno) {
       editor.replaceChildren()
-      Formulario({ onGuardar: Agregar })(editor)
+      Formulario(alumno, { onGuardar: Guardar })(editor)
       editor.showModal()
     }
 
