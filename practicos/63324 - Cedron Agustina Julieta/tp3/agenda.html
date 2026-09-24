@@ -106,46 +106,39 @@
     })
     //mostrar en pantalla de forma provisoria
 
-    html`
-      <h1>Alumnos (${function(){ return estado.alumnos.length}})</h1>
+    function alternarFavorito(evento, i){
+      evento.stopPropagation()
+      const copia=[...estado.alumnos]
+      copia[i].favorito=!copia[i].favorito
+      estado.alumnos=copia
+    }
+      
+      html`
+      <h1>Alumnos (${()=>estado.alumnos.length})</h1>
       <ul>
-      ${function(){
-        return estado.alumnos.map(function(alumno){
-          return html `
-          <!-- tabindex hace que el elemento pueda seleccionarse con la tecla tab -->
-          <li tabindex="0" class="tarjeta">
-
-            <!-- appelido, nombre y estrellita -->
-            <div class="tarjeta-cabecera">
-              <h2 class="nombre">
-                <span class="apellido">${alumno.apellido}</span> ${alumno.nombre}
-              </h2>
-
-              <!--boton de favorito -->
-              <button type="button" class="btn-fav" aria-label="Marcar favorito">
-              ${function(){
-                if (alumno.favorito) {
-                  return '★'
-                } else{
-                  return '☆'
-                }
-              }}
-              </button>
+      ${()=>estado.alumnos.map((alumno,i)=>html`
+      <li tabindex="0" class="tarjeta">
+        <div class="tarjeta-cabecera">
+          <h2 class="nombre">
+            <span class="apellido">${alumno.apellido}</span> ${alumno.nombre}</h2>
+            <button
+            type="button"
+            class="btn-fav"
+            arial-label="Marcar favorito"
+            @click="${(e)=> alternarFavorito(e,i)}"
+            >
+          ${alumno.favorito ? '★':'☆'}
+          </button>
+          </div>
+          <div class="tarjeta-contacto">
+            <p class="telefono">${alumno.telefono}</p>
+            <p class="github">@${alumno.github}</p>
             </div>
-
-              <!-- telefono y github -->
-              <div class="tarjeta-contacto">
-                <p class="telefono">${alumno.telefono}</p>
-                <p class="github">@${alumno.github}</p>
+            <div class="tarjeta-pie">
+              <span>${alumno.comision}·${alumno.legajo}</span>
               </div>
-
-              <!--comision y legajo-->
-              <div class="tarjeta-pie">
-                <span>${alumno.comision} · ${alumno.legajo}</span>
-                </div> 
-          </li>`
-        })
-      }}
+          </li>
+        `)}
       </ul>
     `(app)
   </script>
