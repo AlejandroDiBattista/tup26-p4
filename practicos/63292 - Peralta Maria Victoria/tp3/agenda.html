@@ -5,29 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 32px;
+      font: 1rem/1.5 system-ui;
+      background: #f6f7f5; color: #252a28;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid #2d4034; outline-offset: 3px; }
+
+    main {
+      max-width: 1104px; margin: auto;
+      & > .cabecera {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 16px; margin-bottom: 28px;
+        & > h1 { margin: 0; }
+        & > .acciones {
+          display: flex; flex-wrap: wrap; gap: 10px;
+          & > input, & > button {
+            padding: 12px 18px; border: 1px solid #d9e0da; border-radius: 99px;
+          }
+          & > input { min-width: 0; max-width: 100%; }
+          & > button { background: #2d4034; color: white; }
+        }
+      }
+      & > #lista-alumnos {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+        @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 600px) { grid-template-columns: 1fr; }
+      }
+    }
+
+    .alumno {
+      position: relative; display: flex; flex-direction: column;
+      min-width: 0; min-height: 200px; padding: 20px;
+      border: 1px solid #d9e0da; border-radius: 16px; background: #fffefa;
+      & > header {
+        display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; padding-right: 24px;
+        & > h2 { margin: 0; font: 600 24px Georgia; color: #2d4034; }
+        & > p { margin: 0; color: #627066; }
+      }
+      & > address { display: grid; gap: 7px; margin: auto 0 14px; font-style: normal; }
+      & > footer { border-top: 1px solid #d9e0da; padding-top: 12px; font-size: 12px; }
+      & > .favorito {
+        position: absolute; top: 10px; right: 10px;
+        border: 0; background: none; color: #8b7950; font-size: 22px;
+        &:hover { background: #f6f7f5; }
+      }
+      & h2, & p, & span { overflow-wrap: anywhere; }
+    }
+
+    .alumno,
+    .alumno p,
+    .alumno footer,
+    .alumno > header,
+    .alumno > address,
+    .alumno > footer span {
+      overflow-wrap: anywhere;
+    }
   </style>
 </head>
 <body>
-  <main id="app"></main>
-
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
-
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
-  </script>
+  <main id="app">
+    <header class="cabecera">
+      <h1>Agenda</h1>
+      <div class="acciones">
+        <input class="buscador" type="search" placeholder="Buscar alumno…">
+        <button class="agregar" type="button">+ Agregar</button>
+      </div>
+    </header>
+    <div id="lista-alumnos">
+      <article class="alumno">
+        <button class="favorito" type="button">☆</button>
+        <header><h2>Pérez</h2><p>Ana</p></header>
+        <address><span>(381) 555-0100</span><span>@anaperez</span></address>
+        <footer>C1 · 12345</footer>
+      </article>
+      <article class="alumno">
+        <button class="favorito" type="button">☆</button>
+        <header><h2>García</h2><p>Luis</p></header>
+        <address><span>(381) 555-0101</span><span>@luisgarcia</span></address>
+        <footer>C1 · 12346</footer>
+      </article>
+      <article class="alumno">
+        <button class="favorito" type="button">★</button>
+        <header><h2>Molina</h2><p>Sofía</p></header>
+        <address><span>(381) 555-0102</span><span>@sofiamolina</span></address>
+        <footer>C3 · 12347</footer>
+      </article>
+      <article class="alumno">
+        <button class="favorito" type="button">☆</button>
+        <header><h2>Román</h2><p>Julián</p></header>
+        <address><span>(381) 555-0103</span><span>@julianroman</span></address>
+        <footer>C3 · 12348</footer>
+      </article>
+      <article class="alumno">
+        <button class="favorito" type="button">☆</button>
+        <header><h2>Sosa</h2><p>Martina</p></header>
+        <address><span>(381) 555-0104</span><span>@martinasosa</span></address>
+        <footer>C2 · 12349</footer>
+      </article>
+      <article class="alumno">
+        <button class="favorito" type="button">☆</button>
+        <header><h2>Vittar</h2><p>Juan</p></header>
+        <address><span>(381) 555-0105</span><span>@juanvittar</span></address>
+        <footer>C1 · 12350</footer>
+      </article>
+    </div>
+  </main>
 </body>
 </html>
