@@ -94,6 +94,24 @@
       }
     }
 
+    .buscador {
+      padding: 10px 16px;
+      font-size: 1rem;
+      border: 1px solid #d9ded9;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+
+    .sin-resultados {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #777;
+      font-size: 1.2rem;
+      padding: 40px;
+    }
+
   </style>
 </head>
 
@@ -112,40 +130,67 @@
     }
 
     const estado = reactive({
-      alumnos: datosIniciales
-    })
+      alumnos: datosIniciales,
+      filtro: ""
+    });
 
     watch(() => {
       localStorage.setItem("agenda_alumnos", JSON.stringify(estado.alumnos))
     });
 
+    function obtenerAlumnoVisible(){
+      const texto = estado.filtro.toLowerCase();
+      let filtrados = estado.alumnos
+
+      if(texto) {
+        filtrados = filtrados.filter(a => a.nombre.toLowerCase().includes(texto) || a.apellido.toLowerCase().includes(texto));
+      }
+
+      return [...filtrados].sort((a,b) => {
+        if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+        const compApellido = a.apellido.localeCompare(b.apellido, "es", {sensitivity: "base"});
+        if (compApellido !== 0) return compApellido;
+        return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base"}) 
+      });
+    }
+
     const app = document.getElementById('app')
     html`
     <header class="encabezado">
       <h1>Agenda de Alumnos</h1>
-      </header>
+      <input type="search" placeholder="Buscar Alumno" class="buscador" @input="${(e) => estado.filtro = e.target.value}">
+    </header>
 
       <section class="grilla">
-        ${() => estado.alumnos.map(a => html`
-        <article class="tarjeta">
-          <header>
-            <h2>${a.apellido}, ${a.nombre}</h2>
-            <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito">
-              ${a.favorito ? "★" : "☆"}
-            </button>
-          </header>
 
-          <address>
-            <p>Telefono ${a.telefono}</p>
-            <p>GitHub @${a.github}</p>
-          </address>
+        ${() => {
+          const visible = obtenerAlumnoVisible();
 
-          <footer>
-            <p>Comision: <b>${a.comision}</b></p>
-            <p>Legajo: <b>${a.legajo}</b></p>
-          </footer>
-        </article>`
-    )}
+          if(visible.length === 0) {
+            return html `<p class="sin-resultados">No se encontraron alumnos para la busqueda</p>`
+          }
+          
+          return visible.map(a => html`
+          <article class="tarjeta">
+            <header>
+              <h2>${a.apellido}, ${a.nombre}</h2>
+              <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito">
+                ${a.favorito ? "★" : "☆"}
+              </button>
+            </header>
+  
+            <address>
+              <p>Telefono ${a.telefono}</p>
+              <p>GitHub @${a.github}</p>
+            </address>
+  
+            <footer>
+              <p>Comision: <b>${a.comision}</b></p>
+              <p>Legajo: <b>${a.legajo}</b></p>
+            </footer>
+          </article>
+          `)}
+        }}
       </section>
     `(app)
   </script>
