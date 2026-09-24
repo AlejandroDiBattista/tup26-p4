@@ -5,28 +5,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      color: #26352c;
+      font-family: Arial, sans-serif;
+      background: #f5f6f4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 48px 20px;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+
+      > header h1 {
+        margin: 0 0 32px;
+        font-size: 2rem;
+      }
+    }
+
+    .visualmente-oculto {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .grilla-alumnos {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .tarjeta-alumno {
+      display: flex;
+      min-width: 0;
+      min-height: 200px;
+      flex-direction: column;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: #fffefa;
+      box-shadow: 0 3px 8px rgb(38 53 44 / 8%);
+
+      h3 {
+        margin: 0;
+        font-family: Georgia, serif;
+        font-size: 1.5rem;
+        line-height: 1.15;
+
+        span {
+          font-family: Arial, sans-serif;
+          font-size: 1rem;
+          font-weight: normal;
+          color: #59615c;
+        }
+      }
+
+      address {
+        margin-top: auto;
+        font-style: normal;
+
+        p {
+          margin: 0 0 8px;
+        }
+
+        p:last-child {
+          color: #69716c;
+        }
+      }
+
+      footer {
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid #e1e4e1;
+        color: #59615c;
+        font-size: 0.8rem;
+        font-weight: bold;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .grilla-alumnos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 32px 16px; }
+      .grilla-alumnos { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const CLAVE_ALUMNOS = 'agenda-alumnos'
+
+    function cargarAlumnos() {
+      const alumnosGuardados = localStorage.getItem(CLAVE_ALUMNOS)
+
+      if (alumnosGuardados !== null) {
+        return JSON.parse(alumnosGuardados)
+      }
+
+      localStorage.setItem(CLAVE_ALUMNOS, JSON.stringify(alumnosIniciales))
+      return alumnosIniciales
+    }
+
+    const estado = reactive({ alumnos: cargarAlumnos() })
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header>
+        <h1>Agenda</h1>
+      </header>
+      <section aria-labelledby="titulo-alumnos">
+        <h2 id="titulo-alumnos" class="visualmente-oculto">Listado de alumnos</h2>
+        <div class="grilla-alumnos">
+          ${estado.alumnos.map(alumno => html`
+            <article class="tarjeta-alumno">
+              <header>
+                <h3>
+                  ${alumno.apellido}
+                  <span>${alumno.nombre}</span>
+                </h3>
+              </header>
+              <address>
+                <p><strong>${alumno.telefono}</strong></p>
+                <p>@${alumno.github}</p>
+              </address>
+              <footer>
+                ${alumno.comision} · ${alumno.legajo}
+              </footer>
+            </article>
+          `)}
+        </div>
+      </section>
     `(app)
   </script>
 </body>
