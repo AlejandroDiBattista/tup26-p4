@@ -22,12 +22,100 @@
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const estado= reactive ({
+      alumnos: alumnos,
+      busqueda: ''
+    })
+
+    function guardarAlumnos() {
+      localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    }
+
+    function cargarAlumnos() {
+      const datos = localStorage.getItem('alumnos')
+
+      if (datos) {
+        estado.alumnos = JSON.parse(datos)
+
+      } else {
+        guardarAlumnos()
+      }
+    }
+
+
     html`
       <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+
+      <input
+      type="search"
+      placeholder="Buscar alumno..."
+      @input="${(e) => estado.busqueda = e.target.value}"
+      >
+       ${() => {
+       const alumnosFiltrados = ordenarAlumnos(filtrarAlumnos(estado.alumnos))
+
+       return alumnosFiltrados.length
+       ? alumnosFiltrados.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)
+       : html`<li>No se encontraron alumnos.</li>`
+}}
     `(app)
+
+    cargarAlumnos()
+
+    function ordenarAlumnos(lista) {
+      return [...lista].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return a.favorito ? -1 : 1
+        }
+
+         const apellidoA = a.apellido.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+         const apellidoB = b.apellido.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+         const comparacionApellido = apellidoA.localeCompare(apellidoB)
+
+         if (comparacionApellido !== 0) {
+          return comparacionApellido
+         }
+
+         const nombreA = a.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+         const nombreB = b.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+         return nombreA.localeCompare(nombreB)
+
+      })
+    }
+
+    function filtrarAlumnos(lista) {
+      const texto = estado.busqueda
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+
+      if (!texto) {
+        return lista
+      }
+
+      return lista.filter(a => {
+        const apellido = a.apellido
+        .normalize('NFD') 
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+        const nombre = a.nombre
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+        const legajo = String(a.legajo)
+
+        return apellido.includes(texto) ||
+              nombre.includes(texto) ||
+              legajo.includes(texto)
+      })
+    }
+
+
   </script>
 </body>
 </html>
