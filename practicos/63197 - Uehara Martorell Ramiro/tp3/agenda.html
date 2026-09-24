@@ -5,29 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    :root {
+      --fondo: #f4f4f2;
+      --tarjeta: #fdfdfa;
+      --borde: #dcdfdb;
+      --texto: #25302a;
+      --suave: #5d655f;
+      --acento: #2e3b31;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 15px/1.4 system-ui, sans-serif;
+      color: var(--texto);
+      background: var(--fondo);
+    }
+
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    
+    main > section {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    
+    article {
+      display: flex;
+      flex-direction: column;
+      padding: 20px 20px 14px;
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      background: var(--tarjeta);
+
+      & h2 {
+        margin: 0 0 24px;
+        font-family: Georgia, serif;
+        font-size: 24px;
+        color: var(--acento);
+
+        & span { font: 15px system-ui, sans-serif; color: var(--suave); }
+      }
+
+      & address {
+        font-style: normal;
+        & p { margin: 0 0 8px; }
+        & p:last-child { font-size: 13px; color: var(--suave); }
+      }
+
+      & footer {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--borde);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .12em;
+        color: var(--suave);
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+
+
+
+
+
+  <script type="module">
+
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
+    const CLAVE = 'agenda-alumnos'
+
+    function cargarAlumnos() {
+      const guardado = localStorage.getItem(CLAVE)
+      if (guardado) 
+        return JSON.parse(guardado)
+
+      localStorage.setItem(CLAVE, JSON.stringify(alumnosIniciales))
+      return alumnosIniciales
+    }
+
+    const estado = reactive({
+    alumnos: cargarAlumnos(), 
+})
+
+
+    const Tarjeta = alumno => html`
+      <article>
+        <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
+        <address>
+          <p>${() => alumno.telefono}</p>
+          <p>@${() => alumno.github}</p>
+        </address>
+        <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+      </article>
+    `
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <h1>Agenda</h1>
+      <section>
+        ${() => estado.alumnos.map(a => Tarjeta(a).key(a.id))}
+      </section>
+    `(document.getElementById('app'))
+
   </script>
+
+
+
+
+
+
 </body>
 </html>
