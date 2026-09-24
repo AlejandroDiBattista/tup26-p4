@@ -1,19 +1,102 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px sans-serif;
+      background: #f5f6f4;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    .encabezado {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+
+      & h1{
+        margin: 0;
+      }
+    }
+
+    .grilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px; 
+    }
+
+    .tarjeta {
+      background-color: ivory;
+      border: 1px solid #000;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+
+      & header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        & h2 {
+          margin: 0;
+            font-size: 1.2rem;
+            color: #222;
+        }
+
+        & .favorito {
+          background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #ccc;
+            padding: 0;
+
+            &[data-activo="true"] {
+              color: yellow
+            }
+          }
+        }
+
+        & address {
+          font-style: normal;
+          color: #555;
+          line-height: 1.6;
+
+          & p {
+            margin: 0;
+          }
+        }
+
+        & footer {
+          display: flex;
+        justify-content: space-between;
+        border-top: 1px solid #eee;
+        padding-top: 12px;
+        color: #777;
+        font-size: 0.9rem;
+
+        & p {
+          margin: 0;
+        }
+      }
+    }
+
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
@@ -23,7 +106,7 @@
 
     const datosGuardados = localStorage.getItem("agenda_alumnos");
     const datosIniciales = datosGuardados ? JSON.parse(datosGuardados) : alumnos;
-    
+
     if (!datosGuardados) {
       localStorage.setItem("agenda_alumnos", JSON.stringify(alumnos));
     }
@@ -38,11 +121,34 @@
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${() => alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+    <header class="encabezado">
+      <h1>Agenda de Alumnos</h1>
+      </header>
+
+      <section class="grilla">
+        ${() => estado.alumnos.map(a => html`
+        <article class="tarjeta">
+          <header>
+            <h2>${a.apellido}, ${a.nombre}</h2>
+            <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito">
+              ${a.favorito ? "★" : "☆"}
+            </button>
+          </header>
+
+          <address>
+            <p>Telefono ${a.telefono}</p>
+            <p>GitHub @${a.github}</p>
+          </address>
+
+          <footer>
+            <p>Comision: <b>${a.comision}</b></p>
+            <p>Legajo: <b>${a.legajo}</b></p>
+          </footer>
+        </article>`
+    )}
+      </section>
     `(app)
   </script>
 </body>
+
 </html>
