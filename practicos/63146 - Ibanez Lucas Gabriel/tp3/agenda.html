@@ -123,6 +123,13 @@
       margin: 0;
     }
 
+    .sin-resultados {
+      grid-column: 1 / -1;
+      height: auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
     @media (max-width: 700px) {
       .agenda-header {
         align-items: stretch;
@@ -157,6 +164,68 @@
 
     const app = document.getElementById('app')
 
+    const estado = reactive({
+      busqueda: ''
+    })
+
+    const normalizar = texto => {
+      return texto
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+    }
+
+    const alumnosFiltrados = () => {
+      const busqueda = normalizar(estado.busqueda.trim())
+
+      if (!busqueda) {
+        return alumnos
+      }
+
+      return alumnos.filter(a => {
+        return [
+          a.apellido,
+          a.nombre,
+          a.legajo,
+          a.comision,
+          a.telefono,
+          a.github
+        ].some(dato => normalizar(String(dato)).includes(busqueda))
+      })
+    }
+
+    const vistaAlumnos = () => {
+      const lista = alumnosFiltrados()
+
+      if (lista.length === 0) {
+        return html`
+          <li class="sin-resultados">
+            No hay alumnos para mostrar.
+          </li>
+        `
+      }
+
+      return lista.map(a => html`
+        <li>
+          <div class="card-header">
+            <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
+            <span class="estrella">☆</span>
+          </div>
+
+          <div class="datos">
+            <p>${a.telefono}</p>
+            <p>${a.github}</p>
+          </div>
+
+          <hr class="separador">
+
+          <div class="card-footer">
+            <p>${a.comision} · ${a.legajo}</p>
+          </div>
+        </li>
+      `)
+    }
+
     html`
       <header class="agenda-header">
         <h1>Agenda</h1>
@@ -166,6 +235,7 @@
             class="buscador"
             type="search"
             placeholder="Buscar alumno..."
+            @input="${event => estado.busqueda = event.target.value}"
           >
 
           <button class="agregar" type="button">
@@ -176,25 +246,7 @@
 
       <section>
         <ul>
-          ${alumnos.map(a => html`
-            <li>
-              <div class="card-header">
-                <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
-                <span class="estrella">☆</span>
-              </div>
-
-              <div class="datos">
-                <p>${a.telefono}</p>
-                <p>${a.github}</p>
-              </div>
-
-              <hr class="separador">
-
-              <div class="card-footer">
-                <p>${a.comision} · ${a.legajo}</p>
-              </div>
-            </li>
-          `)}
+          ${vistaAlumnos}
         </ul>
       </section>
     `(app)
