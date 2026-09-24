@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,12 +25,12 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-    }
 
-    h1 {
-      margin: 0;
-      font-size: 32px;
-      font-weight: 700;
+      & h1 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+      }
     }
 
     .acciones {
@@ -48,10 +49,10 @@
       background: white;
       font: inherit;
       outline: none;
-    }
 
-    .buscador:focus {
-      border-color: #999;
+      &:focus {
+        border-color: #999;
+      }
     }
 
     .agregar {
@@ -64,10 +65,10 @@
       font: inherit;
       font-weight: 600;
       cursor: pointer;
-    }
 
-    .agregar:hover {
-      background: #222;
+      &:hover {
+        background: #222;
+      }
     }
 
     ul {
@@ -86,6 +87,15 @@
       border: 1px solid #d9ded9;
       border-radius: 16px;
       background: white;
+    }
+
+    .tarjeta {
+      cursor: pointer;
+
+      &:focus {
+        outline: 2px solid #999;
+        outline-offset: 2px;
+      }
     }
 
     .card-header {
@@ -111,10 +121,10 @@
 
     .datos {
       margin-top: 24px;
-    }
 
-    .datos p {
-      margin: 8px 0;
+      & p {
+        margin: 8px 0;
+      }
     }
 
     .separador {
@@ -123,8 +133,10 @@
       border-top: 1px solid #d9ded9;
     }
 
-    .card-footer p {
-      margin: 0;
+    .card-footer {
+      & p {
+        margin: 0;
+      }
     }
 
     .sin-resultados {
@@ -141,63 +153,73 @@
       border: 1px solid #d9ded9;
       border-radius: 16px;
       background: white;
-    }
 
-    dialog::backdrop {
-      background: rgba(0, 0, 0, 0.4);
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+      }
     }
 
     .formulario {
       display: flex;
       flex-direction: column;
       gap: 14px;
-    }
 
-    .formulario h2 {
-      margin: 0 0 6px;
-    }
+      & h2 {
+        margin: 0 0 6px;
+      }
 
-    .formulario label {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+      & label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
 
-    .formulario input {
-      height: 40px;
-      box-sizing: border-box;
-      padding: 0 10px;
-      border: 1px solid #d9ded9;
-      border-radius: 8px;
-      font: inherit;
-    }
+      & input {
+        height: 40px;
+        box-sizing: border-box;
+        padding: 0 10px;
+        border: 1px solid #d9ded9;
+        border-radius: 8px;
+        font: inherit;
 
-    .formulario input:focus {
-      outline: none;
-      border-color: #999;
+        &:focus {
+          outline: none;
+          border-color: #999;
+        }
+      }
     }
 
     .acciones-formulario {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: 10px;
       margin-top: 6px;
+
+      & button {
+        height: 40px;
+        padding: 0 16px;
+        border: 1px solid #d9ded9;
+        border-radius: 8px;
+        background: white;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      & .guardar {
+        border-color: #000;
+        background: #000;
+        color: white;
+      }
+
+      & .eliminar {
+        border-color: #c62828;
+        color: #c62828;
+      }
     }
 
-    .acciones-formulario button {
-      height: 40px;
-      padding: 0 16px;
-      border: 1px solid #d9ded9;
-      border-radius: 8px;
-      background: white;
-      font: inherit;
-      cursor: pointer;
-    }
-
-    .acciones-formulario .guardar {
-      border-color: #000;
-      background: #000;
-      color: white;
+    .acciones-formulario-derecha {
+      display: flex;
+      gap: 10px;
     }
 
     @media (max-width: 700px) {
@@ -238,7 +260,8 @@
       alumnos: alumnosGuardados
         ? JSON.parse(alumnosGuardados)
         : alumnos,
-      busqueda: ''
+      busqueda: '',
+      alumnoEditando: null
     })
 
     if (!alumnosGuardados) {
@@ -315,67 +338,195 @@
     }
 
     const agregarAlumno = event => {
-  event.preventDefault()
+      event.preventDefault()
 
-  const formulario = event.target
-  const datos = new FormData(formulario)
+      const formulario = event.target
+      const datos = new FormData(formulario)
 
-  const apellido = datos.get('apellido').trim()
-  const nombre = datos.get('nombre').trim()
-  const legajo = datos.get('legajo').trim()
-  const comision = datos.get('comision').trim()
-  const telefono = datos.get('telefono').trim()
-  const github = datos.get('github').trim()
+      const apellido = datos.get('apellido').trim()
+      const nombre = datos.get('nombre').trim()
+      const legajo = datos.get('legajo').trim()
+      const comision = datos.get('comision').trim()
+      const telefono = datos.get('telefono').trim()
+      const github = datos.get('github').trim()
 
-  if (
-    !apellido ||
-    !nombre ||
-    !legajo ||
-    !comision ||
-    !telefono ||
-    !github
-  ) {
-    alert('Todos los campos son obligatorios.')
-    return
-  }
+      if (
+        !apellido ||
+        !nombre ||
+        !legajo ||
+        !comision ||
+        !telefono ||
+        !github
+      ) {
+        alert('Todos los campos son obligatorios.')
+        return
+      }
 
-  const legajoExiste = estado.alumnos.some(
-    alumno => alumno.legajo === legajo
-  )
+      const legajoExiste = estado.alumnos.some(
+        alumno => alumno.legajo === legajo
+      )
 
-  if (legajoExiste) {
-    alert('Ya existe un alumno con ese legajo.')
-    return
-  }
+      if (legajoExiste) {
+        alert('Ya existe un alumno con ese legajo.')
+        return
+      }
 
-  const nuevoAlumno = {
-    id: Date.now(),
-    apellido,
-    nombre,
-    legajo,
-    comision,
-    telefono,
-    github,
-    favorito: false
-  }
+      const nuevoAlumno = {
+        id: Date.now(),
+        apellido,
+        nombre,
+        legajo,
+        comision,
+        telefono,
+        github,
+        favorito: false
+      }
 
-  estado.alumnos = [
-    ...estado.alumnos,
-    nuevoAlumno
-  ]
+      estado.alumnos = [
+        ...estado.alumnos,
+        nuevoAlumno
+      ]
 
-  localStorage.setItem(
-    'alumnos',
-    JSON.stringify(estado.alumnos)
-  )
+      localStorage.setItem(
+        'alumnos',
+        JSON.stringify(estado.alumnos)
+      )
 
-  formulario.reset()
+      formulario.reset()
 
-  document
-    .getElementById('dialogo-agregar')
-    .close()
-}
-    
+      document
+        .getElementById('dialogo-agregar')
+        .close()
+    }
+
+    const abrirEdicion = id => {
+      const alumno = estado.alumnos.find(
+        alumno => alumno.id === id
+      )
+
+      if (!alumno) {
+        return
+      }
+
+      estado.alumnoEditando = alumno
+
+      document
+        .getElementById('dialogo-editar')
+        .showModal()
+    }
+
+    const cancelarEdicion = () => {
+      estado.alumnoEditando = null
+
+      document
+        .getElementById('dialogo-editar')
+        .close()
+    }
+
+    const guardarEdicion = event => {
+      event.preventDefault()
+
+      const formulario = event.target
+      const datos = new FormData(formulario)
+
+      const apellido = datos.get('apellido').trim()
+      const nombre = datos.get('nombre').trim()
+      const legajo = datos.get('legajo').trim()
+      const comision = datos.get('comision').trim()
+      const telefono = datos.get('telefono').trim()
+      const github = datos.get('github').trim()
+
+      if (
+        !apellido ||
+        !nombre ||
+        !legajo ||
+        !comision ||
+        !telefono ||
+        !github
+      ) {
+        alert('Todos los campos son obligatorios.')
+        return
+      }
+
+      const legajoExiste = estado.alumnos.some(
+        alumno =>
+          alumno.legajo === legajo &&
+          alumno.id !== estado.alumnoEditando.id
+      )
+
+      if (legajoExiste) {
+        alert('Ya existe un alumno con ese legajo.')
+        return
+      }
+
+      estado.alumnos = estado.alumnos.map(alumno => {
+        if (alumno.id === estado.alumnoEditando.id) {
+          return {
+            ...alumno,
+            apellido,
+            nombre,
+            legajo,
+            comision,
+            telefono,
+            github
+          }
+        }
+
+        return alumno
+      })
+
+      localStorage.setItem(
+        'alumnos',
+        JSON.stringify(estado.alumnos)
+      )
+
+      estado.alumnoEditando = null
+
+      document
+        .getElementById('dialogo-editar')
+        .close()
+    }
+
+    const eliminarAlumno = () => {
+      if (!estado.alumnoEditando) {
+        return
+      }
+
+      const id = estado.alumnoEditando.id
+
+      estado.alumnos = estado.alumnos.filter(
+        alumno => alumno.id !== id
+      )
+
+      localStorage.setItem(
+        'alumnos',
+        JSON.stringify(estado.alumnos)
+      )
+
+      estado.alumnoEditando = null
+
+      document
+        .getElementById('dialogo-editar')
+        .close()
+    }
+
+    const manejarTeclado = event => {
+      if (event.target !== event.currentTarget) {
+        return
+      }
+
+      const id = Number(event.currentTarget.dataset.id)
+
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        abrirEdicion(id)
+      }
+
+      if (event.key === ' ') {
+        event.preventDefault()
+        cambiarFavorito(id)
+      }
+    }
 
     const vistaAlumnos = () => {
       const lista = alumnosFiltrados()
@@ -392,29 +543,40 @@
 
       return lista.map(a => html`
         <li>
-          <div class="card-header">
-            <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
+          <article
+            class="tarjeta"
+            tabindex="0"
+            data-id="${a.id}"
+            @click="${() => abrirEdicion(a.id)}"
+            @keydown="${manejarTeclado}"
+          >
+            <div class="card-header">
+              <h2 class="nombre">${a.apellido} ${a.nombre}</h2>
 
-            <button
-              class="estrella"
-              type="button"
-              aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
-              @click="${() => cambiarFavorito(a.id)}"
-            >
-              ${() => a.favorito ? '★' : '☆'}
-            </button>
-          </div>
+              <button
+                class="estrella"
+                type="button"
+                aria-label="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+                @click="${event => {
+          event.stopPropagation()
+          cambiarFavorito(a.id)
+        }}"
+              >
+                ${() => a.favorito ? '★' : '☆'}
+              </button>
+            </div>
 
-          <div class="datos">
-            <p>${a.telefono}</p>
-            <p>${a.github}</p>
-          </div>
+            <address class="datos">
+  <p>${a.telefono}</p>
+  <p>${a.github}</p>
+</address>
 
-          <hr class="separador">
+            <hr class="separador">
 
-          <div class="card-footer">
-            <p>${a.comision} · ${a.legajo}</p>
-          </div>
+            <footer class="card-footer">
+  <p>${a.comision} · ${a.legajo}</p>
+</footer>
+          </article>
         </li>
       `.key(a.id))
     }
@@ -525,7 +687,105 @@
           </div>
         </form>
       </dialog>
+
+      <dialog id="dialogo-editar">
+        ${() => estado.alumnoEditando ? html`
+          <form
+            class="formulario"
+            @submit="${guardarEdicion}"
+          >
+            <h2>Editar alumno</h2>
+
+            <label>
+              Apellido
+              <input
+                type="text"
+                name="apellido"
+                value="${estado.alumnoEditando.apellido}"
+                required
+              >
+            </label>
+
+            <label>
+              Nombre
+              <input
+                type="text"
+                name="nombre"
+                value="${estado.alumnoEditando.nombre}"
+                required
+              >
+            </label>
+
+            <label>
+              Legajo
+              <input
+                type="text"
+                name="legajo"
+                value="${estado.alumnoEditando.legajo}"
+                required
+              >
+            </label>
+
+            <label>
+              Comisión
+              <input
+                type="text"
+                name="comision"
+                value="${estado.alumnoEditando.comision}"
+                required
+              >
+            </label>
+
+            <label>
+              Teléfono
+              <input
+                type="tel"
+                name="telefono"
+                value="${estado.alumnoEditando.telefono}"
+                required
+              >
+            </label>
+
+            <label>
+              Usuario de GitHub
+              <input
+                type="text"
+                name="github"
+                value="${estado.alumnoEditando.github}"
+                required
+              >
+            </label>
+
+            <div class="acciones-formulario">
+              <button
+                class="eliminar"
+                type="button"
+                @click="${eliminarAlumno}"
+              >
+                Eliminar
+              </button>
+
+              <div class="acciones-formulario-derecha">
+                <button
+                  type="button"
+                  @click="${cancelarEdicion}"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  class="guardar"
+                  type="submit"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </form>
+        ` : ''}
+      </dialog>
     `(app)
   </script>
 </body>
+
 </html>
