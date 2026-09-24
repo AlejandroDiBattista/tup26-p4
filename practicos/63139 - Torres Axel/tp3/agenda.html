@@ -94,6 +94,7 @@
           </label>
         </p>
         <footer>
+          <button type="button" id="eliminar-alumno" hidden>Eliminar</button>
           <button type="button" id="cancelar-alumno">Cancelar</button>
           <button type="submit">Guardar</button>
         </footer>
@@ -122,10 +123,36 @@
       });
       const dialogo = document.getElementById("dialogo-alumno");
       const formulario = document.getElementById("formulario-alumno");
-      function abrirAgregar() {
+      const tituloformulario = document.getElementById("titulo-formulario");
+      const botonEliminar = document.getElementById("eliminar-alumno");
+
+      let idEnEdicion = null;
+
+      function prepararFormulario() {
         formulario.reset();
+
         for (const campo of formulario.querySelectorAll("input")) {
-          campo.setCustomValidity("");
+          +campo.setCustomValidity("");
+        }
+      }
+      function abrirAgregar() {
+        prepararFormulario();
+        idEnEdicion = null;
+        tituloformulario.textContent = "Agregar alumno";
+        botonEliminar.hidden = true;
+        dialogo.showModal();
+      }
+      function abrirEditar(id) {
+        const alumno = estado.alumnos.find((a) => a.id === id);
+        if (!alumno) return;
+
+        prepararFormulario();
+        idEnEdicion = id;
+        tituloformulario.textContent = "Editar alumno";
+        botonEliminar.hidden = false;
+
+        for (const campo of formulario.querySelectorAll("input")) {
+          campo.value = alumno[campo.name] ?? "";
         }
         dialogo.showModal();
       }
@@ -134,20 +161,38 @@
         .addEventListener("click", () => {
           dialogo.close();
         });
+      formulario.addEventListener("input", (e) => {
+        if (e.target instanceof HTMLInputElement) {
+          e.target.setCustomValidity("");
+        }
+      });
       formulario.addEventListener("submit", (e) => {
         e.preventDefault();
+
         for (const campo of formulario.querySelectorAll("input")) {
           campo.value = campo.value.trim();
-          campo.setCustomValidity(campo.value ? "" : "Completa este campo.");
+          campo.setCustomValidity(campo.value ? "" : "Completa este Campo.");
         }
         if (!formulario.reportValidity()) return;
+
         const datos = Object.fromEntries(new FormData(formulario));
-        const nuevoAlumno = {
-          ...datos,
-          id: crypto.randomUUID(),
-          favorito: false,
-        };
-        estado.alumnos = [...estado.alumnos, nuevoAlumno];
+        if (idEnEdicion === null) {
+          const nuevoAlumno = {
+            ...datos,
+            id: crypto.randomUUID(),
+            favorito: false,
+          };
+          estado.alumnos = [...estado.alumnos, nuevoAlumno];
+        } else {
+          estado.alumnos = estado.alumnos.map((a) =>
+            a.id === idEnEdicion ? { ...a, ...datos } : a,
+          );
+        }
+        dialogo.close();
+      });
+      botonEliminar.addEventListener("click", () => {
+        if (idEnEdicion === null) return;
+        estado.alumnos = estado.alumnos.filter((a) => a.id !== idEnEdicion);
         dialogo.close();
       });
       function normalizar(texto) {
@@ -189,39 +234,44 @@
       }
       html`
         <h1>Alumnos</h1>
-        <button type="button" @click="${abrirAgregar}">
-          Agregar alumno
-          </button>
+        <button type="button" @click="${abrirAgregar}">Agregar alumno</button>
         <input
-        id="buscador"
-        type="search"
-        placeholder="Nombre",Apellido,Legajo..."
-        @input="${(e) => (estado.busqueda = e.target.value)}"
-        >
+          id="buscador"
+          type="search"
+          placeholder="Nombre,Apellido,Legajo..."
+          @input="${(e) => (estado.busqueda = e.target.value)}"
+        />
         <ul>
           ${() =>
             alumnosFiltrados().map(
-              (a) => html`
-        <li>
-          <article>
-            <header>
-              <h2>${a.nombre},${a.apellido}</h2>
-              <button type="button"
-              aria-pressed="${() => a.favorito}"
-              @click ="${() => cambiarFavorito(a.id)}"
-              >
-              ${() => (a.favorito ? "Favorito" : "Marcar Favorito")}
-              </button>
-              </header>
-               <address>
-                <p> Telefono: ${a.telefono}</p>
-                <p> Github: ${a.github}</p>
-              <footer>
-                <p>Comision${a.comision}</p>
-                <p>Legajo: ${a.legajo}</p>
-                </footer>
-                </article>
-              </li>`,
+              (a) =>
+                html` <li>
+                  <article
+                    @click="${(e) => {
+                      if (e.target.closest("button")) return;
+                      abrirEditar(a.id);
+                    }}"
+                  >
+                    <header>
+                      <h2>${a.nombre},${a.apellido}</h2>
+                      <button
+                        type="button"
+                        aria-pressed="${() => a.favorito}"
+                        @click="${() => cambiarFavorito(a.id)}"
+                      >
+                        ${() => (a.favorito ? "Favorito" : "Marcar Favorito")}
+                      </button>
+                    </header>
+                    <address>
+                      <p>Telefono: ${a.telefono}</p>
+                      <p>Github: ${a.github}</p>
+                    </address>
+                    <footer>
+                      <p>Comision${a.comision}</p>
+                      <p>Legajo: ${a.legajo}</p>
+                    </footer>
+                  </article>
+                </li>`,
             )}
         </ul>
         <p role="status">
@@ -229,6 +279,7 @@
             alumnosFiltrados().length === 0
               ? "No hay alumnos para mostrar."
               : ""}
+        </p>
       `(app);
     </script>
   </body>
