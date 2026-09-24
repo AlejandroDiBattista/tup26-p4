@@ -55,16 +55,51 @@
       }
       & h2, & p, & span { overflow-wrap: anywhere; }
     }
+
+    dialog {
+      width: min(620px, calc(100% - 24px)); max-height: calc(100dvh - 24px);
+      padding: 0; border: 8px solid #d9e0da; border-radius: 24px; background: #fffefa;
+      &::backdrop { background: #2d403480; }
+      & > form {
+        & > header, & > .campos, & > footer { padding: 16px; }
+        & > header > h2 { margin: 0; }
+        & > .campos {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+          & > label { display: grid; gap: 5px; }
+          & input { width: 100%; min-width: 0; padding: 9px; border: 1px solid #d9e0da; border-radius: 9px; }
+          @media (max-width: 520px) { grid-template-columns: 1fr; }
+        }
+        & > footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #d9e0da; }
+        & button { padding: 8px 14px; border: 1px solid #d9e0da; border-radius: 10px; }
+        & button[type="submit"] { background: #2d4034; color: white; }
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
+
+  <dialog id="editor">
+    <form>
+      <header><h2 id="titulo-editor">Agregar alumno</h2><p>Completá los datos.</p></header>
+      <div class="campos">
+        <label>Apellido<input name="apellido" required></label>
+        <label>Nombre  <input name="nombre"   required></label>
+        <label>Legajo  <input name="legajo"   required></label>
+        <label>Comisión<input name="comision" required></label>
+        <label>Teléfono<input name="telefono" type="tel" required></label>
+        <label>GitHub  <input name="github"   required></label>
+      </div>
+      <footer><button type="submit">Agregar</button><button type="button">Cancelar</button></footer>
+    </form>
+  </dialog>
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const editor = document.getElementById('editor')
     const claveAlumnos = 'tp3-alumnos'
 
     function CargarAlumnos() {
