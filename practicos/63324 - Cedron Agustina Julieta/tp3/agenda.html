@@ -72,75 +72,108 @@
 </head>
 <body>
   <main id="app"></main>
-
-  <script type="module">
+<script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
-    const clave_storgae='agenda_alumnos'
+    const clave_storage = 'agenda_alumnos'
 
-    //obtener los datos del localstorage o del json inicial
-    const datosGuardados= localStorage.getItem(clave_storgae)
-    let listaInicial
-    //verificar si tenemos datos guardados
-    if (datosGuardados) {
-      listaInicial=JSON.parse(datosGuardados)
-    } else{
-      listaInicial=alumnos
-    }
+    // Obtener los datos del localstorage o del json inicial
+    const datosGuardados = localStorage.getItem(clave_storage)
+    let listaInicial = datosGuardados ? JSON.parse(datosGuardados) : alumnos
 
-    //si no habia nada, guardamos la lista del json
     if (!datosGuardados) {
-      localStorage.setItem(clave_storgae, JSON.stringify(listaInicial))
+      localStorage.setItem(clave_storage, JSON.stringify(listaInicial))
     }
 
-    //crear el estado reactivo con arrowjs
-    const estado= reactive({
-      alumnos:listaInicial,
-      busqueda:''
+    // Crear el estado reactivo con arrowjs
+    const estado = reactive({
+      alumnos: listaInicial,
+      busqueda: ''
     })
-    //guardar automaticamente cada vez que la lista cambie
-    watch(function(){
-      localStorage.setItem(clave_storgae, JSON.stringify(estado.alumnos))
-    })
-    //mostrar en pantalla de forma provisoria
 
-    function alternarFavorito(evento, i){
+    // Guardar automaticamente cada vez que la lista cambie
+    watch(() => {
+      localStorage.setItem(clave_storage, JSON.stringify(estado.alumnos))
+    })
+
+    // Normalizar el texto
+    function normalizar(texto) {
+      return (texto || '')
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+    }
+
+    // Funcion para filtrar
+    function obtenerAlumnos() {
+      const termino = normalizar(estado.busqueda.trim())
+      if (!termino) return estado.alumnos
+      return estado.alumnos.filter(a =>
+        normalizar(a.nombre).includes(termino) ||
+        normalizar(a.apellido).includes(termino)
+      )
+      
+    }
+
+    // Alternar favorito
+    function alternarFavorito(evento, legajo) {
       evento.stopPropagation()
-      const copia=[...estado.alumnos]
-      copia[i].favorito=!copia[i].favorito
-      estado.alumnos=copia
+      const copia = [...estado.alumnos]
+      const index = copia.findIndex(a => a.legajo === legajo)
+      if (index !== -1) {
+        copia[index].favorito = !copia[index].favorito
+        estado.alumnos = copia
+      }
     }
       
-      html`
-      <h1>Alumnos (${()=>estado.alumnos.length})</h1>
+    html`
+      <h1>Alumnos (${() => obtenerAlumnos().length})</h1>
+      <input
+        type="search"
+        placeholder="Buscar por nombre o apellido"
+        @input="${(e) => { estado.busqueda = e.target.value }}"
+      >
       <ul>
-      ${()=>estado.alumnos.map((alumno,i)=>html`
-      <li tabindex="0" class="tarjeta">
-        <div class="tarjeta-cabecera">
-          <h2 class="nombre">
-            <span class="apellido">${alumno.apellido}</span> ${alumno.nombre}</h2>
-            <button
-            type="button"
-            class="btn-fav"
-            arial-label="Marcar favorito"
-            @click="${(e)=> alternarFavorito(e,i)}"
-            >
-          ${alumno.favorito ? '★':'☆'}
-          </button>
-          </div>
-          <div class="tarjeta-contacto">
-            <p class="telefono">${alumno.telefono}</p>
-            <p class="github">@${alumno.github}</p>
-            </div>
-            <div class="tarjeta-pie">
-              <span>${alumno.comision}·${alumno.legajo}</span>
+        ${() => {
+          const lista = obtenerAlumnos()
+
+          if (lista.length === 0) {
+            return [html`<li style="grid-column: 1 / -1; text-align: center; color: #7a8275; padding: 20px;">No se encontraron alumnos</li>`]
+          }
+
+          return lista.map((alumno) => html`
+            <li tabindex="0" class="tarjeta">
+              <div class="tarjeta-cabecera">
+                <h2 class="nombre">
+                  <span class="apellido">${alumno.apellido}</span> ${alumno.nombre}
+                </h2>
+                <button
+                  type="button"
+                  class="btn-fav"
+                  aria-label="Marcar favorito"
+                  @click="${(e) => alternarFavorito(e, alumno.legajo)}"
+                >
+                  ${alumno.favorito ? '★' : '☆'}
+                </button>
               </div>
-          </li>
-        `)}
+              <div class="tarjeta-contacto">
+                <p class="telefono">${alumno.telefono}</p>
+                <p class="github">@${alumno.github}</p>
+              </div>
+              <div class="tarjeta-pie">
+                <span>${alumno.comision} ·${alumno.legajo}</span>
+              </div>
+            </li>
+          `)
+        }}
       </ul>
     `(app)
   </script>
-</body>
+  </body>
 </html>
+
