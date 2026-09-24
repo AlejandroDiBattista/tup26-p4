@@ -27,11 +27,43 @@
 
     main { width: 1104px; max-width: 100%; margin: auto; }
 
-    
+
+    main > header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0 28px;
+
+      & h1 {
+        flex: 1;
+        margin: 0;
+        font-size: 28px;
+      }
+
+      & input {
+        width: 300px;
+        max-width: 100%;
+        padding: 13px 20px;
+        border: 1px solid var(--borde);
+        border-radius: 999px;
+        background: var(--tarjeta);
+        font: inherit;
+        color: var(--texto);
+
+        &:focus { outline: 2px solid var(--acento); }
+      }
+    }
+
     main > section {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
+        & > p {
+          grid-column: 1 / -1;
+          padding: 40px;
+          text-align: center;
+          color: var(--suave);
+        }
     }
 
     
@@ -99,9 +131,6 @@
 
 
 
-
-
-
   <script type="module">
 
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
@@ -120,6 +149,7 @@
 
     const estado = reactive({
     alumnos: cargarAlumnos(), 
+    busqueda: '',
 })
 
 
@@ -135,8 +165,19 @@
       return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
     }
 
-    function alumnosOrdenados() {
-      return [...estado.alumnos].sort(comparar)
+    function normalizar(texto) {
+      return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    }
+
+    function alumnosVisibles() {
+      const buscado = normalizar(estado.busqueda)
+
+      const filtrados = estado.alumnos.filter(a => {
+        const datos = normalizar(`${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`)
+        return datos.includes(buscado)
+      })
+
+      return filtrados.sort(comparar)
     }
 
 
@@ -155,6 +196,10 @@
     function estrella(alumno) {
       if (alumno.favorito) return '★'
       return '☆'
+    }
+
+    function buscar(texto) {
+      estado.busqueda = texto
     }
 
 
@@ -177,12 +222,35 @@
       </article>
     `
 
-    html`
+    
+    
+    
+    const Encabezado = () => html`
+    <header>
       <h1>Agenda</h1>
-      <section>
-        ${() => alumnosOrdenados().map(a => Tarjeta(a).key(a.id))}
-      </section>
-    `(document.getElementById('app'))
+      <input type="search" placeholder="Buscar alumno…"
+      @input="${e => buscar(e.target.value)}">
+      </header>
+      `
+      
+      function listaDeTarjetas() {
+        const lista = alumnosVisibles()
+        if (lista.length === 0) {
+          return [html`<p>No hay alumnos para mostrar.</p>`.key('vacio')]
+        }
+        return lista.map(a => Tarjeta(a).key(a.id))
+      }
+
+
+
+
+      
+      html`
+        ${Encabezado()}
+        <section>
+          ${() => listaDeTarjetas()}
+        </section>
+        `(document.getElementById('app'))
 
   </script>
 
