@@ -49,7 +49,56 @@
   </head>
   <body>
     <main id="app"></main>
-
+    <dialog id="dialogo-alumno" aria-labelledby="titulo-formulario">
+      <form id="formulario-alumno">
+        <h2 id="titulo-formulario">Agregar alumno</h2>
+        <p>
+          <label
+            >Apellido
+            <input name="apellido" required />
+          </label>
+        </p>
+        <p>
+          <label
+            >Nombre
+            <input name="nombre" required />
+          </label>
+        </p>
+        <p>
+          <label
+            >Legajo
+            <input
+              name="legajo"
+              inputmode="numeric"
+              pattern="[0-9]+"
+              required
+            />
+          </label>
+        </p>
+        <p>
+          <label>
+            Comision
+            <input name="comision" required />
+          </label>
+        </p>
+        <p>
+          <label
+            >Telefono
+            <input type="tel" name="telefono" required />
+          </label>
+        </p>
+        <p>
+          <label>
+            Usuario de github
+            <input name="github" required />
+          </label>
+        </p>
+        <footer>
+          <button type="button" id="cancelar-alumno">Cancelar</button>
+          <button type="submit">Guardar</button>
+        </footer>
+      </form>
+    </dialog>
     <script type="module">
       import { html, reactive, watch } from "https://esm.sh/@arrow-js/core";
       import alumnos from "./alumnos.json" with { type: "json" };
@@ -71,7 +120,36 @@
       watch(() => {
         localStorage.setItem(CLAVE_STORAGE, JSON.stringify(estado.alumnos));
       });
-
+      const dialogo = document.getElementById("dialogo-alumno");
+      const formulario = document.getElementById("formulario-alumno");
+      function abrirAgregar() {
+        formulario.reset();
+        for (const campo of formulario.querySelectorAll("input")) {
+          campo.setCustomValidity("");
+        }
+        dialogo.showModal();
+      }
+      document
+        .getElementById("cancelar-alumno")
+        .addEventListener("click", () => {
+          dialogo.close();
+        });
+      formulario.addEventListener("submit", (e) => {
+        e.preventDefault();
+        for (const campo of formulario.querySelectorAll("input")) {
+          campo.value = campo.value.trim();
+          campo.setCustomValidity(campo.value ? "" : "Completa este campo.");
+        }
+        if (!formulario.reportValidity()) return;
+        const datos = Object.fromEntries(new FormData(formulario));
+        const nuevoAlumno = {
+          ...datos,
+          id: crypto.randomUUID(),
+          favorito: false,
+        };
+        estado.alumnos = [...estado.alumnos, nuevoAlumno];
+        dialogo.close();
+      });
       function normalizar(texto) {
         return String(texto ?? "")
           .normalize("NFD")
@@ -111,6 +189,9 @@
       }
       html`
         <h1>Alumnos</h1>
+        <button type="button" @click="${abrirAgregar}">
+          Agregar alumno
+          </button>
         <input
         id="buscador"
         type="search"
