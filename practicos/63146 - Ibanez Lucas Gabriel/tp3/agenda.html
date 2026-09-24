@@ -4,16 +4,148 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
+
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px sans-serif;
+      background: #f5f6f4;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    .agenda-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .acciones {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .buscador {
+      width: 260px;
+      height: 42px;
+      box-sizing: border-box;
+      padding: 0 14px;
+      border: 1px solid #d9ded9;
+      border-radius: 25px;
+      background: white;
+      font: inherit;
+      outline: none;
+    }
+
+    .buscador:focus {
+      border-color: #999;
+    }
+
+    .agregar {
+      height: 42px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 25px;
+      background: #000;
+      color: white;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .agregar:hover {
+      background: #222;
+    }
+
+    ul {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    li {
+      height: 200px;
+      box-sizing: border-box;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .nombre {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .estrella {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .datos {
+      margin-top: 24px;
+    }
+
+    .datos p {
+      margin: 8px 0;
+    }
+
+    .separador {
+      margin: 16px 0 12px;
+      border: 0;
+      border-top: 1px solid #d9ded9;
+    }
+
+    .card-footer p {
+      margin: 0;
+    }
+
+    @media (max-width: 700px) {
+      .agenda-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .acciones {
+        width: 100%;
+      }
+
+      .buscador {
+        flex: 1;
+        width: auto;
+      }
+
+      ul {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
@@ -21,12 +153,50 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    console.log(alumnos)
+
     const app = document.getElementById('app')
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header class="agenda-header">
+        <h1>Agenda</h1>
+
+        <div class="acciones">
+          <input
+            class="buscador"
+            type="search"
+            placeholder="Buscar alumno..."
+          >
+
+          <button class="agregar" type="button">
+            + Agregar
+          </button>
+        </div>
+      </header>
+
+      <section>
+        <ul>
+          ${alumnos.map(a => html`
+            <li>
+              <div class="card-header">
+                <h2 class="nombre">${a.apellido}, ${a.nombre}</h2>
+                <span class="estrella">☆</span>
+              </div>
+
+              <div class="datos">
+                <p>${a.telefono}</p>
+                <p>${a.github}</p>
+              </div>
+
+              <hr class="separador">
+
+              <div class="card-footer">
+                <p>${a.comision} · ${a.legajo}</p>
+              </div>
+            </li>
+          `)}
+        </ul>
+      </section>
     `(app)
   </script>
 </body>
