@@ -61,7 +61,7 @@
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
@@ -77,6 +77,11 @@
     const estado = reactive({
       busqueda: '',
       alumnos: CargarAlumnos().map(alumno => reactive(alumno))
+    })
+
+    watch(() => JSON.stringify(estado.alumnos), datos => {
+      try { localStorage.setItem(claveAlumnos, datos) }
+      catch (error) { console.warn('No se pudieron guardar los alumnos.', error) }
     })
 
     const normalizar = texto =>
