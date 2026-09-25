@@ -21,7 +21,41 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+    const app = document.getElementById('app');
+
+    const CLAVE = "agenda";
+    const estado = reactive({
+      alumnos: JSON.parse(localStorage.getItem(CLAVE)) ?? alumnos,
+      busqueda: "",
+    });
+
+    watch(() => localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos)));
+
+    //id`, `apellido`, `nombre`, `legajo`, `comision`, `telefono`, `github` y `favorito`
+    const CAMPOS = ["id", "apellido", "nombre", "legajo", "comision", "telefono", "github", "favorito"];
+
+    const borrador = reactive({
+      id: null,
+      apellido: '',
+      nombre: '',
+      legajo: '',
+      comision: '',
+      telefono: '',
+      github: '',
+      favorito: '',
+    });
+
+    function normalizar(texto) {
+      return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+    }
+
+    function comparar(a, b) {
+      if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+      const opciones = { sensitivity: 'base' }
+      return a.apellido.localeCompare(b.apellido, 'es', opciones)
+          || a.nombre.localeCompare(b.nombre, 'es', opciones)
+    }
+
     html`
       <h1>Alumnos</h1>
       <ul>
