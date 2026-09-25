@@ -159,47 +159,106 @@
       background: rgba(255,255,255,0.1);
     }
 	.modal {
-	position: fixed;
-	inset: 0;
-	display: grid;
-	place-items: center;
-	padding: 20px;
-	background: rgba(43, 45, 43, 0.35);
+		position: fixed;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		padding: 20px;
+		background: rgba(43, 45, 43, 0.35);
 	}
 
 	.modal[hidden] {
-	display: none;
+		display: none;
 	}
 
 	.modal-content {
-	width: min(520px, 100%);
-	padding: 24px;
-	border: 1px solid var(--line);
-	border-radius: 18px;
-	background: var(--panel);
+		width: min(620px, 100%);
+		padding: 0;
+		border: 1px solid var(--line);
+		border-radius: 18px;
+		background: var(--panel);
+		box-shadow: 0 12px 32px rgba(43, 45, 43, 0.2);
+		overflow: hidden;
 	}
 
-	.modal-content h2 {
-	margin-top: 0;
+	.modal-header {
+		padding: 22px 24px 16px;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.modal-header h2 {
+		margin: 0;
+		font-size: 1.35rem;
+	}
+
+	.modal-header p {
+		margin: 4px 0 0;
+		color: var(--muted);
 	}
 
 	.form {
-	display: grid;
-	gap: 12px;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px 14px;
+		padding: 18px 24px 20px;
+	}
+
+	.form label {
+		display: grid;
+		gap: 5px;
+		color: var(--muted);
+		font-size: 0.82rem;
+		font-weight: 700;
 	}
 
 	.form input {
-	min-height: 40px;
-	padding: 0 12px;
-	border: 1px solid var(--line-strong);
-	border-radius: 8px;
+		width: 100%;
+		min-height: 42px;
+		padding: 0 12px;
+		border: 1px solid var(--line);
+		border-radius: 9px;
+		background: #fff;
+		color: var(--text);
 	}
 
 	.form-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: 10px;
-	margin-top: 8px;
+		grid-column: 1 / -1;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin: 8px -24px -20px;
+		padding: 12px 24px;
+		border-top: 1px solid var(--line);
+	}
+
+	.form-actions > div {
+		display: flex;
+		gap: 8px;
+	}
+
+	.form-actions button {
+		min-height: 38px;
+		padding: 0 16px;
+		border: 1px solid var(--line);
+		border-radius: 9px;
+		background: white;
+		color: var(--text);
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	.form-actions .primary-button {
+		border: none;
+		background: var(--primary);
+		color: white;
+	}
+
+	.danger-button {
+		color: var(--danger) !important;
+	}
+
+	@media (max-width: 600px) {
+		.form { grid-template-columns: 1fr; }
 	}
 
     @media (max-width: 920px) {
@@ -223,7 +282,7 @@
 			type="search" 
 			placeholder="Buscar alumno...">
 
-        <button class="primary-button" type="button">+ Agregar</button>
+        <button  id="add-button" class="primary-button" type="button">+ Agregar</button>
       </div>
     </header>
 
@@ -231,19 +290,28 @@
 
 	<div id="modal" class="modal" hidden>
 		<div class="modal-content">
-			<h2>Agregar alumno</h2>
+			<header class="modal-header">
+				<h2 id="modal-title">Agregar alumno</h2>
+				<p id="modal-subtitle">Completá los datos del alumno.</p>
+			</header>
 
 			<form id="student-form" class="form">
-				<input name="apellido" placeholder="Apellido" required>
-				<input name="nombre" placeholder="Nombre" required>
-				<input name="legajo" placeholder="Legajo" required>
-				<input name="comision" placeholder="Comisión" required>
-				<input name="telefono" placeholder="Teléfono" required>
-				<input name="github" placeholder="GitHub" required>
+				<label>Apellido<input name="apellido" required></label>
+				<label>Nombre<input name="nombre" required></label>
+				<label>Legajo<input name="legajo" required></label>
+				<label>Comisión<input name="comision" required></label>
+				<label>Teléfono<input name="telefono" required></label>
+				<label>GitHub<input name="github" required></label>
 
 				<div class="form-actions">
-					<button id="cancel-button" type="button">Cancelar</button>
-					<button class="primary-button" type="submit">Guardar</button>
+					<button id="delete-button" class="danger-button" type="button" hidden>
+						Eliminar
+					</button>
+
+					<div>
+						<button id="cancel-button" type="button">Cancelar</button>
+						<button class="primary-button" type="submit">Guardar</button>
+					</div>
 				</div>
 			</form>
 		</div>
@@ -309,6 +377,41 @@
 	searchInput.addEventListener('input', (event) => {
 		state.search = event.target.value
 	})
+
+	const modal = document.querySelector('#modal')
+	const addButton = document.querySelector('#add-button')
+	const cancelButton = document.querySelector('#cancel-button')
+	const studentForm = document.querySelector('#student-form')
+
+	addButton.addEventListener('click', () => {
+		modal.hidden = false
+	})
+
+	cancelButton.addEventListener('click', () => {
+		modal.hidden = true
+		studentForm.reset()
+	})
+
+	studentForm.addEventListener('submit', (event) => {
+		event.preventDefault()
+
+		const formData = new FormData(studentForm)
+
+		const nuevoAlumno = {
+			id: Math.max(...state.alumnos.map((alumno) => alumno.id)) + 1,
+			legajo: formData.get('legajo'),
+			apellido: formData.get('apellido'),
+    		nombre: formData.get('nombre'),
+    		comision: formData.get('comision'),
+    		telefono: formData.get('telefono'),
+    		github: formData.get('github'),
+    		favorito: false
+		}
+
+		state.alumnos = [...state.alumnos, nuevoAlumno]
+		studentForm.reset()
+		modal.hidden = true
+	})
 	
 	const renderAlumnos = () => html`
 	  <div class="card-grid">
@@ -331,7 +434,7 @@
 	        </div>
 
 	        <footer class="card-footer">
-	          ${alumno.comision}
+	          ${alumno.comision} . ${alumno.legajo}
 	        </footer>
 	      </article>
 	    `)}
