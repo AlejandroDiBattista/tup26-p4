@@ -3,31 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <title>Agenda de alumnos</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    body { font-family: sans-serif; background: #f5f6f4; margin: 0; padding: 20px; }
+    h1 { text-align: center; }
+    header { text-align: center; margin-bottom: 20px; }
+    input[type="search"] {
+      padding: 8px 12px;
+      width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; list-style: none; padding: 0; }
+    li { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; text-align: center; }
+    li h3 { margin: 0 0 8px; }
+    li p { margin: 4px 0; }
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  <h1>Agenda de alumnos</h1>
+  <header>
+    <input type="search" id="buscador" placeholder="Buscar alumno...">
+  </header>
+  <ul id="lista"></ul>
 
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+  <script>
+    let datos = []
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    fetch("./alumnos.json")
+      .then(resp => resp.json())
+      .then(json => {
+        datos = json
+        mostrar(datos)
+      })
+      .catch(err => console.error("Error cargando alumnos:", err))
+
+    const lista = document.getElementById("lista")
+    const buscador = document.getElementById("buscador")
+
+    function mostrar(arr) {
+      lista.innerHTML = arr.map(a => `
+        <li>
+          <h3>${a.apellido}, ${a.nombre}</h3>
+          <p>Legajo: ${a.legajo}</p>
+          <p>Comisión: ${a.comision}</p>
+          <p>Teléfono: ${a.telefono}</p>
+          <p>GitHub: <a href="https://github.com/${a.github}" target="_blank">${a.github}</a></p>
+        </li>
+      `).join("")
+    }
+
+    buscador.addEventListener("input", () => {
+      const texto = buscador.value.toLowerCase()
+      const filtrados = datos.filter(a =>
+        (a.apellido + a.nombre + a.legajo).toLowerCase().includes(texto)
+      )
+      mostrar(filtrados)
+    })
   </script>
 </body>
 </html>
+
+
+
+
