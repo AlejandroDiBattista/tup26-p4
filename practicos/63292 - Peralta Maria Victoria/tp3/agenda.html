@@ -1,32 +1,240 @@
 <!DOCTYPE html>
+<!-- Para levantar la app, serví esta carpeta con un servidor HTTP local, p.ej.: python -m http.server 8000 -->
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 32px;
+      font: 1rem/1.5 system-ui;
+      background: #f6f7f5; color: #252a28;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid #2d4034; outline-offset: 3px; }
+
+    main {
+      max-width: 1104px; margin: auto;
+      & > .cabecera {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 16px; margin-bottom: 28px;
+        & > h1 { margin: 0; }
+        & > .acciones {
+          display: flex; flex-wrap: wrap; gap: 10px;
+          & > input, & > button {
+            padding: 12px 18px; border: 1px solid #d9e0da; border-radius: 99px;
+          }
+          & > input { min-width: 0; max-width: 100%; }
+          & > button { background: #2d4034; color: white; }
+        }
+      }
+      & > #lista-alumnos {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+        @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 600px) { grid-template-columns: 1fr; }
+      }
+    }
+
+    .alumno {
+      position: relative; display: flex; flex-direction: column;
+      min-width: 0; min-height: 200px; padding: 20px;
+      border: 1px solid #d9e0da; border-radius: 16px; background: #fffefa;
+      & > header {
+        display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; padding-right: 24px;
+        & > h2 { margin: 0; font: 600 24px Georgia; color: #2d4034; }
+        & > p { margin: 0; color: #627066; }
+      }
+      & > address { display: grid; gap: 7px; margin: auto 0 14px; font-style: normal; }
+      & > footer { border-top: 1px solid #d9e0da; padding-top: 12px; font-size: 12px; }
+      & > .favorito {
+        position: absolute; top: 10px; right: 10px;
+        border: 0; background: none; color: #8b7950; font-size: 22px;
+        &:hover { background: #f6f7f5; }
+      }
+      & h2, & p, & span { overflow-wrap: anywhere; }
+    }
+
+    dialog {
+      width: min(620px, calc(100% - 24px)); max-height: calc(100dvh - 24px);
+      padding: 0; border: 8px solid #d9e0da; border-radius: 24px; background: #fffefa;
+      &::backdrop { background: #2d403480; }
+      & > form {
+        & > header, & > .campos, & > footer { padding: 16px; }
+        & > header > h2 { margin: 0; }
+        & > .campos {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+          & > label { display: grid; gap: 5px; }
+          & input { width: 100%; min-width: 0; padding: 9px; border: 1px solid #d9e0da; border-radius: 9px; }
+          @media (max-width: 520px) { grid-template-columns: 1fr; }
+        }
+        & > footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #d9e0da; & > .eliminar { margin-right: auto; color: #b42318; } }
+        & button { padding: 8px 14px; border: 1px solid #d9e0da; border-radius: 10px; }
+        & button[type="submit"] { background: #2d4034; color: white; }
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
+
+  <dialog id="editor"></dialog>
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const editor = document.getElementById('editor')
+    const claveAlumnos = 'tp3-alumnos'
+
+    function CargarAlumnos() {
+      try {
+        const guardados = JSON.parse(localStorage.getItem(claveAlumnos))
+        return Array.isArray(guardados) ? guardados : alumnos
+      } catch { return alumnos }
+    }
+
+    const estado = reactive({
+      busqueda: '',
+      alumnos: CargarAlumnos().map(alumno => reactive(alumno))
+    })
+
+    watch(() => JSON.stringify(estado.alumnos), datos => {
+      try { localStorage.setItem(claveAlumnos, datos) }
+      catch (error) { console.warn('No se pudieron guardar los alumnos.', error) }
+    })
+
+    const normalizar = texto =>
+      texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+    const filtrados = () => {
+      const busqueda = normalizar(estado.busqueda.trim())
+      return estado.alumnos
+        .filter(alumno =>
+          normalizar(Object.values(alumno).join(' ')).includes(busqueda))
+        .sort(CompararAlumnos)
+    }
+
+    function CompararAlumnos(a, b) {
+      return Number(b.favorito) - Number(a.favorito)
+        || a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+        || a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+    }
+
+    function Alumno(alumno) {
+      function alEditar(e) {
+        if (!e.target.closest('button')) Editar(alumno)
+      }
+
+      function alEditarConTeclado(e) {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          if (e.key === 'Enter') Editar(alumno)
+          else alumno.favorito = !alumno.favorito
+        }
+      }
+
+      return html`
+        <article class="alumno" tabindex="0" @click="${alEditar}" @keydown="${alEditarConTeclado}">
+          <button class="favorito" type="button"
+            @click="${() => alumno.favorito = !alumno.favorito}">
+            ${() => alumno.favorito ? '★' : '☆'}
+          </button>
+          <header><h2>${() => alumno.apellido}</h2><p>${() => alumno.nombre}</p></header>
+          <address><span>${() => alumno.telefono}</span><span>@${() => alumno.github}</span></address>
+          <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+        </article>`
+    }
+
+    function Formulario(alumno, { onGuardar, onEliminar }) {
+      const esNuevo = !alumno
+      const borrador = reactive({
+        id: alumno?.id,
+        apellido: alumno?.apellido ?? '', nombre:   alumno?.nombre   ?? '',
+        legajo:   alumno?.legajo   ?? '', comision: alumno?.comision ?? '',
+        telefono: alumno?.telefono ?? '', github:   alumno?.github   ?? ''
+      })
+
+      const Campo = (nombre, etiqueta) => html`
+        <label>${etiqueta}<input name="${nombre}" required
+          type  ="${nombre === 'telefono' ? 'tel' : 'text'}"
+          .value="${() => borrador[nombre]}"
+          @input="${e => borrador[nombre] = e.target.value}"></label>`
+
+      function alGuardar(e) {
+        e.preventDefault()
+        onGuardar({ ...borrador })
+        alCerrar(e)
+      }
+
+      function alCerrar(e) {
+        e.currentTarget.closest('dialog').close()
+      }
+
+      function alEliminar(e) {
+        onEliminar({ id: alumno.id })
+        alCerrar(e)
+      }
+
+      return html`
+        <form @submit="${alGuardar}">
+          <header><h2 id="titulo-editor">${esNuevo ? 'Agregar' : 'Editar'} alumno</h2><p>${esNuevo ? 'Completá' : 'Actualizá'} los datos.</p></header>
+          <div class="campos">
+            ${Campo('apellido', 'Apellido')} ${Campo('nombre', 'Nombre')}
+            ${Campo('legajo', 'Legajo')} ${Campo('comision', 'Comisión')}
+            ${Campo('telefono', 'Teléfono')} ${Campo('github', 'GitHub')}
+          </div>
+          <footer>
+            ${!esNuevo && html`<button class="eliminar" type="button" @click="${alEliminar}">Eliminar</button>`}
+            <button type="submit">${esNuevo ? 'Agregar' : 'Guardar'}</button>
+            <button type="button" @click="${alCerrar}">Cancelar</button>
+          </footer>
+        </form>`
+    }
+
+    function Agregar(datos) {
+      const id = Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1
+      estado.alumnos = [...estado.alumnos, reactive({ ...datos, id, favorito: false })]
+      estado.busqueda = ''
+    }
+
+    function Guardar({ id, ...datos }) {
+      const alumno = estado.alumnos.find(alumno => alumno.id === id)
+      if (alumno) Object.assign(alumno, datos)
+      else Agregar(datos)
+    }
+
+    function Eliminar({ id }) {
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== id)
+    }
+
+    function Editar(alumno) {
+      editor.replaceChildren()
+      Formulario(alumno, { onGuardar: Guardar, onEliminar: Eliminar })(editor)
+      editor.showModal()
+    }
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header class="cabecera">
+        <h1>Agenda</h1>
+        <div class="acciones">
+          <input class="buscador" type="search" placeholder="Buscar alumno…"
+            .value="${() => estado.busqueda}"
+            @input="${e => estado.busqueda = e.target.value}">
+          <button class="agregar" type="button" @click="${() => Editar()}">+ Agregar</button>
+        </div>
+      </header>
+      <div id="lista-alumnos">
+        ${() => {
+          const lista = filtrados()
+          return lista.length
+            ? lista.map(alumno => Alumno(alumno).key(alumno.id))
+            : [html`<p>No se encontraron alumnos.</p>`.key('sin-resultados')]
+        }}
+      </div>
     `(app)
   </script>
 </body>
