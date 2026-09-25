@@ -364,12 +364,36 @@
 
 		if (alumno) {
 			alumno.favorito = !alumno.favorito
+			persistAlumnos()
 		}
 	}
   
+	const STORAGE_KEY = 'agenda-alumnos'
+
+	const loadAlumnos = () => {
+		const savedAlumnos = localStorage.getItem(STORAGE_KEY)	
+		if (!savedAlumnos) {
+			const alumnosIniciales = sortAlumnos(alumnosSeed)
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(alumnosIniciales))
+			return alumnosIniciales
+		}	
+		try {
+			const alumnosGuardados = JSON.parse(savedAlumnos)
+			return Array.isArray(alumnosGuardados)
+		    	? alumnosGuardados
+		    	: sortAlumnos(alumnosSeed)
+		} catch {
+			return sortAlumnos(alumnosSeed)
+		}
+	}
+
+	const persistAlumnos = () => {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos))
+	}
+
 	const state = reactive({
-	  alumnos: sortAlumnos(alumnosSeed),
-	  search: ''
+	  	alumnos: loadAlumnos(),
+	  	search: ''
 	})
 
 	const searchInput = document.querySelector('.search')
@@ -382,14 +406,71 @@
 	const addButton = document.querySelector('#add-button')
 	const cancelButton = document.querySelector('#cancel-button')
 	const studentForm = document.querySelector('#student-form')
+	const modalTitle = document.querySelector('#modal-title')
+	const modalSubtitle = document.querySelector('#modal-subtitle')
+	const deleteButton = document.querySelector('#delete-button')
+
+	let editingId = null
+
+	const openEditModal = (alumno) => {
+		editingId = alumno.id
+
+		modalTitle.textContent = 'Editar alumno'
+		modalSubtitle.textContent = 'Actualizá los datos del alumno.'
+		deleteButton.hidden = false
+
+		for (const [campo, valor] of Object.entries(alumno)) {
+			const input = studentForm.elements[campo]
+
+			if (input) {
+				input.value = valor
+			}
+		}
+
+		modal.hidden = false
+	}
 
 	addButton.addEventListener('click', () => {
+		editingId = null
+		modalTitle.textContent = 'Agregar alumno'
+		modalSubtitle.textContent = 'Completá los datos del alumno.'
+		deleteButton.hidden = true
+		studentForm.reset()
 		modal.hidden = false
 	})
 
 	cancelButton.addEventListener('click', () => {
-		modal.hidden = true
+		editingId = null
+  		modalTitle.textContent = 'Agregar alumno'
+  		modalSubtitle.textContent = 'Completá los datos del alumno.'
+  		deleteButton.hidden = true
+  		studentForm.reset()
+  		modal.hidden = true
+	})
+
+	deleteButton.addEventListener('click', () => {
+		if (editingId === null) {
+			return	
+		}
+
+		const confirmar = confirm('¿Queres eliminar este alumno?')
+
+		if (!confirmar) {
+			return
+		}
+
+		state.alumnos = state.alumnos.filter(
+			(alumno) => alumno.id !== editingId
+		)
+
+		persistAlumnos()
+
+		editingId = null
+		modalTitle.textContent = 'Agregar alumno'
+		modalSubtitle.textContent = 'Completá los datos del alumno.'
+		deleteButton.hidden = true
 		studentForm.reset()
+		modal.hidden = true
 	})
 
 	studentForm.addEventListener('submit', (event) => {
@@ -397,26 +478,44 @@
 
 		const formData = new FormData(studentForm)
 
-		const nuevoAlumno = {
-			id: Math.max(...state.alumnos.map((alumno) => alumno.id)) + 1,
-			legajo: formData.get('legajo'),
-			apellido: formData.get('apellido'),
-    		nombre: formData.get('nombre'),
-    		comision: formData.get('comision'),
-    		telefono: formData.get('telefono'),
-    		github: formData.get('github'),
-    		favorito: false
-		}
+		  const datosAlumno = {
+		    legajo: formData.get('legajo'),
+		    apellido: formData.get('apellido'),
+		    nombre: formData.get('nombre'),
+		    comision: formData.get('comision'),
+		    telefono: formData.get('telefono'),
+		    github: formData.get('github')
+		  }
+	  
+		  if (editingId !== null) {
+		    state.alumnos = state.alumnos.map((alumno) =>
+		      alumno.id === editingId
+		        ? { ...alumno, ...datosAlumno }
+		        : alumno
+		    )
+		  } else {
+		    const nuevoAlumno = {
+		      id: Math.max(...state.alumnos.map((alumno) => alumno.id)) + 1,
+		      ...datosAlumno,
+		      favorito: false
+		    }
+		
+		    state.alumnos = [...state.alumnos, nuevoAlumno]
+		  }
+		  persistAlumnos()
 
-		state.alumnos = [...state.alumnos, nuevoAlumno]
-		studentForm.reset()
-		modal.hidden = true
+		  editingId = null
+		  modalTitle.textContent = 'Agregar alumno'
+		  modalSubtitle.textContent = 'Completá los datos del alumno.'
+		  deleteButton.hidden = true
+		  studentForm.reset()
+		  modal.hidden = true
 	})
 	
 	const renderAlumnos = () => html`
 	  <div class="card-grid">
 	    ${() => filteredAlumnos().map(alumno => html`
-	      <article class="card">
+	      <article class="card" data-alumno-id="${alumno.id}">
 	        <header class="card-header">
 	          <h2 class="name">${alumno.apellido} ${alumno.nombre}</h2>
 
@@ -441,6 +540,21 @@
 	  </div>
 	`
 	renderAlumnos()(app)
+
+	app.addEventListener('click', (event) => {
+		const card = event.target.closest('.card')
+
+		if (!card || event.target.closest('.favorite-toggle')) {
+			return
+		}
+
+		const alumnoId = Number(card.dataset.alumnoId)
+		const alumno = state.alumnos.find((item) => item.id === alumnoId)
+
+		if (alumno) {
+			openEditModal(alumno)
+		}
+	})
   </script>
 </body>
 </html>
