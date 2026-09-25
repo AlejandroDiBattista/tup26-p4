@@ -85,6 +85,7 @@ pre code{background:none;border:none;padding:0;font-size:inherit;color:inherit}
 .tema{display:grid;grid-template-columns:1fr auto;gap:.45rem 1rem;align-items:center;width:100%;background:none;border:none;border-bottom:1px solid var(--borde);padding:.9rem .25rem;cursor:pointer;text-align:left;transition:background .15s}
 .tema:hover{background:var(--sutil)}
 .tnombre{font-weight:600;font-size:1rem}
+.testado{display:block;font-weight:500;font-size:.85rem;color:var(--secundario);margin-top:.1rem}
 .tpct{font-family:var(--titulo);font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem}
 .barra{grid-column:1/-1;height:8px;border-radius:4px;background:var(--c0);overflow:hidden;display:flex;gap:2px}
 .barra i{display:block;height:100%}
@@ -178,6 +179,33 @@ pre code{background:none;border:none;padding:0;font-size:inherit;color:inherit}
 .tabla-temas tr.flojo td:last-child{color:var(--mal)}
 .resumen .acciones{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem}
 
+
+/* Guía del método */
+.guia{padding-top:.5rem}
+.guia-volver{margin:1rem 0 .5rem}
+.guia-hero{background:var(--marca);color:var(--marca-tinta);border-radius:20px;padding:1.6rem 1.5rem}
+.guia-hero h1{font-size:clamp(2rem,7vw,2.8rem);font-weight:800;letter-spacing:-.03em}
+.guia-hero p{margin:.6rem 0 0;font-size:1.08rem;font-weight:500;max-width:48ch}
+.guia h2{font-size:1.45rem;font-weight:800;letter-spacing:-.02em;margin:2.4rem 0 .9rem}
+.guia h3{font-family:var(--titulo);font-size:1.12rem;font-weight:800;margin:1.6rem 0 .4rem}
+.guia p{margin:0 0 .8rem;max-width:62ch}
+.idea{display:grid;grid-template-columns:2.4rem 1fr;gap:.2rem 1rem;padding:1.1rem 0;border-top:1px solid var(--borde)}
+.idea .n{font-family:var(--titulo);font-weight:800;font-size:1.6rem;line-height:1.1}
+.idea h3{margin:0 0 .35rem}
+.idea p{margin:0}
+.tabla{width:100%;border-collapse:collapse;font-size:.97rem;margin:.4rem 0 1rem}
+.tabla th{text-align:left;font-weight:700;font-size:.85rem;color:var(--secundario);padding:.4rem .5rem;border-bottom:2px solid var(--tinta)}
+.tabla td{padding:.6rem .5rem;border-bottom:1px solid var(--borde);vertical-align:top}
+.tabla td:first-child{white-space:nowrap}
+.ejemplo{background:var(--sutil);border-radius:12px;padding:1rem 1.1rem;margin:.6rem 0 1rem}
+.ejemplo p:last-child{margin:0}
+.tpct small{display:block;font-family:var(--texto);font-weight:600;font-size:.7rem;color:var(--secundario);text-align:right;letter-spacing:.01em;margin-bottom:-.1rem}
+.leyenda .enlace{font-size:inherit}
+.hero .enlace{color:var(--marca-tinta);font-weight:700;opacity:1}
+
+.atajo{display:inline-block;font-family:var(--codigo);font-size:.72rem;font-weight:600;line-height:1.35;border:1.5px solid currentColor;border-radius:5px;padding:0 .38em;margin-left:.55rem;opacity:.55;vertical-align:.08em}
+.hero-nota .atajo{margin-left:.35rem}
+@media (hover:none){.atajo{display:none}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @media (max-width:460px){
   main{padding:0 1rem 3.5rem}
@@ -233,7 +261,7 @@ function bloque(s){
 function mezclar(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 const LETRAS = ["A","B","C","D"];
 function cuando(dias){
-  if(dias <= 0) return "vuelve hoy";
+  if(dias <= 0) return "vuelve en la próxima ronda";
   if(dias === 1) return "vuelve mañana";
   return "vuelve en " + dias + " días";
 }
@@ -274,10 +302,10 @@ function inicio(){
       <h1>Fichero de Programación Web</h1>
       <p>${lema}</p>
       <div class="hero-acciones">
-        <button class="btn primario" id="b-practicar">Practicar ${TAM_SESION} preguntas</button>
-        <button class="btn" id="b-simulacro">Simulacro de examen</button>
+        <button class="btn primario" id="b-practicar">Practicar ${TAM_SESION} preguntas<kbd class="atajo">1</kbd></button>
+        <button class="btn" id="b-simulacro">Simulacro de examen<kbd class="atajo">2</kbd></button>
       </div>
-      <p class="hero-nota">El simulacro tiene ${DATOS.temas.length*POR_TEMA_SIMULACRO} preguntas, 2 por tema, y dura ${MIN_SIMULACRO} minutos.</p>
+      <p class="hero-nota">El simulacro tiene ${DATOS.temas.length*POR_TEMA_SIMULACRO} preguntas, 2 por tema, y dura ${MIN_SIMULACRO} minutos. <button class="enlace" id="b-guia">Cómo funciona el método</button><kbd class="atajo">3</kbd></p>
     </div>
   </header>
 
@@ -288,7 +316,7 @@ function inicio(){
     </div>
     <div class="rotulos" aria-hidden="true">${rotulos.map(r=>`<span>${r === "Nuevas" ? r : "Caja " + r}</span>`).join("")}</div>
     <p class="oculto">${c.map((n,i)=>`${NOMBRE_CAJA[i]}: ${n}.`).join(" ")}</p>
-    <p class="leyenda">Si acertás con seguridad, la pregunta sube de caja y tarda más en volver. Si acertás dudando, se queda donde está. Si te equivocás o adivinás, vuelve a la caja 1.</p>
+    <p class="leyenda">Si acertás con seguridad, la pregunta sube de caja y tarda más en volver. Si acertás dudando, se queda en su caja y vuelve en la próxima ronda. Si te equivocás o adivinás, vuelve a la caja 1 y también reaparece en la próxima ronda. El porcentaje de cada tema indica cuánto está afianzado: cada caja suma un 20%, y el 100% es tener todas sus preguntas en la caja 5. <button class="enlace" id="b-guia2">Más sobre el método</button></p>
   </section>
 
   <section class="bloque" aria-labelledby="t-temas">
@@ -297,7 +325,9 @@ function inicio(){
     ${DATOS.temas.map((t,i)=>{
       const d = dominio(i);
       const seg = d.c.map((n,b)=> b===0 || n===0 ? "" : `<i style="width:${100*n/d.total}%;background:var(--c${b})"></i>`).join("");
-      return `<button class="tema" data-t="${i}"><span class="tnombre">${inline(t)}</span><span class="tpct">${d.pct}%</span><span class="barra" aria-hidden="true">${seg}</span></button>`;
+      const nuevasT = d.c[0], pendT = pendientes(DATOS.preguntas.filter(p => p.t === i)).length;
+      const estado = nuevasT === 0 && pendT === 0 ? "Al día" : [nuevasT ? `${nuevasT} ${nuevasT === 1 ? "nueva" : "nuevas"}` : "", pendT ? `${pendT} para repasar` : ""].filter(Boolean).join(", ");
+      return `<button class="tema" data-t="${i}"><span class="tnombre">${inline(t)}<span class="testado">${estado}</span></span><span class="tpct"><small>afianzado</small>${d.pct}%</span><span class="barra" aria-hidden="true">${seg}</span></button>`;
     }).join("")}
     </div>
   </section>
@@ -309,32 +339,148 @@ function inicio(){
   $("#b-practicar").onclick = () => empezarPractica(null);
   $("#b-simulacro").onclick = empezarSimulacro;
   document.querySelectorAll(".tema").forEach(b => b.onclick = () => empezarPractica(+b.dataset.t));
+  $("#b-guia").onclick = comoFunciona;
+  $("#b-guia2").onclick = comoFunciona;
   $("#b-borrar").onclick = () => {
     if(confirm("¿Borrar todo tu progreso? Todas las preguntas vuelven a ser nuevas.")){ est = {v:1,q:{}}; guardar(); inicio(); }
   };
   window.scrollTo(0,0);
 }
 
+
+/* ---------- cómo funciona ---------- */
+function comoFunciona(){
+  sesion = null; detenerReloj();
+  $("#app").innerHTML = `
+  <article class="guia">
+    <p class="guia-volver"><button class="enlace" id="b-volver">← Volver al fichero</button></p>
+    <header class="guia-hero">
+      <h1>Cómo funciona el fichero</h1>
+      <p>La app combina tres ideas sobre cómo se aprende y las convierte en un mecanismo simple: cinco cajas y una pregunta sobre tu seguridad.</p>
+    </header>
+
+    <h2>La idea</h2>
+    <div class="idea"><span class="n">1</span><div>
+      <h3>Recordar es lo que fija</h3>
+      <p>Releer un apunte da la sensación de saber, pero lo que consolida el conocimiento es el esfuerzo de recordar una respuesta sin mirarla. Por eso cada pregunta te pide responder antes de ver nada. Se conoce como práctica de recuperación.</p>
+    </div></div>
+    <div class="idea"><span class="n">2</span><div>
+      <h3>Repasar justo antes de olvidar</h3>
+      <p>Lo aprendido se olvida con el tiempo. Cada vez que recordás algo después de un intervalo, el recuerdo dura más que la vez anterior. Por eso las preguntas que sabés vuelven cada vez más espaciadas, y las que no sabés vuelven pronto. Se conoce como repetición espaciada.</p>
+    </div></div>
+    <div class="idea"><span class="n">3</span><div>
+      <h3>Saber si sabés</h3>
+      <p>Con tres opciones, adivinar acierta una de cada tres veces. Decir qué tan seguro estás separa lo que sabés de lo que acertaste por suerte, y deja a la vista lo más valioso para repasar: lo que creías saber y no sabías.</p>
+    </div></div>
+
+    <h2>El mecanismo</h2>
+    <h3>Cinco cajas</h3>
+    <p>Cada pregunta está en una caja. La caja indica cuánto tiempo pasa hasta que la pregunta vuelve a aparecer.</p>
+    <table class="tabla">
+      <tr><th>Caja</th><th>Vuelve a aparecer</th></tr>
+      <tr><td>${pill(1)}</td><td>En la próxima ronda</td></tr>
+      <tr><td>${pill(2)}</td><td>Al día siguiente</td></tr>
+      <tr><td>${pill(3)}</td><td>A los 3 días</td></tr>
+      <tr><td>${pill(4)}</td><td>A los 7 días</td></tr>
+      <tr><td>${pill(5)}</td><td>A los 14 días</td></tr>
+    </table>
+
+    <h3>Qué pasa cuando respondés</h3>
+    <p>Primero elegís una opción y después indicás tu seguridad. Con esas dos cosas, la app decide a qué caja va la pregunta.</p>
+    <table class="tabla">
+      <tr><th>Respuesta</th><th>Resultado</th></tr>
+      <tr><td>Correcta y <b>Seguro</b></td><td>Sube una caja y tarda más en volver.</td></tr>
+      <tr><td>Correcta y <b>Dudo</b></td><td>Se queda en su caja y vuelve en la próxima ronda, hasta que la respondas con seguridad.</td></tr>
+      <tr><td>Correcta y <b>Adiviné</b></td><td>Vuelve a la caja 1: una respuesta adivinada no cuenta como sabida.</td></tr>
+      <tr><td>Incorrecta</td><td>Vuelve a la caja 1 y reaparece en la próxima ronda. Si estabas seguro, la app lo marca aparte.</td></tr>
+    </table>
+
+    <h3>Cómo se arma una ronda</h3>
+    <p>Cada ronda tiene hasta ${TAM_SESION} preguntas. Primero entran las pendientes: las que erraste, dudaste o adivinaste, y las que ya les tocó volver según su caja. Ocupan hasta la mitad de la ronda, y el resto son preguntas nuevas. Las que respondiste bien y con seguridad no vuelven antes de tiempo, así que una ronda puede ser más corta. Si no queda nada pendiente ni nuevo, el tema está al día.</p>
+    <p>Podés practicar todo el banco o elegir un tema desde la lista de temas.</p>
+
+    <h3>Qué significa "afianzado"</h3>
+    <p>El porcentaje de cada tema mide cuánto están afianzadas sus preguntas, no cuántas respondiste bien. Cada caja suma un 20%: la caja 1 vale 20% y la caja 5 vale 100%. El porcentaje del tema es el promedio de sus preguntas.</p>
+    <div class="ejemplo">
+      <p>Respondés bien y con seguridad las 13 preguntas de un tema. Todas pasan a la caja 2 y el tema queda en 40%. Si al día siguiente las volvés a acertar, pasan a la caja 3 (60%); tres días después, a la 4 (80%); y una semana después, a la 5 (100%).</p>
+    </div>
+    <p>El 100% no significa que respondiste bien una vez, sino que lo seguís sabiendo semanas después.</p>
+
+    <h3>El simulacro</h3>
+    <p>Reproduce un examen: ${DATOS.temas.length*POR_TEMA_SIMULACRO} preguntas elegidas al azar, 2 por tema, con ${MIN_SIMULACRO} minutos y sin ver las respuestas hasta entregar. Al final ves el resultado por tema, y las preguntas que erraste o dejaste en blanco vuelven a la caja 1.</p>
+
+    <h2>Para aprovecharlo</h2>
+    <p><b>Rondas cortas y frecuentes.</b> Un rato cada día rinde más que una sesión larga el día antes del examen, porque el método necesita que pase tiempo entre repasos.</p>
+    <p><b>Sé honesto con tu seguridad.</b> Marcar "Seguro" cuando dudás solo hace que la pregunta tarde más en volver justo cuando más la necesitás.</p>
+    <p><b>Leé la explicación aunque aciertes.</b> Confirma que acertaste por el motivo correcto.</p>
+    <p><b>Tu progreso queda en este navegador.</b> Usá siempre el mismo dispositivo y el mismo navegador para no perderlo.</p>
+
+    <div class="acciones" style="display:flex;gap:.7rem;flex-wrap:wrap;margin-top:2rem">
+      <button class="btn primario" id="b-empezar">Practicar ahora<kbd class="atajo">1</kbd></button>
+      <button class="btn" id="b-volver2">Volver al fichero<kbd class="atajo">2</kbd></button>
+    </div>
+  </article>`;
+  $("#b-volver").onclick = inicio;
+  $("#b-volver2").onclick = inicio;
+  $("#b-empezar").onclick = () => empezarPractica(null);
+  window.scrollTo(0,0);
+}
+
 /* ---------- práctica ---------- */
 let sesion = null;
 
-function elegirPreguntas(filtro){
+// Una ronda se arma con preguntas pendientes (erradas, dudadas o cuyo repaso ya venció)
+// y con preguntas nuevas. Las que se respondieron bien y con seguridad no vuelven
+// hasta que les toque según su caja.
+function pendientes(pool){
   const ahora = Date.now();
-  const pool = DATOS.preguntas.filter(p => filtro == null || p.t === filtro);
   const orden = (a,b) => ficha(a.id).b - ficha(b.id).b || ficha(a.id).due - ficha(b.id).due;
-  let elegidas = pool.filter(p => { const f = ficha(p.id); return f.b > 0 && f.due <= ahora; }).sort(orden).slice(0, TAM_SESION);
-  if(elegidas.length < TAM_SESION)
-    elegidas = elegidas.concat(mezclar(pool.filter(p => ficha(p.id).b === 0)).slice(0, TAM_SESION - elegidas.length));
-  if(elegidas.length < TAM_SESION){
-    const usadas = new Set(elegidas.map(p => p.id));
-    elegidas = elegidas.concat(pool.filter(p => !usadas.has(p.id)).sort(orden).slice(0, TAM_SESION - elegidas.length));
-  }
-  return mezclar(elegidas);
+  return pool.filter(p => { const f = ficha(p.id); return f.b > 0 && f.due <= ahora; }).sort(orden);
+}
+function elegirPreguntas(filtro){
+  const pool = DATOS.preguntas.filter(p => filtro == null || p.t === filtro);
+  const pend = pendientes(pool);
+  const nuevas = mezclar(pool.filter(p => ficha(p.id).b === 0));
+  // Hasta la mitad de la ronda para pendientes; el resto, nuevas. Si faltan nuevas, más pendientes.
+  let nPend = Math.min(pend.length, Math.ceil(TAM_SESION/2));
+  const nNuevas = Math.min(nuevas.length, TAM_SESION - nPend);
+  nPend = Math.min(pend.length, TAM_SESION - nNuevas);
+  return mezclar(pend.slice(0, nPend).concat(nuevas.slice(0, nNuevas)));
+}
+function adelantadas(filtro){
+  const orden = (a,b) => ficha(a.id).b - ficha(b.id).b || ficha(a.id).due - ficha(b.id).due;
+  const vistas = DATOS.preguntas.filter(p => (filtro == null || p.t === filtro) && ficha(p.id).b > 0);
+  return mezclar(vistas.sort(orden).slice(0, TAM_SESION));
 }
 
-function empezarPractica(filtro){
-  sesion = {modo:"practica", filtro, lista:elegirPreguntas(filtro), i:0, resultados:[], elegida:null, fase:"elegir", orden:null};
+function empezarPractica(filtro, lista){
+  lista = lista || elegirPreguntas(filtro);
+  if(lista.length === 0) return alDia(filtro);
+  sesion = {modo:"practica", filtro, lista, i:0, resultados:[], elegida:null, fase:"elegir", orden:null};
   mostrarPregunta();
+}
+
+function alDia(filtro){
+  sesion = null;
+  const pool = DATOS.preguntas.filter(p => filtro == null || p.t === filtro);
+  const proxima = Math.min(...pool.map(p => ficha(p.id).due));
+  const dias = Math.max(1, Math.ceil((proxima - Date.now()) / DIA));
+  const donde = filtro == null ? "en el banco" : "en este tema";
+  $("#app").innerHTML = `
+  <section class="resumen">
+    <div class="resumen-hero">
+      <h2>${filtro == null ? "Estás al día" : inline(DATOS.temas[filtro])}</h2>
+      <p class="cifra">Al día</p>
+      <p>No quedan preguntas nuevas ni pendientes ${donde}. Las que respondiste bien vuelven a aparecer ${dias === 1 ? "mañana" : "en " + dias + " días"}.</p>
+    </div>
+    <div class="acciones">
+      <button class="btn primario" id="b-adelantar">Repasar igual<kbd class="atajo">1</kbd></button>
+      <button class="btn" id="b-inicio">Volver al fichero<kbd class="atajo">2</kbd></button>
+    </div>
+  </section>`;
+  $("#b-adelantar").onclick = () => empezarPractica(filtro, adelantadas(filtro));
+  $("#b-inicio").onclick = inicio;
+  window.scrollTo(0,0);
 }
 
 function barraSesion(izq, der, pct){
@@ -364,7 +510,7 @@ function mostrarPregunta(){
     </div>
     <div id="feedback"></div>
   </article>
-  <p class="teclas">Teclado: 1, 2 o 3 para elegir; después 1, 2 o 3 para la seguridad; Enter para seguir.</p>`;
+  <p class="teclas">Teclado: 1, 2 o 3 para elegir la opción, otra vez 1, 2 o 3 para la seguridad y una vez más para pasar a la siguiente.</p>`;
   $("#b-salir").onclick = terminarPractica;
   document.querySelectorAll(".op").forEach(b => b.onclick = () => elegir(+b.dataset.k));
   document.querySelectorAll(".conf-btns button").forEach(b => b.onclick = () => confirmar(b.dataset.c));
@@ -388,7 +534,8 @@ function confirmar(conf){
   if(acierto && conf === "seguro") f.b = Math.min(5, Math.max(f.b,1) + 1);
   else if(acierto && conf === "dudo") f.b = Math.max(f.b, 1);
   else f.b = 1;
-  f.due = Date.now() + INTERVALO_DIAS[f.b]*DIA;
+  const diasEspera = acierto && conf === "seguro" ? INTERVALO_DIAS[f.b] : 0;
+  f.due = Date.now() + diasEspera*DIA;
   f.vistas++; acierto ? f.ok++ : f.mal++;
   est.q[p.id] = f; guardar();
   s.resultados.push({id:p.id, elegida:s.elegida, acierto, conf, antes, despues:f.b});
@@ -414,7 +561,7 @@ function confirmar(conf){
     <div class="veredicto ${acierto ? "bien" : "mal"}">
       <div class="veredicto-cab"><span class="ico" aria-hidden="true">${acierto ? "✓" : "✕"}</span><strong>${acierto ? "Correcto" : "Incorrecto"}</strong></div>
       ${correcta}${expl}${nota}
-      <div class="movimiento">${mov}<span>${cuando(INTERVALO_DIAS[f.b])}</span></div>
+      <div class="movimiento">${mov}<span>${cuando(diasEspera)}</span></div>
     </div>
     <button class="btn primario siguiente" id="b-sig">${ultima ? "Ver resumen" : "Siguiente pregunta"}</button>`;
   $("#b-sig").onclick = siguiente;
@@ -453,8 +600,8 @@ function terminarPractica(){
     </div>
     ${errores.length ? `<h3>Para repasar</h3><ul class="lista-errores">${errores.map(x => itemError(PREG.get(x.id), x.elegida)).join("")}</ul>` : `<h3>Sin errores en esta ronda</h3>`}
     <div class="acciones">
-      <button class="btn primario" id="b-otra">Otra ronda</button>
-      <button class="btn" id="b-inicio">Volver al fichero</button>
+      <button class="btn primario" id="b-otra">Otra ronda<kbd class="atajo">1</kbd></button>
+      <button class="btn" id="b-inicio">Volver al fichero<kbd class="atajo">2</kbd></button>
     </div>
   </section>`;
   $("#b-otra").onclick = () => empezarPractica(filtro);
@@ -560,8 +707,8 @@ function entregar(){
     </table>
     ${errores.length ? `<h3>Para repasar</h3><ul class="lista-errores">${errores.map(({p,r}) => itemError(p, r)).join("")}</ul>` : ""}
     <div class="acciones">
-      <button class="btn primario" id="b-rep">Repasar lo que erraste</button>
-      <button class="btn" id="b-inicio">Volver al fichero</button>
+      <button class="btn primario" id="b-rep">Repasar lo que erraste<kbd class="atajo">1</kbd></button>
+      <button class="btn" id="b-inicio">Volver al fichero<kbd class="atajo">2</kbd></button>
     </div>
   </section>`;
   $("#b-rep").onclick = () => empezarPractica(null);
@@ -571,11 +718,19 @@ function entregar(){
 
 /* ---------- teclado ---------- */
 document.addEventListener("keydown", e => {
-  if(e.metaKey || e.ctrlKey || e.altKey || !sesion) return;
-  const s = sesion, n = parseInt(e.key, 10);
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  const n = parseInt(e.key, 10);
+  // Fuera de una ronda o simulacro, 1, 2 y 3 pulsan los botones marcados con esa tecla.
+  if(!sesion){
+    const b = document.querySelector(`#app kbd.atajo`) && [...document.querySelectorAll("#app kbd.atajo")].find(k => k.textContent === String(n));
+    if(b && !e.repeat){ (b.closest("button") || b.previousElementSibling).click(); e.preventDefault(); }
+    return;
+  }
+  const s = sesion;
   if(s.modo === "practica"){
     if(s.fase === "elegir" && n >= 1 && n <= s.orden.length){ elegir(s.orden[n-1]); e.preventDefault(); }
     else if(s.fase === "confianza" && n >= 1 && n <= 3){ confirmar(["seguro","dudo","adivine"][n-1]); e.preventDefault(); }
+    else if(s.fase === "hecho" && n >= 1 && n <= 3 && !e.repeat){ siguiente(); e.preventDefault(); }
     else if(s.fase === "hecho" && e.key === "Enter" && document.activeElement?.id !== "b-sig"){ siguiente(); e.preventDefault(); }
   } else if(s.modo === "simulacro"){
     const ops = document.querySelectorAll(".op");
