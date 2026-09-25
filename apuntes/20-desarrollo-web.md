@@ -15,7 +15,7 @@ En lenguaje cotidiano decimos «consultar el clima». Técnicamente mostraremos 
 - [3. Sintaxis y estructura de HTML](#3-sintaxis-y-estructura-de-html)
 - [4. Componentes básicos y HTML con significado](#4-componentes-básicos-y-html-con-significado)
 - [5. CSS: historia y separación de la presentación](#5-css-historia-y-separación-de-la-presentación)
-- [6. Sintaxis, selectores, cascada e herencia](#6-sintaxis-selectores-cascada-e-herencia)
+- [6. Sintaxis, selectores, cascada y herencia](#6-sintaxis-selectores-cascada-y-herencia)
 - [7. Propiedades CSS por categorías](#7-propiedades-css-por-categorías)
 - [8. Distribución y diseño adaptable](#8-distribución-y-diseño-adaptable)
 - [9. JavaScript y su entorno de ejecución](#9-javascript-y-su-entorno-de-ejecución)
@@ -343,7 +343,7 @@ El elemento `link` referencia la hoja desde `head`. En un archivo CSS se escribe
 
 Un archivo externo facilita compartir y mantener estilos. El estilo en un atributo puede servir en situaciones puntuales, pero repetirlo por toda la página hace más difíciles los cambios.
 
-## 6. Sintaxis, selectores, cascada e herencia
+## 6. Sintaxis, selectores, cascada y herencia
 
 ### 6.1. Anatomía de una regla
 
@@ -437,7 +437,7 @@ Muchas propiedades de texto se heredan de los ancestros cuando el elemento no ob
 
 Una declaración aplicada directamente a un hijo no «compite en especificidad» con el color que podría heredar de su padre: la herencia se usa cuando corresponde, después de resolver los valores del propio elemento. Para que los controles sigan la tipografía de la página usaremos explícitamente `font: inherit`.
 
-Referencia para profundizar: [MDN: cascada, especificidad e herencia](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Handling_conflicts).
+Referencia para profundizar: [MDN: cascada, especificidad y herencia](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Handling_conflicts).
 
 ## 7. Propiedades CSS por categorías
 

@@ -44,7 +44,7 @@ Cada pedido apunta a una URL. La URL dice qué recurso querés y dónde está.
 
 ```
 https://api.ejemplo.com:443/usuarios/7?campos=nombre,email#perfil
-└─┬──┘   └──────┬──────┘└┬┘└───┬─────┘└────────┬─────────┘└──┬──┘
+└─┬─┘   └──────┬──────┘ └┬┘└───┬─────┘└────────┬─────────┘└──┬──┘
 esquema        host   puerto  ruta         query (consulta)  fragmento
 ```
 
@@ -777,13 +777,14 @@ La segunda recibe las coordenadas y devuelve el clima. En `current` le pedimos q
 GET https://api.open-meteo.com/v1/forecast?latitude=-26.82&longitude=-65.22&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1
 ```
 
-La respuesta trae los valores en `current` y sus unidades en `current_units`:
+La respuesta trae los valores en `current` y sus unidades en `current_units`; lo mismo ocurre con `daily` y `daily_units`. Recortada a lo que usa la aplicación:
 
 ```json
 {
   "current_units": {
     "temperature_2m": "°C",
     "relative_humidity_2m": "%",
+    "apparent_temperature": "°C",
     "wind_speed_10m": "km/h"
   },
   "current": {
@@ -793,6 +794,10 @@ La respuesta trae los valores en `current` y sus unidades en `current_units`:
     "apparent_temperature": 23.1,
     "weather_code": 2,
     "wind_speed_10m": 11.5
+  },
+  "daily_units": {
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C"
   },
   "daily": {
     "temperature_2m_max": [27.8],
@@ -811,7 +816,7 @@ Ink es una librería que usa React para construir interfaces de terminal. En lug
 
 ### Preparar el proyecto
 
-Necesitás Node.js 20 o posterior.
+Necesitás Node.js 22 o posterior: es la versión mínima que exige la versión actual de Ink.
 
 ```bash
 mkdir clima-cli

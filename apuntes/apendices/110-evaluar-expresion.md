@@ -315,10 +315,27 @@ explícitos:
 - no incorpora el operador de potencia ni otros operadores;
 - no verifica de manera detallada si faltan operandos.
 
-Por ejemplo, `-3 + 2` no se interpreta como una expresión con signo unario,
-porque el primer token debería ser un número. Para soportarlo habría que
-agregar una etapa de tokenización y decidir, según el token anterior, si `-`
-es un operador binario o parte de un literal negativo.
+La segunda limitación tiene un matiz. Un literal negativo funciona, porque el
+tokenizador convierte `-3` en un solo número:
+
+```js
+evaluar("-3 + 2");     // -1
+evaluar("3 * ( -2 )"); // -6
+```
+
+Lo que no funciona es el menos como operador de un solo operando, separado de
+su número o aplicado a un grupo:
+
+```js
+evaluar("- 5 + 1");     // Error: La expresión no tiene una estructura válida
+evaluar("- ( 3 + 2 )"); // Error: La expresión no tiene una estructura válida
+```
+
+En los dos casos el `-` entra como operador binario, y cuando `resolver` busca
+sus dos operandos encuentra uno solo. La comprobación final detecta el
+desbalance, aunque no puede explicar la causa. Para admitir el signo unario
+habría que agregar una etapa de tokenización y decidir, según el token
+anterior, si `-` es un operador binario o parte de un literal negativo.
 
 Separar las etapas ayuda a extender el programa sin mezclar responsabilidades:
 

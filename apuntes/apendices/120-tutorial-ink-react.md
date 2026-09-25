@@ -1,4 +1,4 @@
-# Una agenda de terminal con React e Ink
+# Apéndice D. Una agenda de terminal con React e Ink
 
 Un tutorial para construir un **CRUD de contactos** componiendo componentes de biblioteca. La aplicación permite buscar en caliente, seleccionar personas en una lista maestra y ver sus datos en un panel de detalle. Al crear o editar, ese mismo panel muestra un formulario. Los contactos se conservan en JSON y **el legajo es su identificador único**.
 
@@ -149,13 +149,14 @@ Estas versiones fueron comprobadas juntas. El `override` hace que `ink-form` use
 
 `tsx` ejecuta nuestro JavaScript con JSX; no hace falta escribir TypeScript. `type: "module"` habilita módulos ES en los archivos `.js`.
 
-Conservá `package-lock.json`. Para instalar el mismo proyecto en otra computadora, usá `npm ci
+Conservá `package-lock.json`. Para instalar el mismo proyecto en otra computadora, usá `npm ci`.
 
 > **Tip:** Para pedirle a Codex que configure el proyecto, no hace falta dictarle cada archivo ni repetir los pasos del tutorial. Dale el tutorial como especificación, indicá el resultado esperado y pedile que inspeccione y verifique su trabajo.
 
 ```text
-Configurá este proyecto como una aplicación Node para React e Ink. 
-Instalá las librerías: `ink-text-input`, `ink-select-input` e `ink-form`. 
+Configurá este proyecto como una aplicación Node para React e Ink.
+Instalá las librerías: `ink-text-input`, `ink-select-input` e `ink-form`.
+```
 
 ### Primer componente ejecutable
 

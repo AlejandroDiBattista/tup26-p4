@@ -1,4 +1,4 @@
-# 17. Fundamentos de computación digital
+# Apéndice C. Fundamentos de computación digital
 
 ## Idea central
 
