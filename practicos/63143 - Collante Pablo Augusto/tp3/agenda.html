@@ -25,7 +25,7 @@
       align-items: center;
       margin-bottom: 24px;
 
-      & h1{
+      & h1 {
         margin: 0;
       }
     }
@@ -33,7 +33,7 @@
     .grilla {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px; 
+      gap: 16px;
     }
 
     .tarjeta {
@@ -43,7 +43,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 
       & header {
         display: flex;
@@ -52,36 +52,36 @@
 
         & h2 {
           margin: 0;
-            font-size: 1.2rem;
-            color: #222;
+          font-size: 1.2rem;
+          color: #222;
         }
 
         & .favorito {
           background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            color: #ccc;
-            padding: 0;
+          border: none;
+          font-size: 1.8rem;
+          cursor: pointer;
+          color: #ccc;
+          padding: 0;
 
-            &[data-activo="true"] {
-              color: yellow
-            }
+          &[data-activo="true"] {
+            color: yellow
           }
         }
+      }
 
-        & address {
-          font-style: normal;
-          color: #555;
-          line-height: 1.6;
+      & address {
+        font-style: normal;
+        color: #555;
+        line-height: 1.6;
 
-          & p {
-            margin: 0;
-          }
+        & p {
+          margin: 0;
         }
+      }
 
-        & footer {
-          display: flex;
+      & footer {
+        display: flex;
         justify-content: space-between;
         border-top: 1px solid #eee;
         padding-top: 12px;
@@ -126,30 +126,34 @@
       padding: 32px;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-    
+
     dialog::backdrop {
-      background: rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.5);
     }
+
     .form-grupo {
       display: flex;
       flex-direction: column;
       gap: 4px;
       margin-bottom: 16px;
     }
+
     .form-grupo input {
       padding: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 1rem;
     }
+
     .botones-modal {
       display: flex;
       justify-content: flex-end;
       gap: 12px;
       margin-top: 24px;
     }
+
     .btn {
       padding: 8px 16px;
       border-radius: 8px;
@@ -157,10 +161,21 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    .btn-primario { background: #000; color: white; }
-    .btn-secundario { background: #eee; }
-    .btn-peligro { background: #dc3545; color: white; margin-right: auto; }
 
+    .btn-primario {
+      background: #000;
+      color: white;
+    }
+
+    .btn-secundario {
+      background: #eee;
+    }
+
+    .btn-peligro {
+      background: #dc3545;
+      color: white;
+      margin-right: auto;
+    }
   </style>
 </head>
 
@@ -189,23 +204,23 @@
       localStorage.setItem("agenda_alumnos", JSON.stringify(estado.alumnos))
     });
 
-    function obtenerAlumnoVisible(){
+    function obtenerAlumnoVisible() {
       const texto = estado.filtro.toLowerCase();
       let filtrados = estado.alumnos
 
-      if(texto) {
+      if (texto) {
         filtrados = filtrados.filter(a => a.nombre.toLowerCase().includes(texto) || a.apellido.toLowerCase().includes(texto));
       }
 
-      return [...filtrados].sort((a,b) => {
+      return [...filtrados].sort((a, b) => {
         if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
-        const compApellido = a.apellido.localeCompare(b.apellido, "es", {sensitivity: "base"});
+        const compApellido = a.apellido.localeCompare(b.apellido, "es", { sensitivity: "base" });
         if (compApellido !== 0) return compApellido;
-        return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base"}) 
+        return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
       });
     }
 
-    function alternarFavorito(id){
+    function alternarFavorito(id) {
       const indice = estado.alumnos.findIndex(a => a.id === id);
       if (indice !== -1) {
         estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
@@ -213,7 +228,7 @@
     }
 
     function manejarTecladoTarjeta(e, id) {
-      if (e.key === " "){
+      if (e.key === " ") {
         e.preventDefault();
         alternarFavorito(id);
       } else if (e.key === "Enter") {
@@ -237,6 +252,32 @@
       document.getElementById("modal-alumno").close();
     }
 
+    function guardarAlumno(e) {
+      e.preventDefault();
+
+      const nuevosDatos = { ...estado.formulario };
+
+      if (estado.editandoId) {
+        const indice = estado.alumnos.findIndex(a => a.id === estado.editandoId);
+        if (indice !== -1) {
+          estado.alumnos[indice] = { ...estado.alumnos[indice], ...nuevosDatos };
+        }
+      } else {
+        nuevosDatos.id = Date.now().toString();
+        nuevosDatos.favorito = false;
+        estado.alumnos.push(nuevosDatos)
+      }
+
+      cerrarModal();
+    }
+
+
+    function eliminarAlumno() {
+      if (confirm("estas seguro de eliminar este alumno de la agenda?")) {
+        estado.alumnos = estado.alumnos.filter(a => a.id !== estado.editandoId);
+        cerrarModal();
+      }
+    }
 
 
     const app = document.getElementById('app')
@@ -250,13 +291,13 @@
       <section class="grilla">
 
         ${() => {
-          const visible = obtenerAlumnoVisible();
+        const visible = obtenerAlumnoVisible();
 
-          if(visible.length === 0) {
-            return html `<p class="sin-resultados">No se encontraron alumnos para la busqueda</p>`
-          }
-          
-          return visible.map(a => html`
+        if (visible.length === 0) {
+          return html`<p class="sin-resultados">No se encontraron alumnos para la busqueda</p>`
+        }
+
+        return visible.map(a => html`
           <article class="tarjeta" tabindex="0" @keydown="${(e) => manejarTecladoTarjeta(e, a.id)}" @click="${() => abrirModal(a.id)}">
             <header>
               <h2>${a.apellido}, ${a.nombre}</h2>
@@ -275,12 +316,13 @@
               <p>Legajo: <b>${a.legajo}</b></p>
             </footer>
           </article>
-          `)}
-        }}
+          `)
+      }
+      }
       </section>
       <dialog id="modal-alumno">
         <h2> ${() => estado.editandoId ? "editar alumno" : "agregar alumno"} </h2>
-        <form method="dialog">
+        <form @submit="${(e) => guardarAlumno(e)}">
           
           <div class="form-grupo">
             <label>Nombre</label>
@@ -308,19 +350,14 @@
           </div>
 
           <div class="form-grupo">
-            <label>Legajo</label>
-            <input type="text" required value="${() => estado.formulario.legajo}" @input="${e => estado.formulario.legajo = e.target.value}">
-          </div>
-
-          <div class="form-grupo">
             <label>Usuario GitHub</label>
             <input type="text" required value="${() => estado.formulario.github}" @input="${e => estado.formulario.github = e.target.value}">
           </div>
 
           <div class="botones-modal">
-            ${() => estado.editandoId ? html`<button type="button" class="btn btn-peligro">Eliminar</button>` : ''}
+            ${() => estado.editandoId ? html`<button type="button" class="btn btn-peligro" @click="${() => eliminarAlumno()}">Eliminar</button>` : ''}
             <button type="button" class="btn btn-secundario" @click="${() => cerrarModal()}">Cancelar</button>
-            <button type="button" class="btn btn-primario" @click="${() => cerrarModal()}">Guardar</button>
+            <button type="submit" class="btn btn-primario">Guardar</button>
           </div>
 
         </form>
