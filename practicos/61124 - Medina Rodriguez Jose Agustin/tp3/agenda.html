@@ -23,9 +23,17 @@
       max-width: 100%;
       margin: auto;
 
-      > header h1 {
-        margin: 0 0 32px;
-        font-size: 2rem;
+      > header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 32px;
+
+        h1 {
+          margin: 0;
+          font-size: 2rem;
+        }
       }
     }
 
@@ -41,13 +49,43 @@
       border: 0;
     }
 
+    .busqueda {
+      width: min(100%, 300px);
+
+      input {
+        width: 100%;
+        min-width: 0;
+        padding: 13px 18px;
+        border: 1px solid #d9ded9;
+        border-radius: 999px;
+        color: inherit;
+        font: inherit;
+        background: #fffefa;
+
+        &:focus-visible {
+          outline: 3px solid rgb(38 53 44 / 25%);
+          outline-offset: 2px;
+        }
+      }
+    }
+
     .grilla-alumnos {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
 
+    .sin-resultados {
+      grid-column: 1 / -1;
+      padding: 48px 20px;
+      border: 1px dashed #b9c0bb;
+      border-radius: 16px;
+      color: #59615c;
+      text-align: center;
+    }
+
     .tarjeta-alumno {
+      position: relative;
       display: flex;
       min-width: 0;
       min-height: 200px;
@@ -60,6 +98,7 @@
 
       h3 {
         margin: 0;
+        padding-right: 36px;
         font-family: Georgia, serif;
         font-size: 1.5rem;
         line-height: 1.15;
@@ -69,6 +108,31 @@
           font-size: 1rem;
           font-weight: normal;
           color: #59615c;
+        }
+      }
+
+      .favorito {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        color: #887a45;
+        font-size: 1.8rem;
+        line-height: 1;
+        background: transparent;
+        cursor: pointer;
+
+        &:hover { background: #f1efe4; }
+
+        &:focus-visible {
+          outline: 3px solid rgb(136 122 69 / 35%);
+          outline-offset: 1px;
         }
       }
 
@@ -103,6 +167,13 @@
 
     @media (max-width: 600px) {
       body { padding: 32px 16px; }
+
+      main > header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .busqueda { width: 100%; }
       .grilla-alumnos { grid-template-columns: 1fr; }
     }
   </style>
@@ -116,6 +187,7 @@
 
     const app = document.getElementById('app')
     const CLAVE_ALUMNOS = 'agenda-alumnos'
+    const comparador = new Intl.Collator('es', { sensitivity: 'base' })
 
     function cargarAlumnos() {
       const alumnosGuardados = localStorage.getItem(CLAVE_ALUMNOS)
@@ -128,32 +200,101 @@
       return alumnosIniciales
     }
 
-    const estado = reactive({ alumnos: cargarAlumnos() })
+    function ordenarAlumnos(alumnos) {
+      return [...alumnos].sort((alumnoA, alumnoB) =>
+        Number(alumnoB.favorito) - Number(alumnoA.favorito)
+        || comparador.compare(alumnoA.apellido, alumnoB.apellido)
+        || comparador.compare(alumnoA.nombre, alumnoB.nombre)
+      )
+    }
+
+    function alternarFavorito(id) {
+      const alumno = estado.alumnos.find(alumno => alumno.id === id)
+
+      if (!alumno) return
+
+      alumno.favorito = !alumno.favorito
+      localStorage.setItem(CLAVE_ALUMNOS, JSON.stringify(estado.alumnos))
+    }
+
+    function normalizarTexto(texto) {
+      return String(texto)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+    }
+
+    function alumnosVisibles() {
+      const busqueda = normalizarTexto(estado.busqueda.trim())
+      const filtrados = estado.alumnos.filter(alumno =>
+        normalizarTexto([
+          alumno.apellido,
+          alumno.nombre,
+          alumno.telefono,
+          `@${alumno.github}`,
+          alumno.comision,
+          alumno.legajo
+        ].join(' ')).includes(busqueda)
+      )
+
+      return ordenarAlumnos(filtrados)
+    }
+
+    const estado = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: ''
+    })
 
     html`
       <header>
         <h1>Agenda</h1>
+        <div class="busqueda">
+          <label for="buscar" class="visualmente-oculto">Buscar alumno</label>
+          <input
+            id="buscar"
+            type="search"
+            placeholder="Buscar alumno..."
+            .value="${() => estado.busqueda}"
+            @input="${evento => estado.busqueda = evento.target.value}"
+          >
+        </div>
       </header>
       <section aria-labelledby="titulo-alumnos">
         <h2 id="titulo-alumnos" class="visualmente-oculto">Listado de alumnos</h2>
         <div class="grilla-alumnos">
-          ${estado.alumnos.map(alumno => html`
-            <article class="tarjeta-alumno">
-              <header>
-                <h3>
-                  ${alumno.apellido}
-                  <span>${alumno.nombre}</span>
-                </h3>
-              </header>
-              <address>
-                <p><strong>${alumno.telefono}</strong></p>
-                <p>@${alumno.github}</p>
-              </address>
-              <footer>
-                ${alumno.comision} · ${alumno.legajo}
-              </footer>
-            </article>
-          `)}
+          ${() => {
+            const alumnos = alumnosVisibles()
+
+            return alumnos.length
+              ? alumnos.map(alumno => html`
+                <article class="tarjeta-alumno">
+                  <button
+                    type="button"
+                    class="favorito"
+                    aria-label="${() => alumno.favorito
+                      ? `Quitar a ${alumno.nombre} ${alumno.apellido} de favoritos`
+                      : `Marcar a ${alumno.nombre} ${alumno.apellido} como favorito`}"
+                    aria-pressed="${() => String(alumno.favorito)}"
+                    title="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+                    @click="${() => alternarFavorito(alumno.id)}"
+                  >${() => alumno.favorito ? '★' : '☆'}</button>
+                  <header>
+                    <h3>
+                      ${alumno.apellido}
+                      <span>${alumno.nombre}</span>
+                    </h3>
+                  </header>
+                  <address>
+                    <p><strong>${alumno.telefono}</strong></p>
+                    <p>@${alumno.github}</p>
+                  </address>
+                  <footer>
+                    ${alumno.comision} · ${alumno.legajo}
+                  </footer>
+                </article>
+              `.key(alumno.id))
+              : html`<p class="sin-resultados" role="status">No hay alumnos para mostrar.</p>`
+          }}
         </div>
       </section>
     `(app)
