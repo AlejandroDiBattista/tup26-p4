@@ -175,7 +175,11 @@
       <h1 class="title">Agenda</h1>
 
       <div class="topbar-actions">
-        <input class="search" type="search" placeholder="Buscar alumno...">
+        <input 
+			class="search" 
+			type="search" 
+			placeholder="Buscar alumno...">
+
         <button class="primary-button" type="button">+ Agregar</button>
       </div>
     </header>
@@ -184,76 +188,93 @@
   </main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosSeed from './alumnos.json' with { type: 'json' }
 
 
-    const app = document.getElementById('app')
+	const app = document.getElementById('app')
+	
+	const normalizeText = (value = '') =>
+	  String(value)
+	    .normalize('NFD')
+	    .replace(/[\u0300-\u036f]/g, '')
+	    .toLowerCase()
+	    .trim()
+	
+	const sortAlumnos = (items = []) =>
+	  [...items].sort((a, b) => {
+	    if (Number(a.favorito) !== Number(b.favorito)) {
+	      return Number(b.favorito) - Number(a.favorito)
+	    }
+	
+	    const aKey = normalizeText(`${a.apellido} ${a.nombre}`)
+	    const bKey = normalizeText(`${b.apellido} ${b.nombre}`)
+	
+	    return aKey.localeCompare(bKey, 'es', { sensitivity: 'base' })
+	  })
 
-    const normalizeText = (value = '') =>
-      String(value)
-        .normalize('NFD')
-		.replace(/[\u0300-\u036f]/g, '')
-		.toLowerCase()
-		.trim()
+	const filteredAlumnos = () => {
+		const query = normalizeText(state.search)
 
+		return sortAlumnos(state.alumnos).filter((alumno) => {
+			const textoAlumno = normalizeText(`
+				${alumno.apellido}
+				${alumno.nombre}
+				${alumno.telefono}
+				${alumno.github}
+			`)
 
-	const sortAlumnos = (items) => {
-		return [...items].sort((a, b) => {
-			if (a.favorito !== b.favorito) {
-				return Number(b.favorito) - Number(a.favorito)
-			}
-
-			const aKey = normalizeText(`${a.apellido} ${a.nombre}`)
-			const bKey = normalizeText(`${b.apellido} ${b.nombre}`)
-
-			return aKey.localeCompare(bKey, 'es', {sensitivity: 'base'})
+			return textoAlumno.includes(query)
 		})
 	}
 
-    const state = reactive({
-      alumnos: sortAlumnos(alumnosSeed),
-      search: '',
-      modalOpen: false,
-      editingId: null,
-      form: {
-        apellido: '',
-        nombre: '',
-        legajo: '',
-        comision: '',
-        telefono: '',
-        github: ''
-      }
-    })
+	const toggleFavorite = (id) => {
+		const alumno = state.alumnos.find((item) => item.id === id)
 
-	const renderAlumnos = () => {
-		const alumnos = sortAlumnos(state.alumnos)
-
-		return html`
-			<div class="card-grid">
-				${alumnos.map(alumno => html`
-				<article class="card">
-					<header class="card-header>
-						<h2 class="name">${alumno.apellido} ${alumno.nombre}</h2>
-						<button type="button" class="favorite-toggle ${alumno.favorito ? 'is-favorite' : ''}">
-							★
-						</button>
-					</header>
-					<address class="card-body">
-      			      <span class="detail">${alumno.telefono}</span>
-      			      <span class="detail detail--github">@${alumno.github}</span>
-      			    </address>
-				
-      			    <footer class="card-footer">
-      			      ${alumno.comision}
-      			    </footer>
-      			  </article>
-      			`)}
-			</div>
-		`
+		if (alumno) {
+			alumno.favorito = !alumno.favorito
+		}
 	}
+  
+	const state = reactive({
+	  alumnos: sortAlumnos(alumnosSeed),
+	  search: ''
+	})
 
-	html`${renderAlumnos()}`(app)
+	const searchInput = document.querySelector('.search')
+
+	searchInput.addEventListener('input', (event) => {
+		state.search = event.target.value
+	})
+	
+	const renderAlumnos = () => html`
+	  <div class="card-grid">
+	    ${() => filteredAlumnos().map(alumno => html`
+	      <article class="card">
+	        <header class="card-header">
+	          <h2 class="name">${alumno.apellido} ${alumno.nombre}</h2>
+
+	          <button
+	            type="button"
+	            class="${alumno.favorito ? 'favorite-toggle is-favorite' : 'favorite-toggle'}"
+	            @click="${() => toggleFavorite(alumno.id)}">
+	            ★
+	          </button>
+	        </header>
+
+	        <div class="card-body">
+	          <span class="detail">${alumno.telefono}</span>
+	          <span class="detail detail--github">@${alumno.github}</span>
+	        </div>
+
+	        <footer class="card-footer">
+	          ${alumno.comision}
+	        </footer>
+	      </article>
+	    `)}
+	  </div>
+	`
+	renderAlumnos()(app)
   </script>
 </body>
 </html>
