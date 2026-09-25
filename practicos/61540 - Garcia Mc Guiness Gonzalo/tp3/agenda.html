@@ -5,29 +5,632 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+	:root {
+		--bg: #edf0ec;
+		--panel: #f5f3f1;
+		--line: #d5d8d3;
+		--line-strong: #c0c5bf;
+		--text: #2b2d2b;
+		--muted: #5d625f;
+		--primary: #2e3d38;
+		--favorite: #d6be88;
+		--danger: #d85d5d;
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	html,
+	body {
+		margin: 0;
+		min-height: 100%;
+		font-family: Arial, Helvetica, sans-serif;
+		background: var(--bg);
+		color: var(--text);
+	}
+
+	body {
+		padding: 18px 20px 40px;
+	}
+
+	.page {
+		max-width: 1120px;
+		margin: 0 auto;
+	}
+
+	.topbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 20px;
+		margin-bottom: 20px;
+
+	& .title {
+		margin: 0;
+		font-size: clamp(2rem, 3vw, 3.2rem);
+		font-weight: 700;
+	}
+
+	& .topbar-actions {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	& .search {
+		width: min(320px, 42vw);
+		min-width: 200px;
+		height: 42px;
+		padding: 0 18px;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.14);
+		color: var(--text);
+
+		&::placeholder {
+		color: #7b7e7a;
+		}
+	}
+	}
+
+	.primary-button {
+		min-height: 42px;
+		padding: 0 18px;
+		border: none;
+		border-radius: 999px;
+		background: var(--primary);
+		color: white;
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	.card-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 18px;
+
+	& .empty-state {
+		grid-column: 1 / -1;
+		padding: 28px 18px;
+		border: 1px dashed var(--line-strong);
+		border-radius: 18px;
+		background: rgba(255, 255, 255, 0.1);
+		color: var(--muted);
+		text-align: center;
+	}
+	}
+
+	.card {
+		min-height: 220px;
+		padding: 18px;
+		border: 1px solid var(--line);
+		border-radius: 18px;
+		background: rgba(255, 255, 255, 0.14);
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+
+	&:focus-visible {
+		outline: 3px solid var(--primary);
+		outline-offset: 3px;
+	}
+
+	& .card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	& .name {
+		margin: 0;
+		font-size: clamp(1.5rem, 2vw, 2.1rem);
+		line-height: 1.2;
+		font-weight: 700;
+	}
+
+	& .favorite-toggle {
+		border: none;
+		background: transparent;
+		color: var(--favorite);
+		font-size: 1.6rem;
+		cursor: pointer;
+		opacity: 0.4;
+
+		&.is-favorite {
+		opacity: 1;
+		}
+	}
+
+	& .card-body {
+		margin-top: 16px;
+		padding-top: 12px;
+		border-top: 1px solid var(--line);
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		font-style: normal;
+	}
+
+	& .detail {
+		color: var(--text);
+		font-size: 1.04rem;
+
+		&.detail--github {
+			color: var(--muted);
+		}
+	}
+
+	& .card-footer {
+		margin-top: 14px;
+		padding-top: 12px;
+		border-top: 1px solid var(--line);
+		color: var(--muted);
+		font-weight: 600;
+	}
+	}
+
+	.modal {
+		width: min(620px, calc(100vw - 32px));
+		max-width: none;
+		max-height: calc(100vh - 32px);
+		padding: 0;
+		border: 1px solid var(--line);
+		border-radius: 18px;
+		background: var(--panel);
+		color: var(--text);
+		box-shadow: 0 12px 32px rgba(43, 45, 43, 0.2);
+		overflow: auto;
+
+	&::backdrop {
+		background: rgba(43, 45, 43, 0.35);
+	}
+
+	& .modal-header {
+		padding: 22px 24px 16px;
+		border-bottom: 1px solid var(--line);
+
+		& h2 {
+			margin: 0;
+			font-size: 1.35rem;
+		}
+
+		& p {
+			margin: 4px 0 0;
+			color: var(--muted);
+		}
+	}
+
+	& .form {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px 14px;
+		padding: 18px 24px 20px;
+
+		& label {
+			display: grid;
+			gap: 5px;
+			color: var(--muted);
+			font-size: 0.82rem;
+			font-weight: 700;
+		}
+
+		& input {
+			width: 100%;
+			min-height: 42px;
+			padding: 0 12px;
+			border: 1px solid var(--line);
+			border-radius: 9px;
+			background: white;
+			color: var(--text);
+		}
+	}
+
+	& .form-actions {
+		grid-column: 1 / -1;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin: 8px -24px -20px;
+		padding: 12px 24px;
+		border-top: 1px solid var(--line);
+
+		& > div {
+			display: flex;
+			gap: 8px;
+		}
+
+		& button {
+			min-height: 38px;
+			padding: 0 16px;
+			border: 1px solid var(--line);
+			border-radius: 9px;
+			background: white;
+			color: var(--text);
+			font-weight: 700;
+			cursor: pointer;
+		}
+
+		& .primary-button {
+			border: none;
+			background: var(--primary);
+			color: white;
+		}
+
+		& .danger-button {
+			color: var(--danger);
+		}
+	}
+	}
+
+	@media (max-width: 920px) {
+	.card-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	}
+
+	@media (max-width: 700px) {
+	.topbar {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.card-grid {
+		grid-template-columns: 1fr;
+	}
+	}
+
+	@media (max-width: 600px) {
+	.modal .form {
+		grid-template-columns: 1fr;
+	}
+	}
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  <main class="page">
+    <header class="topbar">
+      <h1 class="title">Agenda</h1>
+
+      <div class="topbar-actions">
+        <input 
+			class="search" 
+			type="search" 
+			placeholder="Buscar alumno...">
+
+        <button  id="add-button" class="primary-button" type="button">+ Agregar</button>
+      </div>
+    </header>
+
+    <section id="app" aria-live="polite"></section>
+
+	<dialog id="modal" class="modal">	
+		<header class="modal-header">
+			<h2 id="modal-title">Agregar alumno</h2>
+			<p id="modal-subtitle">Completá los datos del alumno.</p>
+		</header>
+
+		<form id="student-form" class="form">
+			<label>Apellido<input name="apellido" required></label>
+			<label>Nombre<input name="nombre" required></label>
+			<label>Legajo<input name="legajo" required></label>
+			<label>Comisión<input name="comision" required></label>
+			<label>Teléfono<input name="telefono" required></label>
+			<label>GitHub<input name="github" required></label>
+
+			<div class="form-actions">
+				<button id="delete-button" class="danger-button" type="button" hidden>
+					Eliminar
+				</button>
+
+				<div>
+					<button id="cancel-button" type="button">Cancelar</button>
+					<button class="primary-button" type="submit">Guardar</button>
+				</div>
+			</div>
+		</form>
+	</dialog>
+  </main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosSeed from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+
+	const app = document.getElementById('app')
+	
+	const normalizeText = (value = '') =>
+	  String(value)
+	    .normalize('NFD')
+	    .replace(/[\u0300-\u036f]/g, '')
+	    .toLowerCase()
+	    .trim()
+	
+	const sortAlumnos = (items = []) =>
+	  [...items].sort((a, b) => {
+	    if (Number(a.favorito) !== Number(b.favorito)) {
+	      return Number(b.favorito) - Number(a.favorito)
+	    }
+	
+	    const aKey = normalizeText(`${a.apellido} ${a.nombre}`)
+	    const bKey = normalizeText(`${b.apellido} ${b.nombre}`)
+	
+	    return aKey.localeCompare(bKey, 'es', { sensitivity: 'base' })
+	  })
+
+	const filteredAlumnos = () => {
+		const query = normalizeText(state.search)
+
+		return sortAlumnos(state.alumnos).filter((alumno) => {
+			const textoAlumno = normalizeText(`
+				${alumno.apellido}
+				${alumno.nombre}
+				${alumno.telefono}
+				${alumno.github}
+			`)
+
+			return textoAlumno.includes(query)
+		})
+	}
+
+	const toggleFavorite = (id) => {
+		const alumno = state.alumnos.find((item) => item.id === id)
+
+		if (alumno) {
+			alumno.favorito = !alumno.favorito
+			persistAlumnos()
+		}
+	}
+  
+	const STORAGE_KEY = 'agenda-alumnos'
+
+	const loadAlumnos = () => {
+		const savedAlumnos = localStorage.getItem(STORAGE_KEY)	
+		if (!savedAlumnos) {
+			const alumnosIniciales = sortAlumnos(alumnosSeed)
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(alumnosIniciales))
+			return alumnosIniciales
+		}	
+		try {
+			const alumnosGuardados = JSON.parse(savedAlumnos)
+			return Array.isArray(alumnosGuardados)
+		    	? alumnosGuardados
+		    	: sortAlumnos(alumnosSeed)
+		} catch {
+			return sortAlumnos(alumnosSeed)
+		}
+	}
+
+	const persistAlumnos = () => {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos))
+	}
+
+	const state = reactive({
+	  	alumnos: loadAlumnos(),
+	  	search: ''
+	})
+
+	const searchInput = document.querySelector('.search')
+
+	searchInput.addEventListener('input', (event) => {
+		state.search = event.target.value
+	})
+
+	const modal = document.querySelector('#modal')
+	const addButton = document.querySelector('#add-button')
+	const cancelButton = document.querySelector('#cancel-button')
+	const studentForm = document.querySelector('#student-form')
+	const modalTitle = document.querySelector('#modal-title')
+	const modalSubtitle = document.querySelector('#modal-subtitle')
+	const deleteButton = document.querySelector('#delete-button')
+
+	let editingId = null
+
+	const openEditModal = (alumno) => {
+		editingId = alumno.id
+
+		modalTitle.textContent = 'Editar alumno'
+		modalSubtitle.textContent = 'Actualizá los datos del alumno.'
+		deleteButton.hidden = false
+
+		for (const [campo, valor] of Object.entries(alumno)) {
+			const input = studentForm.elements[campo]
+
+			if (input) {
+				input.value = valor
+			}
+		}
+
+		modal.showModal()
+	}
+
+	addButton.addEventListener('click', () => {
+		editingId = null
+		modalTitle.textContent = 'Agregar alumno'
+		modalSubtitle.textContent = 'Completá los datos del alumno.'
+		deleteButton.hidden = true
+		studentForm.reset()
+		modal.showModal()
+	})
+
+	cancelButton.addEventListener('click', () => {
+		editingId = null
+  		modalTitle.textContent = 'Agregar alumno'
+  		modalSubtitle.textContent = 'Completá los datos del alumno.'
+  		deleteButton.hidden = true
+  		studentForm.reset()
+  		modal.close()
+	})
+
+	deleteButton.addEventListener('click', () => {
+		if (editingId === null) {
+			return	
+		}
+
+		const confirmar = confirm('¿Queres eliminar este alumno?')
+
+		if (!confirmar) {
+			return
+		}
+
+		state.alumnos = state.alumnos.filter(
+			(alumno) => alumno.id !== editingId
+		)
+
+		persistAlumnos()
+
+		editingId = null
+		modalTitle.textContent = 'Agregar alumno'
+		modalSubtitle.textContent = 'Completá los datos del alumno.'
+		deleteButton.hidden = true
+		studentForm.reset()
+		modal.close()
+	})
+
+	studentForm.addEventListener('submit', (event) => {
+		event.preventDefault()
+
+		const formData = new FormData(studentForm)
+
+		  const datosAlumno = {
+		    legajo: String(formData.get('legajo') ?? '').trim(),
+		    apellido: String(formData.get('apellido') ?? '').trim(),
+		    nombre: String(formData.get('nombre') ?? '').trim(),
+		    comision: String(formData.get('comision') ?? '').trim(),
+		    telefono: String(formData.get('telefono') ?? '').trim(),
+		    github: String(formData.get('github') ?? '').trim()
+		  }
+
+		  if (Object.values(datosAlumno).some((valor) => valor === '')) {
+			alert('Completá todos los campos.')
+			return
+		  }
+
+		  const legajoDuplicado = state.alumnos.some((alumno) =>
+		  	String(alumno.legajo) === datosAlumno.legajo && 
+			alumno.id !== editingId
+		  )
+
+		  if (legajoDuplicado) {
+			alert('Ya existe un alumno con ese legajo.')
+			studentForm.elements.legajo.focus()
+			return
+		  }
+	  
+		  if (editingId !== null) {
+		    state.alumnos = state.alumnos.map((alumno) =>
+		      alumno.id === editingId
+		        ? { ...alumno, ...datosAlumno }
+		        : alumno
+		    )
+		  } else {
+		    const nuevoAlumno = {
+		      id: Math.max(0, ...state.alumnos.map((alumno) => alumno.id)) + 1,
+		      ...datosAlumno,
+		      favorito: false
+		    }
+		
+		    state.alumnos = [...state.alumnos, nuevoAlumno]
+		  }
+		  persistAlumnos()
+
+		  editingId = null
+		  modalTitle.textContent = 'Agregar alumno'
+		  modalSubtitle.textContent = 'Completá los datos del alumno.'
+		  deleteButton.hidden = true
+		  studentForm.reset()
+		  modal.close()
+	})
+	
+	const renderAlumnos = () => html`
+		<div class="card-grid">
+			${() => {
+				const alumnos = filteredAlumnos()
+
+				if (alumnos.length === 0) {
+					return [ 
+						html`
+						<p class="empty-state">
+							No hay alumnos para mostrar.
+						</p>
+						`
+					]
+				}
+
+				return alumnos.map(alumno => html`
+					<article class="card" data-alumno-id="${alumno.id}" tabindex="0">
+					<header class="card-header">
+						<h2 class="name">
+						${alumno.apellido} ${alumno.nombre}
+						</h2>
+
+						<button
+						type="button"
+						class="${alumno.favorito
+							? 'favorite-toggle is-favorite'
+							: 'favorite-toggle'}"
+						@click="${() => toggleFavorite(alumno.id)}">
+						★
+						</button>
+					</header>
+
+					<address class="card-body">
+						<span class="detail">${alumno.telefono}</span>
+						<span class="detail detail--github">
+						@${alumno.github}
+						</span>
+					</address>
+
+					<footer class="card-footer">
+						${alumno.comision} . ${alumno.legajo}
+					</footer>
+					</article>
+				`)
+			}}
+		</div>
+	`
+	renderAlumnos()(app)
+
+	app.addEventListener('click', (event) => {
+		const card = event.target.closest('.card')
+
+		if (!card || event.target.closest('.favorite-toggle')) {
+			return
+		}
+
+		const alumnoId = Number(card.dataset.alumnoId)
+		const alumno = state.alumnos.find((item) => item.id === alumnoId)
+
+		if (alumno) {
+			openEditModal(alumno)
+		}
+	})
+
+	app.addEventListener('keydown', (event) => {
+		const card = event.target.closest('.card')
+
+		if (!card || event.target.closest('.favorite-toggle')) {
+			return
+		}
+
+		const alumnoId = Number(card.dataset.alumnoId)
+		const alumno = state.alumnos.find((item) => item.id === alumnoId)
+
+		if (!alumno) {
+			return
+		}
+
+		if (event.key === 'Enter') {
+			event.preventDefault()
+			openEditModal(alumno)
+		}
+
+		if (event.key === ' ') {
+			event.preventDefault()
+			toggleFavorite(alumnoId)
+		}
+	})
   </script>
 </body>
 </html>
