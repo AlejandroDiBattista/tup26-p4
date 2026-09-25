@@ -63,14 +63,57 @@ function sortRows(header, rows, sortFields, noHeader) {
     // obtener indice de columnas,
     const resolveFields = [];
     for (const field of sortFields) {
-        sortFields.push({
-            name: field.name,
-            numeric: field.numeric,
-            descendig: field.descendig,
-            columna: resolveFieldIndex(field.name, header, noHeader)
+        resolveFields.push({
+            // name: field.name,
+            // numeric: field.numeric,
+            // descendig: field.descendig,
+            ...field,
+            column: resolveFieldIndex(field.name, header, noHeader)
         });        
     }
+
+    // Comparacion de Filas
+    const compare = (rowA, rowB) => {
+        for (const field of resolveFields) {
+            const column = field.column;
+            const valueA = rowA[column];
+            const valueB = rowB[column];
+
+            let comparison;
+
+            if (field.numeric) {
+                const numberA = Number(valueA);
+                const numberB = Number(valueB);
+                
+                if (Number.isNaN(numberA) || Number.isNaN(numberB)) {
+                    throw new Error('el campo "' + field.name + '" no es un número');
+                }
+                
+                comparison = numberA -numberB
+            } else {
+                comparison = valueA.localeCompare(valueB, 'es');   
+            }
+
+            // Invierte el signo
+            if (field.descendig) {
+                comparison = -comparison;
+            }
+
+            if (comparison !== 0) {
+                return comparison;
+            }
+        }
+        return 0;
+    }
+
+    const rowsToSort = [];
+    for (const row of rows) {
+        rowsToSort.push(row);    
+    }
+
+    return rowsToSort.sort(compare);
 }
+
 
 function resolveFieldIndex(name, header, noHeader) {
     if (noHeader) {
