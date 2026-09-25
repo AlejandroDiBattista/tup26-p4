@@ -119,6 +119,48 @@
       padding: 40px;
     }
 
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    dialog::backdrop {
+      background: rgba(0,0,0,0.5);
+    }
+    .form-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .form-grupo input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .botones-modal {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .btn-primario { background: #000; color: white; }
+    .btn-secundario { background: #eee; }
+    .btn-peligro { background: #dc3545; color: white; margin-right: auto; }
+
   </style>
 </head>
 
@@ -138,7 +180,9 @@
 
     const estado = reactive({
       alumnos: datosIniciales,
-      filtro: ""
+      filtro: "",
+      editandoId: null,
+      formulario: { nombre: "", apellido: "", legajo: "", comision: "", telefono: "", github: "" }
     });
 
     watch(() => {
@@ -173,15 +217,34 @@
         e.preventDefault();
         alternarFavorito(id);
       } else if (e.key === "Enter") {
-        console.log("");
+        abrirModal(id);
       }
     }
+
+    function abrirModal(id = null) {
+      if (id) {
+        const alumno = estado.alumnos.find(a => a.id === id);
+        estado.formulario = { ...alumno };
+        estado.editandoId = id;
+      } else {
+        estado.formulario = { nombre: "", apellido: "", legajo: "", comision: "", telefono: "", github: "" };
+        estado.editandoId = null;
+      }
+      document.getElementById("modal-alumno").showModal();
+    }
+
+    function cerrarModal() {
+      document.getElementById("modal-alumno").close();
+    }
+
+
 
     const app = document.getElementById('app')
     html`
     <header class="encabezado">
       <h1>Agenda de Alumnos</h1>
       <input type="search" placeholder="Buscar Alumno" class="buscador" @input="${(e) => estado.filtro = e.target.value}">
+      <button class="btn btn-primario" @click="${() => abrirModal()}">Agregar Alumno</button>
     </header>
 
       <section class="grilla">
@@ -194,10 +257,10 @@
           }
           
           return visible.map(a => html`
-          <article class="tarjeta" tabindex="0" @keydown="${(e) => manejarTecladoTarjeta(e, a.id)}">
+          <article class="tarjeta" tabindex="0" @keydown="${(e) => manejarTecladoTarjeta(e, a.id)}" @click="${() => abrirModal(a.id)}">
             <header>
               <h2>${a.apellido}, ${a.nombre}</h2>
-              <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito" @click="${() => alternarFavorito(a.id)}" tabindex="-1">
+              <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito" @click="${(e) => { e.stopPropagation(); alternarFavorito(a.id); }}" tabindex="-1">
                 ${a.favorito ? "★" : "☆"}
               </button>
             </header>
@@ -215,6 +278,53 @@
           `)}
         }}
       </section>
+      <dialog id="modal-alumno">
+        <h2> ${() => estado.editandoId ? "editar alumno" : "agregar alumno"} </h2>
+        <form method="dialog">
+          
+          <div class="form-grupo">
+            <label>Nombre</label>
+            <input type="text" required value="${() => estado.formulario.nombre}" @input="${e => estado.formulario.nombre = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Apellido</label>
+            <input type="text" required value="${() => estado.formulario.apellido}" @input="${e => estado.formulario.apellido = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Legajo</label>
+            <input type="text" required value="${() => estado.formulario.legajo}" @input="${e => estado.formulario.legajo = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Comision</label>
+            <input type="text" required value="${() => estado.formulario.comision}" @input="${e => estado.formulario.comision = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Telefono</label>
+            <input type="text" required value="${() => estado.formulario.telefono}" @input="${e => estado.formulario.telefono = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Legajo</label>
+            <input type="text" required value="${() => estado.formulario.legajo}" @input="${e => estado.formulario.legajo = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Usuario GitHub</label>
+            <input type="text" required value="${() => estado.formulario.github}" @input="${e => estado.formulario.github = e.target.value}">
+          </div>
+
+          <div class="botones-modal">
+            ${() => estado.editandoId ? html`<button type="button" class="btn btn-peligro">Eliminar</button>` : ''}
+            <button type="button" class="btn btn-secundario" @click="${() => cerrarModal()}">Cancelar</button>
+            <button type="button" class="btn btn-primario" @click="${() => cerrarModal()}">Guardar</button>
+          </div>
+
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
