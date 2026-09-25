@@ -50,7 +50,8 @@
     }
 
     .busqueda {
-      width: min(100%, 300px);
+      min-width: 0;
+      flex: 1;
 
       input {
         width: 100%;
@@ -67,6 +68,39 @@
           outline-offset: 2px;
         }
       }
+    }
+
+    .acciones-agenda {
+      display: flex;
+      width: min(100%, 410px);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .boton-agregar,
+    .formulario-alumno button {
+      padding: 13px 18px;
+      border: 1px solid #d9ded9;
+      border-radius: 12px;
+      color: #26352c;
+      font: inherit;
+      font-weight: bold;
+      background: #fffefa;
+      cursor: pointer;
+
+      &:focus-visible {
+        outline: 3px solid rgb(38 53 44 / 25%);
+        outline-offset: 2px;
+      }
+    }
+
+    .boton-agregar,
+    .formulario-alumno .boton-principal {
+      border-color: #30493a;
+      color: white;
+      background: #30493a;
+
+      &:hover { background: #263d31; }
     }
 
     .grilla-alumnos {
@@ -161,6 +195,72 @@
       }
     }
 
+    dialog {
+      width: min(600px, calc(100% - 32px));
+      max-height: calc(100vh - 32px);
+      padding: 0;
+      border: 1px solid #d9ded9;
+      border-radius: 20px;
+      color: #26352c;
+      background: #fffefa;
+      box-shadow: 0 16px 50px rgb(24 37 29 / 30%);
+
+      &::backdrop {
+        background: rgb(38 53 44 / 35%);
+        backdrop-filter: blur(2px);
+      }
+    }
+
+    .formulario-alumno {
+      > header {
+        padding: 24px;
+        border-bottom: 1px solid #e1e4e1;
+
+        h2 { margin: 0 0 6px; }
+        p { margin: 0; color: #69716c; }
+      }
+
+      .campos-formulario {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        padding: 24px;
+
+        label {
+          display: grid;
+          gap: 7px;
+          color: #59615c;
+          font-size: 0.85rem;
+          font-weight: bold;
+        }
+
+        input,
+        select {
+          width: 100%;
+          min-width: 0;
+          padding: 12px;
+          border: 1px solid #d9ded9;
+          border-radius: 10px;
+          color: #26352c;
+          font: inherit;
+          background: #f8f9f7;
+
+          &:focus-visible {
+            outline: 2px solid #30493a;
+            outline-offset: 1px;
+          }
+        }
+      }
+
+      > footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 16px 24px;
+        border-top: 1px solid #e1e4e1;
+      }
+    }
+
     @media (max-width: 900px) {
       .grilla-alumnos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -173,8 +273,17 @@
         flex-direction: column;
       }
 
-      .busqueda { width: 100%; }
+      .acciones-agenda {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
       .grilla-alumnos { grid-template-columns: 1fr; }
+
+      .formulario-alumno .campos-formulario {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -214,7 +323,67 @@
       if (!alumno) return
 
       alumno.favorito = !alumno.favorito
+      guardarAlumnos()
+    }
+
+    function guardarAlumnos() {
       localStorage.setItem(CLAVE_ALUMNOS, JSON.stringify(estado.alumnos))
+    }
+
+    function abrirFormulario() {
+      const formulario = document.getElementById('formulario-alumno')
+
+      formulario.reset()
+      Array.from(formulario.elements).forEach(campo => campo.setCustomValidity?.(''))
+      document.getElementById('dialogo-alumno').showModal()
+    }
+
+    function cerrarFormulario() {
+      document.getElementById('dialogo-alumno').close()
+    }
+
+    function agregarAlumno(evento) {
+      evento.preventDefault()
+
+      const formulario = evento.currentTarget
+      const datos = new FormData(formulario)
+      const camposObligatorios = ['apellido', 'nombre', 'legajo', 'comision', 'telefono', 'github']
+
+      for (const nombreCampo of camposObligatorios) {
+        const campo = formulario.elements[nombreCampo]
+
+        if (!datos.get(nombreCampo).trim()) {
+          campo.setCustomValidity('Este campo no puede quedar vacío.')
+          campo.reportValidity()
+          return
+        }
+      }
+
+      const legajo = datos.get('legajo').trim()
+      const legajoRepetido = estado.alumnos.some(alumno => alumno.legajo === legajo)
+
+      if (legajoRepetido) {
+        formulario.elements.legajo.setCustomValidity('Ya existe un alumno con este legajo.')
+        formulario.elements.legajo.reportValidity()
+        return
+      }
+
+      const siguienteId = Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1
+      const alumno = {
+        id: siguienteId,
+        apellido: datos.get('apellido').trim(),
+        nombre: datos.get('nombre').trim(),
+        legajo,
+        comision: datos.get('comision').trim().toUpperCase(),
+        telefono: datos.get('telefono').trim(),
+        github: datos.get('github').trim().replace(/^@/, ''),
+        favorito: false
+      }
+
+      estado.alumnos.push(alumno)
+      estado.busqueda = ''
+      guardarAlumnos()
+      cerrarFormulario()
     }
 
     function normalizarTexto(texto) {
@@ -248,15 +417,18 @@
     html`
       <header>
         <h1>Agenda</h1>
-        <div class="busqueda">
-          <label for="buscar" class="visualmente-oculto">Buscar alumno</label>
-          <input
-            id="buscar"
-            type="search"
-            placeholder="Buscar alumno..."
-            .value="${() => estado.busqueda}"
-            @input="${evento => estado.busqueda = evento.target.value}"
-          >
+        <div class="acciones-agenda">
+          <div class="busqueda">
+            <label for="buscar" class="visualmente-oculto">Buscar alumno</label>
+            <input
+              id="buscar"
+              type="search"
+              placeholder="Buscar alumno..."
+              .value="${() => estado.busqueda}"
+              @input="${evento => estado.busqueda = evento.target.value}"
+            >
+          </div>
+          <button type="button" class="boton-agregar" @click="${abrirFormulario}">+ Agregar</button>
         </div>
       </header>
       <section aria-labelledby="titulo-alumnos">
@@ -297,6 +469,55 @@
           }}
         </div>
       </section>
+      <dialog id="dialogo-alumno" aria-labelledby="titulo-dialogo">
+        <form
+          id="formulario-alumno"
+          class="formulario-alumno"
+          @input="${evento => evento.target.setCustomValidity('')}"
+          @submit="${agregarAlumno}"
+        >
+          <header>
+            <h2 id="titulo-dialogo">Agregar alumno</h2>
+            <p>Completá los datos del nuevo alumno.</p>
+          </header>
+          <div class="campos-formulario">
+            <label>
+              Apellido
+              <input name="apellido" required maxlength="50" autocomplete="family-name" autofocus>
+            </label>
+            <label>
+              Nombre
+              <input name="nombre" required maxlength="70" autocomplete="given-name">
+            </label>
+            <label>
+              Legajo
+              <input
+                name="legajo"
+                required
+                inputmode="numeric"
+                pattern="[0-9]{5}"
+                title="Ingresá un legajo de 5 dígitos"
+              >
+            </label>
+            <label>
+              Comisión
+              <input name="comision" required maxlength="10" placeholder="C1">
+            </label>
+            <label>
+              Teléfono
+              <input name="telefono" required maxlength="30" autocomplete="tel">
+            </label>
+            <label>
+              GitHub
+              <input name="github" required maxlength="39" autocomplete="username">
+            </label>
+          </div>
+          <footer>
+            <button type="submit" class="boton-principal">Guardar</button>
+            <button type="button" @click="${cerrarFormulario}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
