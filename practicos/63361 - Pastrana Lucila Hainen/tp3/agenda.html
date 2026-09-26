@@ -221,6 +221,19 @@
       )
     }
 
+    function alumnoCoincide(a) {
+      const texto = estado.busqueda.trim().toLowerCase()
+      if (!texto) {
+        return true
+      }
+      return (
+        a.nombre.toLowerCase().includes(texto) ||
+        a.apellido.toLowerCase().includes(texto) ||
+        String(a.legajo).toLowerCase().includes(texto) ||
+        String(a.comision).toLowerCase().includes(texto)
+      )
+    }
+
     function cambiarFavorito(id) {
       const alumno = estado.alumnos.find(a => a.id === id)
 
@@ -237,14 +250,15 @@
       <input
         type="search"
         placeholder="Buscar alumno..."
-        value="${() => estado.busqueda}"
-        @input="${evento => estado.busqueda = evento.target.value}"
+        @input="${evento => {
+        estado.busqueda = evento.target.value
+        }}"
       >
     </div>
 
       <ul>
-        ${() => alumnosVisibles().map(a => html`
-    <li>
+  ${() => ordenarAlumnos().map(a => html`
+    <li style="${() => alumnoCoincide(a) ? '' : 'display: none;'}">
       <div class="${a.apellido.includes(' ') ? 'encabezado dos-apellidos' : 'encabezado'}">
         <span class="apellido">${a.apellido}</span>
         <span class="nombre">${a.nombre}</span>
@@ -270,9 +284,12 @@
       <div class="datos">
         ${a.comision} · ${a.legajo}
       </div>
-         </li>
-      `.key(a.id))}
-      </ul>
+    </li>
+  `.key(a.id))}
+</ul>
+<p>
+  ${() => alumnosVisibles().length === 0 ? 'No se encontraron alumnos.' : ''}
+</p>
     `
     (app)
   </script>
