@@ -89,6 +89,83 @@
         grid-template-columns: 1fr;
       }
     }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    header button {
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    dialog {
+      width: 400px;
+      max-width: calc(100% - 40px);
+      padding: 24px;
+      border: 0;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgb(0 0 0 / 20%);
+    }
+
+    dialog::backdrop {
+      background: rgb(0 0 0 / 40%);
+    }
+
+    dialog form {
+      display: grid;
+      gap: 16px;
+    }
+
+    dialog h2 {
+      margin: 0 0 8px;
+    }
+
+    dialog label {
+      display: grid;
+      gap: 6px;
+    }
+
+    dialog input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d9ded9;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    dialog .acciones {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    dialog .acciones button {
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 8px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    dialog .acciones button[type="submit"] {
+      background: #222;
+      color: white;
+    }
   </style>
 </head>
 
@@ -118,6 +195,30 @@
         storage,
         JSON.stringify(state.alumnos)
       )
+    }
+
+    // Agregar un nuevo alumno a la agenda
+    function agregarAlumno(event) {
+      event.preventDefault()
+
+      const formulario = event.target
+
+      const nuevoAlumno = {
+        id: Date.now(),
+        apellido: formulario.apellido.value.trim(),
+        nombre: formulario.nombre.value.trim(),
+        legajo: formulario.legajo.value.trim(),
+        comision: formulario.comision.value.trim(),
+        telefono: formulario.telefono.value.trim(),
+        github: formulario.github.value.trim(),
+        favorito: false
+      }
+
+      state.alumnos.push(nuevoAlumno)
+      guardarAlumnos()
+
+      formulario.reset()
+      document.getElementById('dialog-agregar').close()
     }
 
     // Guardar cambios cuando se modifica algún alumno
@@ -169,7 +270,12 @@
     }
 
     html`
-      <h1>Agenda</h1>
+      <header>
+        <h1>Agenda</h1>
+        <button type="button" @click="${() => document.getElementById('dialog-agregar').showModal()}" >
+          + Agregar
+        </button>
+      </header>
       <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno" @input="${event => state.busqueda = event.target.value}" >
       <ul>
         ${() => alumnosVisibles().map(a => html`
@@ -180,20 +286,51 @@
                 ${() => a.favorito ? '★' : '☆'}
               </button>
             </div>
-
             <address>
               <p>${a.telefono}</p>
               <p>@${a.github}</p>
             </address>
-
             <div class="datos">
               <span>${a.comision}</span>
               <span>${a.legajo}</span>
             </div>
-        </li>
-      `)}
-    </ul>    
-  `(app)
+          </li>
+        `)}
+      </ul>   
+      <dialog id="dialog-agregar">
+        <form @submit="${agregarAlumno}">
+          <h2>Editar alumno</h2>
+          <label>
+            Apellido
+            <input name="apellido" required>
+          </label>
+          <label>
+            Nombre
+            <input name="nombre" required>
+          </label>
+          <label>
+            Legajo
+            <input name="legajo" required>
+          </label>
+          <label>
+            Comisión
+            <input name="comision" required>
+          </label>
+          <label>
+            Teléfono
+            <input name="telefono" required>
+          </label>
+          <label>
+            GitHub
+            <input name="github" required>
+          </label>
+          <button type="submit">Agregar</button>
+          <button type="button" @click="${() => document.getElementById('dialog-agregar').close()}">
+            Cancelar
+          </button>
+        </form>
+      </dialog> 
+    `(app)
   </script>
 </body>
 
