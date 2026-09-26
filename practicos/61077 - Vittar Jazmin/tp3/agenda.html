@@ -101,11 +101,35 @@
 
     const app = document.getElementById('app')
 
+    const storage = 'agenda-alumnos'
+
+    // Recuperar los alumnos guardados o usar datos iniciales del JSON
+    const alumnosGuardados = localStorage.getItem(storage)
+
     // Estado reactivo de la ageda
     const state = reactive({
-      alumnos: alumnos,
+      alumnos: alumnosGuardados ? JSON.parse(alumnosGuardados) : alumnos,
       busqueda: ''        // guarda lo que escriba el usuario en el buscador
     })
+
+    // Guardar estado actual de alumnos en localStorage
+    function guardarAlumnos() {
+      localStorage.setItem(
+        storage,
+        JSON.stringify(state.alumnos)
+      )
+    }
+
+    // Guardar cambios cuando se modifica algún alumno
+    watch(
+      () => state.alumnos.map(a => ({
+        id: a.id,
+        favorito: a.favorito
+      })),
+      () => {
+        guardarAlumnos()
+      }
+    )
 
     // Comparar sin distinguir mayúsculas, minúsculas ni acentos
     function normalizar(texto) {
