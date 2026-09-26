@@ -100,18 +100,60 @@
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
-    const state = reactive ({
-      alumnos: alumnos
+
+    // Estado reactivo de la ageda
+    const state = reactive({
+      alumnos: alumnos,
+      busqueda: ''        // guarda lo que escriba el usuario en el buscador
     })
+
+    // Comparar sin distinguir mayúsculas, minúsculas ni acentos
+    function normalizar(texto) {
+      return texto
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+    }
+
+    // Obtener alumnos que coincidan con la búsqueda, favoritos van primero
+    function alumnosVisibles() {
+      const busqueda = normalizar(state.busqueda)
+
+      return state.alumnos
+        .filter(a => {
+          const nombre = normalizar(`${a.apellido} ${a.nombre}`)
+          return nombre.includes(busqueda)
+        })
+        .sort((a, b) => {
+          // favoritos aparecen primero
+          if (a.favorito !== b.favorito) {
+            return a.favorito ? -1 : 1
+          }
+
+          // ordenar por apellido y nombre
+          const apellidoA = normalizar(a.apellido)
+          const apellidoB = normalizar(b.apellido)
+
+          const comparacionApellido = apellidoA.localeCompare(apellidoB)
+
+          if (comparacionApellido !== 0) {
+            return comparacionApellido
+          }
+
+          return normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+        })
+    }
+
     html`
       <h1>Agenda</h1>
+      <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno" @input="${event => state.busqueda = event.target.value}" >
       <ul>
-        ${() => state.alumnos.map(a => html`
+        ${() => alumnosVisibles().map(a => html`
           <li>
             <div class="encabezado">
               <h2>${a.apellido} ${a.nombre}</h2>
-              <button type="button" aria-label="Marcar como favorito">
-                ☆
+              <button type="button" aria-label="${a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}" @click="${() => a.favorito = !a.favorito}" >
+                ${() => a.favorito ? '★' : '☆'}
               </button>
             </div>
 
