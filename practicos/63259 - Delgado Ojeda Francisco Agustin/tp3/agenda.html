@@ -1,33 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 20px 60px; font: 16px/1.4 system-ui, sans-serif; background: #f5f6f4; color: #1e2824; }
+    main { max-width: 1104px; margin: auto; }
+
+    /* Cabecera */
+    header.barra {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;
+      & h1 { margin: 0; font-size: 2rem; }
+    }
+
+    /* Grilla y Tarjetas */
+    section.grilla {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+      @media (max-width: 600px) { grid-template-columns: 1fr; }
+    }
+
+    article {
+      background: #fff; border: 1px solid #e3e7e3; border-radius: 16px; padding: 22px 24px 18px;
+      display: flex; flex-direction: column;
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import iniciales from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+    const estado = reactive({
+      alumnos: iniciales
+    })
+
+    // Render principal
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header class="barra">
+        <h1>Agenda</h1>
+      </header>
+
+      <section class="grilla">
+        ${() => estado.alumnos.map(a => html`
+          <article>
+            <h2>${a.apellido} ${a.nombre}</h2>
+          </article>
+        `)}
+      </section>
+    `(document.getElementById('app'))
   </script>
 </body>
 </html>
