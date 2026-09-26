@@ -77,6 +77,15 @@
           gap: 8px;
           margin-top: 12px;
         }
+
+        .acciones-editar {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: space-between;
+          margin-top: 12px;
+
+          .peligro { color: #c0392b; background: none; border: none; cursor: pointer; }
+        }
       }
     }
   </style>
@@ -137,11 +146,55 @@
       evento.currentTarget.closest('dialog').close()
     }
 
+    const borradorEditar = reactive({
+      apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '',
+    })
+
+    function abrirEdicion(alumno) {
+      estado.idEditando = alumno.id
+      borradorEditar.apellido = alumno.apellido
+      borradorEditar.nombre = alumno.nombre
+      borradorEditar.legajo = alumno.legajo
+      borradorEditar.comision = alumno.comision
+      borradorEditar.telefono = alumno.telefono
+      borradorEditar.github = alumno.github
+      document.getElementById('dialogoEditar').showModal()
+    }
+
+    function guardarEdicion(evento) {
+      evento.preventDefault()
+      const alumno = estado.alumnos.find(a => a.id === estado.idEditando)
+      alumno.apellido = borradorEditar.apellido
+      alumno.nombre = borradorEditar.nombre
+      alumno.legajo = borradorEditar.legajo
+      alumno.comision = borradorEditar.comision
+      alumno.telefono = borradorEditar.telefono
+      alumno.github = borradorEditar.github
+      estado.idEditando = null
+      evento.currentTarget.closest('dialog').close()
+    }
+
+    function eliminarAlumno() {
+      estado.alumnos = estado.alumnos.filter(a => a.id !== estado.idEditando)
+      estado.idEditando = null
+      document.getElementById('dialogoEditar').close()
+    }
+
+    function cancelarEdicion(evento) {
+      estado.idEditando = null
+      evento.currentTarget.closest('dialog').close()
+    }
+
     const Tarjeta = component(alumno => html`
-      <article tabindex="0">
+      <article tabindex="0"
+        @click="${() => abrirEdicion(alumno)}"
+        @keydown="${evento => {
+          if (evento.key === 'Enter') abrirEdicion(alumno)
+          if (evento.key === ' ') { evento.preventDefault(); alumno.favorito = !alumno.favorito }
+        }}">
         <header>
           <span><b>${alumno.apellido}</b> ${alumno.nombre}</span>
-          <button @click="${() => alumno.favorito = !alumno.favorito}">
+          <button @click="${evento => { evento.stopPropagation(); alumno.favorito = !alumno.favorito }}">
             ${() => alumno.favorito ? '★' : '☆'}
           </button>
         </header>
@@ -176,6 +229,25 @@
           <div class="acciones">
             <button type="button" @click="${e => e.currentTarget.closest('dialog').close()}">Cancelar</button>
             <button type="submit">Guardar</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="dialogoEditar">
+        <form @submit="${guardarEdicion}">
+          <h2 style="grid-column: 1 / -1; margin: 0">Editar alumno</h2>
+          <label>Apellido <input required .value="${() => borradorEditar.apellido}" @input="${e => borradorEditar.apellido = e.target.value}"></label>
+          <label>Nombre <input required .value="${() => borradorEditar.nombre}" @input="${e => borradorEditar.nombre = e.target.value}"></label>
+          <label>Legajo <input required .value="${() => borradorEditar.legajo}" @input="${e => borradorEditar.legajo = e.target.value}"></label>
+          <label>Comisión <input required .value="${() => borradorEditar.comision}" @input="${e => borradorEditar.comision = e.target.value}"></label>
+          <label>Teléfono <input .value="${() => borradorEditar.telefono}" @input="${e => borradorEditar.telefono = e.target.value}"></label>
+          <label>GitHub <input .value="${() => borradorEditar.github}" @input="${e => borradorEditar.github = e.target.value}"></label>
+          <div class="acciones-editar">
+            <button type="button" class="peligro" @click="${eliminarAlumno}">Eliminar</button>
+            <div style="display: flex; gap: 8px">
+              <button type="button" @click="${cancelarEdicion}">Cancelar</button>
+              <button type="submit">Guardar</button>
+            </div>
           </div>
         </form>
       </dialog>
