@@ -24,6 +24,13 @@
       font-size: 34px;
     }
 
+    .encabezado-agenda {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
     ul {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -148,8 +155,9 @@
 
     const app = document.getElementById('app')
     const estado = reactive({
-      alumnos: []
-    
+      alumnos: [],
+      busqueda: ''
+
     })
 
     const guardados = localStorage.getItem('alumnos')
@@ -194,37 +202,79 @@
       return nombreA.localeCompare(nombreB)
     })
   }
+       function guardarAlumnos() {
+      localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    }
 
+    function alumnosVisibles() {
+      const texto = estado.busqueda.trim().toLowerCase()
+
+      if (!texto) {
+        return ordenarAlumnos()
+      }
+
+      return ordenarAlumnos().filter(a =>
+        a.nombre.toLowerCase().includes(texto) ||
+        a.apellido.toLowerCase().includes(texto) ||
+        String(a.legajo).toLowerCase().includes(texto) ||
+        String(a.comision).toLowerCase().includes(texto)
+      )
+    }
+
+    function cambiarFavorito(id) {
+      const alumno = estado.alumnos.find(a => a.id === id)
+
+      if (alumno) {
+        alumno.favorito = !alumno.favorito
+        guardarAlumnos()
+      }
+    }
+  
     html`
+    <div class="encabezado-agenda">
       <h1>Agenda</h1>
+
+      <input
+        type="search"
+        placeholder="Buscar alumno..."
+        value="${() => estado.busqueda}"
+        @input="${evento => estado.busqueda = evento.target.value}"
+      >
+    </div>
+
       <ul>
-        ${() => ordenarAlumnos().map(a => html`
-          <li>
-            <div class="${a.apellido.includes(' ') ? 'encabezado dos-apellidos' : 'encabezado' }">
-              <span class="apellido">${a.apellido}</span>
-              <span class="nombre">${a.nombre}</span>
-            </div>
+        ${() => alumnosVisibles().map(a => html`
+    <li>
+      <div class="${a.apellido.includes(' ') ? 'encabezado dos-apellidos' : 'encabezado'}">
+        <span class="apellido">${a.apellido}</span>
+        <span class="nombre">${a.nombre}</span>
+      </div>
 
-            <span class="estrella">${a.favorito ? '★' : '☆'}</span>
+      <button
+        class="estrella"
+        @click="${() => cambiarFavorito(a.id)}"
+      >
+        ${a.favorito ? '★' : '☆'}
+      </button>
 
+      <div class="telefono">
+        ${a.telefono}
+      </div>
 
-            <div class="telefono">
-              ${a.telefono}
-            </div>
+      <div class="usuario">
+        @${a.github}
+      </div>
 
-            <div class="usuario">
-              @${a.github}
-            </div>
+      <hr class="separador">
 
-            <hr class="separador">
-
-            <div class="datos">
-              ${a.comision} · ${a.legajo}
-            </div>
-          </li>
-        `.key(a.id))}
+      <div class="datos">
+        ${a.comision} · ${a.legajo}
+      </div>
+         </li>
+      `.key(a.id))}
       </ul>
-    `(app)
+    `
+    (app)
   </script>
 </body>
 </html>
