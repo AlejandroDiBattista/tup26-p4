@@ -7,26 +7,112 @@
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    header.principal {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+
+      h1 { margin: 0; }
+    }
+
+    section.lista {
+      display: grid;
+      grid-template-columns: repeat(3, 360px);
+      justify-content: center;
+      gap: 12px;
+
+      @media (max-width: 1120px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      @media (max-width: 700px) { grid-template-columns: 1fr; }
+    }
+
+    article {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      address {
+        font-style: normal;
+        margin: 8px 0;
+        color: #555;
+      }
+
+      footer {
+        font-size: 12px;
+        color: #999;
+        border-top: 1px solid #eee;
+        padding-top: 8px;
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive, component, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
+    function normalizar(texto) {
+      return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    }
+
+    const guardados = localStorage.getItem('alumnos')
+    const estado = reactive({
+      alumnos: guardados ? JSON.parse(guardados) : alumnosIniciales,
+      busqueda: '',
+      idEditando: null,
+    })
+
+    watch(() => {
+      localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    })
+
+    function alumnosVisibles() {
+      const texto = normalizar(estado.busqueda)
+      return estado.alumnos
+        .filter(a => normalizar(a.apellido + ' ' + a.nombre).includes(texto))
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+          return normalizar(a.apellido + a.nombre).localeCompare(normalizar(b.apellido + b.nombre))
+        })
+    }
+
+    const Tarjeta = component(alumno => html`
+      <article tabindex="0">
+        <header>
+          <span><b>${alumno.apellido}</b> ${alumno.nombre}</span>
+          <button @click="${() => alumno.favorito = !alumno.favorito}">
+            ${() => alumno.favorito ? '★' : '☆'}
+          </button>
+        </header>
+        <address>
+          ${alumno.telefono}<br>
+          @${alumno.github}
+        </address>
+        <footer>${alumno.comision} · ${alumno.legajo}</footer>
+      </article>
+    `)
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header class="principal">
+        <h1>Agenda</h1>
+        <input type="search" placeholder="Buscar..." .value="${() => estado.busqueda}" @input="${e => estado.busqueda = e.target.value}">
+        <button>+ Agregar</button>
+      </header>
+      <section class="lista">
+        ${() => alumnosVisibles().map(a => Tarjeta(a).key(a.id))}
+      </section>
     `(app)
   </script>
 </body>
