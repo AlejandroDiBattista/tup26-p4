@@ -24,14 +24,16 @@
 
     article {
       background: #fff; border: 1px solid #e3e7e3; border-radius: 16px; padding: 22px 24px 18px;
-      display: flex; flex-direction: column; outline: none;
+      display: flex; flex-direction: column; cursor: pointer; outline: none;
       &:hover { border-color: #c9d2cb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+      &:focus-visible { outline: 2px solid #283730; }
 
       & header {
         display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;
         & h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #4b5852;
           & b { font-family: Georgia, serif; font-size: 1.35rem; color: #1e2824; margin-right: 6px; }
         }
+        & button { background: none; border: 0; font-size: 1.5rem; line-height: 1; color: #867345; cursor: pointer; padding: 0; }
       }
 
       & address {
@@ -54,23 +56,47 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import iniciales from './alumnos.json' with { type: 'json' }
 
+    // Persistencia con localStorage
+    const guardados = localStorage.getItem('alumnos')
+    const datos = guardados ? JSON.parse(guardados) : iniciales
+    if (!guardados) localStorage.setItem('alumnos', JSON.stringify(datos))
+
+    // Estado reactivo
     const estado = reactive({
-      alumnos: iniciales
+      alumnos: datos
     })
+
+    const guardar = () => localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
 
     function alumnosOrdenados() {
       return [...estado.alumnos].sort((a, b) =>
+        (b.favorito - a.favorito) ||
         a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
         a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
       )
     }
 
+    function alternarFavorito(alumno, e) {
+      e?.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      estado.alumnos = [...estado.alumnos]
+      guardar()
+    }
+
     // Componente Alumno
     function Alumno(a) {
       return html`
-        <article>
+        <article
+          tabindex="0"
+          @keydown="${e => {
+            if (e.key === ' ') { e.preventDefault(); alternarFavorito(a, e) }
+          }}"
+        >
           <header>
             <h2><b>${a.apellido}</b> ${a.nombre}</h2>
+            <button type="button" @click="${e => alternarFavorito(a, e)}">
+              ${() => a.favorito ? '★' : '☆'}
+            </button>
           </header>
           <address>
             <div>${a.telefono}</div>
