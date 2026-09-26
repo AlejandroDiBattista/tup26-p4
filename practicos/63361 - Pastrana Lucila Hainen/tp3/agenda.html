@@ -5,13 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+         body {
+      margin: 0;
+      padding: 40px 24px;
+      font-family: Arial, sans-serif;
+      background: #f5f6f4;
+      color: #333;
+    }
+
+    main {
+      width: 1400px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    h1 {
+      margin: 0 0 30px;
+      font-size: 34px;
+    }
+
+    ul {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    li {
+      position: relative;
+      min-width: 0;
+      height: 300px;
+      box-sizing: border-box;
+      padding: 28px;
+
+      display: grid;
+      grid-template-rows:
+        130px
+        1fr
+        20px
+        20px
+        22px
+        20px;
+
+      border: 1px solid #d9ded9;
+      border-radius: 18px;
+      background: #fffefa;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .encabezado {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+
+      min-width: 0;
+      padding-right: 50px;
+    }
+
+    .apellido {
+      font-family: Georgia, serif;
+      font-size: 25px;
+      font-weight: bold;
+      color: #26352c;
+    }
+
+    .nombre {
+      font-size: 15px;
+      color: #555;
+    }
+
+    .dos-apellidos {
+      display: block;
+    }
+
+    .dos-apellidos .nombre {
+      display: block;
+      margin-top: 4px;
+    }
+
+    .estrella {
+      position: absolute;
+      top: 22px;
+      right: 24px;
+
+      font-size: 28px;
+      line-height: 1;
+      color: #8c8062;
+    }
+
+    .telefono {
+      font-size: 14px;
+      color: #222;
+      align-self: center;
+    }
+
+    .usuario {
+      font-size: 14px;
+      color: #666;
+      align-self: center;
+    }
+
+    .separador {
+      width: 100%;
+      border: none;
+      border-top: 1px solid #e1e1dc;
+      margin: 0;
+      align-self: center;
+    }
+
+    .datos {
+      font-size: 12px;
+      color: #5d625e;
+      letter-spacing: 1px;
+      align-self: center;
+    }
+
+    @media (max-width: 1120px) {
+      ul {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 25px 18px;
+      }
+
+      ul {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -35,10 +160,69 @@
       estado.alumnos = alumnos
       localStorage.setItem('alumnos', JSON.stringify(alumnos))
     }
+
+     function ordenarAlumnos() {
+    return [...estado.alumnos].sort((a, b) => {
+      if (a.favorito !== b.favorito) {
+        return b.favorito - a.favorito
+      }
+
+      const apellidoA = a.apellido
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+      const apellidoB = b.apellido
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+      if (apellidoA !== apellidoB) {
+        return apellidoA.localeCompare(apellidoB)
+      }
+
+      const nombreA = a.nombre
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+      const nombreB = b.nombre
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+      return nombreA.localeCompare(nombreB)
+    })
+  }
+
     html`
-      <h1>Alumnos</h1>
+      <h1>Agenda</h1>
       <ul>
-        ${estado.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => ordenarAlumnos().map(a => html`
+          <li>
+            <div class="${a.apellido.includes(' ') ? 'encabezado dos-apellidos' : 'encabezado' }">
+              <span class="apellido">${a.apellido}</span>
+              <span class="nombre">${a.nombre}</span>
+            </div>
+
+            <span class="estrella">${a.favorito ? '★' : '☆'}</span>
+
+
+            <div class="telefono">
+              ${a.telefono}
+            </div>
+
+            <div class="usuario">
+              @${a.github}
+            </div>
+
+            <hr class="separador">
+
+            <div class="datos">
+              ${a.comision} · ${a.legajo}
+            </div>
+          </li>
+        `.key(a.id))}
       </ul>
     `(app)
   </script>
