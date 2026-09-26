@@ -15,6 +15,7 @@
       & h1 { margin: 0; font-size: 2rem; }
       & div { display: flex; gap: 12px; }
       & input { width: 230px; padding: 10px 18px; border: 1px solid #dcdfdc; border-radius: 99px; outline: none; background: #fff; font: inherit; }
+      & button { background: #283730; color: #fff; border: 0; padding: 10px 22px; border-radius: 99px; font: inherit; font-weight: 600; cursor: pointer; }
     }
 
     /* Grilla y Tarjetas */
@@ -51,6 +52,30 @@
     }
 
     .sin-resultados { text-align: center; padding: 48px; background: #fff; border: 1px dashed #d9ded9; border-radius: 16px; margin-top: 20px; color: #63726a; }
+
+    /* Diálogo */
+    dialog {
+      border: 1px solid #d9ded9; border-radius: 20px; padding: 28px 32px; width: 560px; max-width: calc(100vw - 32px);
+      &::backdrop { background: rgba(30,40,35,0.45); backdrop-filter: blur(4px); }
+      & h2 { margin: 0 0 4px; font-size: 1.4rem; }
+      & p { margin: 0 0 20px; color: #55635c; font-size: 0.9rem; }
+
+      & .campos {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin-bottom: 24px;
+        & label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; font-weight: 600; color: #374151;
+          & input { padding: 10px 14px; border: 1px solid #d9ded9; border-radius: 10px; background: #f8faf8; font: inherit; outline: none;
+            &:focus { border-color: #1e2824; background: #fff; box-shadow: 0 0 0 1px #1e2824; }
+          }
+        }
+      }
+
+      & footer {
+        display: flex; justify-content: space-between; align-items: center;
+        & button { padding: 10px 20px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+        & .guardar { background: #283730; color: #fff; border: 0; margin-left: auto; margin-right: 10px; }
+        & .cancelar { background: #fff; color: #1e2824; border: 1px solid #d9ded9; }
+      }
+    }
   </style>
 </head>
 <body>
@@ -68,7 +93,8 @@
     // Estado reactivo
     const estado = reactive({
       alumnos: datos,
-      filtro: ''
+      filtro: '',
+      modo: 'agregar'
     })
 
     const guardar = () => localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
@@ -86,6 +112,27 @@
       alumno.favorito = !alumno.favorito
       estado.alumnos = [...estado.alumnos]
       guardar()
+    }
+
+    function abrir() {
+      estado.modo = 'agregar'
+      const form = document.getElementById('form')
+      form.reset()
+      document.getElementById('dialogo').showModal()
+      form.apellido.focus()
+    }
+
+    function guardarAlumno(e) {
+      e.preventDefault()
+      const form = document.getElementById('form')
+      const d = Object.fromEntries(new FormData(form))
+      d.github = d.github.replace(/^@/, '')
+
+      const id = estado.alumnos.length ? Math.max(...estado.alumnos.map(a => a.id)) + 1 : 1
+      estado.alumnos.push({ ...d, id, favorito: false })
+      estado.alumnos = [...estado.alumnos]
+      guardar()
+      document.getElementById('dialogo').close()
     }
 
     // Componente Alumno
@@ -122,6 +169,7 @@
             placeholder="Buscar alumno..."
             @input="${e => estado.filtro = e.target.value}"
           />
+          <button type="button" @click="${() => abrir()}">+ Agregar</button>
         </div>
       </header>
 
@@ -132,6 +180,25 @@
       <p class="sin-resultados" hidden="${() => alumnosFiltrados().length > 0}">
         No hay alumnos para mostrar
       </p>
+
+      <dialog id="dialogo" @click="${e => e.target.id === 'dialogo' && e.target.close()}">
+        <form id="form" method="dialog" @submit="${guardarAlumno}">
+          <h2>Agregar alumno</h2>
+          <p>Ingresá los datos del alumno.</p>
+          <div class="campos">
+            <label>Apellido <input name="apellido" required /></label>
+            <label>Nombre <input name="nombre" required /></label>
+            <label>Legajo <input name="legajo" required /></label>
+            <label>Comisión <input name="comision" required /></label>
+            <label>Teléfono <input name="telefono" type="tel" required /></label>
+            <label>GitHub <input name="github" required /></label>
+          </div>
+          <footer>
+            <button type="submit" class="guardar">Guardar</button>
+            <button type="button" class="cancelar" @click="${() => document.getElementById('dialogo').close()}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
     `(document.getElementById('app'))
   </script>
 </body>
