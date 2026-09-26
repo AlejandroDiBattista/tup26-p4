@@ -156,8 +156,15 @@
     const app = document.getElementById('app')
     const estado = reactive({
       alumnos: [],
-      busqueda: ''
-
+      busqueda: '', 
+      formulario: {
+       apellido: '',
+       nombre: '',
+       legajo: '',
+       comision: '',
+       telefono: '',
+       github: ''
+      }
     })
 
     const guardados = localStorage.getItem('alumnos')
@@ -242,6 +249,46 @@
         guardarAlumnos()
       }
     }
+
+    function agregarAlumno() {
+  const formulario = estado.formulario
+
+  if (
+    !formulario.apellido.trim() ||
+    !formulario.nombre.trim() ||
+    !formulario.legajo.trim() ||
+    !formulario.comision.trim() ||
+    !formulario.telefono.trim() ||
+    !formulario.github.trim()
+  ) {
+    alert('Completá todos los campos.')
+    return
+  }
+
+  const nuevoAlumno = {
+    id: Date.now(),
+    apellido: formulario.apellido.trim(),
+    nombre: formulario.nombre.trim(),
+    legajo: formulario.legajo.trim(),
+    comision: formulario.comision.trim(),
+    telefono: formulario.telefono.trim(),
+    github: formulario.github.trim(),
+    favorito: false
+  }
+
+  estado.alumnos.push(nuevoAlumno)
+  guardarAlumnos()
+
+  estado.formulario.apellido = ''
+  estado.formulario.nombre = ''
+  estado.formulario.legajo = ''
+  estado.formulario.comision = ''
+  estado.formulario.telefono = ''
+  estado.formulario.github = ''
+
+  document.querySelector('#formulario-agregar').reset()
+  document.querySelector('#dialogo-agregar').close()
+}
   
     html`
     <div class="encabezado-agenda">
@@ -254,6 +301,14 @@
         estado.busqueda = evento.target.value
         }}"
       >
+
+      <button
+        @click="${() => document.querySelector('#dialogo-agregar').showModal()}"
+      >
+        + Agregar
+      </button>
+
+
     </div>
 
       <ul>
@@ -286,7 +341,88 @@
       </div>
     </li>
   `.key(a.id))}
-</ul>
+
+
+  </ul>
+<dialog id="dialogo-agregar">
+<form id="formulario-agregar" @submit="${evento => {
+  evento.preventDefault()
+  agregarAlumno()
+}}">
+  <h2>Agregar alumno</h2>
+
+  <label>
+    Apellido
+    <input
+      type="text"
+      @input="${evento => {
+        estado.formulario.apellido = evento.target.value
+      }}"
+    >
+  </label>
+
+  <label>
+    Nombre
+    <input
+      type="text"
+      @input="${evento => {
+        estado.formulario.nombre = evento.target.value
+      }}"
+    >
+  </label>
+
+  <label>
+    Legajo
+    <input
+      type="text"
+      @input="${evento => {
+        estado.formulario.legajo = evento.target.value
+      }}"
+    >
+  </label>
+
+  <label>
+    Comisión
+    <input
+      type="text"
+      @input="${evento => {
+        estado.formulario.comision = evento.target.value
+      }}"
+    >
+  </label>
+
+  <label>
+    Teléfono
+    <input
+      type="text"
+      @input="${evento => {
+        estado.formulario.telefono = evento.target.value
+      }}"
+    >
+  </label>
+
+  <label>
+    GitHub
+    <input
+      type="text"
+      @input="${evento => {
+        estado.formulario.github = evento.target.value
+      }}"
+    >
+  </label>
+
+  <button
+    type="button"
+    @click="${() => document.querySelector('#dialogo-agregar').close()}"
+  >
+    Cancelar
+  </button>
+
+  <button type="submit">
+    Guardar
+  </button>
+</form>
+</dialog>
 <p>
   ${() => alumnosVisibles().length === 0 ? 'No se encontraron alumnos.' : ''}
 </p>
