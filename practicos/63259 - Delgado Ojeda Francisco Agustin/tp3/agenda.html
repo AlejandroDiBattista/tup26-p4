@@ -24,7 +24,26 @@
 
     article {
       background: #fff; border: 1px solid #e3e7e3; border-radius: 16px; padding: 22px 24px 18px;
-      display: flex; flex-direction: column;
+      display: flex; flex-direction: column; outline: none;
+      &:hover { border-color: #c9d2cb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+      & header {
+        display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;
+        & h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #4b5852;
+          & b { font-family: Georgia, serif; font-size: 1.35rem; color: #1e2824; margin-right: 6px; }
+        }
+      }
+
+      & address {
+        font-style: normal; display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px;
+        & div { font-weight: 600; }
+        & span { color: #55635c; font-size: 0.9rem; }
+      }
+
+      & footer {
+        border-top: 1px solid #edf0ed; padding-top: 14px; margin-top: auto;
+        font-size: 0.85rem; font-weight: 600; color: #55635c; letter-spacing: 0.06em;
+      }
     }
   </style>
 </head>
@@ -39,6 +58,29 @@
       alumnos: iniciales
     })
 
+    function alumnosOrdenados() {
+      return [...estado.alumnos].sort((a, b) =>
+        a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
+        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      )
+    }
+
+    // Componente Alumno
+    function Alumno(a) {
+      return html`
+        <article>
+          <header>
+            <h2><b>${a.apellido}</b> ${a.nombre}</h2>
+          </header>
+          <address>
+            <div>${a.telefono}</div>
+            <span>@${a.github}</span>
+          </address>
+          <footer>${a.comision} · ${a.legajo}</footer>
+        </article>
+      `
+    }
+
     // Render principal
     html`
       <header class="barra">
@@ -46,11 +88,7 @@
       </header>
 
       <section class="grilla">
-        ${() => estado.alumnos.map(a => html`
-          <article>
-            <h2>${a.apellido} ${a.nombre}</h2>
-          </article>
-        `)}
+        ${() => alumnosOrdenados().map(a => Alumno(a).key(a.id))}
       </section>
     `(document.getElementById('app'))
   </script>
