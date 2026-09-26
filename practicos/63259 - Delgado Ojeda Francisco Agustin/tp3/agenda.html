@@ -72,6 +72,7 @@
       & footer {
         display: flex; justify-content: space-between; align-items: center;
         & button { padding: 10px 20px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+        & .eliminar { color: #d14343; background: #fff; border: 1px solid #fadcdc; }
         & .guardar { background: #283730; color: #fff; border: 0; margin-left: auto; margin-right: 10px; }
         & .cancelar { background: #fff; color: #1e2824; border: 1px solid #d9ded9; }
       }
@@ -94,6 +95,7 @@
     const estado = reactive({
       alumnos: datos,
       filtro: '',
+      actual: null,
       modo: 'agregar'
     })
 
@@ -114,10 +116,16 @@
       guardar()
     }
 
-    function abrir() {
-      estado.modo = 'agregar'
+    function abrir(alumno = null) {
+      estado.modo = alumno ? 'editar' : 'agregar'
+      estado.actual = alumno
       const form = document.getElementById('form')
       form.reset()
+      if (alumno) {
+        ['apellido', 'nombre', 'legajo', 'comision', 'telefono', 'github'].forEach(k => {
+          if (form[k]) form[k].value = alumno[k] || ''
+        })
+      }
       document.getElementById('dialogo').showModal()
       form.apellido.focus()
     }
@@ -128,19 +136,33 @@
       const d = Object.fromEntries(new FormData(form))
       d.github = d.github.replace(/^@/, '')
 
-      const id = estado.alumnos.length ? Math.max(...estado.alumnos.map(a => a.id)) + 1 : 1
-      estado.alumnos.push({ ...d, id, favorito: false })
+      if (estado.modo === 'editar' && estado.actual) {
+        Object.assign(estado.alumnos.find(a => a.id === estado.actual.id), d)
+      } else {
+        const id = estado.alumnos.length ? Math.max(...estado.alumnos.map(a => a.id)) + 1 : 1
+        estado.alumnos.push({ ...d, id, favorito: false })
+      }
       estado.alumnos = [...estado.alumnos]
       guardar()
       document.getElementById('dialogo').close()
     }
 
-    // Componente Alumno
+    function eliminarAlumno() {
+      if (estado.actual) {
+        estado.alumnos = estado.alumnos.filter(a => a.id !== estado.actual.id)
+        guardar()
+        document.getElementById('dialogo').close()
+      }
+    }
+
+    // Componente Alumno (como en las fotos de clase)
     function Alumno(a) {
       return html`
         <article
           tabindex="0"
+          @click="${() => abrir(a)}"
           @keydown="${e => {
+            if (e.key === 'Enter') abrir(a)
             if (e.key === ' ') { e.preventDefault(); alternarFavorito(a, e) }
           }}"
         >
@@ -183,8 +205,8 @@
 
       <dialog id="dialogo" @click="${e => e.target.id === 'dialogo' && e.target.close()}">
         <form id="form" method="dialog" @submit="${guardarAlumno}">
-          <h2>Agregar alumno</h2>
-          <p>Ingresá los datos del alumno.</p>
+          <h2>${() => estado.modo === 'editar' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p>${() => estado.modo === 'editar' ? 'Actualizá los datos del alumno.' : 'Ingresá los datos del alumno.'}</p>
           <div class="campos">
             <label>Apellido <input name="apellido" required /></label>
             <label>Nombre <input name="nombre" required /></label>
@@ -194,6 +216,10 @@
             <label>GitHub <input name="github" required /></label>
           </div>
           <footer>
+            ${() => estado.modo === 'editar'
+              ? html`<button type="button" class="eliminar" @click="${eliminarAlumno}">Eliminar</button>`
+              : ''
+            }
             <button type="submit" class="guardar">Guardar</button>
             <button type="button" class="cancelar" @click="${() => document.getElementById('dialogo').close()}">Cancelar</button>
           </footer>
