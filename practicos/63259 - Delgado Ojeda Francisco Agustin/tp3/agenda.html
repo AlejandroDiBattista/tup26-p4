@@ -13,6 +13,8 @@
     header.barra {
       display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;
       & h1 { margin: 0; font-size: 2rem; }
+      & div { display: flex; gap: 12px; }
+      & input { width: 230px; padding: 10px 18px; border: 1px solid #dcdfdc; border-radius: 99px; outline: none; background: #fff; font: inherit; }
     }
 
     /* Grilla y Tarjetas */
@@ -47,6 +49,8 @@
         font-size: 0.85rem; font-weight: 600; color: #55635c; letter-spacing: 0.06em;
       }
     }
+
+    .sin-resultados { text-align: center; padding: 48px; background: #fff; border: 1px dashed #d9ded9; border-radius: 16px; margin-top: 20px; color: #63726a; }
   </style>
 </head>
 <body>
@@ -63,17 +67,18 @@
 
     // Estado reactivo
     const estado = reactive({
-      alumnos: datos
+      alumnos: datos,
+      filtro: ''
     })
 
     const guardar = () => localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    const normalizar = t => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
-    function alumnosOrdenados() {
-      return [...estado.alumnos].sort((a, b) =>
-        (b.favorito - a.favorito) ||
-        a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
-        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
-      )
+    function alumnosFiltrados() {
+      const f = normalizar(estado.filtro).match(/\S+/g) || []
+      return estado.alumnos
+        .filter(a => f.every(t => normalizar(`${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`).includes(t)))
+        .sort((a, b) => (b.favorito - a.favorito) || a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) || a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }))
     }
 
     function alternarFavorito(alumno, e) {
@@ -111,11 +116,22 @@
     html`
       <header class="barra">
         <h1>Agenda</h1>
+        <div>
+          <input
+            type="search"
+            placeholder="Buscar alumno..."
+            @input="${e => estado.filtro = e.target.value}"
+          />
+        </div>
       </header>
 
       <section class="grilla">
-        ${() => alumnosOrdenados().map(a => Alumno(a).key(a.id))}
+        ${() => alumnosFiltrados().map(a => Alumno(a).key(a.id))}
       </section>
+
+      <p class="sin-resultados" hidden="${() => alumnosFiltrados().length > 0}">
+        No hay alumnos para mostrar
+      </p>
     `(document.getElementById('app'))
   </script>
 </body>
