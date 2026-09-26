@@ -1,19 +1,97 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px sans-serif;
+      background: #f5f6f4;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    h1 {
+      margin: 0 0 24px;
+    }
+
+    ul {
+      display: grid;
+      grid-template-columns: repeat(3, 360px);
+      justify-content: center;
+      gap: 12px;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+      text-align: center;
+    }
+
+    li .encabezado {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    li h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    li button {
+      border: 0;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    li address {
+      margin-top: 20px;
+      font-style: normal;
+      text-align: left;
+    }
+
+    li address p {
+      margin: 6px 0;
+    }
+
+    li .datos {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid #d9ded9;
+    }
+
+    @media (max-width: 1120px) {
+      ul {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      ul {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
@@ -23,11 +101,31 @@
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <h1>Agenda</h1>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+        ${alumnos.map(a => html`
+          <li>
+            <div class="encabezado">
+              <h2>${a.apellido} ${a.nombre}</h2>
+              <button type="button" aria-label="Marcar como favorito">
+                ☆
+              </button>
+            </div>
+
+            <address>
+              <p>${a.telefono}</p>
+              <p>@${a.github}</p>
+            </address>
+
+            <div class="datos">
+              <span>${a.comision}</span>
+              <span>${a.legajo}</span>
+            </div>
+        </li>
+      `)}
+    </ul>    
+  `(app)
   </script>
 </body>
+
 </html>
