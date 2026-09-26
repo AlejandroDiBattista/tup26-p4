@@ -103,6 +103,13 @@
       &:hover { background: #263d31; }
     }
 
+    .formulario-alumno .boton-eliminar {
+      border-color: #e5caca;
+      color: #b33a3a;
+
+      &:hover { background: #fff1f1; }
+    }
+
     .grilla-alumnos {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -116,6 +123,8 @@
       border-radius: 16px;
       color: #59615c;
       text-align: center;
+
+      &:empty { display: none; }
     }
 
     .tarjeta-alumno {
@@ -129,6 +138,19 @@
       border-radius: 16px;
       background: #fffefa;
       box-shadow: 0 3px 8px rgb(38 53 44 / 8%);
+      cursor: pointer;
+
+      &:hover {
+        border-color: #bdc5bf;
+        box-shadow: 0 5px 12px rgb(38 53 44 / 12%);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgb(38 53 44 / 30%);
+        outline-offset: 2px;
+      }
+
+      &[hidden] { display: none; }
 
       h3 {
         margin: 0;
@@ -254,10 +276,16 @@
 
       > footer {
         display: flex;
-        justify-content: flex-end;
+        flex-wrap: wrap;
+        justify-content: space-between;
         gap: 10px;
         padding: 16px 24px;
         border-top: 1px solid #e1e4e1;
+
+        .acciones-formulario {
+          display: flex;
+          gap: 10px;
+        }
       }
     }
 
@@ -330,11 +358,25 @@
       localStorage.setItem(CLAVE_ALUMNOS, JSON.stringify(estado.alumnos))
     }
 
-    function abrirFormulario() {
+    function abrirFormulario(id = null) {
       const formulario = document.getElementById('formulario-alumno')
 
       formulario.reset()
       Array.from(formulario.elements).forEach(campo => campo.setCustomValidity?.(''))
+      estado.alumnoEditandoId = id
+
+      if (id !== null) {
+        const alumno = estado.alumnos.find(alumno => alumno.id === id)
+
+        if (!alumno) {
+          estado.alumnoEditandoId = null
+          return
+        }
+
+        const campos = ['apellido', 'nombre', 'legajo', 'comision', 'telefono', 'github']
+        campos.forEach(campo => formulario.elements[campo].value = alumno[campo])
+      }
+
       document.getElementById('dialogo-alumno').showModal()
     }
 
@@ -342,7 +384,37 @@
       document.getElementById('dialogo-alumno').close()
     }
 
-    function agregarAlumno(evento) {
+    function manejarTecladoTarjeta(evento, id) {
+      if (evento.target !== evento.currentTarget) return
+
+      if (evento.key === 'Enter') {
+        evento.preventDefault()
+        abrirFormulario(id)
+      } else if (evento.key === ' ') {
+        evento.preventDefault()
+        alternarFavorito(id)
+      }
+    }
+
+    function eliminarAlumno() {
+      const alumno = estado.alumnos.find(alumno => alumno.id === estado.alumnoEditandoId)
+
+      if (!alumno) return
+
+      const confirmado = window.confirm(
+        `¿Eliminar a ${alumno.nombre} ${alumno.apellido} de la agenda?`
+      )
+
+      if (!confirmado) return
+
+      const indice = estado.alumnos.findIndex(item => item.id === alumno.id)
+      estado.alumnos.splice(indice, 1)
+      guardarAlumnos()
+      cerrarFormulario()
+      programarAplicacionFiltro()
+    }
+
+    function guardarAlumno(evento) {
       evento.preventDefault()
 
       const formulario = evento.currentTarget
@@ -360,7 +432,9 @@
       }
 
       const legajo = datos.get('legajo').trim()
-      const legajoRepetido = estado.alumnos.some(alumno => alumno.legajo === legajo)
+      const legajoRepetido = estado.alumnos.some(alumno =>
+        alumno.legajo === legajo && alumno.id !== estado.alumnoEditandoId
+      )
 
       if (legajoRepetido) {
         formulario.elements.legajo.setCustomValidity('Ya existe un alumno con este legajo.')
@@ -368,22 +442,30 @@
         return
       }
 
-      const siguienteId = Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1
-      const alumno = {
-        id: siguienteId,
+      const datosAlumno = {
         apellido: datos.get('apellido').trim(),
         nombre: datos.get('nombre').trim(),
         legajo,
         comision: datos.get('comision').trim().toUpperCase(),
         telefono: datos.get('telefono').trim(),
-        github: datos.get('github').trim().replace(/^@/, ''),
-        favorito: false
+        github: datos.get('github').trim().replace(/^@/, '')
       }
 
-      estado.alumnos.push(alumno)
+      if (estado.alumnoEditandoId === null) {
+        const siguienteId = Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1
+        estado.alumnos.push({ id: siguienteId, ...datosAlumno, favorito: false })
+      } else {
+        const alumno = estado.alumnos.find(alumno => alumno.id === estado.alumnoEditandoId)
+
+        if (!alumno) return
+
+        Object.assign(alumno, datosAlumno)
+      }
+
       estado.busqueda = ''
       guardarAlumnos()
       cerrarFormulario()
+      programarAplicacionFiltro()
     }
 
     function normalizarTexto(texto) {
@@ -393,25 +475,50 @@
         .toLowerCase()
     }
 
-    function alumnosVisibles() {
+    function coincideConBusqueda(alumno) {
       const busqueda = normalizarTexto(estado.busqueda.trim())
-      const filtrados = estado.alumnos.filter(alumno =>
-        normalizarTexto([
-          alumno.apellido,
-          alumno.nombre,
-          alumno.telefono,
-          `@${alumno.github}`,
-          alumno.comision,
-          alumno.legajo
-        ].join(' ')).includes(busqueda)
-      )
+      const datosAlumno = normalizarTexto([
+        alumno.apellido,
+        alumno.nombre,
+        alumno.telefono,
+        `@${alumno.github}`,
+        alumno.comision,
+        alumno.legajo
+      ].join(' '))
 
-      return ordenarAlumnos(filtrados)
+      return datosAlumno.includes(busqueda)
+    }
+
+    function aplicarBusqueda() {
+      let cantidadVisible = 0
+
+      document.querySelectorAll('.tarjeta-alumno').forEach(tarjeta => {
+        const id = Number(tarjeta.dataset.alumnoId)
+        const alumno = estado.alumnos.find(alumno => alumno.id === id)
+        const visible = alumno && coincideConBusqueda(alumno)
+
+        tarjeta.hidden = !visible
+        if (visible) cantidadVisible++
+      })
+
+      document.querySelector('.sin-resultados').textContent = cantidadVisible
+        ? ''
+        : 'No hay alumnos para mostrar.'
+    }
+
+    function actualizarBusqueda(valor) {
+      estado.busqueda = valor
+      aplicarBusqueda()
+    }
+
+    function programarAplicacionFiltro() {
+      requestAnimationFrame(aplicarBusqueda)
     }
 
     const estado = reactive({
       alumnos: cargarAlumnos(),
-      busqueda: ''
+      busqueda: '',
+      alumnoEditandoId: null
     })
 
     html`
@@ -424,61 +531,82 @@
               id="buscar"
               type="search"
               placeholder="Buscar alumno..."
+              aria-controls="lista-alumnos"
               .value="${() => estado.busqueda}"
-              @input="${evento => estado.busqueda = evento.target.value}"
+              @input="${evento => actualizarBusqueda(evento.target.value)}"
             >
           </div>
-          <button type="button" class="boton-agregar" @click="${abrirFormulario}">+ Agregar</button>
+          <button type="button" class="boton-agregar" @click="${() => abrirFormulario()}">+ Agregar</button>
         </div>
       </header>
       <section aria-labelledby="titulo-alumnos">
         <h2 id="titulo-alumnos" class="visualmente-oculto">Listado de alumnos</h2>
-        <div class="grilla-alumnos">
-          ${() => {
-            const alumnos = alumnosVisibles()
-
-            return alumnos.length
-              ? alumnos.map(alumno => html`
-                <article class="tarjeta-alumno">
-                  <button
-                    type="button"
-                    class="favorito"
-                    aria-label="${() => alumno.favorito
-                      ? `Quitar a ${alumno.nombre} ${alumno.apellido} de favoritos`
-                      : `Marcar a ${alumno.nombre} ${alumno.apellido} como favorito`}"
-                    aria-pressed="${() => String(alumno.favorito)}"
-                    title="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
-                    @click="${() => alternarFavorito(alumno.id)}"
-                  >${() => alumno.favorito ? '★' : '☆'}</button>
-                  <header>
-                    <h3>
-                      ${alumno.apellido}
-                      <span>${alumno.nombre}</span>
-                    </h3>
-                  </header>
-                  <address>
-                    <p><strong>${alumno.telefono}</strong></p>
-                    <p>@${alumno.github}</p>
-                  </address>
-                  <footer>
-                    ${alumno.comision} · ${alumno.legajo}
-                  </footer>
-                </article>
-              `.key(alumno.id))
-              : html`<p class="sin-resultados" role="status">No hay alumnos para mostrar.</p>`
-          }}
+        <p id="instrucciones-tarjetas" class="visualmente-oculto">
+          Presioná Enter para editar una tarjeta o la barra espaciadora para cambiar su favorito.
+        </p>
+        <div id="lista-alumnos" class="grilla-alumnos">
+          ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
+            <article
+              class="tarjeta-alumno"
+              tabindex="0"
+              data-alumno-id="${alumno.id}"
+              aria-label="${() => `Editar a ${alumno.nombre} ${alumno.apellido}`}"
+              aria-describedby="instrucciones-tarjetas"
+              aria-keyshortcuts="Enter Space"
+              @click="${() => abrirFormulario(alumno.id)}"
+              @keydown="${evento => manejarTecladoTarjeta(evento, alumno.id)}"
+            >
+              <button
+                type="button"
+                class="favorito"
+                aria-label="${() => alumno.favorito
+                  ? `Quitar a ${alumno.nombre} ${alumno.apellido} de favoritos`
+                  : `Marcar a ${alumno.nombre} ${alumno.apellido} como favorito`}"
+                aria-pressed="${() => String(alumno.favorito)}"
+                title="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+                @click="${evento => {
+                  evento.stopPropagation()
+                  alternarFavorito(alumno.id)
+                }}"
+              >${() => alumno.favorito ? '★' : '☆'}</button>
+              <header>
+                <h3>
+                  ${() => alumno.apellido}
+                  <span>${() => alumno.nombre}</span>
+                </h3>
+              </header>
+              <address>
+                <p><strong>${() => alumno.telefono}</strong></p>
+                <p>@${() => alumno.github}</p>
+              </address>
+              <footer>
+                ${() => alumno.comision} · ${() => alumno.legajo}
+              </footer>
+            </article>
+          `.key(alumno.id))}
+          <p class="sin-resultados" role="status"></p>
         </div>
       </section>
-      <dialog id="dialogo-alumno" aria-labelledby="titulo-dialogo">
+      <dialog
+        id="dialogo-alumno"
+        aria-labelledby="titulo-dialogo"
+        @close="${() => estado.alumnoEditandoId = null}"
+      >
         <form
           id="formulario-alumno"
           class="formulario-alumno"
           @input="${evento => evento.target.setCustomValidity('')}"
-          @submit="${agregarAlumno}"
+          @submit="${guardarAlumno}"
         >
           <header>
-            <h2 id="titulo-dialogo">Agregar alumno</h2>
-            <p>Completá los datos del nuevo alumno.</p>
+            <h2 id="titulo-dialogo">
+              ${() => estado.alumnoEditandoId === null ? 'Agregar alumno' : 'Editar alumno'}
+            </h2>
+            <p>
+              ${() => estado.alumnoEditandoId === null
+                ? 'Completá los datos del nuevo alumno.'
+                : 'Actualizá los datos del alumno.'}
+            </p>
           </header>
           <div class="campos-formulario">
             <label>
@@ -513,8 +641,19 @@
             </label>
           </div>
           <footer>
-            <button type="submit" class="boton-principal">Guardar</button>
-            <button type="button" @click="${cerrarFormulario}">Cancelar</button>
+            <div>
+              ${() => estado.alumnoEditandoId === null
+                ? ''
+                : html`
+                  <button type="button" class="boton-eliminar" @click="${eliminarAlumno}">
+                    Eliminar
+                  </button>
+                `}
+            </div>
+            <div class="acciones-formulario">
+              <button type="submit" class="boton-principal">Guardar</button>
+              <button type="button" @click="${cerrarFormulario}">Cancelar</button>
+            </div>
           </footer>
         </form>
       </dialog>
