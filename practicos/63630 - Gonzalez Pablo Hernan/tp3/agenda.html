@@ -53,6 +53,32 @@
         padding-top: 8px;
       }
     }
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 24px;
+      width: 420px;
+      max-width: 90vw;
+
+      &::backdrop { background: rgba(0, 0, 0, 0.4); }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+
+        label { display: flex; flex-direction: column; font-size: 14px; }
+
+        .acciones {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 12px;
+        }
+      }
+    }
   </style>
 </head>
 <body>
@@ -87,6 +113,30 @@
         })
     }
 
+    const borradorNuevo = reactive({
+      apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '',
+    })
+
+    function limpiarBorrador(b) {
+      b.apellido = ''; b.nombre = ''; b.legajo = ''; b.comision = ''; b.telefono = ''; b.github = ''
+    }
+
+    function agregarAlumno(evento) {
+      evento.preventDefault()
+      estado.alumnos.push({
+        id: crypto.randomUUID(),
+        apellido: borradorNuevo.apellido,
+        nombre: borradorNuevo.nombre,
+        legajo: borradorNuevo.legajo,
+        comision: borradorNuevo.comision,
+        telefono: borradorNuevo.telefono,
+        github: borradorNuevo.github,
+        favorito: false,
+      })
+      limpiarBorrador(borradorNuevo)
+      evento.currentTarget.closest('dialog').close()
+    }
+
     const Tarjeta = component(alumno => html`
       <article tabindex="0">
         <header>
@@ -108,11 +158,27 @@
       <header class="principal">
         <h1>Agenda</h1>
         <input type="search" placeholder="Buscar..." .value="${() => estado.busqueda}" @input="${e => estado.busqueda = e.target.value}">
-        <button>+ Agregar</button>
+        <button @click="${() => document.getElementById('dialogoAgregar').showModal()}">+ Agregar</button>
       </header>
       <section class="lista">
         ${() => alumnosVisibles().map(a => Tarjeta(a).key(a.id))}
       </section>
+
+      <dialog id="dialogoAgregar">
+        <form @submit="${agregarAlumno}">
+          <h2 style="grid-column: 1 / -1; margin: 0">Agregar alumno</h2>
+          <label>Apellido <input required .value="${() => borradorNuevo.apellido}" @input="${e => borradorNuevo.apellido = e.target.value}"></label>
+          <label>Nombre <input required .value="${() => borradorNuevo.nombre}" @input="${e => borradorNuevo.nombre = e.target.value}"></label>
+          <label>Legajo <input required .value="${() => borradorNuevo.legajo}" @input="${e => borradorNuevo.legajo = e.target.value}"></label>
+          <label>Comisión <input required .value="${() => borradorNuevo.comision}" @input="${e => borradorNuevo.comision = e.target.value}"></label>
+          <label>Teléfono <input .value="${() => borradorNuevo.telefono}" @input="${e => borradorNuevo.telefono = e.target.value}"></label>
+          <label>GitHub <input .value="${() => borradorNuevo.github}" @input="${e => borradorNuevo.github = e.target.value}"></label>
+          <div class="acciones">
+            <button type="button" @click="${e => e.currentTarget.closest('dialog').close()}">Cancelar</button>
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
