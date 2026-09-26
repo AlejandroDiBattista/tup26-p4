@@ -164,6 +164,15 @@
        comision: '',
        telefono: '',
        github: ''
+      },
+      edicion: {
+       id: null,
+       apellido: '',
+       nombre: '',
+       legajo: '',
+       comision: '',
+       telefono: '',
+       github: ''
       }
     })
 
@@ -289,6 +298,78 @@
   document.querySelector('#formulario-agregar').reset()
   document.querySelector('#dialogo-agregar').close()
 }
+
+function abrirEdicion(id) {
+  const alumno = estado.alumnos.find(a => a.id === id)
+
+  if (!alumno) {
+    return
+  }
+
+  estado.edicion.id = alumno.id
+  estado.edicion.apellido = alumno.apellido
+  estado.edicion.nombre = alumno.nombre
+  estado.edicion.legajo = alumno.legajo
+  estado.edicion.comision = alumno.comision
+  estado.edicion.telefono = alumno.telefono
+  estado.edicion.github = alumno.github
+
+  const formulario = document.querySelector('#formulario-editar')
+
+  formulario.elements.apellido.value = alumno.apellido
+  formulario.elements.nombre.value = alumno.nombre
+  formulario.elements.legajo.value = alumno.legajo
+  formulario.elements.comision.value = alumno.comision
+  formulario.elements.telefono.value = alumno.telefono
+  formulario.elements.github.value = alumno.github
+
+  document.querySelector('#dialogo-editar').showModal()
+}
+
+function guardarEdicion() {
+  const alumno = estado.alumnos.find(a => a.id === estado.edicion.id)
+
+  if (!alumno) {
+    return
+  }
+
+  if (
+    !estado.edicion.apellido.trim() ||
+    !estado.edicion.nombre.trim() ||
+    !estado.edicion.legajo.trim() ||
+    !estado.edicion.comision.trim() ||
+    !estado.edicion.telefono.trim() ||
+    !estado.edicion.github.trim()
+  ) {
+    alert('Completá todos los campos.')
+    return
+  }
+
+  alumno.apellido = estado.edicion.apellido.trim()
+  alumno.nombre = estado.edicion.nombre.trim()
+  alumno.legajo = estado.edicion.legajo.trim()
+  alumno.comision = estado.edicion.comision.trim()
+  alumno.telefono = estado.edicion.telefono.trim()
+  alumno.github = estado.edicion.github.trim()
+
+  guardarAlumnos()
+
+  document.querySelector('#dialogo-editar').close()
+}
+
+function eliminarAlumno() {
+  if (estado.edicion.id === null) {
+    return
+  }
+
+  estado.alumnos = estado.alumnos.filter(
+    a => a.id !== estado.edicion.id
+  )
+
+  guardarAlumnos()
+
+  document.querySelector('#dialogo-editar').close()
+}
   
     html`
     <div class="encabezado-agenda">
@@ -313,7 +394,24 @@
 
       <ul>
   ${() => ordenarAlumnos().map(a => html`
-    <li style="${() => alumnoCoincide(a) ? '' : 'display: none;'}">
+    
+    <li
+    
+    tabindex="0"
+    style="${() => alumnoCoincide(a) ? '' : 'display: none;'}"
+    @click="${() => abrirEdicion(a.id)}"
+    @keydown="${evento => {
+      if (evento.key === 'Enter') {
+        abrirEdicion(a.id)
+      }
+
+      if (evento.key === ' ') {
+        evento.preventDefault()
+        cambiarFavorito(a.id)
+      }
+     }}"
+    >
+     
       <div class="${a.apellido.includes(' ') ? 'encabezado dos-apellidos' : 'encabezado'}">
         <span class="apellido">${a.apellido}</span>
         <span class="nombre">${a.nombre}</span>
@@ -321,7 +419,10 @@
 
       <button
         class="estrella"
-        @click="${() => cambiarFavorito(a.id)}"
+        @click="${evento => {
+          evento.stopPropagation()
+          cambiarFavorito(a.id)
+        }}"
       >
         ${a.favorito ? '★' : '☆'}
       </button>
@@ -344,6 +445,7 @@
 
 
   </ul>
+
 <dialog id="dialogo-agregar">
 <form id="formulario-agregar" @submit="${evento => {
   evento.preventDefault()
@@ -422,6 +524,95 @@
     Guardar
   </button>
 </form>
+</dialog>
+<dialog id="dialogo-editar">
+  <form id="formulario-editar" @submit="${evento => {
+    evento.preventDefault()
+    guardarEdicion()
+  }}">
+    <h2>Editar alumno</h2>
+
+    <label>
+      Apellido
+      <input
+        name="apellido"
+        type="text"
+        @input="${evento => {
+          estado.edicion.apellido = evento.target.value
+        }}"
+      >
+    </label>
+
+    <label>
+      Nombre
+      <input
+        name="nombre"
+        type="text"
+        @input="${evento => {
+          estado.edicion.nombre = evento.target.value
+        }}"
+      >
+    </label>
+
+    <label>
+      Legajo
+      <input
+        name="legajo"
+        type="text"
+        @input="${evento => {
+          estado.edicion.legajo = evento.target.value
+        }}"
+      >
+    </label>
+
+    <label>
+      Comisión
+      <input
+        name="comision"
+        type="text"
+        @input="${evento => {
+          estado.edicion.comision = evento.target.value
+        }}"
+      >
+    </label>
+
+    <label>
+      Teléfono
+      <input
+        name="telefono"
+        type="text"
+        @input="${evento => {
+          estado.edicion.telefono = evento.target.value
+        }}"
+      >
+    </label>
+
+    <label>
+      GitHub
+      <input
+        name="github"
+        type="text"
+        @input="${evento => {
+          estado.edicion.github = evento.target.value
+        }}"
+      >
+    </label>
+
+    <button
+      type="button"
+      @click="${() => document.querySelector('#dialogo-editar').close()}"
+    >
+      Cancelar
+    </button>
+
+    <button type="button" @click="${eliminarAlumno}">
+      Eliminar
+    </button>
+
+    <button type="submit">
+      Guardar
+    </button>
+  </form>
 </dialog>
 <p>
   ${() => alumnosVisibles().length === 0 ? 'No se encontraron alumnos.' : ''}
