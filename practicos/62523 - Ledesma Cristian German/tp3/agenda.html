@@ -20,12 +20,41 @@
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
-
+    if (!localStorage.getItem('agenda_alumnos')) {
+      localStorage.setItem('agenda_alumnos', JSON.stringify(alumnos));
+    }
+    const datosPersistidos =JSON.parse(localStorage.getItem('agenda_alumnos'));
+    const store = reactive({
+    alumnos: datosPersistidos,
+    busqueda:""
+    });
+    watch(
+  () => JSON.stringify(store.alumnos),
+  datos => localStorage.setItem('agenda_alumnos', datos)
+)
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => store.alumnos.map(a => html`
+        <li class="tarjeta">
+          <div class="tarjeta-cabecera">
+            <span class= "tarjeta-nombre">
+              <b class="apellido">${a.apellido}</b> ${a.nombre}
+              </span>
+            <button class="boton-favorito">
+              ${a.favorito ?  '★' : '☆' }
+              </button>
+              </div>
+              <div class="tarjeta-contacto">
+                <p class="telefono">${a.telefono}</p>
+                <p class="github">@${a.github}</p>
+                </div>
+              <div class= "tarjeta-pie">
+                <span> ${a.comision} · ${a.legajo}</span>
+                </div>
+        </li>
+        `)}
       </ul>
     `(app)
   </script>
