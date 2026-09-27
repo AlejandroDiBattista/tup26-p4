@@ -7,7 +7,32 @@
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
+    .barra-superior {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    h1 { margin: 0; }
+    .input-busqueda {
+      width: min(300px, 100%);
+      height: 46px;
+      box-sizing: border-box;
+      padding: 0 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #30352f;
+      font: inherit;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .input-busqueda::placeholder { color: #7b817a; }
+    .input-busqueda:focus {
+      border-color: #30483a;
+      box-shadow: 0 0 0 3px rgb(48 72 58 / 14%);
+    }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
     li { 
       min-width: 0; 
@@ -69,7 +94,15 @@
       }
     }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) {
+      .barra-superior {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .input-busqueda { width: 100%; }
+      ul { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -90,17 +123,68 @@
   () => JSON.stringify(store.alumnos),
   datos => localStorage.setItem('agenda_alumnos', datos)
 )
+    const normalizar = texto => texto
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+    const alumnosVisibles = () => {
+      const busqueda = normalizar(store.busqueda.trim());
+
+      return [...store.alumnos]
+        .filter(alumno => {
+          const datos = [
+            alumno.nombre,
+            alumno.apellido,
+            alumno.legajo,
+            alumno.comision,
+            alumno.telefono,
+            alumno.github
+          ].map(normalizar).join(' ');
+
+          return datos.includes(busqueda);
+        })
+        .sort((alumnoA, alumnoB) => {
+          if (alumnoA.favorito !== alumnoB.favorito) {
+            return alumnoA.favorito ? -1 : 1;
+          }
+
+          return alumnoA.apellido.localeCompare(alumnoB.apellido, 'es', { sensitivity: 'base' })
+            || alumnoA.nombre.localeCompare(alumnoB.nombre, 'es', { sensitivity: 'base' });
+        });
+    };
+
+    const alternarFavorito = id => {
+      const alumno = store.alumnos.find(alumno => alumno.id === id);
+      if (alumno) alumno.favorito = !alumno.favorito;
+    };
+
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <header class="barra-superior">
+        <h1>Alumnos</h1>
+        <input
+          type="search"
+          placeholder="Buscar alumno..."
+          aria-label="Buscar alumno"
+          .value="${() => store.busqueda}"
+          @input="${evento => store.busqueda = evento.target.value}"
+          class="input-busqueda"
+        />
+      </header>
       <ul>
-        ${() => store.alumnos.map(a => html`
+        ${() => alumnosVisibles().map(a => html`
         <li class="tarjeta">
           <div class="tarjeta-cabecera">
             <span class= "tarjeta-nombre">
               <b class="apellido">${a.apellido}</b> ${a.nombre}
               </span>
-            <button class="boton-favorito">
+            <button
+              type="button"
+              class="boton-favorito"
+              aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+              @click="${() => alternarFavorito(a.id)}"
+            >
               ${a.favorito ?  '★' : '☆' }
               </button>
               </div>
@@ -112,7 +196,7 @@
                 <span> ${a.comision} · ${a.legajo}</span>
                 </div>
         </li>
-        `)}
+        `.key(a.id))}
       </ul>
     `(app)
   </script>
