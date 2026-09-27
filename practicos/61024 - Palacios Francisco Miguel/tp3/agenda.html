@@ -6,66 +6,134 @@
 
   <title>Agenda de alumnos</title>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 32px 20px;
-      font: 16px sans-serif;
-      background: #f5f6f4;
-    }
+<style>
+  * {
+    box-sizing: border-box;
+  }
 
-    main {
-      width: 1104px;
-      max-width: 100%;
-      margin: auto;
-    }
+  body {
+    margin: 0;
+    padding: 32px 20px;
+    font: 16px sans-serif;
+    color: #1f2937;
+    background: #f5f6f4;
+  }
 
-    h1 {
-      margin: 0 0 24px;
+  main {
+    width: 1104px;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  .encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  .encabezado p {
+    margin: 6px 0 0;
+    color: #6b7280;
+  }
+
+  button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  #btn-agregar {
+    color: white;
+    background: #1f7a4d;
+  }
+
+  .controles {
+    margin-bottom: 20px;
+  }
+
+  .controles label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .controles input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font: inherit;
+    background: white;
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  li {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid #d9ded9;
+    border-radius: 16px;
+    background: white;
+  }
+
+  .alumno-apellido {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 18px;
+  }
+
+  .alumno-nombre {
+    display: block;
+    color: #6b7280;
+  }
+
+  @media (max-width: 700px) {
+    .encabezado {
+      align-items: flex-start;
+      flex-direction: column;
     }
 
     ul {
-      display: grid;
-      grid-template-columns: repeat(3, 360px);
-      justify-content: center;
-      gap: 12px;
-      padding: 0;
-      list-style: none;
+      grid-template-columns: 1fr;
     }
-
-    li {
-      min-width: 0;
-      padding: 20px;
-      border: 1px solid #d9ded9;
-      border-radius: 16px;
-      background: white;
-      text-align: center;
-    }
-
-    @media (max-width: 1120px) {
-      ul {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 700px) {
-      ul {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 
 <body>
 
   <main id="app">
-    <header>
-      <h1>Agenda</h1>
-    </header>
+  <header class="encabezado">
+    <div>
+      <h1>Agenda de alumnos</h1>
+      <p>Agenda de alumnos de Programacion IV</p>
+    </div>
+      <button type="button" id="btn-agregar">+ Agregar</button>
+  </header>
 
-    <section aria-label="Lista de alumnos">
-      <ul id="lista-alumnos"></ul>
-    </section>
+  <section class="controles" aria-label="Controles de la agenda">
+    <label for="Buscar">Buscar alumno:</label>
+    <input type="search" id="Buscar" name="Buscar" placeholder="Ingrese el nombre o apellido del alumno">
+  </section>
+
+  <section aria-label="Lista de alumnos">
+    <ul id="lista-alumnos"></ul>
+  </section>
   </main>
 
   <script type="module">
@@ -77,8 +145,8 @@
     html`
       ${alumnos.map(alumno => html`
         <li>
-          <strong>${alumno.apellido}</strong>
-          <span>${alumno.nombre}</span>
+           <strong> class="alumno-apellido">${alumno.apellido}</strong>
+            <span class="alumno-nombre">${alumno.nombre}</span>
         </li>
       `)}
     `(lista)
