@@ -21,11 +21,30 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    // Carga inicial y persistencia en localStorage
+    const STORAGE_KEY = 'alumnos'
+    const datosIniciales = JSON.parse(localStorage.getItem(STORAGE_KEY)) || alumnos
+
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(datosIniciales))
+    }
+
+    // Estado reactivo
+    const state = reactive({
+      alumnos: datosIniciales
+    })
+
+    // Sincronización automática con localStorage
+    watch(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos))
+    })
+
+    // Renderizado reactivo en la interfaz
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => state.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
       </ul>
     `(app)
   </script>
