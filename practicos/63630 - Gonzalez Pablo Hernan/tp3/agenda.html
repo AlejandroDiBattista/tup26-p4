@@ -47,6 +47,13 @@
 
       @media (max-width: 1120px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       @media (max-width: 700px) { grid-template-columns: 1fr; }
+
+      .vacio {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #999;
+        padding: 40px 0;
+      }
     }
 
     article {
@@ -251,7 +258,12 @@
         </div>
       </header>
       <section class="lista">
-        ${() => alumnosVisibles().map(a => Tarjeta(a).key(a.id))}
+        ${() => {
+          const visibles = alumnosVisibles()
+          return visibles.length === 0
+            ? html`<p class="vacio">No hay alumnos para mostrar.</p>`
+            : visibles.map(a => Tarjeta(a).key(a.id))
+        }}
       </section>
 
       <dialog id="dialogoAgregar">
