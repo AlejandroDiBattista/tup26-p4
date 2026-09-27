@@ -1,19 +1,488 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --fondo: #f4f5f2;
+      --tarjeta: #fffefb;
+      --texto: #29312b;
+      --texto-suave: #737872;
+      --borde: #dfe2dd;
+      --verde: #30483b;
+      --verde-hover: #253a30;
+      --dorado: #8d805c;
+      --blanco: #ffffff;
+      --rojo: #d85c58;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 48px 24px;
+      background: var(--fondo);
+      color: var(--texto);
+      font-family: Inter, ui-sans-serif, system-ui, apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    /* Contenido principal */
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: 0 auto;
+
+      &>header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+
+        & h1 {
+          margin: 0;
+          color: var(--texto);
+          font-size: 28px;
+          font-weight: 750;
+          letter-spacing: -0.8px;
+          margin-right: auto;
+        }
+
+        /* Buscador alineado en el header */
+        & .busqueda {
+          width: 260px;
+          height: 42px;
+          padding: 0 18px;
+          border: 1px solid var(--borde);
+          border-radius: 24px;
+          background: var(--blanco);
+          color: var(--texto);
+          font-size: 14px;
+          outline: none;
+          box-shadow: 0 2px 8px rgb(0 0 0 / 2%);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+          &::placeholder {
+            color: #858983;
+          }
+
+          &:focus {
+            border-color: #aeb5ae;
+            box-shadow: 0 0 0 4px rgb(48 72 59 / 8%);
+          }
+        }
+
+        & button {
+          flex-shrink: 0;
+          min-height: 42px;
+          padding: 0 20px;
+          border: 0;
+          border-radius: 24px;
+          background: var(--verde);
+          color: var(--blanco);
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+
+          &:hover {
+            background: var(--verde-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgb(48 72 59 / 18%);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+
+          &:focus-visible {
+            outline: 3px solid rgb(48 72 59 / 25%);
+            outline-offset: 3px;
+          }
+        }
+      }
+
+      /* Sección alumnos */
+      &>.agenda {
+        width: 100%;
+
+        &>.lista-alumnos {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+          margin: 0;
+          padding: 0;
+          list-style: none;
+        }
+
+        &>.sin-resultados {
+          margin: 30px 0;
+          padding: 50px 20px;
+          border: 1px dashed #d2d6d1;
+          border-radius: 16px;
+          color: var(--texto-suave);
+          text-align: center;
+          font-size: 15px;
+        }
+      }
+    }
+
+    /* Tarjetas */
+    .tarjeta-alumno {
+      min-width: 0;
+
+      &>article {
+        min-height: 198px;
+        padding: 24px 22px 18px;
+        border: 1px solid #ebece8;
+        /* Borde más fino y claro */
+        border-radius: 20px;
+        background: #fbfbf9;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          border-color: var(--dorado);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        &:focus-visible {
+          outline: 3px solid rgb(48 72 59 / 28%);
+          outline-offset: 3px;
+        }
+
+        /* Encabezado */
+        & .encabezado {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        & h2 {
+          min-width: 0;
+          margin: 0;
+          color: #242926;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 22px;
+          font-weight: 700;
+          line-height: 1.2;
+          letter-spacing: -0.3px;
+
+          & span {
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            color: #5d625d;
+            margin-left: 4px;
+          }
+        }
+
+        /* Estrella de favoritos */
+        & .favorito {
+          flex-shrink: 0;
+          width: 26px;
+          height: 26px;
+          margin: -2px -2px 0 0;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: #8c826b;
+          font-family: Arial, sans-serif;
+          font-size: 24px;
+          line-height: 26px;
+          cursor: pointer;
+          transition: transform 0.18s ease, color 0.18s ease;
+
+          &:hover {
+            color: #5c5443;
+            transform: scale(1.1);
+          }
+
+          &:focus-visible {
+            outline: 2px solid var(--dorado);
+            outline-offset: 2px;
+            border-radius: 50%;
+          }
+        }
+
+        /* Datos */
+        & address {
+          margin-top: 36px;
+          font-style: normal;
+          text-align: left;
+        }
+
+        & address p {
+          margin: 0 0 6px;
+          color: #222723;
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.35;
+        }
+
+        & address p:last-child {
+          margin-bottom: 0;
+          color: #818680;
+          font-size: 13px;
+          font-weight: 400;
+        }
+
+        /* Comisión, legajo */
+        & .datos {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 7px;
+          margin-top: 20px;
+          padding-top: 14px;
+          border-top: 1px solid #eef0ec;
+          color: #727771;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        }
+
+        & .datos span:first-child::after {
+          content: "·";
+          margin-left: 7px;
+          color: #a0a49f;
+        }
+      }
+    }
+
+    /* Dialogs */
+    dialog {
+      width: min(540px, calc(100% - 32px));
+      max-width: 540px;
+      margin: auto;
+      padding: 0;
+      border: 1px solid #e5e8e5;
+      border-radius: 20px;
+      background: #ffffff;
+      color: var(--texto);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      animation: aparecer 0.18s ease-out;
+
+      &::backdrop {
+        background: rgba(40, 48, 43, 0.45);
+        backdrop-filter: blur(4px);
+      }
+
+      /* Formularios */
+      & form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 16px;
+        row-gap: 16px;
+        padding: 0;
+      }
+
+      /* Título */
+      & h2 {
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: 28px 28px 4px;
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #1c221e;
+      }
+
+      & .subtitulo {
+        grid-column: 1 / -1;
+        margin: 0 28px 8px;
+        color: #787d77;
+        font-size: 13px;
+        font-weight: 400;
+      }
+
+      /* Campos */
+      & label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        color: #4a504b;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      & label:nth-of-type(odd) {
+        margin-left: 28px;
+      }
+
+      & label:nth-of-type(even) {
+        margin-right: 28px;
+      }
+
+      & input {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        background: #f4f5f3;
+        color: #1a201c;
+        font-size: 14px;
+        font-weight: 500;
+        outline: none;
+        transition: border-color 0.15s ease, background 0.15s ease;
+
+        &:focus {
+          border-color: #1a201c;
+          background: #ffffff;
+        }
+      }
+
+      /* Botones de acción */
+      & .acciones {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 12px;
+        padding: 16px 28px 20px;
+        border-top: 1px solid #f0f2ef;
+      }
+
+      & .acciones button {
+        min-height: 40px;
+        padding: 0 20px;
+        border: 1px solid #dcdfdc;
+        border-radius: 12px;
+        background: #ffffff;
+        color: #242925;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+
+        &:hover {
+          background: #f5f6f4;
+        }
+
+        &:active {
+          transform: translateY(1px);
+        }
+      }
+
+      /* Botón guardar y agregar) */
+      & .acciones button[type="submit"] {
+        border-color: #30483b;
+        background: #30483b;
+        color: #ffffff;
+
+        &:hover {
+          background: #23372c;
+          border-color: #23372c;
+        }
+      }
+
+      /* En modal de edición: eliminar a la izquierda */
+      & #form-editar .acciones button.btn-eliminar {
+        margin-right: auto;
+        border-color: #f7e2e1;
+        background: #ffffff;
+        color: #d85c58;
+
+        &:hover {
+          background: rgba(216, 92, 88, 0.315);
+          border-color: #f1c1bf;
+        }
+      }
+
+      /* Alineación por defecto a la derecha para formularios sin botón eliminar */
+      & form .acciones {
+        justify-content: flex-end;
+      }
+    }
+
+    /* Animación */
+    @keyframes aparecer {
+      from {
+        opacity: 0;
+        transform: scale(0.97) translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    footer {
+      margin-top: 28px;
+      color: #8a8f8a;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      body {
+        padding: 34px 20px;
+      }
+
+      main {
+        &>header .busqueda {
+          width: 220px;
+        }
+
+        &>.agenda>.lista-alumnos {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    }
+
+    @media (max-width: 680px) {
+      body {
+        padding: 25px 15px;
+      }
+
+      main {
+        &>header {
+          flex-wrap: wrap;
+          margin-bottom: 18px;
+
+          & h1 {
+            font-size: 25px;
+          }
+
+          & .busqueda {
+            order: 3;
+            width: 100%;
+            margin-top: 10px;
+          }
+        }
+
+        &>.agenda>.lista-alumnos {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+      }
+    }
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
@@ -22,12 +491,323 @@
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+
+    const storage = 'agenda-alumnos'
+
+    // Recuperar los alumnos guardados o usar datos iniciales del JSON
+    const alumnosGuardados = localStorage.getItem(storage)
+
+    // Estado reactivo de la ageda
+    const state = reactive({
+      alumnos: alumnosGuardados ? JSON.parse(alumnosGuardados) : structuredClone(alumnos),
+      busqueda: '',       // guarda lo que escriba el usuario en el buscador
+      alumnoEditando: null
+    })
+
+    // Guardar estado actual de alumnos en localStorage
+    function guardarAlumnos() {
+      localStorage.setItem(storage, JSON.stringify(state.alumnos))
+    }
+
+    // Si no había info guardada, se crea localStorage usando datos de alumnos.json.
+    if (!alumnosGuardados) {
+      guardarAlumnos()
+    }
+
+    // Agregar un nuevo alumno a la agenda
+    function agregarAlumno(event) {
+      event.preventDefault()
+
+      const formulario = event.currentTarget
+
+      if (!formulario.checkValidity()) {
+        formulario.reportValidity()
+        return
+      }
+
+      const nuevoAlumno = {
+        id: generarId(),
+        apellido: formulario.apellido.value.trim(),
+        nombre: formulario.nombre.value.trim(),
+        legajo: formulario.legajo.value.trim(),
+        comision: formulario.comision.value.trim(),
+        telefono: formulario.telefono.value.trim(),
+        github: formulario.github.value.trim(),
+        favorito: false
+      }
+
+      state.alumnos.push(nuevoAlumno)
+      guardarAlumnos()
+      formulario.reset()
+      document.getElementById('dialog-agregar').close()
+    }
+
+    // Abrir formulario de edición con datos del alumno
+    function editarAlumno(alumno) {
+      state.alumnoEditando = alumno
+
+      const formulario = document.getElementById('form-editar')
+
+      formulario.apellido.value = alumno.apellido ?? ''
+      formulario.nombre.value = alumno.nombre ?? ''
+      formulario.legajo.value = alumno.legajo ?? ''
+      formulario.comision.value = alumno.comision ?? ''
+      formulario.telefono.value = alumno.telefono ?? ''
+      formulario.github.value = alumno.github ?? ''
+
+      document.getElementById('dialog-editar').showModal()
+    }
+
+    // Permitir usar tarjetas con el teclado
+    function manejarTeclado(alumno, event) {
+      if (event.target.closest('.favorito')) {
+        return
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        editarAlumno(alumno)
+      } else if (event.key === ' ') {
+        event.preventDefault()
+        cambiarFavorito(alumno, event)
+      }
+    }
+    // Cambiar favorito
+    function cambiarFavorito(alumno, event) {
+      event.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      guardarAlumnos()
+    }
+
+    // Guardar cambios del alumno editado
+    function guardarEdicion(event) {
+      event.preventDefault()
+
+      const formulario = event.currentTarget
+      const alumno = state.alumnoEditando
+
+      if (!alumno) {
+        return
+      }
+
+      if (!formulario.checkValidity()) {
+        formulario.reportValidity()
+        return
+      }
+
+      alumno.apellido = formulario.elements.apellido.value.trim()
+      alumno.nombre = formulario.elements.nombre.value.trim()
+      alumno.legajo = formulario.elements.legajo.value.trim()
+      alumno.comision = formulario.elements.comision.value.trim()
+      alumno.telefono = formulario.elements.telefono.value.trim()
+      alumno.github = formulario.elements.github.value.trim()
+
+      guardarAlumnos()
+      state.alumnoEditando = null
+      formulario.reset()
+      document.getElementById('dialog-editar').close()
+    }
+
+    // Eliminar alumno que se está editando
+    function eliminarAlumno() {
+      const alumno = state.alumnoEditando
+
+      if (!alumno) {
+        return
+      }
+
+      state.alumnos = state.alumnos.filter(a => a.id !== alumno.id)
+
+      guardarAlumnos()
+
+      state.alumnoEditando = null
+      document.getElementById('dialog-editar').close()
+    }
+
+    // Guardar cambios cuando se modifica algún alumno
+    watch(
+      () => state.alumnos.map(alumno => ({
+        id: alumno.id,
+        favorito: alumno.favorito
+      })),
+      () => { guardarAlumnos() }
+    )
+
+    // Comparar sin distinguir mayúsculas, minúsculas ni acentos
+    function normalizar(texto) {
+      return String(texto ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+    }
+
+    // Generar id
+    function generarId() {
+      return Date.now() + Math.floor(Math.random() * 1000)
+    }
+
+    // Obtener alumnos que coincidan con la búsqueda, favoritos van primero
+    function alumnosVisibles() {
+      const busqueda = normalizar(state.busqueda)
+
+      return state.alumnos
+        .filter(alumno => {
+          const datosBuscables = [
+            alumno.apellido,
+            alumno.nombre,
+            alumno.legajo,
+            alumno.comision,
+            alumno.telefono,
+            alumno.github
+          ]
+          return datosBuscables.some(dato => normalizar(dato).includes(busqueda))
+        })
+        .sort((a, b) => {
+          // favoritos aparecen primero
+          if (a.favorito !== b.favorito) {
+            return a.favorito ? -1 : 1
+          }
+
+          // ordenar por apellido y nombre
+          const comparacionApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido), 'es', { sensitivity: 'base' })
+
+          if (comparacionApellido !== 0) {
+            return comparacionApellido
+          }
+
+          return normalizar(a.nombre).localeCompare(normalizar(b.nombre), 'es', { sensitivity: 'base' })
+        })
+    }
+
+    // Cancelar edición
+    function cancelarEdicion() {
+      state.alumnoEditando = null
+      document.getElementById('form-editar').reset()
+      document.getElementById('dialog-editar').close()
+    }
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header>
+        <h1>Agenda</h1>
+        <input class="busqueda" type="search" placeholder="Buscar alumno..." autocomplete="off" @input="${event => state.busqueda = event.target.value}">
+        <button type="button" @click="${() => document.getElementById('dialog-agregar').showModal()}">
+          + Agregar
+        </button>
+      </header>
+      <section class="agenda">
+        <ul class="lista-alumnos">
+          ${() => alumnosVisibles().map(alumno => html`
+            <li class="tarjeta-alumno">
+              <article tabindex="0" role="button" @click="${() => editarAlumno(alumno)}" @keydown="${event => manejarTeclado(alumno, event)}">
+                <div class="encabezado">
+                  <h2>
+                    ${alumno.apellido}
+                    <span> ${alumno.nombre}</span>
+                  </h2>
+                  <button class="favorito" type="button" aria-label="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}" @click="${event => cambiarFavorito(alumno, event)}">
+                    ${() => alumno.favorito ? '★' : '☆'}
+                  </button>
+                </div>
+                <address>
+                  <p>${alumno.telefono}</p>
+                  <p>@${alumno.github}</p>
+                </address>
+                <footer class="datos">
+                  <span>${alumno.comision}</span>
+                  <span>${alumno.legajo}</span>
+                </footer>
+              </article>
+            </li>
+          `.key(alumno.id))}
+        </ul>
+        ${() => alumnosVisibles().length === 0 ? html`
+          <p class="sin-resultados" role="status">No hay alumnos para mostrar</p>
+        ` : ''}
+      </section>
+      <dialog id="dialog-agregar">
+        <form @submit="${agregarAlumno}">
+          <h2>Agregar alumno</h2>
+          <p class="subtitulo">Completá los datos del alumno</p>
+          <label>
+            Apellido
+            <input name="apellido" type="text" autocomplete="family-name" required>
+          </label>
+          <label>
+            Nombre
+            <input name="nombre" type="text" autocomplete="given-name" required>
+          </label>
+          <label>
+            Legajo
+            <input name="legajo" type="text" inputmode="numeric" required>
+          </label>
+          <label>
+            Comisión
+            <input name="comision" type="text" required>
+          </label>
+          <label>
+            Teléfono
+            <input name="telefono" type="tel" autocomplete="tel" required>
+          </label>
+          <label>
+            GitHub
+            <input name="github" type="text" autocomplete="username" required>
+          </label>
+          <div class="acciones">
+            <button type="button" @click="${() => {
+              const dialog = document.getElementById('dialog-agregar')
+              dialog.querySelector('form').reset()
+              dialog.close()}}">
+              Cancelar
+            </button>
+            <button type="submit">
+              Agregar
+            </button>
+          </div>        
+        </form>
+      </dialog>
+      <dialog id="dialog-editar">
+        <form id="form-editar" @submit="${guardarEdicion}">
+          <h2>Editar alumno</h2>
+          <p class="subtitulo">Actualizá los datos del alumno</p>
+          <label>Apellido
+            <input name="apellido" type="text" autocomplete="family-name" required>
+          </label>
+          <label>
+            Nombre
+            <input name="nombre" type="text" autocomplete="given-name" required>
+          </label>
+          <label>
+            Legajo
+            <input name="legajo" type="text" inputmode="numeric" required>
+          </label>
+          <label>
+            Comisión
+            <input name="comision" type="text" required>
+          </label>
+          <label>
+            Teléfono
+            <input name="telefono" type="tel" autocomplete="tel" required>
+          </label>
+          <label>
+            GitHub
+            <input name="github" type="text" autocomplete="username" required>
+          </label>
+          <div class="acciones">
+            <button type="button" class="btn-eliminar" @click="${eliminarAlumno}">
+              Eliminar
+            </button>
+            <button type="submit">
+              Guardar
+            </button>
+            <button type="button" @click="${cancelarEdicion}">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </dialog>
+    `(app)  
   </script>
 </body>
+
 </html>
