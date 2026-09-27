@@ -102,6 +102,19 @@
     color: #6b7280;
   }
 
+  .tarjeta-alumno {
+    text-align: left;
+  }
+
+  .tarjeta-alumno p {
+    margin: 8px 0;
+    color : #4b5563;
+  }
+
+  .tarjeta-alumno p:first-of-type {
+    margin-top: 16px;
+  }
+
   @media (max-width: 700px) {
     .encabezado {
       align-items: flex-start;
@@ -145,13 +158,47 @@ const estado = reactive({
   busqueda: ''
 })
 
+function compararTexto(a, b) {
+  return a.localeCompare(b, 'es' , { sensitivity: 'base' })
+}
+
+
+function ordenarAlumnos(lista) {
+  return [...lista].sort((a, b) => {
+    if (a.favorito !== b.favorito) {
+    return Number(b.favorito) - Number(a.favorito)
+
+  }
+
+  const porApellido = compararTexto(a.apellido, b.apellido)
+  if (porApellido !== 0) {
+    return porApellido
+
+  }
+  return compararTexto(a.nombre, b.nombre)
+
+ })
+}
+
 const lista = document.getElementById('lista-alumnos')
 
 html`
-  ${() => estado.alumnos.map(alumno => html`
+  ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
     <li>
-      <strong class="alumno-apellido">${alumno.apellido}</strong>
-      <span class="alumno-nombre">${alumno.nombre}</span>
+      <article class="tarjeta-alumno">
+        <strong class="alumno-apellido">
+          ${alumno.apellido}
+        </strong>
+
+        <span class="alumno-nombre">
+          ${alumno.nombre}
+        </span>
+
+        <p><b>Legajo:</b> ${alumno.legajo}</p>
+        <p><b>Comisión:</b> ${alumno.comision}</p>
+        <p><b>Teléfono:</b> ${alumno.telefono}</p>
+        <p><b>GitHub:</b> ${alumno.github}</p>
+      </article>
     </li>
   `)}
 `(lista)
