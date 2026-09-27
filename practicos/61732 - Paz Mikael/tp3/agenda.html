@@ -88,6 +88,17 @@
       list-style: none;
     }
 
+    .sin-alumnos {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 16px;
+      color: #6d736a;
+      font-size: 16px;
+      background: #fbfbf9;
+      border: 1px dashed #dcdfd8;
+      border-radius: 18px;
+    }
+
     .tarjeta-alumno {
       padding: 22px 20px 16px 20px;
       border: 1px solid #e2e5df;
@@ -245,6 +256,45 @@
       localStorage.setItem('alumnos_agenda', JSON.stringify(estado.alumnos))
     }
 
+    function normalizar(texto) {
+      return (texto || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+    }
+
+    function alternarFavorito(e, id) {
+      if (e) e.stopPropagation()
+      const indice = estado.alumnos.findIndex(a => a.id === id)
+      if (indice !== -1) {
+        estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+        estado.alumnos = [...estado.alumnos]
+        persistir()
+      }
+    }
+
+    function obtenerAlumnosFiltradosYOrdenados() {
+      const busquedaLimpia = normalizar(estado.busqueda)
+      const lista = estado.alumnos.filter(alumno => {
+        if (!busquedaLimpia) return true
+        const datos = normalizar(`${alumno.apellido} ${alumno.nombre} ${alumno.legajo} ${alumno.telefono} ${alumno.github} ${alumno.comision}`)
+        return datos.includes(busquedaLimpia)
+      })
+
+      return lista.sort((a, b) => {
+        const favA = Boolean(a.favorito)
+        const favB = Boolean(b.favorito)
+        if (favA !== favB) {
+          return favA ? -1 : 1
+        }
+        const compApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido))
+        if (compApellido !== 0) return compApellido
+        return normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+      })
+    }
+
     const app = document.getElementById('app')
 
     const plantilla = html`
@@ -263,32 +313,39 @@
 
       <section>
         <ul class="lista-alumnos">
-          ${() => estado.alumnos.map(alumno => html`
-            <li>
-              <article class="tarjeta-alumno" tabindex="0">
-                <header class="tarjeta-cabecera">
-                  <h2>
-                    <span class="apellido">${alumno.apellido}</span>
-                    <span class="nombre">${alumno.nombre}</span>
-                  </h2>
-                  <button
-                    class="${alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}"
-                    type="button"
-                    aria-label="Favorito"
-                  >
-                    ${alumno.favorito ? '★' : '☆'}
-                  </button>
-                </header>
-                <address>
-                  <div class="telefono">${alumno.telefono}</div>
-                  <div class="github">@${alumno.github}</div>
-                </address>
-                <footer>
-                  ${alumno.comision} · ${alumno.legajo}
-                </footer>
-              </article>
-            </li>
-          `)}
+          ${() => {
+            const alumnos = obtenerAlumnosFiltradosYOrdenados()
+            if (alumnos.length === 0) {
+              return html`<li class="sin-alumnos">No hay alumnos para mostrar</li>`
+            }
+            return alumnos.map(alumno => html`
+              <li>
+                <article class="tarjeta-alumno" tabindex="0">
+                  <header class="tarjeta-cabecera">
+                    <h2>
+                      <span class="apellido">${alumno.apellido}</span>
+                      <span class="nombre">${alumno.nombre}</span>
+                    </h2>
+                    <button
+                      class="${alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}"
+                      type="button"
+                      aria-label="Favorito"
+                      @click="${(e) => alternarFavorito(e, alumno.id)}"
+                    >
+                      ${alumno.favorito ? '★' : '☆'}
+                    </button>
+                  </header>
+                  <address>
+                    <div class="telefono">${alumno.telefono}</div>
+                    <div class="github">@${alumno.github}</div>
+                  </address>
+                  <footer>
+                    ${alumno.comision} · ${alumno.legajo}
+                  </footer>
+                </article>
+              </li>
+            `)
+          }}
         </ul>
       </section>
     `
