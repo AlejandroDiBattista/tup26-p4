@@ -87,6 +87,17 @@
       box-sizing: border-box;
       min-height: 195px;
       transition: box-shadow 0.2s ease;
+      cursor: pointer;
+
+      &:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09);
+      }
+
+      &:focus {
+        outline: 2px solid #283629;
+        outline-offset: 3px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09);
+      }
 
       & header {
         display: flex;
@@ -235,9 +246,29 @@
 
         & .acciones-dialogo {
           display: flex;
-          justify-content: flex-end;
+          justify-content: space-between;
+          align-items: center;
           gap: 12px;
           margin-top: 12px;
+
+          & .acciones-dialogo-derecha {
+            display: flex;
+            gap: 12px;
+          }
+
+          & .btn-eliminar {
+            background: none;
+            border: none;
+            padding: 10px 4px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #c53030;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
 
           & .btn-cancelar {
             background: none;
@@ -340,16 +371,47 @@
     }
 
     // Funciones del diálogo para agregar alumno
+    let alumnoEditandoId = null
+
+    // Abre el diálogo para agregar un nuevo alumno
     function abrirDialogoAgregar() {
-      const form = document.getElementById('form-alumno')
-      if (form) form.reset()
+      alumnoEditandoId = null
       const dialog = document.getElementById('dialogo-alumno')
+      const titulo = document.getElementById('dialogo-titulo')
+      const subtitulo = document.getElementById('dialogo-subtitulo')
+      const btnEliminar = document.getElementById('btn-eliminar')
+      const form = document.getElementById('form-alumno')
+      if (titulo) titulo.textContent = 'Agregar alumno'
+      if (subtitulo) subtitulo.textContent = 'Ingresá los datos del nuevo alumno.'
+      if (btnEliminar) btnEliminar.style.display = 'none'
+      if (form) form.reset()
+      if (dialog) dialog.showModal()
+    }
+
+    // Abre la ventana de dialogo para editar un alumno existente
+    function abrirDialogoEditar(alumno) {
+      alumnoEditandoId = alumno.id
+      const dialog = document.getElementById('dialogo-alumno')
+      const titulo = document.getElementById('dialogo-titulo')
+      const subtitulo = document.getElementById('dialogo-subtitulo')
+      const btnEliminar = document.getElementById('btn-eliminar')
+      if (titulo) titulo.textContent = 'Editar alumno'
+      if (subtitulo) subtitulo.textContent = 'Actualizá los datos del alumno.'
+      if (btnEliminar) btnEliminar.style.display = ''
+      // Precargar los campos con los datos actuales
+      document.getElementById('campo-apellido').value = alumno.apellido
+      document.getElementById('campo-nombre').value = alumno.nombre
+      document.getElementById('campo-legajo').value = alumno.legajo
+      document.getElementById('campo-comision').value = alumno.comision
+      document.getElementById('campo-telefono').value = alumno.telefono
+      document.getElementById('campo-github').value = alumno.github
       if (dialog) dialog.showModal()
     }
 
     function cerrarDialogo() {
       const dialog = document.getElementById('dialogo-alumno')
       if (dialog) dialog.close()
+      alumnoEditandoId = null
     }
 
     function guardarAlumno(event) {
@@ -365,26 +427,40 @@
       let github = formData.get('github').trim()
       if (github.startsWith('@')) github = github.slice(1)
 
-      if (!apellido || !nombre || !legajo || !comision || !telefono || !github) {
-        return
+      if (!apellido || !nombre || !legajo || !comision || !telefono || !github) return
+
+      if (alumnoEditandoId !== null) {
+        // Editar el alumno existente
+        state.alumnos = state.alumnos.map(a =>
+          a.id === alumnoEditandoId
+            ? { ...a, apellido, nombre, legajo, comision, telefono, github }
+            : a
+        )
+      } else {
+        // Agregar un nuevo alumno
+        const maxId = state.alumnos.reduce((max, a) => Math.max(max, a.id || 0), 0)
+        const nuevoAlumno = { id: maxId + 1, apellido, nombre, legajo, comision, telefono, github, favorito: false }
+        state.alumnos = [...state.alumnos, nuevoAlumno]
       }
 
-      // Calcular nuevo ID correlativo
-      const maxId = state.alumnos.reduce((max, a) => Math.max(max, a.id || 0), 0)
-      const nuevoAlumno = {
-        id: maxId + 1,
-        apellido,
-        nombre,
-        legajo,
-        comision,
-        telefono,
-        github,
-        favorito: false
-      }
-
-      // Incorporar al estado y cerrar diálogo
-      state.alumnos = [...state.alumnos, nuevoAlumno]
       cerrarDialogo()
+    }
+
+    function eliminarAlumno() {
+      if (alumnoEditandoId === null) return
+      state.alumnos = state.alumnos.filter(a => a.id !== alumnoEditandoId)
+      cerrarDialogo()
+    }
+
+    // Manejo de teclado con Enter y Espacio
+    function onTarjetaKeydown(alumno, e) {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirDialogoEditar(alumno)
+      } else if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault()
+        toggleFavorito(alumno, e)
+      }
     }
 
     // Renderizado reactivo en la interfaz
@@ -414,7 +490,12 @@
         <ul style="${() => hayCoincidencias(state.alumnos, state.busqueda) ? '' : 'display: none;'}">
           ${() => obtenerAlumnosOrdenados(state.alumnos).map(a => html`
             <li style="${() => coincideBusqueda(a, state.busqueda) ? '' : 'display: none;'}">
-              <article class="tarjeta">
+              <article
+                class="tarjeta"
+                tabindex="0"
+                @click="${() => abrirDialogoEditar(a)}"
+                @keydown="${(e) => onTarjetaKeydown(a, e)}"
+              >
                 <header>
                   <h2>
                     <span class="apellido">${a.apellido}</span>
@@ -438,7 +519,7 @@
                 </address>
 
                 <footer>
-                  <span>${a.comision} · ${a.legajo}</span>
+                  <span>${a.comision} ·${a.legajo}</span>
                 </footer>
               </article>
             </li>
@@ -447,8 +528,8 @@
       </section>
 
       <dialog id="dialogo-alumno" class="dialogo-alumno">
-        <h2>Agregar alumno</h2>
-        <p class="subtitulo">Ingresá los datos del nuevo alumno.</p>
+        <h2 id="dialogo-titulo">Agregar alumno</h2>
+        <p id="dialogo-subtitulo" class="subtitulo">Ingresá los datos del nuevo alumno.</p>
         <form id="form-alumno" @submit="${guardarAlumno}">
           <div class="form-grid">
             <div class="campo">
@@ -478,8 +559,11 @@
           </div>
 
           <div class="acciones-dialogo">
-            <button class="btn-cancelar" type="button" @click="${cerrarDialogo}">Cancelar</button>
-            <button class="btn-guardar" type="submit">Guardar</button>
+            <button id="btn-eliminar" class="btn-eliminar" type="button" style="display: none;" @click="${eliminarAlumno}">Eliminar</button>
+            <div class="acciones-dialogo-derecha">
+              <button class="btn-cancelar" type="button" @click="${cerrarDialogo}">Cancelar</button>
+              <button class="btn-guardar" type="submit">Guardar</button>
+            </div>
           </div>
         </form>
       </dialog>
