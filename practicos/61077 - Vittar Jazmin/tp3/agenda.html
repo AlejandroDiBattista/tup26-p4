@@ -6,200 +6,571 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body {
-      margin: 0;
-      padding: 32px 20px;
-      font: 16px sans-serif;
-      background: #f5f6f4;
+    :root {
+      --fondo: #f4f5f2;
+      --tarjeta: #fffefb;
+      --texto: #29312b;
+      --texto-suave: #737872;
+      --borde: #dfe2dd;
+      --verde: #30483b;
+      --verde-hover: #253a30;
+      --dorado: #8d805c;
+      --blanco: #ffffff;
+      --rojo: #d85c58;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 48px 24px;
+      background: var(--fondo);
+      color: var(--texto);
+      font-family: Inter, ui-sans-serif, system-ui, apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    /* Contenido principal */
     main {
       width: 1104px;
       max-width: 100%;
-      margin: auto;
+      margin: 0 auto;
+
+      &>header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+
+        & h1 {
+          margin: 0;
+          color: var(--texto);
+          font-size: 30px;
+          font-weight: 750;
+          letter-spacing: -0.8px;
+        }
+
+        & button {
+          flex-shrink: 0;
+          min-height: 44px;
+          padding: 0 20px;
+          border: 0;
+          border-radius: 24px;
+          background: var(--verde);
+          color: var(--blanco);
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+
+          &:hover {
+            background: var(--verde-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgb(48 72 59 / 18%);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+
+          &:focus-visible {
+            outline: 3px solid rgb(48 72 59 / 25%);
+            outline-offset: 3px;
+          }
+        }
+      }
+
+      /* Buscador */
+      &>.busqueda {
+        display: block;
+        width: 300px;
+        height: 46px;
+        margin: -74px 110px 28px auto;
+        padding: 0 18px;
+        border: 1px solid var(--borde);
+        border-radius: 24px;
+        background: var(--blanco);
+        color: var(--texto);
+        font-size: 14px;
+        outline: none;
+        box-shadow: 0 2px 8px rgb(0 0 0 / 2%);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+        &::placeholder {
+          color: #858983;
+        }
+
+        &:focus {
+          border-color: #aeb5ae;
+          box-shadow: 0 0 0 4px rgb(48 72 59 / 8%);
+        }
+      }
+
+      /* Sección alumnos */
+      &>.agenda {
+        width: 100%;
+
+        &>.lista-alumnos {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+          margin: 0;
+          padding: 0;
+          list-style: none;
+        }
+
+        &>.sin-resultados {
+          margin: 30px 0;
+          padding: 50px 20px;
+          border: 1px dashed #d2d6d1;
+          border-radius: 16px;
+          color: var(--texto-suave);
+          text-align: center;
+          font-size: 15px;
+        }
+      }
     }
 
-    main > input[type="search"] {
-      display: block;
-      box-sizing: border-box;
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto 24px;
-      padding: 12px 16px;
-      border: 1px solid #d9ded9;
-      border-radius: 10px;
-      background: white;
-      font: inherit;
-      outline: none;
-    }
-
-    main > input[type="search"]:focus {
-      border-color: #999;
-    }
-
-    h1 {
-      margin: 0 0 24px;
-    }
-
-    ul {
-      display: grid;
-      grid-template-columns: repeat(3, 360px);
-      justify-content: center;
-      gap: 12px;
-      padding: 0;
-      list-style: none;
-    }
-
-    li {
+    /* Tarjetas */
+    .tarjeta-alumno {
       min-width: 0;
-      padding: 20px;
-      border: 1px solid #d9ded9;
-      border-radius: 16px;
-      background: white;
-      text-align: center;
-      cursor: pointer;
-    }
 
-    li:hover {
-      box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
-    }
+      &>article {
+        min-height: 198px;
+        padding: 22px 20px 17px;
+        border: 1px solid var(--borde);
+        border-radius: 17px;
+        background: var(--tarjeta);
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgb(0 0 0 / 2%), 0 8px 18px rgb(0 0 0 / 2%);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
-    li .encabezado {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
+        &:hover {
+          transform: translateY(-2px);
+          border-color: #d4d8d3;
+          box-shadow: 0 5px 12px rgb(0 0 0 / 5%), 0 12px 25px rgb(0 0 0 / 4%);
+        }
 
-    li h2 {
-      margin: 0;
-      font-size: 20px;
-    }
+        &:focus-visible {
+          outline: 3px solid rgb(48 72 59 / 28%);
+          outline-offset: 3px;
+        }
 
-    li button {
-      border: 0;
-      background: transparent;
-      font-size: 24px;
-      cursor: pointer;
-    }
+        /* Encabezado */
+        & .encabezado {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
 
-    li address {
-      margin-top: 20px;
-      font-style: normal;
-      text-align: left;
-    }
+        & h2 {
+          min-width: 0;
+          margin: 0;
+          color: var(--texto);
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 23px;
+          font-weight: 700;
+          line-height: 1.15;
+          letter-spacing: -0.4px;
+        }
 
-    li address p {
-      margin: 6px 0;
-    }
+        /* Estrellas */
+        & .favorito {
+          flex-shrink: 0;
+          width: 30px;
+          height: 30px;
+          margin: -3px -2px 0 0;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: var(--dorado);
+          font-family: Arial, sans-serif;
+          font-size: 27px;
+          line-height: 30px;
+          cursor: pointer;
+          transition: transform 0.18s ease, color 0.18s ease;
 
-    li .datos {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-      padding-top: 12px;
-      border-top: 1px solid #d9ded9;
-    }
+          &:hover {
+            color: #776b4a;
+            transform: scale(1.08);
+          }
 
-    @media (max-width: 1120px) {
-      ul {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+          &:focus-visible {
+            outline: 2px solid var(--dorado);
+            outline-offset: 2px;
+            border-radius: 50%;
+          }
+        }
+
+        /* Datos */
+        & address {
+          margin-top: 32px;
+          font-style: normal;
+          text-align: left;
+        }
+
+        & address p {
+          margin: 0 0 9px;
+          color: #383d39;
+          font-size: 14px;
+          line-height: 1.35;
+        }
+
+        & address p:last-child {
+          margin-bottom: 0;
+          color: var(--texto-suave);
+          font-size: 13px;
+        }
+
+        /* Comisión, legajo */
+        & .datos {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 7px;
+          margin-top: 18px;
+          padding-top: 13px;
+          border-top: 1px solid #e4e6e2;
+          color: #646a65;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.3px;
+        }
+
+        & .datos span:first-child::after {
+          content: "·";
+          margin-left: 7px;
+          color: #a0a49f;
+        }
       }
     }
 
-    @media (max-width: 700px) {
-      ul {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-    }
-
-    header h1 {
-      margin: 0;
-    }
-
-    header button {
-      padding: 10px 18px;
-      border: 0;
-      border-radius: 10px;
-      background: #222;
-      color: white;
-      font: inherit;
-      cursor: pointer;
-    }
-
-    header button:hover {
-      opacity: 0.85;
-    }
-
+    /* Dialogs */
     dialog {
-      width: 400px;
-      max-width: calc(100% - 40px);
-      padding: 24px;
-      border: 0;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgb(0 0 0 / 20%);
-    }
-
-    dialog::backdrop {
-      background: rgb(0 0 0 / 40%);
-    }
-
-    dialog form {
-      display: grid;
-      gap: 16px;
-    }
-
-    dialog h2 {
-      margin: 0 0 8px;
-    }
-
-    dialog label {
-      display: grid;
-      gap: 6px;
-    }
-
-    dialog input {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 10px;
+      width: min(600px, calc(100% - 32px));
+      max-width: 600px;
+      margin: auto;
+      padding: 0;
       border: 1px solid #d9ded9;
-      border-radius: 8px;
-      font: inherit;
+      border-radius: 23px;
+      background: #fffefa;
+      color: var(--texto);
+      box-shadow: 0 25px 60px rgb(0 0 0 / 20%), 0 5px 18px rgb(0 0 0 / 10%);
+      overflow: hidden;
+      animation: aparecer 0.18s ease-out;
+
+      &::backdrop {
+        background: rgb(38 45 40 / 48%);
+        backdrop-filter: blur(5px);
+      }
+
+      /* Formularios */
+      & form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 14px;
+        row-gap: 14px;
+        padding: 0;
+      }
+
+      /* Título */
+      & h2 {
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: 24px 28px 7px;
+        font-size: 20px;
+        font-weight: 750;
+        line-height: 1.2;
+      }
+
+      & .subtitulo {
+        grid-column: 1 / -1;
+        margin: -5px 28px 8px;
+        color: #737873;
+        font-size: 13px;
+      }
+
+      /* Campos */
+      & label {
+        display: grid;
+        gap: 6px;
+        color: #666c67;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+
+      & label:nth-of-type(odd) {
+        margin-left: 28px;
+      }
+
+      & label:nth-of-type(even) {
+        margin-right: 28px;
+      }
+
+      & input {
+        width: 100%;
+        height: 42px;
+        padding: 0 13px;
+        border: 1px solid #d9ddd8;
+        border-radius: 10px;
+        background: #f8f8f6;
+        color: var(--texto);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+
+        &:hover {
+          border-color: #c9cec9;
+        }
+
+        &:focus {
+          border-color: var(--verde);
+          background: #ffffff;
+          box-shadow: 0 0 0 3px rgb(48 72 59 / 9%);
+        }
+
+        &:user-invalid {
+          border-color: #d98c88;
+        }
+      }
+
+      /* Botones */
+      & .acciones {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 9px;
+        margin-top: 8px;
+        padding: 13px 28px 17px;
+        border-top: 1px solid #e2e4e0;
+      }
+
+      & .acciones button {
+        min-height: 38px;
+        padding: 0 17px;
+        border: 1px solid #d8dcd7;
+        border-radius: 10px;
+        background: #fffefa;
+        color: #3f4540;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+
+        transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+        &:hover {
+          background: #f3f4f1;
+          border-color: #cbd0ca;
+        }
+
+        &:active {
+          transform: translateY(1px);
+        }
+
+        &:focus-visible {
+          outline: 3px solid rgb(48 72 59 / 18%);
+          outline-offset: 2px;
+        }
+      }
+
+      & .acciones button[type="submit"] {
+        border-color: var(--verde);
+        background: var(--verde);
+        color: white;
+
+        &:hover {
+          border-color: var(--verde-hover);
+          background: var(--verde-hover);
+        }
+      }
+
+      /* Eliminar queda a la izquierda */
+      & #form-editar .acciones button:nth-child(2) {
+        margin-right: auto;
+
+        color: var(--rojo);
+
+        &:hover {
+          background: #fff1f0;
+          border-color: #efc3c1;
+        }
+      }
     }
 
-    dialog .acciones {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 8px;
+    /* Animación */
+    @keyframes aparecer {
+      from {
+        opacity: 0;
+        transform: scale(0.97) translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
-    dialog .acciones button {
-      padding: 10px 16px;
-      border: 0;
-      border-radius: 8px;
-      font: inherit;
-      cursor: pointer;
+    footer {
+      margin-top: 28px;
+
+      color: #8a8f8a;
+
+      text-align: center;
+      font-size: 11px;
     }
 
-    dialog .acciones button[type="submit"] {
-      background: #222;
-      color: white;
+    /* Responsive */
+    @media (max-width: 900px) {
+      body {
+        padding: 34px 20px;
+      }
+
+      main {
+        &>.busqueda {
+          width: 280px;
+          margin-right: 100px;
+        }
+
+        &>.agenda>.lista-alumnos {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
     }
 
-    dialog .acciones button[type="button"] {
-      background: #eee;
+    @media (max-width: 680px) {
+      body {
+        padding: 25px 15px;
+      }
+
+      main {
+        &>header {
+          align-items: flex-start;
+          margin-bottom: 18px;
+
+          & h1 {
+            font-size: 27px;
+          }
+
+          & button {
+            min-height: 42px;
+            padding: 0 16px;
+          }
+        }
+
+        &>.busqueda {
+          width: 100%;
+          height: 44px;
+          margin: 0 0 18px;
+        }
+
+        &>.agenda>.lista-alumnos {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+      }
+
+      .tarjeta-alumno {
+        &>article {
+          min-height: 185px;
+          padding: 20px 18px 16px;
+
+          & h2 {
+            font-size: 21px;
+          }
+
+          & address {
+            margin-top: 26px;
+          }
+        }
+      }
+
+      dialog {
+        width: calc(100% - 24px);
+        border-radius: 19px;
+
+        & form {
+          grid-template-columns: 1fr;
+          row-gap: 13px;
+        }
+
+        & h2 {
+          padding: 21px 20px 7px;
+        }
+
+        & .subtitulo {
+          margin-right: 20px;
+          margin-left: 20px;
+        }
+
+        & label:nth-of-type(odd),
+        & label:nth-of-type(even) {
+          margin-right: 20px;
+          margin-left: 20px;
+        }
+
+        & .acciones {
+          padding: 12px 20px 15px;
+        }
+      }
     }
 
-    dialog .acciones button:hover {
-      opacity: 0.8;
+    @media (max-width: 430px) {
+      main {
+        &>header {
+          gap: 10px;
+
+          & h1 {
+            font-size: 25px;
+          }
+
+          & button {
+            padding: 0 13px;
+            font-size: 13px;
+          }
+        }
+      }
+
+      dialog {
+        & .acciones {
+          flex-wrap: wrap;
+
+          & button {
+            flex: 1;
+          }
+
+          & #form-editar .acciones button:nth-child(2) {
+            margin-right: 0;
+          }
+        }
+      }
+    }
+
+    /* Reducir movimiento */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
     }
   </style>
 </head>
@@ -220,27 +591,34 @@
 
     // Estado reactivo de la ageda
     const state = reactive({
-      alumnos: alumnosGuardados ? JSON.parse(alumnosGuardados) : alumnos,
+      alumnos: alumnosGuardados ? JSON.parse(alumnosGuardados) : structuredClone(alumnos),
       busqueda: '',       // guarda lo que escriba el usuario en el buscador
       alumnoEditando: null
     })
 
     // Guardar estado actual de alumnos en localStorage
     function guardarAlumnos() {
-      localStorage.setItem(
-        storage,
-        JSON.stringify(state.alumnos)
-      )
+      localStorage.setItem(storage, JSON.stringify(state.alumnos))
+    }
+
+    // Si no había info guardada, se crea localStorage usando datos de alumnos.json.
+    if (!alumnosGuardados) {
+      guardarAlumnos()
     }
 
     // Agregar un nuevo alumno a la agenda
     function agregarAlumno(event) {
       event.preventDefault()
 
-      const formulario = event.target
+      const formulario = event.currentTarget
+
+      if (!formulario.checkValidity()) {
+        formulario.reportValidity()
+        return
+      }
 
       const nuevoAlumno = {
-        id: Date.now(),
+        id: generarId(),
         apellido: formulario.apellido.value.trim(),
         nombre: formulario.nombre.value.trim(),
         legajo: formulario.legajo.value.trim(),
@@ -252,7 +630,6 @@
 
       state.alumnos.push(nuevoAlumno)
       guardarAlumnos()
-
       formulario.reset()
       document.getElementById('dialog-agregar').close()
     }
@@ -263,32 +640,58 @@
 
       const formulario = document.getElementById('form-editar')
 
-      formulario.apellido.value = alumno.apellido
-      formulario.nombre.value = alumno.nombre
-      formulario.legajo.value = alumno.legajo
-      formulario.comision.value = alumno.comision
-      formulario.telefono.value = alumno.telefono
-      formulario.github.value = alumno.github
+      formulario.apellido.value = alumno.apellido ?? ''
+      formulario.nombre.value = alumno.nombre ?? ''
+      formulario.legajo.value = alumno.legajo ?? ''
+      formulario.comision.value = alumno.comision ?? ''
+      formulario.telefono.value = alumno.telefono ?? ''
+      formulario.github.value = alumno.github ?? ''
 
       document.getElementById('dialog-editar').showModal()
+    }
+
+    // Permitir usar tarjetas con el teclado
+    function manejarTeclado(alumno, event) {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        editarAlumno(alumno)
+      } else if (event.key === ' ') {
+        event.preventDefault()
+        cambiarFavorito(alumno, event)
+      }
+    }
+
+    // Cambiar favorito
+    function cambiarFavorito(alumno, event) {
+      event.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      guardarAlumnos()
     }
 
     // Guardar cambios del alumno editado
     function guardarEdicion(event) {
       event.preventDefault()
 
-      const formulario = event.target
+      const formulario = event.currentTarget
       const alumno = state.alumnoEditando
 
-      alumno.apellido = formulario.apellido.value.trim()
-      alumno.nombre = formulario.nombre.value.trim()
-      alumno.legajo = formulario.legajo.value.trim()
-      alumno.comision = formulario.comision.value.trim()
-      alumno.telefono = formulario.telefono.value.trim()
-      alumno.github = formulario.github.value.trim()
+      if (!alumno) {
+        return
+      }
+
+      if (!formulario.checkValidity()) {
+        formulario.reportValidity()
+        return
+      }
+
+      alumno.apellido = formulario.elements.apellido.value.trim()
+      alumno.nombre = formulario.elements.nombre.value.trim()
+      alumno.legajo = formulario.elements.legajo.value.trim()
+      alumno.comision = formulario.elements.comision.value.trim()
+      alumno.telefono = formulario.elements.telefono.value.trim()
+      alumno.github = formulario.elements.github.value.trim()
 
       guardarAlumnos()
-
       state.alumnoEditando = null
       formulario.reset()
       document.getElementById('dialog-editar').close()
@@ -297,6 +700,10 @@
     // Eliminar alumno que se está editando
     function eliminarAlumno() {
       const alumno = state.alumnoEditando
+
+      if (!alumno) {
+        return
+      }
 
       state.alumnos = state.alumnos.filter(a => a.id !== alumno.id)
 
@@ -308,21 +715,25 @@
 
     // Guardar cambios cuando se modifica algún alumno
     watch(
-      () => state.alumnos.map(a => ({
-        id: a.id,
-        favorito: a.favorito
+      () => state.alumnos.map(alumno => ({
+        id: alumno.id,
+        favorito: alumno.favorito
       })),
-      () => {
-        guardarAlumnos()
-      }
+      () => { guardarAlumnos() }
     )
 
     // Comparar sin distinguir mayúsculas, minúsculas ni acentos
     function normalizar(texto) {
-      return texto
+      return String(texto ?? '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
+        .trim()
+    }
+
+    // Generar id
+    function generarId() {
+      return Date.now() + Math.floor(Math.random() * 1000)
     }
 
     // Obtener alumnos que coincidan con la búsqueda, favoritos van primero
@@ -330,9 +741,16 @@
       const busqueda = normalizar(state.busqueda)
 
       return state.alumnos
-        .filter(a => {
-          const nombre = normalizar(`${a.apellido} ${a.nombre}`)
-          return nombre.includes(busqueda)
+        .filter(alumno => {
+          const datosBuscables = [
+            alumno.apellido,
+            alumno.nombre,
+            alumno.legajo,
+            alumno.comision,
+            alumno.telefono,
+            alumno.github
+          ]
+          return datosBuscables.some(dato => normalizar(dato).includes(busqueda))
         })
         .sort((a, b) => {
           // favoritos aparecen primero
@@ -341,75 +759,88 @@
           }
 
           // ordenar por apellido y nombre
-          const apellidoA = normalizar(a.apellido)
-          const apellidoB = normalizar(b.apellido)
-
-          const comparacionApellido = apellidoA.localeCompare(apellidoB)
+          const comparacionApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido), 'es', { sensitivity: 'base' })
 
           if (comparacionApellido !== 0) {
             return comparacionApellido
           }
 
-          return normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+          return normalizar(a.nombre).localeCompare(normalizar(b.nombre), 'es', { sensitivity: 'base' })
         })
+    }
+
+    // Cancelar edición
+    function cancelarEdicion() {
+      state.alumnoEditando = null
+      document.getElementById('form-editar').reset()
+      document.getElementById('dialog-editar').close()
     }
 
     html`
       <header>
         <h1>Agenda</h1>
-        <button type="button" @click="${() => document.getElementById('dialog-agregar').showModal()}" >
+        <button type="button" @click="${() => document.getElementById('dialog-agregar').showModal()}">
           + Agregar
         </button>
       </header>
-      <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno" @input="${event => state.busqueda = event.target.value}" >
-      <ul>
-        ${() => alumnosVisibles().map(a => html`
-          <li @click="${() => editarAlumno(a)}">
-            <div class="encabezado">
-              <h2>${a.apellido} ${a.nombre}</h2>
-              <button type="button" aria-label="${a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}" @click="${event => {
-                event.stopPropagation()
-                a.favorito = !a.favorito}}" >
-                ${() => a.favorito ? '★' : '☆'}
-              </button>
-            </div>
-            <address>
-              <p>${a.telefono}</p>
-              <p>@${a.github}</p>
-            </address>
-            <div class="datos">
-              <span>${a.comision}</span>
-              <span>${a.legajo}</span>
-            </div>
-          </li>
-        `)}
-      </ul>   
+      <input class="busqueda" type="search" placeholder="Buscar alumno..." autocomplete="off" @input="${event => state.busqueda = event.target.value}">
+      <section class="agenda">
+        <ul class="lista-alumnos">
+          ${() => alumnosVisibles().map(alumno => html`
+            <li class="tarjeta-alumno">
+              <article tabindex="0" role="button" @click="${() => editarAlumno(alumno)}" @keydown="${event => manejarTeclado(alumno, event)}">
+                <div class="encabezado">
+                  <h2>
+                    ${alumno.apellido}
+                    <span> ${alumno.nombre}</span>
+                  </h2>
+                  <button class="favorito" type="button" aria-label="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}" @click="${event => cambiarFavorito(alumno, event)}">
+                    ${() => alumno.favorito ? '★' : '☆'}
+                  </button>
+                </div>
+                <address>
+                  <p>${alumno.telefono}</p>
+                  <p>@${alumno.github}</p>
+                </address>
+                <footer class="datos">
+                  <span>${alumno.comision}</span>
+                  <span>${alumno.legajo}</span>
+                </footer>
+              </article>
+            </li>
+          `)} 
+        </ul>
+        ${() => alumnosVisibles().length === 0 ? html`
+          <p class="sin-resultados" role="status">No hay alumnos para mostrar</p>
+        ` : ''}
+      </section>
       <dialog id="dialog-agregar">
         <form @submit="${agregarAlumno}">
           <h2>Agregar alumno</h2>
+          <p class="subtitulo">Completá los datos del alumno</p>
           <label>
             Apellido
-            <input name="apellido" required>
+            <input name="apellido" type="text" autocomplete="family-name" required>
           </label>
           <label>
             Nombre
-            <input name="nombre" required>
+            <input name="nombre" type="text" autocomplete="given-name" required>
           </label>
           <label>
             Legajo
-            <input name="legajo" required>
+            <input name="legajo" type="text" inputmode="numeric" required>
           </label>
           <label>
             Comisión
-            <input name="comision" required>
+            <input name="comision" type="text" required>
           </label>
           <label>
             Teléfono
-            <input name="telefono" required>
+            <input name="telefono" type="tel" autocomplete="tel" required>
           </label>
           <label>
             GitHub
-            <input name="github" required>
+            <input name="github" type="text" autocomplete="username" required>
           </label>
           <div class="acciones">
             <button type="button" @click="${() => document.getElementById('dialog-agregar').close()}">
@@ -424,32 +855,32 @@
       <dialog id="dialog-editar">
         <form id="form-editar" @submit="${guardarEdicion}">
           <h2>Editar alumno</h2>
-          <label>
-            Apellido
-            <input name="apellido" required>
+          <p class="subtitulo">Actualizá los datos del alumno</p>
+          <label>Apellido
+            <input name="apellido" type="text" autocomplete="family-name" required>
           </label>
           <label>
             Nombre
-            <input name="nombre" required>
+            <input name="nombre" type="text" autocomplete="given-name" required>
           </label>
           <label>
             Legajo
-            <input name="legajo" required>
+            <input name="legajo" type="text" inputmode="numeric" required>
           </label>
           <label>
             Comisión
-            <input name="comision" required>
+            <input name="comision" type="text" required>
           </label>
           <label>
             Teléfono
-            <input name="telefono" required>
+            <input name="telefono" type="tel" autocomplete="tel" required>
           </label>
           <label>
             GitHub
-            <input name="github" required>
+            <input name="github" type="text" autocomplete="username" required>
           </label>
           <div class="acciones">
-            <button type="button" @click="${() => document.getElementById('dialog-editar').close()}">
+            <button type="button" @click="${cancelarEdicion}">
               Cancelar
             </button>
             <button type="button" @click="${eliminarAlumno}">
@@ -461,7 +892,7 @@
           </div>
         </form>
       </dialog>
-    `(app)
+    `(app)  
   </script>
 </body>
 
