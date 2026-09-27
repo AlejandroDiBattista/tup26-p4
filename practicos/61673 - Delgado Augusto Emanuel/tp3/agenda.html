@@ -123,6 +123,25 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos))
     })
 
+    // Ordenamiento favoritos primero, luego apellido y nombre
+    function obtenerAlumnosOrdenados(lista) {
+      return [...lista].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return a.favorito ? -1 : 1
+        }
+        const compApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+        if (compApellido !== 0) return compApellido
+        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      })
+    }
+
+    // Funcion de la estrella para seleccionar un alumno como favorito 
+    function toggleFavorito(alumno, event) {
+      if (event) event.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      state.alumnos = [...state.alumnos]
+    }
+
     // Renderizado reactivo en la interfaz
     const app = document.getElementById('app')
     html`
@@ -132,7 +151,7 @@
 
       <section>
         <ul>
-        ${() => state.alumnos.map(a => html`
+        ${() => obtenerAlumnosOrdenados(state.alumnos).map(a => html`
             <li>
               <article class="tarjeta">
                 <header>
@@ -140,8 +159,13 @@
                     <span class="apellido">${a.apellido}</span>
                     <span class="nombre">${a.nombre}</span>
                   </h2>
-                  <button class="btn-favorito" type="button" aria-label="Favorito">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="${a.favorito ? '#7c7554' : 'none'}" stroke="#7c7554" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <button
+                    class="btn-favorito"
+                    type="button"
+                    aria-label="Favorito"
+                    @click="${(e) => toggleFavorito(a, e)}"
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="${() => a.favorito ? '#7c7554' : 'none'}" stroke="#7c7554" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
                   </button>
