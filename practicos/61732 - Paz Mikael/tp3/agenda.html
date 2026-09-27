@@ -197,6 +197,140 @@
       }
     }
 
+    dialog {
+      border: none;
+      border-radius: 20px;
+      padding: 28px 32px;
+      width: 520px;
+      max-width: calc(100vw - 32px);
+      background: #ffffff;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+      }
+
+      header {
+        margin-bottom: 22px;
+
+        h2 {
+          margin: 0 0 6px 0;
+          font-size: 22px;
+          font-weight: 700;
+          color: #1f2320;
+          letter-spacing: -0.3px;
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          color: #636a61;
+        }
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+
+        .campos-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px 20px;
+        }
+
+        .campo {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5247;
+          }
+
+          input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #dcdfd8;
+            border-radius: 12px;
+            background: #f7f8f6;
+            font-size: 14px;
+            color: #1f2320;
+            outline: none;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+
+            &:focus {
+              border-color: #25332a;
+              background: #ffffff;
+            }
+          }
+        }
+
+        .acciones-dialogo {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 28px;
+
+          .btn-eliminar {
+            padding: 9px 20px;
+            background: #fff5f5;
+            color: #d33838;
+            border: 1px solid #ffd4d4;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+
+            &:hover {
+              background: #ffe3e3;
+            }
+          }
+
+          .acciones-principales {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+
+            .btn-guardar {
+              padding: 9px 24px;
+              background: #25332a;
+              color: #ffffff;
+              border: none;
+              border-radius: 9999px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background-color 0.15s ease;
+
+              &:hover {
+                background: #1b261f;
+              }
+            }
+
+            .btn-cancelar {
+              padding: 9px 20px;
+              background: #ffffff;
+              color: #25332a;
+              border: 1px solid #dcdfd8;
+              border-radius: 9999px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background-color 0.15s ease;
+
+              &:hover {
+                background: #f4f5f2;
+              }
+            }
+          }
+        }
+      }
+    }
+
     @media (max-width: 1000px) {
       .lista-alumnos {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -224,6 +358,14 @@
       .lista-alumnos {
         grid-template-columns: 1fr;
       }
+
+      dialog {
+        padding: 24px 20px;
+
+        form .campos-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     }
   </style>
 </head>
@@ -249,7 +391,9 @@
 
     const estado = reactive({
       alumnos: obtenerAlumnosIniciales(),
-      busqueda: ''
+      busqueda: '',
+      modalModo: 'agregar',
+      idEdicion: null
     })
 
     function persistir() {
@@ -295,6 +439,54 @@
       })
     }
 
+    function abrirDialogoAgregar() {
+      estado.modalModo = 'agregar'
+      estado.idEdicion = null
+      const dialogo = document.getElementById('dialogo-alumno')
+      const formulario = dialogo.querySelector('form')
+      formulario.reset()
+      dialogo.showModal()
+    }
+
+    function cerrarDialogo() {
+      const dialogo = document.getElementById('dialogo-alumno')
+      if (dialogo) dialogo.close()
+    }
+
+    function guardarAlumno(e) {
+      e.preventDefault()
+      const formulario = e.target
+      const datos = new FormData(formulario)
+      const apellido = datos.get('apellido')?.toString().trim()
+      const nombre = datos.get('nombre')?.toString().trim()
+      const legajo = datos.get('legajo')?.toString().trim()
+      const comision = datos.get('comision')?.toString().trim()
+      const telefono = datos.get('telefono')?.toString().trim()
+      const github = datos.get('github')?.toString().trim()
+
+      if (!apellido || !nombre || !legajo || !comision || !telefono || !github) {
+        return
+      }
+
+      if (estado.modalModo === 'agregar') {
+        const maxId = estado.alumnos.reduce((max, al) => Math.max(max, Number(al.id) || 0), 0)
+        const nuevoAlumno = {
+          id: maxId + 1,
+          apellido,
+          nombre,
+          legajo,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        }
+        estado.alumnos = [...estado.alumnos, nuevoAlumno]
+      }
+
+      persistir()
+      cerrarDialogo()
+    }
+
     const app = document.getElementById('app')
 
     const plantilla = html`
@@ -307,7 +499,7 @@
             value="${() => estado.busqueda}"
             @input="${(e) => { estado.busqueda = e.target.value }}"
           />
-          <button class="btn-agregar" type="button">+ Agregar</button>
+          <button class="btn-agregar" type="button" @click="${abrirDialogoAgregar}">+ Agregar</button>
         </div>
       </header>
 
@@ -348,6 +540,50 @@
           }}
         </ul>
       </section>
+
+      <dialog id="dialogo-alumno">
+        <header>
+          <h2>${() => estado.modalModo === 'editar' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p>${() => estado.modalModo === 'editar' ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
+        </header>
+        <form @submit="${guardarAlumno}">
+          <div class="campos-grid">
+            <div class="campo">
+              <label for="campo-apellido">Apellido</label>
+              <input id="campo-apellido" name="apellido" required />
+            </div>
+            <div class="campo">
+              <label for="campo-nombre">Nombre</label>
+              <input id="campo-nombre" name="nombre" required />
+            </div>
+            <div class="campo">
+              <label for="campo-legajo">Legajo</label>
+              <input id="campo-legajo" name="legajo" required />
+            </div>
+            <div class="campo">
+              <label for="campo-comision">Comisión</label>
+              <input id="campo-comision" name="comision" required />
+            </div>
+            <div class="campo">
+              <label for="campo-telefono">Teléfono</label>
+              <input id="campo-telefono" name="telefono" required />
+            </div>
+            <div class="campo">
+              <label for="campo-github">GitHub</label>
+              <input id="campo-github" name="github" required />
+            </div>
+          </div>
+          <div class="acciones-dialogo">
+            ${() => estado.modalModo === 'editar' ? html`
+              <button class="btn-eliminar" type="button">Eliminar</button>
+            ` : html`<span></span>`}
+            <div class="acciones-principales">
+              <button class="btn-guardar" type="submit">Guardar</button>
+              <button class="btn-cancelar" type="button" @click="${cerrarDialogo}">Cancelar</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
     `
 
     plantilla(app)
