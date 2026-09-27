@@ -4,29 +4,205 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
-  <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+   <style>
+  body {
+    margin: 0;
+    padding: 40px 24px 64px;
+    font: 16px/1.45 sans-serif;
+    background: #f1f2ee;
+    color: #23261f;
+  }
 
- button.favorito {
-  color: gold;
+  main {
+    width: 1100px;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  ul li {
+    min-width: 0;
+  }
+
+  article {
+    position: relative;
+    height: 100%;
+    padding: 24px 24px 18px;
+    border: 1px solid #e6e4da;
+    border-radius: 20px;
+    background: #fbfaf6;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+    cursor: pointer;
+  }
+
+  article:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
+  }
+
+  article:focus-visible {
+    outline: 3px solid #1f3b2f;
+    outline-offset: 2px;
+  }
+
+  article h2 {
+    margin: 0 34px 16px 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.2rem;
+  }
+
+  article p {
+    margin: 7px 0;
+  }
+
+  article address {
+    font-style: normal;
+  }
+
+  article footer {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid #e6e4da;
+  }
+
+  article footer small {
+    color: #767a6f;
+  }
+
+  button.favorito {
+    position: absolute;
+    top: 22px;
+    right: 20px;
+    border: none;
+    background: none;
+    color: #cdc7b3;
+    font-size: 1.35rem;
+    cursor: pointer;
+  }
+
+  button.favorito:hover {
+    color: #a9862c;
+  }
+
+  button.favorito:focus-visible {
+    outline: 3px solid #1f3b2f;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  button.favorito {
+    color: #cdc7b3;
+  }
+
+  button.favorito-activo {
+    color: #a9862c;
+  }
+
+  @media (max-width: 700px) {
+    ul {
+      grid-template-columns: 1fr;
+    }
+  }
+
+dialog {
+  width: min(600px, 90%);
+  border: none;
+  border-radius: 20px;
+  padding: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .18);
 }
 
-  </style>
+dialog::backdrop {
+  background: rgba(25, 30, 24, .4);
+}
 
+dialog form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  padding: 28px;
+}
 
+dialog h2 {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+dialog input {
+  padding: 10px 12px;
+  border: 1px solid #e6e4da;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.acciones-dialogo {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.acciones-dialogo div {
+  display: flex;
+  gap: 10px;
+}
+
+.acciones-dialogo button {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid #d9ded9;
+  background: white;
+  cursor: pointer;
+}
+
+.acciones-dialogo button[type="submit"] {
+  background: #1f3b2f;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  dialog form {
+    grid-template-columns: 1fr;
+  }
+}
+
+ </style>
 </head>
 <body>
 <main id="app"></main>
 
 <dialog id="dialogo">
   <form>
-    <h2>Editar alumno</h2>
+    <h2 id="tituloDialogo">Agregar alumno</h2>
 
     <label>
       Apellido
@@ -58,9 +234,14 @@
       <input type="text" name="github">
     </label>
 
-    <button type="submit">Guardar</button>
-    <button type="button" id="cancelar">Cancelar</button>
-    <button type="button" id="eliminar">Eliminar</button>
+    <div class="acciones-dialogo">
+      <button type="button" id="eliminar">Eliminar</button>
+
+      <div>
+        <button type="submit">Guardar</button>
+        <button type="button" id="cancelar">Cancelar</button>
+      </div>
+    </div>
   </form>
 </dialog>
 
@@ -72,6 +253,7 @@
     const dialogo = document.getElementById('dialogo')
     const cancelar = document.getElementById('cancelar')
     const eliminar = document.getElementById('eliminar')
+    const tituloDialogo = document.getElementById('tituloDialogo')
     
 
     const estado= reactive ({
@@ -107,6 +289,7 @@
     function editarAlumno(alumno) {
       estado.alumnoEditando = alumno
       eliminar.hidden = false
+      tituloDialogo.textContent = 'Editar alumno'
 
       const formulario = dialogo.querySelector('form')
       formulario.apellido.value = alumno.apellido
@@ -123,6 +306,25 @@
       e.preventDefault()
 
     const formulario = e.target
+
+    const campos = [
+      formulario.apellido,
+      formulario.nombre,
+      formulario.legajo,
+      formulario.comision,
+      formulario.telefono,
+      formulario.github
+    ]
+
+  if (campos.some(campo => campo.value.trim() === '')) {
+    alert('Completa todos los campos.')
+    return
+  }
+
+  if (isNaN(formulario.legajo.value)) {
+    alert('El legajo debe ser un numero.')
+    return
+  }
 
   if (estado.alumnoEditando) {
     const alumno = estado.alumnoEditando
@@ -177,6 +379,7 @@
 
       estado.alumnoEditando = null
       eliminar.hidden = true
+      tituloDialogo.textContent = 'Agregar alumno'
 
       dialogo.showModal()
     }
@@ -198,15 +401,12 @@
         <h1>Alumnos</h1>
         <button type="button" id="agregar">Agregar</button>
        </header>
-
-
-
-      <input
-      type="search"
-      placeholder="Buscar alumno..."
-      @input="${(e) => estado.busqueda = e.target.value}"
-      >
-       
+     <section>
+     <input
+    type="search"
+    placeholder="Buscar alumno..."
+    @input="${(e) => estado.busqueda = e.target.value}"
+  >
 
       <ul>
   ${() => {
@@ -219,37 +419,51 @@
     }
 
     return alumnosFiltrados.map(a => html`
-      <article
-        tabindex="0"
-        @keydown="${(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            editarAlumno(a)
-          }
+     
+<li>
+  <article
+    tabindex="0"
+    @keydown="${(e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        editarAlumno(a)
+      }
 
-          if (e.key === ' ') {
-            e.preventDefault()
-            cambiarFavorito(a.id)
-          }
-        }}"
-      >
-        <h2>${a.apellido}, ${a.nombre}</h2>
+      if (e.key === ' ') {
+        e.preventDefault()
+        cambiarFavorito(a.id)
+      }
+    }}"
+  >
+    <h2>${a.apellido}, ${a.nombre}</h2>
 
-        <button
-          class="${() => a.favorito ? 'favorito' : ''}"
-          @click="${() => cambiarFavorito(a.id)}"
-        >
-          ${() => a.favorito ? '★' : '☆'}
-        </button>
+    <button
+      class="${() => a.favorito ? 'favorito favorito-activo' : 'favorito'}"
+      @click="${() => cambiarFavorito(a.id)}"
+    >
+      ${() => a.favorito ? '★' : '☆'}
+    </button>
 
-        <p>Legajo: ${a.legajo}</p>
-        <p>Comisión: ${a.comision}</p>
-        <p>Teléfono: ${a.telefono}</p>
-        <p>GitHub: ${a.github}</p>
-      </article>
+    <p>Legajo: ${a.legajo}</p>
+    <p>Comisión: ${a.comision}</p>
+
+
+    <address>
+      <p>Teléfono: ${a.telefono}</p>
+    </address>
+
+
+    <p>GitHub: ${a.github}</p>
+
+    <footer>
+      <small>Alumno</small>
+      </footer>
+  </article>
+</li>
     `)
   }}
 </ul>
+</section>
 
 
     `(app)
