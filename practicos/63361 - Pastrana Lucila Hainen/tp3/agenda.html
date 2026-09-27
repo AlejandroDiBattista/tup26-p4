@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-         body {
+    body {
       margin: 0;
       padding: 40px 24px;
       font-family: Arial, sans-serif;
@@ -29,6 +29,10 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
+    }
+
+    .encabezado-agenda h1 {
+      margin-right: auto;
     }
 
     ul {
@@ -144,8 +148,109 @@
         grid-template-columns: 1fr;
       }
     }
+
+        dialog {
+      border: none;
+      border-radius: 24px;
+      padding: 32px;
+      width: 620px;
+      max-width: 90vw;
+      background: #fbfaf7;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    dialog h2 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      color: #1c231d;
+    }
+
+    .subtitulo-dialogo {
+      margin: 0 0 28px;
+      font-size: 14px;
+      color: #8a8f89;
+    }
+
+    .grilla-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 24px;
+      margin-bottom: 28px;
+    }
+
+    .grilla-form label {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #2b332c;
+    }
+
+    .grilla-form input {
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #d9ded9;
+      background: #f2f3f0;
+      font-size: 15px;
+      font-family: Arial, sans-serif;
+      color: #333;
+    }
+
+    .grilla-form input:focus {
+      outline: none;
+      border-color: #26352c;
+      box-shadow: 0 0 0 3px rgba(38, 53, 44, 0.12);
+    }
+
+    .acciones-dialogo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .acciones-derecha {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-eliminar {
+      background: transparent;
+      border: 1px solid #e3b8b2;
+      color: #c0392b;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-cancelar {
+      background: transparent;
+      border: 1px solid #d9ded9;
+      color: #333;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-guardar {
+      background: #1c2a20;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 26px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
@@ -154,25 +259,28 @@
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+
     const estado = reactive({
       alumnos: [],
-      busqueda: '', 
+      busqueda: '',
+
       formulario: {
-       apellido: '',
-       nombre: '',
-       legajo: '',
-       comision: '',
-       telefono: '',
-       github: ''
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
       },
+
       edicion: {
-       id: null,
-       apellido: '',
-       nombre: '',
-       legajo: '',
-       comision: '',
-       telefono: '',
-       github: ''
+        id: null,
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
       }
     })
 
@@ -185,40 +293,41 @@
       localStorage.setItem('alumnos', JSON.stringify(alumnos))
     }
 
-     function ordenarAlumnos() {
-    return [...estado.alumnos].sort((a, b) => {
-      if (a.favorito !== b.favorito) {
-        return b.favorito - a.favorito
-      }
+    function ordenarAlumnos() {
+      return [...estado.alumnos].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return b.favorito - a.favorito
+        }
 
-      const apellidoA = a.apellido
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
+        const apellidoA = a.apellido
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
 
-      const apellidoB = b.apellido
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
+        const apellidoB = b.apellido
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
 
-      if (apellidoA !== apellidoB) {
-        return apellidoA.localeCompare(apellidoB)
-      }
+        if (apellidoA !== apellidoB) {
+          return apellidoA.localeCompare(apellidoB)
+        }
 
-      const nombreA = a.nombre
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
+        const nombreA = a.nombre
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
 
-      const nombreB = b.nombre
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
+        const nombreB = b.nombre
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
 
-      return nombreA.localeCompare(nombreB)
-    })
-  }
-       function guardarAlumnos() {
+        return nombreA.localeCompare(nombreB)
+      })
+    }
+
+    function guardarAlumnos() {
       localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
     }
 
@@ -239,9 +348,11 @@
 
     function alumnoCoincide(a) {
       const texto = estado.busqueda.trim().toLowerCase()
+
       if (!texto) {
         return true
       }
+
       return (
         a.nombre.toLowerCase().includes(texto) ||
         a.apellido.toLowerCase().includes(texto) ||
@@ -260,365 +371,340 @@
     }
 
     function agregarAlumno() {
-  const formulario = estado.formulario
+      const formulario = estado.formulario
 
-  if (
-    !formulario.apellido.trim() ||
-    !formulario.nombre.trim() ||
-    !formulario.legajo.trim() ||
-    !formulario.comision.trim() ||
-    !formulario.telefono.trim() ||
-    !formulario.github.trim()
-  ) {
-    alert('Completá todos los campos.')
-    return
-  }
+      if (
+        !formulario.apellido.trim() ||
+        !formulario.nombre.trim() ||
+        !formulario.legajo.trim() ||
+        !formulario.comision.trim() ||
+        !formulario.telefono.trim() ||
+        !formulario.github.trim()
+      ) {
+        alert('Completá todos los campos.')
+        return
+      }
 
-  const nuevoAlumno = {
-    id: Date.now(),
-    apellido: formulario.apellido.trim(),
-    nombre: formulario.nombre.trim(),
-    legajo: formulario.legajo.trim(),
-    comision: formulario.comision.trim(),
-    telefono: formulario.telefono.trim(),
-    github: formulario.github.trim(),
-    favorito: false
-  }
+      if (!/^\d{5}$/.test(formulario.legajo.trim())) {
+        alert('El legajo debe tener 5 dígitos.')
+        return
+      }
 
-  estado.alumnos.push(nuevoAlumno)
-  guardarAlumnos()
+      if (
+        estado.alumnos.some(
+          a => String(a.legajo) === formulario.legajo.trim()
+        )
+      ) {
+        alert('Ese legajo ya existe.')
+        return
+      }
 
-  estado.formulario.apellido = ''
-  estado.formulario.nombre = ''
-  estado.formulario.legajo = ''
-  estado.formulario.comision = ''
-  estado.formulario.telefono = ''
-  estado.formulario.github = ''
+      const nuevoAlumno = {
+        id: Date.now(),
+        apellido: formulario.apellido.trim(),
+        nombre: formulario.nombre.trim(),
+        legajo: formulario.legajo.trim(),
+        comision: formulario.comision.trim(),
+        telefono: formulario.telefono.trim(),
+        github: formulario.github.trim(),
+        favorito: false
+      }
 
-  document.querySelector('#formulario-agregar').reset()
-  document.querySelector('#dialogo-agregar').close()
-}
+      estado.alumnos.push(nuevoAlumno)
+      guardarAlumnos()
 
-function abrirEdicion(id) {
-  const alumno = estado.alumnos.find(a => a.id === id)
+      estado.formulario.apellido = ''
+      estado.formulario.nombre = ''
+      estado.formulario.legajo = ''
+      estado.formulario.comision = ''
+      estado.formulario.telefono = ''
+      estado.formulario.github = ''
 
-  if (!alumno) {
-    return
-  }
+      document.querySelector('#formulario-agregar').reset()
+      document.querySelector('#dialogo-agregar').close()
+    }
 
-  estado.edicion.id = alumno.id
-  estado.edicion.apellido = alumno.apellido
-  estado.edicion.nombre = alumno.nombre
-  estado.edicion.legajo = alumno.legajo
-  estado.edicion.comision = alumno.comision
-  estado.edicion.telefono = alumno.telefono
-  estado.edicion.github = alumno.github
+    function abrirEdicion(id) {
+      const alumno = estado.alumnos.find(a => a.id === id)
 
-  const formulario = document.querySelector('#formulario-editar')
+      if (!alumno) {
+        return
+      }
 
-  formulario.elements.apellido.value = alumno.apellido
-  formulario.elements.nombre.value = alumno.nombre
-  formulario.elements.legajo.value = alumno.legajo
-  formulario.elements.comision.value = alumno.comision
-  formulario.elements.telefono.value = alumno.telefono
-  formulario.elements.github.value = alumno.github
+      estado.edicion.id = alumno.id
+      estado.edicion.apellido = alumno.apellido
+      estado.edicion.nombre = alumno.nombre
+      estado.edicion.legajo = alumno.legajo
+      estado.edicion.comision = alumno.comision
+      estado.edicion.telefono = alumno.telefono
+      estado.edicion.github = alumno.github
 
-  document.querySelector('#dialogo-editar').showModal()
-}
+      const formulario = document.querySelector('#formulario-editar')
 
-function guardarEdicion() {
-  const alumno = estado.alumnos.find(a => a.id === estado.edicion.id)
+      formulario.elements.apellido.value = alumno.apellido
+      formulario.elements.nombre.value = alumno.nombre
+      formulario.elements.legajo.value = alumno.legajo
+      formulario.elements.comision.value = alumno.comision
+      formulario.elements.telefono.value = alumno.telefono
+      formulario.elements.github.value = alumno.github
 
-  if (!alumno) {
-    return
-  }
+      document.querySelector('#dialogo-editar').showModal()
+    }
 
-  if (
-    !estado.edicion.apellido.trim() ||
-    !estado.edicion.nombre.trim() ||
-    !estado.edicion.legajo.trim() ||
-    !estado.edicion.comision.trim() ||
-    !estado.edicion.telefono.trim() ||
-    !estado.edicion.github.trim()
-  ) {
-    alert('Completá todos los campos.')
-    return
-  }
+    function guardarEdicion() {
+      const alumno = estado.alumnos.find(
+        a => a.id === estado.edicion.id
+      )
 
-  alumno.apellido = estado.edicion.apellido.trim()
-  alumno.nombre = estado.edicion.nombre.trim()
-  alumno.legajo = estado.edicion.legajo.trim()
-  alumno.comision = estado.edicion.comision.trim()
-  alumno.telefono = estado.edicion.telefono.trim()
-  alumno.github = estado.edicion.github.trim()
+      if (!alumno) {
+        return
+      }
 
-  guardarAlumnos()
+      if (
+        !estado.edicion.apellido.trim() ||
+        !estado.edicion.nombre.trim() ||
+        !estado.edicion.legajo.trim() ||
+        !estado.edicion.comision.trim() ||
+        !estado.edicion.telefono.trim() ||
+        !estado.edicion.github.trim()
+      ) {
+        alert('Completá todos los campos.')
+        return
+      }
 
-  document.querySelector('#dialogo-editar').close()
-}
+      if (!/^\d{5}$/.test(estado.edicion.legajo.trim())) {
+        alert('El legajo debe tener 5 dígitos.')
+        return
+      }
 
-function eliminarAlumno() {
-  if (estado.edicion.id === null) {
-    return
-  }
+      if (
+        estado.alumnos.some(
+          a =>
+            a.id !== estado.edicion.id &&
+            String(a.legajo) === estado.edicion.legajo.trim()
+        )
+      ) {
+        alert('Ese legajo ya existe.')
+        return
+      }
 
-  estado.alumnos = estado.alumnos.filter(
-    a => a.id !== estado.edicion.id
-  )
+      alumno.apellido = estado.edicion.apellido.trim()
+      alumno.nombre = estado.edicion.nombre.trim()
+      alumno.legajo = estado.edicion.legajo.trim()
+      alumno.comision = estado.edicion.comision.trim()
+      alumno.telefono = estado.edicion.telefono.trim()
+      alumno.github = estado.edicion.github.trim()
 
-  guardarAlumnos()
+      guardarAlumnos()
 
-  document.querySelector('#dialogo-editar').close()
-}
-  
+      document.querySelector('#dialogo-editar').close()
+    }
+
+    function eliminarAlumno() {
+      if (estado.edicion.id === null) {
+        return
+      }
+
+      estado.alumnos = estado.alumnos.filter(
+        a => a.id !== estado.edicion.id
+      )
+
+      guardarAlumnos()
+
+      document.querySelector('#dialogo-editar').close()
+    }
+
     html`
-    <div class="encabezado-agenda">
-      <h1>Agenda</h1>
+      <div class="encabezado-agenda">
+        <h1>Agenda</h1>
 
-      <input
-        type="search"
-        placeholder="Buscar alumno..."
-        @input="${evento => {
-        estado.busqueda = evento.target.value
-        }}"
-      >
+        <input
+          type="search"
+          placeholder="Buscar alumno..."
+          @input="${evento => {
+            estado.busqueda = evento.target.value
+          }}"
+        >
 
-      <button
-        @click="${() => document.querySelector('#dialogo-agregar').showModal()}"
-      >
-        + Agregar
-      </button>
-
-
-    </div>
+        <button
+          @click="${() =>
+            document.querySelector('#dialogo-agregar').showModal()}"
+        >
+          + Agregar
+        </button>
+      </div>
 
       <ul>
-  ${() => ordenarAlumnos().map(a => html`
-    
-    <li
-    
-    tabindex="0"
-    style="${() => alumnoCoincide(a) ? '' : 'display: none;'}"
-    @click="${() => abrirEdicion(a.id)}"
-    @keydown="${evento => {
-      if (evento.key === 'Enter') {
-        abrirEdicion(a.id)
-      }
+        ${() =>
+          ordenarAlumnos().map(
+            a => html`
+              <li
+                tabindex="0"
+                style="${() =>
+                  alumnoCoincide(a) ? '' : 'display: none;'}"
+                @click="${() => abrirEdicion(a.id)}"
+                @keydown="${evento => {
+                  if (evento.key === 'Enter') {
+                    abrirEdicion(a.id)
+                  }
 
-      if (evento.key === ' ') {
-        evento.preventDefault()
-        cambiarFavorito(a.id)
-      }
-     }}"
-    >
-     
-      <div class="${a.apellido.includes(' ') ? 'encabezado dos-apellidos' : 'encabezado'}">
-        <span class="apellido">${a.apellido}</span>
-        <span class="nombre">${a.nombre}</span>
-      </div>
+                  if (evento.key === ' ') {
+                    evento.preventDefault()
+                    cambiarFavorito(a.id)
+                  }
+                }}"
+              >
+                <div
+                  class="${a.apellido.includes(' ')
+                    ? 'encabezado dos-apellidos'
+                    : 'encabezado'}"
+                >
+                  <span class="apellido">${a.apellido}</span>
+                  <span class="nombre">${a.nombre}</span>
+                </div>
 
-      <button
-        class="estrella"
-        @click="${evento => {
-          evento.stopPropagation()
-          cambiarFavorito(a.id)
-        }}"
-      >
-        ${a.favorito ? '★' : '☆'}
-      </button>
+                <button
+                  class="estrella"
+                  @click="${evento => {
+                    evento.stopPropagation()
+                    cambiarFavorito(a.id)
+                  }}"
+                >
+                  ${a.favorito ? '★' : '☆'}
+                </button>
 
-      <div class="telefono">
-        ${a.telefono}
-      </div>
+                <div class="telefono">
+                  ${a.telefono}
+                </div>
 
-      <div class="usuario">
-        @${a.github}
-      </div>
+                <div class="usuario">
+                  @${a.github}
+                </div>
 
-      <hr class="separador">
+                <hr class="separador">
 
-      <div class="datos">
-        ${a.comision} · ${a.legajo}
-      </div>
-    </li>
-  `.key(a.id))}
+                <div class="datos">
+                  ${a.comision} · ${a.legajo}
+                </div>
+              </li>
+            `.key(a.id)
+          )}
+      </ul>
 
+           <dialog id="dialogo-agregar">
+        <form
+          id="formulario-agregar"
+          @submit="${evento => {
+            evento.preventDefault()
+            agregarAlumno()
+          }}"
+        >
+          <h2>Agregar alumno</h2>
+          <p class="subtitulo-dialogo">Completá los datos del nuevo alumno.</p>
 
-  </ul>
+          <div class="grilla-form">
+            <label>
+              Apellido
+              <input type="text" @input="${e => { estado.formulario.apellido = e.target.value }}">
+            </label>
+            <label>
+              Nombre
+              <input type="text" @input="${e => { estado.formulario.nombre = e.target.value }}">
+            </label>
+            <label>
+              Legajo
+              <input type="text" @input="${e => { estado.formulario.legajo = e.target.value }}">
+            </label>
+            <label>
+              Comisión
+              <input type="text" @input="${e => { estado.formulario.comision = e.target.value }}">
+            </label>
+            <label>
+              Teléfono
+              <input type="text" @input="${e => { estado.formulario.telefono = e.target.value }}">
+            </label>
+            <label>
+              GitHub
+              <input type="text" @input="${e => { estado.formulario.github = e.target.value }}">
+            </label>
+          </div>
 
-<dialog id="dialogo-agregar">
-<form id="formulario-agregar" @submit="${evento => {
-  evento.preventDefault()
-  agregarAlumno()
-}}">
-  <h2>Agregar alumno</h2>
+          <div class="acciones-dialogo">
+            <span></span>
+            <div class="acciones-derecha">
+              <button type="button" class="btn-cancelar"
+                @click="${() => document.querySelector('#dialogo-agregar').close()}">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-guardar">Guardar</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
 
-  <label>
-    Apellido
-    <input
-      type="text"
-      @input="${evento => {
-        estado.formulario.apellido = evento.target.value
-      }}"
-    >
-  </label>
+            <dialog id="dialogo-editar">
+        <form
+          id="formulario-editar"
+          @submit="${evento => {
+            evento.preventDefault()
+            guardarEdicion()
+          }}"
+        >
+          <h2>Editar alumno</h2>
+          <p class="subtitulo-dialogo">Actualizá los datos del alumno.</p>
 
-  <label>
-    Nombre
-    <input
-      type="text"
-      @input="${evento => {
-        estado.formulario.nombre = evento.target.value
-      }}"
-    >
-  </label>
+          <div class="grilla-form">
+            <label>
+              Apellido
+              <input name="apellido" type="text" @input="${e => { estado.edicion.apellido = e.target.value }}">
+            </label>
+            <label>
+              Nombre
+              <input name="nombre" type="text" @input="${e => { estado.edicion.nombre = e.target.value }}">
+            </label>
+            <label>
+              Legajo
+              <input name="legajo" type="text" @input="${e => { estado.edicion.legajo = e.target.value }}">
+            </label>
+            <label>
+              Comisión
+              <input name="comision" type="text" @input="${e => { estado.edicion.comision = e.target.value }}">
+            </label>
+            <label>
+              Teléfono
+              <input name="telefono" type="text" @input="${e => { estado.edicion.telefono = e.target.value }}">
+            </label>
+            <label>
+              GitHub
+              <input name="github" type="text" @input="${e => { estado.edicion.github = e.target.value }}">
+            </label>
+          </div>
 
-  <label>
-    Legajo
-    <input
-      type="text"
-      @input="${evento => {
-        estado.formulario.legajo = evento.target.value
-      }}"
-    >
-  </label>
+          <div class="acciones-dialogo">
+            <button type="button" class="btn-eliminar" @click="${eliminarAlumno}">
+              Eliminar
+            </button>
+            <div class="acciones-derecha">
+              <button type="button" class="btn-cancelar"
+                @click="${() => document.querySelector('#dialogo-editar').close()}">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-guardar">Guardar</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
 
-  <label>
-    Comisión
-    <input
-      type="text"
-      @input="${evento => {
-        estado.formulario.comision = evento.target.value
-      }}"
-    >
-  </label>
-
-  <label>
-    Teléfono
-    <input
-      type="text"
-      @input="${evento => {
-        estado.formulario.telefono = evento.target.value
-      }}"
-    >
-  </label>
-
-  <label>
-    GitHub
-    <input
-      type="text"
-      @input="${evento => {
-        estado.formulario.github = evento.target.value
-      }}"
-    >
-  </label>
-
-  <button
-    type="button"
-    @click="${() => document.querySelector('#dialogo-agregar').close()}"
-  >
-    Cancelar
-  </button>
-
-  <button type="submit">
-    Guardar
-  </button>
-</form>
-</dialog>
-<dialog id="dialogo-editar">
-  <form id="formulario-editar" @submit="${evento => {
-    evento.preventDefault()
-    guardarEdicion()
-  }}">
-    <h2>Editar alumno</h2>
-
-    <label>
-      Apellido
-      <input
-        name="apellido"
-        type="text"
-        @input="${evento => {
-          estado.edicion.apellido = evento.target.value
-        }}"
-      >
-    </label>
-
-    <label>
-      Nombre
-      <input
-        name="nombre"
-        type="text"
-        @input="${evento => {
-          estado.edicion.nombre = evento.target.value
-        }}"
-      >
-    </label>
-
-    <label>
-      Legajo
-      <input
-        name="legajo"
-        type="text"
-        @input="${evento => {
-          estado.edicion.legajo = evento.target.value
-        }}"
-      >
-    </label>
-
-    <label>
-      Comisión
-      <input
-        name="comision"
-        type="text"
-        @input="${evento => {
-          estado.edicion.comision = evento.target.value
-        }}"
-      >
-    </label>
-
-    <label>
-      Teléfono
-      <input
-        name="telefono"
-        type="text"
-        @input="${evento => {
-          estado.edicion.telefono = evento.target.value
-        }}"
-      >
-    </label>
-
-    <label>
-      GitHub
-      <input
-        name="github"
-        type="text"
-        @input="${evento => {
-          estado.edicion.github = evento.target.value
-        }}"
-      >
-    </label>
-
-    <button
-      type="button"
-      @click="${() => document.querySelector('#dialogo-editar').close()}"
-    >
-      Cancelar
-    </button>
-
-    <button type="button" @click="${eliminarAlumno}">
-      Eliminar
-    </button>
-
-    <button type="submit">
-      Guardar
-    </button>
-  </form>
-</dialog>
-<p>
-  ${() => alumnosVisibles().length === 0 ? 'No se encontraron alumnos.' : ''}
-</p>
+      <p>
+        ${() =>
+          alumnosVisibles().length === 0
+            ? 'No se encontraron alumnos.'
+            : ''}
+      </p>
     `
     (app)
   </script>
 </body>
 </html>
+
+
