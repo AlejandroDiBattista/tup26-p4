@@ -115,6 +115,12 @@
     margin-top: 16px;
   }
 
+  .sin-resultados {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #6b7280;
+  }
+
   @media (max-width: 700px) {
     .encabezado {
       align-items: flex-start;
@@ -167,40 +173,66 @@ function ordenarAlumnos(lista) {
   return [...lista].sort((a, b) => {
     if (a.favorito !== b.favorito) {
     return Number(b.favorito) - Number(a.favorito)
-
+  }
+   const porApellido = compararTexto(a.apellido, b.apellido)
+   if (porApellido !== 0) {
+     return porApellido
+   }
+    return compararTexto(a.nombre, b.nombre)
+  })
+}
+function filtrarAlumnos(lista) {
+  const texto = estado.busqueda.trim().toLocaleLowerCase()
+  if (texto === '') {
+    return lista
   }
 
-  const porApellido = compararTexto(a.apellido, b.apellido)
-  if (porApellido !== 0) {
-    return porApellido
-
-  }
-  return compararTexto(a.nombre, b.nombre)
-
- })
+  return lista.filter(alumno => {
+    return alumno.nombre.toLocaleLowerCase().includes(texto) ||
+      alumno.apellido.toLocaleLowerCase().includes(texto)
+  })
 }
 
 const lista = document.getElementById('lista-alumnos')
 
+const buscador = document.getElementById('Buscar')
+buscador.addEventListener('input', evento => {
+  estado.busqueda = evento.target.value
+})
+
 html`
-  ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
-    <li>
-      <article class="tarjeta-alumno">
-        <strong class="alumno-apellido">
-          ${alumno.apellido}
-        </strong>
+  ${() => {
+    const filtrados = ordenarAlumnos(
+      filtrarAlumnos(estado.alumnos)
+    )
 
-        <span class="alumno-nombre">
-          ${alumno.nombre}
-        </span>
+    if (filtrados.length === 0) {
+      return html`
+        <li class="sin-resultados">
+          No hay alumnos que coincidan con la búsqueda.
+        </li>
+      `
+    }
 
-        <p><b>Legajo:</b> ${alumno.legajo}</p>
-        <p><b>Comisión:</b> ${alumno.comision}</p>
-        <p><b>Teléfono:</b> ${alumno.telefono}</p>
-        <p><b>GitHub:</b> ${alumno.github}</p>
-      </article>
-    </li>
-  `)}
+    return filtrados.map(alumno => html`
+      <li>
+        <article class="tarjeta-alumno">
+          <strong class="alumno-apellido">
+            ${alumno.apellido}
+          </strong>
+
+          <span class="alumno-nombre">
+            ${alumno.nombre}
+          </span>
+
+          <p><b>Legajo:</b> ${alumno.legajo}</p>
+          <p><b>Comisión:</b> ${alumno.comision}</p>
+          <p><b>Teléfono:</b> ${alumno.telefono}</p>
+          <p><b>GitHub:</b> ${alumno.github}</p>
+        </article>
+      </li>
+    `)
+  }}
 `(lista)
   </script>
 
