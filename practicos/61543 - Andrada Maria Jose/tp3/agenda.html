@@ -12,23 +12,85 @@
     li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+ button.favorito {
+  color: gold;
+}
+
   </style>
+
+
 </head>
 <body>
-  <main id="app"></main>
+<main id="app"></main>
+
+<dialog id="dialogo">
+  <form>
+    <h2>Editar alumno</h2>
+
+    <label>
+      Apellido
+      <input type="text" name="apellido">
+    </label>
+
+    <label>
+      Nombre
+      <input type="text" name="nombre">
+    </label>
+
+    <label>
+      Legajo
+      <input type="text" name="legajo">
+    </label>
+
+    <label>
+      Comisión
+      <input type="text" name="comision">
+    </label>
+
+    <label>
+      Teléfono
+      <input type="text" name="telefono">
+    </label>
+
+    <label>
+      GitHub
+      <input type="text" name="github">
+    </label>
+
+    <button type="submit">Guardar</button>
+    <button type="button" id="cancelar">Cancelar</button>
+    <button type="button" id="eliminar">Eliminar</button>
+  </form>
+</dialog>
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const dialogo = document.getElementById('dialogo')
+    const cancelar = document.getElementById('cancelar')
+    const eliminar = document.getElementById('eliminar')
+    
+
     const estado= reactive ({
       alumnos: alumnos,
-      busqueda: ''
+      busqueda: '',
+      alumnoEditando: null
     })
 
     function guardarAlumnos() {
       localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    }
+
+    function cambiarFavorito(id) {
+      const alumno = estado.alumnos.find(a => a.id === id)
+
+      if (alumno) {
+        alumno.favorito = !alumno.favorito
+        guardarAlumnos()
+      }
     }
 
     function cargarAlumnos() {
@@ -42,23 +104,158 @@
       }
     }
 
+    function editarAlumno(alumno) {
+      estado.alumnoEditando = alumno
+      eliminar.hidden = false
+
+      const formulario = dialogo.querySelector('form')
+      formulario.apellido.value = alumno.apellido
+      formulario.nombre.value = alumno.nombre
+      formulario.legajo.value = alumno.legajo
+      formulario.comision.value = alumno.comision
+      formulario.telefono.value = alumno.telefono
+      formulario.github.value = alumno.github
+      dialogo.showModal()
+    }
+
+
+    function guardarEdicion(e) {
+      e.preventDefault()
+
+    const formulario = e.target
+
+  if (estado.alumnoEditando) {
+    const alumno = estado.alumnoEditando
+
+    alumno.apellido = formulario.apellido.value
+    alumno.nombre = formulario.nombre.value
+    alumno.legajo = formulario.legajo.value
+    alumno.comision = formulario.comision.value
+    alumno.telefono = formulario.telefono.value
+    alumno.github = formulario.github.value
+
+  } else {
+    const nuevoAlumno = {
+      id: crypto.randomUUID(),
+      apellido: formulario.apellido.value,
+      nombre: formulario.nombre.value,
+      legajo: formulario.legajo.value,
+      comision: formulario.comision.value,
+      telefono: formulario.telefono.value,
+      github: formulario.github.value,
+      favorito: false
+    }
+
+    estado.alumnos.push(nuevoAlumno)
+  }
+
+  guardarAlumnos()
+  dialogo.close()
+  estado.alumnoEditando = null
+}
+
+
+     
+    function eliminarAlumno() {
+      const alumno = estado.alumnoEditando
+
+      if(!alumno) {
+        return
+      }
+
+       estado.alumnos = estado.alumnos.filter(a => a.id !== alumno.id)
+
+       guardarAlumnos()
+       dialogo.close()
+       estado.alumnoEditando = null
+    }
+
+    function abrirAgregar() {
+      const formulario = dialogo.querySelector('form')
+
+      formulario.reset()
+
+      estado.alumnoEditando = null
+      eliminar.hidden = true
+
+      dialogo.showModal()
+    }
+
+    dialogo.querySelector('form').addEventListener('submit' , guardarEdicion)
+    
+    cancelar.addEventListener('click' , () => {
+      dialogo.close()
+      estado.alumnoEditando = null
+
+    })
+
+    eliminar.addEventListener('click' , eliminarAlumno)
+    
 
     html`
-      <h1>Alumnos</h1>
+    
+       <header>
+        <h1>Alumnos</h1>
+        <button type="button" id="agregar">Agregar</button>
+       </header>
+
+
 
       <input
       type="search"
       placeholder="Buscar alumno..."
       @input="${(e) => estado.busqueda = e.target.value}"
       >
-       ${() => {
-       const alumnosFiltrados = ordenarAlumnos(filtrarAlumnos(estado.alumnos))
+       
 
-       return alumnosFiltrados.length
-       ? alumnosFiltrados.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)
-       : html`<li>No se encontraron alumnos.</li>`
-}}
+      <ul>
+  ${() => {
+    const alumnosFiltrados = ordenarAlumnos(filtrarAlumnos(estado.alumnos))
+
+    if (alumnosFiltrados.length === 0) {
+      return [
+        html`<li>No se encontraron alumnos.</li>`
+      ]
+    }
+
+    return alumnosFiltrados.map(a => html`
+      <article
+        tabindex="0"
+        @keydown="${(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            editarAlumno(a)
+          }
+
+          if (e.key === ' ') {
+            e.preventDefault()
+            cambiarFavorito(a.id)
+          }
+        }}"
+      >
+        <h2>${a.apellido}, ${a.nombre}</h2>
+
+        <button
+          class="${() => a.favorito ? 'favorito' : ''}"
+          @click="${() => cambiarFavorito(a.id)}"
+        >
+          ${() => a.favorito ? '★' : '☆'}
+        </button>
+
+        <p>Legajo: ${a.legajo}</p>
+        <p>Comisión: ${a.comision}</p>
+        <p>Teléfono: ${a.telefono}</p>
+        <p>GitHub: ${a.github}</p>
+      </article>
+    `)
+  }}
+</ul>
+
+
     `(app)
+
+    const agregar = document.getElementById('agregar')
+    agregar.addEventListener('click' , abrirAgregar)
 
     cargarAlumnos()
 
