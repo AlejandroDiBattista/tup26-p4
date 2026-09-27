@@ -448,9 +448,39 @@
       dialogo.showModal()
     }
 
+    function abrirDialogoEditar(alumno) {
+      estado.modalModo = 'editar'
+      estado.idEdicion = alumno.id
+      const dialogo = document.getElementById('dialogo-alumno')
+      dialogo.querySelector('#campo-apellido').value = alumno.apellido
+      dialogo.querySelector('#campo-nombre').value = alumno.nombre
+      dialogo.querySelector('#campo-legajo').value = alumno.legajo
+      dialogo.querySelector('#campo-comision').value = alumno.comision
+      dialogo.querySelector('#campo-telefono').value = alumno.telefono
+      dialogo.querySelector('#campo-github').value = alumno.github
+      dialogo.showModal()
+    }
+
     function cerrarDialogo() {
       const dialogo = document.getElementById('dialogo-alumno')
       if (dialogo) dialogo.close()
+    }
+
+    function eliminarAlumno() {
+      if (estado.modalModo !== 'editar' || estado.idEdicion === null) return
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== estado.idEdicion)
+      persistir()
+      cerrarDialogo()
+    }
+
+    function manejarTecladoTarjeta(e, alumno) {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirDialogoEditar(alumno)
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        alternarFavorito(null, alumno.id)
+      }
     }
 
     function guardarAlumno(e) {
@@ -481,6 +511,20 @@
           favorito: false
         }
         estado.alumnos = [...estado.alumnos, nuevoAlumno]
+      } else if (estado.modalModo === 'editar') {
+        const indice = estado.alumnos.findIndex(al => al.id === estado.idEdicion)
+        if (indice !== -1) {
+          estado.alumnos[indice] = {
+            ...estado.alumnos[indice],
+            apellido,
+            nombre,
+            legajo,
+            comision,
+            telefono,
+            github
+          }
+          estado.alumnos = [...estado.alumnos]
+        }
       }
 
       persistir()
@@ -512,7 +556,12 @@
             }
             return alumnos.map(alumno => html`
               <li>
-                <article class="tarjeta-alumno" tabindex="0">
+                <article
+                  class="tarjeta-alumno"
+                  tabindex="0"
+                  @click="${() => abrirDialogoEditar(alumno)}"
+                  @keydown="${(e) => manejarTecladoTarjeta(e, alumno)}"
+                >
                   <header class="tarjeta-cabecera">
                     <h2>
                       <span class="apellido">${alumno.apellido}</span>
@@ -575,7 +624,7 @@
           </div>
           <div class="acciones-dialogo">
             ${() => estado.modalModo === 'editar' ? html`
-              <button class="btn-eliminar" type="button">Eliminar</button>
+              <button class="btn-eliminar" type="button" @click="${eliminarAlumno}">Eliminar</button>
             ` : html`<span></span>`}
             <div class="acciones-principales">
               <button class="btn-guardar" type="submit">Guardar</button>
