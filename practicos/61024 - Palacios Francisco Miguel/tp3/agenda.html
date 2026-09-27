@@ -137,19 +137,24 @@
   </main>
 
   <script type="module">
-    import { html } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+import alumnos from './alumnos.json' with { type: 'json' }
 
-    const lista = document.getElementById('lista-alumnos')
+const estado = reactive({
+  alumnos: alumnos,
+  busqueda: ''
+})
 
-    html`
-      ${alumnos.map(alumno => html`
-        <li>
-           <strong> class="alumno-apellido">${alumno.apellido}</strong>
-            <span class="alumno-nombre">${alumno.nombre}</span>
-        </li>
-      `)}
-    `(lista)
+const lista = document.getElementById('lista-alumnos')
+
+html`
+  ${() => estado.alumnos.map(alumno => html`
+    <li>
+      <strong class="alumno-apellido">${alumno.apellido}</strong>
+      <span class="alumno-nombre">${alumno.nombre}</span>
+    </li>
+  `)}
+`(lista)
   </script>
 
 </body>
