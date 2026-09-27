@@ -15,6 +15,18 @@
       margin-bottom: 28px;
     }
     h1 { margin: 0; }
+    .boton-agregar {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: #30483a;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .boton-agregar:hover { background: #24382d; }
     .input-busqueda {
       width: min(300px, 100%);
       height: 46px;
@@ -236,6 +248,8 @@
       if (alumno) alumno.favorito = !alumno.favorito;
     };
 
+    let temporizadorBusqueda;
+
     const app = document.getElementById('app')
     html`
       <header class="barra-superior">
@@ -245,9 +259,16 @@
           placeholder="Buscar alumno..."
           aria-label="Buscar alumno"
           .value="${() => store.busqueda}"
-          @input="${evento => store.busqueda = evento.target.value}"
+          @input="${evento => {
+            const busqueda = evento.target.value;
+            clearTimeout(temporizadorBusqueda);
+            temporizadorBusqueda = setTimeout(() => {
+              store.busqueda = busqueda;
+            }, 120);
+          }}"
           class="input-busqueda"
         />
+        <button type="button" class="boton-agregar" id="agregar-alumno">+ Agregar</button>
       </header>
       <ul>
         ${() => alumnosVisibles().map(a => html`
@@ -288,8 +309,8 @@
       <dialog class="dialogo-alumno" id="dialogo-edicion">
         <form id="formulario-edicion">
           <header class="encabezado-dialogo">
-            <h2>Editar alumno</h2>
-            <p>Actualizá los datos del alumno.</p>
+            <h2 id="titulo-dialogo">Editar alumno</h2>
+            <p id="descripcion-dialogo">Actualizá los datos del alumno.</p>
           </header>
           <div class="campos-alumno">
             <div class="campo-alumno">
@@ -330,6 +351,9 @@
     const formularioEdicion = document.getElementById('formulario-edicion')
     const cancelarEdicion = document.getElementById('cancelar-edicion')
     const eliminarAlumno = document.getElementById('eliminar-alumno')
+    const agregarAlumno = document.getElementById('agregar-alumno')
+    const tituloDialogo = document.getElementById('titulo-dialogo')
+    const descripcionDialogo = document.getElementById('descripcion-dialogo')
     let alumnoEditandoId = null
 
     function seleccionarAlumno(id) {
@@ -337,6 +361,9 @@
       if (!alumno) return
 
       alumnoEditandoId = id
+      tituloDialogo.textContent = 'Editar alumno'
+      descripcionDialogo.textContent = 'Actualizá los datos del alumno.'
+      eliminarAlumno.hidden = false
       formularioEdicion.apellido.value = alumno.apellido
       formularioEdicion.nombre.value = alumno.nombre
       formularioEdicion.legajo.value = alumno.legajo
@@ -348,18 +375,56 @@
       formularioEdicion.apellido.focus()
     }
 
+    agregarAlumno.addEventListener('click', () => {
+      alumnoEditandoId = null
+      tituloDialogo.textContent = 'Agregar alumno'
+      descripcionDialogo.textContent = 'Completá los datos del nuevo alumno.'
+      eliminarAlumno.hidden = true
+      formularioEdicion.reset()
+      dialogoEdicion.showModal()
+      formularioEdicion.apellido.focus()
+    })
+
     formularioEdicion.addEventListener('submit', evento => {
       evento.preventDefault()
 
-      const alumno = store.alumnos.find(alumno => alumno.id === alumnoEditandoId)
-      if (!alumno) return
+      const datos = {
+        apellido: formularioEdicion.apellido.value.trim(),
+        nombre: formularioEdicion.nombre.value.trim(),
+        legajo: formularioEdicion.legajo.value.trim(),
+        comision: formularioEdicion.comision.value.trim(),
+        telefono: formularioEdicion.telefono.value.trim(),
+        github: formularioEdicion.github.value.trim()
+      }
 
-      alumno.apellido = formularioEdicion.apellido.value.trim()
-      alumno.nombre = formularioEdicion.nombre.value.trim()
-      alumno.legajo = formularioEdicion.legajo.value.trim()
-      alumno.comision = formularioEdicion.comision.value.trim()
-      alumno.telefono = formularioEdicion.telefono.value.trim()
-      alumno.github = formularioEdicion.github.value.trim()
+      if (Object.values(datos).some(dato => dato === '')) {
+        alert('Completá todos los campos.')
+        return
+      }
+
+      if (!/^\d+$/.test(datos.legajo)) {
+        alert('El legajo debe contener solo números.')
+        formularioEdicion.legajo.focus()
+        return
+      }
+
+      const legajoRepetido = store.alumnos.some(alumno =>
+        alumno.legajo === datos.legajo && alumno.id !== alumnoEditandoId
+      )
+      if (legajoRepetido) {
+        alert('Ya existe un alumno con ese legajo.')
+        formularioEdicion.legajo.focus()
+        return
+      }
+
+      if (alumnoEditandoId === null) {
+        const nuevoId = Math.max(0, ...store.alumnos.map(alumno => alumno.id)) + 1
+        store.alumnos.push({ id: nuevoId, ...datos, favorito: false })
+      } else {
+        const alumno = store.alumnos.find(alumno => alumno.id === alumnoEditandoId)
+        if (!alumno) return
+        Object.assign(alumno, datos)
+      }
 
       dialogoEdicion.close()
     })
