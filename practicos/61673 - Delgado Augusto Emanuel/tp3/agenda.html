@@ -13,6 +13,46 @@
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
 
+    /* Header de la agenda con buscador */
+    header.agenda-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+
+      & h1 {
+        margin: 0;
+      }
+
+      & .buscador {
+        width: 250px;
+        padding: 10px 18px;
+        border: 1px solid #d9ded9;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        background: white;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+          border-color: #233128;
+        }
+      }
+    }
+
+    .sin-alumnos {
+      text-align: center;
+      padding: 48px 20px;
+      color: #72756d;
+      font-size: 1.1rem;
+      background: white;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+    }
+
     /* Componente: Tarjeta de alumno con CSS Nesting */
     .tarjeta {
       background: white;
@@ -115,7 +155,8 @@
 
     // Estado reactivo
     const state = reactive({
-      alumnos: datosIniciales
+      alumnos: datosIniciales,
+      busqueda: ''
     })
 
     // Sincronización automática con localStorage
@@ -123,7 +164,27 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos))
     })
 
-    // Ordenamiento favoritos primero, luego apellido y nombre
+    // Normalizar texto para ignorar mayúsculas y acentos en la búsqueda
+    function normalizar(texto) {
+      return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    }
+
+    // Comprueba si un alumno coincide con el texto de búsqueda
+    function coincideBusqueda(alumno, query) {
+      const q = normalizar(query)
+      if (!q) return true
+      const datos = `${alumno.nombre} ${alumno.apellido} ${alumno.legajo} ${alumno.comision} ${alumno.telefono} ${alumno.github}`
+      return normalizar(datos).includes(q)
+    }
+
+    // Comprueba si existe al menos un alumno que coincida con la búsqueda
+    function hayCoincidencias(lista, query) {
+      const q = normalizar(query)
+      if (!q) return lista.length > 0
+      return lista.some(a => coincideBusqueda(a, q))
+    }
+
+    // Ordenamiento: favoritos primero, luego apellido y nombre
     function obtenerAlumnosOrdenados(lista) {
       return [...lista].sort((a, b) => {
         if (a.favorito !== b.favorito) {
@@ -145,14 +206,25 @@
     // Renderizado reactivo en la interfaz
     const app = document.getElementById('app')
     html`
-      <header>
-      <h1>Alumnos</h1>
+      <header class="agenda-header">
+        <h1>Agenda</h1>
+        <input
+          class="buscador"
+          type="search"
+          placeholder="Buscar alumno..."
+          value="${() => state.busqueda}"
+          @input="${(e) => { state.busqueda = e.target.value }}"
+        />
       </header>
 
       <section>
-        <ul>
-        ${() => obtenerAlumnosOrdenados(state.alumnos).map(a => html`
-            <li>
+        <p class="sin-alumnos" style="${() => hayCoincidencias(state.alumnos, state.busqueda) ? 'display: none;' : ''}">
+          No hay alumnos para mostrar
+        </p>
+
+        <ul style="${() => hayCoincidencias(state.alumnos, state.busqueda) ? '' : 'display: none;'}">
+          ${() => obtenerAlumnosOrdenados(state.alumnos).map(a => html`
+            <li style="${() => coincideBusqueda(a, state.busqueda) ? '' : 'display: none;'}">
               <article class="tarjeta">
                 <header>
                   <h2>
@@ -181,7 +253,7 @@
                 </footer>
               </article>
             </li>
-          `)}
+          `.key(a.id))}
         </ul>
       </section>
     `(app)
