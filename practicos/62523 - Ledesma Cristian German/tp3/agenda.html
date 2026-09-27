@@ -44,6 +44,18 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgb(30 42 34 / 10%);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgb(48 72 58 / 35%);
+        outline-offset: 3px;
+      }
 
       .tarjeta-cabecera {
         display: flex;
@@ -93,6 +105,70 @@
         color: #868e96;
       }
     }
+    .dialogo-alumno {
+      width: min(600px, calc(100% - 32px));
+      padding: 0;
+      border: 0;
+      border-radius: 20px;
+      color: #30352f;
+      box-shadow: 0 20px 60px rgb(30 42 34 / 25%);
+    }
+    .dialogo-alumno::backdrop { background: rgb(30 42 34 / 42%); }
+    .encabezado-dialogo {
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid #e3e6e2;
+    }
+    .encabezado-dialogo h2 { margin: 0 0 6px; font-size: 1.35rem; }
+    .encabezado-dialogo p { margin: 0; color: #6c736d; }
+    .campos-alumno {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      padding: 20px 24px;
+    }
+    .campo-alumno { display: grid; gap: 6px; }
+    .campo-alumno label { font-size: 0.82rem; font-weight: 700; color: #596159; }
+    .campo-alumno input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #d9ded9;
+      border-radius: 10px;
+      background: #f8f9f7;
+      color: inherit;
+      font: inherit;
+    }
+    .campo-alumno input:focus {
+      border-color: #30483a;
+      outline: 3px solid rgb(48 72 58 / 14%);
+    }
+    .acciones-dialogo {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 24px 20px;
+      border-top: 1px solid #e3e6e2;
+    }
+    .acciones-dialogo button {
+      padding: 10px 16px;
+      border: 1px solid #d9ded9;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #30352f;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+    .acciones-dialogo button[type="submit"] {
+      border-color: #30483a;
+      background: #30483a;
+      color: #ffffff;
+    }
+    .acciones-dialogo .boton-eliminar {
+      margin-right: auto;
+      border-color: #e2b8b8;
+      color: #b34a4a;
+    }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) {
       .barra-superior {
@@ -102,6 +178,7 @@
       }
       .input-busqueda { width: 100%; }
       ul { grid-template-columns: 1fr; }
+      .campos-alumno { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -174,7 +251,14 @@
       </header>
       <ul>
         ${() => alumnosVisibles().map(a => html`
-        <li class="tarjeta">
+        <li
+          class="tarjeta"
+          tabindex="0"
+          @click="${() => seleccionarAlumno(a.id)}"
+          @keydown="${evento => {
+            if (evento.key === 'Enter') seleccionarAlumno(a.id);
+          }}"
+        >
           <div class="tarjeta-cabecera">
             <span class= "tarjeta-nombre">
               <b class="apellido">${a.apellido}</b> ${a.nombre}
@@ -183,7 +267,10 @@
               type="button"
               class="boton-favorito"
               aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
-              @click="${() => alternarFavorito(a.id)}"
+              @click="${evento => {
+                evento.stopPropagation();
+                alternarFavorito(a.id);
+              }}"
             >
               ${a.favorito ?  '★' : '☆' }
               </button>
@@ -198,7 +285,98 @@
         </li>
         `.key(a.id))}
       </ul>
+      <dialog class="dialogo-alumno" id="dialogo-edicion">
+        <form id="formulario-edicion">
+          <header class="encabezado-dialogo">
+            <h2>Editar alumno</h2>
+            <p>Actualizá los datos del alumno.</p>
+          </header>
+          <div class="campos-alumno">
+            <div class="campo-alumno">
+              <label for="apellido">Apellido</label>
+              <input id="apellido" name="apellido" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="nombre">Nombre</label>
+              <input id="nombre" name="nombre" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="legajo">Legajo</label>
+              <input id="legajo" name="legajo" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="comision">Comisión</label>
+              <input id="comision" name="comision" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="telefono">Teléfono</label>
+              <input id="telefono" name="telefono" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="github">GitHub</label>
+              <input id="github" name="github" required />
+            </div>
+          </div>
+          <footer class="acciones-dialogo">
+            <button type="button" class="boton-eliminar" id="eliminar-alumno">Eliminar</button>
+            <button type="button" id="cancelar-edicion">Cancelar</button>
+            <button type="submit">Guardar</button>
+          </footer>
+        </form>
+      </dialog>
     `(app)
+
+    const dialogoEdicion = document.getElementById('dialogo-edicion')
+    const formularioEdicion = document.getElementById('formulario-edicion')
+    const cancelarEdicion = document.getElementById('cancelar-edicion')
+    const eliminarAlumno = document.getElementById('eliminar-alumno')
+    let alumnoEditandoId = null
+
+    function seleccionarAlumno(id) {
+      const alumno = store.alumnos.find(alumno => alumno.id === id)
+      if (!alumno) return
+
+      alumnoEditandoId = id
+      formularioEdicion.apellido.value = alumno.apellido
+      formularioEdicion.nombre.value = alumno.nombre
+      formularioEdicion.legajo.value = alumno.legajo
+      formularioEdicion.comision.value = alumno.comision
+      formularioEdicion.telefono.value = alumno.telefono
+      formularioEdicion.github.value = alumno.github
+
+      dialogoEdicion.showModal()
+      formularioEdicion.apellido.focus()
+    }
+
+    formularioEdicion.addEventListener('submit', evento => {
+      evento.preventDefault()
+
+      const alumno = store.alumnos.find(alumno => alumno.id === alumnoEditandoId)
+      if (!alumno) return
+
+      alumno.apellido = formularioEdicion.apellido.value.trim()
+      alumno.nombre = formularioEdicion.nombre.value.trim()
+      alumno.legajo = formularioEdicion.legajo.value.trim()
+      alumno.comision = formularioEdicion.comision.value.trim()
+      alumno.telefono = formularioEdicion.telefono.value.trim()
+      alumno.github = formularioEdicion.github.value.trim()
+
+      dialogoEdicion.close()
+    })
+
+    cancelarEdicion.addEventListener('click', () => dialogoEdicion.close())
+
+    eliminarAlumno.addEventListener('click', () => {
+      const alumno = store.alumnos.find(alumno => alumno.id === alumnoEditandoId)
+      if (!alumno) return
+
+      const confirmar = confirm(`¿Querés eliminar a ${alumno.nombre} ${alumno.apellido}?`)
+      if (!confirmar) return
+
+      store.alumnos = store.alumnos.filter(alumno => alumno.id !== alumnoEditandoId)
+      alumnoEditandoId = null
+      dialogoEdicion.close()
+    })
   </script>
 </body>
 </html>
