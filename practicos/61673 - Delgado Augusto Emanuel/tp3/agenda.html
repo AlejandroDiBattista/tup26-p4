@@ -7,11 +7,95 @@
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
+    h1 { margin: 0 0 24px; font-size: 2rem; font-weight: 700; color: #1f211d; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    li { min-width: 0; list-style: none; }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    /* Componente: Tarjeta de alumno con CSS Nesting */
+    .tarjeta {
+      background: white;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      box-sizing: border-box;
+      min-height: 195px;
+      transition: box-shadow 0.2s ease;
+
+      & header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 22px;
+
+        & h2 {
+          margin: 0;
+          font-size: 1.25rem;
+          line-height: 1.25;
+
+          & .apellido {
+            font-family: Georgia, serif;
+            font-weight: 700;
+            color: #1a1c18;
+            margin-right: 6px;
+          }
+
+          & .nombre {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-weight: 400;
+            font-size: 1rem;
+            color: #555750;
+          }
+        }
+
+        & .btn-favorito {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #7c7554;
+          line-height: 1;
+        }
+      }
+
+      & address {
+        font-style: normal;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 20px;
+
+        & .telefono {
+          margin: 0;
+          font-weight: 600;
+          color: #20221e;
+          font-size: 1rem;
+        }
+
+        & .github {
+          margin: 0;
+          color: #6e7169;
+          font-size: 0.95rem;
+        }
+      }
+
+      & footer {
+        border-top: 1px solid #ecefe9;
+        padding-top: 14px;
+        margin-top: auto;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #63665e;
+        letter-spacing: 0.5px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -42,10 +126,40 @@
     // Renderizado reactivo en la interfaz
     const app = document.getElementById('app')
     html`
+      <header>
       <h1>Alumnos</h1>
-      <ul>
-        ${() => state.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      </header>
+
+      <section>
+        <ul>
+        ${() => state.alumnos.map(a => html`
+            <li>
+              <article class="tarjeta">
+                <header>
+                  <h2>
+                    <span class="apellido">${a.apellido}</span>
+                    <span class="nombre">${a.nombre}</span>
+                  </h2>
+                  <button class="btn-favorito" type="button" aria-label="Favorito">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="${a.favorito ? '#7c7554' : 'none'}" stroke="#7c7554" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </button>
+                </header>
+
+                <address>
+                  <p class="telefono">${a.telefono}</p>
+                  <p class="github">@${a.github}</p>
+                </address>
+
+                <footer>
+                  <span>${a.comision} · ${a.legajo}</span>
+                </footer>
+              </article>
+            </li>
+          `)}
+        </ul>
+      </section>
     `(app)
   </script>
 </body>
