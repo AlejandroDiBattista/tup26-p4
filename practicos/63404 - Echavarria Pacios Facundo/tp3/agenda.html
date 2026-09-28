@@ -20,12 +20,38 @@
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
+    
+    const STORAGE_KEY = 'alumnos_tp3'
+    
+    const obtenerAlumnos = () => {
+      let datos = localStorage.getItem(STORAGE_KEY)
+      
+      if (datos) {
+        try {
+          return JSON.parse(datos)
+        } catch (error) {
+          console.error(`Error: ${error.message}`);
+          return [...alumnos]
+        }
+      }else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(alumnos))
+        return [...alumnos]
+      }
+    }
+    
+    const guardarAlumnos = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.alumnos))
+    }
+    
+    const estado = reactive({
+      alumnos: obtenerAlumnos()
+    })
 
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => estado.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
       </ul>
     `(app)
   </script>
