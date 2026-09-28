@@ -5,43 +5,299 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font-family: sans-serif; background: #f5f6f4; color: #26302a; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { margin: 0; }
+    /* ===== variables y general ===== */
+    :root {
+        --fondo: #f4f4f1;
+        --blanco: #fdfdf9;
+        --borde: #dcdfd8;
+        --verde: #2e3a30;
+        --texto: #26302a;
+        --gris: #6b716c;
+        --dorado: #8b7c55;
+        --rojo: #c0392b;
+    }
 
-    .buscador { width: 300px; padding: 12px 18px; border: 1px solid #d9ded9; border-radius: 20px; font-size: 15px; }
-    .btn-agregar { padding: 12px 18px; border: none; border-radius: 20px; background: #2e3a30; color: white; font-weight: bold; cursor: pointer; }
+    * {
+        box-sizing: border-box;
+    }
 
-    .lista { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .vacio { color: gray; }
+    body {
+        margin: 0;
+        padding: 40px 20px;
+        font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--texto);
+        background: var(--fondo);
+    }
 
-    .tarjeta { padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; cursor: pointer; }
-    .tarjeta:focus { outline: 2px solid #2e3a30; outline-offset: 2px; }
-    .tarjeta-arriba { display: flex; justify-content: space-between; }
-    .tarjeta h2 { margin: 0; font-family: Georgia, serif; font-size: 24px; }
-    .tarjeta h2 span { font-family: sans-serif; font-size: 16px; font-weight: normal; color: gray; }
-    .estrella { padding: 0; border: none; background: none; font-size: 24px; color: #8b7c55; cursor: pointer; }
-    .telefono { margin: 20px 0 8px; font-size: 14px; font-weight: bold; }
-    .github { margin: 0; font-size: 13px; color: gray; }
-    .tarjeta hr { border: none; border-top: 1px solid #ddd; margin: 14px 0 10px; }
-    .datos { margin: 0; font-size: 12px; color: gray; letter-spacing: 1px; }
+    main {
+        max-width: 1104px;
+        margin: 0 auto;
+    }
 
-    dialog { width: 560px; padding: 20px; border: none; border-radius: 16px; }
-    dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
-    dialog h2 { margin: 0; }
-    .subtitulo { margin-top: 4px; color: gray; }
-    .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .campos label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: bold; color: #555; }
-    .campos input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-    .error { color: #c0392b; }
-    .botones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-    .botones button { padding: 10px 16px; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; }
-    .btn-guardar { background: #2e3a30 !important; color: white; }
-    .btn-eliminar { margin-right: auto; color: #c0392b; }
+    /* ===== botones ===== */
+    .btn {
+        padding: 10px 18px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        background: white;
+        color: var(--texto);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
 
-    @media (max-width: 1120px) { .lista { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 700px) { .lista { grid-template-columns: 1fr; } }
+        &:hover {
+            background: #f0f1ed;
+        }
+
+        &.primario {
+            border-color: var(--verde);
+            background: var(--verde);
+            color: white;
+
+            &:hover {
+                background: #3d4b3f;
+            }
+        }
+
+        &.peligro {
+            color: var(--rojo);
+            margin-right: auto;
+        }
+    }
+
+    /* ===== encabezado con buscador ===== */
+    main > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+
+        & h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        & > div {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+            justify-content: flex-end;
+            max-width: 420px;
+        }
+
+        & input {
+            flex: 1;
+            min-width: 0;
+            padding: 13px 20px;
+            border: 1px solid var(--borde);
+            border-radius: 999px;
+            background: var(--blanco);
+            font: inherit;
+            font-size: 15px;
+
+            &:focus {
+                outline: 2px solid var(--verde);
+                outline-offset: 1px;
+            }
+        }
+
+        & .btn {
+            padding: 13px 20px;
+            border-radius: 999px;
+        }
+    }
+
+    /* ===== grilla de tarjetas ===== */
+    main > section {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+
+        @media (max-width: 950px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 620px) {
+            grid-template-columns: 1fr;
+        }
+
+        /* mensaje cuando no hay resultados */
+        & > p {
+            grid-column: 1 / -1;
+            padding: 40px;
+            text-align: center;
+            color: var(--gris);
+        }
+    }
+
+    /* ===== tarjeta ===== */
+    article {
+        display: flex;
+        flex-direction: column;
+        padding: 22px 20px 18px;
+        border: 1px solid var(--borde);
+        border-radius: 16px;
+        background: var(--blanco);
+        box-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+        cursor: pointer;
+
+        &:hover {
+            box-shadow: 0 6px 16px rgb(0 0 0 / 0.1);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--verde);
+            outline-offset: 2px;
+        }
+
+        & > header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            min-height: 58px;
+
+            & h2 {
+                margin: 0;
+                font-family: Georgia, "Times New Roman", serif;
+                font-size: 25px;
+                line-height: 1.2;
+                color: var(--verde);
+
+                & span {
+                    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    font-size: 16px;
+                    font-weight: normal;
+                    color: var(--gris);
+                }
+            }
+
+            & button {
+                padding: 0;
+                border: none;
+                background: none;
+                font-size: 26px;
+                line-height: 1;
+                color: var(--dorado);
+                cursor: pointer;
+            }
+        }
+
+        & > address {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 14px 0 16px;
+            font-style: normal;
+
+            & :first-child {
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            & :last-child {
+                font-size: 13px;
+                color: var(--gris);
+            }
+        }
+
+        & > footer {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid var(--borde);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--gris);
+        }
+    }
+
+    /* ===== dialogo y formulario ===== */
+    dialog {
+        width: min(600px, calc(100% - 32px));
+        padding: 0;
+        border: 8px solid #dfe6df;
+        border-radius: 24px;
+        background: var(--blanco);
+        box-shadow: 0 20px 60px rgb(0 0 0 / 0.25);
+
+        &::backdrop {
+            background: rgb(95 115 100 / 0.45);
+            backdrop-filter: blur(4px);
+        }
+    }
+
+    form {
+        & > header {
+            padding: 18px 14px 14px;
+            border-bottom: 1px solid var(--borde);
+            background: #f3f3f0;
+
+            & h2 {
+                margin: 0;
+                font-size: 20px;
+            }
+
+            & p {
+                margin: 4px 0 0;
+                font-size: 14px;
+                color: var(--gris);
+            }
+        }
+
+        & > section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 18px 14px;
+
+            @media (max-width: 500px) {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        & label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gris);
+        }
+
+        & input {
+            padding: 11px 12px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: #eff0ec;
+            font: inherit;
+            font-size: 15px;
+            color: var(--texto);
+
+            &:focus {
+                outline: none;
+                border-color: var(--verde);
+                background: white;
+            }
+        }
+
+        & > p {
+            margin: 0 14px 12px;
+            color: var(--rojo);
+            font-size: 14px;
+        }
+
+        & > footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 14px;
+            border-top: 1px solid var(--borde);
+        }
+    }
   </style>
 </head>
 <body>
@@ -214,20 +470,21 @@
 
     function Tarjeta(alumno) {
         return html`
-            <article class="tarjeta" tabindex="0" data-id="${alumno.id}"
+            <article tabindex="0" data-id="${alumno.id}"
                 @click="${() => abrirEditar(alumno)}"
                 @keydown="${(e) => manejarTeclado(e, alumno)}">
-                <div class="tarjeta-arriba">
+                <header>
                     <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
-                    <button type="button" class="estrella" tabindex="-1"
+                    <button type="button" tabindex="-1" title="Favorito"
                         @click="${(e) => { e.stopPropagation(); alternarFavorito(alumno); }}">
                         ${() => alumno.favorito ? '★' : '☆'}
                     </button>
-                </div>
-                <p class="telefono">${() => alumno.telefono}</p>
-                <p class="github">@${() => alumno.github}</p>
-                <hr>
-                <p class="datos">${() => alumno.comision} · ${() => alumno.legajo}</p>
+                </header>
+                <address>
+                    <span>${() => alumno.telefono}</span>
+                    <span>@${() => alumno.github}</span>
+                </address>
+                <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
             </article>
         `;
     }
@@ -237,7 +494,7 @@
         if (lista.length == 0) {
             // lo devuelvo dentro de un array porque si no despues de buscar algo
             // sin resultados la lista no se volvia a mostrar
-            return [html`<p class="vacio">No hay alumnos para mostrar.</p>`];
+            return [html`<p>No hay alumnos para mostrar.</p>`];
         }
         return lista.map(Tarjeta);
     }
@@ -259,12 +516,13 @@
         <header>
             <h1>Agenda</h1>
             <div>
-                <input type="search" class="buscador" placeholder="Buscar alumno..."
+                <input type="search" placeholder="Buscar alumno..."
+                    value="${() => estado.busqueda}"
                     @input="${(e) => estado.busqueda = e.target.value}">
-                <button type="button" class="btn-agregar" @click="${abrirAgregar}">+ Agregar</button>
+                <button type="button" class="btn primario" @click="${abrirAgregar}">+ Agregar</button>
             </div>
         </header>
-        <section class="lista">
+        <section>
             ${() => Lista()}
         </section>
     `(app);
@@ -273,24 +531,26 @@
 
     html`
         <form @submit="${guardarAlumno}">
-            <h2>${() => estado.editando == null ? 'Agregar alumno' : 'Editar alumno'}</h2>
-            <p class="subtitulo">${() => estado.editando == null ? 'Completá los datos del nuevo alumno.' : 'Actualizá los datos del alumno.'}</p>
-            <div class="campos">
+            <header>
+                <h2>${() => estado.editando == null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+                <p>${() => estado.editando == null ? 'Completá los datos del nuevo alumno.' : 'Actualizá los datos del alumno.'}</p>
+            </header>
+            <section>
                 ${Campo('Apellido', 'apellido')}
                 ${Campo('Nombre', 'nombre')}
                 ${Campo('Legajo', 'legajo')}
                 ${Campo('Comisión', 'comision')}
                 ${Campo('Teléfono', 'telefono')}
                 ${Campo('GitHub', 'github')}
-            </div>
-            <p class="error">${() => estado.error}</p>
-            <div class="botones">
+            </section>
+            ${() => estado.error ? html`<p>${estado.error}</p>` : ''}
+            <footer>
                 ${() => estado.editando != null
-                    ? html`<button type="button" class="btn-eliminar" @click="${eliminarAlumno}">Eliminar</button>`
+                    ? html`<button type="button" class="btn peligro" @click="${eliminarAlumno}">Eliminar</button>`
                     : ''}
-                <button type="submit" class="btn-guardar">Guardar</button>
-                <button type="button" @click="${cerrarDialogo}">Cancelar</button>
-            </div>
+                <button type="submit" class="btn primario">Guardar</button>
+                <button type="button" class="btn" @click="${cerrarDialogo}">Cancelar</button>
+            </footer>
         </form>
     `(dialogo);
 
