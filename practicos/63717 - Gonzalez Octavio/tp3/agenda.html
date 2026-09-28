@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 32px 20px;
       font-family: system-ui, -apple-system, sans-serif;
       background-color: #f4f5f3;
-      color: #333;
+      color: #222;
     }
 
     main {
@@ -19,38 +23,103 @@
       margin: 0 auto;
     }
 
-    header {
+    header.principal {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 24px;
 
       h1 {
         margin: 0;
-        font-size: 2rem;
+        font-size: 1.8rem;
+        font-weight: 700;
       }
     }
 
-    ul {
+    .listado {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
-      padding: 0;
-      list-style: none;
     }
 
-    li {
-      background: white;
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
+    .tarjeta {
+      background: #ffffff;
+      border: 1px solid #e1e4dc;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 180px;
+
+      .tarjeta-cabecera {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        h2 {
+          margin: 0;
+          font-size: 1.15rem;
+          font-family: Georgia, serif;
+          line-height: 1.2;
+
+          .apellido {
+            font-weight: bold;
+            color: #1f2937;
+          }
+
+          .nombre {
+            font-weight: normal;
+            color: #4b5563;
+          }
+        }
+
+        .btn-favorito {
+          background: none;
+          border: none;
+          font-size: 1.4rem;
+          cursor: pointer;
+          color: #71716b;
+          padding: 0;
+          line-height: 1;
+        }
+      }
+
+      .tarjeta-contacto {
+        font-style: normal;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .telefono {
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .github {
+          color: #6b7280;
+          font-size: 0.95rem;
+        }
+      }
+
+      .tarjeta-pie {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+        color: #555;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
     }
 
     @media (max-width: 900px) {
-      ul {
+      .listado {
         grid-template-columns: repeat(2, 1fr);
       }
     }
 
     @media (max-width: 600px) {
-      ul {
+      .listado {
         grid-template-columns: 1fr;
       }
     }
@@ -84,18 +153,33 @@
     const app = document.getElementById('app')
 
     const vista = html`
-      <header>
+      <header class="principal">
         <h1>Agenda</h1>
       </header>
 
-      <section>
-        <ul>
-          ${() => estado.alumnos.map(alumno => html`
-            <li>
-              <strong>${alumno.apellido}</strong>, ${alumno.nombre}
-            </li>
-          `)}
-        </ul>
+      <section class="listado">
+        ${() => estado.alumnos.map(alumno => html`
+          <article class="tarjeta">
+            <header class="tarjeta-cabecera">
+              <h2>
+                <span class="apellido">${alumno.apellido}</span>
+                <span class="nombre">${alumno.nombre}</span>
+              </h2>
+              <button class="btn-favorito" type="button">
+                ${alumno.favorito ? '★' : '☆'}
+              </button>
+            </header>
+
+            <address class="tarjeta-contacto">
+              <div class="telefono">${alumno.telefono}</div>
+              <div class="github">@${alumno.github}</div>
+            </address>
+
+            <footer class="tarjeta-pie">
+              <span>${alumno.comision} · ${alumno.legajo}</span>
+            </footer>
+          </article>
+        `)}
       </section>
     `
 
