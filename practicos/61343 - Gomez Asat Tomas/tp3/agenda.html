@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head>  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background-color: #f1f2f0; color: #5b3c31; } 
     main { width: 1104px; max-width: 100%; margin: auto; }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
@@ -169,127 +169,115 @@
       }
     }
 
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
+    //interfaz 
+    html`
+      <header class="app-header">
+        <h1>Agenda</h1>
+        <div class="toolbar">
+          <input
+            type="search"
+            placeholder="Buscar alumno..."
+            .value="${() => state.search}"
+            @input="${e => (state.search = e.target.value)}"
+          >
+          <button type="button" @click="${abrirAgregar}">+ Agregar</button>
+        </div>
+      </header>
+      <section>
+        <ul>
+          ${() => {
+            const visibles = obtenerAlumnosVisibles()
+            if (visibles.length === 0) {
+              return html`<li class="empty">No hay alumnos para mostrar.</li>`
+            }
+            return visibles.map(a => html`
+              <li>
+                <article
+                  tabindex="0"
+                  @click="${() => abrirEditar(a)}"
+                  @keydown="${e => manejarTeclaTarjeta(e, a)}"
+                >
+                  <header>
+                    <strong>${a.apellido}, ${a.nombre}</strong>
+                    <button
+                      class="fav"
+                      type="button"
+                      title="${a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+                      @click="${e => { e.stopPropagation(); toggleFavorito(a.id) }}"
+                    >
+                      ${a.favorito ? '★' : '☆'}
+                    </button>
+                  </header>
+                  <address>
+                    ${a.telefono}<br>
+                    @${a.github}
+                  </address>
+                  <footer>${a.comision} - ${a.legajo}</footer>
+                </article>
+              </li>
+            `.key(a.id))
+          }}
+        </ul>
+      </section>
+      <dialog id="dialogAlumno">
+        <form @submit="${e => { e.preventDefault(); guardarFormulario() }}">
+          <h2>${() => (state.isNew ? 'Agregar alumno' : 'Editar alumno')}</h2>
+          <p>Actualizá los datos del alumno.</p>
+          <div class="grid">
+            <label>Apellido
+              <input
+                required
+                .value="${() => state.form?.apellido || ''}"
+                @input="${e => (state.form.apellido = e.target.value)}"
+              >
+            </label>
+            <label>Nombre
+              <input
+                required
+                .value="${() => state.form?.nombre || ''}"
+                @input="${e => (state.form.nombre = e.target.value)}"
+              >
+            </label>
+            <label>Legajo
+              <input
+                required
+                .value="${() => state.form?.legajo || ''}"
+                @input="${e => (state.form.legajo = e.target.value)}"
+              >
+            </label>
+            <label>Comisión
+              <input
+                .value="${() => state.form?.comision || ''}"
+                @input="${e => (state.form.comision = e.target.value)}"
+              >
+            </label>
+            <label>Teléfono
+              <input
+                .value="${() => state.form?.telefono || ''}"
+                @input="${e => (state.form.telefono = e.target.value)}"
+              >
+            </label>
+            <label>GitHub
+              <input
+                .value="${() => state.form?.github || ''}"
+                @input="${e => (state.form.github = e.target.value)}"
+              >
+            </label>
+          </div>
+          <footer>
+            ${() => state.isNew && html`
+              <button type="button" class="danger"
+               @click="${eliminarAlumno}">Eliminar
+               </button>
+            `}
+            <div class="actions">
+              <button type="button" @click="${cerrarDialogo}">Cancelar</button>
+              <button type="submit">${() => (state.isNew ? 'Agregar' : 'Guardar')}</button>
+            </div>
+          </footer>
+        </form>
+      </dialog>
+    `(app)    
   </script>
 </body> 
 </html>
-
