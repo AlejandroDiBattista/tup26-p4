@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda Reactiva -  Programación C:1</title>
+
+  <script>
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnos from './alumnos.json' with { type: 'json' }
+  </script>
+
   <style>
     :root {
       --primary: #2536eb;
@@ -115,9 +121,89 @@
             position: relative;
             cursor: pointer;
             transition: trsnform 0.15s ease, box-shadow 0.15s ease;
+
+            &:hover, &:focus-visible {
+              transform: translateY(-2px);
+              box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+              outline: 2px solid var(--primary);
+            }
+
+            .fav-btn {
+              position: absolute;
+              top: 1rem;
+              right: 1rem;
+              background: none;
+              border: none;
+              font-size: 1.5rem;
+              cursor: pointer;
+              color: #cbd5e1;
+              line-height: 1;
+
+              &.is-fav {
+                color: var(--star);
+              }
+
+              &.focus-visible {
+                outline: 2px solid var(--primary);
+                border-radius: 4px;
+              }
+            }
+
+            .card-header {
+              padding-right: 2rem;
+              margin-bottom: 0.75rem;
+
+              h2 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                line-height: 1.3;
+              }
+            }
+
+            .card-body {
+              font-size: 0.9rem;
+              color: var(--text-muted);
+
+              p {
+                margin-bottom: 0.25rem;
+              }
+
+              address {
+                font-style: normal;
+                margin-top: 0.5rem;
+                border-top: 1px solid var(--border);
+                padding-top: 0.5rem;
+
+                a {
+                  color: var(--primary);
+                  text-decoration: none;
+
+                  &:hover {
+                    text-decoration: underline;
+                  }
+                }
+              }
+            }
+
+            footer.card-tags {
+              margin-top: 1rem;
+              display: flex;
+              gap: 0.5rem;
+
+              .badge {
+                background-color: #eff6ff;
+                color: var(--primary);
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+              }
+            }
           }
         }
       }
+
+      
 
     }
     h1 { margin: 0 0 24px; }
@@ -190,20 +276,72 @@
       </div>
     </form>
   </dialog>
-
-
-
+  
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    const STORAGE_KEY = 'agenda_alumnos_data';
+    const { reactive, html } = Arrow;
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    const state = reactive ({
+      alumnos: [],
+      searchQuery: ''
+    });
+
+    async function initData() {
+      const storedData = localStorage.getItem(STORAGE_KEY);
+      if (storedData) {
+        state.alumnos = JSON.parse(storedData);
+      } else {
+        try {
+          const response = await fetch('./alumnos.json');
+          if (response.ok) {
+            const data = await response.json();
+            state.alumnos = data;
+            saveData();
+          } else {
+            console.warn('No se pudo cargar los alumnos automáticamente..');
+          }
+        } catch (err) {
+          console.error('Error al cargar alumnos', err);
+        }
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos));
+    }
+
+
+    function toggleFavorite(id, e) {
+      if (e) e.stopPropagation();
+      state.alumnos = state.alumnos.map(al =>
+        al.id === id ? { ...al, favorito: !al.favorito } : al
+      );
+      saveData();
+    } 
+    
+    function saveStudent(studentData) {
+      if (studentData.id) {
+        state.alumnos = state.alumnos.map(al =>
+        al.id === studentData.id ? { ...al, ...studentData } : al
+      );
+      } else {
+      const newStudent = {
+        ...studentData,
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        favorito: false
+      };
+      state.alumnos = [...state.alumnos, newStudent];
+    }
+    saveData();
+  }
+
+  function deleteStudent(id) {
+    state.alumnos = state.alumnos.filter(al => al.id !== id);
+    saveData();
+  }
+
+
+
   </script>
 </body>
 </html>
