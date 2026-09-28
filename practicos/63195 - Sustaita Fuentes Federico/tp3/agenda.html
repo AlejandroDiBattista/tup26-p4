@@ -9,10 +9,11 @@
     main { max-width: 1104px; margin: auto; }
 
     main > header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
 
-      h1 { margin: 0; }
+      h1 { margin: 0 auto 0 0; }
       input { width: 300px; max-width: 100%; padding: 12px 20px; font: inherit; border: 1px solid #d9ded9; border-radius: 999px; background: #fefef9; }
+      button { padding: 12px 20px; font: inherit; font-weight: bold; color: white; background: #2c3b30; border: 0; border-radius: 999px; cursor: pointer; }
     }
 
     section { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
@@ -28,6 +29,20 @@
       address { margin: 16px 0; font-style: normal; }
       footer { padding-top: 10px; border-top: 1px solid #d9ded9; font-size: .8rem; color: #5f6b62; }
     }
+
+    dialog {
+      width: min(600px, calc(100% - 32px)); padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9;
+
+      &::backdrop { background: #2c3b3059; }
+      h2 { margin: 0 0 16px; }
+      form > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      label { display: grid; gap: 4px; font-size: .8rem; font-weight: bold; color: #5f6b62; }
+      input { padding: 10px 12px; font: inherit; border: 1px solid #d9ded9; border-radius: 8px; background: #f3f4f1; }
+      p { min-height: 1.2em; margin: 12px 0 0; font-size: .9rem; color: #c0392b; }
+      footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+      footer button { padding: 10px 18px; font: inherit; font-weight: bold; border: 1px solid #d9ded9; border-radius: 10px; background: white; cursor: pointer; }
+      footer button[type="submit"] { color: white; background: #2c3b30; border-color: #2c3b30; }
+    }
   </style>
 </head>
 <body>
@@ -37,10 +52,7 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
-    // ---------- Estado ----------
     const CLAVE = 'agenda:alumnos'
-
-    // Usa lo guardado; si no hay nada, usa alumnos.json
     function cargar() {
       try {
         const guardado = localStorage.getItem(CLAVE)
@@ -50,8 +62,9 @@
     }
 
     const state = reactive({ alumnos: cargar(), busqueda: '' })
+    const form = reactive({ apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '', error: '' })
 
-    // ---------- Funciones ----------
+    
     const guardar = () => localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
 
     const alternarFavorito = id => {
@@ -64,7 +77,7 @@
     const coincide = (a, texto) =>
       norm([a.apellido, a.nombre, a.legajo, a.comision, a.telefono, a.github].join(' ')).includes(texto)
 
-    // Filtra por lo buscado; favoritos primero, luego apellido y nombre
+    
     const visibles = () => {
       const texto = norm(state.busqueda).trim()
       return state.alumnos
@@ -75,9 +88,45 @@
           norm(a.nombre).localeCompare(norm(b.nombre)))
     }
 
-    guardar() // crea el almacenamiento local la primera vez
+    const CAMPOS = [
+      ['apellido', 'Apellido'], ['nombre', 'Nombre'], ['legajo', 'Legajo'],
+      ['comision', 'Comisión'], ['telefono', 'Teléfono'], ['github', 'GitHub'],
+    ]
+    const dialogo = () => document.getElementById('dialogo')
 
-    // ---------- Interfaz ----------
+    const abrirNuevo = () => {
+      Object.assign(form, { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '', error: '' })
+      dialogo().showModal()
+    }
+
+    const cancelar = () => dialogo().close()
+
+    
+    function validar() {
+      const datos = {}
+      for (const [k] of CAMPOS) datos[k] = String(form[k]).trim()
+      datos.github = datos.github.replace(/^@/, '')
+      for (const [k, titulo] of CAMPOS)
+        if (!datos[k]) return { error: `Completá el campo ${titulo}.` }
+      if (!/^\d+$/.test(datos.legajo)) return { error: 'El legajo debe contener solo números.' }
+      if (!/^[\d\s()+-]{6,}$/.test(datos.telefono)) return { error: 'El teléfono no es válido.' }
+      if (!/^[\w-]+$/.test(datos.github)) return { error: 'El usuario de GitHub no es válido.' }
+      return { datos }
+    }
+
+    const guardarNuevo = () => {
+      const { datos, error } = validar()
+      form.error = error ?? ''
+      if (error) return
+      const ids = state.alumnos.map(a => Number(a.id)).filter(Number.isFinite)
+      const id = ids.length ? Math.max(...ids) + 1 : 1
+      state.alumnos = [...state.alumnos, { id, ...datos, favorito: false }]
+      guardar()
+      dialogo().close()
+    }
+
+    guardar()
+
     const tarjeta = a => html`
       <article>
         <header>
@@ -94,17 +143,38 @@
       </article>
     `.key(a.id)
 
+    const campo = ([k, titulo]) => html`
+      <label>
+        ${titulo}
+        <input name="${k}" autocomplete="off"
+          .value="${() => form[k]}"
+          @input="${e => { form[k] = e.target.value }}">
+      </label>
+    `.key(k)
+
     html`
       <header>
         <h1>Agenda</h1>
         <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno"
-          .value="${() => state.busqueda}"
+          .value="${() => state.busqueda}" 
           @input="${e => { state.busqueda = e.target.value }}">
+        <button type="button" @click="${abrirNuevo}">+ Agregar</button>
       </header>
       <section>
         ${() => visibles().map(tarjeta)}
         ${() => visibles().length ? '' : html`<p>No hay alumnos para mostrar.</p>`}
       </section>
+      <dialog id="dialogo">
+        <form novalidate @submit="${e => { e.preventDefault(); guardarNuevo() }}">
+          <h2>Agregar alumno</h2>
+          <div>${CAMPOS.map(campo)}</div>
+          <p role="alert">${() => form.error}</p>
+          <footer>
+            <button type="submit">Guardar</button>
+            <button type="button" @click="${cancelar}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
     `(document.getElementById('app'))
   </script>
 </body>
