@@ -43,6 +43,20 @@
       alumno.favorito= !alumno.favorito
       guardar()
     }
+    function agregarAlumno(){
+      const nuevo={
+        id: Date.now(),
+        apellido: document.getElementById("napellido").value,
+        nombre: document.getElementById("nnombre").value,
+        legajo: document.getElementById("nlegajo").value,
+        comision: document.getElementById("ncomision").value,
+        celular: document.getElementById("ncelular").value,
+        github: document.getElementById("ngithub").value,
+        favorito: false
+      }
+      estado.alumnos.push(nuevo)
+      guardar()
+    }
     function alumnosEncontrados(){
       const texto= estado.busqueda.toLowerCase()
       const lista= estado.alumnos.filter(a=> {
@@ -65,6 +79,7 @@
     html`
     <h1>Alumnos</h1>
     <input type="search" placeholder="buscar alumno" @input="${(e) =>estado.busqueda= e.target.value}">
+    <button @click="${() => document.getElementById("agregar").showModal()}">agregar</button>
       <ul>
         ${() => alumnosEncontrados().map(a => html`
         <li> 
@@ -74,7 +89,7 @@
               <button @click="${() => favoritos(a.id)}">${a.favorito ? "★" : "☆"}</button>
             </header>
             <address>
-              <p>Tel: ${a.telefono}</p>
+              <p>Tel: ${a.celular}</p>
               <p>Github: ${a.github}</p>
             </address>
             <footer>
@@ -84,6 +99,21 @@
         </li>` )}
       </ul>
       ${() => alumnosEncontrados().length=== 0 ? html`<p>no hay alumnos</p>` : "" }
+
+      <dialog id="agregar">
+        <form method="dialog">
+          <h2>agregar alumno</h2>
+          <label> apellido <input type="text" id="napellido" required> </label>
+          <label> nombre<input type="text" id="nnombre" required> </label>
+          <label> legajo <input type="text" id="nlegajo" required> </label>
+          <label> comision <input type="text" id="ncomision" required> </label>
+          <label> celular <input type="text" id="ncelular" required> </label>
+          <label> github <input type="text" id="ngithub" required> </label>
+          <button type="submit" @click="${() => agregarAlumno()}">guardar</button>
+          <button type="button" @click="${() => document.getElementById("agregar").close()}">cancelar</button>
+          </form>
+        </dialog>
+
         `(app)
   </script>
 </body>
