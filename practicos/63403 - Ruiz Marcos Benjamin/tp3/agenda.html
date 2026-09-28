@@ -43,7 +43,12 @@
   guardarAlumnos()
   }
 
-
+  function ordenamiento (){
+  return [...personas.contenido].sort((a,b) =>
+  b.favorito - a.favorito ||
+  a.apellido.localeCompare(b.apellido, "es", {sensitivity: "base"}) ||
+  a.nombre.localeCompare(b.nombre, "es", {sensitivity: "base"})
+  )}
 
 
 
@@ -51,7 +56,7 @@
     html`
       <h1>Alumnos</h1>
       <section>
-       ${() => personas.contenido.map(a => html`
+       ${() => ordenamiento().map(a => html`
         <article>
         <header>
         <h2>
