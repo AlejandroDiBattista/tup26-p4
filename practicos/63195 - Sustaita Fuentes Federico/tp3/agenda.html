@@ -7,9 +7,16 @@
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
     main { max-width: 1104px; margin: auto; }
-    h1 { margin: 0 0 24px; }
+
+    main > header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+
+      h1 { margin: 0; }
+      input { width: 300px; max-width: 100%; padding: 12px 20px; font: inherit; border: 1px solid #d9ded9; border-radius: 999px; background: #fefef9; }
+    }
 
     section { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    section > p { grid-column: 1 / -1; text-align: center; color: #5f6b62; }
 
     article {
       padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9;
@@ -26,17 +33,30 @@
   <main id="app"></main>
 
   <script type="module">
-    import { html } from 'https://esm.sh/@arrow-js/core'
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    // ---------- Estado ----------
+    const state = reactive({ busqueda: '' })
+
+    // ---------- Funciones ----------
     const norm = s => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
-    // Favoritos primero; luego apellido y nombre, sin distinguir mayúsculas ni acentos
-    const ordenados = () => [...alumnos].sort((a, b) =>
-      (Number(!!b.favorito) - Number(!!a.favorito)) ||
-      norm(a.apellido).localeCompare(norm(b.apellido)) ||
-      norm(a.nombre).localeCompare(norm(b.nombre)))
+    const coincide = (a, texto) =>
+      norm([a.apellido, a.nombre, a.legajo, a.comision, a.telefono, a.github].join(' ')).includes(texto)
 
+    // Filtra por lo buscado; favoritos primero, luego apellido y nombre
+    const visibles = () => {
+      const texto = norm(state.busqueda).trim()
+      return alumnos
+        .filter(a => coincide(a, texto))
+        .sort((a, b) =>
+          (Number(!!b.favorito) - Number(!!a.favorito)) ||
+          norm(a.apellido).localeCompare(norm(b.apellido)) ||
+          norm(a.nombre).localeCompare(norm(b.nombre)))
+    }
+
+    // ---------- Interfaz ----------
     const tarjeta = a => html`
       <article>
         <header>
@@ -54,9 +74,13 @@
     html`
       <header>
         <h1>Agenda</h1>
+        <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno"
+          .value="${() => state.busqueda}"
+          @input="${e => { state.busqueda = e.target.value }}">
       </header>
       <section>
-        ${ordenados().map(tarjeta)}
+        ${() => visibles().map(tarjeta)}
+        ${() => visibles().length ? '' : html`<p>No hay alumnos para mostrar.</p>`}
       </section>
     `(document.getElementById('app'))
   </script>
