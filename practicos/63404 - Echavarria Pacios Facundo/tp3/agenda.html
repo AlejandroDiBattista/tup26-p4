@@ -158,6 +158,18 @@
       cerrarDialogo()
     }
 
+    //Funcion para manejar las teclas del teclado
+    const manejarTeclado = (e , alumno) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        cambiarFavorito(alumno.id)
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirEditar(alumno)
+      }
+    }
+
     //Estados reactivos de ArroJs
     const estado = reactive({
       alumnos: obtenerAlumnos(),
@@ -174,7 +186,7 @@
       <header>
         <h1>Agenda</h1>
         <input type="search" placeholder="Buscar alumno..." @input="${(e) => estado.busqueda = e.target.value}"/>
-        <button @click="${abrirCrear}">+ Crear</button>
+        <button @click="${abrirCrear}">+ Agregar</button>
       </header>
       <section>
         ${() => {
@@ -184,11 +196,11 @@
           }
 
           return lista.map(a => html`
-            <article @click="${() => abrirEditar(a)}">
+            <article @click="${() => abrirEditar(a)}" tabindex="0" @keydown="${(e) => manejarTeclado(e, a)}">
               <header>
                 <b>${a.apellido}</b>
                 ${a.nombre}
-                <button @click="${(e) => {e.stopPropagation(); cambiarFavorito(a.id)}}">
+                <button @click="${(e) => {e.stopPropagation(); cambiarFavorito(a.id)}}" tabindex="-1">
                   ${a.favorito ? '\u2605' : '\u2606'}
                 </button>
               </header>
