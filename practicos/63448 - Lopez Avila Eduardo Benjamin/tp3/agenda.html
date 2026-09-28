@@ -23,6 +23,27 @@
       margin: 0 0 24px;
     }
 
+    input[type="search"] {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 360px;
+      margin: 0 0 24px;
+      padding: 10px 14px;
+      font: inherit;
+      border: 1px solid #d9ded9;
+      border-radius: 12px;
+      background: white;
+    }
+
+    input[type="search"]:focus {
+      outline: 2px solid #8aa58a;
+      outline-offset: 1px;
+    }
+
+    .vacio {
+      color: #6b736b;
+    }
+
     ul {
       display: grid;
       grid-template-columns: repeat(3, 360px);
@@ -66,19 +87,49 @@
     const datosAlumnos = alumnosGuardados ? JSON.parse(alumnosGuardados) : alumnosIniciales
 
     const estado = reactive({
-      alumnos: datosAlumnos
+      alumnos: datosAlumnos,
+      busqueda: ''
     })
 
     watch(() => estado.alumnos, (nuevosAlumnos) => {
       localStorage.setItem('agenda_alumnos', JSON.stringify(nuevosAlumnos))
     })
 
+    const normalizar = (texto) =>
+      texto
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/n\u0303/g, '\u0001')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\u0001/g, 'ñ')
+
+    const filtrarAlumnos = () => {
+      const terminos = normalizar(estado.busqueda).split(/\s+/).filter(Boolean)
+      if (!terminos.length) return estado.alumnos
+
+      return estado.alumnos.filter(a => {
+        const completo = normalizar(`${a.nombre} ${a.apellido}`)
+        return terminos.every(t => completo.includes(t))
+      })
+    }
+
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
+      <input
+        type="search"
+        placeholder="Buscar alumno..."
+        aria-label="Buscar alumno"
+        autocomplete="off"
+        value="${() => estado.busqueda}"
+        @input="${(e) => { estado.busqueda = e.target.value }}"
+      >
       <ul>
-        ${() => estado.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => filtrarAlumnos().map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
       </ul>
+      ${() => filtrarAlumnos().length === 0
+        ? html`<p class="vacio">No se encontraron alumnos.</p>`
+        : ''}
     `(app)
   </script>
 </body>
