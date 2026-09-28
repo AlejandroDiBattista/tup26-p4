@@ -99,6 +99,8 @@
       }
 
       .tarjeta-contacto {
+        font-style: normal;
+
         p {
           margin: 4px 0;
           color: #666666;
@@ -116,6 +118,11 @@
         font-size: 0.85rem;
         color: #868e96;
       }
+    }
+    .mensaje-vacio {
+      margin: 28px 0;
+      color: #6c736d;
+      text-align: center;
     }
     .dialogo-alumno {
       width: min(600px, calc(100% - 32px));
@@ -140,7 +147,8 @@
     }
     .campo-alumno { display: grid; gap: 6px; }
     .campo-alumno label { font-size: 0.82rem; font-weight: 700; color: #596159; }
-    .campo-alumno input {
+    .campo-alumno input,
+    .campo-alumno select {
       width: 100%;
       box-sizing: border-box;
       padding: 10px 12px;
@@ -150,7 +158,8 @@
       color: inherit;
       font: inherit;
     }
-    .campo-alumno input:focus {
+    .campo-alumno input:focus,
+    .campo-alumno select:focus {
       border-color: #30483a;
       outline: 3px solid rgb(48 72 58 / 14%);
     }
@@ -270,6 +279,7 @@
         />
         <button type="button" class="boton-agregar" id="agregar-alumno">+ Agregar</button>
       </header>
+      <section aria-label="Listado de alumnos">
       <ul>
         ${() => alumnosVisibles().map(a => html`
         <li
@@ -277,9 +287,15 @@
           tabindex="0"
           @click="${() => seleccionarAlumno(a.id)}"
           @keydown="${evento => {
+            if (evento.target !== evento.currentTarget) return;
             if (evento.key === 'Enter') seleccionarAlumno(a.id);
+            if (evento.key === ' ') {
+              evento.preventDefault();
+              alternarFavorito(a.id);
+            }
           }}"
         >
+          <article>
           <div class="tarjeta-cabecera">
             <span class= "tarjeta-nombre">
               <b class="apellido">${a.apellido}</b> ${a.nombre}
@@ -296,16 +312,21 @@
               ${a.favorito ?  '★' : '☆' }
               </button>
               </div>
-              <div class="tarjeta-contacto">
+              <address class="tarjeta-contacto">
                 <p class="telefono">${a.telefono}</p>
                 <p class="github">@${a.github}</p>
-                </div>
+                </address>
               <div class= "tarjeta-pie">
                 <span> ${a.comision} · ${a.legajo}</span>
                 </div>
+          </article>
         </li>
         `.key(a.id))}
       </ul>
+      ${() => alumnosVisibles().length === 0
+        ? html`<p class="mensaje-vacio">No hay alumnos para mostrar.</p>`
+        : ''}
+      </section>
       <dialog class="dialogo-alumno" id="dialogo-edicion">
         <form id="formulario-edicion">
           <header class="encabezado-dialogo">
@@ -327,7 +348,18 @@
             </div>
             <div class="campo-alumno">
               <label for="comision">Comisión</label>
-              <input id="comision" name="comision" required />
+              <select id="comision" name="comision" required>
+                <option value="">Seleccionar comisión</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
+                <option value="C3">C3</option>
+                <option value="C4">C4</option>
+                <option value="C5">C5</option>
+                <option value="C6">C6</option>
+                <option value="C7">C7</option>
+                <option value="C8">C8</option>
+                <option value="C9">C9</option>
+              </select>
             </div>
             <div class="campo-alumno">
               <label for="telefono">Teléfono</label>
@@ -355,6 +387,8 @@
     const tituloDialogo = document.getElementById('titulo-dialogo')
     const descripcionDialogo = document.getElementById('descripcion-dialogo')
     let alumnoEditandoId = null
+    const comisionesValidas = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+    const formatoGithub = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i
 
     function seleccionarAlumno(id) {
       const alumno = store.alumnos.find(alumno => alumno.id === id)
@@ -399,6 +433,18 @@
 
       if (Object.values(datos).some(dato => dato === '')) {
         alert('Completá todos los campos.')
+        return
+      }
+
+      if (!comisionesValidas.includes(datos.comision)) {
+        alert('Seleccioná una comisión válida.')
+        formularioEdicion.comision.focus()
+        return
+      }
+
+      if (!formatoGithub.test(datos.github)) {
+        alert('El usuario de GitHub no es válido.')
+        formularioEdicion.github.focus()
         return
       }
 
