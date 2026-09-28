@@ -48,7 +48,8 @@
       localStorage.setItem("alumnos", JSON.stringify(alumnos))
     }
     const estado = reactive({
-      alumnos: datosAlumnos
+      alumnos: datosAlumnos,
+      busqueda: ""
     })
     watch(() => {
       localStorage.setItem("alumnos", JSON.stringify(estado.alumnos))
@@ -79,15 +80,42 @@
 
       return alumnosOrdenados
     }
+  
+    function buscarAlumnos(alumnos){
+      let texto = estado.busqueda.toLowerCase()
+      return alumnos.filter(a => {
+        return a.nombre.toLowerCase().includes(texto) ||
+               a.apellido.toLowerCase().includes(texto)       
+      })
+    }
+
+    function cambiarFavorito(id){
+      let alumno = estado.alumnos.find(a => a.id === id)
+      if (alumno) {
+        alumno.favorito = !alumno.favorito
+      }
+    }
 
 
     html`
       <h1>Alumnos</h1>
-      <ul>
-        ${() => ordenarAlumnos(estado.alumnos).map(a => html`
+      <input
+      type= "search"
+      placeholder= "Buscar alumno..."
+      @input="${e => estado.busqueda = e.target.value}"
+      >
+      ${() => buscarAlumnos(estado.alumnos).length === 0 
+      ? html`<p>No se encontraron alumnos</p>`
+      : ""
+      }
+
+      <ul>  
+        ${() => ordenarAlumnos(buscarAlumnos(estado.alumnos)).map(a => html`
           <li>
             <article>
-            <div>${a.favorito ? "Favorito" : "No favorito"}</div>
+            <button @click="${() => cambiarFavorito(a.id)}">
+              ${a.favorito ? "Favorito" : "No favorito"}
+              </button>
 
            <h2> ${a.apellido} </h2>
 
