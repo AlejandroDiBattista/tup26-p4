@@ -32,7 +32,7 @@
     }
   
     const personas = reactive ({ 
-    contenido : listado});
+    contenido : listado, busqueda: ""});
 
   function guardarAlumnos (){
   localStorage.setItem("listado", JSON.stringify(personas.contenido))
@@ -44,7 +44,10 @@
   }
 
   function ordenamiento (){
-  return [...personas.contenido].sort((a,b) =>
+  return [...personas.contenido]
+  .filter(a =>
+  `${a.apellido} ${a.nombre}`.toLowerCase().includes(personas.busqueda.toLowerCase()))
+  .sort((a,b) =>
   b.favorito - a.favorito ||
   a.apellido.localeCompare(b.apellido, "es", {sensitivity: "base"}) ||
   a.nombre.localeCompare(b.nombre, "es", {sensitivity: "base"})
@@ -55,9 +58,15 @@
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
+      <input type="search"
+      
+      placeholder="Buscar alumno.."
+      .value="${() => personas.busqueda}"
+      @input="${e => personas.busqueda = e.target.value}">
+      
+      
       <section>
-       ${() => ordenamiento().map(a => html`
-        <article>
+       ${() => ordenamiento().map(a => html`<article>
         <header>
         <h2>
         ${a.apellido}
@@ -66,7 +75,7 @@
         </span>
         
         </h2>
-        
+      
         <button @click="${() => alternarFavorito(a)}">
         ${() => a.favorito ? '★' : '☆'}
         </button>
