@@ -94,11 +94,78 @@
       })
     }
 
+    //Funcion para abrir modal de agregar alumno
+    const abrirCrear = () => {
+      estado.dialogo.modo = 'crear'
+      estado.dialogo.alumno = {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
+      }
+      document.getElementById('modalAlumno').showModal()
+    }
+    //Funcion para abrir modal de editar alumno
+    const abrirEditar = (alumno) => {
+      estado.dialogo.modo = 'editar'
+      estado.dialogo.alumno = { ...alumno }
+      document.getElementById('modalAlumno').showModal()
+    }
+    //Funcion para cerrar el modal
+    const cerrarDialogo = () => {document.getElementById('modalAlumno').close()}
+
+    //Funcion para guardar un alumno unico despues de crarlo o editarlo
+    const guardarAlumno = (e, id) => {
+      e.preventDefault()
+      const formData = new FormData(e.target)
+      const {legajo, nombre, apellido, comision, telefono, github} = Object.fromEntries(formData)
+
+      if (!id) {
+        id = Date.now()
+      }
+      
+
+      if (estado.dialogo.modo === 'crear') {
+        const nuevoAlumno = {
+          id,
+          legajo,
+          apellido,
+          nombre,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        }
+
+        estado.alumnos.push(nuevoAlumno)
+      }else {
+        const alumnoEditar = estado.alumnos.find(a => a.id === id)
+        if (alumnoEditar) {
+          Object.assign(alumnoEditar, { legajo, apellido, nombre, comision, telefono, github })
+        }
+      }
+
+      guardarAlumnos()
+      cerrarDialogo()
+    }
+    
+    //Funcion para eliminar a un alumno
+    const eliminarAlumno = (id) => {
+      estado.alumnos = estado.alumnos.filter(a => a.id !== id)
+      guardarAlumnos()
+      cerrarDialogo()
+    }
 
     //Estados reactivos de ArroJs
     const estado = reactive({
       alumnos: obtenerAlumnos(),
-      busqueda: ''
+      busqueda: '',
+      dialogo: {
+        modo: 'crear',
+        alumno: null
+      }
     })
 
     //Return HTML de ArrowJs
@@ -107,6 +174,7 @@
       <header>
         <h1>Agenda</h1>
         <input type="search" placeholder="Buscar alumno..." @input="${(e) => estado.busqueda = e.target.value}"/>
+        <button @click="${abrirCrear}">+ Crear</button>
       </header>
       <section>
         ${() => {
@@ -116,7 +184,7 @@
           }
 
           return lista.map(a => html`
-            <article>
+            <article @click="${() => abrirEditar(a)}">
               <header>
                 <b>${a.apellido}</b>
                 ${a.nombre}
@@ -135,6 +203,47 @@
           `)
         }}
       </section>
+      <dialog id="modalAlumno">
+        <form @submit="${(e) => guardarAlumno(e, estado.dialogo.alumno?.id)}">
+          <h2>${() => estado.dialogo.modo === 'editar' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p>${() => estado.dialogo.modo === 'editar' ? 'Actualizá los datos del alumno.' : 'Ingresá los datos del alumno.'}</p>
+          <div>
+            <label>
+              Apellido
+              <input type="text" name="apellido" .value="${() => estado.dialogo.alumno?.apellido || ''}" required />
+            </label>
+            <label>
+              Nombre
+              <input type="text" name="nombre" .value="${() => estado.dialogo.alumno?.nombre || ''}" required />
+            </label>
+            <label>
+              Legajo
+              <input type="text" name="legajo" .value="${() => estado.dialogo.alumno?.legajo || ''}" required />
+            </label>
+            <label>
+              Comisión
+              <input type="text" name="comision" .value="${() => estado.dialogo.alumno?.comision || ''}" required />
+            </label>
+            <label>
+              Teléfono
+              <input type="tel" name="telefono" .value="${() => estado.dialogo.alumno?.telefono || ''}" required />
+            </label>
+            <label>
+              GitHub
+              <input type="text" name="github" .value="${() => estado.dialogo.alumno?.github || ''}" required />
+            </label>
+          </div>
+          <div class="acciones">
+            ${() => estado.dialogo.modo === 'editar' ? html`
+              <button type="button" @click="${() => eliminarAlumno(estado.dialogo.alumno?.id)}">
+                Eliminar
+              </button>
+            ` : ''}
+            <button type="submit">Guardar</button>
+            <button type="button" @click="${cerrarDialogo}">Cancelar</button>
+          </div>
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
