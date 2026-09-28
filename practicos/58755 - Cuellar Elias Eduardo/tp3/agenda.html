@@ -46,13 +46,25 @@
       guardar()
     }
 
+    function comparar(a, b) {
+      return a.localeCompare(b, 'es', { sensitivity: 'base' })
+    }
+
+    function alumnosVisibles() {
+      return [...state.alumnos].sort((a, b) =>
+        (b.favorito - a.favorito) ||
+        comparar(a.apellido, b.apellido) ||
+        comparar(a.nombre, b.nombre)
+      )
+    }
+    
     if (localStorage.getItem(CLAVE) === null) guardar()
 
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
       <ul>
-        ${() => state.alumnos.map(a => html`
+        ${() => alumnosVisibles().map(a => html`
           <li @click="${() => alternarFavorito(a.id)}">
             ${() => a.favorito ? '★ ' : ''}${a.nombre} <b>${a.apellido}</b>
           </li>
