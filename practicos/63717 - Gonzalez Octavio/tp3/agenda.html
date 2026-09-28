@@ -28,11 +28,47 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
+      gap: 16px;
 
       h1 {
         margin: 0;
         font-size: 1.8rem;
         font-weight: 700;
+      }
+
+      .acciones-cabecera {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .input-busqueda {
+          padding: 8px 16px;
+          border-radius: 20px;
+          border: 1px solid #d1d5db;
+          background: #ffffff;
+          font-size: 0.95rem;
+          outline: none;
+          min-width: 220px;
+
+          &:focus {
+            border-color: #374151;
+          }
+        }
+
+        .btn-agregar {
+          background: #2b332b;
+          color: white;
+          border: none;
+          padding: 8px 18px;
+          border-radius: 20px;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+
+          &:hover {
+            background: #1f261f;
+          }
+        }
       }
     }
 
@@ -40,6 +76,15 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
+    }
+
+    .sin-alumnos {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #6b7280;
+      font-size: 1.1rem;
+      padding: 40px 0;
+      margin: 0;
     }
 
     .tarjeta {
@@ -51,6 +96,13 @@
       flex-direction: column;
       gap: 14px;
       min-height: 180px;
+      cursor: pointer;
+      outline: none;
+
+      &:focus-visible {
+        outline: 2px solid #2b332b;
+        outline-offset: 2px;
+      }
 
       .tarjeta-cabecera {
         display: flex;
@@ -123,6 +175,15 @@
     }
 
     @media (max-width: 600px) {
+      header.principal {
+        flex-direction: column;
+        align-items: stretch;
+
+        .acciones-cabecera {
+          flex-direction: column;
+        }
+      }
+
       .listado {
         grid-template-columns: 1fr;
       }
@@ -147,7 +208,8 @@
     }
 
     const estado = reactive({
-      alumnos: listaInicial
+      alumnos: listaInicial,
+      busqueda: ''
     })
 
     function guardarEnStorage() {
@@ -174,40 +236,91 @@
       guardarEnStorage()
     }
 
+    function normalizar(texto) {
+      return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    }
+
+    function obtenerAlumnos() {
+      const termino = normalizar(estado.busqueda.trim())
+      let lista = estado.alumnos
+
+      if (termino !== '') {
+        lista = lista.filter(a => {
+          const nombreCompleto = normalizar(`${a.apellido} ${a.nombre}`)
+          return nombreCompleto.includes(termino)
+        })
+      }
+
+      return ordenarAlumnos(lista)
+    }
+
+    function abrirEdicion(alumno) {
+      const eventoEdicion = new CustomEvent('editar-alumno', { detail: alumno })
+      window.dispatchEvent(eventoEdicion)
+    }
+
     const app = document.getElementById('app')
 
     const vista = html`
       <header class="principal">
         <h1>Agenda</h1>
+        <div class="acciones-cabecera">
+          <input 
+            type="search" 
+            placeholder="Buscar alumno..." 
+            class="input-busqueda"
+            @input="${(e) => { estado.busqueda = e.target.value }}"
+            value="${() => estado.busqueda}"
+          />
+          <button class="btn-agregar" type="button">+ Agregar</button>
+        </div>
       </header>
 
       <section class="listado">
-        ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
-          <article class="tarjeta">
-            <header class="tarjeta-cabecera">
-              <h2>
-                <span class="apellido">${alumno.apellido}</span>
-                <span class="nombre">${alumno.nombre}</span>
-              </h2>
-              <button 
-                class="${() => alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}" 
-                type="button"
-                @click="${(e) => toggleFavorito(alumno, e)}"
-              >
-                ${() => alumno.favorito ? '★' : '☆'}
-              </button>
-            </header>
+        ${() => {
+          const lista = obtenerAlumnos()
+          if (lista.length === 0) {
+            return html`<p class="sin-alumnos">No hay alumnos para mostrar</p>`
+          }
+          return lista.map(alumno => html`
+            <article 
+              class="tarjeta" 
+              tabindex="0"
+              @click="${() => abrirEdicion(alumno)}"
+              @keydown="${(e) => {
+                if (e.key === ' ' || e.code === 'Space') {
+                  e.preventDefault()
+                  toggleFavorito(alumno, e)
+                } else if (e.key === 'Enter') {
+                  abrirEdicion(alumno)
+                }
+              }}"
+            >
+              <header class="tarjeta-cabecera">
+                <h2>
+                  <span class="apellido">${alumno.apellido}</span>
+                  <span class="nombre">${alumno.nombre}</span>
+                </h2>
+                <button 
+                  class="${() => alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}" 
+                  type="button"
+                  @click="${(e) => toggleFavorito(alumno, e)}"
+                >
+                  ${() => alumno.favorito ? '★' : '☆'}
+                </button>
+              </header>
 
-            <address class="tarjeta-contacto">
-              <div class="telefono">${alumno.telefono}</div>
-              <div class="github">@${alumno.github}</div>
-            </address>
+              <address class="tarjeta-contacto">
+                <div class="telefono">${alumno.telefono}</div>
+                <div class="github">@${alumno.github}</div>
+              </address>
 
-            <footer class="tarjeta-pie">
-              <span>${alumno.comision} · ${alumno.legajo}</span>
-            </footer>
-          </article>
-        `)}
+              <footer class="tarjeta-pie">
+                <span>${alumno.comision} · ${alumno.legajo}</span>
+              </footer>
+            </article>
+          `)
+        }}
       </section>
     `
 
