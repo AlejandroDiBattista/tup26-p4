@@ -44,32 +44,67 @@
       color: #6b736b;
     }
 
-    ul {
+    .lista-alumnos {
       display: grid;
-      grid-template-columns: repeat(3, 360px);
-      justify-content: center;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       padding: 0;
       list-style: none;
+
+      & > li {
+        min-width: 0;
+      }
     }
 
-    li {
-      min-width: 0;
+    .tarjeta {
+      height: 100%;
+      box-sizing: border-box;
       padding: 20px;
       border: 1px solid #d9ded9;
-      border-radius: 16px;
+      border-radius: 8px;
       background: white;
-      text-align: center;
+
+      & header {
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e7ebe7;
+      }
+
+      & h2 {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+      }
+
+      & p {
+        margin: 8px 0 0;
+      }
+
+      .contacto {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+        font-style: normal;
+      }
+
+      & a {
+        color: #315e48;
+        overflow-wrap: anywhere;
+      }
+
+      & footer {
+        margin-top: 14px;
+        color: #59645d;
+        font-size: 0.9rem;
+      }
     }
 
-    @media (max-width: 1120px) {
-      ul {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    @media (max-width: 900px) {
+      .lista-alumnos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 700px) {
-      ul {
+      .lista-alumnos {
         grid-template-columns: 1fr;
       }
     }
@@ -105,12 +140,18 @@
 
     const filtrarAlumnos = () => {
       const terminos = normalizar(estado.busqueda).split(/\s+/).filter(Boolean)
-      if (!terminos.length) return estado.alumnos
+      const alumnosFiltrados = !terminos.length
+        ? [...estado.alumnos]
+        : estado.alumnos.filter(a => {
+          const completo = normalizar(`${a.nombre} ${a.apellido}`)
+          return terminos.every(t => completo.includes(t))
+        })
 
-      return estado.alumnos.filter(a => {
-        const completo = normalizar(`${a.nombre} ${a.apellido}`)
-        return terminos.every(t => completo.includes(t))
-      })
+      const comparador = new Intl.Collator('es', { sensitivity: 'base' })
+      return alumnosFiltrados.sort((a, b) =>
+        comparador.compare(a.apellido, b.apellido) ||
+        comparador.compare(a.nombre, b.nombre)
+      )
     }
 
     const app = document.getElementById('app')
@@ -124,8 +165,22 @@
         value="${() => estado.busqueda}"
         @input="${(e) => { estado.busqueda = e.target.value }}"
       >
-      <ul>
-        ${() => filtrarAlumnos().map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+      <ul class="lista-alumnos">
+        ${() => filtrarAlumnos().map(a => html`
+          <li>
+            <article class="tarjeta">
+              <header>
+                <h2>${a.apellido}, ${a.nombre}</h2>
+                <p>Legajo: <strong>${a.legajo}</strong></p>
+              </header>
+              <div class="contacto">
+                <p>Teléfono: ${a.telefono}</p>
+                <p>GitHub: ${a.github}</p>
+              </div>
+              <footer>Comisión: ${a.comision}</footer>
+            </article>
+          </li>
+        `)}
       </ul>
       ${() => filtrarAlumnos().length === 0
         ? html`<p class="vacio">No se encontraron alumnos.</p>`
