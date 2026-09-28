@@ -9,12 +9,16 @@
     main { width: 1104px; max-width: 100%; margin: auto; }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    li { position: relative; min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
     header{display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;}
     header input {padding: 6px 12px; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 10px;}
-  </style>
+    .filtro {display: none;}
+    #boton-formulario {background-color: #1b5e20;color: #ffffff;border: none; padding: 8px 18px; font-size: 0.95rem; font-weight: bold; border-radius: 20px; cursor: pointer; transition: background-color 0.2s, transform 0.1s;}
+    .header-orden{ display: flex; align-items: center; gap: 10px;}
+    .btn-estrella {position: absolute; top: 12px; right: 12px; background: transparent; border: none; font-size: 1.7rem; line-height: 1; cursor: pointer; color: #f5a623; transition: transform 0.15s ease;}
+ </style>
 </head>
 <body>
   <main id="app"></main>
@@ -23,15 +27,144 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    document.addEventListener('keyup', e =>{
+      if(e.target.matches('#buscador')){
+        const texto = e.target.value.toLowerCase();
+        document.querySelectorAll('.alumno-lista').forEach(alumno => {
+         alumno.textContent.toLowerCase().includes(texto)
+        ? alumno.classList.remove('filtro')
+        : alumno.classList.add('filtro');
+        })
+      }
+    })
+
+    document.addEventListener('click', e => {
+      const formulario = document.querySelector('#formulario');
+      if (e.target.matches('#boton-formulario')) {
+        formulario?.showModal();
+      }
+      if (e.target.matches('#btn-cerrar')) {
+        formulario?.close();
+      }
+    });
+
+    const data = reactive({
+      lista:[...alumnos]
+    });
+
+    document.addEventListener('submit',e =>{
+      if(e.target.matches('#form-alumno')){
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const agregarAlumno = Object.fromEntries(formData);
+        data.lista.push(agregarAlumno);
+        e.target.reset();
+        document.querySelector('#formulario').close();
+      }
+      if (e.target.matches('#form-editar')) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        data.lista[data.indexEditar] = Object.fromEntries(formData);
+        document.querySelector('#modal-editar').close();
+      }
+    });
+
+    document.addEventListener('click', e => {
+  if (e.target.matches('#boton-formulario')) {
+    document.querySelector('#formulario')?.showModal();
+    return;
+  }
+
+  if (e.target.matches('.btn-cerrar-modal')) {
+    e.target.closest('dialog')?.close();
+    return;
+  }
+
+  if (e.target.matches('.btn-estrella')) {
+    e.stopPropagation();
+    e.target.textContent = e.target.textContent === '☆' ? '★' : '☆';
+    return;
+  }
+
+  const tarjeta = e.target.closest('.alumno-lista');
+  if (tarjeta) {
+    const indice = Number(tarjeta.dataset.index);
+    data.indexEditar = indice;
+    const alumno = data.lista[indice];
+    const modalEditar = document.querySelector('#modal-editar');
+    const form = document.querySelector('#form-editar');
+
+    form.nombre.value = alumno.nombre || '';
+    form.apellido.value = alumno.apellido || '';
+    form.telefono.value = alumno.telefono || '';
+    form.github.value = alumno.github || '';
+    form.comision.value = alumno.comision || '';
+    form.legajo.value = alumno.legajo || '';
+
+    modalEditar.showModal();
+  }
+
+  if (e.target.matches('#btn-eliminar')) {
+    console.warn(`Alerta: Intentando eliminar a: ${data.lista[data.indexEditar]?.nombre} ${data.lista[data.indexEditar]?.apellido}`);
+    const confirmar = window.confirm("¿Estás seguro de que deseas eliminar este alumno?");
+    if (confirmar) {
+      data.lista.splice(data.indexEditar, 1);
+      console.log("Alumno eliminado correctamente.");
+      document.querySelector('#modal-editar')?.close();
+       }
+      }
+    });
+
 
     const app = document.getElementById('app')
     html`
-      <header class=>
+      <header>
       <h1>Agenda</h1>
-       <input type="search" placeholder="Buscar alumno..."/>
+       <div class="header-orden">
+       <input type="search" id="buscador" placeholder="Buscar alumno..."/>
+       <button id="boton-formulario">+agregar</button>
+       </div>
       </header>
+       
+       <dialog id="formulario">
+        <form id="form-alumno">
+          <h3>Agregar alumno</h3>
+          <h6>Agrega datos de un nuevo alumno</h6>
+          <input type="text" name="nombre" placeholder="Nombre" required />
+          <input type="text" name="apellido" placeholder="Apellido" required />
+          <input type="tel"  name="telefono" placeholder="Teléfono" required />
+          <input type="text"  name="github" placeholder="GitHub" required />
+          <input type="text" name="comision" placeholder="Comisión" required />
+          <input type="text" name="legajo" placeholder="Legajo" required />
+          <div class="form-acciones">
+            <button type="button" id="btn-cerrar">Cancelar</button>
+            <button type="submit" class="btn-guardar">Guardar</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="modal-editar">
+        <form id="form-editar">
+          <h3>Editar alumno</h3>
+          <input type="text" name="nombre" placeholder="Nombre" required />
+          <input type="text" name="apellido" placeholder="Apellido" required />
+          <input type="tel" name="telefono" placeholder="Teléfono" required />
+          <input type="text" name="github" placeholder="GitHub" required />
+          <input type="text" name="comision" placeholder="Comisión" required />
+          <input type="text" name="legajo" placeholder="Legajo" required />
+          <div class="form-acciones">
+            <button type="button" id="btn-eliminar" class="btn-eliminar">Eliminar</button>
+            <button type="button" class="btn-cancelar btn-cerrar-modal">Cancelar</button>
+            <button type="submit" class="btn-guardar">Guardar</button>
+          </div>
+        </form>
+      </dialog>
+
       <ul>
-        ${alumnos.map(a => html`<li><b>${a.apellido}</b> ${a.nombre}
+        ${() => data.lista.map((a,index) => 
+          html`<li class="alumno-lista" data-index="${index}">
+          <button class="btn-estrella" title="Favorito">☆</button>
+          <b>${a.apellido}</b> ${a.nombre}
           <br> 
           <b>${a.telefono}</b> 
           <br>
