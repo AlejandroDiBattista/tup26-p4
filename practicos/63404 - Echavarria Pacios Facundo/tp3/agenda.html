@@ -22,7 +22,8 @@
     import alumnos from './alumnos.json' with { type: 'json' }
     
     const STORAGE_KEY = 'alumnos_tp3'
-    
+    //FUNCIONES
+    //Funcion para obtener los alumnos del local storage o si esta vacio desde el json
     const obtenerAlumnos = () => {
       let datos = localStorage.getItem(STORAGE_KEY)
       
@@ -39,10 +40,30 @@
       }
     }
     
+    //Funcion para guardar la lista de alumnos en el locale storage
     const guardarAlumnos = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.alumnos))
     }
     
+    //Funcion para ordenar la lista de alumnos segun favoritos y alfabeticamente
+    const ordenarAlumnos = (lista) => {
+      return [...lista].sort((a, b) => {
+        if (a.favorito && !b.favorito) {
+          return -1
+        }else if (!a.favorito && b.favorito) {
+          return 1
+        }else if (a.favorito === b.favorito) {
+          let compararApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+          if (compararApellido === 0) {
+            return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+          }else {
+            return compararApellido
+          }
+        }
+      })
+    }
+
+    //Estados reactivos de ArroJs
     const estado = reactive({
       alumnos: obtenerAlumnos()
     })
@@ -51,7 +72,7 @@
     html`
       <h1>Alumnos</h1>
       <ul>
-        ${() => estado.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => ordenarAlumnos(estado.alumnos).map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
       </ul>
     `(app)
   </script>
