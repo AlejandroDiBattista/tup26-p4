@@ -11,7 +11,7 @@
       --borde: #dfe3dc;
       --suave: #6b7469;
     }
-
+ 
     body {
       margin: 0;
       padding: 48px 20px;
@@ -19,27 +19,35 @@
       color: var(--verde);
       font: 16px/1.4 system-ui, sans-serif;
     }
-
+ 
     main {
       max-width: 1104px;
       margin: 0 auto;
-
+ 
       > header {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
         gap: 16px;
         margin-bottom: 24px;
-
+ 
         h1 { margin: 0; font-size: 1.9rem; }
       }
-
+ 
       > section {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 12px;
+ 
+        > p {
+          grid-column: 1 / -1;
+          margin: 24px 0;
+          text-align: center;
+          color: var(--suave);
+        }
       }
-
+ 
       > footer {
         margin-top: 24px;
         text-align: center;
@@ -47,7 +55,38 @@
         color: var(--suave);
       }
     }
-
+ 
+    main > header > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+ 
+      input {
+        width: min(280px, 100%);
+        padding: 12px 20px;
+        border: 1px solid var(--borde);
+        border-radius: 999px;
+        background: #fdfdfa;
+        color: var(--verde);
+        font: inherit;
+        font-size: .9rem;
+ 
+        &:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+      }
+ 
+      button {
+        padding: 12px 20px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--verde);
+        color: white;
+        font: 700 .9rem system-ui, sans-serif;
+        cursor: pointer;
+ 
+        &:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+      }
+    }
+ 
     article {
       display: flex;
       flex-direction: column;
@@ -56,24 +95,24 @@
       border-radius: 16px;
       background: #fdfdfa;
       box-shadow: 0 1px 4px rgba(0, 0, 0, .14);
-
+ 
       > header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         gap: 8px;
         min-height: 3.4rem;
-
+ 
         h2 {
           margin: 0;
           font: 700 1.5rem/1.2 Georgia, 'Times New Roman', serif;
-
+ 
           span {
             font: 400 1rem system-ui, sans-serif;
             color: var(--suave);
           }
         }
-
+ 
         button {
           flex: none;
           padding: 0;
@@ -85,17 +124,17 @@
           cursor: pointer;
         }
       }
-
+ 
       > address {
         display: grid;
         gap: 4px;
         font-style: normal;
-
+ 
         p { margin: 0; }
         p:first-child { font-weight: 600; }
         p:last-child { font-size: .85rem; color: var(--suave); }
       }
-
+ 
       > footer {
         padding-top: 12px;
         border-top: 1px solid var(--borde);
@@ -107,17 +146,15 @@
     }
   </style>
 </head>
-
-
 <body>
   <div id="app"></div>
-
+ 
   <script type="module">
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import iniciales from './alumnos.json' with { type: 'json' }
-
+ 
     const CLAVE = 'agenda.alumnos'
-
+ 
     function leerGuardados() {
       try {
         const texto = localStorage.getItem(CLAVE)
@@ -126,65 +163,101 @@
         return null
       }
     }
-
+ 
     const state = reactive({
       alumnos: leerGuardados() ?? structuredClone(iniciales),
+      busqueda: '',
     })
-
+ 
     function guardar() {
       localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
     }
-
+ 
     function alternarFavorito(id) {
       const alumno = state.alumnos.find(a => a.id === id)
       alumno.favorito = !alumno.favorito
       guardar()
     }
-
+ 
+    function buscar(texto) {
+      state.busqueda = texto
+    }
+ 
+    function normalizar(texto) {
+      return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    }
+ 
     function comparar(a, b) {
       return a.localeCompare(b, 'es', { sensitivity: 'base' })
     }
-
-    function alumnosVisibles() {
-      return [...state.alumnos].sort((a, b) =>
-        (b.favorito - a.favorito) ||
-        comparar(a.apellido, b.apellido) ||
-        comparar(a.nombre, b.nombre)
+ 
+    function coincide(alumno, terminos) {
+      const datos = normalizar(
+        `${alumno.apellido} ${alumno.nombre} ${alumno.legajo} ${alumno.comision} ${alumno.telefono} ${alumno.github}`
       )
+      return terminos.every(t => datos.includes(t))
     }
-
+ 
+    function alumnosVisibles() {
+      const terminos = normalizar(state.busqueda).split(/\s+/).filter(Boolean)
+      return state.alumnos
+        .filter(a => coincide(a, terminos))
+        .sort((a, b) =>
+          (b.favorito - a.favorito) ||
+          comparar(a.apellido, b.apellido) ||
+          comparar(a.nombre, b.nombre)
+        )
+    }
+ 
     if (localStorage.getItem(CLAVE) === null) guardar()
-
+ 
+    const tarjeta = a => html`
+      <article>
+        <header>
+          <h2>${() => a.apellido} <span>${() => a.nombre}</span></h2>
+          <button type="button"
+                  aria-pressed="${() => String(a.favorito)}"
+                  aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+                  @click="${() => alternarFavorito(a.id)}">
+            ${() => a.favorito ? '★' : '☆'}
+          </button>
+        </header>
+        <address>
+          <p>${() => a.telefono}</p>
+          <p>@${() => a.github}</p>
+        </address>
+        <footer>${() => a.comision} · ${() => a.legajo}</footer>
+      </article>
+    `.key(a.id)
+ 
+    const sinResultados = () => html`
+      <p role="status">No hay alumnos para mostrar.</p>
+    `.key('sin-resultados')
+ 
     html`
       <main>
         <header>
           <h1>Agenda</h1>
+          <div>
+            <input type="search"
+                   placeholder="Buscar alumno..."
+                   aria-label="Buscar alumno"
+                   @input="${e => buscar(e.target.value)}">
+            <button type="button">+ Agregar</button>
+          </div>
         </header>
-
+ 
         <section>
-          ${() => alumnosVisibles().map(a => html`
-            <article>
-              <header>
-                <h2>${() => a.apellido} <span>${() => a.nombre}</span></h2>
-                <button type="button"
-                        aria-pressed="${() => String(a.favorito)}"
-                        aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
-                        @click="${() => alternarFavorito(a.id)}">
-                  ${() => a.favorito ? '★' : '☆'}
-                </button>
-              </header>
-              <address>
-                <p>${() => a.telefono}</p>
-                <p>@${() => a.github}</p>
-              </address>
-              <footer>${() => a.comision} · ${() => a.legajo}</footer>
-            </article>
-          `.key(a.id))}
+          ${() => {
+            const lista = alumnosVisibles()
+            return lista.length === 0 ? [sinResultados()] : lista.map(tarjeta)
+          }}
         </section>
-
+ 
         <footer>${() => alumnosVisibles().length} alumnos</footer>
       </main>
     `(document.getElementById('app'))
   </script>
 </body>
 </html>
+ 
