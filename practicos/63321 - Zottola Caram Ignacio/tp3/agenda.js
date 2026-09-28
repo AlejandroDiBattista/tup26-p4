@@ -4,7 +4,6 @@ import alumnosJson from './alumnos.json' with { type: 'json' }
 const STORAGE_KEY = 'agenda-alumnos'
 const dialogo = document.getElementById('dialogo')
 
-// ----- Estado -----
 const estado = reactive({
   alumnos: cargarAlumnos(),
   busqueda: '',
@@ -13,15 +12,12 @@ const estado = reactive({
   form: formVacio()
 })
 
-// ----- Persistencia -----
 function cargarAlumnos() {
   const guardado = localStorage.getItem(STORAGE_KEY)
   if (guardado) {
     try {
       return JSON.parse(guardado)
-    } catch {
-      // si está corrupto, seguimos con el JSON
-    }
+    } catch {}
   }
   const iniciales = structuredClone(alumnosJson)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales))
@@ -32,7 +28,6 @@ function persistir() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.alumnos))
 }
 
-// ----- Utilidades -----
 function formVacio() {
   return {
     id: null,
@@ -75,7 +70,6 @@ function alumnosVisibles() {
     })
 }
 
-// ----- Acciones -----
 function toggleFavorito(alumno, e) {
   if (e) e.stopPropagation()
   alumno.favorito = !alumno.favorito
@@ -156,7 +150,6 @@ function eliminar() {
   cerrarDialogo()
 }
 
-// ----- Vista -----
 function tarjeta(alumno) {
   return html`
     <li>
