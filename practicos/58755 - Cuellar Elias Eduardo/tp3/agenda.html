@@ -20,6 +20,7 @@
       font: 16px/1.4 system-ui, sans-serif;
     }
  
+    /* ===== Página ===== */
     main {
       max-width: 1104px;
       margin: 0 auto;
@@ -56,6 +57,7 @@
       }
     }
  
+    /* ===== Buscador y acciones ===== */
     main > header > div {
       display: flex;
       flex-wrap: wrap;
@@ -87,6 +89,7 @@
       }
     }
  
+    /* ===== Tarjeta ===== */
     article {
       display: flex;
       flex-direction: column;
@@ -95,6 +98,9 @@
       border-radius: 16px;
       background: #fdfdfa;
       box-shadow: 0 1px 4px rgba(0, 0, 0, .14);
+      cursor: pointer;
+ 
+      &:focus-visible { outline: 3px solid var(--verde); outline-offset: 2px; }
  
       > header {
         display: flex;
@@ -122,6 +128,8 @@
           line-height: 1;
           color: var(--dorado);
           cursor: pointer;
+ 
+          &:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; border-radius: 4px; }
         }
       }
  
@@ -153,6 +161,7 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import iniciales from './alumnos.json' with { type: 'json' }
  
+    // ===== ESTADO =====
     const CLAVE = 'agenda.alumnos'
  
     function leerGuardados() {
@@ -167,8 +176,10 @@
     const state = reactive({
       alumnos: leerGuardados() ?? structuredClone(iniciales),
       busqueda: '',
+      editando: null,   // id del alumno que se está editando (el diálogo llega en el paso 7)
     })
  
+    // ===== ACCIONES =====
     function guardar() {
       localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
     }
@@ -179,18 +190,54 @@
       guardar()
     }
  
+    function abrirEdicion(id) {
+      state.editando = id
+    }
+ 
+    // Al cambiar un favorito la tarjeta se mueve y el navegador pierde el foco:
+    // lo devolvemos a esa tarjeta cuando Arrow terminó de reordenar
+    function enfocarTarjeta(id) {
+      requestAnimationFrame(() =>
+        document.querySelector(`article[data-id="${id}"]`)?.focus()
+      )
+    }
+ 
+    // Enter abre la edición; la barra espaciadora alterna el favorito
+    function alPresionarTecla(e, id) {
+      // Ignora las teclas que vienen de la estrella: ese botón ya las maneja solo
+      if (e.target !== e.currentTarget) return
+ 
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirEdicion(id)
+      } else if (e.key === ' ') {
+        e.preventDefault()   // evita que la página haga scroll
+        alternarFavorito(id)
+        enfocarTarjeta(id)
+      }
+    }
+ 
+    function alHacerClicEnEstrella(e, id) {
+      e.stopPropagation()   // que el clic no llegue a la tarjeta y abra la edición
+      alternarFavorito(id)
+      enfocarTarjeta(id)
+    }
+ 
     function buscar(texto) {
       state.busqueda = texto
     }
  
+    // Minúsculas y sin tildes: "Álvarez" -> "alvarez"
     function normalizar(texto) {
       return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     }
  
+    // Compara textos ignorando mayúsculas y tildes
     function comparar(a, b) {
       return a.localeCompare(b, 'es', { sensitivity: 'base' })
     }
  
+    // Un alumno coincide si TODAS las palabras buscadas aparecen en alguno de sus datos
     function coincide(alumno, terminos) {
       const datos = normalizar(
         `${alumno.apellido} ${alumno.nombre} ${alumno.legajo} ${alumno.comision} ${alumno.telefono} ${alumno.github}`
@@ -198,6 +245,7 @@
       return terminos.every(t => datos.includes(t))
     }
  
+    // Filtra por la búsqueda; favoritos primero, luego apellido y nombre
     function alumnosVisibles() {
       const terminos = normalizar(state.busqueda).split(/\s+/).filter(Boolean)
       return state.alumnos
@@ -209,16 +257,22 @@
         )
     }
  
+    // Si era la primera vez, crea el almacenamiento local con los datos iniciales
     if (localStorage.getItem(CLAVE) === null) guardar()
  
+    // ===== VISTA =====
+    // Plantilla de una tarjeta
     const tarjeta = a => html`
-      <article>
+      <article tabindex="0"
+               data-id="${a.id}"
+               @click="${() => abrirEdicion(a.id)}"
+               @keydown="${e => alPresionarTecla(e, a.id)}">
         <header>
           <h2>${() => a.apellido} <span>${() => a.nombre}</span></h2>
           <button type="button"
                   aria-pressed="${() => String(a.favorito)}"
                   aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
-                  @click="${() => alternarFavorito(a.id)}">
+                  @click="${e => alHacerClicEnEstrella(e, a.id)}">
             ${() => a.favorito ? '★' : '☆'}
           </button>
         </header>
@@ -230,10 +284,13 @@
       </article>
     `.key(a.id)
  
+    // Mensaje cuando la búsqueda no encuentra nada
     const sinResultados = () => html`
       <p role="status">No hay alumnos para mostrar.</p>
     `.key('sin-resultados')
  
+    // OJO: dentro de html`...` no se pueden usar comentarios de HTML: Arrow falla.
+    // TEMPORAL: el <span> del pie sirve para probar Enter y el clic. Se borra en el paso 7.
     html`
       <main>
         <header>
@@ -250,11 +307,16 @@
         <section>
           ${() => {
             const lista = alumnosVisibles()
+            // Siempre devuelve un array: cambiar entre "una plantilla" y "un array"
+            // en el mismo lugar rompe el redibujado de Arrow
             return lista.length === 0 ? [sinResultados()] : lista.map(tarjeta)
           }}
         </section>
  
-        <footer>${() => alumnosVisibles().length} alumnos</footer>
+        <footer>
+          ${() => alumnosVisibles().length} alumnos
+          <span>${() => state.editando !== null ? ` · Editando el alumno id ${state.editando}` : ''}</span>
+        </footer>
       </main>
     `(document.getElementById('app'))
   </script>
