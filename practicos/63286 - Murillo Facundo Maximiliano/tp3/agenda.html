@@ -89,6 +89,21 @@
           }
         }
       }
+      button {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: transparent;
+        font-size: 25px;
+        cursor: pointer;
+
+        &.favorito {
+            color: #e5a900;
+        }
+      }
       @media (max-width: 800px) {
         ul {
           grid-template-columns: repeat(2, 1fr);
@@ -110,14 +125,22 @@
 
       const app = document.getElementById("app");
 
+      const guardarAlumnos = localStorage.getItem("alumnos")
+      let alumnosIniciales
+        if (guardarAlumnos) {
+            alumnosIniciales = JSON.parse(guardarAlumnos)
+        } else {
+            alumnosIniciales = alumnos
+            localStorage.setItem("alumnos", JSON.stringify(alumnos))
+        }
+
       const estado = reactive({
-        alumnos: alumnos,
+        alumnos: alumnosIniciales,
         busqueda: "",
       });
 
       function ordenarAlumnos(lista){
-
-        lista.sort((a,b)=>{
+          return [...lista].sort((a,b)=>{           //hacemos esto para crear una copia del array 
           if(a.favorito === true && b.favorito === false){
 
             return -1
@@ -127,24 +150,49 @@
             return 1
           
           } else {  
-
-            return a.apellido.localeCompare(b.apellido)
-
+            const compararApellido = a.apellido.localeCompare(b.apellido)
+            if (compararApellido !== 0) {
+                return compararApellido
+              } else {
+                return a.nombre.localeCompare(b.nombre)
+              }
           }
         })
       }
+
+      function cambiarFavorito(id){
+        const alumno = estado.alumnos.find(a => a.id === id) // buscamos alumno por su id
+
+        alumno.favorito = !alumno.favorito // reduciccion 
+        
+        localStorage.setItem("alumnos", JSON.stringify(estado.alumnos))
+      
+        console.log("Tocaste el boton para cambiar a favorito", alumno.favorito)
+        // if(alumno.favorito === true){
+          
+        //     return alumno.favorito = false
+        // } else {
+
+        //   return alumno.favorito = true
+
+        // }
+      } 
+
       html`
         <h1>Alumnos</h1>
         <ul>
           ${() =>
-            estado.alumnos.map(
+            ordenarAlumnos(estado.alumnos).map(
               (a) =>
                 html`<li>
                   <article>
                     <header>
                       <h2>${a.apellido}</h2>
                       <span>${a.nombre}</span>
-                      <button>☆</button>
+                      <button class="${() => a.favorito ? 'favorito' : ''}"
+                        @click="${() => cambiarFavorito(a.id)}">
+                        ${() => a.favorito ? "★" : "☆"}
+                    </button>
                     </header>
                     <address>
                       <strong>${a.telefono}</strong>
@@ -152,7 +200,7 @@
                     </address>
                     <footer>${a.comision} · ${a.legajo}</footer>
                   </article>
-                </li>`,
+                </li>`.key(a.id)
             )}
         </ul>
       `(app);
