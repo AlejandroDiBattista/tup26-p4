@@ -94,17 +94,22 @@
         })
         .slice()
         .sort((a, b) => {
-          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
-          const apA = normalizar(a.apellido), apB = normalizar(b.apellido)
-          if (apA !== apB) return apA < apB ? -1 : 1
-          const noA = normalizar(a.nombre), noB = normalizar(b.nombre)
-          return noA < noB ? -1 : noA > noB ? 1 : 0
-        })
-    }
-    function nuevoId () {
-      const max = state.alumnos.reduce((m, a) => Math.max(m, Number(a.id) || 0), 0)
-      return max + 1
-    }
+          
+          if (a.favorito !== b.favorito) {  // Si uno es favorito y el otro no, el favorito va primero
+           if (a.favorito) return -1
+           else return 1
+          }
+          let datosA = normalizar(a.apellido) + normalizar(a.nombre) // Comparo apellido y nombre juntos, ya normalizados
+          let datosB = normalizar(b.apellido) + normalizar(b.nombre)
+          if (datosA < datosB) return -1
+          if (datosA > datosB) return 1
+          return 0
+        })}
+        function nuevoId () {
+          const max = state.alumnos.reduce((m, a) => Math.max(m, Number(a.id) || 0), 0)
+          return max + 1
+        }
+        
 
     
 
