@@ -24,6 +24,7 @@
       header { display: flex; justify-content: space-between; }
       h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #5f6b62; }
       strong { font: bold 1.4rem Georgia, serif; color: #2c3b30; }
+      button { padding: 0; font-size: 1.5rem; line-height: 1; color: #8a7a4f; background: none; border: 0; cursor: pointer; }
       address { margin: 16px 0; font-style: normal; }
       footer { padding-top: 10px; border-top: 1px solid #d9ded9; font-size: .8rem; color: #5f6b62; }
     }
@@ -34,12 +35,30 @@
 
   <script type="module">
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
     // ---------- Estado ----------
-    const state = reactive({ busqueda: '' })
+    const CLAVE = 'agenda:alumnos'
+
+    // Usa lo guardado; si no hay nada, usa alumnos.json
+    function cargar() {
+      try {
+        const guardado = localStorage.getItem(CLAVE)
+        if (guardado) return JSON.parse(guardado)
+      } catch {}
+      return JSON.parse(JSON.stringify(alumnosIniciales))
+    }
+
+    const state = reactive({ alumnos: cargar(), busqueda: '' })
 
     // ---------- Funciones ----------
+    const guardar = () => localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
+
+    const alternarFavorito = id => {
+      state.alumnos = state.alumnos.map(a => a.id === id ? { ...a, favorito: !a.favorito } : a)
+      guardar()
+    }
+
     const norm = s => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
     const coincide = (a, texto) =>
@@ -48,7 +67,7 @@
     // Filtra por lo buscado; favoritos primero, luego apellido y nombre
     const visibles = () => {
       const texto = norm(state.busqueda).trim()
-      return alumnos
+      return state.alumnos
         .filter(a => coincide(a, texto))
         .sort((a, b) =>
           (Number(!!b.favorito) - Number(!!a.favorito)) ||
@@ -56,12 +75,16 @@
           norm(a.nombre).localeCompare(norm(b.nombre)))
     }
 
+    guardar() // crea el almacenamiento local la primera vez
+
     // ---------- Interfaz ----------
     const tarjeta = a => html`
       <article>
         <header>
           <h2><strong>${a.apellido}</strong> ${a.nombre}</h2>
-          <span>${a.favorito ? '★' : '☆'}</span>
+          <button type="button" aria-pressed="${String(!!a.favorito)}"
+            aria-label="${a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+            @click="${() => alternarFavorito(a.id)}">${a.favorito ? '★' : '☆'}</button>
         </header>
         <address>
           <div>${a.telefono}</div>
