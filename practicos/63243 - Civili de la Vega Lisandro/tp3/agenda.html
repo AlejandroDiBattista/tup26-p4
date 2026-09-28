@@ -7,15 +7,19 @@
   <style>
     body { margin: 0; padding: 32px 20px; font-family: sans-serif; background: #f5f6f4; color: #26302a; }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { margin: 0; }
+
+    .buscador { width: 300px; padding: 12px 18px; border: 1px solid #d9ded9; border-radius: 20px; font-size: 15px; }
 
     .lista { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .vacio { color: gray; }
 
     .tarjeta { padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; }
     .tarjeta-arriba { display: flex; justify-content: space-between; }
     .tarjeta h2 { margin: 0; font-family: Georgia, serif; font-size: 24px; }
     .tarjeta h2 span { font-family: sans-serif; font-size: 16px; font-weight: normal; color: gray; }
-    .estrella { font-size: 24px; color: #8b7c55; }
+    .estrella { padding: 0; border: none; background: none; font-size: 24px; color: #8b7c55; cursor: pointer; }
     .telefono { margin: 20px 0 8px; font-size: 14px; font-weight: bold; }
     .github { margin: 0; font-size: 13px; color: gray; }
     .tarjeta hr { border: none; border-top: 1px solid #ddd; margin: 14px 0 10px; }
@@ -34,15 +38,41 @@
 
     // ================== ESTADO ==================
 
+    // si hay algo guardado en localStorage uso eso, si no los del json
+    function cargarAlumnos() {
+        const guardado = localStorage.getItem('alumnos');
+        if (guardado) {
+            return JSON.parse(guardado);
+        }
+        return alumnosJson;
+    }
+
     const estado = reactive({
-        alumnos: alumnosJson,
+        alumnos: cargarAlumnos(),
+        busqueda: '',
     });
 
     // ================== FUNCIONES ==================
 
-    // ordeno alfabeticamente por apellido
-    function alumnosOrdenados() {
-        return estado.alumnos.slice().sort((a, b) => a.apellido > b.apellido ? 1 : -1);
+    function guardar() {
+        localStorage.setItem('agenda', JSON.stringify(estado.alumnos));
+    }
+
+    function alumnosFiltrados() {
+        const lista = estado.alumnos.filter(a => a.apellido.includes(estado.busqueda));
+        // primero los favoritos y despues por apellido
+        lista.sort((a, b) => {
+            if (a.favorito && !b.favorito) return -1;
+            if (!a.favorito && b.favorito) return 1;
+            return a.apellido > b.apellido ? 1 : -1;
+        });
+        return lista;
+    }
+
+    function alternarFavorito(alumno) {
+        alumno.favorito = !alumno.favorito;
+        console.log('favorito', alumno.apellido, alumno.favorito);
+        guardar();
     }
 
     // ================== VISTAS ==================
@@ -52,7 +82,9 @@
             <article class="tarjeta">
                 <div class="tarjeta-arriba">
                     <h2>${alumno.apellido} <span>${alumno.nombre}</span></h2>
-                    <span class="estrella">${alumno.favorito ? '★' : '☆'}</span>
+                    <button type="button" class="estrella" @click="${() => alternarFavorito(alumno)}">
+                        ${() => alumno.favorito ? '★' : '☆'}
+                    </button>
                 </div>
                 <p class="telefono">${alumno.telefono}</p>
                 <p class="github">@${alumno.github}</p>
@@ -62,14 +94,24 @@
         `;
     }
 
+    function Lista() {
+        const lista = alumnosFiltrados();
+        if (lista.length == 0) {
+            return html`<p class="vacio">No hay alumnos para mostrar.</p>`;
+        }
+        return lista.map(Tarjeta);
+    }
+
     const app = document.getElementById('app');
 
     html`
         <header>
             <h1>Agenda</h1>
+            <input type="search" class="buscador" placeholder="Buscar alumno..."
+                @input="${(e) => estado.busqueda = e.target.value}">
         </header>
         <section class="lista">
-            ${() => alumnosOrdenados().map(Tarjeta)}
+            ${() => Lista()}
         </section>
     `(app);
   </script>
