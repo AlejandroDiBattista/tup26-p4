@@ -121,6 +121,14 @@
     color: #6b7280;
   }
 
+  .boton-favorito {
+    float: right;
+    padding: 4px 8px;
+    font-size: 22px;
+    color: #d89b00;
+    background: transparent;
+  }
+
   @media (max-width: 700px) {
     .encabezado {
       align-items: flex-start;
@@ -159,8 +167,22 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
 import alumnos from './alumnos.json' with { type: 'json' }
 
+function cargarAlumnos() {
+  const guardados = localStorage.getItem('alumnos')
+
+  if (!guardados) {
+    return alumnos
+  }
+
+  try {
+    return JSON.parse(guardados)
+  } catch {
+    return alumnos
+  }
+}
+
 const estado = reactive({
-  alumnos: alumnos,
+  alumnos: cargarAlumnos(),
   busqueda: ''
 })
 
@@ -172,15 +194,28 @@ function compararTexto(a, b) {
 function ordenarAlumnos(lista) {
   return [...lista].sort((a, b) => {
     if (a.favorito !== b.favorito) {
-    return Number(b.favorito) - Number(a.favorito)
-  }
-   const porApellido = compararTexto(a.apellido, b.apellido)
-   if (porApellido !== 0) {
-     return porApellido
-   }
+      return Number(b.favorito) - Number(a.favorito)
+    }
+
+    const porApellido = compararTexto(a.apellido, b.apellido)
+    if (porApellido !== 0) {
+      return porApellido
+    }
+
     return compararTexto(a.nombre, b.nombre)
   })
 }
+
+function cambiarFavorito(id) {
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumno.favorito = !alumno.favorito
+  localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+}
+
 function filtrarAlumnos(lista) {
   const texto = estado.busqueda.trim().toLocaleLowerCase()
   if (texto === '') {
@@ -194,6 +229,20 @@ function filtrarAlumnos(lista) {
 }
 
 const lista = document.getElementById('lista-alumnos')
+
+lista.addEventListener('click', evento => {
+  const boton = evento.target.closest('.boton-favorito')
+  if (!boton) {
+    return
+  }
+
+  const id = Number(boton.dataset.id)
+  if (!Number.isFinite(id)) {
+    return
+  }
+
+  cambiarFavorito(id)
+})
 
 const buscador = document.getElementById('Buscar')
 buscador.addEventListener('input', evento => {
@@ -217,22 +266,31 @@ html`
 }
 
     return filtrados.map(alumno => html`
-      <li>
-        <article class="tarjeta-alumno">
-          <strong class="alumno-apellido">
-            ${alumno.apellido}
-          </strong>
+<li>
+  <article class="tarjeta-alumno" data-id="${alumno.id}">
+    <button
+      type="button"
+      class="boton-favorito"
+      data-id="${alumno.id}"
+      aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+    >
+      ${alumno.favorito ? '★' : '☆'}
+    </button>
 
-          <span class="alumno-nombre">
-            ${alumno.nombre}
-          </span>
+    <strong class="alumno-apellido">
+      ${alumno.apellido}
+    </strong>
 
-          <p><b>Legajo:</b> ${alumno.legajo}</p>
-          <p><b>Comisión:</b> ${alumno.comision}</p>
-          <p><b>Teléfono:</b> ${alumno.telefono}</p>
-          <p><b>GitHub:</b> ${alumno.github}</p>
-        </article>
-      </li>
+    <span class="alumno-nombre">
+      ${alumno.nombre}
+    </span>
+
+    <p><b>Legajo:</b> ${alumno.legajo}</p>
+    <p><b>Comisión:</b> ${alumno.comision}</p>
+    <p><b>Teléfono:</b> ${alumno.telefono}</p>
+    <p><b>GitHub:</b> ${alumno.github}</p>
+  </article>
+</li>
     `)
   }}
 `(lista)
