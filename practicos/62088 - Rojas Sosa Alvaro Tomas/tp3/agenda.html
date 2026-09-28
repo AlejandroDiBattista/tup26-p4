@@ -94,6 +94,11 @@
       cursor: pointer;
 
       &:hover { border-color: var(--acento); }
+      &:focus-visible {
+        outline: 2px solid var(--acento);
+        outline-offset: 2px;
+        border-color: var(--acento);
+      }
 
       & header {
         display: flex;
@@ -280,6 +285,17 @@
       alumno.favorito = !alumno.favorito
     }
 
+    function teclasEnTarjeta(evento, alumno) {
+      if (evento.key === 'Enter') {
+        evento.preventDefault()
+        abrirEdicion(alumno)
+      }
+      if (evento.key === ' ' || evento.key === 'Spacebar') {
+        evento.preventDefault()
+        alternarFavorito(alumno)
+      }
+    }
+
     const enBlanco = () => ({
       id: null, apellido: '', nombre: '', legajo: '',
       comision: '', telefono: '', github: '', favorito: false
@@ -334,7 +350,9 @@
 
     const tarjeta = (a) => html`
       <li>
-        <article class="tarjeta" @click="${() => abrirEdicion(a)}">
+        <article class="tarjeta" tabindex="0"
+                 @click="${() => abrirEdicion(a)}"
+                 @keydown="${(e) => teclasEnTarjeta(e, a)}">
           <header>
             <h2>${a.apellido} <span>${a.nombre}</span></h2>
             <button class="favorito" type="button" aria-label="Alternar favorito"
@@ -399,9 +417,11 @@
         <button class="agregar" type="button" @click="${abrirAlta}">+ Agregar</button>
       </header>
 
-      <ul class="agenda">
-        ${listado}
-      </ul>
+      <section aria-label="Listado de alumnos">
+        <ul class="agenda">
+          ${listado}
+        </ul>
+      </section>
 
       <dialog class="dialogo" id="dialogo" @close="${cerrar}">
         ${formulario}
