@@ -1,33 +1,506 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenda de alumnos</title>
+
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #202b3c;
+      background: #f4f6fa;
+      font-synthesis: none;
+      font-weight: 400;
+      --blue: #345be3;
+      --muted: #68758a;
+      --border: #e0e5ee;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .page {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 52px 0 64px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 30px;
+
+      h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+      p { margin: 8px 0 0; color: var(--muted); }
+    }
+
+    .primary-button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 18px;
+      color: white;
+      background: var(--blue);
+      font-weight: 700;
+      box-shadow: 0 4px 12px #345be333;
+
+      &:hover { background: #2449c9; }
+      &:focus-visible { outline: 3px solid #8ea4ff; outline-offset: 3px; }
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+
+      input {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 13px 15px;
+        background: white;
+        outline: none;
+
+        &:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #345be322; }
+      }
+    }
+
+    .results-count { color: var(--muted); font-size: .92rem; margin: 0 0 18px; }
+
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .student-card {
+      position: relative;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 3px 12px #182b4908;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+
+      &:hover { transform: translateY(-2px); box-shadow: 0 8px 22px #182b4913; }
+      &:focus-visible { outline: 3px solid #8ea4ff; outline-offset: 2px; }
+
+      h2 { margin: 0 36px 4px 0; font-size: 1.12rem; }
+      .github { margin: 0 0 16px; color: var(--blue); font-size: .93rem; }
+      address { font-style: normal; color: #4e5b70; line-height: 1.7; font-size: .92rem; }
+    }
+
+    .favorite-button {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 50%;
+      background: #f1f3f8;
+      color: #8b96a8;
+      font-size: 1.25rem;
+
+      &[aria-pressed="true"] { color: #e7a500; background: #fff5d8; }
+      &:focus-visible { outline: 2px solid var(--blue); }
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 42px 20px;
+      border: 1px dashed #cbd3e0;
+      border-radius: 14px;
+      color: var(--muted);
+      text-align: center;
+      background: white;
+    }
+
+    .page-footer { margin-top: 28px; color: var(--muted); font-size: .86rem; }
+
+    dialog {
+      width: min(520px, calc(100% - 28px));
+      border: 0;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 20px 70px #14213d44;
+
+      &::backdrop { background: #17243b88; }
+    }
+
+    .dialog-content { padding: 26px; }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 22px;
+
+      h2 { margin: 0; font-size: 1.45rem; }
+      p { margin: 6px 0 0; color: var(--muted); font-size: .9rem; }
+    }
+
+    .close-button {
+      border: 0;
+      border-radius: 8px;
+      padding: 5px 10px;
+      background: #f0f2f7;
+      color: #4e5b70;
+      font-size: 1.2rem;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-field {
+      display: grid;
+      gap: 6px;
+      color: #47546a;
+      font-size: .9rem;
+      font-weight: 600;
+
+      input {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 11px 12px;
+        color: #202b3c;
+        outline: none;
+
+        &:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #345be322; }
+      }
+    }
+
+    .form-field.full { grid-column: 1 / -1; }
+    .form-error { min-height: 1.3em; margin: 12px 0 0; color: #b42318; font-size: .9rem; }
+    .dialog-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .right-actions { display: flex; gap: 9px; }
+    .secondary-button, .danger-button {
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 14px;
+      background: white;
+      color: #344054;
+      font-weight: 650;
+    }
+
+    .danger-button { color: #b42318; border-color: #f0c8c5; }
+    .danger-button:hover { background: #fff3f2; }
+
+    @media (max-width: 850px) {
+      .student-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 580px) {
+      .page { width: min(100% - 28px, 1120px); padding-top: 30px; }
+      .page-header { align-items: start; flex-direction: column; }
+      .student-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-field.full { grid-column: auto; }
+    }
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+  <dialog id="student-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-content">
+      <header class="dialog-header">
+        <div>
+          <h2 id="dialog-title">Agregar alumno</h2>
+          <p id="dialog-description">Completa los datos del alumno.</p>
+        </div>
+        <button class="close-button" type="button" aria-label="Cerrar diálogo">×</button>
+      </header>
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <form id="student-form">
+        <div class="form-grid">
+          <label class="form-field">Apellido
+            <input name="apellido" required maxlength="80" autocomplete="family-name">
+          </label>
+          <label class="form-field">Nombre
+            <input name="nombre" required maxlength="80" autocomplete="given-name">
+          </label>
+          <label class="form-field">Legajo
+            <input name="legajo" required maxlength="30">
+          </label>
+          <label class="form-field">Comisión
+            <input name="comision" required maxlength="30">
+          </label>
+          <label class="form-field">Teléfono
+            <input name="telefono" required maxlength="40" type="tel" autocomplete="tel">
+          </label>
+          <label class="form-field">Usuario de GitHub
+            <input name="github" required maxlength="39" pattern="[A-Za-z0-9-]+" placeholder="usuario">
+          </label>
+        </div>
+        <p class="form-error" id="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="danger-button" id="delete-button" type="button" hidden>Eliminar</button>
+          <div class="right-actions">
+            <button class="secondary-button" id="cancel-button" type="button">Cancelar</button>
+            <button class="primary-button" type="submit">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+<script type="module">
+    import { reactive, html } from "https://esm.sh/@arrow-js/core";
+
+    const STORAGE_KEY = "agenda-alumnos-v1";
+    const state = reactive({
+      students: [],
+      query: "",
+      loading: true,
+      error: ""
+    });
+
+    const dialog = document.querySelector("#student-dialog");
+    const form = document.querySelector("#student-form");
+    const errorBox = document.querySelector("#form-error");
+    let editingId = null;
+
+    const normalize = value => String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es");
+
+    const save = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.students));
+    };
+
+    const sortedStudents = () => {
+      const query = normalize(state.query.trim());
+      return [...state.students]
+        .filter(student => !query || [
+          student.apellido, student.nombre, student.legajo, student.comision,
+          student.telefono, student.github
+        ].some(value => normalize(value).includes(query)))
+        .sort((a, b) =>
+          Number(Boolean(b.favorito)) - Number(Boolean(a.favorito)) ||
+          normalize(a.apellido).localeCompare(normalize(b.apellido), "es") ||
+          normalize(a.nombre).localeCompare(normalize(b.nombre), "es")
+        );
+    };
+
+    const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
+
+    const app = html`
+      <div class="page">
+        <header class="page-header">
+          <div>
+            <h1>Agenda de alumnos</h1>
+            <p>Consulta y administra los datos de la comisión.</p>
+          </div>
+          <button class="primary-button" id="add-button" type="button" @click="${() => openDialog()}">＋ Agregar</button>
+        </header>
+
+        <section aria-label="Buscar alumnos">
+          <div class="toolbar">
+            <input id="search" type="search" placeholder="Buscar por nombre, legajo, comisión..."
+              aria-label="Buscar alumnos"
+              value="${() => state.query}"
+              @input="${(e) => { state.query = e.target.value; }}">
+          </div>
+        </section>
+
+        <section aria-label="Listado de alumnos">
+          <p class="results-count">${() => state.loading
+            ? "Cargando alumnos…"
+            : state.error
+              ? state.error
+              : `${sortedStudents().length} alumno${sortedStudents().length === 1 ? "" : "s"}`}</p>
+          
+          <div class="student-grid" id="student-grid"></div>
+        </section>
+
+        <footer class="page-footer">Los cambios se guardan en este dispositivo.</footer>
+      </div>
+    `;
+
+    app(document.querySelector("#app"));
+
+    // Renderizado reactivo directo de la grilla
+    function renderGrid() {
+      const grid = document.querySelector("#student-grid");
+      if (!grid) return;
+
+      if (state.loading || state.error) {
+        grid.innerHTML = "";
+        return;
+      }
+
+      const lista = sortedStudents();
+      if (lista.length === 0) {
+        grid.innerHTML = `<p class="empty-state">No hay alumnos para mostrar.</p>`;
+        return;
+      }
+
+      grid.innerHTML = lista.map(student => `
+        <article class="student-card" tabindex="0" data-id="${escapeHtml(student.id)}"
+          aria-label="${escapeHtml(student.apellido)}, ${escapeHtml(student.nombre)}. Presiona Enter para editar.">
+          <button class="favorite-button" type="button"
+            aria-label="${student.favorito ? "Quitar de favoritos" : "Marcar como favorito"}"
+            aria-pressed="${Boolean(student.favorito)}" title="Alternar favorito">
+            ${student.favorito ? "★" : "☆"}
+          </button>
+          <h2>${escapeHtml(student.apellido)}, ${escapeHtml(student.nombre)}</h2>
+          <p class="github">@${escapeHtml(student.github)}</p>
+          <address>
+            <div>☎ ${escapeHtml(student.telefono)}</div>
+            <div>Comisión: ${escapeHtml(student.comision)}</div>
+            <div>Legajo: ${escapeHtml(student.legajo)}</div>
+          </address>
+        </article>
+      `).join("");
+    }
+
+    async function loadStudents() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored !== null) {
+          const parsed = JSON.parse(stored);
+          if (!Array.isArray(parsed)) throw new Error("El almacenamiento local no tiene un formato válido.");
+          state.students = parsed;
+        } else {
+          const response = await fetch("./alumnos.json");
+          if (!response.ok) throw new Error("No se pudo cargar alumnos.json.");
+          const data = await response.json();
+          state.students = Array.isArray(data) ? data : data.alumnos;
+          if (!Array.isArray(state.students)) throw new Error("alumnos.json debe contener una lista de alumnos.");
+          save();
+        }
+      } catch (error) {
+        state.error = `${error.message} Ejecuta la aplicación mediante un servidor HTTP.`;
+      } finally {
+        state.loading = false;
+        renderGrid();
+      }
+    }
+
+    const findStudent = id => state.students.find(student => String(student.id) === String(id));
+
+    function toggleFavorite(id) {
+      const student = findStudent(id);
+      if (!student) return;
+      student.favorito = !student.favorito;
+      save();
+      renderGrid();
+    }
+
+    function openDialog(student = null) {
+      editingId = student?.id ?? null;
+      form.reset();
+      errorBox.textContent = "";
+      document.querySelector("#dialog-title").textContent = student ? "Editar alumno" : "Agregar alumno";
+      document.querySelector("#dialog-description").textContent =
+        student ? "Modifica los datos y guarda los cambios." : "Completa los datos del alumno.";
+      document.querySelector("#delete-button").hidden = !student;
+
+      if (student) {
+        for (const key of ["apellido", "nombre", "legajo", "comision", "telefono", "github"]) {
+          if (form.elements[key]) form.elements[key].value = student[key] ?? "";
+        }
+      }
+      dialog.showModal();
+      form.elements.apellido.focus();
+    }
+
+    document.querySelector(".close-button").addEventListener("click", () => dialog.close());
+    document.querySelector("#cancel-button").addEventListener("click", () => dialog.close());
+
+    // Actualizar la grilla en vivo al escribir en el buscador
+    document.querySelector("#app").addEventListener("input", event => {
+      if (event.target.id === "search") {
+        renderGrid();
+      }
+    });
+
+    document.querySelector("#app").addEventListener("click", event => {
+      const favorite = event.target.closest(".favorite-button");
+      if (favorite) {
+        event.stopPropagation();
+        const card = favorite.closest(".student-card");
+        if (card) toggleFavorite(card.dataset.id);
+        return;
+      }
+      const card = event.target.closest(".student-card");
+      if (card) openDialog(findStudent(card.dataset.id));
+    });
+
+    document.querySelector("#app").addEventListener("keydown", event => {
+      const card = event.target.closest(".student-card");
+      if (!card) return;
+      if (event.key === "Enter") {
+        event.preventDefault();
+        openDialog(findStudent(card.dataset.id));
+      } else if (event.code === "Space" && event.target === card) {
+        event.preventDefault();
+        toggleFavorite(card.dataset.id);
+      }
+    });
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+
+      const data = Object.fromEntries(new FormData(form).entries());
+      for (const key of Object.keys(data)) data[key] = data[key].trim();
+      data.github = data.github.replace(/^@/, "");
+
+      if (!data.apellido || !data.nombre || !data.legajo || !data.comision ||
+          !data.telefono || !data.github) {
+        errorBox.textContent = "Completa todos los campos.";
+        return;
+      }
+
+      if (editingId !== null) {
+        const index = state.students.findIndex(student => String(student.id) === String(editingId));
+        if (index >= 0) {
+          state.students[index] = { ...state.students[index], ...data };
+        }
+      } else {
+        state.students.push({
+          id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          ...data,
+          favorito: false
+        });
+      }
+      save();
+      renderGrid();
+      dialog.close();
+    });
+
+    document.querySelector("#delete-button").addEventListener("click", () => {
+      if (editingId === null) return;
+      state.students = state.students.filter(student => String(student.id) !== String(editingId));
+      save();
+      renderGrid();
+      dialog.close();
+    });
+
+    dialog.addEventListener("click", event => {
+      if (event.target === dialog) dialog.close();
+    });
+
+    loadStudents();
   </script>
 </body>
 </html>
