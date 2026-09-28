@@ -134,7 +134,13 @@
         <ul>
           ${() => ordenar().map (alumno => html`
             <li>
-    <article @click="${() => abrir(alumno)}">
+    <article tabindex="0" @click="${() => abrir(alumno)}" @keydown="${e => {
+      if (e.key === 'Enter') abrir(alumno)
+      if (e.key === ' ') {
+        e.preventDefault()
+        alumno.favorito = !alumno.favorito
+      }
+    }}">
       <h2><strong>${alumno.apellido}</strong> ${alumno.nombre}</h2>
       <button aria-label="${() => alumno.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}" @click="${e => { e.stopPropagation(); alumno.favorito = !alumno.favorito }}">${() => alumno.favorito ? '★' : '☆'}</button>
       <address>
