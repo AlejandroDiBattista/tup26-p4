@@ -129,6 +129,41 @@
     background: transparent;
   }
 
+  dialog {
+    width: 420%;
+    max-width: calc(100% - 40px);
+    border: 0;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  
+  dialog::backdrop {
+  background: rgb(0 0 0 / 40%);
+  } 
+  dialog form{
+    display: grid;
+    gap: 10px;
+  }
+
+  dialog h2 {
+    margin: 0 0 10;
+  }
+
+  dialog input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+  }
+
+  .acciones-dialogo {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
   @media (max-width: 700px) {
     .encabezado {
       align-items: flex-start;
@@ -161,6 +196,40 @@
   <section aria-label="Lista de alumnos">
     <ul id="lista-alumnos"></ul>
   </section>
+
+  <dialog id="dialog-agregar">
+  <form id="form-agregar">
+    <h2>Agregar alumno</h2>
+
+    <label for="apellido">Apellido</label>
+    <input type="text" id="apellido" name="apellido" required>
+
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" name="nombre" required>
+
+    <label for="legajo">Legajo</label>
+    <input type="text" id="legajo" name="legajo" required>
+
+    <label for="comision">Comisión</label>
+    <input type="text" id="comision" name="comision" required>
+
+    <label for="telefono">Teléfono</label>
+    <input type="text" id="telefono" name="telefono" required>
+
+    <label for="github">GitHub</label>
+    <input type="text" id="github" name="github" required>
+
+    <div class="acciones-dialogo">
+      <button type="button" id="btn-cancelar-agregar">
+        Cancelar
+      </button>
+
+      <button type="submit" id="btn-guardar-agregar">
+        Guardar
+      </button>
+    </div>
+  </form>
+</dialog>
   </main>
 
   <script type="module">
@@ -185,6 +254,30 @@ const estado = reactive({
   alumnos: cargarAlumnos(),
   busqueda: ''
 })
+
+function guardarAlumnos() {
+  localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+}
+
+function agregarAlumno(datos) {
+  const siguienteId = estado.alumnos.length === 0
+    ? 1
+    : Math.max(...estado.alumnos.map(alumno => alumno.id)) + 1
+
+  const nuevoAlumno = {
+    id: siguienteId,
+    apellido: datos.apellido,
+    nombre: datos.nombre,
+    legajo: datos.legajo,
+    comision: datos.comision,
+    telefono: datos.telefono,
+    github: datos.github,
+    favorito: false
+  }
+
+  estado.alumnos.push(nuevoAlumno)
+  guardarAlumnos()
+}
 
 function compararTexto(a, b) {
   return a.localeCompare(b, 'es' , { sensitivity: 'base' })
@@ -213,7 +306,7 @@ function cambiarFavorito(id) {
   }
 
   alumno.favorito = !alumno.favorito
-  localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+  guardarAlumnos()
 }
 
 function filtrarAlumnos(lista) {
@@ -247,6 +340,42 @@ lista.addEventListener('click', evento => {
 const buscador = document.getElementById('Buscar')
 buscador.addEventListener('input', evento => {
   estado.busqueda = evento.target.value
+})
+
+const botonAgregar = document.getElementById('btn-agregar')
+const dialogAgregar = document.getElementById('dialog-agregar')
+const formularioAgregar = document.getElementById('form-agregar')
+const botonCancelarAgregar = document.getElementById('btn-cancelar-agregar')
+
+botonAgregar.addEventListener('click', () => {
+  formularioAgregar.reset()
+  dialogAgregar.showModal()
+})
+
+botonCancelarAgregar.addEventListener('click', () => {
+  dialogAgregar.close()
+})
+
+formularioAgregar.addEventListener('submit', evento => {
+  evento.preventDefault()
+
+  const datos = Object.fromEntries(new FormData(formularioAgregar).entries())
+  const alumno = {
+    apellido: datos.apellido?.trim() || '',
+    nombre: datos.nombre?.trim() || '',
+    legajo: datos.legajo?.trim() || '',
+    comision: datos.comision?.trim() || '',
+    telefono: datos.telefono?.trim() || '',
+    github: datos.github?.trim() || ''
+  }
+
+  if (!alumno.apellido || !alumno.nombre || !alumno.legajo || !alumno.comision || !alumno.telefono || !alumno.github) {
+    return
+  }
+
+  agregarAlumno(alumno)
+  formularioAgregar.reset()
+  dialogAgregar.close()
 })
 
 html`
