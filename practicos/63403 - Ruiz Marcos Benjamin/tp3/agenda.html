@@ -89,6 +89,13 @@ function abrirEdicion(alumno){
    document.querySelector("dialog").showModal()
 }
 
+function eliminarAlumno(){
+personas.contenido = personas.contenido.filter(a => a.id !== personas.editandoId)
+localStorage.setItem("listado", JSON.stringify(personas.contenido))
+document.querySelector("dialog").close()
+personas.editandoId = null
+}
+
 
     const app = document.getElementById('app')
     html`
@@ -143,10 +150,13 @@ function abrirEdicion(alumno){
     </label>
     
 
-    <footer>
-      <button type="submit">Guardar</button>
-      <button type="button" @click="${cerrarDialogo}">Cancelar</button>
-    </footer>
+   <footer>
+  ${() => personas.editandoId !== null
+    ? html`<button type="button" @click="${eliminarAlumno}">Eliminar</button>`
+    : ""}
+  <button type="submit">Guardar</button>
+  <button type="button" @click="${cerrarDialogo}">Cancelar</button>
+</footer>
   </form>
 </dialog>
 
