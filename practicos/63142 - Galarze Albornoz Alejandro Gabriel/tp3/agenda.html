@@ -434,9 +434,76 @@
     });
 
     return filtered.sort((a, b) => {
-
-    })
+      if (a.favorito !== b.favorito) {
+        return a.favorito ? -1 : 1;
+      }
+      const cmpApellido = a.apellido.localCompare(b.apellido, 'es', { sensitivity: 'base' });
+      if (cmpApellido !== 0) return cmpApellido;
+      return a.nombre.localCompare(b.nombre, 'es', { sensitivity: 'base' });
+    });
   }
+
+  const cardTemplate = (alumno) => html`
+  <article
+    class="card"
+    tabinsex="0"
+    role="button"
+    aria-label="${() => `Editar a ${alumno.apellido},${alumno.nombre}`}"
+    @click="${() => openEditDialog(alumno)}"
+    @keydown="${(e) => {
+      if (e.key === 'Enter') openEditDialog(alumno);
+      if (e.key === ' '){
+        e.preventDefault();
+        toggleFavorite(alumno.id);
+      }
+    }}"
+  >
+    <button
+    class="${() => `fav-btn ${alumno.favorito ? 'is-fav' : ''}`}"
+    title="Marcar favorito"
+    arial-label="Marcar como favorito"
+    @click="${(e) => toggleFavorite(alumno.id, e)}"
+    >★</button>
+
+    <div class="card-header">
+      <h2>${() => `${alumno.apellido},${alumno.nombre}`}</h2>
+    </div>
+
+    <div class="card-body">
+      <p><strong>Teléfono:</strong> ${() => alumno.telefono}</p>
+      <address>
+        <strong>GitHub:</strong>
+        <a
+          href="${() => `https://github.com/${alumno.github}`}"
+          target="_blank"
+          rel="noopener noreferrer"
+          @click="${(e) => e.stopPropagation()}"
+        >@${() => alumno.github}</a>
+      </address>
+    </div>
+
+    <footer class="card-tags">
+      <span class="badge">Comisión ${() => alumno.comision}</span>
+      <span class="badge">Legajo: ${() => alumno.legajo}</span>
+    </footer>
+  </article>  
+    `;
+
+    const appTemplate = html `
+    ${() => {
+      const students = getFilteredAndSortedStudents();
+      if (students.legth === 0){
+        return html `<p class="empty-state">No hay alumnos para mostrar.</p>`;
+    }
+    return html`
+      <div class="cards-grid">
+        ${students.map(student => cardTemplate(student))}
+      </div>
+    `;
+  }}
+`;
+
+
 
   </script>
 </body>
