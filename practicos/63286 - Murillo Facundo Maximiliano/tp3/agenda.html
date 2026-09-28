@@ -104,6 +104,23 @@
             color: #e5a900;
         }
       }
+
+      /* buscador */
+      input[type="search"] {
+        width: 100%;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border: 1px solid #d9ded9;
+        border-radius: 10px;
+        background: white;
+        font-size: 16px;
+      }
+      .sin-resultados {
+        grid-column: 1 / -1;
+        padding: 30px;
+        text-align: center;
+        color: #59635d;
+      }
       @media (max-width: 800px) {
         ul {
           grid-template-columns: repeat(2, 1fr);
@@ -178,32 +195,71 @@
         // }
       } 
 
+      function buscarAlumnos(lista) {
+          const texto = estado.busqueda.toLowerCase()
+
+          return lista.filter(a => {
+              return a.nombre.toLowerCase().includes(texto) ||
+                    a.apellido.toLowerCase().includes(texto) ||
+                    a.legajo.toLowerCase().includes(texto)
+          })
+      }
+
       html`
-        <h1>Alumnos</h1>
-        <ul>
-          ${() =>
-            ordenarAlumnos(estado.alumnos).map(
-              (a) =>
-                html`<li>
-                  <article>
-                    <header>
-                      <h2>${a.apellido}</h2>
-                      <span>${a.nombre}</span>
-                      <button class="${() => a.favorito ? 'favorito' : ''}"
-                        @click="${() => cambiarFavorito(a.id)}">
-                        ${() => a.favorito ? "★" : "☆"}
-                    </button>
-                    </header>
-                    <address>
-                      <strong>${a.telefono}</strong>
-                      <span>@${a.github}</span>
-                    </address>
-                    <footer>${a.comision} · ${a.legajo}</footer>
-                  </article>
-                </li>`.key(a.id)
-            )}
-        </ul>
-      `(app);
+          <h1>Alumnos</h1>
+
+          <input
+            type="search"
+            placeholder="Buscar alumnos..."
+            @input="${(e) => estado.busqueda = e.target.value}"
+          >
+
+          <ul>
+            ${() => {
+              const resultados = ordenarAlumnos(buscarAlumnos(estado.alumnos))
+
+              if (resultados.length === 0) {
+                return [
+                    html`
+                        <li class="sin-resultados">
+                            No se encontraron alumnos
+                        </li>
+                    `
+                ]
+                }
+
+              return resultados.map(
+                (a) =>
+                  html`
+                    <li>
+                      <article>
+                        <header>
+                          <h2>${a.apellido}</h2>
+                          <span>${a.nombre}</span>
+
+                          <button
+                            class="${() => a.favorito ? 'favorito' : ''}"
+                            @click="${() => cambiarFavorito(a.id)}"
+                          >
+                            ${() => a.favorito ? "★" : "☆"}
+                          </button>
+                        </header>
+
+                        <address>
+                          <strong>${a.telefono}</strong>
+                          <span>@${a.github}</span>
+                        </address>
+
+                        <footer>
+                          ${a.comision} · ${a.legajo}
+                        </footer>
+                      </article>
+                    </li>
+                  `.key(a.id)
+              )
+            }}
+          </ul>
+        `(app)
     </script>
   </body>
 </html>
