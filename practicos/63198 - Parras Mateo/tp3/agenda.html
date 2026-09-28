@@ -22,7 +22,8 @@
 
     const estado= reactive({
       alumnos: [],
-      busqueda: ""
+      busqueda: "",
+      idEditando: null
     })
     async function cargarAlumnos(){
       const guardado= localStorage.getItem("alumnos")
@@ -75,6 +76,33 @@
       })
       return lista
     }
+    function abrirEdicion(id){
+      const alumno= estado.alumnos.find(a => a.id === id)
+      estado.idEditando= id
+      document.getElementById("eapellido").value= alumno.apellido
+      document.getElementById("enombre").value= alumno.nombre
+      document.getElementById("elegajo").value= alumno.legajo
+      document.getElementById("ecomision").value= alumno.comision
+      document.getElementById("etelefono").value= alumno.celular
+      document.getElementById("egithub").value= alumno.github
+      document.getElementById("editar").showModal()
+    }
+    function guardarEdicion(){
+      const alumno= estado.alumnos.find(a => a.id === estado.idEditando)
+      alumno.apellido= document.getElementById("eapellido").value
+      alumno.nombre= document.getElementById("enombre").value
+      alumno.legajo= document.getElementById("elegajo").value
+      alumno.comision= document.getElementById("ecomision").value
+      alumno.celular= document.getElementById("etelefono").value
+      alumno.github= document.getElementById("egithub").value
+    }
+    function eliminarAlumno(){
+      estado.alumnos= estado.alumnos.filter(a => a.id !== estado.idEditando)
+      guardar()
+      document.getElementById("editar").close()
+      guardar()
+    }
+
     const app= document.getElementById("app")
     html`
     <h1>Alumnos</h1>
@@ -82,7 +110,12 @@
     <button @click="${() => document.getElementById("agregar").showModal()}">agregar</button>
       <ul>
         ${() => alumnosEncontrados().map(a => html`
-        <li> 
+        <li tabindex="0"
+        @click="${() => abrirEdicion(a.id)}"
+        @keydown="${(e) =>{
+          if (e.key=== 'Enter') abrirEdicion(a.id)
+          if (e.key === ' ' ) {e.preventDefault(); favoritos(a.id)}
+        }}"> 
           <article>
             <header>
               <h2>${a.apellido}, ${a.nombre}</h2>
@@ -111,6 +144,21 @@
           <label> github <input type="text" id="ngithub" required> </label>
           <button type="submit" @click="${() => agregarAlumno()}">guardar</button>
           <button type="button" @click="${() => document.getElementById("agregar").close()}">cancelar</button>
+          </form>
+        </dialog>
+
+        <dialog id="editar">
+          <form method="dialog">
+            <h2>editar alumno</h2>
+            <label>apellido <input type="text" id="eapellido" required></label>
+            <label>nombre <input type="text" id="enombre" required></label>
+            <label>legajo <input type="text" id="elegajo" required></label>
+            <label>comision <input type="text" id="ecomision" required></label>
+            <label>telefono <input type="text" id="etelefono" required></label>
+            <label>github <input type="text" id="egithub" required></label>
+            <button type="submit" @click="${() => guardarEdicion()}">guardar</button>
+            <button type="button" @click="${() => document.getElementById("editar").close()}">cancelar</button>
+            <button type="button" @click="${() => eliminarAlumno()}">eliminar</button>
           </form>
         </dialog>
 
