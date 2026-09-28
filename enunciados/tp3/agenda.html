@@ -13,6 +13,8 @@
       --text-muted: #6b7280;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
       --star-active: #eab308;
       --radius: 12px;
     }
@@ -47,6 +49,7 @@
         h1 {
           font-size: 2rem;
           font-weight: 700;
+          letter-spacing: -0.5px;
         }
 
         .actions {
@@ -63,10 +66,28 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 0.95rem;
+            background-color: #fff;
+            color: var(--text);
 
             &:focus {
               outline: 2px solid var(--primary);
               border-color: transparent;
+            }
+          }
+
+          .btn-add {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.15s;
+
+            &:hover {
+              background-color: var(--primary-hover);
             }
           }
         }
@@ -91,6 +112,7 @@
         text-align: center;
         padding: 48px 16px;
         color: var(--text-muted);
+        font-size: 1.1rem;
       }
     }
 
@@ -103,15 +125,35 @@
       flex-direction: column;
       justify-content: space-between;
       gap: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
 
       header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        gap: 8px;
 
         .nombre-alumno {
           font-size: 1.15rem;
           font-weight: 600;
+          color: var(--text);
+          line-height: 1.3;
+
+          b {
+            font-weight: 700;
+          }
         }
 
         .btn-fav {
@@ -121,9 +163,15 @@
           font-size: 1.4rem;
           color: #cbd5e1;
           line-height: 1;
+          padding: 2px;
+          transition: color 0.15s, transform 0.15s;
 
           &.activo {
             color: var(--star-active);
+          }
+
+          &:hover {
+            transform: scale(1.15);
           }
         }
       }
@@ -136,13 +184,24 @@
         font-size: 0.9rem;
         color: var(--text-muted);
 
-        p strong {
+        p {
+          margin: 0;
+          display: flex;
+          gap: 6px;
+        }
+
+        strong {
           color: var(--text);
+          font-weight: 500;
         }
 
         a {
           color: var(--primary);
           text-decoration: none;
+
+          &:hover {
+            text-decoration: underline;
+          }
         }
       }
 
@@ -153,6 +212,117 @@
         padding-top: 10px;
         font-size: 0.85rem;
         color: var(--text-muted);
+
+        span strong {
+          color: var(--text);
+          font-weight: 500;
+        }
+      }
+    }
+
+    dialog#dialog-alumno {
+      margin: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 90%;
+      max-width: 460px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+      background-color: #fff;
+      color: var(--text);
+
+      &::backdrop {
+        background-color: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+      }
+
+      h2 {
+        font-size: 1.35rem;
+        margin-bottom: 20px;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+          }
+
+          input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 0.95rem;
+
+            &:focus {
+              outline: 2px solid var(--primary);
+              border-color: transparent;
+            }
+          }
+        }
+
+        .form-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 12px;
+          gap: 8px;
+
+          .right-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+          }
+
+          button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+            transition: background-color 0.15s;
+          }
+
+          .btn-save {
+            background-color: var(--primary);
+            color: #fff;
+            font-weight: 600;
+
+            &:hover {
+              background-color: var(--primary-hover);
+            }
+          }
+
+          .btn-cancel {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+
+            &:hover {
+              background-color: #f1f5f9;
+              color: var(--text);
+            }
+          }
+
+          .btn-delete {
+            background-color: var(--danger);
+            color: #fff;
+
+            &:hover {
+              background-color: var(--danger-hover);
+            }
+          }
+        }
       }
     }
   </style>
@@ -164,32 +334,189 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core';
     import alumnosIniciales from './alumnos.json' with { type: 'json' };
 
+    const STORAGE_KEY = 'tup26_tp3_alumnos';
+
+    // 1. ESTADO
     const state = reactive({
-      alumnos: Array.isArray(alumnosIniciales) ? alumnosIniciales : [],
-      busqueda: ''
+      alumnos: [],
+      busqueda: '',
+      modoModal: 'agregar', // 'agregar' | 'editar'
+      form: {
+        id: null,
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: '',
+        favorito: false
+      }
     });
 
-    function toggleFavorito(id) {
-      const idx = state.alumnos.findIndex(a => a.id === id);
-      if (idx !== -1) {
-        state.alumnos[idx].favorito = !state.alumnos[idx].favorito;
+    // 2. PERSISTENCIA Y CARGA INICIAL
+    function cargarDatos() {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        try {
+          state.alumnos = JSON.parse(guardado);
+          return;
+        } catch (e) {
+          console.error('Error parseando localStorage:', e);
+        }
+      }
+      state.alumnos = Array.isArray(alumnosIniciales) ? alumnosIniciales : [];
+      guardarEnStorage();
+    }
+
+    function guardarEnStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos));
+    }
+
+    // 3. OPERACIONES
+    function alternarFavorito(id, event) {
+      if (event) event.stopPropagation();
+      const index = state.alumnos.findIndex(a => a.id === id);
+      if (index !== -1) {
+        state.alumnos[index].favorito = !state.alumnos[index].favorito;
         state.alumnos = [...state.alumnos];
+        guardarEnStorage();
       }
     }
 
-    function obtenerAlumnos() {
+    function abrirModalAgregar() {
+      state.modoModal = 'agregar';
+      state.form = {
+        id: null,
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: '',
+        favorito: false
+      };
+      const dialog = document.getElementById('dialog-alumno');
+      if (dialog) dialog.showModal();
+    }
+
+    function abrirModalEditar(alumno) {
+      state.modoModal = 'editar';
+      state.form = { ...alumno };
+      const dialog = document.getElementById('dialog-alumno');
+      if (dialog) dialog.showModal();
+    }
+
+    function cerrarModal() {
+      const dialog = document.getElementById('dialog-alumno');
+      if (dialog) dialog.close();
+    }
+
+    function guardarFormulario(event) {
+      event.preventDefault();
+      const formEl = event.target;
+      if (!formEl.checkValidity()) return;
+
+      if (state.modoModal === 'agregar') {
+        const nuevo = {
+          ...state.form,
+          id: Date.now().toString(),
+          favorito: false
+        };
+        state.alumnos = [...state.alumnos, nuevo];
+      } else {
+        const idx = state.alumnos.findIndex(a => a.id === state.form.id);
+        if (idx !== -1) {
+          state.alumnos[idx] = { ...state.form };
+          state.alumnos = [...state.alumnos];
+        }
+      }
+
+      guardarEnStorage();
+      cerrarModal();
+    }
+
+    function eliminarAlumno() {
+      if (confirm(`¿Eliminar a ${state.form.nombre} ${state.form.apellido}?`)) {
+        state.alumnos = state.alumnos.filter(a => a.id !== state.form.id);
+        guardarEnStorage();
+        cerrarModal();
+      }
+    }
+
+    // 4. FILTRADO Y ORDENAMIENTO
+    function obtenerAlumnosProcesados() {
       const q = state.busqueda.trim().toLowerCase();
+
       const filtrados = state.alumnos.filter(a => {
         if (!q) return true;
-        return `${a.nombre} ${a.apellido} ${a.legajo} ${a.telefono}`.toLowerCase().includes(q);
+        const texto = `${a.nombre} ${a.apellido} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`.toLowerCase();
+        return texto.includes(q);
       });
 
       return filtrados.sort((a, b) => {
         if (a.favorito && !b.favorito) return -1;
         if (!a.favorito && b.favorito) return 1;
-        return (a.apellido || '').localeCompare(b.apellido || '', 'es', { sensitivity: 'base' });
+
+        const cmpApe = (a.apellido || '').localeCompare(b.apellido || '', 'es', { sensitivity: 'base' });
+        if (cmpApe !== 0) return cmpApe;
+
+        return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
       });
     }
+
+    // 5. COMPONENTES Y VISTA
+    const renderCard = (alumno) => {
+      const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+          abrirModalEditar(alumno);
+        } else if (e.key === ' ' || e.code === 'Space') {
+          e.preventDefault();
+          alternarFavorito(alumno.id);
+        }
+      };
+
+      return html`
+        <article
+          class="card-alumno"
+          tabindex="0"
+          role="button"
+          aria-label="${() => `Alumno ${alumno.nombre}${alumno.apellido}`}"
+          @click="${() => abrirModalEditar(alumno)}"
+          @keydown="${handleKeyDown}"
+        >
+          <header>
+            <span class="nombre-alumno">
+              ${() => alumno.nombre} <b>${() => alumno.apellido}</b>
+            </span>
+            <button
+              type="button"
+              class="${() => `btn-fav ${alumno.favorito ? 'activo' : ''}`}"
+              title="${() => (alumno.favorito ? 'Quitar de favoritos' : 'Marcar favorito')}"
+              aria-label="Favorito"
+              @click="${(e) => alternarFavorito(alumno.id, e)}"
+            >
+              ${() => (alumno.favorito ? '★' : '☆')}
+            </button>
+          </header>
+
+          <address>
+            <p><strong>Teléfono:</strong> <span>${() => alumno.telefono || '—'}</span></p>
+            <p>
+              <strong>GitHub:</strong>
+              ${() =>
+                alumno.github
+                  ? html`<a href="https://github.com/${alumno.github}" target="_blank" rel="noopener" @click="${(e) => e.stopPropagation()}">@${alumno.github}</a>`
+                  : '—'}
+            </p>
+          </address>
+
+          <footer>
+            <span><strong>Comisión:</strong> ${() => alumno.comision || '—'}</span>
+            <span><strong>Legajo:</strong> ${() => alumno.legajo || '—'}</span>
+          </footer>
+        </article>
+      `;
+    };
 
     const App = html`
       <header class="agenda-header">
@@ -200,41 +527,110 @@
             placeholder="Buscar alumnos..."
             value="${() => state.busqueda}"
             @input="${(e) => (state.busqueda = e.target.value)}"
+            aria-label="Buscar alumnos"
           />
+          <button type="button" class="btn-add" @click="${abrirModalAgregar}">
+            + Agregar
+          </button>
         </div>
       </header>
 
       <section class="grid-alumnos">
         ${() => {
-          const list = obtenerAlumnos();
-          if (list.length === 0) return html`<p class="empty-state">No hay alumnos para mostrar.</p>`;
-          return list.map(a => html`
-            <article class="card-alumno">
-              <header>
-                <span class="nombre-alumno">${a.nombre} <b>${a.apellido}</b></span>
-                <button
-                  type="button"
-                  class="${() => `btn-fav ${a.favorito ? 'activo' : ''}`}"
-                  @click="${() => toggleFavorito(a.id)}"
-                >
-                  ${() => (a.favorito ? '★' : '☆')}
-                </button>
-              </header>
-              <address>
-                <p><strong>Teléfono:</strong> ${a.telefono || '—'}</p>
-                <p><strong>GitHub:</strong> <a href="https://github.com/${a.github}">@${a.github}</a></p>
-              </address>
-              <footer>
-                <span><strong>Comisión:</strong> ${a.comision || '—'}</span>
-                <span><strong>Legajo:</strong> ${a.legajo || '—'}</span>
-              </footer>
-            </article>
-          `);
+          const lista = obtenerAlumnosProcesados();
+          if (lista.length === 0) {
+            return html`<p class="empty-state">No hay alumnos para mostrar.</p>`;
+          }
+          return lista.map(a => renderCard(a));
         }}
       </section>
+
+      <dialog id="dialog-alumno" @click="${(e) => e.target.id === 'dialog-alumno' && cerrarModal()}">
+        <h2>${() => (state.modoModal === 'agregar' ? 'Nuevo alumno' : 'Editar alumno')}</h2>
+        
+        <form @submit="${guardarFormulario}">
+          <div class="form-group">
+            <label for="campo-apellido">Apellido</label>
+            <input
+              id="campo-apellido"
+              type="text"
+              required
+              value="${() => state.form.apellido}"
+              @input="${(e) => (state.form.apellido = e.target.value)}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="campo-nombre">Nombre</label>
+            <input
+              id="campo-nombre"
+              type="text"
+              required
+              value="${() => state.form.nombre}"
+              @input="${(e) => (state.form.nombre = e.target.value)}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="campo-legajo">Legajo</label>
+            <input
+              id="campo-legajo"
+              type="text"
+              required
+              value="${() => state.form.legajo}"
+              @input="${(e) => (state.form.legajo = e.target.value)}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="campo-comision">Comisión</label>
+            <input
+              id="campo-comision"
+              type="text"
+              required
+              value="${() => state.form.comision}"
+              @input="${(e) => (state.form.comision = e.target.value)}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="campo-telefono">Teléfono</label>
+            <input
+              id="campo-telefono"
+              type="tel"
+              value="${() => state.form.telefono}"
+              @input="${(e) => (state.form.telefono = e.target.value)}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="campo-github">Usuario GitHub</label>
+            <input
+              id="campo-github"
+              type="text"
+              value="${() => state.form.github}"
+              @input="${(e) => (state.form.github = e.target.value)}"
+            />
+          </div>
+
+          <div class="form-actions">
+            ${() =>
+              state.modoModal === 'editar'
+                ? html`<button type="button" class="btn-delete" @click="${eliminarAlumno}">Eliminar</button>`
+                : html`<span></span>`}
+            
+            <div class="right-actions">
+              <button type="button" class="btn-cancel" @click="${cerrarModal}">Cancelar</button>
+              <button type="submit" class="btn-save">Guardar</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
     `;
 
+    // Inicializar
     App(document.getElementById('app'));
+    cargarDatos();
   </script>
 </body>
 </html>
