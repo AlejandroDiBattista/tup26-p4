@@ -35,11 +35,19 @@
       }
     }
     cargarAlumnos()
+    function alumnosEncontrados(){
+      const texto= estado.busqueda.toLowerCase()
+      return estado.alumnos.filter(a=> {
+        const datos= (a.apellido + " " + a.nombre+ " " + a.legajo + " " + a.github).toLocaleLowerCase()
+        return datos.includes(texto)
+      })
+    }
     const app= document.getElementById("app")
     html`
     <h1>Alumnos</h1>
+    <input type="search" placeholder="buscar alumno" @input="${(e) =>estado.busqueda= e.target.value}">
       <ul>
-        ${() => estado.alumnos.map(a => html`
+        ${() => alumnosEncontrados().map(a => html`
         <li> 
           <article>
             <header>
@@ -56,6 +64,7 @@
           </article>
         </li>` )}
       </ul>
+      ${() => alumnosEncontrados().length=== 0 ? html`<p>no hay alumnos</p>` : "" }
         `(app)
   </script>
 </body>
