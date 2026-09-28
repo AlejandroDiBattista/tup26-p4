@@ -17,14 +17,126 @@
     main { width: 1104px; max-width: 100%; margin: auto; }
 
     h1 { margin: 0 0 24px; }
+    header {
+    margin-bottom: 24px;
+
+    & h1 {
+    margin-bottom: 16px;
+  }
+
+  & input {
+    width: 70%;
+    padding: 10px;
+    border: 1px solid #d9ded9;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+
+  & button {
+    padding: 10px 16px;
+    margin-left: 8px;
+    border: 1px solid #d9ded9;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+  }
+}
 
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
 
     li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
 
+     article {
+      cursor: pointer;
+
+      & h2 {
+      margin-bottom: 8px;
+     }
+
+     & address {
+     font-style: normal;
+     }
+
+     &:hover {
+      transform: translateY(-2px);
+    }
+
+    &:focus {
+     outline: 3px solid #555;
+     outline-offset: 3px;
+     }
+    }
+    dialog {
+     width: 450px;
+     max-width: calc(100% - 40px);
+     padding: 0;
+     border: 1px solid #d9ded9;
+     border-radius: 16px;
+
+    &::backdrop {
+     background: rgb(0 0 0 / 40%);
+    }
+
+    & form {
+     display: grid;
+     gap: 12px;
+     padding: 24px;
+    }
+
+    & h2 {
+     margin: 0 0 8px;
+    }
+
+    & label {
+     display: grid;
+     gap: 5px;
+    }
+
+    & input {
+     padding: 9px;
+     border: 1px solid #d9ded9;
+     border-radius: 8px;
+     font-size: 16px;
+    }
+
+    & button {
+     padding: 9px;
+     border: 1px solid #d9ded9;
+     border-radius: 8px;
+     background: white;
+     cursor: pointer;
+    }
+  }
+
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) {
+
+     body {
+    padding: 20px 12px;
+     }
+
+     header {
+    & input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+     }
+
+     & button {
+      width: 100%;
+      margin-left: 0;
+     }
+   }
+
+   ul {
+    grid-template-columns: 1fr;
+   }
+
+    dialog {
+     max-width: calc(100% - 24px);
+    }
+}
 
   </style>
 </head>
@@ -162,8 +274,31 @@
       document.getElementById("formularioAlumno").close()
     }
 
+    function eliminarAlumno(){
+      if (estado.alumnoSeleccionado) {
+        estado.alumnos = estado.alumnos.filter(a => {
+          return a.id !== estado.alumnoSeleccionado.id
+        })
+        document.getElementById("formularioAlumno").close()
+      }
+    }
+
+    function manejarTeclado(e, alumno){
+      if (e.key === "Enter") {
+        abrirFormularioEditar(alumno)
+      }
+    }
+    function manejarEspacio(e, alumno){
+      if (e.key === " ") {
+        e.preventDefault()
+        cambiarFavorito(alumno.id)
+      }
+    }
+
+
 
     html`
+    <header>
       <h1>Alumnos</h1>
       <input
       type= "search"
@@ -173,6 +308,7 @@
       <button @click="${() => abrirFormularioNuevo()}">
         Agregar alumno
         </button>
+        </header> 
       <dialog id="formularioAlumno">
         <form @submit="${e => guardarAlumno(e)}">
           <h2>Alumno</h2>
@@ -203,16 +339,31 @@
               GitHub:
               <input type= "text" name="github" required>
               </label>
-            <button type="submit">Guardar</button>
-            <button 
-            type= "button"
-            @click="${() => document.getElementById('formularioAlumno').close()}"
+           <button type="submit">Guardar</button>
+
+            ${() => estado.editando
+             ? html`
+             <button
+            type="button"
+            @click="${() => eliminarAlumno()}"
             >
-            Cancelar
+            Eliminar
             </button>
-          </form>
+            `
+           : ""
+           }
+
+           <button
+           type="button"
+           @click="${() => document.getElementById('formularioAlumno').close()}"
+           >
+           Cancelar
+           </button>
+           </form>
           </dialog>
-      
+
+          <section>
+
       ${() => buscarAlumnos(estado.alumnos).length === 0 
       ? html`<p>No se encontraron alumnos</p>`
       : ""
@@ -221,7 +372,12 @@
       <ul>  
         ${() => ordenarAlumnos(buscarAlumnos(estado.alumnos)).map(a => html`
           <li>
-            <article @click="${() => abrirFormularioEditar(a)}">
+            <article 
+            tabindex="0"
+            @click="${() => abrirFormularioEditar(a)}"
+            @keyup="${e => manejarTeclado(e, a)}"
+            @keypress="${e => manejarEspacio(e, a)}"
+            >
             <button @click="${e => {
               e.stopPropagation()
               cambiarFavorito(a.id)
@@ -246,6 +402,7 @@
 
         `)}
       </ul>
+      </section>
     `(app)
   </script>
 </body>
