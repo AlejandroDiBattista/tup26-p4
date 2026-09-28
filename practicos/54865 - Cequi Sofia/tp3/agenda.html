@@ -147,11 +147,17 @@
       }
 
       .estrella {
+        flex: none;
+        padding: 2px;
+        border: 0;
+        background: none;
+        cursor: pointer;
         font-size: 21px;
         line-height: 1;
         color: var(--dorado-tenue);
 
-        &[data-activa="true"] {
+        &[data-activa="true"],
+        &:hover {
           color: var(--dorado);
         }
       }
@@ -227,21 +233,51 @@
       const alumnosVisibles = () =>
         state.alumnos.filter((a) => coincide(a, state.busqueda)).sort(comparar);
 
+      const buscar = (id) =>
+        state.alumnos[state.alumnos.findIndex((a) => a.id === id)];
+
+      function alternarFavorito(id) {
+        const alumno = buscar(id);
+        if (!alumno) return;
+        alumno.favorito = !alumno.favorito;
+        guardarAlumnos(state.alumnos);
+      }
+
+      function teclaTarjeta(e, id) {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === " ") {
+          e.preventDefault();
+          alternarFavorito(id);
+        }
+      }
+
       // interfaz
       const tarjeta = (a) =>
         html`
-          <article class="tarjeta">
+          <article
+            class="tarjeta"
+            tabindex="0"
+            aria-label="${() => `${a.apellido} ${a.nombre}`}"
+            @keydown="${(e) => teclaTarjeta(e, a.id)}"
+          >
             <header>
               <h2>
                 <strong>${() => a.apellido}</strong>
                 <span>${() => a.nombre}</span>
               </h2>
-              <span
+              <button
+                type="button"
                 class="estrella"
-                aria-hidden="true"
                 data-activa="${() => String(a.favorito)}"
-                >${() => (a.favorito ? "★" : "☆")}</span
+                aria-pressed="${() => String(a.favorito)}"
+                aria-label="Favorito"
+                @click="${(e) => {
+                  e.stopPropagation();
+                  alternarFavorito(a.id);
+                }}"
               >
+                ${() => (a.favorito ? "★" : "☆")}
+              </button>
             </header>
             <address>
               <p>${() => a.telefono}</p>
