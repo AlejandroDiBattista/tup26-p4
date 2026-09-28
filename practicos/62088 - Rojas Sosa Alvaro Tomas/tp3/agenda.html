@@ -27,6 +27,7 @@
     }
 
     main { width: 1160px; max-width: 100%; margin: auto; }
+
     .principal {
       display: flex;
       align-items: center;
@@ -35,6 +36,20 @@
 
       & h1 { margin: 0 auto 0 0; font-size: 32px; }
     }
+
+    .buscador {
+      flex: 0 1 320px;
+      padding: 12px 18px;
+      border: 1px solid var(--borde);
+      border-radius: 999px;
+      background: var(--tarjeta);
+      font: inherit;
+      color: inherit;
+
+      &::placeholder { color: var(--tenue); }
+      &:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
+    }
+
     .agenda {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -46,6 +61,14 @@
       @media (max-width: 1000px) { grid-template-columns: repeat(2, 1fr); }
       @media (max-width: 680px)  { grid-template-columns: 1fr; }
     }
+
+    .vacio {
+      grid-column: 1 / -1;
+      padding: 48px;
+      text-align: center;
+      color: var(--suave);
+    }
+
     .tarjeta {
       height: 100%;
       padding: 18px 20px;
@@ -90,6 +113,7 @@
         color: var(--tenue);
       }
     }
+
     .favorito {
       padding: 0;
       border: 0;
@@ -98,6 +122,8 @@
       line-height: 1;
       color: var(--acento);
       cursor: pointer;
+
+      &:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
     }
   </style>
 </head>
@@ -113,38 +139,72 @@
     const guardado = localStorage.getItem(CLAVE)
     const iniciales = guardado ? JSON.parse(guardado) : alumnos
 
-    const estado = reactive({ alumnos: iniciales })
+    const estado = reactive({ alumnos: iniciales, busqueda: '' })
+
     watch(() => {
       localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos))
     })
-    window.estado = estado
+
     function comparar(a, b) {
       if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
       const porApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
       if (porApellido !== 0) return porApellido
       return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
     }
+
+    function normalizar(texto) {
+      return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    }
+
+    function coincide(alumno, busqueda) {
+      if (!busqueda.trim()) return true
+      const campos = [alumno.apellido, alumno.nombre, alumno.legajo,
+                      alumno.comision, alumno.telefono, alumno.github].join(' ')
+      return normalizar(campos).includes(normalizar(busqueda))
+    }
+
+    function alternarFavorito(alumno) {
+      alumno.favorito = !alumno.favorito
+    }
+
     const tarjeta = (a) => html`
       <li>
         <article class="tarjeta">
           <header>
             <h2>${a.apellido} <span>${a.nombre}</span></h2>
-            <button class="favorito">${a.favorito ? '\u2605' : '\u2606'}</button>
+            <button class="favorito" type="button"
+                    aria-label="Alternar favorito"
+                    @click="${() => alternarFavorito(a)}">${() => a.favorito ? '★' : '☆'}</button>
           </header>
           <address>
             <span class="telefono">${a.telefono}</span>
             <span class="github">@${a.github}</span>
           </address>
-          <footer>${a.comision} \u00b7 ${a.legajo}</footer>
+          <footer>${a.comision} · ${a.legajo}</footer>
         </article>
       </li>
     `
+
+    const listado = () => {
+      const visibles = estado.alumnos
+        .filter(a => coincide(a, estado.busqueda))
+        .sort(comparar)
+
+      if (visibles.length === 0) {
+        return html`<li class="vacio">No hay alumnos para mostrar.</li>`
+      }
+      return visibles.map(tarjeta)
+    }
+
     html`
       <header class="principal">
         <h1>Agenda</h1>
+        <input class="buscador" type="search" placeholder="Buscar alumno..."
+               aria-label="Buscar alumno"
+               @input="${(e) => estado.busqueda = e.target.value}">
       </header>
       <ul class="agenda">
-        ${() => [...estado.alumnos].sort(comparar).map(tarjeta)}
+        ${listado}
       </ul>
     `(app)
   </script>
