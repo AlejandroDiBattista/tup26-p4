@@ -51,14 +51,62 @@
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
-
     const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    
+    //persistencia de datos en localStorage   
+    const STORAGE_KEY = 'alumnos'
+
+    function cargarInicial () {
+      const guardado = localStorage.getItem(STORAGE_KEY)
+      if (guardado) return JSON.parse(guardado)
+      return alumnos.map(a => ({ favorito: false, ...a }))
+    }
+    // Estado reactivo 
+    const state = reactive({
+      alumnos: cargarInicial(),
+      search: '',
+      isNew: false,
+      form: null, // { id, apellido, nombre, legajo, comision, telefono, github, favorito }
+    })
+    // Persiste automáticamente cada vez que cambia la lista
+    watch(() => state.alumnos, (valor) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(valor))
+    })
+
+    // utilidades
+    function normalizar (texto = '') {
+      return texto
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+    }
+    function obtenerAlumnosVisibles () {
+      const termino = normalizar(state.search)
+      return state.alumnos
+        .filter(a => {
+          if (!termino) return true
+          const combinado = normalizar(
+            `${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.github} ${a.telefono}`
+          )
+          return combinado.includes(termino)
+        })
+        .slice()
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+          const apA = normalizar(a.apellido), apB = normalizar(b.apellido)
+          if (apA !== apB) return apA < apB ? -1 : 1
+          const noA = normalizar(a.nombre), noB = normalizar(b.nombre)
+          return noA < noB ? -1 : noA > noB ? 1 : 0
+        })
+    }
+    function nuevoId () {
+      const max = state.alumnos.reduce((m, a) => Math.max(m, Number(a.id) || 0), 0)
+      return max + 1
+    }
+
+    
 
 
 
