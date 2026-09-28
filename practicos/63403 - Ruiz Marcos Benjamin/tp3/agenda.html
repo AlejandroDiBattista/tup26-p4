@@ -46,14 +46,16 @@
   function ordenamiento (){
   return [...personas.contenido]
   .filter(a =>
-  `${a.apellido} ${a.nombre}`.toLowerCase().includes(personas.busqueda.toLowerCase()))
+  convertir(`${a.apellido} ${a.nombre}`).includes(convertir(personas.busqueda)))
   .sort((a,b) =>
   b.favorito - a.favorito ||
   a.apellido.localeCompare(b.apellido, "es", {sensitivity: "base"}) ||
   a.nombre.localeCompare(b.nombre, "es", {sensitivity: "base"})
   )}
-
-
+  
+ function convertir(texto) {
+  return texto.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, '')
+}
 
     const app = document.getElementById('app')
     html`
@@ -90,6 +92,7 @@
               </footer>
           </article>`.key(a.id))}
       </section>
+      <p>${() =>ordenamiento().length === 0  ? "No hay alumnos para mostrar" : ""}</p>
        `(app)
   </script>
 </body>
