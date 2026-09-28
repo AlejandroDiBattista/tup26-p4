@@ -53,11 +53,57 @@
     watch(() => {
       localStorage.setItem("alumnos", JSON.stringify(estado.alumnos))
     })
+
+    function ordenarAlumnos(alumnos) {
+      let alumnosOrdenados = [...alumnos]
+
+      alumnosOrdenados.sort((a, b) => {
+        if (a.favorito && !b.favorito) {
+          return -1
+        }
+        if (!a.favorito && b.favorito) {
+          return 1
+        }
+        let comparacionApellido = a.apellido.localeCompare(b.apellido, "es", {
+          sensitivity: "base"
+        
+        
+      })
+      if (comparacionApellido !==0) {
+        return comparacionApellido
+      }
+      return a.nombre.localeCompare(b.nombre, "es", {
+        sensitivity: "base"
+      })
+    })
+
+      return alumnosOrdenados
+    }
+
+
     html`
       <h1>Alumnos</h1>
       <ul>
-        ${() => estado.alumnos.map(a => html`
-          <li>${a.nombre} <b>${a.apellido}</b></li>
+        ${() => ordenarAlumnos(estado.alumnos).map(a => html`
+          <li>
+            <article>
+            <div>${a.favorito ? "Favorito" : "No favorito"}</div>
+
+           <h2> ${a.apellido} </h2>
+
+          <p>${a.nombre}</p>
+
+          <address>
+            <p>Telefono: ${a.telefono}</p>
+            <p>GitHub: ${a.github}</p>
+          </address>
+          <footer>
+            <p>Comision: ${a.comision}</p>
+            <p>Legajo: ${a.legajo}</p>
+            </footer>
+          </article>
+         </li>   
+
         `)}
       </ul>
     `(app)
