@@ -5,13 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    :root {
+      --fondo: #f5f6f4; --tarjeta: #fdfcf8; --borde: #e2e0d6;
+      --tinta: #22231d; --suave: #5c5b52; --tenue: #8b897c;
+      --acento: #2c3521; --dorado: #93731f; --dorado-tenue: #c7bfa4;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: var(--fondo); color: var(--tinta); }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    h1, h2, p { margin: 0; }
+    h1, h2 { font-family: Georgia, serif; }
+    :focus-visible { outline: 2.5px solid var(--acento); outline-offset: 2px; }
+
+    .cabecera {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 16px; margin-bottom: 24px;
+
+      & h1 { font-size: 34px; }
+    }
+
+    .grilla {
+      display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px;
+
+      @media (max-width: 1120px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      @media (max-width: 700px) { grid-template-columns: 1fr; }
+    }
+
+    .tarjeta {
+      min-width: 0; padding: 20px 22px; border: 1px solid var(--borde); border-radius: 16px;
+      background: var(--tarjeta); box-shadow: 0 1px 2px rgb(0 0 0 / .05), 0 8px 20px rgb(0 0 0 / .05);
+
+      & > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+
+      & h2 {
+        font-size: 19px; line-height: 1.3; font-weight: 400; color: var(--suave);
+
+        & strong { color: var(--tinta); }
+      }
+
+      & address {
+        margin-top: 16px; font-style: normal; line-height: 1.7;
+
+        & p:last-child { color: var(--dorado); }
+      }
+
+      & > p {
+        margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde);
+        font-size: 12px; letter-spacing: .08em; color: var(--tenue);
+      }
+    }
+
+    .estrella {
+      font-size: 21px; line-height: 1; color: var(--dorado-tenue);
+
+      &[data-activa="true"] { color: var(--dorado); }
+    }
+
+    .pie { margin-top: 24px; text-align: center; font-size: 13px; color: var(--tenue); }
   </style>
 </head>
 <body>
@@ -20,6 +70,7 @@
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
 
     const STORAGE_KEY = 'agenda.alumnos'
 
@@ -42,13 +93,48 @@
       alumnos: leerAlumnos(),
     })
 
+    // funciones
+    const normalizar = t =>
+      String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+    const comparar = (a, b) =>
+      (b.favorito - a.favorito) ||
+      normalizar(a.apellido).localeCompare(normalizar(b.apellido), 'es') ||
+      normalizar(a.nombre).localeCompare(normalizar(b.nombre), 'es')
+
+    const alumnosVisibles = () => [...state.alumnos].sort(comparar)
+
     // interfaz
+    const tarjeta = a => html`
+      <article class="tarjeta">
+        <header>
+          <h2><strong>${() => a.apellido}</strong> <span>${() => a.nombre}</span></h2>
+          <span class="estrella" aria-hidden="true" data-activa="${() => String(a.favorito)}">${() => (a.favorito ? '★' : '☆')}</span>
+        </header>
+        <address>
+          <p>${() => a.telefono}</p>
+          <p>@${() => a.github}</p>
+        </address>
+        <p>${() => a.comision} · ${() => a.legajo}</p>
+      </article>
+    `.key(a.id)
+
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${() => state.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header class="cabecera">
+        <h1>Agenda</h1>
+      </header>
+
+      <section class="grilla">
+        ${() => alumnosVisibles().map(a => tarjeta(a))}
+      </section>
+
+      <footer class="pie">
+        <p>${() => {
+          const n = alumnosVisibles().length
+          return `${n} alumno${n === 1 ? '' : 's'} en la agenda`
+        }}</p>
+      </footer>
     `(app)
   </script>
 </body>
