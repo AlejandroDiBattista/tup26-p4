@@ -6,28 +6,59 @@
   <title>Agenda</title>
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
+    main { max-width: 1104px; margin: auto; }
     h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    section { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+
+    article {
+      padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9;
+
+      header { display: flex; justify-content: space-between; }
+      h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #5f6b62; }
+      strong { font: bold 1.4rem Georgia, serif; color: #2c3b30; }
+      address { margin: 16px 0; font-style: normal; }
+      footer { padding-top: 10px; border-top: 1px solid #d9ded9; font-size: .8rem; color: #5f6b62; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import { html } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+    const norm = s => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
+    // Favoritos primero; luego apellido y nombre, sin distinguir mayúsculas ni acentos
+    const ordenados = () => [...alumnos].sort((a, b) =>
+      (Number(!!b.favorito) - Number(!!a.favorito)) ||
+      norm(a.apellido).localeCompare(norm(b.apellido)) ||
+      norm(a.nombre).localeCompare(norm(b.nombre)))
+
+    const tarjeta = a => html`
+      <article>
+        <header>
+          <h2><strong>${a.apellido}</strong> ${a.nombre}</h2>
+          <span>${a.favorito ? '★' : '☆'}</span>
+        </header>
+        <address>
+          <div>${a.telefono}</div>
+          <div>${'@' + a.github}</div>
+        </address>
+        <footer>${a.comision} · ${a.legajo}</footer>
+      </article>
+    `.key(a.id)
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header>
+        <h1>Agenda</h1>
+      </header>
+      <section>
+        ${ordenados().map(tarjeta)}
+      </section>
+    `(document.getElementById('app'))
   </script>
 </body>
 </html>
