@@ -11,11 +11,12 @@
     h1 { margin: 0; }
 
     .buscador { width: 300px; padding: 12px 18px; border: 1px solid #d9ded9; border-radius: 20px; font-size: 15px; }
+    .btn-agregar { padding: 12px 18px; border: none; border-radius: 20px; background: #2e3a30; color: white; font-weight: bold; cursor: pointer; }
 
     .lista { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .vacio { color: gray; }
 
-    .tarjeta { padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; }
+    .tarjeta { padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; cursor: pointer; }
     .tarjeta-arriba { display: flex; justify-content: space-between; }
     .tarjeta h2 { margin: 0; font-family: Georgia, serif; font-size: 24px; }
     .tarjeta h2 span { font-family: sans-serif; font-size: 16px; font-weight: normal; color: gray; }
@@ -25,15 +26,29 @@
     .tarjeta hr { border: none; border-top: 1px solid #ddd; margin: 14px 0 10px; }
     .datos { margin: 0; font-size: 12px; color: gray; letter-spacing: 1px; }
 
+    dialog { width: 560px; padding: 20px; border: none; border-radius: 16px; }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+    dialog h2 { margin: 0; }
+    .subtitulo { margin-top: 4px; color: gray; }
+    .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .campos label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: bold; color: #555; }
+    .campos input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+    .error { color: #c0392b; }
+    .botones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .botones button { padding: 10px 16px; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; }
+    .btn-guardar { background: #2e3a30 !important; color: white; }
+    .btn-eliminar { margin-right: auto; color: #c0392b; }
+
     @media (max-width: 1120px) { .lista { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 700px) { .lista { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main id="app"></main>
+  <dialog id="dialogo"></dialog>
 
   <script type="module">
-    import { html, reactive } from 'https://esm.sh/@arrow-js/core';
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core';
     import alumnosJson from './alumnos.json' with { type: 'json' };
 
     const CLAVE = 'agenda-alumnos';
@@ -50,9 +65,17 @@
         return alumnosJson;
     }
 
+    function formVacio() {
+        return { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' };
+    }
+
     const estado = reactive({
         alumnos: cargarAlumnos(),
         busqueda: '',
+        dialogoAbierto: false,
+        editando: null, // alumno que se esta editando
+        form: formVacio(),
+        error: '',
     });
 
     // ================== FUNCIONES ==================
@@ -92,11 +115,60 @@
         guardar();
     }
 
+    function abrirAgregar() {
+        estado.editando = null;
+        estado.form = formVacio();
+        estado.error = '';
+        estado.dialogoAbierto = true;
+    }
+
+    function abrirEditar(alumno) {
+        estado.editando = alumno;
+        estado.form = alumno;
+        estado.error = '';
+        estado.dialogoAbierto = true;
+    }
+
+    function cerrarDialogo() {
+        estado.dialogoAbierto = false;
+    }
+
+    function validar(datos) {
+        if (datos.apellido == '' || datos.nombre == '') {
+            return 'El apellido y el nombre son obligatorios.';
+        }
+        return '';
+    }
+
+    function guardarAlumno(e) {
+        e.preventDefault();
+
+        estado.error = validar(estado.form);
+        if (estado.error != '') return;
+
+        if (estado.editando == null) {
+            const nuevo = { id: estado.alumnos.length + 1, ...estado.form, favorito: false };
+            estado.alumnos = [...estado.alumnos, nuevo];
+        } else {
+            // los datos ya se cambiaron desde el formulario, solo actualizo la lista
+            estado.alumnos = [...estado.alumnos];
+        }
+
+        guardar();
+        cerrarDialogo();
+    }
+
+    function eliminarAlumno() {
+        estado.alumnos = estado.alumnos.filter(a => a.id != estado.form.id);
+        guardar();
+        cerrarDialogo();
+    }
+
     // ================== VISTAS ==================
 
     function Tarjeta(alumno) {
         return html`
-            <article class="tarjeta">
+            <article class="tarjeta" @click="${() => abrirEditar(alumno)}">
                 <div class="tarjeta-arriba">
                     <h2>${alumno.apellido} <span>${alumno.nombre}</span></h2>
                     <button type="button" class="estrella" @click="${() => alternarFavorito(alumno)}">
@@ -121,18 +193,64 @@
         return lista.map(Tarjeta);
     }
 
+    function Campo(titulo, nombre) {
+        return html`
+            <label>
+                ${titulo}
+                <input type="text" name="${nombre}"
+                    value="${() => estado.form[nombre]}"
+                    @input="${(e) => estado.form[nombre] = e.target.value}">
+            </label>
+        `;
+    }
+
     const app = document.getElementById('app');
 
     html`
         <header>
             <h1>Agenda</h1>
-            <input type="search" class="buscador" placeholder="Buscar alumno..."
-                @input="${(e) => estado.busqueda = e.target.value}">
+            <div>
+                <input type="search" class="buscador" placeholder="Buscar alumno..."
+                    @input="${(e) => estado.busqueda = e.target.value}">
+                <button type="button" class="btn-agregar" @click="${abrirAgregar}">+ Agregar</button>
+            </div>
         </header>
         <section class="lista">
             ${() => Lista()}
         </section>
     `(app);
+
+    const dialogo = document.getElementById('dialogo');
+
+    html`
+        <form @submit="${guardarAlumno}">
+            <h2>${() => estado.editando == null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+            <p class="subtitulo">${() => estado.editando == null ? 'Completá los datos del nuevo alumno.' : 'Actualizá los datos del alumno.'}</p>
+            <div class="campos">
+                ${Campo('Apellido', 'apellido')}
+                ${Campo('Nombre', 'nombre')}
+                ${Campo('Legajo', 'legajo')}
+                ${Campo('Comisión', 'comision')}
+                ${Campo('Teléfono', 'telefono')}
+                ${Campo('GitHub', 'github')}
+            </div>
+            <p class="error">${() => estado.error}</p>
+            <div class="botones">
+                <button type="button" class="btn-eliminar" @click="${eliminarAlumno}">Eliminar</button>
+                <button type="submit" class="btn-guardar">Guardar</button>
+                <button type="button" @click="${cerrarDialogo}">Cancelar</button>
+            </div>
+        </form>
+    `(dialogo);
+
+    // abro o cierro el dialogo segun el estado
+    watch(() => {
+        if (estado.dialogoAbierto) {
+            if (!dialogo.open) dialogo.showModal();
+        } else if (dialogo.open) {
+            dialogo.close();
+        }
+    });
   </script>
 </body>
 </html>
