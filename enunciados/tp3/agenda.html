@@ -1,33 +1,148 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --bg: #f5f6f4;
+      --card-bg: #ffffff;
+      --border: #d9ded9;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --star-active: #eab308;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px 20px 48px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    main#app {
+      width: 1104px;
+      max-width: 100%;
+      margin: 0 auto;
+
+      header.agenda-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+
+        h1 {
+          font-size: 2rem;
+          font-weight: 700;
+        }
+      }
+
+      section.grid-alumnos {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+
+        @media (max-width: 900px) {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media (max-width: 600px) {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+
+    article.card-alumno {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        .nombre-alumno {
+          font-size: 1.15rem;
+          font-weight: 600;
+        }
+      }
+
+      address {
+        font-style: normal;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+
+        p strong {
+          color: var(--text);
+        }
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html } from 'https://esm.sh/@arrow-js/core';
+    import alumnos from './alumnos.json' with { type: 'json' };
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    const App = html`
+      <header class="agenda-header">
+        <h1>Agenda</h1>
+      </header>
+
+      <section class="grid-alumnos">
+        ${() => alumnos.map(a => html`
+          <article class="card-alumno">
+            <header>
+              <span class="nombre-alumno">${a.nombre} <b>${a.apellido}</b></span>
+            </header>
+            <address>
+              <p><strong>Teléfono:</strong> ${a.telefono || '—'}</p>
+              <p><strong>GitHub:</strong> @${a.github || '—'}</p>
+            </address>
+            <footer>
+              <span><strong>Comisión:</strong> ${a.comision || '—'}</span>
+              <span><strong>Legajo:</strong> ${a.legajo || '—'}</span>
+            </footer>
+          </article>
+        `)}
+      </section>
+    `;
+
+    App(document.getElementById('app'));
   </script>
 </body>
 </html>
