@@ -32,7 +32,7 @@
     }
   
     const personas = reactive ({ 
-    contenido : listado, busqueda: "", borrador:{apellido:"", nombre:"", legajo:"", comision:"", telefono:"", github:""}
+    contenido : listado, busqueda: "", editandoId:null, borrador:{apellido:"", nombre:"", legajo:"", comision:"", telefono:"", github:""}
     });
 
   function guardarAlumnos (){
@@ -60,19 +60,33 @@
 
 function abrirDialogo(){
   document.querySelector("dialog").showModal()
+  personas.editandoId = null
 }
 
 function agregarAlumno(e){
 e.preventDefault()
+if (personas.editandoId === null){
 const nuevoId = Math.max(... personas.contenido.map(a => a.id)) +1
 personas.contenido.push({ id: nuevoId, ...personas.borrador, favorito: false })
+} else {
+const alumno = personas.contenido.find(a => a.id === personas.editandoId)
+Object.assign(alumno, personas.borrador)
+}
 guardarAlumnos()
 document.querySelector("dialog").close()
 personas.borrador = {apellido: "", nombre:"", legajo:"", comision:"", telefono:"", github:"" }
+personas.editandoId = null
+
 }
 
 function cerrarDialogo(){
   document.querySelector("dialog").close()
+}
+
+function abrirEdicion(alumno){
+  personas.editandoId = alumno.id
+   personas.borrador= {... alumno}
+   document.querySelector("dialog").showModal()
 }
 
 
@@ -137,7 +151,8 @@ function cerrarDialogo(){
 </dialog>
 
       <section>
-       ${() => ordenamiento().map(a => html`<article>
+       ${() => ordenamiento().map(a => html`<article
+        @click="${() => abrirEdicion(a)}">
         <header>
         <h2>
         ${a.apellido}
@@ -147,10 +162,10 @@ function cerrarDialogo(){
         
         </h2>
       
-        <button @click="${() => alternarFavorito(a)}">
+       <button @click="${e => { e.stopPropagation(); alternarFavorito(a) }}">
         ${() => a.favorito ? '★' : '☆'}
         </button>
-
+          
           </header>
           <address>
             ${a.telefono} 
