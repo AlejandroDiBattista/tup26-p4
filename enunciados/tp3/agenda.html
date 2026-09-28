@@ -13,7 +13,6 @@
       --text-muted: #6b7280;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
-      --danger: #dc2626;
       --star-active: #eab308;
       --radius: 12px;
     }
@@ -49,6 +48,28 @@
           font-size: 2rem;
           font-weight: 700;
         }
+
+        .actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex: 1;
+          max-width: 480px;
+          justify-content: flex-end;
+
+          input[type="search"] {
+            width: 100%;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+
+            &:focus {
+              outline: 2px solid var(--primary);
+              border-color: transparent;
+            }
+          }
+        }
       }
 
       section.grid-alumnos {
@@ -63,6 +84,13 @@
         @media (max-width: 600px) {
           grid-template-columns: 1fr;
         }
+      }
+
+      .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 48px 16px;
+        color: var(--text-muted);
       }
     }
 
@@ -85,6 +113,19 @@
           font-size: 1.15rem;
           font-weight: 600;
         }
+
+        .btn-fav {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 1.4rem;
+          color: #cbd5e1;
+          line-height: 1;
+
+          &.activo {
+            color: var(--star-active);
+          }
+        }
       }
 
       address {
@@ -97,6 +138,11 @@
 
         p strong {
           color: var(--text);
+        }
+
+        a {
+          color: var(--primary);
+          text-decoration: none;
         }
       }
 
@@ -115,30 +161,76 @@
   <main id="app"></main>
 
   <script type="module">
-    import { html } from 'https://esm.sh/@arrow-js/core';
-    import alumnos from './alumnos.json' with { type: 'json' };
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core';
+    import alumnosIniciales from './alumnos.json' with { type: 'json' };
+
+    const state = reactive({
+      alumnos: Array.isArray(alumnosIniciales) ? alumnosIniciales : [],
+      busqueda: ''
+    });
+
+    function toggleFavorito(id) {
+      const idx = state.alumnos.findIndex(a => a.id === id);
+      if (idx !== -1) {
+        state.alumnos[idx].favorito = !state.alumnos[idx].favorito;
+        state.alumnos = [...state.alumnos];
+      }
+    }
+
+    function obtenerAlumnos() {
+      const q = state.busqueda.trim().toLowerCase();
+      const filtrados = state.alumnos.filter(a => {
+        if (!q) return true;
+        return `${a.nombre} ${a.apellido} ${a.legajo} ${a.telefono}`.toLowerCase().includes(q);
+      });
+
+      return filtrados.sort((a, b) => {
+        if (a.favorito && !b.favorito) return -1;
+        if (!a.favorito && b.favorito) return 1;
+        return (a.apellido || '').localeCompare(b.apellido || '', 'es', { sensitivity: 'base' });
+      });
+    }
 
     const App = html`
       <header class="agenda-header">
         <h1>Agenda</h1>
+        <div class="actions">
+          <input
+            type="search"
+            placeholder="Buscar alumnos..."
+            value="${() => state.busqueda}"
+            @input="${(e) => (state.busqueda = e.target.value)}"
+          />
+        </div>
       </header>
 
       <section class="grid-alumnos">
-        ${() => alumnos.map(a => html`
-          <article class="card-alumno">
-            <header>
-              <span class="nombre-alumno">${a.nombre} <b>${a.apellido}</b></span>
-            </header>
-            <address>
-              <p><strong>Teléfono:</strong> ${a.telefono || '—'}</p>
-              <p><strong>GitHub:</strong> @${a.github || '—'}</p>
-            </address>
-            <footer>
-              <span><strong>Comisión:</strong> ${a.comision || '—'}</span>
-              <span><strong>Legajo:</strong> ${a.legajo || '—'}</span>
-            </footer>
-          </article>
-        `)}
+        ${() => {
+          const list = obtenerAlumnos();
+          if (list.length === 0) return html`<p class="empty-state">No hay alumnos para mostrar.</p>`;
+          return list.map(a => html`
+            <article class="card-alumno">
+              <header>
+                <span class="nombre-alumno">${a.nombre} <b>${a.apellido}</b></span>
+                <button
+                  type="button"
+                  class="${() => `btn-fav ${a.favorito ? 'activo' : ''}`}"
+                  @click="${() => toggleFavorito(a.id)}"
+                >
+                  ${() => (a.favorito ? '★' : '☆')}
+                </button>
+              </header>
+              <address>
+                <p><strong>Teléfono:</strong> ${a.telefono || '—'}</p>
+                <p><strong>GitHub:</strong> <a href="https://github.com/${a.github}">@${a.github}</a></p>
+              </address>
+              <footer>
+                <span><strong>Comisión:</strong> ${a.comision || '—'}</span>
+                <span><strong>Legajo:</strong> ${a.legajo || '—'}</span>
+              </footer>
+            </article>
+          `);
+        }}
       </section>
     `;
 
