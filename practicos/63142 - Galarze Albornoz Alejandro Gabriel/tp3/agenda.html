@@ -203,14 +203,95 @@
         }
       }
 
-      
+      dialog#student-dialog {
+        margin: auto;
+        border: none;
+        border-radius: var(--randius);
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        padding: 0;
+        width: 100%;
+        max-width: 500px;
 
+        &::backdrop {
+          background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        form {
+          padding: 1.5rem;
+
+          h2 {
+            margin-bottom: 1.25rem;
+            font-size: 1.25rem;
+          }
+
+          .form-group {
+            margin-bottom: 1rem;
+
+            label {
+              display: block;
+              font-size: 0.875rem;
+              font-weight: 600;
+              margin-bottom: 0.25rem;
+            }
+
+            input {
+              width: 100%;
+              padding: 0.5rem;
+              border: 1px solid var(--border);
+              border-radius: var(--randius);
+              font-size: 1rem;
+
+              &:focus {
+                outline: 2px solid var(--primary);
+              }
+            }
+          }
+
+          .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+
+            button {
+              padding: 0.5rem 1rem;
+              border-radius: var(--randius);
+              font-weight: 600;
+              cursor: pointer;
+              border: 1px solid trasnparent;
+
+              &.btn-secondary {
+                background-color: transparent;
+                border-color: var(--border);
+                color: var(--text);
+
+                &:hover {
+                  background-color: #f1f5f9;
+                }
+              }
+
+              &.btn-danger {
+                background-color: var(--danger);
+                color: white;
+                margin-right: auto;
+
+                &:hover {
+                  background-color: var(--danger-hover);
+                }
+              }
+
+              &.btn-submit {}
+              background-color: var(--primary);
+              color: white;
+
+              &:hover {
+                background-color: var(--primary-hover);
+              }
+            }
+          }
+        }
+      }
     }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -340,7 +421,22 @@
     saveData();
   }
 
+  function getFilteredAndSortedStudents() {
+    const query = state.searchQuery.toLowerCase().trim();
+    const filtered = state.alumnos.filter(al => {
+      if (!query) return true;
+      return (
+        al.nombre.toLowerCase().includes(query) ||
+        al.apellido.toLowerCase().includes(query) ||
+        al.legajo.toString().toLowerCase().includes(query) ||
+        al.comision.toLowerCase().includes(query)
+      );
+    });
 
+    return filtered.sort((a, b) => {
+
+    })
+  }
 
   </script>
 </body>
