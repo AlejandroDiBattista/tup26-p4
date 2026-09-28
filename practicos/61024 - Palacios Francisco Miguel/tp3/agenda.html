@@ -230,6 +230,40 @@
     </div>
   </form>
 </dialog>
+
+  <dialog id="dialog-editar">
+  <form id="form-editar">
+    <h2>Editar alumno</h2>
+
+    <label for="editar-apellido">Apellido</label>
+    <input type="text" id="editar-apellido" name="apellido" required>
+
+    <label for="editar-nombre">Nombre</label>
+    <input type="text" id="editar-nombre" name="nombre" required>
+
+    <label for="editar-legajo">Legajo</label>
+    <input type="text" id="editar-legajo" name="legajo" required>
+
+    <label for="editar-comision">Comisión</label>
+    <input type="text" id="editar-comision" name="comision" required>
+
+    <label for="editar-telefono">Teléfono</label>
+    <input type="text" id="editar-telefono" name="telefono" required>
+
+    <label for="editar-github">GitHub</label>
+    <input type="text" id="editar-github" name="github" required>
+
+    <div class="acciones-dialogo">
+      <button type="button" id="btn-cancelar-editar">
+        Cancelar
+      </button>
+
+      <button type="submit" id="btn-guardar-editar">
+        Guardar
+      </button>
+    </div>
+  </form>
+</dialog>
   </main>
 
   <script type="module">
@@ -279,6 +313,22 @@ function agregarAlumno(datos) {
   guardarAlumnos()
 }
 
+function editarAlumno(id, datos) {
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumno.apellido = datos.apellido
+  alumno.nombre = datos.nombre
+  alumno.legajo = datos.legajo
+  alumno.comision = datos.comision
+  alumno.telefono = datos.telefono
+  alumno.github = datos.github
+
+  guardarAlumnos()
+}
+
 function compararTexto(a, b) {
   return a.localeCompare(b, 'es' , { sensitivity: 'base' })
 }
@@ -323,18 +373,47 @@ function filtrarAlumnos(lista) {
 
 const lista = document.getElementById('lista-alumnos')
 
+let alumnoEditandoId = null
+
+const dialogEditar = document.getElementById('dialog-editar')
+const formularioEditar = document.getElementById('form-editar')
+const botonCancelarEditar = document.getElementById('btn-cancelar-editar')
+
 lista.addEventListener('click', evento => {
   const boton = evento.target.closest('.boton-favorito')
-  if (!boton) {
+  if (boton) {
+    const id = Number(boton.dataset.id)
+    if (!Number.isFinite(id)) {
+      return
+    }
+
+    cambiarFavorito(id)
     return
   }
 
-  const id = Number(boton.dataset.id)
+  const tarjeta = evento.target.closest('.tarjeta-alumno')
+  if (!tarjeta) {
+    return
+  }
+
+  const id = Number(tarjeta.dataset.id)
   if (!Number.isFinite(id)) {
     return
   }
 
-  cambiarFavorito(id)
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumnoEditandoId = id
+  formularioEditar.apellido.value = alumno.apellido
+  formularioEditar.nombre.value = alumno.nombre
+  formularioEditar.legajo.value = alumno.legajo
+  formularioEditar.comision.value = alumno.comision
+  formularioEditar.telefono.value = alumno.telefono
+  formularioEditar.github.value = alumno.github
+  dialogEditar.showModal()
 })
 
 const buscador = document.getElementById('Buscar')
@@ -354,6 +433,12 @@ botonAgregar.addEventListener('click', () => {
 
 botonCancelarAgregar.addEventListener('click', () => {
   dialogAgregar.close()
+})
+
+botonCancelarEditar.addEventListener('click', () => {
+  formularioEditar.reset()
+  alumnoEditandoId = null
+  dialogEditar.close()
 })
 
 formularioAgregar.addEventListener('submit', evento => {
@@ -376,6 +461,33 @@ formularioAgregar.addEventListener('submit', evento => {
   agregarAlumno(alumno)
   formularioAgregar.reset()
   dialogAgregar.close()
+})
+
+formularioEditar.addEventListener('submit', evento => {
+  evento.preventDefault()
+
+  if (alumnoEditandoId === null) {
+    return
+  }
+
+  const datos = Object.fromEntries(new FormData(formularioEditar).entries())
+  const alumnoActualizado = {
+    apellido: datos.apellido?.trim() || '',
+    nombre: datos.nombre?.trim() || '',
+    legajo: datos.legajo?.trim() || '',
+    comision: datos.comision?.trim() || '',
+    telefono: datos.telefono?.trim() || '',
+    github: datos.github?.trim() || ''
+  }
+
+  if (!alumnoActualizado.apellido || !alumnoActualizado.nombre || !alumnoActualizado.legajo || !alumnoActualizado.comision || !alumnoActualizado.telefono || !alumnoActualizado.github) {
+    return
+  }
+
+  editarAlumno(alumnoEditandoId, alumnoActualizado)
+  formularioEditar.reset()
+  alumnoEditandoId = null
+  dialogEditar.close()
 })
 
 html`
