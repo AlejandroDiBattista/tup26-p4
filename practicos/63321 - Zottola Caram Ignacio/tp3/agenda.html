@@ -66,6 +66,26 @@
       }
     }
 
+    /* ===== Buscador ===== */
+    .busqueda {
+      flex: 1 1 220px;
+      max-width: 320px;
+      padding: 10px 16px;
+      border: 1px solid var(--borde);
+      border-radius: 999px;
+      background: var(--tarjeta);
+      font: inherit;
+      color: var(--texto);
+      outline: none;
+
+      &::placeholder { color: var(--suave); }
+
+      &:focus {
+        border-color: var(--verde);
+        box-shadow: 0 0 0 3px rgba(47, 61, 52, .12);
+      }
+    }
+
     /* ===== Botones ===== */
     .btn {
       display: inline-flex;
@@ -123,7 +143,8 @@
         flex: 1 1 100%;
         justify-content: stretch;
 
-        & .btn { flex: 1; justify-content: center; }
+        & .busqueda { max-width: none; }
+        & .btn { flex-shrink: 0; }
       }
     }
 
@@ -235,7 +256,8 @@
 
     // ----- Estado -----
     const estado = reactive({
-      alumnos: cargarAlumnos()
+      alumnos: cargarAlumnos(),
+      busqueda: ''
     })
 
     // ----- Persistencia -----
@@ -266,9 +288,16 @@
         .trim()
     }
 
-    function alumnosOrdenados() {
+    function alumnosVisibles() {
+      const q = normalizar(estado.busqueda)
       return estado.alumnos
-        .slice()
+        .filter(a => {
+          if (!q) return true
+          const texto = normalizar(
+            `${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`
+          )
+          return texto.includes(q)
+        })
         .sort((a, b) => {
           if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
           const porApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido))
@@ -277,14 +306,34 @@
         })
     }
 
+    // ----- Acciones -----
+    function toggleFavorito(alumno, e) {
+      if (e) e.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      persistir()
+    }
+
+    function manejarTeclado(alumno, e) {
+      if (e.target.closest('.fav')) return
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        // la edición se agrega en el siguiente paso
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        toggleFavorito(alumno)
+      }
+    }
+
     // ----- Vista -----
     function tarjeta(alumno) {
       return html`
         <li>
-          <article class="tarjeta" tabindex="0">
+          <article class="tarjeta" tabindex="0"
+            @keydown="${e => manejarTeclado(alumno, e)}">
             <button class="fav" type="button"
               aria-pressed="${() => alumno.favorito ? 'true' : 'false'}"
-              aria-label="Favorito">
+              aria-label="${() => alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+              @click="${e => toggleFavorito(alumno, e)}">
               ${() => alumno.favorito ? '★' : '☆'}
             </button>
             <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
@@ -304,13 +353,23 @@
       <header>
         <h1>Agenda</h1>
         <div class="acciones">
+          <input class="busqueda" type="search" placeholder="Buscar alumno..."
+            aria-label="Buscar alumnos"
+            .value="${() => estado.busqueda}"
+            @input="${e => { estado.busqueda = e.target.value }}">
           <button class="btn btn-primary" type="button">+ Agregar</button>
         </div>
       </header>
 
       <section aria-label="Listado de alumnos">
         <ul class="lista">
-          ${() => alumnosOrdenados().map(tarjeta)}
+          ${() => {
+            const lista = alumnosVisibles()
+            if (!lista.length) {
+              return html`<li class="vacio">No hay alumnos para mostrar</li>`
+            }
+            return lista.map(tarjeta)
+          }}
         </ul>
       </section>
 
