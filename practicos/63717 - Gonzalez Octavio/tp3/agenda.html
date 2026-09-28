@@ -82,6 +82,10 @@
           color: #71716b;
           padding: 0;
           line-height: 1;
+
+          &.activo {
+            color: #6b6947;
+          }
         }
       }
 
@@ -150,6 +154,26 @@
       localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
     }
 
+    function ordenarAlumnos(lista) {
+      return [...lista].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return a.favorito ? -1 : 1
+        }
+        const cmpApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+        if (cmpApellido !== 0) {
+          return cmpApellido
+        }
+        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      })
+    }
+
+    function toggleFavorito(alumno, e) {
+      if (e) e.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      estado.alumnos = [...estado.alumnos]
+      guardarEnStorage()
+    }
+
     const app = document.getElementById('app')
 
     const vista = html`
@@ -158,15 +182,19 @@
       </header>
 
       <section class="listado">
-        ${() => estado.alumnos.map(alumno => html`
+        ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
           <article class="tarjeta">
             <header class="tarjeta-cabecera">
               <h2>
                 <span class="apellido">${alumno.apellido}</span>
                 <span class="nombre">${alumno.nombre}</span>
               </h2>
-              <button class="btn-favorito" type="button">
-                ${alumno.favorito ? '★' : '☆'}
+              <button 
+                class="${() => alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}" 
+                type="button"
+                @click="${(e) => toggleFavorito(alumno, e)}"
+              >
+                ${() => alumno.favorito ? '★' : '☆'}
               </button>
             </header>
 
