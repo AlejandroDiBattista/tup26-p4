@@ -49,7 +49,9 @@
     }
     const estado = reactive({
       alumnos: datosAlumnos,
-      busqueda: ""
+      busqueda: "",
+      editando: false,
+      alumnoSeleccionado: null,
     })
     watch(() => {
       localStorage.setItem("alumnos", JSON.stringify(estado.alumnos))
@@ -95,6 +97,70 @@
         alumno.favorito = !alumno.favorito
       }
     }
+    function abrirFormularioNuevo(){
+      estado.editando = false
+      estado.alumnoSeleccionado = null
+
+      let formulario = document.querySelector("#formularioAlumno form")
+      formulario.reset()
+      document.getElementById("formularioAlumno").showModal()
+    }
+    function abrirFormularioEditar(alumno){
+      estado.editando = true
+      estado.alumnoSeleccionado = alumno
+
+      let formulario = document.querySelector("#formularioAlumno form")
+
+      formulario.apellido.value = alumno.apellido
+      formulario.nombre.value = alumno.nombre
+      formulario.legajo.value = alumno.legajo
+      formulario.comision.value = alumno.comision
+      formulario.telefono.value = alumno.telefono
+      formulario.github.value = alumno.github
+
+      document.getElementById("formularioAlumno").showModal()
+
+      
+    }
+    function guardarAlumno(e){
+      e.preventDefault()
+      let formulario = e.target
+      let datos = new FormData(formulario)
+      
+      if (estado.editando){
+        estado.alumnos = estado.alumnos.map(a => {
+          if (a.id === estado.alumnoSeleccionado.id){
+            return {
+              ...a,
+              apellido: datos.get("apellido"),
+              nombre: datos.get("nombre"),
+              legajo: datos.get("legajo"),
+              comision: datos.get("comision"),
+              telefono: datos.get("telefono"),
+              github: datos.get("github")
+            }
+          }
+          return a
+        })
+
+      } else {
+
+
+      let  nuevoAlumno = {
+        id: Date.now(),
+        apellido: datos.get("apellido"),
+        nombre: datos.get("nombre"),
+        legajo: datos.get("legajo"),
+        comision: datos.get("comision"),
+        telefono: datos.get("telefono"),
+        github: datos.get("github"),
+        favorito: false
+      }
+      estado.alumnos = [...estado.alumnos, nuevoAlumno]
+    }
+      formulario.reset()
+      document.getElementById("formularioAlumno").close()
+    }
 
 
     html`
@@ -104,6 +170,49 @@
       placeholder= "Buscar alumno..."
       @input="${e => estado.busqueda = e.target.value}"
       >
+      <button @click="${() => abrirFormularioNuevo()}">
+        Agregar alumno
+        </button>
+      <dialog id="formularioAlumno">
+        <form @submit="${e => guardarAlumno(e)}">
+          <h2>Alumno</h2>
+
+          <label>
+          Apellido:
+          <input type="text" name="apellido" required>
+          </label>
+          <label>
+            Nombre:
+            <input type="text" name="nombre" required>
+            </label>
+          <label>
+            Legajo:
+            <input type="text" name="legajo" required>
+            </label>
+            
+          <label>
+              Comision:
+              <input type="text" name="comision" required>
+              </label>
+              
+          <label>
+              Telefono:
+              <input type= "text" name="telefono" required>
+              </label>
+            <label>
+              GitHub:
+              <input type= "text" name="github" required>
+              </label>
+            <button type="submit">Guardar</button>
+            <button 
+            type= "button"
+            @click="${() => document.getElementById('formularioAlumno').close()}"
+            >
+            Cancelar
+            </button>
+          </form>
+          </dialog>
+      
       ${() => buscarAlumnos(estado.alumnos).length === 0 
       ? html`<p>No se encontraron alumnos</p>`
       : ""
@@ -112,8 +221,11 @@
       <ul>  
         ${() => ordenarAlumnos(buscarAlumnos(estado.alumnos)).map(a => html`
           <li>
-            <article>
-            <button @click="${() => cambiarFavorito(a.id)}">
+            <article @click="${() => abrirFormularioEditar(a)}">
+            <button @click="${e => {
+              e.stopPropagation()
+              cambiarFavorito(a.id)
+            }}">
               ${a.favorito ? "Favorito" : "No favorito"}
               </button>
 
