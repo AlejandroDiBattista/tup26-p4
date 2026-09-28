@@ -109,7 +109,67 @@
           const max = state.alumnos.reduce((m, a) => Math.max(m, Number(a.id) || 0), 0)
           return max + 1
         }
-        
+        // Funciones de acción
+    function toggleFavorito (id) {
+      const alumno = state.alumnos.find(a => a.id === id)
+      if (alumno) alumno.favorito = !alumno.favorito
+    }
+    function abrirAgregar () {
+      state.isNew = true
+      state.form = {
+        apellido: '', nombre: '', legajo: '',
+        comision: '', telefono: '', github: '',
+      }
+      document.getElementById('dialogAlumno').showModal()
+    }
+    function abrirEditar (alumno) {
+      state.isNew = false
+      state.form = { ...alumno }
+      document.getElementById('dialogAlumno').showModal()
+    }
+    function cerrarDialogo () {
+      document.getElementById('dialogAlumno').close()
+      state.form = null
+    }
+    function guardarFormulario () {
+      const f = state.form
+      if (!f.apellido?.trim() || !f.nombre?.trim() || !f.legajo?.toString().trim()) {
+        alert('Apellido, nombre y legajo son obligatorios.')
+        return
+      }
+      if (state.isNew) {
+        state.alumnos.push({
+          id: nuevoId(),
+          apellido: f.apellido.trim(),
+          nombre: f.nombre.trim(),
+          legajo: f.legajo.toString().trim(),
+          comision: (f.comision || '').trim(),
+          telefono: (f.telefono || '').trim(),
+          github: (f.github || '').trim(),
+          favorito: false,
+        })
+      } else {
+        const alumno = state.alumnos.find(a => a.id === f.id)
+        if (alumno) Object.assign(alumno, f)
+      }
+      cerrarDialogo()
+    }
+    function eliminarAlumno () {
+      if (!state.form) return
+      state.alumnos = state.alumnos.filter(a => a.id !== state.form.id)
+      cerrarDialogo()
+    }
+    function manejarTeclaTarjeta (evento, alumno) {
+      if (evento.key === 'Enter') {
+        evento.preventDefault()
+        abrirEditar(alumno)
+      } else if (evento.key === ' ') {
+        evento.preventDefault()
+        toggleFavorito(alumno.id)
+      }
+    }
+
+
 
     
 
