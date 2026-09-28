@@ -36,14 +36,17 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core';
     import alumnosJson from './alumnos.json' with { type: 'json' };
 
+    const CLAVE = 'agenda-alumnos';
+
     // ================== ESTADO ==================
 
-    // si hay algo guardado en localStorage uso eso, si no los del json
+    // si hay algo guardado en localStorage uso eso, si no uso el json y lo guardo
     function cargarAlumnos() {
-        const guardado = localStorage.getItem('alumnos');
+        const guardado = localStorage.getItem(CLAVE);
         if (guardado) {
             return JSON.parse(guardado);
         }
+        localStorage.setItem(CLAVE, JSON.stringify(alumnosJson));
         return alumnosJson;
     }
 
@@ -55,23 +58,37 @@
     // ================== FUNCIONES ==================
 
     function guardar() {
-        localStorage.setItem('agenda', JSON.stringify(estado.alumnos));
+        localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos));
+    }
+
+    // saco mayusculas y acentos para poder comparar
+    function normalizar(texto) {
+        return String(texto).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    // primero los favoritos, despues por apellido y nombre
+    function compararAlumnos(a, b) {
+        if (a.favorito != b.favorito) {
+            return a.favorito ? -1 : 1;
+        }
+        const porApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' });
+        if (porApellido != 0) {
+            return porApellido;
+        }
+        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
     }
 
     function alumnosFiltrados() {
-        const lista = estado.alumnos.filter(a => a.apellido.includes(estado.busqueda));
-        // primero los favoritos y despues por apellido
-        lista.sort((a, b) => {
-            if (a.favorito && !b.favorito) return -1;
-            if (!a.favorito && b.favorito) return 1;
-            return a.apellido > b.apellido ? 1 : -1;
+        const texto = normalizar(estado.busqueda.trim());
+        const lista = estado.alumnos.filter(a => {
+            const datos = normalizar(a.apellido + ' ' + a.nombre + ' ' + a.legajo + ' ' + a.comision + ' ' + a.github + ' ' + a.telefono);
+            return datos.includes(texto);
         });
-        return lista;
+        return lista.sort(compararAlumnos);
     }
 
     function alternarFavorito(alumno) {
         alumno.favorito = !alumno.favorito;
-        console.log('favorito', alumno.apellido, alumno.favorito);
         guardar();
     }
 
@@ -97,7 +114,9 @@
     function Lista() {
         const lista = alumnosFiltrados();
         if (lista.length == 0) {
-            return html`<p class="vacio">No hay alumnos para mostrar.</p>`;
+            // lo devuelvo dentro de un array porque si no despues de buscar algo
+            // sin resultados la lista no se volvia a mostrar
+            return [html`<p class="vacio">No hay alumnos para mostrar.</p>`];
         }
         return lista.map(Tarjeta);
     }
