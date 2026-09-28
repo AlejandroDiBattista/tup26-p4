@@ -35,12 +35,31 @@
       }
     }
     cargarAlumnos()
+    function guardar(){
+      localStorage.setItem("alumnos", JSON.stringify(estado.alumnos))
+    }
+    function favoritos(id){
+      const alumno= estado.alumnos.find(a=> a.id === id)
+      alumno.favorito= !alumno.favorito
+      guardar()
+    }
     function alumnosEncontrados(){
       const texto= estado.busqueda.toLowerCase()
-      return estado.alumnos.filter(a=> {
+      const lista= estado.alumnos.filter(a=> {
         const datos= (a.apellido + " " + a.nombre+ " " + a.legajo + " " + a.github).toLocaleLowerCase()
         return datos.includes(texto)
       })
+      lista.sort((a,b)=> {
+        if (a.favorito !== b.favorito){
+          return a.favorito ? -1: 1
+        }
+        const porApellido= a.apellido.localeCompare(b.apellido, "es", {sensitivity:"base"})
+        if (porApellido !==0){
+          return porApellido
+        }
+        return a.nombre.localeCompare(b.nombre, "es", {sensitivity:"base"})
+      })
+      return lista
     }
     const app= document.getElementById("app")
     html`
@@ -52,7 +71,7 @@
           <article>
             <header>
               <h2>${a.apellido}, ${a.nombre}</h2>
-              <button>${a.favorito ? "★":"☆"}</button>
+              <button @click="${() => favoritos(a.id)}">${a.favorito ? "★" : "☆"}</button>
             </header>
             <address>
               <p>Tel: ${a.telefono}</p>
