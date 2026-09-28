@@ -79,34 +79,61 @@
       guardarAlumnos()
     }
 
+    //Funcion para mostrar los alumnos segun la busqueda actual
+    const verAlumnos = () => {
+      const busqueda = estado.busqueda.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      
+      if (!busqueda) {
+        return estado.alumnos
+      }
+
+      return estado.alumnos.filter(a => {
+        let apellido = a.apellido.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+        let nombre = a.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")   
+        return apellido.includes(busqueda) || nombre.includes(busqueda)
+      })
+    }
+
+
     //Estados reactivos de ArroJs
     const estado = reactive({
-      alumnos: obtenerAlumnos()
+      alumnos: obtenerAlumnos(),
+      busqueda: ''
     })
 
     //Return HTML de ArrowJs
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <header>
+        <h1>Agenda</h1>
+        <input type="search" placeholder="Buscar alumno..." @input="${(e) => estado.busqueda = e.target.value}"/>
+      </header>
       <section>
-        ${() => ordenarAlumnos(estado.alumnos).map(a => html`
-          <article>
-            <header>
-              <b>${a.apellido}</b>
-              ${a.nombre}
-              <button @click="${(e) => {e.stopPropagation(); cambiarFavorito(a.id)}}">
-                ${a.favorito ? '\u2605' : '\u2606'}
-              </button>
-            </header>
-            <address>
-              ${a.telefono}
-              @${a.github}
-            </address>
-            <footer>
-              ${a.comision} . ${a.legajo} 
-            </footer>
-          </article>
-        `)}
+        ${() => {
+          const lista = ordenarAlumnos(verAlumnos())
+          if (lista.length === 0) {
+            return [html`<p>No hay alumnos para mostrar</p>`]
+          }
+
+          return lista.map(a => html`
+            <article>
+              <header>
+                <b>${a.apellido}</b>
+                ${a.nombre}
+                <button @click="${(e) => {e.stopPropagation(); cambiarFavorito(a.id)}}">
+                  ${a.favorito ? '\u2605' : '\u2606'}
+                </button>
+              </header>
+              <address>
+                ${a.telefono}
+                @${a.github}
+              </address>
+              <footer>
+                ${a.comision} · ${a.legajo} 
+              </footer>
+            </article>
+          `)
+        }}
       </section>
     `(app)
   </script>
