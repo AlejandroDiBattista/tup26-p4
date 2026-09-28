@@ -329,6 +329,21 @@ function editarAlumno(id, datos) {
   guardarAlumnos()
 }
 
+function eliminarAlumno(id) {
+  const indice = estado.alumnos.findIndex(alumno => alumno.id === id)
+
+  if (indice === -1) {
+    return
+  }
+
+  estado.alumnos.splice(indice, 1)
+  guardarAlumnos()
+
+  formularioEditar.reset()
+  alumnoEditandoId = null
+  dialogEditar.close()
+}
+ 
 function compararTexto(a, b) {
   return a.localeCompare(b, 'es' , { sensitivity: 'base' })
 }
@@ -379,6 +394,23 @@ const dialogEditar = document.getElementById('dialog-editar')
 const formularioEditar = document.getElementById('form-editar')
 const botonCancelarEditar = document.getElementById('btn-cancelar-editar')
 
+function abrirEdicion(id) {
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumnoEditandoId = id
+  formularioEditar.elements.apellido.value = alumno.apellido
+  formularioEditar.elements.nombre.value = alumno.nombre
+  formularioEditar.elements.legajo.value = alumno.legajo
+  formularioEditar.elements.comision.value = alumno.comision
+  formularioEditar.elements.telefono.value = alumno.telefono
+  formularioEditar.elements.github.value = alumno.github
+
+  dialogEditar.showModal()
+}
+
 lista.addEventListener('click', evento => {
   const boton = evento.target.closest('.boton-favorito')
   if (boton) {
@@ -401,19 +433,34 @@ lista.addEventListener('click', evento => {
     return
   }
 
-  const alumno = estado.alumnos.find(alumno => alumno.id === id)
-  if (!alumno) {
+  abrirEdicion(id)
+})
+
+lista.addEventListener('keydown', evento => {
+  const tarjeta = evento.target.closest('.tarjeta-alumno')
+  if (!tarjeta) {
     return
   }
 
-  alumnoEditandoId = id
-  formularioEditar.apellido.value = alumno.apellido
-  formularioEditar.nombre.value = alumno.nombre
-  formularioEditar.legajo.value = alumno.legajo
-  formularioEditar.comision.value = alumno.comision
-  formularioEditar.telefono.value = alumno.telefono
-  formularioEditar.github.value = alumno.github
-  dialogEditar.showModal()
+  if (evento.target.closest('.boton-favorito')) {
+    return
+  }
+
+  const id = Number(tarjeta.dataset.id)
+  if (!Number.isFinite(id)) {
+    return
+  }
+
+  if (evento.key === 'Enter') {
+    evento.preventDefault()
+    abrirEdicion(id)
+    return
+  }
+
+  if (evento.key === ' ' || evento.code === 'Space') {
+    evento.preventDefault()
+    cambiarFavorito(id)
+  }
 })
 
 const buscador = document.getElementById('Buscar')
@@ -508,7 +555,7 @@ html`
 
     return filtrados.map(alumno => html`
 <li>
-  <article class="tarjeta-alumno" data-id="${alumno.id}">
+  <article class="tarjeta-alumno" data-id="${alumno.id}" tabindex="0">
     <button
       type="button"
       class="boton-favorito"
