@@ -17,6 +17,7 @@
     .vacio { color: gray; }
 
     .tarjeta { padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; cursor: pointer; }
+    .tarjeta:focus { outline: 2px solid #2e3a30; outline-offset: 2px; }
     .tarjeta-arriba { display: flex; justify-content: space-between; }
     .tarjeta h2 { margin: 0; font-family: Georgia, serif; font-size: 24px; }
     .tarjeta h2 span { font-family: sans-serif; font-size: 16px; font-weight: normal; color: gray; }
@@ -73,7 +74,7 @@
         alumnos: cargarAlumnos(),
         busqueda: '',
         dialogoAbierto: false,
-        editando: null, // alumno que se esta editando
+        editando: null, // id del alumno que se esta editando, null si es uno nuevo
         form: formVacio(),
         error: '',
     });
@@ -115,6 +116,14 @@
         guardar();
     }
 
+    function nuevoId() {
+        let max = 0;
+        for (const a of estado.alumnos) {
+            if (a.id > max) max = a.id;
+        }
+        return max + 1;
+    }
+
     function abrirAgregar() {
         estado.editando = null;
         estado.form = formVacio();
@@ -123,8 +132,16 @@
     }
 
     function abrirEditar(alumno) {
-        estado.editando = alumno;
-        estado.form = alumno;
+        estado.editando = alumno.id;
+        // hago una copia para que si cancela no se modifique el original
+        estado.form = {
+            apellido: alumno.apellido,
+            nombre: alumno.nombre,
+            legajo: alumno.legajo,
+            comision: alumno.comision,
+            telefono: alumno.telefono,
+            github: alumno.github,
+        };
         estado.error = '';
         estado.dialogoAbierto = true;
     }
@@ -134,8 +151,13 @@
     }
 
     function validar(datos) {
-        if (datos.apellido == '' || datos.nombre == '') {
-            return 'El apellido y el nombre son obligatorios.';
+        for (const campo in datos) {
+            if (datos[campo] == '') {
+                return 'Todos los campos son obligatorios.';
+            }
+        }
+        if (isNaN(datos.legajo)) {
+            return 'El legajo tiene que ser un numero.';
         }
         return '';
     }
@@ -143,15 +165,21 @@
     function guardarAlumno(e) {
         e.preventDefault();
 
-        estado.error = validar(estado.form);
+        const datos = {};
+        for (const campo in estado.form) {
+            datos[campo] = estado.form[campo].trim();
+        }
+        datos.github = datos.github.replace('@', '');
+
+        estado.error = validar(datos);
         if (estado.error != '') return;
 
         if (estado.editando == null) {
-            const nuevo = { id: estado.alumnos.length + 1, ...estado.form, favorito: false };
+            const nuevo = { id: nuevoId(), ...datos, favorito: false };
             estado.alumnos = [...estado.alumnos, nuevo];
         } else {
-            // los datos ya se cambiaron desde el formulario, solo actualizo la lista
-            estado.alumnos = [...estado.alumnos];
+            const alumno = estado.alumnos.find(a => a.id == estado.editando);
+            Object.assign(alumno, datos);
         }
 
         guardar();
@@ -159,26 +187,47 @@
     }
 
     function eliminarAlumno() {
-        estado.alumnos = estado.alumnos.filter(a => a.id != estado.form.id);
+        estado.alumnos = estado.alumnos.filter(a => a.id != estado.editando);
         guardar();
         cerrarDialogo();
+    }
+
+    function manejarTeclado(e, alumno) {
+        // solo si el foco esta en la tarjeta
+        if (e.target != e.currentTarget) return;
+
+        if (e.key == 'Enter') {
+            e.preventDefault();
+            abrirEditar(alumno);
+        } else if (e.key == ' ') {
+            e.preventDefault(); // para que no baje la pagina
+            alternarFavorito(alumno);
+            // al reordenar la lista se pierde el foco, lo vuelvo a poner en la tarjeta
+            setTimeout(() => {
+                const tarjeta = document.querySelector('article[data-id="' + alumno.id + '"]');
+                if (tarjeta) tarjeta.focus();
+            }, 0);
+        }
     }
 
     // ================== VISTAS ==================
 
     function Tarjeta(alumno) {
         return html`
-            <article class="tarjeta" @click="${() => abrirEditar(alumno)}">
+            <article class="tarjeta" tabindex="0" data-id="${alumno.id}"
+                @click="${() => abrirEditar(alumno)}"
+                @keydown="${(e) => manejarTeclado(e, alumno)}">
                 <div class="tarjeta-arriba">
-                    <h2>${alumno.apellido} <span>${alumno.nombre}</span></h2>
-                    <button type="button" class="estrella" @click="${() => alternarFavorito(alumno)}">
+                    <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
+                    <button type="button" class="estrella" tabindex="-1"
+                        @click="${(e) => { e.stopPropagation(); alternarFavorito(alumno); }}">
                         ${() => alumno.favorito ? '★' : '☆'}
                     </button>
                 </div>
-                <p class="telefono">${alumno.telefono}</p>
-                <p class="github">@${alumno.github}</p>
+                <p class="telefono">${() => alumno.telefono}</p>
+                <p class="github">@${() => alumno.github}</p>
                 <hr>
-                <p class="datos">${alumno.comision} · ${alumno.legajo}</p>
+                <p class="datos">${() => alumno.comision} · ${() => alumno.legajo}</p>
             </article>
         `;
     }
@@ -236,7 +285,9 @@
             </div>
             <p class="error">${() => estado.error}</p>
             <div class="botones">
-                <button type="button" class="btn-eliminar" @click="${eliminarAlumno}">Eliminar</button>
+                ${() => estado.editando != null
+                    ? html`<button type="button" class="btn-eliminar" @click="${eliminarAlumno}">Eliminar</button>`
+                    : ''}
                 <button type="submit" class="btn-guardar">Guardar</button>
                 <button type="button" @click="${cerrarDialogo}">Cancelar</button>
             </div>
@@ -251,6 +302,9 @@
             dialogo.close();
         }
     });
+
+    // si lo cierran con Escape tambien actualizo el estado
+    dialogo.addEventListener('close', () => estado.dialogoAbierto = false);
   </script>
 </body>
 </html>
