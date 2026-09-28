@@ -20,8 +20,9 @@
     section > p { grid-column: 1 / -1; text-align: center; color: #5f6b62; }
 
     article {
-      padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9;
+      padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9; cursor: pointer;
 
+      &:focus-visible { outline: 3px solid #2c3b30; outline-offset: 2px; }
       header { display: flex; justify-content: space-between; }
       h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #5f6b62; }
       strong { font: bold 1.4rem Georgia, serif; color: #2c3b30; }
@@ -39,9 +40,10 @@
       label { display: grid; gap: 4px; font-size: .8rem; font-weight: bold; color: #5f6b62; }
       input { padding: 10px 12px; font: inherit; border: 1px solid #d9ded9; border-radius: 8px; background: #f3f4f1; }
       p { min-height: 1.2em; margin: 12px 0 0; font-size: .9rem; color: #c0392b; }
-      footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+      footer { display: flex; gap: 8px; margin-top: 12px; }
       footer button { padding: 10px 18px; font: inherit; font-weight: bold; border: 1px solid #d9ded9; border-radius: 10px; background: white; cursor: pointer; }
-      footer button[type="submit"] { color: white; background: #2c3b30; border-color: #2c3b30; }
+      footer button[type="submit"] { margin-left: auto; color: white; background: #2c3b30; border-color: #2c3b30; }
+      footer button.eliminar { color: #c0392b; }
     }
   </style>
 </head>
@@ -52,7 +54,10 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
+    // ---------- Estado ----------
     const CLAVE = 'agenda:alumnos'
+
+    // Usa lo guardado; si no hay nada, usa alumnos.json
     function cargar() {
       try {
         const guardado = localStorage.getItem(CLAVE)
@@ -62,9 +67,10 @@
     }
 
     const state = reactive({ alumnos: cargar(), busqueda: '' })
-    const form = reactive({ apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '', error: '' })
+    // id === null: alta de un alumno nuevo. Con id: edición de un alumno existente
+    const form = reactive({ id: null, apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '', error: '' })
 
-    
+    // ---------- Funciones ----------
     const guardar = () => localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
 
     const alternarFavorito = id => {
@@ -77,7 +83,7 @@
     const coincide = (a, texto) =>
       norm([a.apellido, a.nombre, a.legajo, a.comision, a.telefono, a.github].join(' ')).includes(texto)
 
-    
+    // Filtra por lo buscado; favoritos primero, luego apellido y nombre
     const visibles = () => {
       const texto = norm(state.busqueda).trim()
       return state.alumnos
@@ -94,14 +100,19 @@
     ]
     const dialogo = () => document.getElementById('dialogo')
 
-    const abrirNuevo = () => {
-      Object.assign(form, { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '', error: '' })
+    // Carga el formulario con los datos del alumno (o vacío si es nuevo) y abre el diálogo
+    const abrirForm = (alumno = {}) => {
+      for (const [k] of CAMPOS) form[k] = alumno[k] ?? ''
+      form.id = alumno.id ?? null
+      form.error = ''
       dialogo().showModal()
     }
+    const abrirNuevo = () => abrirForm()
+    const abrirEdicion = id => abrirForm(state.alumnos.find(a => a.id === id))
 
     const cancelar = () => dialogo().close()
 
-    
+    // Devuelve los datos limpios o un mensaje de error
     function validar() {
       const datos = {}
       for (const [k] of CAMPOS) datos[k] = String(form[k]).trim()
@@ -114,26 +125,54 @@
       return { datos }
     }
 
-    const guardarNuevo = () => {
+    const guardarForm = () => {
       const { datos, error } = validar()
       form.error = error ?? ''
       if (error) return
-      const ids = state.alumnos.map(a => Number(a.id)).filter(Number.isFinite)
-      const id = ids.length ? Math.max(...ids) + 1 : 1
-      state.alumnos = [...state.alumnos, { id, ...datos, favorito: false }]
+      if (form.id !== null) {
+        // Edición: se pisan solo los campos del formulario, el resto (id, favorito) se conserva
+        state.alumnos = state.alumnos.map(a => a.id === form.id ? { ...a, ...datos } : a)
+      } else {
+        const ids = state.alumnos.map(a => Number(a.id)).filter(Number.isFinite)
+        const id = ids.length ? Math.max(...ids) + 1 : 1
+        state.alumnos = [...state.alumnos, { id, ...datos, favorito: false }]
+      }
       guardar()
       dialogo().close()
     }
 
-    guardar()
+    const eliminar = () => {
+      state.alumnos = state.alumnos.filter(a => a.id !== form.id)
+      guardar()
+      dialogo().close()
+    }
 
+    // Teclado en la tarjeta: Enter abre la edición, barra espaciadora alterna el favorito
+    const teclado = (e, id) => {
+      if (e.target !== e.currentTarget) return
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirEdicion(id)
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        alternarFavorito(id)
+        // la tarjeta cambia de lugar al reordenarse: se le devuelve el foco
+        requestAnimationFrame(() => document.querySelector(`[data-id="${id}"]`)?.focus())
+      }
+    }
+
+    guardar() // crea el almacenamiento local la primera vez
+
+    // ---------- Interfaz ----------
     const tarjeta = a => html`
-      <article>
+      <article tabindex="0" data-id="${a.id}"
+        @click="${() => abrirEdicion(a.id)}"
+        @keydown="${e => teclado(e, a.id)}">
         <header>
           <h2><strong>${a.apellido}</strong> ${a.nombre}</h2>
-          <button type="button" aria-pressed="${String(!!a.favorito)}"
+          <button type="button" tabindex="-1" aria-pressed="${String(!!a.favorito)}"
             aria-label="${a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
-            @click="${() => alternarFavorito(a.id)}">${a.favorito ? '★' : '☆'}</button>
+            @click="${e => { e.stopPropagation(); alternarFavorito(a.id) }}">${a.favorito ? '★' : '☆'}</button>
         </header>
         <address>
           <div>${a.telefono}</div>
@@ -156,7 +195,7 @@
       <header>
         <h1>Agenda</h1>
         <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno"
-          .value="${() => state.busqueda}" 
+          .value="${() => state.busqueda}"
           @input="${e => { state.busqueda = e.target.value }}">
         <button type="button" @click="${abrirNuevo}">+ Agregar</button>
       </header>
@@ -165,11 +204,14 @@
         ${() => visibles().length ? '' : html`<p>No hay alumnos para mostrar.</p>`}
       </section>
       <dialog id="dialogo">
-        <form novalidate @submit="${e => { e.preventDefault(); guardarNuevo() }}">
-          <h2>Agregar alumno</h2>
+        <form novalidate @submit="${e => { e.preventDefault(); guardarForm() }}">
+          <h2>${() => form.id !== null ? 'Editar alumno' : 'Agregar alumno'}</h2>
           <div>${CAMPOS.map(campo)}</div>
           <p role="alert">${() => form.error}</p>
           <footer>
+            ${() => form.id !== null
+              ? html`<button type="button" class="eliminar" @click="${eliminar}">Eliminar</button>`
+              : ''}
             <button type="submit">Guardar</button>
             <button type="button" @click="${cancelar}">Cancelar</button>
           </footer>
