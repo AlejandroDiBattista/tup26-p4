@@ -32,7 +32,8 @@
     }
   
     const personas = reactive ({ 
-    contenido : listado, busqueda: ""});
+    contenido : listado, busqueda: "", borrador:{apellido:"", nombre:"", legajo:"", comision:"", telefono:"", github:""}
+    });
 
   function guardarAlumnos (){
   localStorage.setItem("listado", JSON.stringify(personas.contenido))
@@ -57,16 +58,78 @@
   return texto.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, '')
 }
 
+function abrirDialogo(){
+  document.querySelector("dialog").showModal()
+}
+
+function agregarAlumno(e){
+e.preventDefault()
+const nuevoId = Math.max(... personas.contenido.map(a => a.id)) +1
+personas.contenido.push({ id: nuevoId, ...personas.borrador, favorito: false })
+guardarAlumnos()
+}
+
+
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <h1>Agenda</h1>
       <input type="search"
       
       placeholder="Buscar alumno.."
       .value="${() => personas.busqueda}"
       @input="${e => personas.busqueda = e.target.value}">
       
-      
+       <button @click="${abrirDialogo}">+ Agregar</button>
+    <dialog>
+    <form @submit="${agregarAlumno}">
+    <header>
+      <h2>Agregar Alumno</h2>
+    </header>
+
+    <label>Apellido
+      <input name="apellido" required
+  .value="${() => personas.borrador.apellido}"
+  @input="${e => personas.borrador.apellido = e.target.value}">
+    </label>
+
+    <label>Nombre
+      <input name="nombre" required
+      .value="${()=> personas.borrador.nombre}"
+      @input="${e => personas.borrador.nombre = e.target.value}">
+    </label>
+
+    <label>Legajo
+      <input name="legajo" required
+      .value="${()=> personas.borrador.legajo}"
+      @input="${e => personas.borrador.legajo = e.target.value}">
+    </label>
+
+    <label>Comisión
+      <input name="comision" required
+      .value="${()=> personas.borrador.comision}"
+      @input="${e => personas.borrador.comision = e.target.value}">
+    </label>
+
+    <label>Teléfono
+      <input name="telefono" required
+      .value="${()=> personas.borrador.telefono}"
+      @input="${e => personas.borrador.telefono = e.target.value}">
+    </label>
+
+    <label>GitHub
+      <input name="github" required
+      .value="${()=> personas.borrador.github}"
+      @input="${e => personas.borrador.github = e.target.value}">
+    </label>
+    
+
+    <footer>
+      <button type="submit">Guardar</button>
+      <button type="button">Cancelar</button>
+    </footer>
+  </form>
+</dialog>
+
       <section>
        ${() => ordenamiento().map(a => html`<article>
         <header>
@@ -93,7 +156,7 @@
           </article>`.key(a.id))}
       </section>
       <p>${() =>ordenamiento().length === 0  ? "No hay alumnos para mostrar" : ""}</p>
-       `(app)
+      `(app)
   </script>
 </body>
 </html>
