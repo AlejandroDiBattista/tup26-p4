@@ -130,7 +130,7 @@
   }
 
   dialog {
-    width: 420%;
+    width: min(420px, calc(100vw - 40px));
     max-width: calc(100% - 40px);
     border: 0;
     border-radius: 16px;
@@ -187,6 +187,10 @@
     </div>
       <button type="button" id="btn-agregar">+ Agregar</button>
   </header>
+
+  <footer>
+    <address>Agenda de alumnos de Programación IV</address>
+  </footer>
 
   <section class="controles" aria-label="Controles de la agenda">
     <label for="Buscar">Buscar alumno:</label>
@@ -254,6 +258,10 @@
     <input type="text" id="editar-github" name="github" required>
 
     <div class="acciones-dialogo">
+      <button type="button" id="btn-eliminar-editar">
+        Eliminar
+      </button>
+
       <button type="button" id="btn-cancelar-editar">
         Cancelar
       </button>
@@ -393,6 +401,15 @@ let alumnoEditandoId = null
 const dialogEditar = document.getElementById('dialog-editar')
 const formularioEditar = document.getElementById('form-editar')
 const botonCancelarEditar = document.getElementById('btn-cancelar-editar')
+const botonEliminarEditar = document.getElementById('btn-eliminar-editar')
+
+botonEliminarEditar.addEventListener('click', () => {
+  if (alumnoEditandoId === null) {
+    return
+  }
+
+  eliminarAlumno(alumnoEditandoId)
+})
 
 function abrirEdicion(id) {
   const alumno = estado.alumnos.find(alumno => alumno.id === id)
