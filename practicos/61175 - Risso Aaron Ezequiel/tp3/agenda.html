@@ -12,6 +12,8 @@
     li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    header{display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;}
+    header input {padding: 6px 12px; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 10px;}
   </style>
 </head>
 <body>
@@ -21,11 +23,22 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <header class=>
+      <h1>Agenda</h1>
+       <input type="search" placeholder="Buscar alumno..."/>
+      </header>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${alumnos.map(a => html`<li><b>${a.apellido}</b> ${a.nombre}
+          <br> 
+          <b>${a.telefono}</b> 
+          <br>
+          <b>${a.github}</b>
+          <hr>
+          <b>${a.comision}‧ ${a.legajo}</b>
+          </li>`)}
       </ul>
     `(app)
   </script>
