@@ -3,10 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <title>Agenda Reactiva -  Programación C:1</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
+    :root {
+      --primary: #2536eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --star: #f59e0b;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --randius: 0.5rem;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body { 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 2rem;
+    }
+    
+    header {
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+
+      .header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        align-items: center;
+
+        h1 {
+          font-size: 1.5rem;
+          font-weight: 700;
+        }
+
+        .controls {
+          display: flex;
+          gap: 1rem;
+          flex: 1;
+          max-width: 500px;
+
+          input[type="search"] {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--randius);
+            font-size: 1rem;
+            outline: none;
+
+            &:focus {
+              background-color: var(--primary);
+              color: white;
+              border: none;
+              padding: 0.5rem 1.25rem;
+              border-radius: var(--randius);
+              font-weight: 600;
+              cursor: pointer;
+              white-space: nowrap;
+
+              a:hover {
+                background-color: var(--primary-hover);
+              }
+            }
+          }
+        }
+      }
+
+      main { 
+        max-width: 1200px; 
+        margin: auto; 
+        padding: 0 1.5rem;
+
+        .empty-state {
+          text-align: center;
+          padding: 4rem 1rem;
+          color: var(--text-muted);
+          font-size: 1.125rem;
+        }
+
+        .cards-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 1.5rem;
+
+          article.card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--randius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            cursor: pointer;
+            transition: trsnform 0.15s ease, box-shadow 0.15s ease;
+          }
+        }
+      }
+
+    }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
     li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
@@ -15,7 +128,70 @@
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  
+  <header>
+    <div class="header-container">
+      <h1>Agenda de Alumnos</h1>
+      <div class="controls">
+        <input 
+          type="text"
+          id="search-input"
+          placeholder="Buscar por nombre, apellido, legajo"
+          aria-label="Buscar alumnos"
+          >
+        <button id="btn-add" class="btn-primary">Agregar</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="app.container"></section>
+  </main>
+
+  <dialog id="student-dialog">
+    <form id="student_form" method="dialog">
+      <h2 id="dialog-title">Alumno</h2>
+      <input type="hidden" name="id" id="field-id">
+
+      <div class="form group">
+        <label for="field-apellido">Apellido</label>
+        <input type="text" id="field-apellido" name="apellido" required>
+      </div>
+
+      <div class="form-group">
+        <label for="field-nombre">Nombre</label>
+        <input type="text" id="field-nombre" name="nombre" required>
+      </div>
+
+      <div class="form-group">
+        <label for="field-legajo">Legajo</label>
+        <input type="text" id="field-legajo" name="legajo" required>
+      </div>
+
+      <div class="form-group">
+        <label for="field-comision">Comisión</label>
+        <input type="text" id="field-comision" name="comision" required>
+      </div>
+
+      <div class="form-group">
+        <label for="field-telefono">Teléfono</label>
+        <input type="tel" id="field-telefono" name="telefono" required>
+      </div>
+
+      <div class="form-group">
+        <label for="field-github">Usuario de GitHub</label>
+        <input type="text" id="field-github" name="github" required>
+      </div>
+
+      <div class="dialog=actions">
+        <button type="button" id="btn-delete" class="btn-danger">Eliminar</button>
+        <button type="button" id="btn-cancel" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
