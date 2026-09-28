@@ -18,10 +18,13 @@
   <main id="app"></main>
 
   <script type="module">
+    //Imports
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
     
+    //valores Constates
     const STORAGE_KEY = 'alumnos_tp3'
+
     //FUNCIONES
     //Funcion para obtener los alumnos del local storage o si esta vacio desde el json
     const obtenerAlumnos = () => {
@@ -63,17 +66,48 @@
       })
     }
 
+    //Funcion para cambiar el estado de favorito
+    const cambiarFavorito = (id) => {
+      let alumnoEncotrado = estado.alumnos.find(a => a.id === id)
+
+      if (!alumnoEncotrado) {
+        console.error('El alumno no existe')
+        return
+      }
+
+      alumnoEncotrado.favorito = !alumnoEncotrado.favorito
+      guardarAlumnos()
+    }
+
     //Estados reactivos de ArroJs
     const estado = reactive({
       alumnos: obtenerAlumnos()
     })
 
+    //Return HTML de ArrowJs
     const app = document.getElementById('app')
     html`
       <h1>Alumnos</h1>
-      <ul>
-        ${() => ordenarAlumnos(estado.alumnos).map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <section>
+        ${() => ordenarAlumnos(estado.alumnos).map(a => html`
+          <article>
+            <header>
+              <b>${a.apellido}</b>
+              ${a.nombre}
+              <button @click="${(e) => {e.stopPropagation(); cambiarFavorito(a.id)}}">
+                ${a.favorito ? '\u2605' : '\u2606'}
+              </button>
+            </header>
+            <address>
+              ${a.telefono}
+              @${a.github}
+            </address>
+            <footer>
+              ${a.comision} . ${a.legajo} 
+            </footer>
+          </article>
+        `)}
+      </section>
     `(app)
   </script>
 </body>
