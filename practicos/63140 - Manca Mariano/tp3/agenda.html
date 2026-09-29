@@ -48,7 +48,20 @@
     }
 
 
+    .buscador {
+      padding: 10px 16px;
+      border: 1px solid #d9ded9;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+      background: white;
+      width: 220px;
 
+      &:focus {
+        border-color: #8a9a7b;
+        box-shadow: 0 0 0 2px rgba(138, 154, 123, 0.2);
+      }
+    }
 
     .grilla {
       display: grid;
@@ -131,6 +144,33 @@
         padding-top: 10px;
         border-top: 1px solid #eee;
       }
+    }
+
+
+    .btn-favorito {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #a0a88e;
+      padding: 4px;
+      line-height: 1;
+      transition: transform 0.15s;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+
+      &.activo {
+        color: #7a8a6b;
+      }
+    }
+
+    .sin-resultados {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+      font-size: 1rem;
     }
   </style>
 </head>
@@ -224,6 +264,19 @@
       })
     }
 
+
+    function alumnosFiltrados() {
+      const ordenados = alumnosOrdenados()
+      const termino = normalizar(estado.busqueda.trim())
+      if (!termino) return ordenados
+      return ordenados.filter(a =>
+        normalizar(a.apellido).includes(termino) ||
+        normalizar(a.nombre).includes(termino) ||
+        normalizar(a.legajo).includes(termino) ||
+        normalizar(a.comision).includes(termino) ||
+        normalizar(a.github).includes(termino)
+      )
+    }
 
   </script>
 </body>
