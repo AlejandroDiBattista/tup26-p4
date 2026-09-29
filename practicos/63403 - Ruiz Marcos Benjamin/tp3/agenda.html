@@ -161,8 +161,13 @@ personas.editandoId = null
 </dialog>
 
       <section>
-       ${() => ordenamiento().map(a => html`<article
-        @click="${() => abrirEdicion(a)}">
+       ${() => ordenamiento().map(a => html`<article tabindex="0"
+  @click="${() => abrirEdicion(a)}"
+  @keydown="${e => {
+    if (e.target !== e.currentTarget) return
+    if (e.key === 'Enter') {e.preventDefault() ; abrirEdicion(a)}
+    if (e.key === ' ') { e.preventDefault(); alternarFavorito(a)}
+  }}">
         <header>
         <h2>
         ${a.apellido}
