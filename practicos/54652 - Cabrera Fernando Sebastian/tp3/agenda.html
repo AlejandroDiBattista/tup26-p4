@@ -36,12 +36,22 @@
       estado.alumnos = alumnos
       localStorage.setItem('alumnos',JSON.stringify(alumnos))
     }
-
-
+    
     html`
-      <h1>Alumnos</h1>
+    <h1>Alumnos</h1>
+    <input type="search" placeholder="Buscar..." @input="${e => estado.busqueda = e.target.value}">
+      
       <ul>
-        ${() => estado.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}      </ul>
+      ${() => estado.alumnos
+      .filter(a=> {
+        const texto = estado.busqueda.toLowerCase();
+        return a.apellido.toLowerCase().includes(texto) ||
+          a.nombre.toLowerCase().includes(texto)
+      })
+      .map(a=> html`<li>${a.nombre} <b>${a.apellido}</b></li>`)
+        }
+
+        </ul>
     `(app)
   </script>
 </body>
