@@ -168,6 +168,101 @@
       }
     }
 
+    dialog {
+      border: 1px solid #d9ded9;
+      border-radius: 20px;
+      padding: 28px;
+      width: 520px;
+      max-width: 90vw;
+      background: #ffffff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+      }
+
+      h2 {
+        margin: 0 0 6px;
+        font-size: 1.4rem;
+        color: #111;
+      }
+
+      p {
+        margin: 0 0 20px;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .fila-campos {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .campo {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+          }
+
+          input {
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: #f9fafb;
+            outline: none;
+
+            &:focus {
+              border-color: #111;
+              background: #fff;
+            }
+          }
+        }
+
+        .acciones-dialogo {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 10px;
+          margin-top: 10px;
+
+          .btn-guardar {
+            background: #2b332b;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+          }
+
+          .btn-cancelar {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+
     @media (max-width: 900px) {
       .listado {
         grid-template-columns: repeat(2, 1fr);
@@ -187,11 +282,59 @@
       .listado {
         grid-template-columns: 1fr;
       }
+
+      dialog form .fila-campos {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <main id="app"></main>
+
+  <dialog id="dialogo-alumno">
+    <h2>Agregar alumno</h2>
+    <p>Completá los datos del alumno.</p>
+    <form id="form-alumno">
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="campo-apellido">Apellido</label>
+          <input type="text" id="campo-apellido" name="apellido" required />
+        </div>
+        <div class="campo">
+          <label for="campo-nombre">Nombre</label>
+          <input type="text" id="campo-nombre" name="nombre" required />
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="campo-legajo">Legajo</label>
+          <input type="text" id="campo-legajo" name="legajo" required />
+        </div>
+        <div class="campo">
+          <label for="campo-comision">Comisión</label>
+          <input type="text" id="campo-comision" name="comision" required />
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="campo-telefono">Teléfono</label>
+          <input type="text" id="campo-telefono" name="telefono" required />
+        </div>
+        <div class="campo">
+          <label for="campo-github">GitHub</label>
+          <input type="text" id="campo-github" name="github" required />
+        </div>
+      </div>
+
+      <div class="acciones-dialogo">
+        <button type="submit" class="btn-guardar">Guardar</button>
+        <button type="button" class="btn-cancelar" id="btn-cancelar">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
 
   <script type="module">
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
@@ -254,9 +397,45 @@
       return ordenarAlumnos(lista)
     }
 
+    const dialogo = document.getElementById('dialogo-alumno')
+    const formulario = document.getElementById('form-alumno')
+    const botonCancelar = document.getElementById('btn-cancelar')
+
+    function abrirAgregar() {
+      formulario.reset()
+      dialogo.showModal()
+    }
+
+    function cerrarDialogo() {
+      dialogo.close()
+    }
+
+    botonCancelar.addEventListener('click', cerrarDialogo)
+
+    formulario.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const nuevoAlumno = {
+        id: Date.now(),
+        apellido: formulario.apellido.value.trim(),
+        nombre: formulario.nombre.value.trim(),
+        legajo: formulario.legajo.value.trim(),
+        comision: formulario.comision.value.trim(),
+        telefono: formulario.telefono.value.trim(),
+        github: formulario.github.value.trim(),
+        favorito: false
+      }
+
+      if (!nuevoAlumno.apellido || !nuevoAlumno.nombre || !nuevoAlumno.legajo || !nuevoAlumno.comision || !nuevoAlumno.telefono || !nuevoAlumno.github) {
+        return
+      }
+
+      estado.alumnos = [...estado.alumnos, nuevoAlumno]
+      guardarEnStorage()
+      cerrarDialogo()
+    })
+
     function abrirEdicion(alumno) {
-      const eventoEdicion = new CustomEvent('editar-alumno', { detail: alumno })
-      window.dispatchEvent(eventoEdicion)
+      console.log('Editar', alumno)
     }
 
     const app = document.getElementById('app')
@@ -272,7 +451,7 @@
             @input="${(e) => { estado.busqueda = e.target.value }}"
             value="${() => estado.busqueda}"
           />
-          <button class="btn-agregar" type="button">+ Agregar</button>
+          <button class="btn-agregar" type="button" @click="${abrirAgregar}">+ Agregar</button>
         </div>
       </header>
 
