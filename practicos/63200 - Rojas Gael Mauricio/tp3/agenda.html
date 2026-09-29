@@ -155,13 +155,14 @@
 
     function cargarAlumnos() {
       const guardado = localStorage.getItem(CLAVE)
-      if (guardado) return JSON.parse(guardado)          // ya había datos guardados
-      localStorage.setItem(CLAVE, JSON.stringify(datosIniciales)) // primera vez: usar alumnos.json
+      if (guardado) return JSON.parse(guardado)
+      localStorage.setItem(CLAVE, JSON.stringify(datosIniciales))
       return datosIniciales
     }
 
     const state = reactive({
-      alumnos: cargarAlumnos()
+      alumnos: cargarAlumnos(),
+      busqueda: ''
     })
 
     /* ===== 2) FUNCIONES QUE ACTUALIZAN EL ESTADO ===== */
@@ -169,7 +170,36 @@
       localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
     }
 
+    // Pasa a minúsculas y quita acentos: "Ríos" -> "rios"
+    function normalizar(texto) {
+      return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    }
+
+    function alumnosVisibles() {
+      const buscado = normalizar(state.busqueda.trim())
+      return state.alumnos
+        .filter(a => normalizar(Object.values(a).join(' ')).includes(buscado))
+        .sort((a, b) =>
+          Number(b.favorito) - Number(a.favorito) ||                 // favoritos primero
+          normalizar(a.apellido).localeCompare(normalizar(b.apellido)) ||
+          normalizar(a.nombre).localeCompare(normalizar(b.nombre)))
+    }
+
     /* ===== 3) INTERFAZ ===== */
+    const tarjeta = a => html`
+      <article tabindex="0">
+        <h2>${a.apellido} <span>${a.nombre}</span></h2>
+        <button type="button" tabindex="-1" aria-label="Marcar favorito">
+          ${a.favorito ? '★' : '☆'}
+        </button>
+        <address>
+          <b>${a.telefono}</b>
+          <small>@${a.github}</small>
+        </address>
+        <footer>${a.comision} · ${a.legajo}</footer>
+      </article>
+    `.key(a.id)
+
     html`
       <header>
         <h1>Agenda</h1>
@@ -180,7 +210,9 @@
       </header>
 
       <section>
-        ${() => state.alumnos.map(a => html`<article><h2>${a.apellido} <span>${a.nombre}</span></h2></article>`.key(a.id))}
+        ${() => alumnosVisibles().length
+          ? alumnosVisibles().map(tarjeta)
+          : html`<p>No hay alumnos para mostrar.</p>`}
       </section>
 
       <dialog></dialog>
