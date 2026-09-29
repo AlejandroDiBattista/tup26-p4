@@ -99,6 +99,7 @@ personas.editandoId = null
 
     const app = document.getElementById('app')
     html`
+      <header>
       <h1>Agenda</h1>
       <input type="search"
       
@@ -107,10 +108,45 @@ personas.editandoId = null
       @input="${e => personas.busqueda = e.target.value}">
       
        <button @click="${abrirDialogo}">+ Agregar</button>
-    <dialog>
+       </header>
+  
+
+      <section>
+       ${() => ordenamiento().map(a => html`<article tabindex="0"
+  @click="${() => abrirEdicion(a)}"
+  @keydown="${e => {
+    if (e.target !== e.currentTarget) return
+    if (e.key === 'Enter') {e.preventDefault() ; abrirEdicion(a)}
+    if (e.key === ' ') { e.preventDefault(); alternarFavorito(a)}
+  }}">
+        <header>
+        <h2>
+        ${a.apellido}
+        <span>
+        ${a.nombre}
+        </span>
+        
+        </h2>
+      
+       <button @click="${e => { e.stopPropagation(); alternarFavorito(a) }}">
+        ${() => a.favorito ? '★' : '☆'}
+        </button>
+          
+          </header>
+          <address>
+            ${a.telefono} 
+            @${a.github}
+            </address>
+             <footer>
+              ${a.comision} · ${a.legajo}
+              </footer>
+          </article>`.key(a.id))}
+      </section>
+      <p>${() =>ordenamiento().length === 0  ? "No hay alumnos para mostrar" : ""}</p>
+        <dialog>
     <form @submit="${agregarAlumno}">
     <header>
-      <h2>Agregar Alumno</h2>
+      <h2>${() => personas.editandoId !== null ? "Editar alumno" : "Agregar alumno"}</h2>
     </header>
 
     <label>Apellido
@@ -159,39 +195,6 @@ personas.editandoId = null
 </footer>
   </form>
 </dialog>
-
-      <section>
-       ${() => ordenamiento().map(a => html`<article tabindex="0"
-  @click="${() => abrirEdicion(a)}"
-  @keydown="${e => {
-    if (e.target !== e.currentTarget) return
-    if (e.key === 'Enter') {e.preventDefault() ; abrirEdicion(a)}
-    if (e.key === ' ') { e.preventDefault(); alternarFavorito(a)}
-  }}">
-        <header>
-        <h2>
-        ${a.apellido}
-        <span>
-        ${a.nombre}
-        </span>
-        
-        </h2>
-      
-       <button @click="${e => { e.stopPropagation(); alternarFavorito(a) }}">
-        ${() => a.favorito ? '★' : '☆'}
-        </button>
-          
-          </header>
-          <address>
-            ${a.telefono} 
-            @${a.github}
-            </address>
-             <footer>
-              ${a.comision} · ${a.legajo}
-              </footer>
-          </article>`.key(a.id))}
-      </section>
-      <p>${() =>ordenamiento().length === 0  ? "No hay alumnos para mostrar" : ""}</p>
       `(app)
   </script>
 </body>
