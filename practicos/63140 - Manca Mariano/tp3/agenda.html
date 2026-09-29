@@ -47,9 +47,6 @@
       }
     }
 
-    /* ================================================
-       COMMIT 3 — Estilos del buscador
-       ================================================ */
 
     .buscador {
       padding: 10px 16px;
@@ -445,6 +442,182 @@
     }
 
 
+
+    function abrirDialogoEditar(alumno) {
+      alumnoEditandoId = alumno.id
+      document.getElementById('dialogo-titulo').textContent = 'Editar alumno'
+      document.getElementById('dialogo-subtitulo').textContent = 'Actualizá los datos del alumno.'
+      document.getElementById('campo-apellido').value = alumno.apellido
+      document.getElementById('campo-nombre').value = alumno.nombre
+      document.getElementById('campo-legajo').value = alumno.legajo
+      document.getElementById('campo-comision').value = alumno.comision
+      document.getElementById('campo-telefono').value = alumno.telefono
+      document.getElementById('campo-github').value = alumno.github
+      btnEliminar.style.display = 'inline-block'
+      dialogo.showModal()
+    }
+
+    function cerrarDialogo() {
+      dialogo.close()
+      alumnoEditandoId = null
+    }
+
+    formulario.addEventListener('submit', (evento) => {
+      evento.preventDefault()
+      const apellido = document.getElementById('campo-apellido').value.trim()
+      const nombre = document.getElementById('campo-nombre').value.trim()
+      const legajo = document.getElementById('campo-legajo').value.trim()
+      const comision = document.getElementById('campo-comision').value.trim()
+      const telefono = document.getElementById('campo-telefono').value.trim()
+      const github = document.getElementById('campo-github').value.trim()
+
+      if (!apellido || !nombre || !legajo || !comision) return
+
+      if (alumnoEditandoId === null) {
+        estado.alumnos.push({
+          id: generarId(),
+          apellido,
+          nombre,
+          legajo,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        })
+      } else {
+        const indice = estado.alumnos.findIndex(a => a.id === alumnoEditandoId)
+        if (indice !== -1) {
+          estado.alumnos[indice].apellido = apellido
+          estado.alumnos[indice].nombre = nombre
+          estado.alumnos[indice].legajo = legajo
+          estado.alumnos[indice].comision = comision
+          estado.alumnos[indice].telefono = telefono
+          estado.alumnos[indice].github = github
+        }
+      }
+
+      guardarAlumnos()
+      cerrarDialogo()
+    })
+
+    btnCancelar.addEventListener('click', cerrarDialogo)
+
+    btnEliminar.addEventListener('click', () => {
+      if (alumnoEditandoId === null) return
+      const indice = estado.alumnos.findIndex(a => a.id === alumnoEditandoId)
+      if (indice !== -1) {
+        estado.alumnos.splice(indice, 1)
+        guardarAlumnos()
+      }
+      cerrarDialogo()
+    })
+
+
+    const app = document.getElementById('app')
+
+
+    html`
+      <header>
+        <h1>Agenda</h1>
+        <div class="controles">
+          <input
+            class="buscador"
+            type="search"
+            placeholder="Buscar alumno..."
+            @input="${(e) => { estado.busqueda = e.target.value }}"
+          />
+          <button class="btn-agregar" @click="${abrirDialogoAgregar}">+ Agregar</button>
+        </div>
+      </header>
+      <section aria-label="Lista de alumnos">
+        <p id="sin-resultados" class="sin-resultados" style="display:none">
+          No hay alumnos para mostrar.
+        </p>
+        <ul id="grilla" class="grilla"></ul>
+      </section>
+      <footer style="text-align: center; margin-top: 32px; color: #aaa; font-size: 0.8rem;">
+        Agenda de Alumnos — TP3
+      </footer>
+    `(app)
+
+
+    const grilla = document.getElementById('grilla')
+    const sinResultados = document.getElementById('sin-resultados')
+
+    function renderizarLista() {
+      const lista = alumnosFiltrados()
+
+      sinResultados.style.display = lista.length === 0 ? '' : 'none'
+
+      grilla.innerHTML = lista.map(alumno => `
+        <li>
+          <article class="tarjeta" tabindex="0" data-id="${alumno.id}">
+            <div class="tarjeta-encabezado">
+              <div class="tarjeta-nombre">
+                <span class="apellido">${alumno.apellido}</span>
+                <span class="nombre">${alumno.nombre}</span>
+              </div>
+              <button class="btn-favorito${alumno.favorito ? ' activo' : ''}"
+                data-id="${alumno.id}"
+                aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+              >${alumno.favorito ? '★' : '☆'}</button>
+            </div>
+            <address class="tarjeta-contacto">
+              <span class="telefono">${alumno.telefono}</span>
+              <span class="github">@${alumno.github}</span>
+            </address>
+            <footer class="tarjeta-pie">
+              ${alumno.comision} · ${alumno.legajo}
+            </footer>
+          </article>
+        </li>
+      `).join('')
+    }
+
+    grilla.addEventListener('click', (e) => {
+      const btnFav = e.target.closest('.btn-favorito')
+      if (btnFav) {
+        e.stopPropagation()
+        e.preventDefault()
+        const id = Number(btnFav.dataset.id)
+        const indice = estado.alumnos.findIndex(a => a.id === id)
+        if (indice !== -1) {
+          estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+          guardarAlumnos()
+        }
+        return
+      }
+
+
+      const tarjeta = e.target.closest('.tarjeta')
+      if (tarjeta) {
+        const id = Number(tarjeta.dataset.id)
+        const alumno = estado.alumnos.find(a => a.id === id)
+        if (alumno) abrirDialogoEditar(alumno)
+      }
+    })
+
+
+    grilla.addEventListener('keydown', (e) => {
+      const tarjeta = e.target.closest('.tarjeta')
+      if (!tarjeta) return
+      const id = Number(tarjeta.dataset.id)
+
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        const alumno = estado.alumnos.find(a => a.id === id)
+        if (alumno) abrirDialogoEditar(alumno)
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        const indice = estado.alumnos.findIndex(a => a.id === id)
+        if (indice !== -1) {
+          estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+          guardarAlumnos()
+        }
+      }
+    })
+
+    watch(renderizarLista)
   </script>
 </body>
 
