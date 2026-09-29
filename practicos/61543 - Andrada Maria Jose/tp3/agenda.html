@@ -4,30 +4,602 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
-  <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
-  </style>
+   <style>
+  body {
+    margin: 0;
+    padding: 40px 24px 64px;
+    font: 16px/1.45 sans-serif;
+    background:#f5f5f5;
+    color: #23261f;
+  }
+
+  main {
+    width: 1100px;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+.acciones-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.acciones-header input {
+  width: 300px;
+  padding: 10px 18px;
+  border: 1px solid #e6e4da;
+  border-radius: 999px;
+  background: #fbfaf6;
+  font: inherit;
+}
+
+
+.acciones-header button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #1f3b2f;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+ 
+  h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  ul li {
+    min-width: 0;
+  }
+
+  article {
+  position: relative;
+  padding: 24px 24px 18px;
+  border: 1px solid #e6e4da;
+  border-radius: 18px;
+  background: #fbfaf6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #1f3b2f;
+    outline-offset: 2px;
+  }
+
+  h2 {
+  margin: 0 34px 28px 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #5f6659;
+
+  strong {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.35rem;
+    color: #2b3a30;
+  }
+}
+
+p {
+  margin: 7px 0;
+}
+
+.telefono {
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.github {
+  font-size: .85rem;
+  color: #767a6f;
+}
+
+footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e6e4da;
+
+  small {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #767a6f;
+  }
+}
+}
+  button.favorito {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    border: none;
+    background: none;
+    color: #8a7d4f;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  button.favorito:hover {
+    color: #a9862c;
+  }
+
+  button.favorito:focus-visible {
+    outline: 3px solid #1f3b2f;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  button.favorito-activo {
+    color: #a9862c;
+  }
+
+  @media (max-width: 700px) {
+    ul {
+      grid-template-columns: 1fr;
+    }
+  }
+
+dialog {
+  width: min(600px, 90%);
+  border: 8px solid #d5dfd8;
+  border-radius: 24px;
+  padding: 0;
+  overflow: hidden;
+  background: #fbfaf6;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .18);
+}
+
+dialog::backdrop {
+  background: rgba(25, 30, 24, .4);
+  backdrop-filter: blur(4px);
+}
+
+dialog form {
+  display: block;
+}
+
+.dialogo-encabezado {
+  padding: 16px 18px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e6e4da;
+}
+
+.dialogo-encabezado h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.dialogo-encabezado p {
+  margin: 2px 0 0;
+  font-size: .85rem;
+  color: #5f6659;
+}
+
+.dialogo-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+  padding: 18px;
+}
+
+dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: #5f6659;
+}
+
+dialog input {
+  padding: 10px 12px;
+  border: 1px solid #e6e4da;
+  border-radius: 10px;
+  background: #f5f5f5;
+  font: inherit;
+  font-weight: 400;
+  color: #23261f;
+}
+
+dialog input:focus {
+  background: #fbfaf6;
+  outline: 2px solid #1f3b2f;
+  outline-offset: 2px;
+}
+
+.acciones-dialogo {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid #e6e4da;
+}
+
+.acciones-dialogo div {
+  display: flex;
+  gap: 10px;
+}
+
+.acciones-dialogo button {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid #e6e4da;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acciones-dialogo button[type="submit"] {
+  background: #1f3b2f;
+  border-color: #1f3b2f;
+  color: white;
+}
+
+#eliminar {
+  color: #d64545;
+}
+
+@media (max-width: 600px) {
+  .dialogo-campos {
+    grid-template-columns: 1fr;
+  }
+}
+
+ </style>
 </head>
 <body>
-  <main id="app"></main>
+<main id="app"></main>
+
+<dialog id="dialogo">
+  <form>
+  <div class="dialogo-encabezado">
+    <h2 id="tituloDialogo">Agregar alumno</h2>
+    <p>Actualizá los datos del alumno.</p>
+  </div>
+
+<div class="dialogo-campos">
+  <label>
+    Apellido
+    <input type="text" name="apellido" required>
+  </label>
+
+  <label>
+    Nombre
+    <input type="text" name="nombre" required>
+  </label>
+
+  <label>
+    Legajo
+    <input type="text" name="legajo" required>
+  </label>
+
+  <label>
+    Comisión
+    <input type="text" name="comision" required>
+  </label>
+
+  <label>
+    Teléfono
+    <input type="text" name="telefono" required>
+  </label>
+
+  <label>
+    Usuario de GitHub
+    <input type="text" name="github" required>
+  </label>
+</div>
+
+<div class="acciones-dialogo">
+  <button type="button" id="eliminar">Eliminar</button>
+
+  <div>
+    <button type="submit">Guardar</button>
+    <button type="button" id="cancelar">Cancelar</button>
+  </div>
+</div>
+
+</form>
+</dialog>
+
+
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    const dialogo = document.getElementById('dialogo')
+    const cancelar = document.getElementById('cancelar')
+    const eliminar = document.getElementById('eliminar')
+    const tituloDialogo = document.getElementById('tituloDialogo')
+    
+
+    const estado= reactive ({
+      alumnos: alumnos,
+      busqueda: '',
+      alumnoEditando: null
+    })
+
+    function guardarAlumnos() {
+      localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    }
+
+    function cambiarFavorito(id) {
+      const alumno = estado.alumnos.find(a => a.id === id)
+
+      if (alumno) {
+        alumno.favorito = !alumno.favorito
+        guardarAlumnos()
+      }
+    }
+
+    function cargarAlumnos() {
+      const datos = localStorage.getItem('alumnos')
+
+      if (datos) {
+        estado.alumnos = JSON.parse(datos)
+
+      } else {
+        guardarAlumnos()
+      }
+    }
+
+    function editarAlumno(alumno) {
+      estado.alumnoEditando = alumno
+      eliminar.hidden = false
+      tituloDialogo.textContent = 'Editar alumno'
+
+      const formulario = dialogo.querySelector('form')
+      formulario.apellido.value = alumno.apellido
+      formulario.nombre.value = alumno.nombre
+      formulario.legajo.value = alumno.legajo
+      formulario.comision.value = alumno.comision
+      formulario.telefono.value = alumno.telefono
+      formulario.github.value = alumno.github
+      dialogo.showModal()
+    }
+
+
+    function guardarEdicion(e) {
+      e.preventDefault()
+
+    const formulario = e.target
+
+    const campos = [
+      formulario.apellido,
+      formulario.nombre,
+      formulario.legajo,
+      formulario.comision,
+      formulario.telefono,
+      formulario.github
+    ]
+
+  if (campos.some(campo => campo.value.trim() === '')) {
+    alert('Completa todos los campos.')
+    return
+  }
+
+  if (isNaN(formulario.legajo.value)) {
+    alert('El legajo debe ser un numero.')
+    return
+  }
+
+  if (estado.alumnoEditando) {
+    const alumno = estado.alumnoEditando
+
+    alumno.apellido = formulario.apellido.value
+    alumno.nombre = formulario.nombre.value
+    alumno.legajo = formulario.legajo.value
+    alumno.comision = formulario.comision.value
+    alumno.telefono = formulario.telefono.value
+    alumno.github = formulario.github.value
+
+  } else {
+    const nuevoAlumno = {
+      id: crypto.randomUUID(),
+      apellido: formulario.apellido.value,
+      nombre: formulario.nombre.value,
+      legajo: formulario.legajo.value,
+      comision: formulario.comision.value,
+      telefono: formulario.telefono.value,
+      github: formulario.github.value,
+      favorito: false
+    }
+
+    estado.alumnos.push(nuevoAlumno)
+  }
+
+  guardarAlumnos()
+  dialogo.close()
+  estado.alumnoEditando = null
+}
+
+
+     
+    function eliminarAlumno() {
+      const alumno = estado.alumnoEditando
+
+      if(!alumno) {
+        return
+      }
+
+       estado.alumnos = estado.alumnos.filter(a => a.id !== alumno.id)
+
+       guardarAlumnos()
+       dialogo.close()
+       estado.alumnoEditando = null
+    }
+
+    function abrirAgregar() {
+      const formulario = dialogo.querySelector('form')
+
+      formulario.reset()
+
+      estado.alumnoEditando = null
+      eliminar.hidden = true
+      tituloDialogo.textContent = 'Agregar alumno'
+
+      dialogo.showModal()
+    }
+
+    dialogo.querySelector('form').addEventListener('submit' , guardarEdicion)
+    
+    cancelar.addEventListener('click' , () => {
+      dialogo.close()
+      estado.alumnoEditando = null
+
+    })
+
+    eliminar.addEventListener('click' , eliminarAlumno)
+    
     html`
-      <h1>Alumnos</h1>
+      
+<header>
+  <h1>Agenda</h1>
+
+  <div class="acciones-header">
+    <input
+      type="search"
+      placeholder="Buscar alumno..."
+      @input="${(e) => estado.busqueda = e.target.value}"
+    >
+
+    <button type="button" id="agregar">+ Agregar</button>
+  </div>
+</header>
+
+<section>
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+  ${() => {
+    const alumnosFiltrados = ordenarAlumnos(filtrarAlumnos(estado.alumnos))
+
+    if (alumnosFiltrados.length === 0) {
+      return [
+        html`<li>No se encontraron alumnos.</li>`
+      ]
+    }
+return alumnosFiltrados.map(a => html`
+     
+<li>
+ <article 
+  tabindex="0"
+  @keydown="${(e) => {
+
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      editarAlumno(a)
+    }
+
+    if (e.key === ' ') {
+      e.preventDefault()
+      cambiarFavorito(a.id)
+    }
+  }}"
+>
+   <h2><strong>${a.apellido}</strong> <span>${a.nombre}</span></h2>
+
+<button
+  class="${() => a.favorito ? 'favorito favorito-activo' : 'favorito'}"
+  @click="${() => cambiarFavorito(a.id)}"
+>
+  ${() => a.favorito ? '★' : '☆'}
+</button>
+
+<p class="telefono">${a.telefono}</p>
+<p class="github">${a.github}</p>
+
+<footer>
+  <small>${a.comision} · ${a.legajo}</small>
+</footer>
+</li>
+    `)
+  }}
+</ul>
+</section>
+
+
     `(app)
+
+    const agregar = document.getElementById('agregar')
+    agregar.addEventListener('click' , abrirAgregar)
+
+    cargarAlumnos()
+
+    function ordenarAlumnos(lista) {
+      return [...lista].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return a.favorito ? -1 : 1
+        }
+
+         const apellidoA = a.apellido.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+         const apellidoB = b.apellido.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+         const comparacionApellido = apellidoA.localeCompare(apellidoB)
+
+         if (comparacionApellido !== 0) {
+          return comparacionApellido
+         }
+
+         const nombreA = a.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+         const nombreB = b.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+         return nombreA.localeCompare(nombreB)
+
+      })
+    }
+
+    function filtrarAlumnos(lista) {
+      const texto = estado.busqueda
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+
+      if (!texto) {
+        return lista
+      }
+
+      return lista.filter(a => {
+        const apellido = a.apellido
+        .normalize('NFD') 
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+        const nombre = a.nombre
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+        const legajo = String(a.legajo)
+
+        return apellido.includes(texto) ||
+              nombre.includes(texto) ||
+              legajo.includes(texto)
+      })
+    }
+
+
   </script>
 </body>
 </html>
