@@ -233,31 +233,51 @@
 
         .acciones-dialogo {
           display: flex;
-          justify-content: flex-end;
+          justify-content: space-between;
           align-items: center;
-          gap: 10px;
           margin-top: 10px;
 
-          .btn-guardar {
-            background: #2b332b;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-          }
-
-          .btn-cancelar {
+          .btn-eliminar {
             background: #fff;
-            color: #374151;
-            border: 1px solid #d1d5db;
+            color: #dc2626;
+            border: 1px solid #fecaca;
             padding: 10px 16px;
             border-radius: 10px;
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
+
+            &:hover {
+              background: #fef2f2;
+            }
+          }
+
+          .grupo-botones {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+
+            .btn-guardar {
+              background: #2b332b;
+              color: #fff;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 10px;
+              font-size: 0.95rem;
+              font-weight: 600;
+              cursor: pointer;
+            }
+
+            .btn-cancelar {
+              background: #fff;
+              color: #374151;
+              border: 1px solid #d1d5db;
+              padding: 10px 16px;
+              border-radius: 10px;
+              font-size: 0.95rem;
+              font-weight: 600;
+              cursor: pointer;
+            }
           }
         }
       }
@@ -293,8 +313,8 @@
   <main id="app"></main>
 
   <dialog id="dialogo-alumno">
-    <h2>Agregar alumno</h2>
-    <p>Completá los datos del alumno.</p>
+    <h2 id="dialogo-titulo">Agregar alumno</h2>
+    <p id="dialogo-subtitulo">Completá los datos del alumno.</p>
     <form id="form-alumno">
       <div class="fila-campos">
         <div class="campo">
@@ -330,8 +350,11 @@
       </div>
 
       <div class="acciones-dialogo">
-        <button type="submit" class="btn-guardar">Guardar</button>
-        <button type="button" class="btn-cancelar" id="btn-cancelar">Cancelar</button>
+        <button type="button" class="btn-eliminar" id="btn-eliminar">Eliminar</button>
+        <div class="grupo-botones">
+          <button type="submit" class="btn-guardar">Guardar</button>
+          <button type="button" class="btn-cancelar" id="btn-cancelar">Cancelar</button>
+        </div>
       </div>
     </form>
   </dialog>
@@ -354,6 +377,8 @@
       alumnos: listaInicial,
       busqueda: ''
     })
+
+    let idAlumnoEditando = null
 
     function guardarEnStorage() {
       localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
@@ -400,9 +425,32 @@
     const dialogo = document.getElementById('dialogo-alumno')
     const formulario = document.getElementById('form-alumno')
     const botonCancelar = document.getElementById('btn-cancelar')
+    const botonEliminar = document.getElementById('btn-eliminar')
+    const tituloDialogo = document.getElementById('dialogo-titulo')
+    const subtituloDialogo = document.getElementById('dialogo-subtitulo')
 
     function abrirAgregar() {
+      idAlumnoEditando = null
+      tituloDialogo.textContent = 'Agregar alumno'
+      subtituloDialogo.textContent = 'Completá los datos del alumno.'
+      botonEliminar.style.display = 'none'
       formulario.reset()
+      dialogo.showModal()
+    }
+
+    function abrirEdicion(alumno) {
+      idAlumnoEditando = alumno.id
+      tituloDialogo.textContent = 'Editar alumno'
+      subtituloDialogo.textContent = 'Actualizá los datos del alumno.'
+      botonEliminar.style.display = 'inline-block'
+
+      formulario.apellido.value = alumno.apellido
+      formulario.nombre.value = alumno.nombre
+      formulario.legajo.value = alumno.legajo
+      formulario.comision.value = alumno.comision
+      formulario.telefono.value = alumno.telefono
+      formulario.github.value = alumno.github
+
       dialogo.showModal()
     }
 
@@ -412,31 +460,57 @@
 
     botonCancelar.addEventListener('click', cerrarDialogo)
 
+    botonEliminar.addEventListener('click', () => {
+      if (idAlumnoEditando !== null) {
+        estado.alumnos = estado.alumnos.filter(a => a.id !== idAlumnoEditando)
+        guardarEnStorage()
+        cerrarDialogo()
+      }
+    })
+
     formulario.addEventListener('submit', (e) => {
       e.preventDefault()
-      const nuevoAlumno = {
-        id: Date.now(),
-        apellido: formulario.apellido.value.trim(),
-        nombre: formulario.nombre.value.trim(),
-        legajo: formulario.legajo.value.trim(),
-        comision: formulario.comision.value.trim(),
-        telefono: formulario.telefono.value.trim(),
-        github: formulario.github.value.trim(),
-        favorito: false
-      }
 
-      if (!nuevoAlumno.apellido || !nuevoAlumno.nombre || !nuevoAlumno.legajo || !nuevoAlumno.comision || !nuevoAlumno.telefono || !nuevoAlumno.github) {
+      const apellido = formulario.apellido.value.trim()
+      const nombre = formulario.nombre.value.trim()
+      const legajo = formulario.legajo.value.trim()
+      const comision = formulario.comision.value.trim()
+      const telefono = formulario.telefono.value.trim()
+      const github = formulario.github.value.trim()
+
+      if (!apellido || !nombre || !legajo || !comision || !telefono || !github) {
         return
       }
 
-      estado.alumnos = [...estado.alumnos, nuevoAlumno]
-      guardarEnStorage()
+      if (idAlumnoEditando !== null) {
+        const alumno = estado.alumnos.find(a => a.id === idAlumnoEditando)
+        if (alumno) {
+          alumno.apellido = apellido
+          alumno.nombre = nombre
+          alumno.legajo = legajo
+          alumno.comision = comision
+          alumno.telefono = telefono
+          alumno.github = github
+          estado.alumnos = [...estado.alumnos]
+          guardarEnStorage()
+        }
+      } else {
+        const nuevoAlumno = {
+          id: Date.now(),
+          apellido,
+          nombre,
+          legajo,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        }
+        estado.alumnos = [...estado.alumnos, nuevoAlumno]
+        guardarEnStorage()
+      }
+
       cerrarDialogo()
     })
-
-    function abrirEdicion(alumno) {
-      console.log('Editar', alumno)
-    }
 
     const app = document.getElementById('app')
 
