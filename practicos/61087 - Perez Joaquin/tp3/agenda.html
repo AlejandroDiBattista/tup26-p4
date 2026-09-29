@@ -82,6 +82,75 @@
       return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
     });
 
+    function alternarFavorito(alumno, evento) {
+      if(evento) {
+        evento.stopPropagation();
+      }
+      alumno.favorito = !alumno.favorito;
+      guardarEnLocal();
+    }
+
+    function abrirDialogo(alumno = null) {
+      state.alumnoEnEdicion = alumno;
+      state.dialogoAbierto = true;
+      
+      const dialog = document.querySelector('dialog');
+      if (dialog) dialog.showModal();
+    }
+
+    function cerrarDialogo() {
+      state.dialogoAbierto = false;
+      state.alumnoEnEdicion = null;
+      const dialog = document.querySelector('dialog');
+      if (dialog) dialog.close();
+    }
+
+    function guardarFormulario(evento) {
+      evento.preventDefault();
+      const form = evento.target;
+      const formData = new FormData(form);
+      
+      const datosNuevo = {
+        apellido: formData.get('apellido'),
+        nombre: formData.get('nombre'),
+        legajo: formData.get('legajo'),
+        comision: formData.get('comision'),
+        telefono: formData.get('telefono'),
+        github: formData.get('github')
+      };
+
+      if (state.alumnoEnEdicion) {
+        // Editar existente
+        Object.assign(state.alumnoEnEdicion, datosNuevo);
+      } else {
+        // Agregar nuevo (generar ID pseudo-aleatorio o incremental)
+        const nuevoId = state.alumnos.length > 0 ? Math.max(...state.alumnos.map(a => a.id)) + 1 : 1;
+        state.alumnos.push({
+          id: nuevoId,
+          favorito: false,
+          ...datosNuevo
+        });
+      }
+      
+      guardarEnLocal();
+      cerrarDialogo();
+    }
+
+    function eliminarAlumno(id) {
+      state.alumnos = state.alumnos.filter(a => a.id !== id);
+      guardarEnLocal();
+      cerrarDialogo();
+    }
+
+    function manejarTecladoTarjeta(evento, alumno) {
+      if (evento.key === 'Enter') {
+        abrirDialogo(alumno);
+      } else if (evento.key === ' ') {
+        evento.preventDefault();
+        alternarFavorito(alumno);
+      }
+    }
+
   </script>
 </body>
 </html>
