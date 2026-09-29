@@ -47,6 +47,9 @@
       }
     }
 
+    /* ================================================
+       COMMIT 3 — Estilos del buscador
+       ================================================ */
 
     .buscador {
       padding: 10px 16px;
@@ -62,6 +65,26 @@
         box-shadow: 0 0 0 2px rgba(138, 154, 123, 0.2);
       }
     }
+
+
+
+    .btn-agregar {
+      padding: 10px 20px;
+      background: #3d4a3a;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #2e3a2b;
+      }
+    }
+
+
 
     .grilla {
       display: grid;
@@ -147,6 +170,7 @@
     }
 
 
+
     .btn-favorito {
       background: none;
       border: none;
@@ -171,6 +195,122 @@
       padding: 40px 20px;
       color: #888;
       font-size: 1rem;
+    }
+
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 0;
+      width: 520px;
+      max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+      }
+
+      & .dialogo-contenido {
+        padding: 28px 32px;
+      }
+
+      & .dialogo-titulo {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      & .dialogo-subtitulo {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 24px;
+      }
+    }
+
+    .formulario {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+
+      & .campo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        & label {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #555;
+        }
+
+        & input {
+          padding: 10px 12px;
+          border: 1px solid #d9ded9;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          outline: none;
+          background: #fafafa;
+
+          &:focus {
+            border-color: #8a9a7b;
+            box-shadow: 0 0 0 2px rgba(138, 154, 123, 0.2);
+            background: white;
+          }
+        }
+      }
+    }
+
+    .dialogo-acciones {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+
+      & .btn-eliminar {
+        background: none;
+        border: none;
+        color: #c0392b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 16px;
+        margin-right: auto;
+
+        &:hover {
+          color: #a93226;
+        }
+      }
+
+      & .btn-guardar {
+        padding: 10px 24px;
+        background: #3d4a3a;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+          background: #2e3a2b;
+        }
+      }
+
+      & .btn-cancelar {
+        padding: 10px 20px;
+        background: #eee;
+        color: #333;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+
+        &:hover {
+          background: #ddd;
+        }
+      }
     }
   </style>
 </head>
@@ -265,6 +405,7 @@
     }
 
 
+
     function alumnosFiltrados() {
       const ordenados = alumnosOrdenados()
       const termino = normalizar(estado.busqueda.trim())
@@ -277,6 +418,32 @@
         normalizar(a.github).includes(termino)
       )
     }
+
+
+    const dialogo = document.getElementById('dialogo')
+    const formulario = document.getElementById('formulario-alumno')
+    const btnEliminar = document.getElementById('btn-eliminar')
+    const btnCancelar = document.getElementById('btn-cancelar')
+
+    function generarId() {
+      if (estado.alumnos.length === 0) return 1
+      return Math.max(...estado.alumnos.map(a => a.id)) + 1
+    }
+
+    function abrirDialogoAgregar() {
+      alumnoEditandoId = null
+      document.getElementById('dialogo-titulo').textContent = 'Agregar alumno'
+      document.getElementById('dialogo-subtitulo').textContent = 'Completá los datos del nuevo alumno.'
+      document.getElementById('campo-apellido').value = ''
+      document.getElementById('campo-nombre').value = ''
+      document.getElementById('campo-legajo').value = ''
+      document.getElementById('campo-comision').value = ''
+      document.getElementById('campo-telefono').value = ''
+      document.getElementById('campo-github').value = ''
+      btnEliminar.style.display = 'none'
+      dialogo.showModal()
+    }
+
 
   </script>
 </body>
