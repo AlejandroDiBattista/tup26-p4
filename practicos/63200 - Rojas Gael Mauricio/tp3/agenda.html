@@ -150,22 +150,29 @@
     import { html, reactive } from 'https://esm.sh/@arrow-js/core'
     import datosIniciales from './alumnos.json' with { type: 'json' }
 
-    /* ===== 1) ESTADO ===== */
+    /* =====================================================
+       1) ESTADO: los datos que usa la aplicación
+       ===================================================== */
     const CLAVE = 'agenda-alumnos'
 
     function cargarAlumnos() {
       const guardado = localStorage.getItem(CLAVE)
-      if (guardado) return JSON.parse(guardado)
-      localStorage.setItem(CLAVE, JSON.stringify(datosIniciales))
+      if (guardado) return JSON.parse(guardado)          // ya había datos guardados
+      localStorage.setItem(CLAVE, JSON.stringify(datosIniciales)) // primera vez: usar alumnos.json
       return datosIniciales
     }
 
     const state = reactive({
       alumnos: cargarAlumnos(),
-      busqueda: ''
+      busqueda: '',
+      dialogoAbierto: false,
+      editando: null,   // null = alumno nuevo, o el alumno que se está editando
+      error: ''
     })
 
-    /* ===== 2) FUNCIONES QUE ACTUALIZAN EL ESTADO ===== */
+    /* =====================================================
+       2) FUNCIONES QUE ACTUALIZAN EL ESTADO
+       ===================================================== */
     function guardar() {
       localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
     }
@@ -190,17 +197,66 @@
       guardar()
     }
 
-    // Teclado en la tarjeta: Espacio alterna favorito
+    function abrirDialogo(alumno = null) {
+      state.editando = alumno
+      state.error = ''
+      state.dialogoAbierto = true
+      document.querySelector('dialog').showModal()
+    }
+
+    function cerrarDialogo() {
+      state.dialogoAbierto = false
+      const dialogo = document.querySelector('dialog')
+      if (dialogo.open) dialogo.close()
+    }
+
+    function guardarAlumno(evento) {
+      evento.preventDefault()
+      const datos = Object.fromEntries(new FormData(evento.target))
+      for (const clave in datos) datos[clave] = datos[clave].trim()
+
+      // Validaciones simples
+      if (Object.values(datos).some(v => v === '')) {
+        state.error = 'Completá todos los campos.'
+        return
+      }
+      if (!/^\d+$/.test(datos.legajo)) {
+        state.error = 'El legajo debe contener solo números.'
+        return
+      }
+
+      if (state.editando) {
+        const id = state.editando.id
+        state.alumnos = state.alumnos.map(a => a.id === id ? { ...a, ...datos } : a)
+      } else {
+        const id = Math.max(0, ...state.alumnos.map(a => a.id)) + 1
+        state.alumnos = [...state.alumnos, { id, ...datos, favorito: false }]
+      }
+      guardar()
+      cerrarDialogo()
+    }
+
+    function eliminarAlumno() {
+      state.alumnos = state.alumnos.filter(a => a.id !== state.editando.id)
+      guardar()
+      cerrarDialogo()
+    }
+
+    // Teclado en la tarjeta: Enter edita, Espacio alterna favorito
     function teclaEnTarjeta(evento, alumno) {
+      if (evento.key === 'Enter') abrirDialogo(alumno)
       if (evento.key === ' ') {
         evento.preventDefault()
         alternarFavorito(alumno.id)
       }
     }
 
-    /* ===== 3) INTERFAZ ===== */
+    /* =====================================================
+       3) INTERFAZ: plantillas de Arrow.js
+       ===================================================== */
     const tarjeta = a => html`
       <article tabindex="0"
+               @click="${() => abrirDialogo(a)}"
                @keydown="${e => teclaEnTarjeta(e, a)}">
         <h2>${a.apellido} <span>${a.nombre}</span></h2>
         <button type="button" tabindex="-1"
@@ -216,13 +272,43 @@
       </article>
     `.key(a.id)
 
+    const campo = (etiqueta, nombre, valor) => html`
+      <label>${etiqueta}
+        <input name="${nombre}" value="${valor}">
+      </label>
+    `
+
+    const formulario = () => {
+      const a = state.editando || { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
+      return html`
+        <h3>${state.editando ? 'Editar alumno' : 'Agregar alumno'}</h3>
+        <p>${state.editando ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
+        <form @submit="${guardarAlumno}">
+          ${campo('Apellido', 'apellido', a.apellido)}
+          ${campo('Nombre', 'nombre', a.nombre)}
+          ${campo('Legajo', 'legajo', a.legajo)}
+          ${campo('Comisión', 'comision', a.comision)}
+          ${campo('Teléfono', 'telefono', a.telefono)}
+          ${campo('GitHub', 'github', a.github)}
+          <p class="error">${() => state.error}</p>
+          <div class="botones">
+            ${state.editando
+              ? html`<button type="button" class="eliminar" @click="${eliminarAlumno}">Eliminar</button>`
+              : ''}
+            <button type="submit" class="guardar">Guardar</button>
+            <button type="button" class="cancelar" @click="${cerrarDialogo}">Cancelar</button>
+          </div>
+        </form>
+      `
+    }
+
     html`
       <header>
         <h1>Agenda</h1>
         <div>
           <input type="search" placeholder="Buscar alumno..."
                  @input="${e => { state.busqueda = e.target.value }}">
-          <button type="button">+ Agregar</button>
+          <button type="button" @click="${() => abrirDialogo()}">+ Agregar</button>
         </div>
       </header>
 
@@ -232,9 +318,10 @@
           : html`<p>No hay alumnos para mostrar.</p>`}
       </section>
 
-      <dialog></dialog>
+      <dialog @close="${() => { state.dialogoAbierto = false }}">
+        ${() => state.dialogoAbierto ? formulario() : ''}
+      </dialog>
     `(document.getElementById('app'))
-
   </script>
 </body>
 </html>
