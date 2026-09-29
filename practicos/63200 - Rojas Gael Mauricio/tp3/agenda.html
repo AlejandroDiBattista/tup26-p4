@@ -5,29 +5,167 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    /* ===== Base ===== */
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px Georgia, serif;
+      background: #f5f6f4;
+      color: #1f2a24;
+    }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    /* ===== Encabezado (título + buscador + botón agregar) ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+
+      h1 { margin: 0; font-size: 1.6rem; }
+
+      div { display: flex; gap: 8px; }
+
+      input[type="search"] {
+        padding: 8px 12px;
+        border: 1px solid #d9ded9;
+        border-radius: 999px;
+        font: 14px sans-serif;
+        width: 220px;
+      }
+
+      button {
+        padding: 8px 16px;
+        border: 0;
+        border-radius: 999px;
+        background: #2c3a30;
+        color: white;
+        font: bold 14px sans-serif;
+        cursor: pointer;
+      }
+    }
+
+    /* ===== Lista de tarjetas ===== */
+    section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+
+      > p { grid-column: 1 / -1; text-align: center; color: #667; }
+    }
+
+    /* ===== Tarjeta de alumno ===== */
+    article {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+
+      &:hover, &:focus { border-color: #2c3a30; outline: none; box-shadow: 0 0 0 2px #2c3a3033; }
+
+      h2 {
+        margin: 0;
+        padding-right: 30px;
+        font-size: 1.05rem;
+
+        span { font-weight: normal; font-size: .85rem; }
+      }
+
+      address {
+        font: normal 13px sans-serif;
+
+        b { display: block; margin-bottom: 4px; }
+        small { color: #667; }
+      }
+
+      footer {
+        padding-top: 8px;
+        border-top: 1px solid #e5e8e5;
+        font: 12px sans-serif;
+        color: #667;
+      }
+
+      button {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        border: 0;
+        background: none;
+        font-size: 1.2rem;
+        color: #8a6d1d;
+        cursor: pointer;
+      }
+    }
+
+    /* ===== Diálogo de alta / edición ===== */
+    dialog {
+      width: 480px;
+      max-width: 92vw;
+      border: 0;
+      border-radius: 14px;
+      padding: 20px;
+      font: 14px sans-serif;
+
+      &::backdrop { background: #2c3a3099; }
+
+      h3 { margin: 0; font-family: Georgia, serif; }
+      p { margin: 2px 0 14px; color: #667; font-size: 12px; }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+
+        label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+        input { padding: 7px; border: 1px solid #d9ded9; border-radius: 6px; font: 14px sans-serif; }
+
+        .error { grid-column: 1 / -1; margin: 0; color: #b3261e; }
+
+        .botones {
+          grid-column: 1 / -1;
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+
+          button { padding: 7px 14px; border: 0; border-radius: 6px; cursor: pointer; }
+          .guardar { background: #2c3a30; color: white; }
+          .cancelar { background: #e5e8e5; }
+          .eliminar { background: none; color: #b3261e; margin-right: auto; }
+        }
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import { html } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header>
+        <h1>Agenda</h1>
+        <div>
+          <input type="search" placeholder="Buscar alumno...">
+          <button type="button">+ Agregar</button>
+        </div>
+      </header>
+
+      <section>
+        ${alumnos.map(a => html`<article><h2>${a.apellido} <span>${a.nombre}</span></h2></article>`)}
+      </section>
+
+      <dialog></dialog>
+    `(document.getElementById('app'))
+
   </script>
 </body>
 </html>
