@@ -185,11 +185,27 @@
           normalizar(a.nombre).localeCompare(normalizar(b.nombre)))
     }
 
+    function alternarFavorito(id) {
+      state.alumnos = state.alumnos.map(a => a.id === id ? { ...a, favorito: !a.favorito } : a)
+      guardar()
+    }
+
+    // Teclado en la tarjeta: Espacio alterna favorito
+    function teclaEnTarjeta(evento, alumno) {
+      if (evento.key === ' ') {
+        evento.preventDefault()
+        alternarFavorito(alumno.id)
+      }
+    }
+
     /* ===== 3) INTERFAZ ===== */
     const tarjeta = a => html`
-      <article tabindex="0">
+      <article tabindex="0"
+               @keydown="${e => teclaEnTarjeta(e, a)}">
         <h2>${a.apellido} <span>${a.nombre}</span></h2>
-        <button type="button" tabindex="-1" aria-label="Marcar favorito">
+        <button type="button" tabindex="-1"
+                aria-label="Marcar favorito"
+                @click="${e => { e.stopPropagation(); alternarFavorito(a.id) }}">
           ${a.favorito ? '★' : '☆'}
         </button>
         <address>
@@ -204,7 +220,8 @@
       <header>
         <h1>Agenda</h1>
         <div>
-          <input type="search" placeholder="Buscar alumno...">
+          <input type="search" placeholder="Buscar alumno..."
+                 @input="${e => { state.busqueda = e.target.value }}">
           <button type="button">+ Agregar</button>
         </div>
       </header>
