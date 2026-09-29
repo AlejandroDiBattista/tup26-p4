@@ -9,7 +9,8 @@
     main { width: 1104px; max-width: 100%; margin: auto; }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { position: relative; min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    li.alumno-lista { position: relative; min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: left; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.1s ease;}
+    li.alumno-lista:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);}
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
     header{display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;}
@@ -18,6 +19,20 @@
     #boton-formulario {background-color: #1b5e20;color: #ffffff;border: none; padding: 8px 18px; font-size: 0.95rem; font-weight: bold; border-radius: 20px; cursor: pointer; transition: background-color 0.2s, transform 0.1s;}
     .header-orden{ display: flex; align-items: center; gap: 10px;}
     .btn-estrella {position: absolute; top: 12px; right: 12px; background: transparent; border: none; font-size: 1.7rem; line-height: 1; cursor: pointer; color: #f5a623; transition: transform 0.15s ease;}
+    dialog { border: none; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); width: 320px;}
+    dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+    form { display: flex; flex-direction: column; gap: 8px; }
+    form input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem;}
+    .form-acciones { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px;}
+    .btn-guardar { background-color: #1b5e20; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;}
+    .btn-cancelar { background-color: #eee; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;}
+    .btn-eliminar { background-color: #c62828; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .alumno-nombre { font-size: 1.05rem; color: #333333; margin-bottom: 6px; padding-right: 30px; }
+    .alumno-apellido { font-size: 1.25rem; font-weight: 700; color: #1b5e20; }
+    .alumno-telefono { font-size: 0.95rem; font-weight: 600; color: #444444; margin-bottom: 4px; }
+    .alumno-github { font-size: 0.85rem; color: #777777; }
+    li.alumno-lista hr { border: 0; border-top: 1px solid #e0e0e0; margin: 12px 0 8px; }
+    .alumno-meta { font-size: 0.85rem; color: #777777; }
  </style>
 </head>
 <body>
@@ -26,6 +41,11 @@
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
+
+    const LOCAL_KEY = 'agenda-alumnos';
+    function guardarEnLocal() {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(data.lista));
+    }
 
     document.addEventListener('keyup', e =>{
       if(e.target.matches('#buscador')){
@@ -37,19 +57,14 @@
         })
       }
     })
-
-    document.addEventListener('click', e => {
-      const formulario = document.querySelector('#formulario');
-      if (e.target.matches('#boton-formulario')) {
-        formulario?.showModal();
-      }
-      if (e.target.matches('#btn-cerrar')) {
-        formulario?.close();
-      }
-    });
-
+     
+    function cargarAlumnos() {
+     const guardado = localStorage.getItem(LOCAL_KEY);
+     return guardado ? JSON.parse(guardado) : alumnos;
+    }
+    
     const data = reactive({
-      lista:[...alumnos]
+      lista:[...cargarAlumnos()]
     });
 
     document.addEventListener('submit',e =>{
@@ -58,6 +73,7 @@
         const formData = new FormData(e.target);
         const agregarAlumno = Object.fromEntries(formData);
         data.lista.push(agregarAlumno);
+        guardarEnLocal();
         e.target.reset();
         document.querySelector('#formulario').close();
       }
@@ -65,6 +81,7 @@
         e.preventDefault();
         const formData = new FormData(e.target);
         data.lista[data.indexEditar] = Object.fromEntries(formData);
+        guardarEnLocal();
         document.querySelector('#modal-editar').close();
       }
     });
@@ -82,7 +99,10 @@
 
   if (e.target.matches('.btn-estrella')) {
     e.stopPropagation();
-    e.target.textContent = e.target.textContent === '☆' ? '★' : '☆';
+    const tarjeta = e.target.closest('.alumno-lista');
+    const alumno = data.lista[Number(tarjeta.dataset.index)];
+    alumno.favorito = !alumno.favorito;
+    guardarEnLocal();
     return;
   }
 
@@ -109,6 +129,7 @@
     const confirmar = window.confirm("¿Estás seguro de que deseas eliminar este alumno?");
     if (confirmar) {
       data.lista.splice(data.indexEditar, 1);
+      guardarEnLocal();
       console.log("Alumno eliminado correctamente.");
       document.querySelector('#modal-editar')?.close();
        }
@@ -137,7 +158,7 @@
           <input type="text" name="comision" placeholder="Comisión" required />
           <input type="text" name="legajo" placeholder="Legajo" required />
           <div class="form-acciones">
-            <button type="button" id="btn-cerrar">Cancelar</button>
+            <button type="button" id="btn-cerrar" class="btn-cancelar btn-cerrar-modal">Cancelar</button>
             <button type="submit" class="btn-guardar">Guardar</button>
           </div>
         </form>
@@ -163,14 +184,14 @@
       <ul>
         ${() => data.lista.map((a,index) => 
           html`<li class="alumno-lista" data-index="${index}">
-          <button class="btn-estrella" title="Favorito">☆</button>
-          <b>${a.apellido}</b> ${a.nombre}
-          <br> 
-          <b>${a.telefono}</b> 
-          <br>
-          <b>${a.github}</b>
-          <hr>
-          <b>${a.comision}‧ ${a.legajo}</b>
+          <button class="btn-estrella" title="Favorito">${() => a.favorito ? '★' : '☆'}</button>
+         <div class="alumno-nombre">
+              <span class="alumno-apellido">${a.apellido}</span> ${a.nombre}
+            </div>
+            <div class="alumno-telefono">${a.telefono}</div>
+            <div class="alumno-github">@${a.github}</div>
+            <hr>
+            <div class="alumno-meta">${a.comision} ‧ ${a.legajo}</div>
           </li>`)}
       </ul>
     `(app)
