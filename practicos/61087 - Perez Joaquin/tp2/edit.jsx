@@ -17,7 +17,7 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
-function App() {
+function App(resultado) {
     const {exit} = useApp();
     
     useInput((tecla, key) => {
@@ -38,6 +38,43 @@ function App() {
     );
 }
 
-const app = render(<App />);
+
+const texto = await readFile("empleados.csv","utf-8") 
+// console.log(texto)
+
+function parseTexto(texto) {
+    const fila = texto.trim().split('\n')
+    const header = fila[0]
+    const campo = header.trim().split(',')
+    const registros = 
+    fila.slice(1).map(fila => fila.trim().split(','))
+
+    let tabla = []
+    tabla.push(campo,registros)
+    
+    return tabla 
+    
+    
+}
+const resultado = parseTexto(texto)
+
+
+function parseObjeto(resultado) {
+    
+    const objetos = resultado[1].map(registro =>{
+        const objeto = {}
+
+        for (let i = 0; i < resultado[0].length; i++) {
+            objeto[resultado[0] [i]] = registro[i];
+            
+        }
+        return objeto
+    })
+    console.log(objetos)
+    
+}
+parseObjeto(resultado)
+
+const app = render(<App resultado={resultado} />);
 await app.waitUntilExit();
 console.clear();

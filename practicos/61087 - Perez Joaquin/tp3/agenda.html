@@ -16,6 +16,15 @@
 </head>
 <body>
   <main id="app"></main>
+  
+
+  <article>
+    <header>
+      <span>
+
+      </span>
+    </header>
+  </article>
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
@@ -28,6 +37,51 @@
         ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
       </ul>
     `(app)
+    
+    const estado = reactive({
+      alumnos : alumnos,
+      busqueda : '',
+      alumSel : null 
+    })  
+
+    async function fichasAlumnos() {
+      const datosGuardados = localStorage.getItem('alumnos')
+      if (datosGuardados) {
+        estado.alumnos = JSON.parse(datosGuardados)
+      }else{
+        try {
+          const respuesta = await fetch('./alumnos.json')
+          const datos = await respuesta.json()
+          estado.alumnos = datos
+          guardar()
+        } catch (error) {
+          console.error("Error al cargar alumno",error)          
+        }
+      }
+    }
+    
+    function guradar() {
+      localStorage.setItem('alumnos',JSON.stringify(estado.alumnos))
+    }
+
+    function buscar () {
+      const texto = estado.busqueda.toLowerCase()
+      let resultado = state.alumnos.filter(a => 
+        a.nombre.toLowerCase().includes(texto) || 
+        a.apellido.toLowerCase().includes(texto) ||
+        a.legajo.includes(texto) ||
+        a.github.toLowerCase().includes(texto)
+    )}
+
+    resultado.sort((a, b) => {
+    if (a.favorito !== b.favorito) {
+      return a.favorito ? -1 : 1;
+    }
+    const cmpApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' });
+    if (cmpApellido !== 0) return cmpApellido;
+      return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+    });
+
   </script>
 </body>
 </html>
