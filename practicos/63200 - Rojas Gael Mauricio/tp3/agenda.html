@@ -147,9 +147,29 @@
   <main id="app"></main>
 
   <script type="module">
-    import { html } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import datosIniciales from './alumnos.json' with { type: 'json' }
 
+    /* ===== 1) ESTADO ===== */
+    const CLAVE = 'agenda-alumnos'
+
+    function cargarAlumnos() {
+      const guardado = localStorage.getItem(CLAVE)
+      if (guardado) return JSON.parse(guardado)          // ya había datos guardados
+      localStorage.setItem(CLAVE, JSON.stringify(datosIniciales)) // primera vez: usar alumnos.json
+      return datosIniciales
+    }
+
+    const state = reactive({
+      alumnos: cargarAlumnos()
+    })
+
+    /* ===== 2) FUNCIONES QUE ACTUALIZAN EL ESTADO ===== */
+    function guardar() {
+      localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
+    }
+
+    /* ===== 3) INTERFAZ ===== */
     html`
       <header>
         <h1>Agenda</h1>
@@ -160,7 +180,7 @@
       </header>
 
       <section>
-        ${alumnos.map(a => html`<article><h2>${a.apellido} <span>${a.nombre}</span></h2></article>`)}
+        ${() => state.alumnos.map(a => html`<article><h2>${a.apellido} <span>${a.nombre}</span></h2></article>`.key(a.id))}
       </section>
 
       <dialog></dialog>
