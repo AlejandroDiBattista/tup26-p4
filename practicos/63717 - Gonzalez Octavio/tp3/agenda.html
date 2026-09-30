@@ -5,29 +5,579 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f4f5f3;
+      color: #222;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    header.principal {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      gap: 16px;
+
+      h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+
+      .acciones-cabecera {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .input-busqueda {
+          padding: 8px 16px;
+          border-radius: 20px;
+          border: 1px solid #d1d5db;
+          background: #ffffff;
+          font-size: 0.95rem;
+          outline: none;
+          min-width: 220px;
+
+          &:focus {
+            border-color: #374151;
+          }
+        }
+
+        .btn-agregar {
+          background: #2b332b;
+          color: white;
+          border: none;
+          padding: 8px 18px;
+          border-radius: 20px;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+
+          &:hover {
+            background: #1f261f;
+          }
+        }
+      }
+    }
+
+    .listado {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .sin-alumnos {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #6b7280;
+      font-size: 1.1rem;
+      padding: 40px 0;
+      margin: 0;
+    }
+
+    .tarjeta {
+      background: #ffffff;
+      border: 1px solid #e1e4dc;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 180px;
+      cursor: pointer;
+      outline: none;
+
+      &:focus-visible {
+        outline: 2px solid #2b332b;
+        outline-offset: 2px;
+      }
+
+      .tarjeta-cabecera {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        h2 {
+          margin: 0;
+          font-size: 1.15rem;
+          font-family: Georgia, serif;
+          line-height: 1.2;
+
+          .apellido {
+            font-weight: bold;
+            color: #1f2937;
+          }
+
+          .nombre {
+            font-weight: normal;
+            color: #4b5563;
+          }
+        }
+
+        .btn-favorito {
+          background: none;
+          border: none;
+          font-size: 1.4rem;
+          cursor: pointer;
+          color: #71716b;
+          padding: 0;
+          line-height: 1;
+
+          &.activo {
+            color: #6b6947;
+          }
+        }
+      }
+
+      .tarjeta-contacto {
+        font-style: normal;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .telefono {
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .github {
+          color: #6b7280;
+          font-size: 0.95rem;
+        }
+      }
+
+      .tarjeta-pie {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+        color: #555;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+    }
+
+    dialog {
+      border: 1px solid #d9ded9;
+      border-radius: 20px;
+      padding: 28px;
+      width: 520px;
+      max-width: 90vw;
+      background: #ffffff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+      }
+
+      h2 {
+        margin: 0 0 6px;
+        font-size: 1.4rem;
+        color: #111;
+      }
+
+      p {
+        margin: 0 0 20px;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .fila-campos {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .campo {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+          }
+
+          input {
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: #f9fafb;
+            outline: none;
+
+            &:focus {
+              border-color: #111;
+              background: #fff;
+            }
+          }
+        }
+
+        .acciones-dialogo {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 10px;
+
+          .btn-eliminar {
+            background: #fff;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+
+            &:hover {
+              background: #fef2f2;
+            }
+          }
+
+          .grupo-botones {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+
+            .btn-guardar {
+              background: #2b332b;
+              color: #fff;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 10px;
+              font-size: 0.95rem;
+              font-weight: 600;
+              cursor: pointer;
+            }
+
+            .btn-cancelar {
+              background: #fff;
+              color: #374151;
+              border: 1px solid #d1d5db;
+              padding: 10px 16px;
+              border-radius: 10px;
+              font-size: 0.95rem;
+              font-weight: 600;
+              cursor: pointer;
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 900px) {
+      .listado {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      header.principal {
+        flex-direction: column;
+        align-items: stretch;
+
+        .acciones-cabecera {
+          flex-direction: column;
+        }
+      }
+
+      .listado {
+        grid-template-columns: 1fr;
+      }
+
+      dialog form .fila-campos {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
+  <dialog id="dialogo-alumno">
+    <h2 id="dialogo-titulo">Agregar alumno</h2>
+    <p id="dialogo-subtitulo">Completá los datos del alumno.</p>
+    <form id="form-alumno">
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="campo-apellido">Apellido</label>
+          <input type="text" id="campo-apellido" name="apellido" required />
+        </div>
+        <div class="campo">
+          <label for="campo-nombre">Nombre</label>
+          <input type="text" id="campo-nombre" name="nombre" required />
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="campo-legajo">Legajo</label>
+          <input type="text" id="campo-legajo" name="legajo" required />
+        </div>
+        <div class="campo">
+          <label for="campo-comision">Comisión</label>
+          <input type="text" id="campo-comision" name="comision" required />
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <div class="campo">
+          <label for="campo-telefono">Teléfono</label>
+          <input type="text" id="campo-telefono" name="telefono" required />
+        </div>
+        <div class="campo">
+          <label for="campo-github">GitHub</label>
+          <input type="text" id="campo-github" name="github" required />
+        </div>
+      </div>
+
+      <div class="acciones-dialogo">
+        <button type="button" class="btn-eliminar" id="btn-eliminar">Eliminar</button>
+        <div class="grupo-botones">
+          <button type="submit" class="btn-guardar">Guardar</button>
+          <button type="button" class="btn-cancelar" id="btn-cancelar">Cancelar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
+    const datosGuardados = localStorage.getItem('alumnos')
+    let listaInicial = []
+
+    if (datosGuardados) {
+      listaInicial = JSON.parse(datosGuardados)
+    } else {
+      listaInicial = alumnosIniciales
+      localStorage.setItem('alumnos', JSON.stringify(listaInicial))
+    }
+
+    const estado = reactive({
+      alumnos: listaInicial,
+      busqueda: ''
+    })
+
+    let idAlumnoEditando = null
+
+    function guardarEnStorage() {
+      localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    }
+
+    function ordenarAlumnos(lista) {
+      return [...lista].sort((a, b) => {
+        if (a.favorito !== b.favorito) {
+          return a.favorito ? -1 : 1
+        }
+        const cmpApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+        if (cmpApellido !== 0) {
+          return cmpApellido
+        }
+        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      })
+    }
+
+    function toggleFavorito(alumno, e) {
+      if (e) e.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      estado.alumnos = [...estado.alumnos]
+      guardarEnStorage()
+    }
+
+    function normalizar(texto) {
+      return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    }
+
+    function obtenerAlumnos() {
+      const termino = normalizar(estado.busqueda.trim())
+      let lista = estado.alumnos
+
+      if (termino !== '') {
+        lista = lista.filter(a => {
+          const nombreCompleto = normalizar(`${a.apellido} ${a.nombre}`)
+          return nombreCompleto.includes(termino)
+        })
+      }
+
+      return ordenarAlumnos(lista)
+    }
+
+    const dialogo = document.getElementById('dialogo-alumno')
+    const formulario = document.getElementById('form-alumno')
+    const botonCancelar = document.getElementById('btn-cancelar')
+    const botonEliminar = document.getElementById('btn-eliminar')
+    const tituloDialogo = document.getElementById('dialogo-titulo')
+    const subtituloDialogo = document.getElementById('dialogo-subtitulo')
+
+    function abrirAgregar() {
+      idAlumnoEditando = null
+      tituloDialogo.textContent = 'Agregar alumno'
+      subtituloDialogo.textContent = 'Completá los datos del alumno.'
+      botonEliminar.style.display = 'none'
+      formulario.reset()
+      dialogo.showModal()
+    }
+
+    function abrirEdicion(alumno) {
+      idAlumnoEditando = alumno.id
+      tituloDialogo.textContent = 'Editar alumno'
+      subtituloDialogo.textContent = 'Actualizá los datos del alumno.'
+      botonEliminar.style.display = 'inline-block'
+
+      formulario.apellido.value = alumno.apellido
+      formulario.nombre.value = alumno.nombre
+      formulario.legajo.value = alumno.legajo
+      formulario.comision.value = alumno.comision
+      formulario.telefono.value = alumno.telefono
+      formulario.github.value = alumno.github
+
+      dialogo.showModal()
+    }
+
+    function cerrarDialogo() {
+      dialogo.close()
+    }
+
+    botonCancelar.addEventListener('click', cerrarDialogo)
+
+    botonEliminar.addEventListener('click', () => {
+      if (idAlumnoEditando !== null) {
+        estado.alumnos = estado.alumnos.filter(a => a.id !== idAlumnoEditando)
+        guardarEnStorage()
+        cerrarDialogo()
+      }
+    })
+
+    formulario.addEventListener('submit', (e) => {
+      e.preventDefault()
+
+      const apellido = formulario.apellido.value.trim()
+      const nombre = formulario.nombre.value.trim()
+      const legajo = formulario.legajo.value.trim()
+      const comision = formulario.comision.value.trim()
+      const telefono = formulario.telefono.value.trim()
+      const github = formulario.github.value.trim()
+
+      if (!apellido || !nombre || !legajo || !comision || !telefono || !github) {
+        return
+      }
+
+      if (idAlumnoEditando !== null) {
+        const alumno = estado.alumnos.find(a => a.id === idAlumnoEditando)
+        if (alumno) {
+          alumno.apellido = apellido
+          alumno.nombre = nombre
+          alumno.legajo = legajo
+          alumno.comision = comision
+          alumno.telefono = telefono
+          alumno.github = github
+          estado.alumnos = [...estado.alumnos]
+          guardarEnStorage()
+        }
+      } else {
+        const nuevoAlumno = {
+          id: Date.now(),
+          apellido,
+          nombre,
+          legajo,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        }
+        estado.alumnos = [...estado.alumnos, nuevoAlumno]
+        guardarEnStorage()
+      }
+
+      cerrarDialogo()
+    })
 
     const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+
+    const vista = html`
+      <header class="principal">
+        <h1>Agenda</h1>
+        <div class="acciones-cabecera">
+          <input 
+            type="search" 
+            placeholder="Buscar alumno..." 
+            class="input-busqueda"
+            @input="${(e) => { estado.busqueda = e.target.value }}"
+            value="${() => estado.busqueda}"
+          />
+          <button class="btn-agregar" type="button" @click="${abrirAgregar}">+ Agregar</button>
+        </div>
+      </header>
+
+      <section class="listado">
+        ${() => {
+          const lista = obtenerAlumnos()
+          if (lista.length === 0) {
+            return html`<p class="sin-alumnos">No hay alumnos para mostrar</p>`
+          }
+          return lista.map(alumno => html`
+            <article 
+              class="tarjeta" 
+              tabindex="0"
+              @click="${() => abrirEdicion(alumno)}"
+              @keydown="${(e) => {
+                if (e.key === ' ' || e.code === 'Space') {
+                  e.preventDefault()
+                  toggleFavorito(alumno, e)
+                } else if (e.key === 'Enter') {
+                  abrirEdicion(alumno)
+                }
+              }}"
+            >
+              <header class="tarjeta-cabecera">
+                <h2>
+                  <span class="apellido">${alumno.apellido}</span>
+                  <span class="nombre">${alumno.nombre}</span>
+                </h2>
+                <button 
+                  class="${() => alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}" 
+                  type="button"
+                  @click="${(e) => toggleFavorito(alumno, e)}"
+                >
+                  ${() => alumno.favorito ? '★' : '☆'}
+                </button>
+              </header>
+
+              <address class="tarjeta-contacto">
+                <div class="telefono">${alumno.telefono}</div>
+                <div class="github">@${alumno.github}</div>
+              </address>
+
+              <footer class="tarjeta-pie">
+                <span>${alumno.comision} · ${alumno.legajo}</span>
+              </footer>
+            </article>
+          `)
+        }}
+      </section>
+    `
+
+    vista(app)
   </script>
 </body>
 </html>
