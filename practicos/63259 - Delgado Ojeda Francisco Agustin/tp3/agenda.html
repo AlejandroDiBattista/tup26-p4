@@ -1,33 +1,224 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 20px 60px; font: 16px/1.4 system-ui, sans-serif; background: #f5f6f4; color: #1e2824; }
+    main { max-width: 1104px; margin: auto; }
+
+    header.barra {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;
+      & h1 { margin: 0; font-size: 2rem; }
+      & div { display: flex; gap: 12px; }
+      & input { width: 230px; padding: 10px 18px; border: 1px solid #dcdfdc; border-radius: 99px; outline: none; background: #fff; font: inherit; }
+      & button { background: #283730; color: #fff; border: 0; padding: 10px 22px; border-radius: 99px; font: inherit; font-weight: 600; cursor: pointer; }
+    }
+
+    section.grilla {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+      @media (max-width: 600px) { grid-template-columns: 1fr; }
+    }
+
+    article {
+      background: #fff; border: 1px solid #e3e7e3; border-radius: 16px; padding: 22px 24px 18px;
+      display: flex; flex-direction: column; cursor: pointer; outline: none;
+      &:hover { border-color: #c9d2cb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+      &:focus-visible { outline: 2px solid #283730; }
+
+      & header {
+        display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;
+        & h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #4b5852;
+          & b { font-family: Georgia, serif; font-size: 1.35rem; color: #1e2824; margin-right: 6px; }
+        }
+        & button { background: none; border: 0; font-size: 1.5rem; line-height: 1; color: #867345; cursor: pointer; padding: 0; }
+      }
+
+      & address {
+        font-style: normal; display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px;
+        & div { font-weight: 600; }
+        & span { color: #55635c; font-size: 0.9rem; }
+      }
+
+      & footer {
+        border-top: 1px solid #edf0ed; padding-top: 14px; margin-top: auto;
+        font-size: 0.85rem; font-weight: 600; color: #55635c; letter-spacing: 0.06em;
+      }
+    }
+
+    .sin-resultados { text-align: center; padding: 48px; background: #fff; border: 1px dashed #d9ded9; border-radius: 16px; margin-top: 20px; color: #63726a; }
+
+    dialog {
+      border: 1px solid #d9ded9; border-radius: 20px; padding: 28px 32px; width: 560px; max-width: calc(100vw - 32px);
+      &::backdrop { background: rgba(30,40,35,0.45); backdrop-filter: blur(4px); }
+      & h2 { margin: 0 0 4px; font-size: 1.4rem; }
+      & p { margin: 0 0 20px; color: #55635c; font-size: 0.9rem; }
+
+      & .campos {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin-bottom: 24px;
+        & label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; font-weight: 600; color: #374151;
+          & input { padding: 10px 14px; border: 1px solid #d9ded9; border-radius: 10px; background: #f8faf8; font: inherit; outline: none;
+            &:focus { border-color: #1e2824; background: #fff; box-shadow: 0 0 0 1px #1e2824; }
+          }
+        }
+      }
+
+      & footer {
+        display: flex; justify-content: space-between; align-items: center;
+        & button { padding: 10px 20px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+        & .eliminar { color: #d14343; background: #fff; border: 1px solid #fadcdc; }
+        & .guardar { background: #283730; color: #fff; border: 0; margin-left: auto; margin-right: 10px; }
+        & .cancelar { background: #fff; color: #1e2824; border: 1px solid #d9ded9; }
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import iniciales from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+    const guardados = localStorage.getItem('alumnos')
+    const datos = guardados ? JSON.parse(guardados) : iniciales
+    if (!guardados) localStorage.setItem('alumnos', JSON.stringify(datos))
+
+    const estado = reactive({
+      alumnos: datos,
+      filtro: '',
+      actual: null,
+      modo: 'agregar'
+    })
+
+    const guardar = () => localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    const normalizar = t => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+    function alumnosFiltrados() {
+      const f = normalizar(estado.filtro).match(/\S+/g) || []
+      return estado.alumnos
+        .filter(a => f.every(t => normalizar(`${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`).includes(t)))
+        .sort((a, b) => (b.favorito - a.favorito) || a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) || a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }))
+    }
+
+    function alternarFavorito(alumno, e) {
+      e?.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      estado.alumnos = [...estado.alumnos]
+      guardar()
+    }
+
+    function abrir(alumno = null) {
+      estado.modo = alumno ? 'editar' : 'agregar'
+      estado.actual = alumno
+      const form = document.getElementById('form')
+      form.reset()
+      if (alumno) {
+        ['apellido', 'nombre', 'legajo', 'comision', 'telefono', 'github'].forEach(k => {
+          if (form[k]) form[k].value = alumno[k] || ''
+        })
+      }
+      document.getElementById('dialogo').showModal()
+      form.apellido.focus()
+    }
+
+    function guardarAlumno(e) {
+      e.preventDefault()
+      const form = document.getElementById('form')
+      const d = Object.fromEntries(new FormData(form))
+      d.github = d.github.replace(/^@/, '')
+
+      if (estado.modo === 'editar' && estado.actual) {
+        Object.assign(estado.alumnos.find(a => a.id === estado.actual.id), d)
+      } else {
+        const id = estado.alumnos.length ? Math.max(...estado.alumnos.map(a => a.id)) + 1 : 1
+        estado.alumnos.push({ ...d, id, favorito: false })
+      }
+      estado.alumnos = [...estado.alumnos]
+      guardar()
+      document.getElementById('dialogo').close()
+    }
+
+    function eliminarAlumno() {
+      if (estado.actual) {
+        estado.alumnos = estado.alumnos.filter(a => a.id !== estado.actual.id)
+        guardar()
+        document.getElementById('dialogo').close()
+      }
+    }
+
+    function Alumno(a) {
+      return html`
+        <article
+          tabindex="0"
+          @click="${() => abrir(a)}"
+          @keydown="${e => {
+            if (e.key === 'Enter') abrir(a)
+            if (e.key === ' ') { e.preventDefault(); alternarFavorito(a, e) }
+          }}"
+        >
+          <header>
+            <h2><b>${a.apellido}</b> ${a.nombre}</h2>
+            <button type="button" @click="${e => alternarFavorito(a, e)}">
+              ${() => a.favorito ? '★' : '☆'}
+            </button>
+          </header>
+          <address>
+            <div>${a.telefono}</div>
+            <span>@${a.github}</span>
+          </address>
+          <footer>${a.comision} · ${a.legajo}</footer>
+        </article>
+      `
+    }
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header class="barra">
+        <h1>Agenda</h1>
+        <div>
+          <input
+            type="search"
+            placeholder="Buscar alumno..."
+            @input="${e => estado.filtro = e.target.value}"
+          />
+          <button type="button" @click="${() => abrir()}">+ Agregar</button>
+        </div>
+      </header>
+
+      <section class="grilla">
+        ${() => alumnosFiltrados().map(a => Alumno(a).key(a.id))}
+      </section>
+
+      <p class="sin-resultados" hidden="${() => alumnosFiltrados().length > 0}">
+        No hay alumnos para mostrar
+      </p>
+
+      <dialog id="dialogo" @click="${e => e.target.id === 'dialogo' && e.target.close()}">
+        <form id="form" method="dialog" @submit="${guardarAlumno}">
+          <h2>${() => estado.modo === 'editar' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p>${() => estado.modo === 'editar' ? 'Actualizá los datos del alumno.' : 'Ingresá los datos del alumno.'}</p>
+          <div class="campos">
+            <label>Apellido <input name="apellido" required /></label>
+            <label>Nombre <input name="nombre" required /></label>
+            <label>Legajo <input name="legajo" required /></label>
+            <label>Comisión <input name="comision" required /></label>
+            <label>Teléfono <input name="telefono" type="tel" required /></label>
+            <label>GitHub <input name="github" required /></label>
+          </div>
+          <footer>
+            ${() => estado.modo === 'editar'
+              ? html`<button type="button" class="eliminar" @click="${eliminarAlumno}">Eliminar</button>`
+              : ''
+            }
+            <button type="submit" class="guardar">Guardar</button>
+            <button type="button" class="cancelar" @click="${() => document.getElementById('dialogo').close()}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
+    `(document.getElementById('app'))
   </script>
 </body>
 </html>
