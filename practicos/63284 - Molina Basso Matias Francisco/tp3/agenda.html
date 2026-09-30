@@ -1,32 +1,408 @@
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Agenda</title>
+
   <style>
+
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+
     main { width: 1104px; max-width: 100%; margin: auto; }
+
     h1 { margin: 0 0 24px; }
+    header {
+    margin-bottom: 24px;
+
+    & h1 {
+    margin-bottom: 16px;
+  }
+
+  & input {
+    width: 70%;
+    padding: 10px;
+    border: 1px solid #d9ded9;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+
+  & button {
+    padding: 10px 16px;
+    margin-left: 8px;
+    border: 1px solid #d9ded9;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+  }
+}
+
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
+
     li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+
+     article {
+      cursor: pointer;
+
+      & h2 {
+      margin-bottom: 8px;
+     }
+
+     & address {
+     font-style: normal;
+     }
+
+     &:hover {
+      transform: translateY(-2px);
+    }
+
+    &:focus {
+     outline: 3px solid #555;
+     outline-offset: 3px;
+     }
+    }
+    dialog {
+     width: 450px;
+     max-width: calc(100% - 40px);
+     padding: 0;
+     border: 1px solid #d9ded9;
+     border-radius: 16px;
+
+    &::backdrop {
+     background: rgb(0 0 0 / 40%);
+    }
+
+    & form {
+     display: grid;
+     gap: 12px;
+     padding: 24px;
+    }
+
+    & h2 {
+     margin: 0 0 8px;
+    }
+
+    & label {
+     display: grid;
+     gap: 5px;
+    }
+
+    & input {
+     padding: 9px;
+     border: 1px solid #d9ded9;
+     border-radius: 8px;
+     font-size: 16px;
+    }
+
+    & button {
+     padding: 9px;
+     border: 1px solid #d9ded9;
+     border-radius: 8px;
+     background: white;
+     cursor: pointer;
+    }
+  }
+
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    @media (max-width: 700px) {
+
+     body {
+    padding: 20px 12px;
+     }
+
+     header {
+    & input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+     }
+
+     & button {
+      width: 100%;
+      margin-left: 0;
+     }
+   }
+
+   ul {
+    grid-template-columns: 1fr;
+   }
+
+    dialog {
+     max-width: calc(100% - 24px);
+    }
+}
+
   </style>
 </head>
 <body>
-  <main id="app"></main>
 
+  <main id="app"></main>
   <script type="module">
+
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+
     import alumnos from './alumnos.json' with { type: 'json' }
 
     const app = document.getElementById('app')
+    
+    let alumnosGuardados = localStorage.getItem("alumnos")
+    let datosAlumnos
+    if (alumnosGuardados) {
+      datosAlumnos = JSON.parse(alumnosGuardados)
+    } else {
+      datosAlumnos = alumnos
+      localStorage.setItem("alumnos", JSON.stringify(alumnos))
+    }
+    const estado = reactive({
+      alumnos: datosAlumnos,
+      busqueda: "",
+      editando: false,
+      alumnoSeleccionado: null,
+    })
+    watch(() => {
+      localStorage.setItem("alumnos", JSON.stringify(estado.alumnos))
+    })
+
+    function ordenarAlumnos(alumnos) {
+      let alumnosOrdenados = [...alumnos]
+
+      alumnosOrdenados.sort((a, b) => {
+        if (a.favorito && !b.favorito) {
+          return -1
+        }
+        if (!a.favorito && b.favorito) {
+          return 1
+        }
+        let comparacionApellido = a.apellido.localeCompare(b.apellido, "es", {
+          sensitivity: "base"
+        
+        
+      })
+      if (comparacionApellido !==0) {
+        return comparacionApellido
+      }
+      return a.nombre.localeCompare(b.nombre, "es", {
+        sensitivity: "base"
+      })
+    })
+
+      return alumnosOrdenados
+    }
+  
+    function buscarAlumnos(alumnos){
+      let texto = estado.busqueda.toLowerCase()
+      return alumnos.filter(a => {
+        return a.nombre.toLowerCase().includes(texto) ||
+               a.apellido.toLowerCase().includes(texto)       
+      })
+    }
+
+    function cambiarFavorito(id){
+      let alumno = estado.alumnos.find(a => a.id === id)
+      if (alumno) {
+        alumno.favorito = !alumno.favorito
+      }
+    }
+    function abrirFormularioNuevo(){
+      estado.editando = false
+      estado.alumnoSeleccionado = null
+
+      let formulario = document.querySelector("#formularioAlumno form")
+      formulario.reset()
+      document.getElementById("formularioAlumno").showModal()
+    }
+    function abrirFormularioEditar(alumno){
+      estado.editando = true
+      estado.alumnoSeleccionado = alumno
+
+      let formulario = document.querySelector("#formularioAlumno form")
+
+      formulario.apellido.value = alumno.apellido
+      formulario.nombre.value = alumno.nombre
+      formulario.legajo.value = alumno.legajo
+      formulario.comision.value = alumno.comision
+      formulario.telefono.value = alumno.telefono
+      formulario.github.value = alumno.github
+
+      document.getElementById("formularioAlumno").showModal()
+
+      
+    }
+    function guardarAlumno(e){
+      e.preventDefault()
+      let formulario = e.target
+      let datos = new FormData(formulario)
+      
+      if (estado.editando){
+        estado.alumnos = estado.alumnos.map(a => {
+          if (a.id === estado.alumnoSeleccionado.id){
+            return {
+              ...a,
+              apellido: datos.get("apellido"),
+              nombre: datos.get("nombre"),
+              legajo: datos.get("legajo"),
+              comision: datos.get("comision"),
+              telefono: datos.get("telefono"),
+              github: datos.get("github")
+            }
+          }
+          return a
+        })
+
+      } else {
+
+
+      let  nuevoAlumno = {
+        id: Date.now(),
+        apellido: datos.get("apellido"),
+        nombre: datos.get("nombre"),
+        legajo: datos.get("legajo"),
+        comision: datos.get("comision"),
+        telefono: datos.get("telefono"),
+        github: datos.get("github"),
+        favorito: false
+      }
+      estado.alumnos = [...estado.alumnos, nuevoAlumno]
+    }
+      formulario.reset()
+      document.getElementById("formularioAlumno").close()
+    }
+
+    function eliminarAlumno(){
+      if (estado.alumnoSeleccionado) {
+        estado.alumnos = estado.alumnos.filter(a => {
+          return a.id !== estado.alumnoSeleccionado.id
+        })
+        document.getElementById("formularioAlumno").close()
+      }
+    }
+
+    function manejarTeclado(e, alumno){
+      if (e.key === "Enter") {
+        abrirFormularioEditar(alumno)
+      }
+    }
+    function manejarEspacio(e, alumno){
+      if (e.key === " ") {
+        e.preventDefault()
+        cambiarFavorito(alumno.id)
+      }
+    }
+
+
+
     html`
+    <header>
       <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+      <input
+      type= "search"
+      placeholder= "Buscar alumno..."
+      @input="${e => estado.busqueda = e.target.value}"
+      >
+      <button @click="${() => abrirFormularioNuevo()}">
+        Agregar alumno
+        </button>
+        </header> 
+      <dialog id="formularioAlumno">
+        <form @submit="${e => guardarAlumno(e)}">
+          <h2>Alumno</h2>
+
+          <label>
+          Apellido:
+          <input type="text" name="apellido" required>
+          </label>
+          <label>
+            Nombre:
+            <input type="text" name="nombre" required>
+            </label>
+          <label>
+            Legajo:
+            <input type="text" name="legajo" required>
+            </label>
+            
+          <label>
+              Comision:
+              <input type="text" name="comision" required>
+              </label>
+              
+          <label>
+              Telefono:
+              <input type= "text" name="telefono" required>
+              </label>
+            <label>
+              GitHub:
+              <input type= "text" name="github" required>
+              </label>
+           <button type="submit">Guardar</button>
+
+            ${() => estado.editando
+             ? html`
+             <button
+            type="button"
+            @click="${() => eliminarAlumno()}"
+            >
+            Eliminar
+            </button>
+            `
+           : ""
+           }
+
+           <button
+           type="button"
+           @click="${() => document.getElementById('formularioAlumno').close()}"
+           >
+           Cancelar
+           </button>
+           </form>
+          </dialog>
+
+          <section>
+
+      ${() => buscarAlumnos(estado.alumnos).length === 0 
+      ? html`<p>No se encontraron alumnos</p>`
+      : ""
+      }
+
+      <ul>  
+        ${() => ordenarAlumnos(buscarAlumnos(estado.alumnos)).map(a => html`
+          <li>
+            <article 
+            tabindex="0"
+            @click="${() => abrirFormularioEditar(a)}"
+            @keyup="${e => manejarTeclado(e, a)}"
+            @keypress="${e => manejarEspacio(e, a)}"
+            >
+            <button @click="${e => {
+              e.stopPropagation()
+              cambiarFavorito(a.id)
+            }}">
+              ${a.favorito ? "Favorito" : "No favorito"}
+              </button>
+
+           <h2> ${a.apellido} </h2>
+
+          <p>${a.nombre}</p>
+
+          <address>
+            <p>Telefono: ${a.telefono}</p>
+            <p>GitHub: ${a.github}</p>
+          </address>
+          <footer>
+            <p>Comision: ${a.comision}</p>
+            <p>Legajo: ${a.legajo}</p>
+            </footer>
+          </article>
+         </li>   
+
+        `)}
       </ul>
+      </section>
     `(app)
   </script>
 </body>
