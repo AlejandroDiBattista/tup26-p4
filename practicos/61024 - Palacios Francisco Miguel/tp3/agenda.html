@@ -3,31 +3,603 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
-  <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
-  </style>
+
+  <title>Agenda de alumnos</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    padding: 32px 20px;
+    font: 16px sans-serif;
+    color: #1f2937;
+    background: #f5f6f4;
+  }
+
+  main {
+    width: 1104px;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  .encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  .encabezado p {
+    margin: 6px 0 0;
+    color: #6b7280;
+  }
+
+  button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  #btn-agregar {
+    color: white;
+    background: #1f7a4d;
+  }
+
+  .controles {
+    margin-bottom: 20px;
+  }
+
+  .controles label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .controles input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font: inherit;
+    background: white;
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  li {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid #d9ded9;
+    border-radius: 16px;
+    background: white;
+  }
+
+  .alumno-apellido {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 18px;
+  }
+
+  .alumno-nombre {
+    display: block;
+    color: #6b7280;
+  }
+
+  .tarjeta-alumno {
+    text-align: left;
+  }
+
+  .tarjeta-alumno p {
+    margin: 8px 0;
+    color : #4b5563;
+  }
+
+  .tarjeta-alumno p:first-of-type {
+    margin-top: 16px;
+  }
+
+  .sin-resultados {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .boton-favorito {
+    float: right;
+    padding: 4px 8px;
+    font-size: 22px;
+    color: #d89b00;
+    background: transparent;
+  }
+
+  dialog {
+    width: min(420px, calc(100vw - 40px));
+    max-width: calc(100% - 40px);
+    border: 0;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  
+  dialog::backdrop {
+  background: rgb(0 0 0 / 40%);
+  } 
+  dialog form{
+    display: grid;
+    gap: 10px;
+  }
+
+  dialog h2 {
+    margin: 0 0 10;
+  }
+
+  dialog input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+  }
+
+  .acciones-dialogo {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 700px) {
+    .encabezado {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    ul {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 </head>
+
 <body>
-  <main id="app"></main>
+
+  <main id="app">
+  <header class="encabezado">
+    <div>
+      <h1>Agenda de alumnos</h1>
+      <p>Agenda de alumnos de Programacion IV</p>
+    </div>
+      <button type="button" id="btn-agregar">+ Agregar</button>
+  </header>
+
+  <footer>
+    <address>Agenda de alumnos de Programación IV</address>
+  </footer>
+
+  <section class="controles" aria-label="Controles de la agenda">
+    <label for="Buscar">Buscar alumno:</label>
+    <input type="search" id="Buscar" name="Buscar" placeholder="Ingrese el nombre o apellido del alumno">
+  </section>
+
+  <section aria-label="Lista de alumnos">
+    <ul id="lista-alumnos"></ul>
+  </section>
+
+  <dialog id="dialog-agregar">
+  <form id="form-agregar">
+    <h2>Agregar alumno</h2>
+
+    <label for="apellido">Apellido</label>
+    <input type="text" id="apellido" name="apellido" required>
+
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" name="nombre" required>
+
+    <label for="legajo">Legajo</label>
+    <input type="text" id="legajo" name="legajo" required>
+
+    <label for="comision">Comisión</label>
+    <input type="text" id="comision" name="comision" required>
+
+    <label for="telefono">Teléfono</label>
+    <input type="text" id="telefono" name="telefono" required>
+
+    <label for="github">GitHub</label>
+    <input type="text" id="github" name="github" required>
+
+    <div class="acciones-dialogo">
+      <button type="button" id="btn-cancelar-agregar">
+        Cancelar
+      </button>
+
+      <button type="submit" id="btn-guardar-agregar">
+        Guardar
+      </button>
+    </div>
+  </form>
+</dialog>
+
+  <dialog id="dialog-editar">
+  <form id="form-editar">
+    <h2>Editar alumno</h2>
+
+    <label for="editar-apellido">Apellido</label>
+    <input type="text" id="editar-apellido" name="apellido" required>
+
+    <label for="editar-nombre">Nombre</label>
+    <input type="text" id="editar-nombre" name="nombre" required>
+
+    <label for="editar-legajo">Legajo</label>
+    <input type="text" id="editar-legajo" name="legajo" required>
+
+    <label for="editar-comision">Comisión</label>
+    <input type="text" id="editar-comision" name="comision" required>
+
+    <label for="editar-telefono">Teléfono</label>
+    <input type="text" id="editar-telefono" name="telefono" required>
+
+    <label for="editar-github">GitHub</label>
+    <input type="text" id="editar-github" name="github" required>
+
+    <div class="acciones-dialogo">
+      <button type="button" id="btn-eliminar-editar">
+        Eliminar
+      </button>
+
+      <button type="button" id="btn-cancelar-editar">
+        Cancelar
+      </button>
+
+      <button type="submit" id="btn-guardar-editar">
+        Guardar
+      </button>
+    </div>
+  </form>
+</dialog>
+  </main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+import alumnos from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+function cargarAlumnos() {
+  const guardados = localStorage.getItem('alumnos')
+
+  if (!guardados) {
+    return alumnos
+  }
+
+  try {
+    return JSON.parse(guardados)
+  } catch {
+    return alumnos
+  }
+}
+
+const estado = reactive({
+  alumnos: cargarAlumnos(),
+  busqueda: ''
+})
+
+function guardarAlumnos() {
+  localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+}
+
+function agregarAlumno(datos) {
+  const siguienteId = estado.alumnos.length === 0
+    ? 1
+    : Math.max(...estado.alumnos.map(alumno => alumno.id)) + 1
+
+  const nuevoAlumno = {
+    id: siguienteId,
+    apellido: datos.apellido,
+    nombre: datos.nombre,
+    legajo: datos.legajo,
+    comision: datos.comision,
+    telefono: datos.telefono,
+    github: datos.github,
+    favorito: false
+  }
+
+  estado.alumnos.push(nuevoAlumno)
+  guardarAlumnos()
+}
+
+function editarAlumno(id, datos) {
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumno.apellido = datos.apellido
+  alumno.nombre = datos.nombre
+  alumno.legajo = datos.legajo
+  alumno.comision = datos.comision
+  alumno.telefono = datos.telefono
+  alumno.github = datos.github
+
+  guardarAlumnos()
+}
+
+function eliminarAlumno(id) {
+  const indice = estado.alumnos.findIndex(alumno => alumno.id === id)
+
+  if (indice === -1) {
+    return
+  }
+
+  estado.alumnos.splice(indice, 1)
+  guardarAlumnos()
+
+  formularioEditar.reset()
+  alumnoEditandoId = null
+  dialogEditar.close()
+}
+ 
+function compararTexto(a, b) {
+  return a.localeCompare(b, 'es' , { sensitivity: 'base' })
+}
+
+
+function ordenarAlumnos(lista) {
+  return [...lista].sort((a, b) => {
+    if (a.favorito !== b.favorito) {
+      return Number(b.favorito) - Number(a.favorito)
+    }
+
+    const porApellido = compararTexto(a.apellido, b.apellido)
+    if (porApellido !== 0) {
+      return porApellido
+    }
+
+    return compararTexto(a.nombre, b.nombre)
+  })
+}
+
+function cambiarFavorito(id) {
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumno.favorito = !alumno.favorito
+  guardarAlumnos()
+}
+
+function filtrarAlumnos(lista) {
+  const texto = estado.busqueda.trim().toLocaleLowerCase()
+  if (texto === '') {
+    return lista
+  }
+
+  return lista.filter(alumno => {
+    return alumno.nombre.toLocaleLowerCase().includes(texto) ||
+      alumno.apellido.toLocaleLowerCase().includes(texto)
+  })
+}
+
+const lista = document.getElementById('lista-alumnos')
+
+let alumnoEditandoId = null
+
+const dialogEditar = document.getElementById('dialog-editar')
+const formularioEditar = document.getElementById('form-editar')
+const botonCancelarEditar = document.getElementById('btn-cancelar-editar')
+const botonEliminarEditar = document.getElementById('btn-eliminar-editar')
+
+botonEliminarEditar.addEventListener('click', () => {
+  if (alumnoEditandoId === null) {
+    return
+  }
+
+  eliminarAlumno(alumnoEditandoId)
+})
+
+function abrirEdicion(id) {
+  const alumno = estado.alumnos.find(alumno => alumno.id === id)
+  if (!alumno) {
+    return
+  }
+
+  alumnoEditandoId = id
+  formularioEditar.elements.apellido.value = alumno.apellido
+  formularioEditar.elements.nombre.value = alumno.nombre
+  formularioEditar.elements.legajo.value = alumno.legajo
+  formularioEditar.elements.comision.value = alumno.comision
+  formularioEditar.elements.telefono.value = alumno.telefono
+  formularioEditar.elements.github.value = alumno.github
+
+  dialogEditar.showModal()
+}
+
+lista.addEventListener('click', evento => {
+  const boton = evento.target.closest('.boton-favorito')
+  if (boton) {
+    const id = Number(boton.dataset.id)
+    if (!Number.isFinite(id)) {
+      return
+    }
+
+    cambiarFavorito(id)
+    return
+  }
+
+  const tarjeta = evento.target.closest('.tarjeta-alumno')
+  if (!tarjeta) {
+    return
+  }
+
+  const id = Number(tarjeta.dataset.id)
+  if (!Number.isFinite(id)) {
+    return
+  }
+
+  abrirEdicion(id)
+})
+
+lista.addEventListener('keydown', evento => {
+  const tarjeta = evento.target.closest('.tarjeta-alumno')
+  if (!tarjeta) {
+    return
+  }
+
+  if (evento.target.closest('.boton-favorito')) {
+    return
+  }
+
+  const id = Number(tarjeta.dataset.id)
+  if (!Number.isFinite(id)) {
+    return
+  }
+
+  if (evento.key === 'Enter') {
+    evento.preventDefault()
+    abrirEdicion(id)
+    return
+  }
+
+  if (evento.key === ' ' || evento.code === 'Space') {
+    evento.preventDefault()
+    cambiarFavorito(id)
+  }
+})
+
+const buscador = document.getElementById('Buscar')
+buscador.addEventListener('input', evento => {
+  estado.busqueda = evento.target.value
+})
+
+const botonAgregar = document.getElementById('btn-agregar')
+const dialogAgregar = document.getElementById('dialog-agregar')
+const formularioAgregar = document.getElementById('form-agregar')
+const botonCancelarAgregar = document.getElementById('btn-cancelar-agregar')
+
+botonAgregar.addEventListener('click', () => {
+  formularioAgregar.reset()
+  dialogAgregar.showModal()
+})
+
+botonCancelarAgregar.addEventListener('click', () => {
+  dialogAgregar.close()
+})
+
+botonCancelarEditar.addEventListener('click', () => {
+  formularioEditar.reset()
+  alumnoEditandoId = null
+  dialogEditar.close()
+})
+
+formularioAgregar.addEventListener('submit', evento => {
+  evento.preventDefault()
+
+  const datos = Object.fromEntries(new FormData(formularioAgregar).entries())
+  const alumno = {
+    apellido: datos.apellido?.trim() || '',
+    nombre: datos.nombre?.trim() || '',
+    legajo: datos.legajo?.trim() || '',
+    comision: datos.comision?.trim() || '',
+    telefono: datos.telefono?.trim() || '',
+    github: datos.github?.trim() || ''
+  }
+
+  if (!alumno.apellido || !alumno.nombre || !alumno.legajo || !alumno.comision || !alumno.telefono || !alumno.github) {
+    return
+  }
+
+  agregarAlumno(alumno)
+  formularioAgregar.reset()
+  dialogAgregar.close()
+})
+
+formularioEditar.addEventListener('submit', evento => {
+  evento.preventDefault()
+
+  if (alumnoEditandoId === null) {
+    return
+  }
+
+  const datos = Object.fromEntries(new FormData(formularioEditar).entries())
+  const alumnoActualizado = {
+    apellido: datos.apellido?.trim() || '',
+    nombre: datos.nombre?.trim() || '',
+    legajo: datos.legajo?.trim() || '',
+    comision: datos.comision?.trim() || '',
+    telefono: datos.telefono?.trim() || '',
+    github: datos.github?.trim() || ''
+  }
+
+  if (!alumnoActualizado.apellido || !alumnoActualizado.nombre || !alumnoActualizado.legajo || !alumnoActualizado.comision || !alumnoActualizado.telefono || !alumnoActualizado.github) {
+    return
+  }
+
+  editarAlumno(alumnoEditandoId, alumnoActualizado)
+  formularioEditar.reset()
+  alumnoEditandoId = null
+  dialogEditar.close()
+})
+
+html`
+  ${() => {
+    const filtrados = ordenarAlumnos(
+      filtrarAlumnos(estado.alumnos)
+    )
+
+   if (filtrados.length === 0) {
+  return [
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <li class="sin-resultados">
+        No hay alumnos que coincidan con la búsqueda.
+      </li>
+    `
+  ]
+}
+
+    return filtrados.map(alumno => html`
+<li>
+  <article class="tarjeta-alumno" data-id="${alumno.id}" tabindex="0">
+    <button
+      type="button"
+      class="boton-favorito"
+      data-id="${alumno.id}"
+      aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+    >
+      ${alumno.favorito ? '★' : '☆'}
+    </button>
+
+    <strong class="alumno-apellido">
+      ${alumno.apellido}
+    </strong>
+
+    <span class="alumno-nombre">
+      ${alumno.nombre}
+    </span>
+
+    <p><b>Legajo:</b> ${alumno.legajo}</p>
+    <p><b>Comisión:</b> ${alumno.comision}</p>
+    <p><b>Teléfono:</b> ${alumno.telefono}</p>
+    <p><b>GitHub:</b> ${alumno.github}</p>
+  </article>
+</li>
+    `)
+  }}
+`(lista)
   </script>
+
 </body>
 </html>
