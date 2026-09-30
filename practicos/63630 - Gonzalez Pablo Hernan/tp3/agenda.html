@@ -7,26 +7,299 @@
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+
+    header.principal {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+
+      h1 { margin: 0; font-family: Georgia, serif; }
+
+      .acciones-header {
+        display: flex;
+        gap: 12px;
+
+        input {
+          padding: 8px 14px;
+          border: 1px solid #d9ded9;
+          border-radius: 8px;
+          font-size: 14px;
+          width: 260px;
+        }
+
+        button {
+          padding: 8px 18px;
+          border: none;
+          border-radius: 8px;
+          background: #2f3a2f;
+          color: white;
+          cursor: pointer;
+        }
+      }
+    }
+
+    section.lista {
+      display: grid;
+      grid-template-columns: repeat(3, 360px);
+      justify-content: center;
+      gap: 12px;
+
+      @media (max-width: 1120px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      @media (max-width: 700px) { grid-template-columns: 1fr; }
+
+      .vacio {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #999;
+        padding: 40px 0;
+      }
+    }
+
+    article {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        b { font-family: Georgia, serif; font-size: 18px; }
+
+        button {
+          border: none;
+          background: none;
+          font-size: 18px;
+          cursor: pointer;
+        }
+      }
+
+      address {
+        font-style: normal;
+        margin: 8px 0;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      footer {
+        font-size: 12px;
+        letter-spacing: 1px;
+        color: #999;
+        border-top: 1px solid #eee;
+        padding-top: 8px;
+      }
+    }
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 24px;
+      width: 420px;
+      max-width: 90vw;
+
+      &::backdrop { background: rgba(0, 0, 0, 0.4); }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+
+        label { display: flex; flex-direction: column; font-size: 14px; }
+
+        .acciones {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 12px;
+        }
+
+        .acciones-editar {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: space-between;
+          margin-top: 12px;
+
+          .peligro { color: #c0392b; background: none; border: none; cursor: pointer; }
+        }
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive, component, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
+    function normalizar(texto) {
+      return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    }
+
+    const guardados = localStorage.getItem('alumnos')
+    const estado = reactive({
+      alumnos: guardados ? JSON.parse(guardados) : alumnosIniciales,
+      busqueda: '',
+      idEditando: null,
+    })
+
+    watch(() => {
+      localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+    })
+
+    function alumnosVisibles() {
+      const texto = normalizar(estado.busqueda)
+      return estado.alumnos
+        .filter(a => normalizar(a.apellido + ' ' + a.nombre).includes(texto))
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+          return normalizar(a.apellido + a.nombre).localeCompare(normalizar(b.apellido + b.nombre))
+        })
+    }
+
+    const borradorNuevo = reactive({
+      apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '',
+    })
+
+    function limpiarBorrador(b) {
+      b.apellido = ''; b.nombre = ''; b.legajo = ''; b.comision = ''; b.telefono = ''; b.github = ''
+    }
+
+    function agregarAlumno(evento) {
+      evento.preventDefault()
+      estado.alumnos.push({
+        id: crypto.randomUUID(),
+        apellido: borradorNuevo.apellido,
+        nombre: borradorNuevo.nombre,
+        legajo: borradorNuevo.legajo,
+        comision: borradorNuevo.comision,
+        telefono: borradorNuevo.telefono,
+        github: borradorNuevo.github,
+        favorito: false,
+      })
+      limpiarBorrador(borradorNuevo)
+      evento.currentTarget.closest('dialog').close()
+    }
+
+    const borradorEditar = reactive({
+      apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '',
+    })
+
+    function abrirEdicion(alumno) {
+      estado.idEditando = alumno.id
+      borradorEditar.apellido = alumno.apellido
+      borradorEditar.nombre = alumno.nombre
+      borradorEditar.legajo = alumno.legajo
+      borradorEditar.comision = alumno.comision
+      borradorEditar.telefono = alumno.telefono
+      borradorEditar.github = alumno.github
+      document.getElementById('dialogoEditar').showModal()
+    }
+
+    function guardarEdicion(evento) {
+      evento.preventDefault()
+      const alumno = estado.alumnos.find(a => a.id === estado.idEditando)
+      alumno.apellido = borradorEditar.apellido
+      alumno.nombre = borradorEditar.nombre
+      alumno.legajo = borradorEditar.legajo
+      alumno.comision = borradorEditar.comision
+      alumno.telefono = borradorEditar.telefono
+      alumno.github = borradorEditar.github
+      estado.idEditando = null
+      evento.currentTarget.closest('dialog').close()
+    }
+
+    function eliminarAlumno() {
+      estado.alumnos = estado.alumnos.filter(a => a.id !== estado.idEditando)
+      estado.idEditando = null
+      document.getElementById('dialogoEditar').close()
+    }
+
+    function cancelarEdicion(evento) {
+      estado.idEditando = null
+      evento.currentTarget.closest('dialog').close()
+    }
+
+    const Tarjeta = component(alumno => html`
+      <article tabindex="0"
+        @click="${() => abrirEdicion(alumno)}"
+        @keydown="${evento => {
+          if (evento.key === 'Enter') abrirEdicion(alumno)
+          if (evento.key === ' ') { evento.preventDefault(); alumno.favorito = !alumno.favorito }
+        }}">
+        <header>
+          <span><b>${alumno.apellido}</b> ${alumno.nombre}</span>
+          <button
+            style="${() => `color: ${alumno.favorito ? '#b8860b' : '#ccc'}`}"
+            @click="${evento => { evento.stopPropagation(); alumno.favorito = !alumno.favorito }}">
+            ${() => alumno.favorito ? '★' : '☆'}
+          </button>
+        </header>
+        <address>
+          ${alumno.telefono}<br>
+          @${alumno.github}
+        </address>
+        <footer>${alumno.comision} · ${alumno.legajo}</footer>
+      </article>
+    `)
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header class="principal">
+        <h1>Agenda</h1>
+        <div class="acciones-header">
+          <input type="search" placeholder="Buscar alumno..." .value="${() => estado.busqueda}" @input="${e => estado.busqueda = e.target.value}">
+          <button @click="${() => document.getElementById('dialogoAgregar').showModal()}">+ Agregar</button>
+        </div>
+      </header>
+      <section class="lista">
+        ${() => {
+          const visibles = alumnosVisibles()
+          return visibles.length === 0
+            ? html`<p class="vacio">No hay alumnos para mostrar.</p>`
+            : visibles.map(a => Tarjeta(a).key(a.id))
+        }}
+      </section>
+
+      <dialog id="dialogoAgregar">
+        <form @submit="${agregarAlumno}">
+          <h2 style="grid-column: 1 / -1; margin: 0">Agregar alumno</h2>
+          <label>Apellido <input required .value="${() => borradorNuevo.apellido}" @input="${e => borradorNuevo.apellido = e.target.value}"></label>
+          <label>Nombre <input required .value="${() => borradorNuevo.nombre}" @input="${e => borradorNuevo.nombre = e.target.value}"></label>
+          <label>Legajo <input required .value="${() => borradorNuevo.legajo}" @input="${e => borradorNuevo.legajo = e.target.value}"></label>
+          <label>Comisión <input required .value="${() => borradorNuevo.comision}" @input="${e => borradorNuevo.comision = e.target.value}"></label>
+          <label>Teléfono <input .value="${() => borradorNuevo.telefono}" @input="${e => borradorNuevo.telefono = e.target.value}"></label>
+          <label>GitHub <input .value="${() => borradorNuevo.github}" @input="${e => borradorNuevo.github = e.target.value}"></label>
+          <div class="acciones">
+            <button type="button" @click="${e => e.currentTarget.closest('dialog').close()}">Cancelar</button>
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="dialogoEditar" @close="${() => estado.idEditando = null}">
+        <form @submit="${guardarEdicion}">
+          <h2 style="grid-column: 1 / -1; margin: 0">Editar alumno</h2>
+          <label>Apellido <input required .value="${() => borradorEditar.apellido}" @input="${e => borradorEditar.apellido = e.target.value}"></label>
+          <label>Nombre <input required .value="${() => borradorEditar.nombre}" @input="${e => borradorEditar.nombre = e.target.value}"></label>
+          <label>Legajo <input required .value="${() => borradorEditar.legajo}" @input="${e => borradorEditar.legajo = e.target.value}"></label>
+          <label>Comisión <input required .value="${() => borradorEditar.comision}" @input="${e => borradorEditar.comision = e.target.value}"></label>
+          <label>Teléfono <input .value="${() => borradorEditar.telefono}" @input="${e => borradorEditar.telefono = e.target.value}"></label>
+          <label>GitHub <input .value="${() => borradorEditar.github}" @input="${e => borradorEditar.github = e.target.value}"></label>
+          <div class="acciones-editar">
+            <button type="button" class="peligro" @click="${eliminarAlumno}">Eliminar</button>
+            <div style="display: flex; gap: 8px">
+              <button type="button" @click="${cancelarEdicion}">Cancelar</button>
+              <button type="submit">Guardar</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
