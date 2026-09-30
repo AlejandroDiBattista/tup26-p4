@@ -5,29 +5,566 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    /* ===== variables y general ===== */
+    :root {
+        --fondo: #f4f4f1;
+        --blanco: #fdfdf9;
+        --borde: #dcdfd8;
+        --verde: #2e3a30;
+        --texto: #26302a;
+        --gris: #6b716c;
+        --dorado: #8b7c55;
+        --rojo: #c0392b;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 40px 20px;
+        font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--texto);
+        background: var(--fondo);
+    }
+
+    main {
+        max-width: 1104px;
+        margin: 0 auto;
+    }
+
+    /* ===== botones ===== */
+    .btn {
+        padding: 10px 18px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        background: white;
+        color: var(--texto);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            background: #f0f1ed;
+        }
+
+        &.primario {
+            border-color: var(--verde);
+            background: var(--verde);
+            color: white;
+
+            &:hover {
+                background: #3d4b3f;
+            }
+        }
+
+        &.peligro {
+            color: var(--rojo);
+            margin-right: auto;
+        }
+    }
+
+    /* ===== encabezado con buscador ===== */
+    main > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+
+        & h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        & > div {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+            justify-content: flex-end;
+            max-width: 420px;
+        }
+
+        & input {
+            flex: 1;
+            min-width: 0;
+            padding: 13px 20px;
+            border: 1px solid var(--borde);
+            border-radius: 999px;
+            background: var(--blanco);
+            font: inherit;
+            font-size: 15px;
+
+            &:focus {
+                outline: 2px solid var(--verde);
+                outline-offset: 1px;
+            }
+        }
+
+        & .btn {
+            padding: 13px 20px;
+            border-radius: 999px;
+        }
+    }
+
+    /* ===== grilla de tarjetas ===== */
+    main > section {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+
+        @media (max-width: 950px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 620px) {
+            grid-template-columns: 1fr;
+        }
+
+        /* mensaje cuando no hay resultados */
+        & > p {
+            grid-column: 1 / -1;
+            padding: 40px;
+            text-align: center;
+            color: var(--gris);
+        }
+    }
+
+    /* ===== tarjeta ===== */
+    article {
+        display: flex;
+        flex-direction: column;
+        padding: 22px 20px 18px;
+        border: 1px solid var(--borde);
+        border-radius: 16px;
+        background: var(--blanco);
+        box-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+        cursor: pointer;
+
+        &:hover {
+            box-shadow: 0 6px 16px rgb(0 0 0 / 0.1);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--verde);
+            outline-offset: 2px;
+        }
+
+        & > header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            min-height: 58px;
+
+            & h2 {
+                margin: 0;
+                font-family: Georgia, "Times New Roman", serif;
+                font-size: 25px;
+                line-height: 1.2;
+                color: var(--verde);
+
+                & span {
+                    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    font-size: 16px;
+                    font-weight: normal;
+                    color: var(--gris);
+                }
+            }
+
+            & button {
+                padding: 0;
+                border: none;
+                background: none;
+                font-size: 26px;
+                line-height: 1;
+                color: var(--dorado);
+                cursor: pointer;
+            }
+        }
+
+        & > address {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 14px 0 16px;
+            font-style: normal;
+
+            & :first-child {
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            & :last-child {
+                font-size: 13px;
+                color: var(--gris);
+            }
+        }
+
+        & > footer {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid var(--borde);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--gris);
+        }
+    }
+
+    /* ===== dialogo y formulario ===== */
+    dialog {
+        width: min(600px, calc(100% - 32px));
+        padding: 0;
+        border: 8px solid #dfe6df;
+        border-radius: 24px;
+        background: var(--blanco);
+        box-shadow: 0 20px 60px rgb(0 0 0 / 0.25);
+
+        &::backdrop {
+            background: rgb(95 115 100 / 0.45);
+            backdrop-filter: blur(4px);
+        }
+    }
+
+    form {
+        & > header {
+            padding: 18px 14px 14px;
+            border-bottom: 1px solid var(--borde);
+            background: #f3f3f0;
+
+            & h2 {
+                margin: 0;
+                font-size: 20px;
+            }
+
+            & p {
+                margin: 4px 0 0;
+                font-size: 14px;
+                color: var(--gris);
+            }
+        }
+
+        & > section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 18px 14px;
+
+            @media (max-width: 500px) {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        & label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gris);
+        }
+
+        & input {
+            padding: 11px 12px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: #eff0ec;
+            font: inherit;
+            font-size: 15px;
+            color: var(--texto);
+
+            &:focus {
+                outline: none;
+                border-color: var(--verde);
+                background: white;
+            }
+        }
+
+        & > p {
+            margin: 0 14px 12px;
+            color: var(--rojo);
+            font-size: 14px;
+        }
+
+        & > footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 14px;
+            border-top: 1px solid var(--borde);
+        }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
+  <dialog id="dialogo"></dialog>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core';
+    import alumnosJson from './alumnos.json' with { type: 'json' };
 
-    const app = document.getElementById('app')
+    const CLAVE = 'agenda-alumnos';
+
+    // ================== ESTADO ==================
+
+    // si hay algo guardado en localStorage uso eso, si no uso el json y lo guardo
+    function cargarAlumnos() {
+        const guardado = localStorage.getItem(CLAVE);
+        if (guardado) {
+            return JSON.parse(guardado);
+        }
+        localStorage.setItem(CLAVE, JSON.stringify(alumnosJson));
+        return alumnosJson;
+    }
+
+    function formVacio() {
+        return { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' };
+    }
+
+    const estado = reactive({
+        alumnos: cargarAlumnos(),
+        busqueda: '',
+        dialogoAbierto: false,
+        editando: null, // id del alumno que se esta editando, null si es uno nuevo
+        form: formVacio(),
+        error: '',
+    });
+
+    // ================== FUNCIONES ==================
+
+    function guardar() {
+        localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos));
+    }
+
+    // saco mayusculas y acentos para poder comparar
+    function normalizar(texto) {
+        return String(texto).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    // primero los favoritos, despues por apellido y nombre
+    function compararAlumnos(a, b) {
+        if (a.favorito != b.favorito) {
+            return a.favorito ? -1 : 1;
+        }
+        const porApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' });
+        if (porApellido != 0) {
+            return porApellido;
+        }
+        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+    }
+
+    function alumnosFiltrados() {
+        const texto = normalizar(estado.busqueda.trim());
+        const lista = estado.alumnos.filter(a => {
+            const datos = normalizar(a.apellido + ' ' + a.nombre + ' ' + a.legajo + ' ' + a.comision + ' ' + a.github + ' ' + a.telefono);
+            return datos.includes(texto);
+        });
+        return lista.sort(compararAlumnos);
+    }
+
+    function alternarFavorito(alumno) {
+        alumno.favorito = !alumno.favorito;
+        guardar();
+    }
+
+    function nuevoId() {
+        let max = 0;
+        for (const a of estado.alumnos) {
+            if (a.id > max) max = a.id;
+        }
+        return max + 1;
+    }
+
+    function abrirAgregar() {
+        estado.editando = null;
+        estado.form = formVacio();
+        estado.error = '';
+        estado.dialogoAbierto = true;
+    }
+
+    function abrirEditar(alumno) {
+        estado.editando = alumno.id;
+        // hago una copia para que si cancela no se modifique el original
+        estado.form = {
+            apellido: alumno.apellido,
+            nombre: alumno.nombre,
+            legajo: alumno.legajo,
+            comision: alumno.comision,
+            telefono: alumno.telefono,
+            github: alumno.github,
+        };
+        estado.error = '';
+        estado.dialogoAbierto = true;
+    }
+
+    function cerrarDialogo() {
+        estado.dialogoAbierto = false;
+    }
+
+    function validar(datos) {
+        for (const campo in datos) {
+            if (datos[campo] == '') {
+                return 'Todos los campos son obligatorios.';
+            }
+        }
+        if (isNaN(datos.legajo)) {
+            return 'El legajo tiene que ser un numero.';
+        }
+        return '';
+    }
+
+    function guardarAlumno(e) {
+        e.preventDefault();
+
+        const datos = {};
+        for (const campo in estado.form) {
+            datos[campo] = estado.form[campo].trim();
+        }
+        datos.github = datos.github.replace('@', '');
+
+        estado.error = validar(datos);
+        if (estado.error != '') return;
+
+        if (estado.editando == null) {
+            const nuevo = { id: nuevoId(), ...datos, favorito: false };
+            estado.alumnos = [...estado.alumnos, nuevo];
+        } else {
+            const alumno = estado.alumnos.find(a => a.id == estado.editando);
+            Object.assign(alumno, datos);
+        }
+
+        guardar();
+        cerrarDialogo();
+    }
+
+    function eliminarAlumno() {
+        estado.alumnos = estado.alumnos.filter(a => a.id != estado.editando);
+        guardar();
+        cerrarDialogo();
+    }
+
+    function manejarTeclado(e, alumno) {
+        // solo si el foco esta en la tarjeta
+        if (e.target != e.currentTarget) return;
+
+        if (e.key == 'Enter') {
+            e.preventDefault();
+            abrirEditar(alumno);
+        } else if (e.key == ' ') {
+            e.preventDefault(); // para que no baje la pagina
+            alternarFavorito(alumno);
+            // al reordenar la lista se pierde el foco, lo vuelvo a poner en la tarjeta
+            setTimeout(() => {
+                const tarjeta = document.querySelector('article[data-id="' + alumno.id + '"]');
+                if (tarjeta) tarjeta.focus();
+            }, 0);
+        }
+    }
+
+    // ================== VISTAS ==================
+
+    function Tarjeta(alumno) {
+        return html`
+            <article tabindex="0" data-id="${alumno.id}"
+                @click="${() => abrirEditar(alumno)}"
+                @keydown="${(e) => manejarTeclado(e, alumno)}">
+                <header>
+                    <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
+                    <button type="button" tabindex="-1" title="Favorito"
+                        @click="${(e) => { e.stopPropagation(); alternarFavorito(alumno); }}">
+                        ${() => alumno.favorito ? '★' : '☆'}
+                    </button>
+                </header>
+                <address>
+                    <span>${() => alumno.telefono}</span>
+                    <span>@${() => alumno.github}</span>
+                </address>
+                <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+            </article>
+        `;
+    }
+
+    function Lista() {
+        const lista = alumnosFiltrados();
+        if (lista.length == 0) {
+            // lo devuelvo dentro de un array porque si no despues de buscar algo
+            // sin resultados la lista no se volvia a mostrar
+            return [html`<p>No hay alumnos para mostrar.</p>`];
+        }
+        return lista.map(Tarjeta);
+    }
+
+    function Campo(titulo, nombre) {
+        return html`
+            <label>
+                ${titulo}
+                <input type="text" name="${nombre}"
+                    value="${() => estado.form[nombre]}"
+                    @input="${(e) => estado.form[nombre] = e.target.value}">
+            </label>
+        `;
+    }
+
+    const app = document.getElementById('app');
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+        <header>
+            <h1>Agenda</h1>
+            <div>
+                <input type="search" placeholder="Buscar alumno..."
+                    value="${() => estado.busqueda}"
+                    @input="${(e) => estado.busqueda = e.target.value}">
+                <button type="button" class="btn primario" @click="${abrirAgregar}">+ Agregar</button>
+            </div>
+        </header>
+        <section>
+            ${() => Lista()}
+        </section>
+    `(app);
+
+    const dialogo = document.getElementById('dialogo');
+
+    html`
+        <form @submit="${guardarAlumno}">
+            <header>
+                <h2>${() => estado.editando == null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+                <p>${() => estado.editando == null ? 'Completá los datos del nuevo alumno.' : 'Actualizá los datos del alumno.'}</p>
+            </header>
+            <section>
+                ${Campo('Apellido', 'apellido')}
+                ${Campo('Nombre', 'nombre')}
+                ${Campo('Legajo', 'legajo')}
+                ${Campo('Comisión', 'comision')}
+                ${Campo('Teléfono', 'telefono')}
+                ${Campo('GitHub', 'github')}
+            </section>
+            ${() => estado.error ? html`<p>${estado.error}</p>` : ''}
+            <footer>
+                ${() => estado.editando != null
+                    ? html`<button type="button" class="btn peligro" @click="${eliminarAlumno}">Eliminar</button>`
+                    : ''}
+                <button type="submit" class="btn primario">Guardar</button>
+                <button type="button" class="btn" @click="${cerrarDialogo}">Cancelar</button>
+            </footer>
+        </form>
+    `(dialogo);
+
+    // abro o cierro el dialogo segun el estado
+    watch(() => {
+        if (estado.dialogoAbierto) {
+            if (!dialogo.open) dialogo.showModal();
+        } else if (dialogo.open) {
+            dialogo.close();
+        }
+    });
+
+    // si lo cierran con Escape tambien actualizo el estado
+    dialogo.addEventListener('close', () => estado.dialogoAbierto = false);
   </script>
 </body>
 </html>
