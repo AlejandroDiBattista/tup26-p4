@@ -1,19 +1,184 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px sans-serif;
+      background: #f5f6f4;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    .encabezado {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+
+      & h1 {
+        margin: 0;
+      }
+    }
+
+    .grilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .tarjeta {
+      background-color: ivory;
+      border: 1px solid #000;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+
+      & header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        & h2 {
+          margin: 0;
+          font-size: 1.2rem;
+          color: #222;
+        }
+
+        & .favorito {
+          background: none;
+          border: none;
+          font-size: 1.8rem;
+          cursor: pointer;
+          color: #ccc;
+          padding: 0;
+
+          &[data-activo="true"] {
+            color: yellow
+          }
+        }
+      }
+
+      & address {
+        font-style: normal;
+        color: #555;
+        line-height: 1.6;
+
+        & p {
+          margin: 0;
+        }
+      }
+
+      & footer {
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid #eee;
+        padding-top: 12px;
+        color: #777;
+        font-size: 0.9rem;
+
+        & p {
+          margin: 0;
+        }
+      }
+
+      &:focus {
+        outline: 2px solid #edbb64;
+        border-color: #edbb64;
+      }
+
+
+    }
+
+    .buscador {
+      padding: 10px 16px;
+      font-size: 1rem;
+      border: 1px solid #d9ded9;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+
+    .sin-resultados {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #777;
+      font-size: 1.2rem;
+      padding: 40px;
+    }
+
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .form-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+
+    .form-grupo input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    .botones-modal {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .btn-primario {
+      background: #000;
+      color: white;
+    }
+
+    .btn-secundario {
+      background: #eee;
+    }
+
+    .btn-peligro {
+      background: #dc3545;
+      color: white;
+      margin-right: auto;
+    }
   </style>
 </head>
+
 <body>
   <main id="app"></main>
 
@@ -21,13 +186,184 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
+    const datosGuardados = localStorage.getItem("agenda_alumnos");
+    const datosIniciales = datosGuardados ? JSON.parse(datosGuardados) : alumnos;
+
+    if (!datosGuardados) {
+      localStorage.setItem("agenda_alumnos", JSON.stringify(alumnos));
+    }
+
+    const estado = reactive({
+      alumnos: datosIniciales,
+      filtro: "",
+      editandoId: null,
+      formulario: { nombre: "", apellido: "", legajo: "", comision: "", telefono: "", github: "" }
+    });
+
+    watch(() => {
+      localStorage.setItem("agenda_alumnos", JSON.stringify(estado.alumnos))
+    });
+
+    function obtenerAlumnoVisible() {
+      const texto = estado.filtro.toLowerCase();
+      let filtrados = estado.alumnos
+
+      if (texto) {
+        filtrados = filtrados.filter(a => a.nombre.toLowerCase().includes(texto) || a.apellido.toLowerCase().includes(texto));
+      }
+
+      return [...filtrados].sort((a, b) => {
+        if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+        const compApellido = a.apellido.localeCompare(b.apellido, "es", { sensitivity: "base" });
+        if (compApellido !== 0) return compApellido;
+        return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+      });
+    }
+
+    function alternarFavorito(id) {
+      const indice = estado.alumnos.findIndex(a => a.id === id);
+      if (indice !== -1) {
+        estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+      }
+    }
+
+    function manejarTecladoTarjeta(e, id) {
+      if (e.key === " ") {
+        e.preventDefault();
+        alternarFavorito(id);
+      } else if (e.key === "Enter") {
+        abrirModal(id);
+      }
+    }
+
+    function abrirModal(id = null) {
+      if (id) {
+        const alumno = estado.alumnos.find(a => a.id === id);
+        estado.formulario = { ...alumno };
+        estado.editandoId = id;
+      } else {
+        estado.formulario = { nombre: "", apellido: "", legajo: "", comision: "", telefono: "", github: "" };
+        estado.editandoId = null;
+      }
+      document.getElementById("modal-alumno").showModal();
+    }
+
+    function cerrarModal() {
+      document.getElementById("modal-alumno").close();
+    }
+
+    function guardarAlumno(e) {
+      e.preventDefault();
+
+      const nuevosDatos = { ...estado.formulario };
+
+      if (estado.editandoId) {
+        const indice = estado.alumnos.findIndex(a => a.id === estado.editandoId);
+        if (indice !== -1) {
+          estado.alumnos[indice] = { ...estado.alumnos[indice], ...nuevosDatos };
+        }
+      } else {
+        nuevosDatos.id = Date.now().toString();
+        nuevosDatos.favorito = false;
+        estado.alumnos.push(nuevosDatos)
+      }
+
+      cerrarModal();
+    }
+
+
+    function eliminarAlumno() {
+      if (confirm("estas seguro de eliminar este alumno de la agenda?")) {
+        estado.alumnos = estado.alumnos.filter(a => a.id !== estado.editandoId);
+        cerrarModal();
+      }
+    }
+
+
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+    <header class="encabezado">
+      <h1>Agenda de Alumnos</h1>
+      <input type="search" placeholder="Buscar Alumno" class="buscador" @input="${(e) => estado.filtro = e.target.value}">
+      <button class="btn btn-primario" @click="${() => abrirModal()}">Agregar Alumno</button>
+    </header>
+
+      <section class="grilla">
+
+        ${() => {
+        const visible = obtenerAlumnoVisible();
+
+        if (visible.length === 0) {
+          return html`<p class="sin-resultados">No se encontraron alumnos para la busqueda</p>`
+        }
+
+        return visible.map(a => html`
+          <article class="tarjeta" tabindex="0" @keydown="${(e) => manejarTecladoTarjeta(e, a.id)}" @click="${() => abrirModal(a.id)}">
+            <header>
+              <h2>${a.apellido}, ${a.nombre}</h2>
+              <button class="favorito" data-activo="${a.favorito}" aria-label="Favorito" @click="${(e) => { e.stopPropagation(); alternarFavorito(a.id); }}" tabindex="-1">
+                ${a.favorito ? "★" : "☆"}
+              </button>
+            </header>
+  
+            <address>
+              <p>Telefono ${a.telefono}</p>
+              <p>GitHub @${a.github}</p>
+            </address>
+  
+            <footer>
+              <p>Comision: <b>${a.comision}</b></p>
+              <p>Legajo: <b>${a.legajo}</b></p>
+            </footer>
+          </article>
+          `)
+      }
+      }
+      </section>
+      <dialog id="modal-alumno">
+        <h2> ${() => estado.editandoId ? "editar alumno" : "agregar alumno"} </h2>
+        <form @submit="${(e) => guardarAlumno(e)}">
+          
+          <div class="form-grupo">
+            <label>Nombre</label>
+            <input type="text" required value="${() => estado.formulario.nombre}" @input="${e => estado.formulario.nombre = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Apellido</label>
+            <input type="text" required value="${() => estado.formulario.apellido}" @input="${e => estado.formulario.apellido = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Legajo</label>
+            <input type="text" required value="${() => estado.formulario.legajo}" @input="${e => estado.formulario.legajo = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Comision</label>
+            <input type="text" required value="${() => estado.formulario.comision}" @input="${e => estado.formulario.comision = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Telefono</label>
+            <input type="text" required value="${() => estado.formulario.telefono}" @input="${e => estado.formulario.telefono = e.target.value}">
+          </div>
+
+          <div class="form-grupo">
+            <label>Usuario GitHub</label>
+            <input type="text" required value="${() => estado.formulario.github}" @input="${e => estado.formulario.github = e.target.value}">
+          </div>
+
+          <div class="botones-modal">
+            ${() => estado.editandoId ? html`<button type="button" class="btn btn-peligro" @click="${() => eliminarAlumno()}">Eliminar</button>` : ''}
+            <button type="button" class="btn btn-secundario" @click="${() => cerrarModal()}">Cancelar</button>
+            <button type="submit" class="btn btn-primario">Guardar</button>
+          </div>
+
+        </form>
+      </dialog>
     `(app)
   </script>
 </body>
+
 </html>
