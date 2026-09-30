@@ -7,11 +7,200 @@
   <style>
     body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
     main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
+    .barra-superior {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    h1 { margin: 0; }
+    .boton-agregar {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: #30483a;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .boton-agregar:hover { background: #24382d; }
+    .input-busqueda {
+      width: min(300px, 100%);
+      height: 46px;
+      box-sizing: border-box;
+      padding: 0 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #30352f;
+      font: inherit;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .input-busqueda::placeholder { color: #7b817a; }
+    .input-busqueda:focus {
+      border-color: #30483a;
+      box-shadow: 0 0 0 3px rgb(48 72 58 / 14%);
+    }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    li { 
+      min-width: 0; 
+      padding: 20px; 
+      border: 1px solid #d9ded9; 
+      border-radius: 16px; 
+      background: white; 
+      text-align: left; 
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgb(30 42 34 / 10%);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgb(48 72 58 / 35%);
+        outline-offset: 3px;
+      }
+
+      .tarjeta-cabecera {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        .tarjeta-nombre {
+          font-size: 0.95rem;
+          color: #1a1a1a;
+          
+          .apellido {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.45rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-right: 6px;
+          }
+        }
+
+        .boton-favorito {
+          background: none;
+          border: none;
+          font-size: 1.8rem;
+          cursor: pointer;
+          color: #cca300;
+          padding: 0;
+          line-height: 1;
+        }
+      }
+
+      .tarjeta-contacto {
+        font-style: normal;
+
+        p {
+          margin: 4px 0;
+          color: #666666;
+          font-size: 0.95rem;
+        }
+        .github {
+          color: #0066cc;
+        }
+      }
+
+      .tarjeta-pie {
+        border-top: 1px solid #e9ecef;
+        padding-top: 12px;
+        margin-top: auto;
+        font-size: 0.85rem;
+        color: #868e96;
+      }
+    }
+    .mensaje-vacio {
+      margin: 28px 0;
+      color: #6c736d;
+      text-align: center;
+    }
+    .dialogo-alumno {
+      width: min(600px, calc(100% - 32px));
+      padding: 0;
+      border: 0;
+      border-radius: 20px;
+      color: #30352f;
+      box-shadow: 0 20px 60px rgb(30 42 34 / 25%);
+    }
+    .dialogo-alumno::backdrop { background: rgb(30 42 34 / 42%); }
+    .encabezado-dialogo {
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid #e3e6e2;
+    }
+    .encabezado-dialogo h2 { margin: 0 0 6px; font-size: 1.35rem; }
+    .encabezado-dialogo p { margin: 0; color: #6c736d; }
+    .campos-alumno {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      padding: 20px 24px;
+    }
+    .campo-alumno { display: grid; gap: 6px; }
+    .campo-alumno label { font-size: 0.82rem; font-weight: 700; color: #596159; }
+    .campo-alumno input,
+    .campo-alumno select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #d9ded9;
+      border-radius: 10px;
+      background: #f8f9f7;
+      color: inherit;
+      font: inherit;
+    }
+    .campo-alumno input:focus,
+    .campo-alumno select:focus {
+      border-color: #30483a;
+      outline: 3px solid rgb(48 72 58 / 14%);
+    }
+    .acciones-dialogo {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 24px 20px;
+      border-top: 1px solid #e3e6e2;
+    }
+    .acciones-dialogo button {
+      padding: 10px 16px;
+      border: 1px solid #d9ded9;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #30352f;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+    .acciones-dialogo button[type="submit"] {
+      border-color: #30483a;
+      background: #30483a;
+      color: #ffffff;
+    }
+    .acciones-dialogo .boton-eliminar {
+      margin-right: auto;
+      border-color: #e2b8b8;
+      color: #b34a4a;
+    }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) {
+      .barra-superior {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .input-busqueda { width: 100%; }
+      ul { grid-template-columns: 1fr; }
+      .campos-alumno { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -20,14 +209,285 @@
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
+    if (!localStorage.getItem('agenda_alumnos')) {
+      localStorage.setItem('agenda_alumnos', JSON.stringify(alumnos));
+    }
+    const datosPersistidos =JSON.parse(localStorage.getItem('agenda_alumnos'));
+    const store = reactive({
+    alumnos: datosPersistidos,
+    busqueda:""
+    });
+    watch(
+  () => JSON.stringify(store.alumnos),
+  datos => localStorage.setItem('agenda_alumnos', datos)
+)
+    const normalizar = texto => texto
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+    const alumnosVisibles = () => {
+      const busqueda = normalizar(store.busqueda.trim());
+
+      return [...store.alumnos]
+        .filter(alumno => {
+          const datos = [
+            alumno.nombre,
+            alumno.apellido,
+            alumno.legajo,
+            alumno.comision,
+            alumno.telefono,
+            alumno.github
+          ].map(normalizar).join(' ');
+
+          return datos.includes(busqueda);
+        })
+        .sort((alumnoA, alumnoB) => {
+          if (alumnoA.favorito !== alumnoB.favorito) {
+            return alumnoA.favorito ? -1 : 1;
+          }
+
+          return alumnoA.apellido.localeCompare(alumnoB.apellido, 'es', { sensitivity: 'base' })
+            || alumnoA.nombre.localeCompare(alumnoB.nombre, 'es', { sensitivity: 'base' });
+        });
+    };
+
+    const alternarFavorito = id => {
+      const alumno = store.alumnos.find(alumno => alumno.id === id);
+      if (alumno) alumno.favorito = !alumno.favorito;
+    };
+
+    let temporizadorBusqueda;
 
     const app = document.getElementById('app')
     html`
-      <h1>Alumnos</h1>
+      <header class="barra-superior">
+        <h1>Alumnos</h1>
+        <input
+          type="search"
+          placeholder="Buscar alumno..."
+          aria-label="Buscar alumno"
+          .value="${() => store.busqueda}"
+          @input="${evento => {
+            const busqueda = evento.target.value;
+            clearTimeout(temporizadorBusqueda);
+            temporizadorBusqueda = setTimeout(() => {
+              store.busqueda = busqueda;
+            }, 120);
+          }}"
+          class="input-busqueda"
+        />
+        <button type="button" class="boton-agregar" id="agregar-alumno">+ Agregar</button>
+      </header>
+      <section aria-label="Listado de alumnos">
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => alumnosVisibles().map(a => html`
+        <li
+          class="tarjeta"
+          tabindex="0"
+          @click="${() => seleccionarAlumno(a.id)}"
+          @keydown="${evento => {
+            if (evento.target !== evento.currentTarget) return;
+            if (evento.key === 'Enter') seleccionarAlumno(a.id);
+            if (evento.key === ' ') {
+              evento.preventDefault();
+              alternarFavorito(a.id);
+            }
+          }}"
+        >
+          <article>
+          <div class="tarjeta-cabecera">
+            <span class= "tarjeta-nombre">
+              <b class="apellido">${a.apellido}</b> ${a.nombre}
+              </span>
+            <button
+              type="button"
+              class="boton-favorito"
+              aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+              @click="${evento => {
+                evento.stopPropagation();
+                alternarFavorito(a.id);
+              }}"
+            >
+              ${a.favorito ?  '★' : '☆' }
+              </button>
+              </div>
+              <address class="tarjeta-contacto">
+                <p class="telefono">${a.telefono}</p>
+                <p class="github">@${a.github}</p>
+                </address>
+              <div class= "tarjeta-pie">
+                <span> ${a.comision} · ${a.legajo}</span>
+                </div>
+          </article>
+        </li>
+        `.key(a.id))}
       </ul>
+      ${() => alumnosVisibles().length === 0
+        ? html`<p class="mensaje-vacio">No hay alumnos para mostrar.</p>`
+        : ''}
+      </section>
+      <dialog class="dialogo-alumno" id="dialogo-edicion">
+        <form id="formulario-edicion">
+          <header class="encabezado-dialogo">
+            <h2 id="titulo-dialogo">Editar alumno</h2>
+            <p id="descripcion-dialogo">Actualizá los datos del alumno.</p>
+          </header>
+          <div class="campos-alumno">
+            <div class="campo-alumno">
+              <label for="apellido">Apellido</label>
+              <input id="apellido" name="apellido" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="nombre">Nombre</label>
+              <input id="nombre" name="nombre" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="legajo">Legajo</label>
+              <input id="legajo" name="legajo" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="comision">Comisión</label>
+              <select id="comision" name="comision" required>
+                <option value="">Seleccionar comisión</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
+                <option value="C3">C3</option>
+                <option value="C4">C4</option>
+                <option value="C5">C5</option>
+                <option value="C6">C6</option>
+                <option value="C7">C7</option>
+                <option value="C8">C8</option>
+                <option value="C9">C9</option>
+              </select>
+            </div>
+            <div class="campo-alumno">
+              <label for="telefono">Teléfono</label>
+              <input id="telefono" name="telefono" required />
+            </div>
+            <div class="campo-alumno">
+              <label for="github">GitHub</label>
+              <input id="github" name="github" required />
+            </div>
+          </div>
+          <footer class="acciones-dialogo">
+            <button type="button" class="boton-eliminar" id="eliminar-alumno">Eliminar</button>
+            <button type="button" id="cancelar-edicion">Cancelar</button>
+            <button type="submit">Guardar</button>
+          </footer>
+        </form>
+      </dialog>
     `(app)
+
+    const dialogoEdicion = document.getElementById('dialogo-edicion')
+    const formularioEdicion = document.getElementById('formulario-edicion')
+    const cancelarEdicion = document.getElementById('cancelar-edicion')
+    const eliminarAlumno = document.getElementById('eliminar-alumno')
+    const agregarAlumno = document.getElementById('agregar-alumno')
+    const tituloDialogo = document.getElementById('titulo-dialogo')
+    const descripcionDialogo = document.getElementById('descripcion-dialogo')
+    let alumnoEditandoId = null
+    const comisionesValidas = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+    const formatoGithub = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i
+
+    function seleccionarAlumno(id) {
+      const alumno = store.alumnos.find(alumno => alumno.id === id)
+      if (!alumno) return
+
+      alumnoEditandoId = id
+      tituloDialogo.textContent = 'Editar alumno'
+      descripcionDialogo.textContent = 'Actualizá los datos del alumno.'
+      eliminarAlumno.hidden = false
+      formularioEdicion.apellido.value = alumno.apellido
+      formularioEdicion.nombre.value = alumno.nombre
+      formularioEdicion.legajo.value = alumno.legajo
+      formularioEdicion.comision.value = alumno.comision
+      formularioEdicion.telefono.value = alumno.telefono
+      formularioEdicion.github.value = alumno.github
+
+      dialogoEdicion.showModal()
+      formularioEdicion.apellido.focus()
+    }
+
+    agregarAlumno.addEventListener('click', () => {
+      alumnoEditandoId = null
+      tituloDialogo.textContent = 'Agregar alumno'
+      descripcionDialogo.textContent = 'Completá los datos del nuevo alumno.'
+      eliminarAlumno.hidden = true
+      formularioEdicion.reset()
+      dialogoEdicion.showModal()
+      formularioEdicion.apellido.focus()
+    })
+
+    formularioEdicion.addEventListener('submit', evento => {
+      evento.preventDefault()
+
+      const datos = {
+        apellido: formularioEdicion.apellido.value.trim(),
+        nombre: formularioEdicion.nombre.value.trim(),
+        legajo: formularioEdicion.legajo.value.trim(),
+        comision: formularioEdicion.comision.value.trim(),
+        telefono: formularioEdicion.telefono.value.trim(),
+        github: formularioEdicion.github.value.trim()
+      }
+
+      if (Object.values(datos).some(dato => dato === '')) {
+        alert('Completá todos los campos.')
+        return
+      }
+
+      if (!comisionesValidas.includes(datos.comision)) {
+        alert('Seleccioná una comisión válida.')
+        formularioEdicion.comision.focus()
+        return
+      }
+
+      if (!formatoGithub.test(datos.github)) {
+        alert('El usuario de GitHub no es válido.')
+        formularioEdicion.github.focus()
+        return
+      }
+
+      if (!/^\d+$/.test(datos.legajo)) {
+        alert('El legajo debe contener solo números.')
+        formularioEdicion.legajo.focus()
+        return
+      }
+
+      const legajoRepetido = store.alumnos.some(alumno =>
+        alumno.legajo === datos.legajo && alumno.id !== alumnoEditandoId
+      )
+      if (legajoRepetido) {
+        alert('Ya existe un alumno con ese legajo.')
+        formularioEdicion.legajo.focus()
+        return
+      }
+
+      if (alumnoEditandoId === null) {
+        const nuevoId = Math.max(0, ...store.alumnos.map(alumno => alumno.id)) + 1
+        store.alumnos.push({ id: nuevoId, ...datos, favorito: false })
+      } else {
+        const alumno = store.alumnos.find(alumno => alumno.id === alumnoEditandoId)
+        if (!alumno) return
+        Object.assign(alumno, datos)
+      }
+
+      dialogoEdicion.close()
+    })
+
+    cancelarEdicion.addEventListener('click', () => dialogoEdicion.close())
+
+    eliminarAlumno.addEventListener('click', () => {
+      const alumno = store.alumnos.find(alumno => alumno.id === alumnoEditandoId)
+      if (!alumno) return
+
+      const confirmar = confirm(`¿Querés eliminar a ${alumno.nombre} ${alumno.apellido}?`)
+      if (!confirmar) return
+
+      store.alumnos = store.alumnos.filter(alumno => alumno.id !== alumnoEditandoId)
+      alumnoEditandoId = null
+      dialogoEdicion.close()
+    })
   </script>
 </body>
 </html>
