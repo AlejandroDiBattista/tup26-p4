@@ -5,29 +5,637 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 36px 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f4f5f2;
+      color: #1f2320;
+    }
+
+    main {
+      width: 1040px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    .barra-superior {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      gap: 16px;
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+      }
+
+      .acciones-superiores {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        input[type="search"] {
+          width: 240px;
+          padding: 10px 16px;
+          border: 1px solid #dcdfd8;
+          border-radius: 9999px;
+          background: #ffffff;
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.15s ease;
+
+          &:focus {
+            border-color: #2b392e;
+          }
+
+          &::placeholder {
+            color: #8c9288;
+          }
+        }
+
+        .btn-agregar {
+          padding: 10px 20px;
+          background: #25332a;
+          color: #ffffff;
+          border: none;
+          border-radius: 9999px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.15s ease;
+
+          &:hover {
+            background: #1b261f;
+          }
+        }
+      }
+    }
+
+    .lista-alumnos {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .sin-alumnos {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 16px;
+      color: #6d736a;
+      font-size: 16px;
+      background: #fbfbf9;
+      border: 1px dashed #dcdfd8;
+      border-radius: 18px;
+    }
+
+    .tarjeta-alumno {
+      padding: 22px 20px 16px 20px;
+      border: 1px solid #e2e5df;
+      border-radius: 18px;
+      background: #fbfbf9;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 160px;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        border-color: #cbcfc8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+      }
+
+      &:focus-visible {
+        border-color: #25332a;
+        box-shadow: 0 0 0 2px rgba(37, 51, 42, 0.15);
+      }
+
+      .tarjeta-cabecera {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+
+        h2 {
+          margin: 0;
+          font-size: 19px;
+          font-weight: 400;
+          line-height: 1.25;
+
+          .apellido {
+            font-family: Georgia, "Times New Roman", Times, serif;
+            font-weight: 700;
+            color: #1a1e1b;
+          }
+
+          .nombre {
+            color: #3b423c;
+          }
+        }
+
+        .btn-favorito {
+          background: none;
+          border: none;
+          padding: 0;
+          margin: -2px 0 0 0;
+          cursor: pointer;
+          font-size: 22px;
+          line-height: 1;
+          color: #9ea499;
+          transition: transform 0.15s ease, color 0.15s ease;
+
+          &.activo {
+            color: #7d6b42;
+          }
+
+          &:hover {
+            transform: scale(1.15);
+          }
+        }
+      }
+
+      address {
+        font-style: normal;
+        margin-bottom: 14px;
+        flex-grow: 1;
+
+        .telefono {
+          font-size: 14px;
+          font-weight: 600;
+          color: #232824;
+          margin-bottom: 4px;
+        }
+
+        .github {
+          font-size: 13px;
+          color: #5c635a;
+        }
+      }
+
+      footer {
+        padding-top: 10px;
+        border-top: 1px solid #ebede8;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #777d73;
+        text-transform: uppercase;
+      }
+    }
+
+    dialog {
+      border: none;
+      border-radius: 20px;
+      padding: 28px 32px;
+      width: 520px;
+      max-width: calc(100vw - 32px);
+      background: #ffffff;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+      }
+
+      header {
+        margin-bottom: 22px;
+
+        h2 {
+          margin: 0 0 6px 0;
+          font-size: 22px;
+          font-weight: 700;
+          color: #1f2320;
+          letter-spacing: -0.3px;
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          color: #636a61;
+        }
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+
+        .campos-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px 20px;
+        }
+
+        .campo {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5247;
+          }
+
+          input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #dcdfd8;
+            border-radius: 12px;
+            background: #f7f8f6;
+            font-size: 14px;
+            color: #1f2320;
+            outline: none;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+
+            &:focus {
+              border-color: #25332a;
+              background: #ffffff;
+            }
+          }
+        }
+
+        .acciones-dialogo {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 28px;
+
+          .btn-eliminar {
+            padding: 9px 20px;
+            background: #fff5f5;
+            color: #d33838;
+            border: 1px solid #ffd4d4;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+
+            &:hover {
+              background: #ffe3e3;
+            }
+          }
+
+          .acciones-principales {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+
+            .btn-guardar {
+              padding: 9px 24px;
+              background: #25332a;
+              color: #ffffff;
+              border: none;
+              border-radius: 9999px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background-color 0.15s ease;
+
+              &:hover {
+                background: #1b261f;
+              }
+            }
+
+            .btn-cancelar {
+              padding: 9px 20px;
+              background: #ffffff;
+              color: #25332a;
+              border: 1px solid #dcdfd8;
+              border-radius: 9999px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background-color 0.15s ease;
+
+              &:hover {
+                background: #f4f5f2;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .lista-alumnos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .barra-superior {
+        flex-direction: column;
+        align-items: stretch;
+
+        .acciones-superiores {
+          flex-direction: column;
+
+          input[type="search"] {
+            width: 100%;
+          }
+
+          .btn-agregar {
+            width: 100%;
+          }
+        }
+      }
+
+      .lista-alumnos {
+        grid-template-columns: 1fr;
+      }
+
+      dialog {
+        padding: 24px 20px;
+
+        form .campos-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import datosIniciales from './alumnos.json' with { type: 'json' }
+
+    function obtenerAlumnosIniciales() {
+      const guardados = localStorage.getItem('alumnos_agenda')
+      if (guardados) {
+        try {
+          return JSON.parse(guardados)
+        } catch (e) {
+          return datosIniciales
+        }
+      }
+      localStorage.setItem('alumnos_agenda', JSON.stringify(datosIniciales))
+      return datosIniciales
+    }
+
+    const estado = reactive({
+      alumnos: obtenerAlumnosIniciales(),
+      busqueda: '',
+      modalModo: 'agregar',
+      idEdicion: null
+    })
+
+    function persistir() {
+      localStorage.setItem('alumnos_agenda', JSON.stringify(estado.alumnos))
+    }
+
+    function normalizar(texto) {
+      return (texto || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+    }
+
+    function alternarFavorito(e, id) {
+      if (e) e.stopPropagation()
+      const indice = estado.alumnos.findIndex(a => a.id === id)
+      if (indice !== -1) {
+        estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+        estado.alumnos = [...estado.alumnos]
+        persistir()
+      }
+    }
+
+    function obtenerAlumnosFiltradosYOrdenados() {
+      const busquedaLimpia = normalizar(estado.busqueda)
+      const lista = estado.alumnos.filter(alumno => {
+        if (!busquedaLimpia) return true
+        const datos = normalizar(`${alumno.apellido} ${alumno.nombre} ${alumno.legajo} ${alumno.telefono} ${alumno.github} ${alumno.comision}`)
+        return datos.includes(busquedaLimpia)
+      })
+
+      return lista.sort((a, b) => {
+        const favA = Boolean(a.favorito)
+        const favB = Boolean(b.favorito)
+        if (favA !== favB) {
+          return favA ? -1 : 1
+        }
+        const compApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido))
+        if (compApellido !== 0) return compApellido
+        return normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+      })
+    }
+
+    function abrirDialogoAgregar() {
+      estado.modalModo = 'agregar'
+      estado.idEdicion = null
+      const dialogo = document.getElementById('dialogo-alumno')
+      const formulario = dialogo.querySelector('form')
+      formulario.reset()
+      dialogo.showModal()
+    }
+
+    function abrirDialogoEditar(alumno) {
+      estado.modalModo = 'editar'
+      estado.idEdicion = alumno.id
+      const dialogo = document.getElementById('dialogo-alumno')
+      dialogo.querySelector('#campo-apellido').value = alumno.apellido
+      dialogo.querySelector('#campo-nombre').value = alumno.nombre
+      dialogo.querySelector('#campo-legajo').value = alumno.legajo
+      dialogo.querySelector('#campo-comision').value = alumno.comision
+      dialogo.querySelector('#campo-telefono').value = alumno.telefono
+      dialogo.querySelector('#campo-github').value = alumno.github
+      dialogo.showModal()
+    }
+
+    function cerrarDialogo() {
+      const dialogo = document.getElementById('dialogo-alumno')
+      if (dialogo) dialogo.close()
+    }
+
+    function eliminarAlumno() {
+      if (estado.modalModo !== 'editar' || estado.idEdicion === null) return
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== estado.idEdicion)
+      persistir()
+      cerrarDialogo()
+    }
+
+    function manejarTecladoTarjeta(e, alumno) {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirDialogoEditar(alumno)
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        alternarFavorito(null, alumno.id)
+      }
+    }
+
+    function guardarAlumno(e) {
+      e.preventDefault()
+      const formulario = e.target
+      const datos = new FormData(formulario)
+      const apellido = datos.get('apellido')?.toString().trim()
+      const nombre = datos.get('nombre')?.toString().trim()
+      const legajo = datos.get('legajo')?.toString().trim()
+      const comision = datos.get('comision')?.toString().trim()
+      const telefono = datos.get('telefono')?.toString().trim()
+      const github = datos.get('github')?.toString().trim()
+
+      if (!apellido || !nombre || !legajo || !comision || !telefono || !github) {
+        return
+      }
+
+      if (estado.modalModo === 'agregar') {
+        const maxId = estado.alumnos.reduce((max, al) => Math.max(max, Number(al.id) || 0), 0)
+        const nuevoAlumno = {
+          id: maxId + 1,
+          apellido,
+          nombre,
+          legajo,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        }
+        estado.alumnos = [...estado.alumnos, nuevoAlumno]
+      } else if (estado.modalModo === 'editar') {
+        const indice = estado.alumnos.findIndex(al => al.id === estado.idEdicion)
+        if (indice !== -1) {
+          estado.alumnos[indice] = {
+            ...estado.alumnos[indice],
+            apellido,
+            nombre,
+            legajo,
+            comision,
+            telefono,
+            github
+          }
+          estado.alumnos = [...estado.alumnos]
+        }
+      }
+
+      persistir()
+      cerrarDialogo()
+    }
 
     const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+
+    const plantilla = html`
+      <header class="barra-superior">
+        <h1>Agenda</h1>
+        <div class="acciones-superiores">
+          <input
+            type="search"
+            placeholder="Buscar alumno..."
+            value="${() => estado.busqueda}"
+            @input="${(e) => { estado.busqueda = e.target.value }}"
+          />
+          <button class="btn-agregar" type="button" @click="${abrirDialogoAgregar}">+ Agregar</button>
+        </div>
+      </header>
+
+      <section>
+        <ul class="lista-alumnos">
+          ${() => {
+            const alumnos = obtenerAlumnosFiltradosYOrdenados()
+            if (alumnos.length === 0) {
+              return html`<li class="sin-alumnos">No hay alumnos para mostrar</li>`
+            }
+            return alumnos.map(alumno => html`
+              <li>
+                <article
+                  class="tarjeta-alumno"
+                  tabindex="0"
+                  @click="${() => abrirDialogoEditar(alumno)}"
+                  @keydown="${(e) => manejarTecladoTarjeta(e, alumno)}"
+                >
+                  <header class="tarjeta-cabecera">
+                    <h2>
+                      <span class="apellido">${alumno.apellido}</span>
+                      <span class="nombre">${alumno.nombre}</span>
+                    </h2>
+                    <button
+                      class="${alumno.favorito ? 'btn-favorito activo' : 'btn-favorito'}"
+                      type="button"
+                      aria-label="Favorito"
+                      @click="${(e) => alternarFavorito(e, alumno.id)}"
+                    >
+                      ${alumno.favorito ? '★' : '☆'}
+                    </button>
+                  </header>
+                  <address>
+                    <div class="telefono">${alumno.telefono}</div>
+                    <div class="github">@${alumno.github}</div>
+                  </address>
+                  <footer>
+                    ${alumno.comision} · ${alumno.legajo}
+                  </footer>
+                </article>
+              </li>
+            `)
+          }}
+        </ul>
+      </section>
+
+      <dialog id="dialogo-alumno">
+        <header>
+          <h2>${() => estado.modalModo === 'editar' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p>${() => estado.modalModo === 'editar' ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
+        </header>
+        <form @submit="${guardarAlumno}">
+          <div class="campos-grid">
+            <div class="campo">
+              <label for="campo-apellido">Apellido</label>
+              <input id="campo-apellido" name="apellido" required />
+            </div>
+            <div class="campo">
+              <label for="campo-nombre">Nombre</label>
+              <input id="campo-nombre" name="nombre" required />
+            </div>
+            <div class="campo">
+              <label for="campo-legajo">Legajo</label>
+              <input id="campo-legajo" name="legajo" required />
+            </div>
+            <div class="campo">
+              <label for="campo-comision">Comisión</label>
+              <input id="campo-comision" name="comision" required />
+            </div>
+            <div class="campo">
+              <label for="campo-telefono">Teléfono</label>
+              <input id="campo-telefono" name="telefono" required />
+            </div>
+            <div class="campo">
+              <label for="campo-github">GitHub</label>
+              <input id="campo-github" name="github" required />
+            </div>
+          </div>
+          <div class="acciones-dialogo">
+            ${() => estado.modalModo === 'editar' ? html`
+              <button class="btn-eliminar" type="button" @click="${eliminarAlumno}">Eliminar</button>
+            ` : html`<span></span>`}
+            <div class="acciones-principales">
+              <button class="btn-guardar" type="submit">Guardar</button>
+              <button class="btn-cancelar" type="button" @click="${cerrarDialogo}">Cancelar</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
+    `
+
+    plantilla(app)
   </script>
 </body>
 </html>
