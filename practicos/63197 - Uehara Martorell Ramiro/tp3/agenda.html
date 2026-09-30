@@ -5,29 +5,476 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --fondo: #f1f3ef;
+      --tarjeta: #fcfdfb;
+      --borde: #d6ddd6;
+      --texto: #1d2825;
+      --suave: #66736d;
+      --acento: #2b4a42;
+      --estrella: #c09a4a;
+      --peligro: #b9473f;
+      --letra: "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 36px 20px;
+      font: 15px/1.45 var(--letra);
+      color: var(--texto);
+      background: var(--fondo);
+    }
+
+    button, input { font: inherit; color: inherit; }
+    button { font-weight: 600; cursor: pointer; }
+
+    main { width: 1120px; max-width: 100%; margin: auto; }
+
+    main > header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 30px;
+
+      & h1 { flex: 1; margin: 0; font-size: 30px; }
+
+      & input {
+        width: 280px;
+        padding: 12px 18px;
+        border: 1px solid var(--borde);
+        border-radius: 5px;
+        background: var(--tarjeta);
+      }
+
+      & button {
+        padding: 12px 22px;
+        border: 0;
+        border-radius: 5px;
+        background: var(--acento);
+        color: white;
+      }
+    }
+
+    main > section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 10px;
+
+      & > p { grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--suave); }
+    }
+
+    article {
+      display: flex;
+      flex-direction: column;
+      padding: 14px 16px 10px;
+      border: 1px solid var(--borde);
+      border-radius: 5px;
+      background: var(--tarjeta);
+      box-shadow: 0 1px 3px rgb(0 0 0 / .06);
+      cursor: pointer;
+      transition: .2s;
+
+      &:hover { box-shadow: 0 8px 20px rgb(0 0 0 / .09); transform: translateY(-2px); }
+      &:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+
+      & header { display: flex; align-items: flex-start; min-height: 44px; }
+
+      & h2 {
+        flex: 1;
+        margin: 0;
+        font: bold 20px/1.2 Palatino, "Book Antiqua", serif;
+        color: var(--acento);
+
+        & span { font: 13px var(--letra); color: var(--suave); }
+      }
+
+      & header button {
+        padding: 0;
+        border: 0;
+        background: none;
+        font: 19px/1 sans-serif;
+        color: var(--estrella);
+      }
+
+      & address { font-style: normal; font-size: 14px; }
+      & address p { margin: 0 0 4px; }
+      & address p:first-child { font-weight: 500; }
+      & address p:last-child { font-size: 12px; color: var(--suave); }
+
+      & footer {
+        margin-top: auto;
+        padding-top: 8px;
+        border-top: 1px dashed var(--borde);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .1em;
+        color: var(--suave);
+      }
+    }
+
+    dialog {
+      width: 600px;
+      max-width: calc(100% - 32px);
+      padding: 0;
+      border: 6px solid var(--borde);
+      border-radius: 20px;
+      background: var(--tarjeta);
+      color: var(--texto);
+      box-shadow: 0 24px 60px rgb(0 0 0 / .2);
+
+      &::backdrop { background: rgb(60 80 72 / .4); backdrop-filter: blur(4px); }
+
+      & form > * { padding: 18px 20px; border-top: 1px solid var(--borde); }
+
+      & form > header {
+        border: 0;
+        background: var(--fondo);
+
+        & h2 { margin: 0; font-size: 19px; }
+        & p { margin: 4px 0 0; font-size: 13px; color: var(--suave); }
+      }
+
+      & fieldset {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin: 0;
+        border-width: 1px 0 0;
+
+        & label { display: grid; gap: 6px; font-size: 12px; font-weight: 600; color: var(--suave); }
+
+        & input {
+          padding: 10px 12px;
+          border: 1px solid var(--borde);
+          border-radius: 8px;
+          background: var(--fondo);
+          font: 15px var(--letra);
+          color: var(--texto);
+        }
+
+        & p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--peligro); }
+        & p:empty { display: none; }
+      }
+
+      & footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+
+        & button { padding: 10px 18px; border: 1px solid var(--borde); border-radius: 8px; background: white; }
+        & .eliminar { margin-right: auto; border-color: var(--peligro); color: var(--peligro); }
+        & [type="submit"] { background: var(--acento); color: white; }
+      }
+    }
+
+    @media (max-width: 600px) {
+      main > header h1 { flex-basis: 100%; }
+      main > header input { flex: 1; min-width: 0; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+    const CLAVE = 'agenda-alumnos'
+
+    
+    function cargarAlumnos() {
+      const guardado = localStorage.getItem(CLAVE)
+      if (guardado) {
+        return JSON.parse(guardado)
+      }
+
+      localStorage.setItem(CLAVE, JSON.stringify(alumnosIniciales))
+      return alumnosIniciales
+    }
+
+    const estado = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: '',
+    })
+
+    const formulario = reactive({
+      id: null,
+      apellido: '',
+      nombre: '',
+      legajo: '',
+      comision: '',
+      telefono: '',
+      github: '',
+      error: '',
+    })
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    function comparar(a, b) {
+      if (a.favorito !== b.favorito) return b.favorito - a.favorito
+
+      const porApellido = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' })
+      if (porApellido !== 0) return porApellido
+
+      return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+    }
+
+    function normalizar(texto) {
+      return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    }
+
+    function alumnosVisibles() {
+      const buscado = normalizar(estado.busqueda)
+
+      const filtrados = estado.alumnos.filter(a => {
+        const datos = normalizar(`${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`)
+        return datos.includes(buscado)
+      })
+
+      return filtrados.sort(comparar)
+    }
+
+    function validar() {
+      if (formulario.apellido.trim() === '') return 'El apellido es obligatorio.'
+      if (formulario.nombre.trim() === '') return 'El nombre es obligatorio.'
+      if (!/^\d+$/.test(formulario.legajo.trim())) return 'El legajo debe tener solo números.'
+
+      const repetido = estado.alumnos.some(a => a.legajo === formulario.legajo.trim() && a.id !== formulario.id)
+      if (repetido) return 'Ya existe un alumno con ese legajo.'
+
+      if (!/^C\d+$/i.test(formulario.comision.trim())) return 'La comisión debe ser C1, C2, C3…'
+      if (formulario.telefono.trim() === '') return 'El teléfono es obligatorio.'
+      if (formulario.github.trim() === '') return 'El usuario de GitHub es obligatorio.'
+      return ''
+    }
+
+    function titulo() {
+      if (formulario.id === null) return 'Agregar alumno'
+      return 'Editar alumno'
+    }
+
+    function subtitulo() {
+      if (formulario.id === null) return 'Completa los datos del nuevo alumno.'
+      return 'Actualiza los datos del alumno.'
+    }
+
+    function estrella(alumno) {
+      if (alumno.favorito) return '★'
+      return '☆'
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function guardar() {
+      localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos))
+    }
+
+    function alternarFavorito(alumno) {
+      alumno.favorito = !alumno.favorito
+      guardar()
+    }
+
+    function buscar(texto) {
+      estado.busqueda = texto
+    }
+
+    function abrirNuevo() {
+      formulario.id = null
+      formulario.apellido = ''
+      formulario.nombre = ''
+      formulario.legajo = ''
+      formulario.comision = ''
+      formulario.telefono = ''
+      formulario.github = ''
+      formulario.error = ''
+      document.querySelector('dialog').showModal()
+    }
+
+    function abrirEdicion(alumno) {
+      formulario.id = alumno.id
+      formulario.apellido = alumno.apellido
+      formulario.nombre = alumno.nombre
+      formulario.legajo = alumno.legajo
+      formulario.comision = alumno.comision
+      formulario.telefono = alumno.telefono
+      formulario.github = alumno.github
+      formulario.error = ''
+      document.querySelector('dialog').showModal()
+    }
+
+    function cerrarFormulario() {
+      document.querySelector('dialog').close()
+    }
+
+    function guardarFormulario() {
+      const error = validar()
+      if (error !== '') {
+        formulario.error = error
+        return
+      }
+
+      const datos = {
+        apellido: formulario.apellido.trim(),
+        nombre: formulario.nombre.trim(),
+        legajo: formulario.legajo.trim(),
+        comision: formulario.comision.trim().toUpperCase(),
+        telefono: formulario.telefono.trim(),
+        github: formulario.github.trim(),
+      }
+
+      if (formulario.id === null) {
+        const ids = estado.alumnos.map(a => a.id)
+        const nuevo = { id: Math.max(0, ...ids) + 1, ...datos, favorito: false }
+        estado.alumnos = [...estado.alumnos, nuevo]
+      } else {
+        const alumno = estado.alumnos.find(a => a.id === formulario.id)
+        Object.assign(alumno, datos)
+      }
+
+      guardar()
+      cerrarFormulario()
+    }
+
+  function eliminarAlumno() {
+      if (!confirm('¿Eliminar a ' + formulario.apellido + ', ' + formulario.nombre + '?')) return
+      estado.alumnos = estado.alumnos.filter(a => a.id !== formulario.id)
+      guardar()
+      cerrarFormulario()
+    }
+
+  function teclaEnTarjeta(e, alumno) {
+      if (e.target !== e.currentTarget) return
+
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirEdicion(alumno)
+      }
+      if (e.key === ' ') {
+        e.preventDefault()
+        alternarFavorito(alumno)
+      }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const Tarjeta = alumno => html`
+        <article tabindex="0"
+            @click="${() => abrirEdicion(alumno)}"
+            @keydown="${e => teclaEnTarjeta(e, alumno)}">
+        <header>
+          <h2>${() => alumno.apellido} <span>${() => alumno.nombre}</span></h2>
+          <button type="button" tabindex="-1" @click="${e => { e.stopPropagation(); alternarFavorito(alumno) }}">
+            ${() => estrella(alumno)}
+          </button>
+        </header>
+        <address>
+          <p>${() => alumno.telefono}</p>
+          <p>@${() => alumno.github}</p>
+        </address>
+        <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+      </article>
+    `
+
+    const Encabezado = () => html`
+      <header>
+        <h1>Agenda</h1>
+        <input type="search" placeholder="Buscar alumno…"
+               @input="${e => buscar(e.target.value)}">
+        <button type="button" @click="${() => abrirNuevo()}">+ Agregar</button>
+      </header>
+    `
+
+    const Campo = (campo, etiqueta) => html`
+      <label>
+        ${etiqueta}
+        <input value="${() => formulario[campo]}"
+               @input="${e => { formulario[campo] = e.target.value }}">
+      </label>
+    `
+
+    const Dialogo = () => html`
+      <dialog>
+        <form novalidate @submit="${e => { e.preventDefault(); guardarFormulario() }}">
+          <header>
+            <h2>${() => titulo()}</h2>
+            <p>${() => subtitulo()}</p>
+          </header>
+          <fieldset>
+            ${Campo('apellido', 'Apellido')}
+            ${Campo('nombre', 'Nombre')}
+            ${Campo('legajo', 'Legajo')}
+            ${Campo('comision', 'Comisión')}
+            ${Campo('telefono', 'Teléfono')}
+            ${Campo('github', 'GitHub')}
+            <p>${() => formulario.error}</p>
+          </fieldset>
+          <footer>
+            <button type="button" class="eliminar" hidden="${() => formulario.id === null}"
+              @click="${() => eliminarAlumno()}">Eliminar</button>
+            <button type="submit">Guardar</button>
+            <button type="button" @click="${() => cerrarFormulario()}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
+    `
+
+    function listaDeTarjetas() {
+      const lista = alumnosVisibles()
+      if (lista.length === 0) {
+        return [html`<p>No hay alumnos para mostrar.</p>`.key('vacio')]
+      }
+      return lista.map(a => Tarjeta(a).key(a.id))
+    }
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      ${Encabezado()}
+      <section>
+        ${() => listaDeTarjetas()}
+      </section>
+      ${Dialogo()}
+    `(document.getElementById('app'))
   </script>
 </body>
 </html>
