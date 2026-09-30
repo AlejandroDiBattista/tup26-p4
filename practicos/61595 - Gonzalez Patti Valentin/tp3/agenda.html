@@ -3,15 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <meta name="theme-color" content="#f5f6f4">
+  <title>Agenda de alumnos</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #292e2a;
+      background: #f5f6f4;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    main {
+      width: min(1200px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 48px 0 64px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+      & h1 { margin: 0; font-size: 28px; letter-spacing: -.04em; }
+      & .tools { display: flex; align-items: center; gap: 8px; }
+    }
+
+    .search {
+      width: min(300px, 40vw);
+      min-height: 46px;
+      padding: 0 18px;
+      border: 1px solid #d9ded9;
+      border-radius: 999px;
+      background: #fff;
+      outline: none;
+      &:focus { border-color: #34443a; box-shadow: 0 0 0 3px #34443a22; }
+    }
+
+    .button {
+      min-height: 46px;
+      padding: 0 20px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      font-weight: 700;
+      transition: transform .15s ease, background .15s ease;
+      &:active { transform: translateY(1px); }
+      &:focus-visible { outline: 3px solid #8c967e; outline-offset: 2px; }
+      &.primary { color: white; background: #2e3d33; &:hover { background: #405446; } }
+      &.quiet { color: #292e2a; border-color: #d9ded9; background: white; }
+      &.danger { color: #b94a43; border-color: #e6d8d6; background: white; }
+    }
+
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      & > li { min-width: 0; }
+    }
+
+    .student-card {
+      position: relative;
+      display: flex;
+      min-height: 200px;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px 20px 17px;
+      border: 1px solid #d9ded9;
+      border-radius: 17px;
+      background: #fff;
+      box-shadow: 0 2px 5px #27342b0b;
+      cursor: pointer;
+      transition: box-shadow .15s ease, transform .15s ease;
+      &:hover { transform: translateY(-2px); box-shadow: 0 7px 18px #27342b12; }
+      &:focus-visible { outline: 3px solid #34443a; outline-offset: 2px; }
+      & .identity { padding-right: 32px; }
+      & h2 { display: inline; margin: 0; color: #34443a; font-family: Georgia, "Times New Roman", serif; font-size: 25px; letter-spacing: -.04em; }
+      & .name { margin-left: 6px; color: #626862; font-size: 15px; }
+      & .details { display: grid; gap: 8px; margin-top: 22px; color: #646b65; font-size: 13px; }
+      & address { color: #292e2a; font-size: 14px; font-style: normal; font-weight: 650; }
+      & .record { padding-top: 12px; border-top: 1px solid #e1e3df; color: #646b65; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+      & .favorite { position: absolute; top: 14px; right: 16px; width: 30px; height: 30px; padding: 0; border: 0; color: #887d5d; background: transparent; font-size: 27px; line-height: 1; }
+      & .favorite:focus-visible { border-radius: 5px; outline: 2px solid #34443a; }
+    }
+
+    .empty, .load-error { padding: 56px 16px; color: #626862; text-align: center; }
+    .load-error { color: #a43d36; }
+
+    .student-dialog {
+      width: min(620px, calc(100% - 32px));
+      max-width: none;
+      padding: 0;
+      overflow: hidden;
+      border: 7px solid #dce1dc;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: 0 24px 80px #17231c40;
+      &::backdrop { background: #44504788; backdrop-filter: blur(4px); }
+      & header { padding: 16px 18px 14px; border-bottom: 1px solid #e1e3df; background: #fafbf9; }
+      & h2 { margin: 0 0 3px; font-size: 20px; letter-spacing: -.03em; }
+      & .dialog-intro { margin: 0; color: #646b65; font-size: 13px; }
+      & form { margin: 0; }
+      & .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 18px; }
+      & label { display: grid; gap: 5px; color: #626862; font-size: 12px; font-weight: 700; }
+      & input { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid #d9ded9; border-radius: 10px; color: #292e2a; background: #f7f8f6; outline: none; }
+      & input:focus { border-color: #34443a; box-shadow: 0 0 0 3px #34443a22; }
+      & .form-error { grid-column: 1 / -1; min-height: 18px; margin: 0; color: #b33d36; font-size: 13px; }
+      & footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid #e1e3df; }
+      & .form-actions { display: flex; gap: 8px; }
+      & .button { min-height: 42px; padding: 0 17px; border-radius: 12px; font-size: 13px; }
+    }
+
+    @media (max-width: 900px) {
+      main { width: min(760px, calc(100% - 36px)); padding-top: 32px; }
+      .student-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      main { width: calc(100% - 28px); padding: 24px 0 40px; }
+      .page-header { align-items: stretch; flex-direction: column; gap: 16px; margin-bottom: 20px; & .tools { width: 100%; } }
+      .search { width: 100%; min-width: 0; }
+      .page-header .button { padding: 0 15px; white-space: nowrap; }
+      .student-grid { grid-template-columns: 1fr; }
+      .student-card { min-height: 184px; }
+      .student-dialog { border-width: 5px; border-radius: 22px; & .fields { gap: 10px; padding: 14px; } & header { padding: 14px; } & footer { align-items: stretch; flex-direction: column-reverse; } & .form-actions { justify-content: flex-end; } & footer > .button { align-self: flex-start; } }
+    }
+    @media (max-width: 420px) { .student-dialog .fields { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -19,15 +143,185 @@
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
+    const STORAGE_KEY = 'agenda-alumnos-v1'
     const app = document.getElementById('app')
+    const dialog = document.createElement('dialog')
+    dialog.className = 'student-dialog'
+    document.body.append(dialog)
+
+    function cargarAlumnos() {
+      try {
+        const guardados = localStorage.getItem(STORAGE_KEY)
+        if (guardados !== null) {
+          const parsed = JSON.parse(guardados)
+          if (Array.isArray(parsed)) return parsed
+        }
+      } catch (error) {
+        console.warn('No se pudieron recuperar los datos guardados.', error)
+      }
+      return structuredClone(alumnosIniciales)
+    }
+
+    const estado = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: '',
+      modo: 'agregar',
+      idEditando: null,
+      formulario: { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' },
+      error: ''
+    })
+
+    function persistir() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.alumnos))
+      } catch (error) {
+        console.error('No se pudieron guardar los cambios en localStorage.', error)
+        estado.error = 'No se pudieron guardar los cambios en este navegador.'
+      }
+    }
+    persistir()
+
+    const normalizar = valor => String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim()
+    const comparar = new Intl.Collator('es', { sensitivity: 'base' }).compare
+
+    function alumnosVisibles() {
+      const busqueda = normalizar(estado.busqueda)
+      return [...estado.alumnos]
+        .filter(alumno => !busqueda || [alumno.apellido, alumno.nombre, alumno.legajo, alumno.comision, alumno.telefono, alumno.github].some(dato => normalizar(dato).includes(busqueda)))
+        .sort((a, b) => Number(Boolean(b.favorito)) - Number(Boolean(a.favorito)) || comparar(a.apellido, b.apellido) || comparar(a.nombre, b.nombre))
+    }
+
+    function alternarFavorito(id) {
+      const alumno = estado.alumnos.find(item => String(item.id) === String(id))
+      if (!alumno) return
+      alumno.favorito = !alumno.favorito
+      persistir()
+    }
+
+    function limpiarFormulario() {
+      estado.formulario = { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
+      estado.error = ''
+    }
+
+    function abrirAlta() {
+      estado.modo = 'agregar'
+      estado.idEditando = null
+      limpiarFormulario()
+      dialog.showModal()
+      requestAnimationFrame(() => dialog.querySelector('[name="apellido"]').focus())
+    }
+
+    function abrirEdicion(id) {
+      const alumno = estado.alumnos.find(item => String(item.id) === String(id))
+      if (!alumno) return
+      estado.modo = 'editar'
+      estado.idEditando = alumno.id
+      estado.error = ''
+      estado.formulario = {
+        apellido: alumno.apellido ?? '', nombre: alumno.nombre ?? '', legajo: alumno.legajo ?? '',
+        comision: alumno.comision ?? '', telefono: alumno.telefono ?? '', github: alumno.github ?? ''
+      }
+      dialog.showModal()
+      requestAnimationFrame(() => dialog.querySelector('[name="apellido"]').focus())
+    }
+
+    function guardar(event) {
+      event.preventDefault()
+      const datos = Object.fromEntries(Object.entries(estado.formulario).map(([clave, valor]) => [clave, String(valor).trim()]))
+      if (Object.values(datos).some(valor => !valor)) {
+        estado.error = 'Completá todos los campos para guardar.'
+        return
+      }
+      const duplicado = estado.alumnos.some(alumno => String(alumno.legajo).trim() === datos.legajo && String(alumno.id) !== String(estado.idEditando))
+      if (duplicado) {
+        estado.error = 'Ya existe un alumno con ese legajo.'
+        dialog.querySelector('[name="legajo"]').focus()
+        return
+      }
+
+      if (estado.modo === 'editar') {
+        const alumno = estado.alumnos.find(item => String(item.id) === String(estado.idEditando))
+        if (alumno) Object.assign(alumno, datos)
+      } else {
+        const nuevoId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
+        estado.alumnos.push({ id: nuevoId, ...datos, favorito: false })
+      }
+      persistir()
+      dialog.close()
+    }
+
+    function eliminar() {
+      if (estado.modo !== 'editar') return
+      estado.alumnos = estado.alumnos.filter(alumno => String(alumno.id) !== String(estado.idEditando))
+      persistir()
+      dialog.close()
+    }
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
+      <header class="page-header">
+        <h1>Agenda</h1>
+        <div class="tools">
+          <input class="search" type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno" @input="${event => estado.busqueda = event.target.value}">
+          <button class="button primary" type="button" @click="${abrirAlta}">+ Agregar</button>
+        </div>
+      </header>
+      <section aria-label="Alumnos de la agenda">
+        <ul class="student-grid" aria-live="polite">
+          ${() => alumnosVisibles().map(alumno => html`
+            <li>
+              <article class="student-card" tabindex="0" aria-label="${`${alumno.apellido}, ${alumno.nombre}. Enter para editar; espacio para cambiar favorito.`}" @click="${() => abrirEdicion(alumno.id)}" @keydown="${event => {
+                if (event.target !== event.currentTarget) return
+                if (event.key === 'Enter') { event.preventDefault(); abrirEdicion(alumno.id) }
+                if (event.key === ' ') { event.preventDefault(); alternarFavorito(alumno.id) }
+              }}">
+                <div class="identity"><h2>${alumno.apellido}</h2><span class="name">${alumno.nombre}</span></div>
+                <button class="favorite" type="button" aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}" aria-pressed="${Boolean(alumno.favorito)}" @click="${event => { event.stopPropagation(); alternarFavorito(alumno.id) }}" @keydown="${event => event.stopPropagation()}">${alumno.favorito ? '★' : '☆'}</button>
+                <div class="details">
+                  <address>${alumno.telefono}</address>
+                  <span>@${alumno.github}</span>
+                </div>
+                <footer class="record">${alumno.comision} · ${alumno.legajo}</footer>
+              </article>
+            </li>
+          `)}
+        </ul>
+        ${() => alumnosVisibles().length === 0 ? html`<p class="empty">No hay alumnos para mostrar.</p>` : ''}
+      </section>
     `(app)
+
+    html`
+      <header>
+        <h2>${() => estado.modo === 'editar' ? 'Editar alumno' : 'Agregar alumno'}</h2>
+        <p class="dialog-intro">${() => estado.modo === 'editar' ? 'Actualizá los datos del alumno.' : 'Completá los datos para sumar un alumno a la agenda.'}</p>
+      </header>
+      <form @submit="${guardar}">
+        <div class="fields">
+          <label>Apellido<input name="apellido" autocomplete="family-name" required .value="${() => estado.formulario.apellido}" @input="${event => estado.formulario.apellido = event.target.value}"></label>
+          <label>Nombre<input name="nombre" autocomplete="given-name" required .value="${() => estado.formulario.nombre}" @input="${event => estado.formulario.nombre = event.target.value}"></label>
+          <label>Legajo<input name="legajo" inputmode="numeric" required .value="${() => estado.formulario.legajo}" @input="${event => estado.formulario.legajo = event.target.value}"></label>
+          <label>Comisión<input name="comision" required .value="${() => estado.formulario.comision}" @input="${event => estado.formulario.comision = event.target.value}"></label>
+          <label>Teléfono<input name="telefono" type="tel" autocomplete="tel" required .value="${() => estado.formulario.telefono}" @input="${event => estado.formulario.telefono = event.target.value}"></label>
+          <label>GitHub<input name="github" autocomplete="off" required .value="${() => estado.formulario.github}" @input="${event => estado.formulario.github = event.target.value}"></label>
+          <p class="form-error" role="alert">${() => estado.error}</p>
+        </div>
+        <footer>
+          <button class="button danger" type="button" hidden="${() => estado.modo !== 'editar'}" @click="${eliminar}">Eliminar</button>
+          <div class="form-actions">
+            <button class="button primary" type="submit">Guardar</button>
+            <button class="button quiet" type="button" @click="${() => dialog.close()}">Cancelar</button>
+          </div>
+        </footer>
+      </form>
+    `(dialog)
+
+    dialog.addEventListener('close', limpiarFormulario)
+    dialog.addEventListener('click', event => {
+      if (event.target === dialog) dialog.close()
+    })
+
+    watch(() => estado.alumnos, () => persistir())
   </script>
 </body>
 </html>
