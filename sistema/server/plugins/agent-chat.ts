@@ -5,6 +5,9 @@ import {
 } from "@agent-native/core/server";
 
 import actionsRegistry from "../../.generated/actions-registry.js";
+import { configureOpenAIModel } from "../agent/openai-model.js";
+
+configureOpenAIModel();
 
 const INLINE_TEXT_ATTACHMENT_MAX_CHARS = 60_000;
 

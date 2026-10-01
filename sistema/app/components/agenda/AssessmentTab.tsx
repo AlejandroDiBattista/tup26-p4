@@ -1,10 +1,11 @@
-import { useActionMutation, useActionQuery } from "@agent-native/core/client/hooks";
+import { callAction, useActionMutation, useActionQuery } from "@agent-native/core/client/hooks";
 import { useT } from "@agent-native/core/client/i18n";
 import {
   IconCalendarEvent,
   IconChecklist,
   IconChevronDown,
   IconFileUpload,
+  IconGitPullRequest,
   IconPlus,
   IconSearch,
   IconSettings,
@@ -12,6 +13,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -26,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { ResultadoBajarTp } from "../../../server/agenda/bajar-tp";
 
 type WorkStatus = "pendiente" | "error" | "falla" | "presentado";
 
@@ -136,10 +139,17 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const updateWork = useActionMutation("update-assessment");
   const deleteWork = useActionMutation("delete-assessment");
   const publishStatement = useActionMutation("publicar-enunciado-trabajo");
+  // La revisión completa de GitHub puede superar los 60 s del hook de acciones.
+  const downloadTp = useMutation({
+    mutationFn: () => callAction<ResultadoBajarTp>("bajar-tp", {}, { timeoutMs: 600_000 }),
+    retry: false,
+  });
+  const [prResult, setPrResult] = useState<ResultadoBajarTp | null>(null);
   const setResult = useActionMutation("set-assessment-result");
   const checkTp1 = useActionMutation("comprobar-tp1");
   const checkTp2 = useActionMutation("comprobar-tp2");
-  const checking = checkTp1.isPending || checkTp2.isPending;
+  const checkTp3 = useActionMutation("comprobar-tp3");
+  const checking = checkTp1.isPending || checkTp2.isPending || checkTp3.isPending;
   const [checkDetails, setCheckDetails] = useState<Array<{ legajo: string; detalle?: string }>>([]);
   const [checkErrors, setCheckErrors] = useState<Array<{ legajo: string; error?: string }>>([]);
 
@@ -148,6 +158,11 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const courses = courseData?.courses ?? [];
   const selectedWork = works.find((work) => work.id === selectedWorkId) ?? null;
   const checkableWork = selectedWork?.title.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const checkLabels = checkableWork === "tp3"
+    ? { action: "agenda.checkTp3", pending: "agenda.checkingTp3", hint: "agenda.checkTp3Hint", done: "agenda.tp3Checked" }
+    : checkableWork === "tp2"
+      ? { action: "agenda.checkTp2", pending: "agenda.checkingTp2", hint: "agenda.checkTp2Hint", done: "agenda.tp2Checked" }
+      : { action: "agenda.checkTp1", pending: "agenda.checkingTp1", hint: "agenda.checkTp1Hint", done: "agenda.tp1Checked" };
   const visibleRows = useMemo(() => {
     const terms = normalizeStudentSearch(studentQuery)
       .split(/[^\p{L}\p{N}]+/u)
@@ -317,7 +332,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
     if (!selectedWork || !filteredRows.length) return;
     setCheckErrors([]);
     setCheckDetails([]);
-    const mutation = checkableWork === "tp2" ? checkTp2 : checkTp1;
+    const mutation = checkableWork === "tp3" ? checkTp3 : checkableWork === "tp2" ? checkTp2 : checkTp1;
     mutation.mutate(
       { assessmentId: selectedWork.id, legajos: filteredRows.map((row) => row.legajo) },
       {
@@ -329,13 +344,28 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
           };
           setCheckErrors(result.results.filter((row) => row.error));
           setCheckDetails(result.results.filter((row) => row.detalle));
-          const message = t(checkableWork === "tp2" ? "agenda.tp2Checked" : "agenda.tp1Checked", { count: result.updated });
-          if (result.failed) toast.warning(message);
+          const message = t(checkLabels.done, { count: result.updated });
+          if (result.failed) toast.warning(`${message} ${t("agenda.checkFailures", { count: result.failed })}`);
           else toast.success(message);
         },
         onError: (error) => toast.error(error.message),
       },
     );
+  }
+
+  function handleBajarTp() {
+    if (downloadTp.isPending) return;
+    setPrResult(null);
+    downloadTp.mutate(undefined, {
+      onSuccess: (value) => {
+        const result = value as ResultadoBajarTp;
+        setPrResult(result);
+        const message = t("agenda.tpDownloaded", { ...result });
+        if (result.failed || result.sync?.status === "failed") toast.warning(message);
+        else toast.success(message);
+      },
+      onError: (error) => toast.error(error.message),
+    });
   }
 
   function setStatus(row: WorkRow, status: WorkStatus) {
@@ -451,22 +481,30 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
         <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" disabled={!selectedWork}>
+              <Button type="button" variant="outline">
                 {t("agenda.actions")}
                 <IconChevronDown aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {checkableWork === "tp1" || checkableWork === "tp2" ? (
+              <DropdownMenuItem
+                onSelect={handleBajarTp}
+                disabled={downloadTp.isPending}
+                title={t("agenda.downloadTpHint")}
+              >
+                <IconGitPullRequest aria-hidden="true" />
+                {t(downloadTp.isPending ? "agenda.downloadingTp" : "agenda.downloadTp")}
+              </DropdownMenuItem>
+              {checkableWork === "tp1" || checkableWork === "tp2" || checkableWork === "tp3" ? (
                 <DropdownMenuItem
                   onSelect={handleCheckWork}
                   disabled={checking || setResult.isPending || filteredRows.length === 0}
-                  title={t(checkableWork === "tp2" ? "agenda.checkTp2Hint" : "agenda.checkTp1Hint")}
+                  title={t(checkLabels.hint)}
                 >
                   <IconChecklist aria-hidden="true" />
                   {checking
-                    ? t(checkableWork === "tp2" ? "agenda.checkingTp2" : "agenda.checkingTp1")
-                    : t(checkableWork === "tp2" ? "agenda.checkTp2" : "agenda.checkTp1", { count: filteredRows.length })}
+                    ? t(checkLabels.pending)
+                    : t(checkLabels.action, { count: filteredRows.length })}
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem
@@ -498,8 +536,8 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
           {t("agenda.checkingTp1Hint")}
         </p>
       ) : null}
-      {checkableWork === "tp2" ? (
-        <p className="mb-4 text-sm text-muted-foreground">{t("agenda.checkTp2Hint")}</p>
+      {checkableWork === "tp2" || checkableWork === "tp3" ? (
+        <p className="mb-4 text-sm text-muted-foreground">{t(checkLabels.hint)}</p>
       ) : null}
       {checkDetails.length > 0 ? (
         <details className="mb-4 rounded-md border p-3 text-sm">
@@ -576,6 +614,35 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
           </div>
         </form>
       ) : null}
+
+      <div role="status" aria-live="polite">
+        {downloadTp.isPending ? (
+          <p className="mb-4 text-sm text-muted-foreground">{t("agenda.downloadingTp")}</p>
+        ) : null}
+        {prResult ? (
+          <div className="mb-5 rounded-md border border-border p-4 text-sm">
+            <p>{t("agenda.tpDownloaded", { ...prResult })}</p>
+            {prResult.sync ? <p className={`mt-2 ${prResult.sync.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}>{prResult.sync.detail}</p> : null}
+            {prResult.results.length ? (
+              <details className="mt-2">
+                <summary className="cursor-pointer font-medium">{t("agenda.tpDownloadDetails")}</summary>
+                <p className="mt-2 text-muted-foreground">{t("agenda.downloadTpHint")}</p>
+                <ul className="mt-3 grid gap-3">
+                  {prResult.results.map((result) => (
+                    <li key={result.number} className="break-words">
+                      <a href={result.url} target="_blank" rel="noreferrer" className="font-medium text-primary underline underline-offset-2">PR #{result.number}</a>
+                      {" · "}{t(`agenda.prStatus_${result.status}`)}
+                      <p className="mt-1 text-muted-foreground">{result.previousTitle}</p>
+                      {result.title && result.title !== result.previousTitle ? <p>→ {result.title}</p> : null}
+                      {result.detail ? <p className="mt-1 text-muted-foreground">{result.detail}</p> : null}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {selectedWork && showManage ? (
         <form

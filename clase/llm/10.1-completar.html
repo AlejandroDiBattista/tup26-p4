@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Completar</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #18231f;
+      background: #f2f3ee;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 32px 18px; }
+    main { width: min(100%, 680px); }
+    .eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; color: #63736a; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { width: 8px; height: 8px; border-radius: 50%; background: #df7654; content: ""; }
+    h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1; letter-spacing: -.055em; }
+    .intro { margin: 14px 0 30px; color: #647169; }
+    .model { display: inline-block; padding: 4px 9px; border: 1px solid #dce1d9; border-radius: 999px; color: #526158; font-size: .78rem; vertical-align: 2px; }
+    form, .answer { padding: 18px; border: 1px solid #dfe3dc; border-radius: 16px; background: #fff; box-shadow: 0 12px 36px #23382c0b; }
+    textarea { display: block; width: 100%; min-height: 150px; padding: 14px; border: 1px solid #e0e4df; border-radius: 10px; outline: none; background: #fbfcfa; color: inherit; font: inherit; line-height: 1.55; resize: vertical; transition: border-color .15s, box-shadow .15s; }
+    textarea:focus { border-color: #708b75; box-shadow: 0 0 0 3px #708b751a; }
+    textarea::placeholder { color: #9aa49c; }
+    .actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+    button { display: inline-flex; align-items: center; gap: 9px; padding: 10px 16px; border: 0; border-radius: 9px; background: #273f32; color: white; font: inherit; font-size: .92rem; font-weight: 650; cursor: pointer; transition: background .15s, transform .15s; }
+    button:hover:not(:disabled) { transform: translateY(-1px); background: #365a45; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .answer { margin-top: 14px; padding: 20px; }
+    .answer-label { margin: 0 0 10px; color: #758078; font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    pre { min-height: 1.5em; margin: 0; color: #27352d; font: inherit; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    @media (max-width: 480px) { body { place-items: start center; padding: 48px 16px 24px; } form { padding: 12px; } .answer { padding: 16px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+  <body>
+    <main id="app"></main>
+
+    <script type="module">
+      import { html, reactive } from "https://esm.sh/@arrow-js/core";
+
+      function obtenerApiKey() {
+        let clave = localStorage.getItem("OPENAI_API_KEY")?.trim();
+        if (!clave) {
+          clave = prompt("Ingresá tu API key de OpenAI:")?.trim();
+          if (!clave) throw new Error("Se necesita una API key para continuar.");
+          localStorage.setItem("OPENAI_API_KEY", clave);
+        }
+        return clave;
+      }
+
+      const API_URL = "https://api.openai.com/v1/chat/completions";
+      const MODEL   = "gpt-6-luna";
+
+      const estado = reactive({ resultado: "Escribí un prompt para empezar.", cargando: false });
+
+      async function consultar(prompt) {
+        const respuesta = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${obtenerApiKey()}`,
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        const datos = await respuesta.json();
+        if (!respuesta.ok) throw new Error(datos.error?.message ?? respuesta.statusText);
+        return datos.choices[0].message.content;
+      }
+
+      async function enviar(evento) {
+        evento.preventDefault();
+        estado.cargando  = true;
+        estado.resultado = "Generando una respuesta…";
+        try {
+          estado.resultado = await consultar(evento.target.prompt.value);
+        } catch (error) {
+          estado.resultado = `Error: ${error.message}`;
+        } finally {
+          estado.cargando = false;
+        }
+      }
+
+      const vista = html`
+        <p class="eyebrow">Laboratorio de IA</p>
+        <h1>Completar<span aria-hidden="true">.</span></h1>
+        <p class="intro">Escribí una instrucción y recibí una respuesta <span class="model">${MODEL}</span></p>
+        <form @submit="${enviar}">
+          <textarea name="prompt" required placeholder="¿Qué te gustaría preguntarle?" aria-label="Prompt"></textarea>
+          <div class="actions">
+            <button type="submit" :disabled="${() => estado.cargando}">
+              ${() => estado.cargando ? "Procesando…" : "Generar respuesta"}
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </form>
+        <section class="answer" aria-live="polite">
+          <p class="answer-label">Respuesta</p>
+          <pre>${() => estado.resultado}</pre>
+        </section>
+      `;
+
+      vista(document.querySelector("#app"));
+    </script>
+  </body>
+</html>

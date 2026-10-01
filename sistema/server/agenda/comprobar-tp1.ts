@@ -36,7 +36,7 @@ export async function comprobarTrabajo(
   ownerEmail: string,
   assessmentId: string,
   legajos: string[],
-  trabajo: "tp1" | "tp2",
+  trabajo: "tp1" | "tp2" | "tp3",
   ejecutar: (legajo: string) => Promise<z.infer<typeof resultSchema> & { detalle?: string; lineas?: number }>,
 ) {
   const assessment = await getAssessment(ownerEmail, assessmentId);
@@ -70,8 +70,10 @@ export async function comprobarTrabajo(
     if (!result.status) continue;
     try {
       await setAssessmentResult(ownerEmail, { assessmentId, legajo: result.legajo, status: result.status });
-    } catch {
-      result.error = "No se pudo guardar el resultado.";
+    } catch (error) {
+      result.error = error instanceof Error && /database disk image is malformed|SQLITE_CORRUPT/i.test(error.message)
+        ? "No se pudo guardar el resultado: la base de datos está dañada."
+        : "No se pudo guardar el resultado.";
     }
   }
   const saved = await assessmentGrid(ownerEmail);

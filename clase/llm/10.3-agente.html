@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asistente de programación</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #18231f;
+        background: #f2f3ee;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px 16px; }
+      main { width: min(100%, 820px); height: min(900px, calc(100vh - 48px)); min-height: 540px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #dfe3dc; border-radius: 20px; background: #fff; box-shadow: 0 20px 60px #23382c12; }
+      header { display: flex; align-items: center; gap: 13px; padding: 18px 22px; border-bottom: 1px solid #edf0eb; }
+      .avatar { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 13px; background: #e8efe8; color: #35543f; font-size: 20px; }
+      h1 { margin: 0; font-size: 1rem; letter-spacing: -.02em; }
+      .subtitle { margin: 3px 0 0; color: #7b867e; font-size: .8rem; }
+      .header-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+      .folder-name { max-width: 180px; overflow: hidden; color: #758078; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+      button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 13px; border: 0; border-radius: 9px; background: #304c39; color: #fff; font: inherit; font-size: .86rem; font-weight: 650; cursor: pointer; transition: background .15s, transform .15s; }
+      button:hover:not(:disabled) { transform: translateY(-1px); background: #42654d; }
+      button:disabled { opacity: .5; cursor: wait; }
+      button.secondary { border: 1px solid #dfe4dd; background: white; color: #304c39; }
+      button.secondary:hover:not(:disabled) { background: #f4f7f3; }
+      #messages { flex: 1; overflow-y: auto; padding: 25px clamp(16px, 5vw, 42px); scroll-behavior: smooth; }
+      .welcome { max-width: 480px; margin: 11vh auto 0; color: #758078; text-align: center; }
+      .welcome strong { display: block; margin-bottom: 8px; color: #28382e; font-size: 1.25rem; letter-spacing: -.03em; }
+      .welcome p { margin: 0; }
+      .message { display: flex; margin: 0 0 18px; }
+      .message.user { justify-content: flex-end; }
+      .bubble { max-width: min(88%, 600px); padding: 12px 15px; border: 1px solid #e9ece7; border-radius: 16px 16px 16px 5px; background: #f7f8f5; color: #29372f; line-height: 1.6; overflow-wrap: anywhere; }
+      .user .bubble { border-color: #304c39; border-radius: 16px 16px 5px 16px; background: #304c39; color: #fff; white-space: pre-wrap; }
+      .markdown > :first-child { margin-top: 0; }
+      .markdown > :last-child { margin-bottom: 0; }
+      .markdown p, .markdown ul, .markdown ol, .markdown blockquote { margin: .55em 0; }
+      .markdown pre { max-width: 100%; overflow-x: auto; padding: 13px; border-radius: 10px; background: #18212b; }
+      .markdown pre code { padding: 0; background: transparent; font-size: .83rem; }
+      .markdown :not(pre) > code { padding: .12em .35em; border-radius: 5px; background: #e9eee9; font-size: .88em; }
+      .markdown a { color: #315c43; text-underline-offset: 3px; }
+      .typing { color: #77847a; letter-spacing: 2px; }
+      .pending-write { margin: 10px 0 20px 38px; padding: 16px; border: 1px solid #e8d5a7; border-radius: 14px; background: #fffbef; }
+      .pending-write h2 { margin: 0 0 5px; font-size: .95rem; }
+      .pending-write p { margin: 0 0 10px; color: #6f6858; font-size: .84rem; }
+      .pending-write details { margin: 10px 0; }
+      .pending-write summary { cursor: pointer; color: #56634f; font-size: .84rem; font-weight: 600; }
+      .pending-write pre { max-height: 240px; overflow: auto; padding: 12px; border-radius: 8px; background: #f4f1e8; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .pending-actions { display: flex; gap: 8px; justify-content: flex-end; }
+      .error { margin: 8px 18px; color: #a23d36; font-size: .84rem; }
+      form { margin: 0 18px 18px; padding: 10px; border: 1px solid #dfe4dd; border-radius: 16px; background: #fff; box-shadow: 0 5px 18px #23382c0b; }
+      textarea { display: block; width: 100%; min-height: 58px; max-height: 160px; padding: 8px 10px; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; line-height: 1.5; resize: vertical; }
+      textarea::placeholder { color: #9aa49c; }
+      .form-footer { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 0 10px; }
+      .hint { color: #929c94; font-size: .72rem; }
+      .send { width: 38px; height: 38px; padding: 0; border-radius: 11px; font-size: 1.1rem; }
+      @media (max-width: 560px) {
+        body { padding: 0; }
+        main { height: 100dvh; min-height: 0; border: 0; border-radius: 0; }
+        header { padding: 14px; }
+        .folder-name { display: none; }
+        #messages { padding: 20px 14px; }
+        form { margin: 0 10px 10px; }
+        .pending-write { margin-left: 0; }
+        .hint { max-width: 230px; }
+      }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+
+    <script type="module">
+      import { html, reactive } from "https://esm.sh/@arrow-js/core";
+      import { marked } from "https://esm.sh/marked@15.0.12";
+      import hljs from "https://esm.sh/highlight.js@11.11.1";
+      import DOMPurify from "https://esm.sh/dompurify@3.2.6";
+
+      function obtenerApiKey() {
+        let clave = localStorage.getItem("OPENAI_API_KEY")?.trim();
+        if (!clave) {
+          clave = prompt("Ingresá tu API key de OpenAI:")?.trim();
+          if (!clave) throw new Error("Se necesita una API key para continuar.");
+          localStorage.setItem("OPENAI_API_KEY", clave);
+        }
+        return clave;
+      }
+
+      const API_URL = "https://api.openai.com/v1/chat/completions";
+      const MODEL = "gpt-6-luna";
+      const SYSTEM_PROMPT = "Sos un asistente de programación. Podés listar y leer archivos de la carpeta elegida y proponer cambios escribiendo archivos. Usá rutas relativas a esa carpeta. Antes de escribir, explicá brevemente qué archivo vas a crear o modificar; la aplicación pedirá confirmación y solo escribirá si la persona la aprueba. No afirmes que un cambio fue guardado si no recibiste confirmación de éxito de la herramienta.";
+      const MAX_FILE_CHARS = 6000;
+      const MAX_LISTED_FILES = 100;
+
+      const estado = reactive({
+        mensajes: [],
+        cargando: false,
+        seleccionandoCarpeta: false,
+        error: "",
+        carpeta: "Ninguna carpeta elegida",
+        pendiente: null,
+      });
+      let carpetaHandle = null;
+      let resolverEscritura = null;
+      let inicializacion = Promise.resolve();
+
+      function abrirBaseLocal() {
+        return new Promise((resolve, reject) => {
+          const solicitud = indexedDB.open("asistente-programacion", 1);
+          solicitud.onupgradeneeded = () => {
+            if (!solicitud.result.objectStoreNames.contains("accesos")) {
+              solicitud.result.createObjectStore("accesos");
+            }
+          };
+          solicitud.onsuccess = () => resolve(solicitud.result);
+          solicitud.onerror = () => reject(solicitud.error);
+        });
+      }
+
+      async function guardarCarpeta(handle) {
+        const db = await abrirBaseLocal();
+        await new Promise((resolve, reject) => {
+          const transaccion = db.transaction("accesos", "readwrite");
+          transaccion.objectStore("accesos").put(handle, "carpeta");
+          transaccion.oncomplete = resolve;
+          transaccion.onerror = () => reject(transaccion.error);
+        });
+        db.close();
+      }
+
+      async function recuperarCarpeta() {
+        const db = await abrirBaseLocal();
+        const handle = await new Promise((resolve, reject) => {
+          const solicitud = db.transaction("accesos", "readonly").objectStore("accesos").get("carpeta");
+          solicitud.onsuccess = () => resolve(solicitud.result ?? null);
+          solicitud.onerror = () => reject(solicitud.error);
+        });
+        db.close();
+        return handle;
+      }
+
+      async function guardarConversacion() {
+        const db = await abrirBaseLocal();
+        await new Promise((resolve, reject) => {
+          const transaccion = db.transaction("accesos", "readwrite");
+          transaccion.objectStore("accesos").put(historial, "historial");
+          transaccion.oncomplete = resolve;
+          transaccion.onerror = () => reject(transaccion.error);
+        });
+        db.close();
+      }
+
+      async function recuperarConversacion() {
+        const db = await abrirBaseLocal();
+        const guardado = await new Promise((resolve, reject) => {
+          const solicitud = db.transaction("accesos", "readonly").objectStore("accesos").get("historial");
+          solicitud.onsuccess = () => resolve(solicitud.result ?? []);
+          solicitud.onerror = () => reject(solicitud.error);
+        });
+        db.close();
+        return guardado;
+      }
+
+      async function restaurarConversacion() {
+        try {
+          const guardada = await recuperarConversacion();
+          historial.push(...guardada);
+          estado.mensajes.push(...guardada.filter((mensaje) =>
+            (mensaje.role === "user" || mensaje.role === "assistant") && typeof mensaje.content === "string"
+          ));
+          requestAnimationFrame(() => {
+            const area = document.querySelector("#messages");
+            area.scrollTop = area.scrollHeight;
+            resaltarCodigo();
+          });
+        } catch (error) {
+          estado.error = `No se pudo restaurar la conversación: ${error.message}`;
+        }
+      }
+
+      async function restaurarCarpeta() {
+        try {
+          const guardada = await recuperarCarpeta();
+          if (!guardada) return;
+          carpetaHandle = guardada;
+          const permiso = await guardada.queryPermission({ mode: "readwrite" });
+          estado.carpeta = permiso === "granted" ? guardada.name : `${guardada.name} (autorizar acceso)`;
+        } catch (error) {
+          estado.error = `No se pudo restaurar la carpeta: ${error.message}`;
+        }
+      }
+
+      const tools = [
+        {
+          type: "function",
+          function: {
+            name: "listar_archivos",
+            description: "Lista recursivamente los archivos de la carpeta elegida. Devuelve rutas relativas.",
+            parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+            strict: true,
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "leer_archivo",
+            description: "Lee un archivo de texto dentro de la carpeta elegida. La ruta debe ser relativa.",
+            parameters: {
+              type: "object",
+              properties: { ruta: { type: "string", description: "Ruta relativa, por ejemplo src/app.js" } },
+              required: ["ruta"],
+              additionalProperties: false,
+            },
+            strict: true,
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "escribir_archivo",
+            description: "Propone crear o reemplazar un archivo de texto dentro de la carpeta elegida. La persona debe aprobar la escritura antes de guardarla.",
+            parameters: {
+              type: "object",
+              properties: {
+                ruta: { type: "string", description: "Ruta relativa del archivo" },
+                contenido: { type: "string", description: "Contenido completo que tendrá el archivo" },
+              },
+              required: ["ruta", "contenido"],
+              additionalProperties: false,
+            },
+            strict: true,
+          },
+        },
+      ];
+
+      async function elegirCarpeta() {
+        if (estado.seleccionandoCarpeta) return;
+        estado.error = "";
+        if (!window.showDirectoryPicker) {
+          estado.error = "Este navegador no permite elegir carpetas. Abrí la página en Chrome o Edge desde localhost o HTTPS.";
+          return;
+        }
+
+        estado.seleccionandoCarpeta = true;
+        try {
+          await inicializacion;
+          if (carpetaHandle) {
+            const permisoActual = await carpetaHandle.queryPermission({ mode: "readwrite" });
+            if (permisoActual !== "granted") {
+              const permisoRenovado = await carpetaHandle.requestPermission({ mode: "readwrite" });
+              if (permisoRenovado === "granted") {
+                estado.carpeta = carpetaHandle.name;
+                return;
+              }
+            }
+          }
+
+          const seleccion = await window.showDirectoryPicker({ mode: "readwrite" });
+          const permiso = await seleccion.requestPermission({ mode: "readwrite" });
+          if (permiso !== "granted") throw new Error("No se concedió permiso de lectura y escritura.");
+          carpetaHandle = seleccion;
+          estado.carpeta = seleccion.name;
+          await guardarCarpeta(seleccion);
+        } catch (error) {
+          if (error.name === "InvalidStateError") {
+            estado.error = "Ya hay un selector de carpetas abierto. Cerralo y volvé a pulsar Elegir carpeta.";
+          } else if (error.name !== "AbortError") {
+            estado.error = error.message;
+          }
+        } finally {
+          estado.seleccionandoCarpeta = false;
+        }
+      }
+
+      function segmentosDeRuta(ruta) {
+        if (typeof ruta !== "string" || !ruta.trim() || ruta.startsWith("/") || ruta.includes("\\")) {
+          throw new Error("Indicá una ruta relativa válida usando / como separador.");
+        }
+        const segmentos = ruta.split("/");
+        if (segmentos.some((segmento) => !segmento || segmento === "." || segmento === "..")) {
+          throw new Error("La ruta no puede contener segmentos vacíos, . o ..");
+        }
+        return segmentos;
+      }
+
+      async function directorioPadre(ruta, crear = false) {
+        const segmentos = segmentosDeRuta(ruta);
+        const nombre = segmentos.pop();
+        let directorio = carpetaHandle;
+        for (const segmento of segmentos) {
+          directorio = await directorio.getDirectoryHandle(segmento, { create: crear });
+        }
+        return { directorio, nombre };
+      }
+
+      async function listarArchivos() {
+        if (!carpetaHandle) throw new Error("Primero elegí una carpeta.");
+        const archivos = [];
+
+        async function recorrer(directorio, ruta = "") {
+          for await (const [nombre, handle] of directorio.entries()) {
+            if (archivos.length >= MAX_LISTED_FILES) return;
+            const relativa = ruta ? `${ruta}/${nombre}` : nombre;
+            if (handle.kind === "directory") {
+              await recorrer(handle, relativa);
+            } else {
+              archivos.push(relativa);
+              if (archivos.length >= MAX_LISTED_FILES) return;
+            }
+          }
+        }
+
+        await recorrer(carpetaHandle);
+        return { archivos, limitado: archivos.length >= MAX_LISTED_FILES };
+      }
+
+      async function leerArchivo(ruta) {
+        if (!carpetaHandle) throw new Error("Primero elegí una carpeta.");
+        const { directorio, nombre } = await directorioPadre(ruta);
+        const archivo = await (await directorio.getFileHandle(nombre)).getFile();
+        const contenido = await archivo.text();
+        return contenido.length > MAX_FILE_CHARS
+          ? `${contenido.slice(0, MAX_FILE_CHARS)}\n\n[Archivo truncado al límite de lectura]`
+          : contenido;
+      }
+
+      function confirmarEscritura(ruta, contenido, existente) {
+        return new Promise((resolve) => {
+          resolverEscritura = resolve;
+          estado.pendiente = { ruta, contenido, existente };
+        });
+      }
+
+      async function escribirArchivo(ruta, contenido) {
+        if (!carpetaHandle) throw new Error("Primero elegí una carpeta.");
+        if (typeof contenido !== "string") throw new Error("El contenido debe ser texto.");
+        if (contenido.length > MAX_FILE_CHARS) throw new Error(`El contenido supera el límite de ${MAX_FILE_CHARS} caracteres.`);
+
+        let existente = false;
+        try {
+          const { directorio, nombre } = await directorioPadre(ruta);
+          await directorio.getFileHandle(nombre);
+          existente = true;
+        } catch (error) {
+          if (error.name !== "NotFoundError") throw error;
+        }
+
+        const aprobado = await confirmarEscritura(ruta, contenido, existente);
+        if (!aprobado) return { guardado: false, motivo: "La persona canceló la escritura." };
+
+        const { directorio, nombre } = await directorioPadre(ruta, true);
+        const archivo = await directorio.getFileHandle(nombre, { create: true });
+        const writable = await archivo.createWritable();
+        await writable.write(contenido);
+        await writable.close();
+        return { guardado: true, ruta };
+      }
+
+      function responderEscritura(aprobada) {
+        const resolver = resolverEscritura;
+        resolverEscritura = null;
+        estado.pendiente = null;
+        resolver?.(aprobada);
+      }
+
+      async function ejecutarHerramienta(nombre, argumentos) {
+        switch (nombre) {
+          case "listar_archivos": return listarArchivos();
+          case "leer_archivo": return leerArchivo(argumentos.ruta);
+          case "escribir_archivo": return escribirArchivo(argumentos.ruta, argumentos.contenido);
+          default: throw new Error(`Herramienta desconocida: ${nombre}`);
+        }
+      }
+
+      async function pedirRespuesta() {
+        for (let vuelta = 0; vuelta < 8; vuelta++) {
+          const respuesta = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${obtenerApiKey()}`,
+            },
+            body: JSON.stringify({
+              model: MODEL,
+              messages: [{ role: "system", content: SYSTEM_PROMPT }, ...historial],
+              tools,
+              tool_choice: "auto",
+              parallel_tool_calls: false,
+              reasoning_effort: "none",
+            }),
+          });
+
+          const datos = await respuesta.json();
+          if (!respuesta.ok) throw new Error(datos.error?.message ?? respuesta.statusText);
+          const mensaje = datos.choices[0].message;
+
+          if (!mensaje.tool_calls?.length) {
+            if (mensaje.content) {
+              estado.mensajes.push({ role: "assistant", content: mensaje.content });
+              await guardarConversacion();
+              requestAnimationFrame(resaltarCodigo);
+            }
+            return;
+          }
+
+          historial.push({
+            role: "assistant",
+            content: mensaje.content,
+            tool_calls: mensaje.tool_calls,
+          });
+
+          for (const llamada of mensaje.tool_calls) {
+            let resultado;
+            try {
+              const argumentos = JSON.parse(llamada.function.arguments);
+              estado.estado = `Usando ${llamada.function.name}…`;
+              resultado = await ejecutarHerramienta(llamada.function.name, argumentos);
+            } catch (error) {
+              resultado = { error: error.message };
+            }
+            historial.push({
+              role: "tool",
+              tool_call_id: llamada.id,
+              content: JSON.stringify(resultado),
+            });
+            await guardarConversacion();
+          }
+        }
+        throw new Error("Se alcanzó el límite de llamadas a herramientas para este turno.");
+      }
+
+      const historial = [];
+
+      function acotarHistorial() {
+        const indicesDeUsuario = [];
+        historial.forEach((mensaje, indice) => {
+          if (mensaje.role === "user") indicesDeUsuario.push(indice);
+        });
+        if (!indicesDeUsuario.length) return;
+
+        const ultimaPregunta = historial[indicesDeUsuario.at(-1)];
+        const ultimaRespuesta = historial.slice(indicesDeUsuario.at(-1) + 1).reverse().find((mensaje) =>
+          mensaje.role === "assistant" && !mensaje.tool_calls && typeof mensaje.content === "string"
+        );
+        historial.splice(0, historial.length, ultimaPregunta);
+        if (ultimaRespuesta) {
+          historial.push({ role: "assistant", content: ultimaRespuesta.content.slice(-4000) });
+        }
+      }
+
+      async function enviar(evento) {
+        evento.preventDefault();
+        if (estado.cargando) return;
+        await inicializacion;
+        if (!carpetaHandle) {
+          estado.error = "Elegí una carpeta para que el asistente pueda trabajar con sus archivos.";
+          return;
+        }
+        const formulario = evento.target;
+        const texto = formulario.elements.prompt.value.trim();
+        if (!texto) return;
+
+        estado.error = "";
+        acotarHistorial();
+        historial.push({ role: "user", content: texto });
+        estado.mensajes.push({ role: "user", content: texto });
+        await guardarConversacion();
+        formulario.reset();
+        estado.cargando = true;
+        requestAnimationFrame(() => {
+          const area = document.querySelector("#messages");
+          area.scrollTop = area.scrollHeight;
+        });
+
+        try {
+          await pedirRespuesta();
+        } catch (error) {
+          estado.error = /rate limit|tokens per min|too many tokens/i.test(error.message)
+            ? "La API alcanzó el límite de tokens de la organización. Esperá a que se libere el límite antes de reintentar. Reduje el historial y el tamaño de los archivos enviados para que las próximas peticiones sean más pequeñas."
+            : error.message;
+        } finally {
+          estado.cargando = false;
+          estado.estado = "";
+          requestAnimationFrame(() => {
+            const area = document.querySelector("#messages");
+            area.scrollTop = area.scrollHeight;
+          });
+        }
+      }
+
+      function Mensaje(mensaje) {
+        if (mensaje.role === "assistant") {
+          const markdown = DOMPurify.sanitize(marked.parse(mensaje.content, { gfm: true, breaks: true }));
+          return html`<article class="${'message ' + mensaje.role}"><div class="bubble markdown" .innerHTML="${markdown}"></div></article>`;
+        }
+        return html`<article class="${'message ' + mensaje.role}"><div class="bubble">${() => mensaje.content}</div></article>`;
+      }
+
+      function resaltarCodigo() {
+        document.querySelectorAll("#messages pre code").forEach((bloque) => {
+          if (!bloque.dataset.highlighted) hljs.highlightElement(bloque);
+        });
+      }
+
+      function atajoTeclado(evento) {
+        if (evento.key !== "Enter" || evento.shiftKey || evento.isComposing) return;
+        evento.preventDefault();
+        evento.currentTarget.form.requestSubmit();
+      }
+
+      const vista = html`
+        <header>
+          <div class="avatar" aria-hidden="true">⌘</div>
+          <div><h1>Asistente de programación</h1><p class="subtitle">Explora y modifica archivos con tu autorización</p></div>
+          <div class="header-actions">
+            <span class="folder-name">${() => estado.carpeta}</span>
+            <button class="secondary" type="button" :disabled="${() => estado.cargando || estado.seleccionandoCarpeta}" @click="${elegirCarpeta}">${() => estado.seleccionandoCarpeta ? "Abriendo…" : "Elegir carpeta"}</button>
+          </div>
+        </header>
+        <section id="messages" aria-live="polite" aria-label="Mensajes de la conversación">
+          ${() => estado.mensajes.length
+            ? estado.mensajes.map(Mensaje)
+            : html`<div class="welcome"><strong>Tu asistente de código</strong><p>Elegí una carpeta y pedime que liste, lea o prepare cambios en sus archivos.</p></div>`}
+          ${() => estado.cargando ? html`<article class="message"><div class="bubble typing">${() => estado.estado || "•••"}</div></article>` : ""}
+          ${() => estado.error ? html`<article class="message"><div class="bubble">Error: ${() => estado.error}</div></article>` : ""}
+          ${() => estado.pendiente ? html`
+            <aside class="pending-write" aria-live="assertive">
+              <h2>${() => estado.pendiente.existente ? "Confirmar reemplazo de archivo" : "Confirmar creación de archivo"}</h2>
+              <p>Ruta: <strong>${() => estado.pendiente.ruta}</strong></p>
+              <details><summary>Revisar contenido propuesto</summary><pre>${() => estado.pendiente.contenido}</pre></details>
+              <div class="pending-actions">
+                <button class="secondary" type="button" @click="${() => responderEscritura(false)}">Cancelar</button>
+                <button type="button" @click="${() => responderEscritura(true)}">Guardar archivo</button>
+              </div>
+            </aside>
+          ` : ""}
+        </section>
+        <p class="error" role="alert">${() => estado.error}</p>
+        <form @submit="${enviar}">
+          <textarea name="prompt" required aria-label="Mensaje" placeholder="Pedile que revise o modifique código…" @keydown="${atajoTeclado}"></textarea>
+          <div class="form-footer">
+            <span class="hint">Enter para enviar · Shift + Enter para nueva línea</span>
+            <button class="send" type="submit" :disabled="${() => estado.cargando}" aria-label="Enviar mensaje">↑</button>
+          </div>
+        </form>
+      `;
+
+      vista(document.querySelector("#app"));
+      if (!window.showDirectoryPicker) estado.error = "Para acceder a carpetas, abrí esta página desde localhost o HTTPS en un navegador compatible.";
+      else inicializacion = Promise.all([restaurarCarpeta(), restaurarConversacion()]);
+    </script>
+  </body>
+</html>

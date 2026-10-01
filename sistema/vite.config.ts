@@ -14,6 +14,18 @@ const coreRequire = createRequire(
 );
 
 export default defineConfig({
+  optimizeDeps: {
+    // Estas entradas solo aparecen al abrir sus rutas. Prepararlas al iniciar
+    // evita que Vite regenere los chunks y recargue en medio de la navegación.
+    include: [
+      "@agent-native/core/client/changelog",
+      "@agent-native/core/client/settings",
+      "@agent-native/core/client/db-admin",
+      "@agent-native/core/client/extensions",
+      "@agent-native/core/client/observability",
+      "@agent-native/toolkit/ui/card",
+    ],
+  },
   resolve: {
     // Core and toolkit both use assistant-ui contexts. Keep published and
     // linked graphs on one store so the agent sidebar can compose reliably.

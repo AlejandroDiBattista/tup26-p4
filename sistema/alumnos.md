@@ -79,7 +79,7 @@ Legajo  Nombre y Apellido                         Teléfono        GitHub
 63140   Manca, Mariano                            (381)549-7187   🟡 angelmarianomanca-blip
 63434   Martín, Francisco Augusto                 (381)414-1903   🟡 ffranmartin
 63119   Montes, Luis Esteban                      (381)627-2294   🟢 LCanopee
-63459   Méndez, Carlos Samuel                     (381)697-0888   🟡 bboymendez53-cmyk
+63459   Méndez, Carlos Samuel                     (386)551-7042   🟡 bboymendez53-cmyk
 61246   Palacios, Mateo                           (381)522-3848   🟢 mateopalacios14
 63198   Parras, Mateo                             (381)646-3031   🟢 MateoParras17
 50793   Peralta, Lucas                            (381)666-3064   🟡 LucasPeraltaa
