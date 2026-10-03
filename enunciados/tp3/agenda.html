@@ -115,6 +115,196 @@
           return nombreA.localeCompare(nombreB);
         });
       }
+      function alumnosVisibles() {
+        const texto = normalizar(estado.busqueda.trim());
+        let lista = estado.alumnos;
+        if (texto) {
+          lista = lista.filter((alumno) => {
+            return [
+              alumno.apellido,
+              alumno.nombre,
+              alumno.legajo,
+              alumno.comision,
+              alumno.telefono,
+              alumno.github,
+            ].some((valor) => normalizar(String(valor)).includes(texto));
+          });
+        }
+        return ordenarAlumnos(lista);
+      }
+
+      function cambiarFavorito(id) {
+        const alumno = estado.alumnos.find((alumno) => alumno.id === id);
+        if (!alumno) return;
+        alumno.favorito = !alumno.favorito;
+        guardarDatos();
+      }
+
+      function abrirAgregar() {
+        estado.editando = false;
+        estado.formulario = crearFormulario();
+        estado.error = "";
+        document.getElementById("dialog-alumno").showModal();
+      }
+
+      function abrirEditar(alumno) {
+        estado.editando = true;
+        estado.formulario = {
+          ...alumno,
+        };
+        estado.error = "";
+        document.getElementById("dialog-alumno").showModal();
+      }
+
+      function cerrarDialog() {
+        estado.error = "";
+        document.getElementById("dialog-alumno").close();
+      }
+
+      function validar() {
+        const formulario = estado.formulario;
+        if (!formulario.apellido.trim()) {
+          return "El apellido es obligatorio.";
+        }
+        if (!formulario.nombre.trim()) {
+          return "El nombre es obligatorio.";
+        }
+        if (!formulario.legajo.trim()) {
+          return "El legajo es obligatorio.";
+        }
+        if (!formulario.comision.trim()) {
+          return "La comisión es obligatoria.";
+        }
+        if (!formulario.telefono.trim()) {
+          return "El teléfono es obligatorio.";
+        }
+        if (!formulario.github.trim()) {
+          return "El GitHub es obligatorio.";
+        }
+        return "";
+      }
+
+      function guardar(event) {
+        event.preventDefault();
+        const error = validar();
+        if (error) {
+          estado.error = error;
+
+          return;
+        }
+        const datos = {
+          apellido: estado.formulario.apellido.trim(),
+          nombre: estado.formulario.nombre.trim(),
+          legajo: estado.formulario.legajo.trim(),
+          comision: estado.formulario.comision.trim(),
+          telefono: estado.formulario.telefono.trim(),
+          github: estado.formulario.github.trim(),
+        };
+
+        if (!estado.editando) {
+          const ids = estado.alumnos.map((alumno) => Number(alumno.id));
+          const nuevoId = Math.max(...ids, 0) + 1;
+
+          estado.alumnos.push({
+            id: nuevoId,
+            ...datos,
+            favorito: false,
+          });
+        }
+        else {
+          const indice = estado.alumnos.findIndex(
+            (alumno) => alumno.id === estado.formulario.id,
+          );
+
+          if (indice !== -1) {
+            estado.alumnos[indice] = {
+              ...estado.alumnos[indice],
+              ...datos,
+            };
+          }
+        }
+        guardarDatos();
+        cerrarDialog();
+      }
+
+      function eliminar() {
+        if (!estado.editando) return;
+        const id = estado.formulario.id;
+        estado.alumnos = estado.alumnos.filter((alumno) => alumno.id !== id);
+        guardarDatos();
+        cerrarDialog();
+      }
+
+      function manejarTeclado(event, alumno) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+
+          abrirEditar(alumno);
+        }
+
+        if (event.key === " ") {
+          event.preventDefault();
+          cambiarFavorito(alumno.id);
+        }
+      }
+
+      function tarjeta(alumno) {
+        return html`
+          <li
+            class="alumno-card"
+            tabindex="0"
+            @keydown="${(event) => manejarTeclado(event, alumno)}"
+          >
+            <article>
+              <button
+                type="button"
+                class="favorito"
+                @click="${() => cambiarFavorito(alumno.id)}"
+                aria-label="Cambiar favorito"
+              >
+                ${() => (alumno.favorito ? "★" : "☆")}
+              </button>
+
+              <div class="alumno-info" @dblclick="${() => abrirEditar(alumno)}">
+                <h3>
+                  ${alumno.nombre}
+                  <b>${alumno.apellido}</b>
+                </h3>
+
+                <p>
+                  <strong>Legajo:</strong>
+                  ${alumno.legajo}
+                </p>
+
+                <p>
+                  <strong>Comisión:</strong>
+                  ${alumno.comision}
+                </p>
+
+                <address>
+                  <p>
+                    <strong>Teléfono:</strong>
+                    ${alumno.telefono}
+                  </p>
+
+                  <p>
+                    <strong>GitHub:</strong>
+
+                    <a
+                      href="${alumno.github}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      ${alumno.github}
+                    </a>
+                  </p>
+                </address>
+              </div>
+              ${() => (alumno.favorito ? html`<small>Favorito</small>` : "")}
+            </article>
+          </li>
+        `.key(alumno.id);
+      }
     </script>
   </body>
 </html>
