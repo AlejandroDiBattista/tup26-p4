@@ -22,10 +22,26 @@ const COLORES = {
 const DATOS_VACIOS = {cabecera: [], filas: []};
 const CODIGO_ERROR_ARCHIVO_INEXISTENTE = 'ENOENT';
 const CONFIGURACION_REGIONAL = 'es-AR';
-const SEPARACION_ENTRE_COLUMNAS = 2;
 const TITULO_COLUMNA_NUMERO = '#';
-const LINEAS_FUERA_DE_LA_TABLA = 9;
-const CANTIDAD_FILAS_VISIBLES = Math.max(1, FILAS - LINEAS_FUERA_DE_LA_TABLA);
+const CANTIDAD_FILAS_VISIBLES = Math.max(1, FILAS - 9);
+
+const DESPLAZAMIENTOS_POR_FLECHA = {
+    upArrow:    {filas: -1, columnas: 0},
+    downArrow:  {filas: 1,  columnas: 0},
+    leftArrow:  {filas: 0,  columnas: -1},
+    rightArrow: {filas: 0,  columnas: 1},
+};
+
+const SENTIDOS_DE_ORDEN_POR_TECLA = {
+    '<': 1,
+    '>': -1,
+};
+
+const ATAJOS_DE_NAVEGACION = [
+    {tecla: '<', accion: 'ascendente'},
+    {tecla: '>', accion: 'descendente'},
+    {tecla: 'Esc', accion: 'salir'},
+];
 
 function describirError(error) {
     if (error.code === CODIGO_ERROR_ARCHIVO_INEXISTENTE) {
@@ -44,6 +60,20 @@ function esColumnaNumerica(filas, indiceColumna) {
 
 function formatearValor(valor, esNumerica) {
     return esNumerica ? Number(valor).toLocaleString(CONFIGURACION_REGIONAL) : valor;
+}
+
+function compararValores(valorA, valorB, esNumerica) {
+    if (esNumerica) {
+        return Number(valorA) - Number(valorB);
+    }
+    return valorA.localeCompare(valorB, CONFIGURACION_REGIONAL);
+}
+
+function ordenarFilas(filas, indiceColumna, sentido) {
+    const esNumerica = esColumnaNumerica(filas, indiceColumna);
+    return filas.toSorted((filaA, filaB) =>
+        sentido * compararValores(filaA[indiceColumna], filaB[indiceColumna], esNumerica)
+    );
 }
 
 function limitarAlRango(valor, minimo, maximo) {
@@ -80,7 +110,7 @@ function Tabla({datos, filaSeleccionada, columnaSeleccionada, primeraFilaVisible
 
     return (
         <Box flexDirection="column" marginTop={1} overflow="hidden">
-            <Box columnGap={SEPARACION_ENTRE_COLUMNAS}>
+            <Box columnGap={2}>
                 <Text bold color={COLORES.secundario}>{TITULO_COLUMNA_NUMERO.padStart(anchoColumnaNumero)}</Text>
                 {columnas.map((columna, indiceColumna) => {
                     const estaSeleccionada = indiceColumna === columnaSeleccionada;
@@ -100,7 +130,7 @@ function Tabla({datos, filaSeleccionada, columnaSeleccionada, primeraFilaVisible
                 const indiceFila = primeraFilaVisible + indiceVisible;
                 const esFilaSeleccionada = indiceFila === filaSeleccionada;
                 return (
-                    <Box key={indiceFila} columnGap={SEPARACION_ENTRE_COLUMNAS}>
+                    <Box key={indiceFila} columnGap={2}>
                         <Text
                             bold={esFilaSeleccionada}
                             color={esFilaSeleccionada ? COLORES.acento : COLORES.secundario}
@@ -153,6 +183,19 @@ function Atajo({tecla, accion}) {
     );
 }
 
+function ListaDeAtajos({atajos}) {
+    return (
+        <Text>
+            {atajos.map((atajo, indiceAtajo) => (
+                <Text key={atajo.tecla}>
+                    {indiceAtajo > 0 && <Text color={COLORES.secundario}> · </Text>}
+                    <Atajo tecla={atajo.tecla} accion={atajo.accion} />
+                </Text>
+            ))}
+        </Text>
+    );
+}
+
 function Posicion({hayDatos, filaSeleccionada, columnaSeleccionada}) {
     if (!hayDatos) {
         return null;
@@ -193,6 +236,10 @@ function App({rutaInicial}) {
         setPrimeraFilaVisible(calcularPrimeraFilaVisible(primeraFilaVisible, nuevaFila));
     }
 
+    function ordenarPorColumnaSeleccionada(sentido) {
+        setDatos({...datos, filas: ordenarFilas(datos.filas, columnaSeleccionada, sentido)});
+    }
+
     useEffect(() => {
         if (rutaInicial) {
             abrirArchivo(rutaInicial);
@@ -207,14 +254,14 @@ function App({rutaInicial}) {
         if (!hayDatos) {
             return;
         }
-        if (key.upArrow) {
-            moverSeleccion(-1, 0);
-        } else if (key.downArrow) {
-            moverSeleccion(1, 0);
-        } else if (key.leftArrow) {
-            moverSeleccion(0, -1);
-        } else if (key.rightArrow) {
-            moverSeleccion(0, 1);
+        const flechaPresionada = Object.keys(DESPLAZAMIENTOS_POR_FLECHA).find(flecha => key[flecha]);
+        if (flechaPresionada) {
+            const desplazamiento = DESPLAZAMIENTOS_POR_FLECHA[flechaPresionada];
+            moverSeleccion(desplazamiento.filas, desplazamiento.columnas);
+            return;
+        }
+        if (tecla in SENTIDOS_DE_ORDEN_POR_TECLA) {
+            ordenarPorColumnaSeleccionada(SENTIDOS_DE_ORDEN_POR_TECLA[tecla]);
         }
     });
 
@@ -232,7 +279,7 @@ function App({rutaInicial}) {
             />
             <Box flexGrow={1} />
             <Box justifyContent="space-between">
-                <Atajo tecla="Esc" accion="salir" />
+                <ListaDeAtajos atajos={ATAJOS_DE_NAVEGACION} />
                 <Posicion hayDatos={hayDatos} filaSeleccionada={filaSeleccionada} columnaSeleccionada={columnaSeleccionada} />
             </Box>
         </Box>
