@@ -19,12 +19,71 @@ const COLORES = {
 
 const DATOS_VACIOS = {cabecera: [], filas: []};
 const CODIGO_ERROR_ARCHIVO_INEXISTENTE = 'ENOENT';
+const CONFIGURACION_REGIONAL = 'es-AR';
+const SEPARACION_ENTRE_COLUMNAS = 2;
+const TITULO_COLUMNA_NUMERO = '#';
+const LINEAS_FUERA_DE_LA_TABLA = 9;
+const CANTIDAD_FILAS_VISIBLES = Math.max(1, FILAS - LINEAS_FUERA_DE_LA_TABLA);
 
 function describirError(error) {
     if (error.code === CODIGO_ERROR_ARCHIVO_INEXISTENTE) {
         return 'el archivo no existe';
     }
     return error.message;
+}
+
+function esNumero(valor) {
+    return valor.trim() !== '' && Number.isFinite(Number(valor));
+}
+
+function esColumnaNumerica(filas, indiceColumna) {
+    return filas.length > 0 && filas.every(fila => esNumero(fila[indiceColumna]));
+}
+
+function formatearValor(valor, esNumerica) {
+    return esNumerica ? Number(valor).toLocaleString(CONFIGURACION_REGIONAL) : valor;
+}
+
+function alinearTexto(texto, ancho, alineadoALaDerecha) {
+    return alineadoALaDerecha ? texto.padStart(ancho) : texto.padEnd(ancho);
+}
+
+function describirColumnas({cabecera, filas}) {
+    return cabecera.map((titulo, indiceColumna) => {
+        const esNumerica = esColumnaNumerica(filas, indiceColumna);
+        const valoresFormateados = filas.map(fila => formatearValor(fila[indiceColumna], esNumerica));
+        const ancho = Math.max(titulo.length, ...valoresFormateados.map(valor => valor.length));
+        return {titulo: titulo.toUpperCase(), esNumerica, ancho};
+    });
+}
+
+function Tabla({datos}) {
+    const columnas = describirColumnas(datos);
+    const anchoColumnaNumero = Math.max(TITULO_COLUMNA_NUMERO.length, String(datos.filas.length).length);
+    const filasVisibles = datos.filas.slice(0, CANTIDAD_FILAS_VISIBLES);
+
+    return (
+        <Box flexDirection="column" marginTop={1} overflow="hidden">
+            <Box columnGap={SEPARACION_ENTRE_COLUMNAS}>
+                <Text bold color={COLORES.secundario}>{TITULO_COLUMNA_NUMERO.padStart(anchoColumnaNumero)}</Text>
+                {columnas.map(columna => (
+                    <Text key={columna.titulo} bold color={COLORES.secundario}>
+                        {alinearTexto(columna.titulo, columna.ancho, columna.esNumerica)}
+                    </Text>
+                ))}
+            </Box>
+            {filasVisibles.map((fila, indiceFila) => (
+                <Box key={indiceFila} columnGap={SEPARACION_ENTRE_COLUMNAS}>
+                    <Text color={COLORES.secundario}>{String(indiceFila + 1).padStart(anchoColumnaNumero)}</Text>
+                    {columnas.map((columna, indiceColumna) => (
+                        <Text key={columna.titulo} color={COLORES.titulo}>
+                            {alinearTexto(formatearValor(fila[indiceColumna], columna.esNumerica), columna.ancho, columna.esNumerica)}
+                        </Text>
+                    ))}
+                </Box>
+            ))}
+        </Box>
+    );
 }
 
 function Encabezado({rutaArchivo, cantidadFilas, cantidadColumnas}) {
@@ -83,6 +142,7 @@ function App({rutaInicial}) {
             <Box marginTop={1}>
                 <LineaDeMensaje mensajeError={mensajeError} />
             </Box>
+            <Tabla datos={datos} />
             <Box flexGrow={1} />
             <Atajo tecla="Esc" accion="salir" />
         </Box>
