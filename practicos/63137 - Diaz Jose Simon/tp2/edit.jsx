@@ -15,6 +15,8 @@ const COLORES = {
     secundario:'#ada79e',
     acento:    '#edbb64',
     error:     '#e06c5f',
+    resaltado: '#000000',
+    seleccion: '#e5e5e5',
 };
 
 const DATOS_VACIOS = {cabecera: [], filas: []};
@@ -44,6 +46,20 @@ function formatearValor(valor, esNumerica) {
     return esNumerica ? Number(valor).toLocaleString(CONFIGURACION_REGIONAL) : valor;
 }
 
+function limitarAlRango(valor, minimo, maximo) {
+    return Math.min(Math.max(valor, minimo), maximo);
+}
+
+function calcularPrimeraFilaVisible(primeraFilaVisible, filaSeleccionada) {
+    if (filaSeleccionada < primeraFilaVisible) {
+        return filaSeleccionada;
+    }
+    if (filaSeleccionada >= primeraFilaVisible + CANTIDAD_FILAS_VISIBLES) {
+        return filaSeleccionada - CANTIDAD_FILAS_VISIBLES + 1;
+    }
+    return primeraFilaVisible;
+}
+
 function alinearTexto(texto, ancho, alineadoALaDerecha) {
     return alineadoALaDerecha ? texto.padStart(ancho) : texto.padEnd(ancho);
 }
@@ -57,31 +73,57 @@ function describirColumnas({cabecera, filas}) {
     });
 }
 
-function Tabla({datos}) {
+function Tabla({datos, filaSeleccionada, columnaSeleccionada, primeraFilaVisible}) {
     const columnas = describirColumnas(datos);
     const anchoColumnaNumero = Math.max(TITULO_COLUMNA_NUMERO.length, String(datos.filas.length).length);
-    const filasVisibles = datos.filas.slice(0, CANTIDAD_FILAS_VISIBLES);
+    const filasVisibles = datos.filas.slice(primeraFilaVisible, primeraFilaVisible + CANTIDAD_FILAS_VISIBLES);
 
     return (
         <Box flexDirection="column" marginTop={1} overflow="hidden">
             <Box columnGap={SEPARACION_ENTRE_COLUMNAS}>
                 <Text bold color={COLORES.secundario}>{TITULO_COLUMNA_NUMERO.padStart(anchoColumnaNumero)}</Text>
-                {columnas.map(columna => (
-                    <Text key={columna.titulo} bold color={COLORES.secundario}>
-                        {alinearTexto(columna.titulo, columna.ancho, columna.esNumerica)}
-                    </Text>
-                ))}
-            </Box>
-            {filasVisibles.map((fila, indiceFila) => (
-                <Box key={indiceFila} columnGap={SEPARACION_ENTRE_COLUMNAS}>
-                    <Text color={COLORES.secundario}>{String(indiceFila + 1).padStart(anchoColumnaNumero)}</Text>
-                    {columnas.map((columna, indiceColumna) => (
-                        <Text key={columna.titulo} color={COLORES.titulo}>
-                            {alinearTexto(formatearValor(fila[indiceColumna], columna.esNumerica), columna.ancho, columna.esNumerica)}
+                {columnas.map((columna, indiceColumna) => {
+                    const estaSeleccionada = indiceColumna === columnaSeleccionada;
+                    return (
+                        <Text
+                            key={columna.titulo}
+                            bold
+                            color={estaSeleccionada ? COLORES.acento : COLORES.secundario}
+                            backgroundColor={estaSeleccionada ? COLORES.resaltado : COLORES.fondo}
+                        >
+                            {alinearTexto(columna.titulo, columna.ancho, columna.esNumerica)}
                         </Text>
-                    ))}
-                </Box>
-            ))}
+                    );
+                })}
+            </Box>
+            {filasVisibles.map((fila, indiceVisible) => {
+                const indiceFila = primeraFilaVisible + indiceVisible;
+                const esFilaSeleccionada = indiceFila === filaSeleccionada;
+                return (
+                    <Box key={indiceFila} columnGap={SEPARACION_ENTRE_COLUMNAS}>
+                        <Text
+                            bold={esFilaSeleccionada}
+                            color={esFilaSeleccionada ? COLORES.acento : COLORES.secundario}
+                            backgroundColor={esFilaSeleccionada ? COLORES.resaltado : COLORES.fondo}
+                        >
+                            {String(indiceFila + 1).padStart(anchoColumnaNumero)}
+                        </Text>
+                        {columnas.map((columna, indiceColumna) => {
+                            const esCeldaSeleccionada = esFilaSeleccionada && indiceColumna === columnaSeleccionada;
+                            return (
+                                <Text
+                                    key={columna.titulo}
+                                    bold={esCeldaSeleccionada}
+                                    color={esCeldaSeleccionada ? COLORES.fondo : COLORES.titulo}
+                                    backgroundColor={esCeldaSeleccionada ? COLORES.seleccion : COLORES.fondo}
+                                >
+                                    {alinearTexto(formatearValor(fila[indiceColumna], columna.esNumerica), columna.ancho, columna.esNumerica)}
+                                </Text>
+                            );
+                        })}
+                    </Box>
+                );
+            })}
         </Box>
     );
 }
@@ -95,11 +137,14 @@ function Encabezado({rutaArchivo, cantidadFilas, cantidadColumnas}) {
     );
 }
 
-function LineaDeMensaje({mensajeError}) {
+function LineaDeMensaje({mensajeError, hayDatos, valorSeleccionado}) {
     if (mensajeError) {
         return <Text color={COLORES.error}>Error › {mensajeError}</Text>;
     }
-    return <Text> </Text>;
+    if (!hayDatos) {
+        return <Text> </Text>;
+    }
+    return <Text color={COLORES.secundario}>Valor › <Text color={COLORES.titulo}>{valorSeleccionado}</Text></Text>;
 }
 
 function Atajo({tecla, accion}) {
@@ -108,20 +153,44 @@ function Atajo({tecla, accion}) {
     );
 }
 
+function Posicion({hayDatos, filaSeleccionada, columnaSeleccionada}) {
+    if (!hayDatos) {
+        return null;
+    }
+    return <Text color={COLORES.secundario}>Fila {filaSeleccionada + 1} · Columna {columnaSeleccionada + 1}</Text>;
+}
+
 function App({rutaInicial}) {
     const {exit} = useApp();
     const [rutaArchivo, setRutaArchivo] = useState('');
     const [datos, setDatos] = useState(DATOS_VACIOS);
     const [mensajeError, setMensajeError] = useState('');
+    const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+    const [columnaSeleccionada, setColumnaSeleccionada] = useState(0);
+    const [primeraFilaVisible, setPrimeraFilaVisible] = useState(0);
+
+    const hayDatos = datos.filas.length > 0;
+    const valorSeleccionado = hayDatos ? datos.filas[filaSeleccionada][columnaSeleccionada] : '';
 
     async function abrirArchivo(ruta) {
         try {
             setDatos(await leerCsv(ruta));
             setRutaArchivo(ruta);
             setMensajeError('');
+            setFilaSeleccionada(0);
+            setColumnaSeleccionada(0);
+            setPrimeraFilaVisible(0);
         } catch (error) {
             setMensajeError(`No se pudo abrir "${ruta}": ${describirError(error)}`);
         }
+    }
+
+    function moverSeleccion(desplazamientoFilas, desplazamientoColumnas) {
+        const nuevaFila = limitarAlRango(filaSeleccionada + desplazamientoFilas, 0, datos.filas.length - 1);
+        const nuevaColumna = limitarAlRango(columnaSeleccionada + desplazamientoColumnas, 0, datos.cabecera.length - 1);
+        setFilaSeleccionada(nuevaFila);
+        setColumnaSeleccionada(nuevaColumna);
+        setPrimeraFilaVisible(calcularPrimeraFilaVisible(primeraFilaVisible, nuevaFila));
     }
 
     useEffect(() => {
@@ -133,6 +202,19 @@ function App({rutaInicial}) {
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+            return;
+        }
+        if (!hayDatos) {
+            return;
+        }
+        if (key.upArrow) {
+            moverSeleccion(-1, 0);
+        } else if (key.downArrow) {
+            moverSeleccion(1, 0);
+        } else if (key.leftArrow) {
+            moverSeleccion(0, -1);
+        } else if (key.rightArrow) {
+            moverSeleccion(0, 1);
         }
     });
 
@@ -140,11 +222,19 @@ function App({rutaInicial}) {
         <Box width={COLUMNAS} height={FILAS} flexDirection="column" paddingX={1} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
             <Encabezado rutaArchivo={rutaArchivo} cantidadFilas={datos.filas.length} cantidadColumnas={datos.cabecera.length} />
             <Box marginTop={1}>
-                <LineaDeMensaje mensajeError={mensajeError} />
+                <LineaDeMensaje mensajeError={mensajeError} hayDatos={hayDatos} valorSeleccionado={valorSeleccionado} />
             </Box>
-            <Tabla datos={datos} />
+            <Tabla
+                datos={datos}
+                filaSeleccionada={filaSeleccionada}
+                columnaSeleccionada={columnaSeleccionada}
+                primeraFilaVisible={primeraFilaVisible}
+            />
             <Box flexGrow={1} />
-            <Atajo tecla="Esc" accion="salir" />
+            <Box justifyContent="space-between">
+                <Atajo tecla="Esc" accion="salir" />
+                <Posicion hayDatos={hayDatos} filaSeleccionada={filaSeleccionada} columnaSeleccionada={columnaSeleccionada} />
+            </Box>
         </Box>
     );
 }
