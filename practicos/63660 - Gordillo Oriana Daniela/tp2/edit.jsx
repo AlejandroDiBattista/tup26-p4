@@ -19,6 +19,7 @@ const COLORES = {
   seleccion: '#f5f5f5',
   textoSeleccion: '#000000',
   error: '#ff6b6b',
+  exito: '#69db7c',
 };
 
 function recortar(texto, ancho) {
@@ -54,17 +55,25 @@ function EditorTabla() {
   const [encabezados, setEncabezados] = useState([]);
   const [filas, setFilas] = useState([]);
   const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState('normal');
 
   const [filaSeleccionada, setFilaSeleccionada] = useState(0);
   const [colSeleccionada, setColSeleccionada] = useState(0);
   const [filaInicio, setFilaInicio] = useState(0);
 
-  const filasVisibles = Math.max(3, Math.min(10, ALTO - 12));
+  // Modos: 'tabla' | 'editar' | 'abrir' | 'guardar'
+  const [modo, setModo] = useState('tabla');
+  const [bufferTexto, setBufferTexto] = useState('');
+
+  const filasVisibles = Math.max(3, Math.min(10, ALTO - 14));
 
   async function cargarArchivo(ruta) {
     try {
       const contenido = await readFile(ruta, 'utf-8');
       const { encabezados: enc, filas: fil } = parsearCSV(contenido);
+      if (enc.length === 0) {
+        throw new Error('El archivo CSV está vacío.');
+      }
       setEncabezados(enc);
       setFilas(fil);
       setRutaArchivo(ruta);
@@ -72,8 +81,30 @@ function EditorTabla() {
       setColSeleccionada(0);
       setFilaInicio(0);
       setMensaje(`Archivo cargado: ${basename(ruta)}`);
+      setTipoMensaje('exito');
+      return true;
     } catch (err) {
-      setMensaje(`Error al leer archivo: ${err.message}`);
+      setMensaje(`Error al abrir: ${err.message}`);
+      setTipoMensaje('error');
+      return false;
+    }
+  }
+
+  async function guardarArchivo(ruta) {
+    try {
+      if (!ruta || !ruta.trim()) {
+        throw new Error('Debe especificar un nombre de archivo válido.');
+      }
+      const contenido = formatearCSV(encabezados, filas);
+      await writeFile(ruta.trim(), contenido, 'utf-8');
+      setRutaArchivo(ruta.trim());
+      setMensaje(`Archivo guardado exitosamente: ${basename(ruta)}`);
+      setTipoMensaje('exito');
+      return true;
+    } catch (err) {
+      setMensaje(`Error al guardar: ${err.message}`);
+      setTipoMensaje('error');
+      return false;
     }
   }
 
@@ -101,6 +132,7 @@ function EditorTabla() {
     setFilas(copia);
     const nombreCol = encabezados[colIdx] || `Columna ${colIdx + 1}`;
     setMensaje(`Ordenado por ${nombreCol} (${ascendente ? 'ascendente' : 'descendente'})`);
+    setTipoMensaje('normal');
   }
 
   useEffect(() => {
@@ -109,54 +141,133 @@ function EditorTabla() {
     }
   }, []);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      exit();
-      return;
-    }
-
-    if (key.upArrow) {
-      setFilaSeleccionada(prev => {
-        const sig = Math.max(0, prev - 1);
-        if (sig < filaInicio) {
-          setFilaInicio(sig);
+  useInput(
+    (input, key) => {
+      // Si estamos en un modo de entrada de texto (editar, abrir, guardar)
+      if (modo !== 'tabla') {
+        if (key.escape) {
+          setModo('tabla');
+          setMensaje('Acción cancelada.');
+          setTipoMensaje('normal');
+          return;
         }
-        return sig;
-      });
-      return;
-    }
 
-    if (key.downArrow) {
-      setFilaSeleccionada(prev => {
-        const sig = Math.min(Math.max(0, filas.length - 1), prev + 1);
-        if (sig >= filaInicio + filasVisibles) {
-          setFilaInicio(sig - filasVisibles + 1);
+        if (key.return) {
+          if (modo === 'editar') {
+            const nuevasFilas = filas.map((fila, fIdx) => {
+              if (fIdx === filaSeleccionada) {
+                const nuevaFila = [...fila];
+                nuevaFila[colSeleccionada] = bufferTexto;
+                return nuevaFila;
+              }
+              return fila;
+            });
+            setFilas(nuevasFilas);
+            setMensaje(`Celda [${filaSeleccionada + 1}, ${colSeleccionada + 1}] actualizada.`);
+            setTipoMensaje('exito');
+            setModo('tabla');
+          } else if (modo === 'abrir') {
+            const destino = bufferTexto.trim() || rutaArchivo;
+            cargarArchivo(destino);
+            setModo('tabla');
+          } else if (modo === 'guardar') {
+            const destino = bufferTexto.trim() || rutaArchivo;
+            guardarArchivo(destino);
+            setModo('tabla');
+          }
+          return;
         }
-        return sig;
-      });
-      return;
-    }
 
-    if (key.leftArrow) {
-      setColSeleccionada(prev => Math.max(0, prev - 1));
-      return;
-    }
+        if (key.backspace || key.delete) {
+          setBufferTexto(prev => prev.slice(0, -1));
+          return;
+        }
 
-    if (key.rightArrow) {
-      setColSeleccionada(prev => Math.min(Math.max(0, encabezados.length - 1), prev + 1));
-      return;
-    }
+        if (input && !key.ctrl && !key.meta) {
+          setBufferTexto(prev => prev + input);
+          return;
+        }
 
-    if (input === '<' || input === ',') {
-      ordenarPorColumna(colSeleccionada, true);
-      return;
-    }
+        return;
+      }
 
-    if (input === '>' || input === '.') {
-      ordenarPorColumna(colSeleccionada, false);
-      return;
-    }
-  });
+      // Modo tabla normal
+      if (key.escape) {
+        exit();
+        return;
+      }
+
+      if (key.upArrow) {
+        setFilaSeleccionada(prev => {
+          const sig = Math.max(0, prev - 1);
+          if (sig < filaInicio) {
+            setFilaInicio(sig);
+          }
+          return sig;
+        });
+        return;
+      }
+
+      if (key.downArrow) {
+        setFilaSeleccionada(prev => {
+          const sig = Math.min(Math.max(0, filas.length - 1), prev + 1);
+          if (sig >= filaInicio + filasVisibles) {
+            setFilaInicio(sig - filasVisibles + 1);
+          }
+          return sig;
+        });
+        return;
+      }
+
+      if (key.leftArrow) {
+        setColSeleccionada(prev => Math.max(0, prev - 1));
+        return;
+      }
+
+      if (key.rightArrow) {
+        setColSeleccionada(prev => Math.min(Math.max(0, encabezados.length - 1), prev + 1));
+        return;
+      }
+
+      if (input === '<' || input === ',') {
+        ordenarPorColumna(colSeleccionada, true);
+        return;
+      }
+
+      if (input === '>' || input === '.') {
+        ordenarPorColumna(colSeleccionada, false);
+        return;
+      }
+
+      if (input === 'a' || input === 'A') {
+        setModo('abrir');
+        setBufferTexto('');
+        setMensaje('Abrir archivo CSV');
+        setTipoMensaje('normal');
+        return;
+      }
+
+      if (input === 'g' || input === 'G') {
+        setModo('guardar');
+        setBufferTexto(rutaArchivo || 'empleados.csv');
+        setMensaje('Guardar archivo CSV');
+        setTipoMensaje('normal');
+        return;
+      }
+
+      if (key.return) {
+        if (filas.length > 0 && encabezados.length > 0) {
+          const actual = filas[filaSeleccionada]?.[colSeleccionada] ?? '';
+          setBufferTexto(actual);
+          setModo('editar');
+          setMensaje(`Editando Fila ${filaSeleccionada + 1}, Columna ${colSeleccionada + 1}`);
+          setTipoMensaje('normal');
+        }
+        return;
+      }
+    },
+    { isActive: Boolean(process.stdin.isTTY) }
+  );
 
   const celdaActual = filas[filaSeleccionada]?.[colSeleccionada] ?? '';
   const filasParaMostrar = filas.slice(filaInicio, filaInicio + filasVisibles);
@@ -170,6 +281,7 @@ function EditorTabla() {
         backgroundColor={COLORES.fondo}
         paddingX={1}
       >
+        {/* Cabecera superior con archivo y estadísticas */}
         <Box justifyContent="space-between">
           <Text bold color={COLORES.titulo}>Editor CSV</Text>
           <Text color={COLORES.acento}>{basename(rutaArchivo)}</Text>
@@ -178,10 +290,36 @@ function EditorTabla() {
           {filas.length} filas · {encabezados.length} columnas
         </Text>
 
+        {/* Valor y posición actual */}
         <Box marginY={1}>
           <Text bold color={COLORES.acento}>Valor {'>'} </Text>
-          <Text color={COLORES.titulo}>{celdaActual}</Text>
+          <Text color={COLORES.titulo}>{celdaActual || '(vacío)'}</Text>
         </Box>
+
+        {/* Modal / Diálogo de entrada de texto si está activo */}
+        {modo !== 'tabla' ? (
+          <Box
+            flexDirection="column"
+            borderStyle="single"
+            borderColor={COLORES.acento}
+            paddingX={1}
+            marginY={1}
+          >
+            <Text bold color={COLORES.acento}>
+              {modo === 'editar' ? 'Editar celda' : modo === 'abrir' ? 'Abrir archivo' : 'Guardar archivo'}
+            </Text>
+            <Box flexDirection="row">
+              <Text color={COLORES.secundario}>
+                {modo === 'editar' ? 'Nuevo valor: ' : 'Nombre del archivo: '}
+              </Text>
+              <Text bold color={COLORES.titulo}>{bufferTexto}</Text>
+              <Text color={COLORES.acento}>_</Text>
+            </Box>
+            <Text color={COLORES.secundario}>
+              [Enter] Confirmar  ·  [Esc] Cancelar
+            </Text>
+          </Box>
+        ) : null}
 
         {/* Encabezado de la tabla */}
         <Box flexDirection="row" marginBottom={1}>
@@ -223,6 +361,7 @@ function EditorTabla() {
           );
         })}
 
+        {/* Barra inferior de comandos y posición */}
         <Box marginTop={1} justifyContent="space-between">
           <Text color={COLORES.secundario}>
             <Text bold color={COLORES.acento}>A</Text> abrir ·{' '}
@@ -237,9 +376,20 @@ function EditorTabla() {
           </Text>
         </Box>
 
+        {/* Mensaje de estado o error */}
         {mensaje ? (
           <Box marginTop={1}>
-            <Text color={COLORES.acento}>{mensaje}</Text>
+            <Text
+              color={
+                tipoMensaje === 'error'
+                  ? COLORES.error
+                  : tipoMensaje === 'exito'
+                  ? COLORES.exito
+                  : COLORES.acento
+              }
+            >
+              {mensaje}
+            </Text>
           </Box>
         ) : null}
       </Box>
@@ -248,5 +398,7 @@ function EditorTabla() {
 }
 
 const app = render(<EditorTabla />);
-await app.waitUntilExit();
-console.clear();
+if (process.stdin.isTTY) {
+  await app.waitUntilExit();
+  console.clear();
+}
