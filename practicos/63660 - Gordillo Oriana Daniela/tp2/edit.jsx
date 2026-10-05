@@ -55,6 +55,9 @@ function EditorTabla() {
   const [filas, setFilas] = useState([]);
   const [mensaje, setMensaje] = useState('');
 
+  const [filaSeleccionada, setFilaSeleccionada] = useState(0);
+  const [colSeleccionada, setColSeleccionada] = useState(0);
+
   async function cargarArchivo(ruta) {
     try {
       const contenido = await readFile(ruta, 'utf-8');
@@ -62,6 +65,8 @@ function EditorTabla() {
       setEncabezados(enc);
       setFilas(fil);
       setRutaArchivo(ruta);
+      setFilaSeleccionada(0);
+      setColSeleccionada(0);
       setMensaje(`Archivo cargado: ${basename(ruta)}`);
     } catch (err) {
       setMensaje(`Error al leer archivo: ${err.message}`);
@@ -73,6 +78,8 @@ function EditorTabla() {
       cargarArchivo(rutaArchivo);
     }
   }, []);
+
+  const celdaActual = filas[filaSeleccionada]?.[colSeleccionada] ?? '';
 
   return (
     <Box width={ANCHO} height={ALTO} flexDirection="column" padding={1}>
@@ -88,9 +95,70 @@ function EditorTabla() {
           <Text color={COLORES.acento}>{basename(rutaArchivo)}</Text>
         </Box>
         <Text color={COLORES.secundario}>
-          Filas: {filas.length} · Columnas: {encabezados.length}
+          {filas.length} filas · {encabezados.length} columnas
         </Text>
-        {mensaje ? <Text color={COLORES.acento}>{mensaje}</Text> : null}
+
+        <Box marginY={1}>
+          <Text bold color={COLORES.acento}>Valor {'>'} </Text>
+          <Text color={COLORES.titulo}>{celdaActual}</Text>
+        </Box>
+
+        {/* Encabezado de la tabla */}
+        <Box flexDirection="row" marginBottom={1}>
+          <Box width={ANCHO_INDICE}>
+            <Text bold color={COLORES.secundario}>#</Text>
+          </Box>
+          {encabezados.map((col, idx) => (
+            <Box key={idx} width={ANCHO_CELDA}>
+              <Text bold color={colSeleccionada === idx ? COLORES.acento : COLORES.titulo}>
+                {recortar(col.toUpperCase(), ANCHO_CELDA - 1)}
+              </Text>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Filas de datos */}
+        {filas.map((fila, fIdx) => (
+          <Box key={fIdx} flexDirection="row">
+            <Box width={ANCHO_INDICE}>
+              <Text color={COLORES.secundario}>{fIdx + 1}</Text>
+            </Box>
+            {fila.map((celda, cIdx) => {
+              const activo = fIdx === filaSeleccionada && cIdx === colSeleccionada;
+              return (
+                <Box key={cIdx} width={ANCHO_CELDA}>
+                  <Text
+                    color={activo ? COLORES.textoSeleccion : COLORES.titulo}
+                    backgroundColor={activo ? COLORES.seleccion : undefined}
+                    bold={activo}
+                  >
+                    {recortar(celda, ANCHO_CELDA - 1)}
+                  </Text>
+                </Box>
+              );
+            })}
+          </Box>
+        ))}
+
+        <Box marginTop={1} justifyContent="space-between">
+          <Text color={COLORES.secundario}>
+            <Text bold color={COLORES.acento}>A</Text> abrir ·{' '}
+            <Text bold color={COLORES.acento}>G</Text> guardar ·{' '}
+            <Text bold color={COLORES.acento}>Enter</Text> editar ·{' '}
+            <Text bold color={COLORES.acento}>{'<'}</Text> asc ·{' '}
+            <Text bold color={COLORES.acento}>{'>'}</Text> desc ·{' '}
+            <Text bold color={COLORES.acento}>Esc</Text> salir
+          </Text>
+          <Text color={COLORES.secundario}>
+            Fila {filas.length > 0 ? filaSeleccionada + 1 : 0} · Columna {encabezados.length > 0 ? colSeleccionada + 1 : 0}
+          </Text>
+        </Box>
+
+        {mensaje ? (
+          <Box marginTop={1}>
+            <Text color={COLORES.acento}>{mensaje}</Text>
+          </Box>
+        ) : null}
       </Box>
     </Box>
   );
