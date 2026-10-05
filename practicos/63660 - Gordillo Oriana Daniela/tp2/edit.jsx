@@ -77,6 +77,32 @@ function EditorTabla() {
     }
   }
 
+  function ordenarPorColumna(colIdx, ascendente = true) {
+    if (filas.length === 0 || colIdx < 0 || colIdx >= encabezados.length) return;
+
+    const copia = [...filas];
+    copia.sort((a, b) => {
+      const valA = a[colIdx] ?? '';
+      const valB = b[colIdx] ?? '';
+
+      const numA = Number(valA);
+      const numB = Number(valB);
+
+      let res = 0;
+      if (!isNaN(numA) && !isNaN(numB) && valA !== '' && valB !== '') {
+        res = numA - numB;
+      } else {
+        res = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+      }
+
+      return ascendente ? res : -res;
+    });
+
+    setFilas(copia);
+    const nombreCol = encabezados[colIdx] || `Columna ${colIdx + 1}`;
+    setMensaje(`Ordenado por ${nombreCol} (${ascendente ? 'ascendente' : 'descendente'})`);
+  }
+
   useEffect(() => {
     if (rutaArchivo) {
       cargarArchivo(rutaArchivo);
@@ -118,6 +144,16 @@ function EditorTabla() {
 
     if (key.rightArrow) {
       setColSeleccionada(prev => Math.min(Math.max(0, encabezados.length - 1), prev + 1));
+      return;
+    }
+
+    if (input === '<' || input === ',') {
+      ordenarPorColumna(colSeleccionada, true);
+      return;
+    }
+
+    if (input === '>' || input === '.') {
+      ordenarPorColumna(colSeleccionada, false);
       return;
     }
   });
