@@ -77,7 +77,7 @@ async function fotoCarnet(rutaSelfie, rutaFoto) {
     Encuadre vertical de cabeza y hombros, incluyendo aproximadamente hasta la parte superior del pecho. Hombros ligeramente girados respecto de la cámara y rostro orientado naturalmente hacia ella. Cámara colocada aproximadamente a la altura de los ojos.
     Simular la estética óptica de una fotografía realizada con un objetivo profesional para retratos de aproximadamente 85 mm, con profundidad de campo reducida. Los ojos y el rostro deben estar perfectamente enfocados mientras el fondo permanece elegantemente desenfocado.
     Utilizar como fondo un estudio, despacho u oficina contemporánea elegante, en tonos neutros y ligeramente oscuros, completamente desenfocado. Incorporar de manera muy discreta elementos como madera cálida, una biblioteca, una planta, una lámpara con luz cálida y alguna obra gráfica enmarcada. Estos elementos deben aparecer solamente como formas y luces desenfocadas, aportando profundidad sin distraer del rostro.
-    Fotografía profesional fotorrealista de alta resolución, calidad editorial, textura natural de la piel, poros visibles de manera sutil, iluminación realista, tonos de piel naturales, gradación de color elegante, contraste moderado, gran rango dinámico y excelente detalle óptico. Evitar el aspecto plástico, el exceso de retoque, la piel artificialmente perfecta, efectos cinematográficos exagerados o cualquier apariencia típica de una imagen generada por IA.
+    Fotografía profesional fotorrealista de alta resolución, calidad editorial, textura natural de la piel, poros visibles de manera sutil, iluminación realista, tonos de piel naturales, gradación de color elegante, contraste moderado, gran rango dinámico y excelente detalle óptico. Evitar el aspecto plástico, el exceso de retoque, la piel artificialmente perfecta, efectos cinematográficos exagerados o cualquier apariencia típica de una imagen generada por IA. 
     `;
 
   return transformarImagen(rutaSelfie, prompt, rutaFoto, {
@@ -87,7 +87,7 @@ async function fotoCarnet(rutaSelfie, rutaFoto) {
 }
 
 const rutaSelfie = fileURLToPath(new URL("./selfie.jpg", import.meta.url));
-const rutaFoto = fileURLToPath(new URL("./foto-carnet.jpg", import.meta.url));
+const rutaFoto   = fileURLToPath(new URL("./foto-carnet.jpg", import.meta.url));
 
 try {
   await access(rutaSelfie);

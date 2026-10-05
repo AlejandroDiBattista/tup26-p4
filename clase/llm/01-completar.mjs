@@ -40,5 +40,5 @@ async function completar(texto, instrucciones = "", opciones = {}) {
   return (datos.choices[0].message.content ?? "").trim();
 }
 
-const respuesta = await completar("¿Qué es HTTP?", "Respondé en una sola oración.");
+const respuesta = await completar("¿Qué es HTTP?");
 console.log(respuesta);

@@ -51,7 +51,7 @@ async function traducir(texto, idioma = "inglés") {
 
 const original = "Mañana a primera hora te paso el presupuesto, así lo mirás con calma.";
 const ingles = await traducir(original, "inglés");
-const vuelta = await traducir(ingles, "español");
+const vuelta = await traducir(ingles, "español pero de un abogado muy tecnico");
 
 console.log("Original:", original);
 console.log("Inglés:  ", ingles);

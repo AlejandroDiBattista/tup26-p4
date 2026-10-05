@@ -49,7 +49,7 @@ async function generarImagen(prompt, ruta, opciones = {}) {
 }
 
 await generarImagen(
-  "Ilustración plana de una computadora antigua con una lupa encima, colores pastel, fondo liso, sin texto",
+  "como se veria el cuerpo de un atleta de elite, con un cuerpo muy musculoso y definido, con una gran fuerza y resistencia, en un estilo hiperrealista, con una iluminación dramática y un fondo oscuro, en una pose de acción, mostrando su poder y determinación, con un enfoque en los detalles anatómicos y la textura de la piel, como si fuera una pintura digital de alta calidad y comparalo por una persona con sobrepeso",
   "portada.png",
   { dimensiones: "1536x1024" }
 );
