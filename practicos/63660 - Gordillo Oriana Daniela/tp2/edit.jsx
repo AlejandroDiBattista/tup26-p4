@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --import tsx
 
 import React, { useState, useEffect } from 'react';
-import { render, Box, Text, useApp } from 'ink';
+import { render, Box, Text, useInput, useApp } from 'ink';
 import { readFile, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
@@ -57,6 +57,9 @@ function EditorTabla() {
 
   const [filaSeleccionada, setFilaSeleccionada] = useState(0);
   const [colSeleccionada, setColSeleccionada] = useState(0);
+  const [filaInicio, setFilaInicio] = useState(0);
+
+  const filasVisibles = Math.max(3, Math.min(10, ALTO - 12));
 
   async function cargarArchivo(ruta) {
     try {
@@ -67,6 +70,7 @@ function EditorTabla() {
       setRutaArchivo(ruta);
       setFilaSeleccionada(0);
       setColSeleccionada(0);
+      setFilaInicio(0);
       setMensaje(`Archivo cargado: ${basename(ruta)}`);
     } catch (err) {
       setMensaje(`Error al leer archivo: ${err.message}`);
@@ -79,7 +83,47 @@ function EditorTabla() {
     }
   }, []);
 
+  useInput((input, key) => {
+    if (key.escape) {
+      exit();
+      return;
+    }
+
+    if (key.upArrow) {
+      setFilaSeleccionada(prev => {
+        const sig = Math.max(0, prev - 1);
+        if (sig < filaInicio) {
+          setFilaInicio(sig);
+        }
+        return sig;
+      });
+      return;
+    }
+
+    if (key.downArrow) {
+      setFilaSeleccionada(prev => {
+        const sig = Math.min(Math.max(0, filas.length - 1), prev + 1);
+        if (sig >= filaInicio + filasVisibles) {
+          setFilaInicio(sig - filasVisibles + 1);
+        }
+        return sig;
+      });
+      return;
+    }
+
+    if (key.leftArrow) {
+      setColSeleccionada(prev => Math.max(0, prev - 1));
+      return;
+    }
+
+    if (key.rightArrow) {
+      setColSeleccionada(prev => Math.min(Math.max(0, encabezados.length - 1), prev + 1));
+      return;
+    }
+  });
+
   const celdaActual = filas[filaSeleccionada]?.[colSeleccionada] ?? '';
+  const filasParaMostrar = filas.slice(filaInicio, filaInicio + filasVisibles);
 
   return (
     <Box width={ANCHO} height={ALTO} flexDirection="column" padding={1}>
@@ -117,28 +161,31 @@ function EditorTabla() {
           ))}
         </Box>
 
-        {/* Filas de datos */}
-        {filas.map((fila, fIdx) => (
-          <Box key={fIdx} flexDirection="row">
-            <Box width={ANCHO_INDICE}>
-              <Text color={COLORES.secundario}>{fIdx + 1}</Text>
+        {/* Filas de datos visibles con scroll */}
+        {filasParaMostrar.map((fila, indexRelativo) => {
+          const indexReal = filaInicio + indexRelativo;
+          return (
+            <Box key={indexReal} flexDirection="row">
+              <Box width={ANCHO_INDICE}>
+                <Text color={COLORES.secundario}>{indexReal + 1}</Text>
+              </Box>
+              {fila.map((celda, cIdx) => {
+                const activo = indexReal === filaSeleccionada && cIdx === colSeleccionada;
+                return (
+                  <Box key={cIdx} width={ANCHO_CELDA}>
+                    <Text
+                      color={activo ? COLORES.textoSeleccion : COLORES.titulo}
+                      backgroundColor={activo ? COLORES.seleccion : undefined}
+                      bold={activo}
+                    >
+                      {recortar(celda, ANCHO_CELDA - 1)}
+                    </Text>
+                  </Box>
+                );
+              })}
             </Box>
-            {fila.map((celda, cIdx) => {
-              const activo = fIdx === filaSeleccionada && cIdx === colSeleccionada;
-              return (
-                <Box key={cIdx} width={ANCHO_CELDA}>
-                  <Text
-                    color={activo ? COLORES.textoSeleccion : COLORES.titulo}
-                    backgroundColor={activo ? COLORES.seleccion : undefined}
-                    bold={activo}
-                  >
-                    {recortar(celda, ANCHO_CELDA - 1)}
-                  </Text>
-                </Box>
-              );
-            })}
-          </Box>
-        ))}
+          );
+        })}
 
         <Box marginTop={1} justifyContent="space-between">
           <Text color={COLORES.secundario}>
