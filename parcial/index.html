@@ -1,0 +1,3466 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1er Parcial(b)</title>
+  <meta name="application-name" content="1er Parcial" />
+  <meta id="themeColorMeta" name="theme-color" content="#efe3d3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="1er Parcial" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f8f3ea;
+      --paper-strong: #fffdf8;
+      --ink: #1f1b16;
+      --muted: #6f6558;
+      --line: #d7ccba;
+      --accent: #8a5a44;
+      --accent-soft: #e9d9c7;
+      --ok: #1f7a49;
+      --bad: #9f2d2d;
+      --code-bg: #1f2430;
+      --code-fg: #e6edf3;
+      --tok-comment: #8b949e;
+      --tok-string: #a5d6a7;
+      --tok-number: #f6bd60;
+      --tok-keyword: #f28482;
+      --tok-type: #84a8ff;
+      --tok-command: #84a8ff;
+      --tok-var: #ffd166;
+      --shadow: 0 24px 80px rgba(47, 37, 24, 0.12);
+      --focus-ring: rgba(138, 90, 68, 0.4);
+      --bg-glow-a: rgba(138, 90, 68, 0.10);
+      --bg-glow-b: rgba(138, 90, 68, 0.08);
+      --bg-top: #efe3d3;
+      --bg-mid: #f7f2ea;
+      --bg-bottom: #efe7dc;
+      --hero-bg: linear-gradient(135deg, rgba(247, 243, 234, 0.9), rgba(255, 253, 248, 0.98));
+      --hero-border: rgba(138, 90, 68, 0.18);
+      --hero-shadow: var(--shadow);
+      --hero-compact-shadow: 0 18px 42px rgba(47, 37, 24, 0.14);
+      --secondary-bg: #ece3d6;
+      --secondary-ink: var(--ink);
+      --paper-bg: linear-gradient(180deg, rgba(255,253,248,0.96), rgba(248,243,234,0.98));
+      --paper-border: rgba(138, 90, 68, 0.14);
+      --paper-header-bg:
+        linear-gradient(90deg, rgba(138, 90, 68, 0.08), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.45), transparent);
+      --theme-title-ink: #34291f;
+      --question-bg: rgba(255,255,255,0.44);
+      --question-border: rgba(138, 90, 68, 0.12);
+      --inline-code-bg: rgba(138, 90, 68, 0.10);
+      --choice-bg: rgba(255,255,255,0.6);
+      --choice-bg-hover: rgba(255,255,255,0.92);
+      --choice-border: rgba(138, 90, 68, 0.14);
+      --choice-border-hover: rgba(138, 90, 68, 0.3);
+      --ok-soft: rgba(31, 122, 73, 0.06);
+      --ok-border: rgba(31, 122, 73, 0.45);
+      --ok-answer-border: rgba(31, 122, 73, 0.35);
+      --ok-answer-bg: rgba(31, 122, 73, 0.10);
+      --bad-soft: rgba(159, 45, 45, 0.05);
+      --bad-border: rgba(159, 45, 45, 0.35);
+      --bad-answer-border: rgba(159, 45, 45, 0.28);
+      --bad-answer-bg: rgba(159, 45, 45, 0.10);
+      --result-border: rgba(138, 90, 68, 0.16);
+      --result-bg: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(248,243,234,0.96));
+      --bottom-border: rgba(138, 90, 68, 0.18);
+      --bottom-bg: linear-gradient(180deg, rgba(255, 253, 248, 0.92), rgba(247, 243, 234, 0.96));
+      --bottom-shadow: 0 20px 55px rgba(47, 37, 24, 0.18);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #1d1b1a;
+      --paper-strong: #262321;
+      --ink: #f2e6d7;
+      --muted: #c0ae9b;
+      --line: #4f4439;
+      --accent: #d3a98d;
+      --accent-soft: #4d362b;
+      --ok: #7ed6a0;
+      --bad: #f09090;
+      --code-bg: #14181f;
+      --code-fg: #ebf0f6;
+      --tok-comment: #9aa6b2;
+      --tok-string: #b8deb6;
+      --tok-number: #f6c177;
+      --tok-keyword: #f29d9d;
+      --tok-type: #9eb8ff;
+      --tok-command: #9eb8ff;
+      --tok-var: #f3d98a;
+      --shadow: 0 28px 90px rgba(5, 6, 8, 0.42);
+      --focus-ring: rgba(211, 169, 141, 0.55);
+      --bg-glow-a: rgba(211, 169, 141, 0.09);
+      --bg-glow-b: rgba(79, 58, 44, 0.14);
+      --bg-top: #131110;
+      --bg-mid: #1a1715;
+      --bg-bottom: #151311;
+      --hero-bg: linear-gradient(135deg, rgba(38, 35, 33, 0.92), rgba(28, 25, 23, 0.98));
+      --hero-border: rgba(211, 169, 141, 0.18);
+      --hero-shadow: var(--shadow);
+      --hero-compact-shadow: 0 18px 42px rgba(5, 6, 8, 0.45);
+      --secondary-bg: #2d2926;
+      --secondary-ink: var(--ink);
+      --paper-bg: linear-gradient(180deg, rgba(31, 28, 26, 0.98), rgba(24, 22, 20, 0.98));
+      --paper-border: rgba(211, 169, 141, 0.14);
+      --paper-header-bg:
+        linear-gradient(90deg, rgba(211, 169, 141, 0.10), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+      --theme-title-ink: #f0dcc7;
+      --question-bg: rgba(255,255,255,0.03);
+      --question-border: rgba(211, 169, 141, 0.14);
+      --inline-code-bg: rgba(211, 169, 141, 0.14);
+      --choice-bg: rgba(255,255,255,0.04);
+      --choice-bg-hover: rgba(255,255,255,0.07);
+      --choice-border: rgba(211, 169, 141, 0.14);
+      --choice-border-hover: rgba(211, 169, 141, 0.28);
+      --ok-soft: rgba(126, 214, 160, 0.10);
+      --ok-border: rgba(126, 214, 160, 0.45);
+      --ok-answer-border: rgba(126, 214, 160, 0.32);
+      --ok-answer-bg: rgba(126, 214, 160, 0.12);
+      --bad-soft: rgba(240, 144, 144, 0.08);
+      --bad-border: rgba(240, 144, 144, 0.35);
+      --bad-answer-border: rgba(240, 144, 144, 0.26);
+      --bad-answer-bg: rgba(240, 144, 144, 0.12);
+      --result-border: rgba(211, 169, 141, 0.14);
+      --result-bg: linear-gradient(180deg, rgba(37, 33, 30, 0.95), rgba(25, 23, 21, 0.98));
+      --bottom-border: rgba(211, 169, 141, 0.18);
+      --bottom-bg: linear-gradient(180deg, rgba(36, 33, 31, 0.94), rgba(24, 22, 20, 0.98));
+      --bottom-shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        color-scheme: dark;
+        --paper: #1d1b1a;
+        --paper-strong: #262321;
+        --ink: #f2e6d7;
+        --muted: #c0ae9b;
+        --line: #4f4439;
+        --accent: #d3a98d;
+        --accent-soft: #4d362b;
+        --ok: #7ed6a0;
+        --bad: #f09090;
+        --code-bg: #14181f;
+        --code-fg: #ebf0f6;
+        --tok-comment: #9aa6b2;
+        --tok-string: #b8deb6;
+        --tok-number: #f6c177;
+        --tok-keyword: #f29d9d;
+        --tok-type: #9eb8ff;
+        --tok-command: #9eb8ff;
+        --tok-var: #f3d98a;
+        --shadow: 0 28px 90px rgba(5, 6, 8, 0.42);
+        --focus-ring: rgba(211, 169, 141, 0.55);
+        --bg-glow-a: rgba(211, 169, 141, 0.09);
+        --bg-glow-b: rgba(79, 58, 44, 0.14);
+        --bg-top: #131110;
+        --bg-mid: #1a1715;
+        --bg-bottom: #151311;
+        --hero-bg: linear-gradient(135deg, rgba(38, 35, 33, 0.92), rgba(28, 25, 23, 0.98));
+        --hero-border: rgba(211, 169, 141, 0.18);
+        --hero-shadow: var(--shadow);
+        --hero-compact-shadow: 0 18px 42px rgba(5, 6, 8, 0.45);
+        --secondary-bg: #2d2926;
+        --secondary-ink: var(--ink);
+        --paper-bg: linear-gradient(180deg, rgba(31, 28, 26, 0.98), rgba(24, 22, 20, 0.98));
+        --paper-border: rgba(211, 169, 141, 0.14);
+        --paper-header-bg:
+          linear-gradient(90deg, rgba(211, 169, 141, 0.10), transparent 26%),
+          linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+        --theme-title-ink: #f0dcc7;
+        --question-bg: rgba(255,255,255,0.03);
+        --question-border: rgba(211, 169, 141, 0.14);
+        --inline-code-bg: rgba(211, 169, 141, 0.14);
+        --choice-bg: rgba(255,255,255,0.04);
+        --choice-bg-hover: rgba(255,255,255,0.07);
+        --choice-border: rgba(211, 169, 141, 0.14);
+        --choice-border-hover: rgba(211, 169, 141, 0.28);
+        --ok-soft: rgba(126, 214, 160, 0.10);
+        --ok-border: rgba(126, 214, 160, 0.45);
+        --ok-answer-border: rgba(126, 214, 160, 0.32);
+        --ok-answer-bg: rgba(126, 214, 160, 0.12);
+        --bad-soft: rgba(240, 144, 144, 0.08);
+        --bad-border: rgba(240, 144, 144, 0.35);
+        --bad-answer-border: rgba(240, 144, 144, 0.26);
+        --bad-answer-bg: rgba(240, 144, 144, 0.12);
+        --result-border: rgba(211, 169, 141, 0.14);
+        --result-bg: linear-gradient(180deg, rgba(37, 33, 30, 0.95), rgba(25, 23, 21, 0.98));
+        --bottom-border: rgba(211, 169, 141, 0.18);
+        --bottom-bg: linear-gradient(180deg, rgba(36, 33, 31, 0.94), rgba(24, 22, 20, 0.98));
+        --bottom-shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display",
+        "SF Pro Text", "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, var(--bg-glow-a), transparent 28%),
+        radial-gradient(circle at bottom right, var(--bg-glow-b), transparent 24%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 16%, var(--bg-bottom) 100%);
+    }
+
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 10px calc(74px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .hero {
+      background: var(--hero-bg);
+      border: 1px solid var(--hero-border);
+      border-radius: 8px;
+      box-shadow: var(--hero-shadow);
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+      transition: padding 180ms ease, border-radius 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .hero.measuring,
+    .hero.measuring * {
+      transition: none !important;
+    }
+
+    .hero.compact {
+      padding-top: 14px;
+      padding-bottom: 14px;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      box-shadow: var(--hero-compact-shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      max-height: 2rem;
+      transition: opacity 160ms ease, transform 160ms ease, max-height 180ms ease, margin 180ms ease;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      transition: font-size 180ms ease, margin 180ms ease;
+    }
+
+    .hero-timer {
+      position: absolute;
+      top: 12px;
+      right: 68px;
+      min-width: 104px;
+      padding: 7px 12px;
+      border: 1px solid var(--choice-border);
+      border-radius: 8px;
+      background: var(--choice-bg-hover);
+      color: var(--ink);
+      font: 800 1.15rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(47, 37, 24, 0.12);
+    }
+
+    body:not([data-screen="exam"]) .hero-timer {
+      display: none;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 70ch;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-height: 6rem;
+      transition: opacity 160ms ease, transform 160ms ease, max-height 180ms ease, margin 180ms ease;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(47, 37, 24, 0.12);
+      transition: transform 120ms ease, opacity 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    }
+
+    .theme-toggle:hover,
+    .bottom-bar button:hover {
+      transform: translateY(-1px);
+    }
+
+    .theme-toggle:focus-visible,
+    .bottom-bar button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    :root[data-theme="dark"] .theme-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.95rem;
+      max-height: 4rem;
+      transition: opacity 160ms ease, transform 160ms ease, max-height 180ms ease, margin 180ms ease;
+    }
+
+    .meta strong {
+      color: var(--ink);
+    }
+
+    .hero.compact h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+    }
+
+    .hero.compact .hero-timer {
+      top: 10px;
+      font-size: 1rem;
+    }
+
+    .hero.compact .eyebrow,
+    .hero.compact .lead,
+    .hero.compact .meta {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      max-height: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      overflow: hidden;
+      transform: translateY(-10px);
+    }
+
+    .exam-paper {
+      margin-top: 26px;
+      background: var(--paper-bg);
+      border: 1px solid var(--paper-border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .paper-header {
+      padding: 28px 32px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper-header-bg);
+      border-radius: 8px 8px 0 0;
+    }
+
+    .paper-title {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      line-height: 1.05;
+    }
+
+    .paper-student[hidden] {
+      display: none;
+    }
+
+    .paper-student {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      align-items: center;
+      gap: 16px;
+    }
+
+    .paper-student-photo {
+      position: relative;
+      width: 72px;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--choice-bg-hover);
+      color: var(--accent);
+    }
+
+    .paper-student-photo img,
+    .paper-student-photo span {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .paper-student-photo img {
+      object-fit: cover;
+    }
+
+    .paper-student-photo img[hidden] {
+      display: none;
+    }
+
+    .paper-student-photo span {
+      display: grid;
+      place-items: center;
+      font: 700 1.35rem/1 var(--display-font);
+    }
+
+    .paper-student-details {
+      min-width: 0;
+    }
+
+    .paper-student-name {
+      margin: 0;
+      font-size: clamp(1.25rem, 2.8vw, 2rem);
+      line-height: 1.08;
+      overflow-wrap: anywhere;
+    }
+
+    .paper-student-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+      margin: 7px 0 0;
+      color: var(--muted);
+      font: 600 0.88rem/1.25 var(--text-font);
+    }
+
+    @media (max-width: 720px) {
+      .paper-student {
+        grid-template-columns: 60px minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .paper-student-photo {
+        width: 60px;
+      }
+
+      .paper-student-meta {
+        display: block;
+        font-size: 0.76rem;
+      }
+
+      .paper-student-meta span {
+        display: block;
+      }
+    }
+
+    .paper-subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .theme {
+      padding: 8px 4px;
+    }
+
+    .theme + .theme {
+      border-top: 1px solid rgba(138, 90, 68, 0.08);
+    }
+
+    .theme-title {
+      margin: 0 12px 18px;
+      font-size: 1.55rem;
+      color: var(--theme-title-ink);
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 10px;
+    }
+
+    .question {
+      background: var(--question-bg);
+      border: 0;
+      border-radius: 0;
+      padding: 8px 4px;
+      margin: 0 0 10px;
+    }
+
+    .question + .question {
+      border-top: 2px solid var(--choice-border-hover);
+      padding-top: 12px;
+    }
+
+    .question-title {
+      padding-top: 10px;
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+    }
+
+    .question-body p {
+      margin: 0 0 12px;
+      font-size: 1.02rem;
+    }
+
+    .question-body p strong { font-weight: 700; }
+    .question-body p em { font-style: italic; }
+    .question-title code,
+    .question-body code,
+    .choice-text code {
+      background: var(--inline-code-bg);
+      border-radius: 0.4em;
+      padding: 0.08em 0.35em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 14px 0 16px;
+      padding: 16px 18px;
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    pre code {
+      background: none !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      color: inherit;
+      display: block;
+      line-height: 1.55;
+      font-size: 0.95rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tok-comment { color: var(--tok-comment); }
+    .tok-string  { color: var(--tok-string);  }
+    .tok-char    { color: var(--tok-string);  }
+    .tok-number  { color: var(--tok-number);  }
+    .tok-keyword { color: var(--tok-keyword); font-weight: 700; }
+    .tok-type    { color: var(--tok-type);    }
+    .tok-command { color: var(--tok-command); font-weight: 700; }
+    .tok-var     { color: var(--tok-var);     }
+
+    .choices {
+      display: grid;
+      gap: 4px;
+      margin-top: 10px;
+    }
+
+    .choice {
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 4px;
+        align-items: start;
+        padding: 8px 8px;
+        background: var(--choice-bg);
+        border: 1px solid var(--choice-border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+    }
+    .choice:hover {
+      background: var(--choice-bg-hover);
+      border-color: var(--choice-border-hover);
+      transform: translateY(-1px);
+    }
+
+    .choice input[type="checkbox"] {
+      margin-top: 2px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .choice-text {
+      line-height: 1.45;
+    }
+
+    .question.answered .question-title::after {
+      content: " Respondida";
+      font-size: 0.8rem;
+      color: var(--ok);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-left: 10px;
+    }
+
+    .choice.selected {
+      border-color: var(--ok-border);
+      background: var(--ok-soft);
+    }
+
+    .start-screen,
+    .result-screen {
+      padding: 32px;
+    }
+
+    .start-panel,
+    .result-panel {
+      max-width: 760px;
+    }
+
+    .start-panel h3,
+    .result-panel h3 {
+      margin: 0 0 12px;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+    }
+
+    .result-nav {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      margin: 0 0 16px;
+    }
+
+    .result-nav h3 {
+      margin: 0;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .result-nav-button {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--choice-border);
+      border-radius: 8px;
+      background: var(--choice-bg);
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .result-nav-button img {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+
+    .result-nav-button.next img {
+      transform: rotate(180deg);
+    }
+
+    .result-nav-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.32;
+    }
+
+    .welcome-message {
+      margin: 18px 0;
+      padding: 18px;
+      border: 1px solid var(--choice-border);
+      border-radius: 8px;
+      background: var(--choice-bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 8px;
+      margin-top: 18px;
+      max-width: 360px;
+    }
+
+    .field-row label {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .field-row input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--choice-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: var(--paper-strong);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .form-message {
+      min-height: 1.35em;
+      margin: 8px 0 0;
+      color: var(--bad);
+      font-weight: 700;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+    }
+
+    .primary-button {
+      background: var(--accent);
+      color: #fffdf8;
+    }
+
+    .secondary-button {
+      background: var(--secondary-bg);
+      color: var(--secondary-ink);
+      border-color: var(--choice-border);
+    }
+
+    .primary-button:hover,
+    .secondary-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary-button:disabled,
+    .secondary-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+      transform: none;
+    }
+
+    .exam-summary,
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .exam-summary {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--choice-border);
+      border-radius: 8px;
+      background: var(--choice-bg);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.35rem;
+      color: var(--ink);
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .result-code {
+      width: 100%;
+      height: 58px;
+      margin-top: 10px;
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      padding: 0 14px;
+      background: var(--paper-strong);
+      color: var(--ink);
+      font: 700 1.15rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      overflow: hidden;
+      -webkit-user-select: all;
+      user-select: all;
+      cursor: text;
+    }
+
+    .empty-state {
+      padding: 48px 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      left: 50%;
+      right: auto;
+      bottom: 0;
+      bottom: env(safe-area-inset-bottom, 0px);
+      transform: translateX(-50%);
+      width: min(1080px, calc(100% - 20px));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid var(--bottom-border);
+      border-bottom: 0;
+      background: var(--bottom-bg);
+      box-shadow: var(--bottom-shadow);
+      backdrop-filter: blur(14px);
+      z-index: 35;
+    }
+
+    .bottom-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.98rem;
+    }
+
+    .bottom-status strong {
+      color: var(--ink);
+    }
+
+    .progress-count {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: clamp(1.45rem, 3vw, 2.1rem);
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .progress-count:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+
+    body[data-screen="start"] .bottom-bar,
+    body[data-screen="result"] .bottom-bar,
+    body[data-screen="loading"] .bottom-bar {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .hero,
+      .paper-header,
+      .theme {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      .question {
+        padding: 4px;
+      }
+
+      .hero.compact {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .bottom-bar {
+        width: calc(100% - 20px);
+        bottom: 0;
+        bottom: env(safe-area-inset-bottom, 0px);
+        gap: 12px;
+        align-items: center;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 12px 14px;
+      }
+
+      .bottom-bar .primary-button {
+        flex: 0 1 220px;
+        min-width: 0;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .hero-timer {
+        top: 56px;
+        right: 10px;
+        min-width: 64px;
+        padding: 4px 6px;
+        font-size: 0.78rem;
+        letter-spacing: -0.02em;
+      }
+
+      .exam-summary {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .metric {
+        padding: 10px;
+      }
+
+      .metric strong {
+        font-size: clamp(1rem, 4vw, 1.35rem);
+        overflow-wrap: anywhere;
+      }
+
+      .metric span {
+        font-size: 0.82rem;
+      }
+
+      .start-screen,
+      .result-screen {
+        padding: 24px 16px;
+      }
+    }
+
+    /* Editorial redesign: refined magazine-grade exam interface */
+    :root {
+      --paper: #f4efe4;
+      --paper-strong: #fffaf0;
+      --ink: #171411;
+      --muted: #6d6257;
+      --line: #d6cab8;
+      --accent: #9a2538;
+      --accent-soft: #f1d8cf;
+      --accent-2: #2f6573;
+      --ok: #22754c;
+      --bad: #9d2634;
+      --code-bg: #1d2430;
+      --code-fg: #eef2f0;
+      --tok-comment: #a5adb7;
+      --tok-string: #a7d9af;
+      --tok-number: #f3bd62;
+      --tok-keyword: #ff8a8a;
+      --tok-type: #9fb7ff;
+      --tok-command: #9fb7ff;
+      --tok-var: #f4d47e;
+      --shadow: 0 34px 90px rgba(42, 34, 24, 0.14);
+      --focus-ring: rgba(47, 101, 115, 0.42);
+      --bg-top: #e8d9c8;
+      --bg-mid: #f5efe5;
+      --bg-bottom: #e5d3bf;
+      --hero-bg: linear-gradient(180deg, rgba(255, 250, 240, 0.97), rgba(249, 242, 231, 0.95));
+      --hero-border: rgba(28, 22, 16, 0.12);
+      --hero-shadow: 0 18px 54px rgba(42, 34, 24, 0.12);
+      --hero-compact-shadow: 0 16px 42px rgba(42, 34, 24, 0.16);
+      --secondary-bg: #eadfd0;
+      --secondary-ink: #201914;
+      --paper-bg: linear-gradient(180deg, #fffaf0 0%, #fbf5ea 100%);
+      --paper-border: rgba(28, 22, 16, 0.13);
+      --paper-header-bg:
+        linear-gradient(90deg, rgba(154, 37, 56, 0.10), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.60), transparent);
+      --theme-title-ink: #241b16;
+      --question-bg: transparent;
+      --question-border: rgba(28, 22, 16, 0.14);
+      --inline-code-bg: #eee7de;
+      --choice-bg: rgba(255, 252, 246, 0.86);
+      --choice-bg-hover: #fffdf8;
+      --choice-border: rgba(34, 26, 20, 0.13);
+      --choice-border-hover: rgba(47, 101, 115, 0.34);
+      --ok-soft: rgba(34, 117, 76, 0.08);
+      --ok-border: rgba(34, 117, 76, 0.46);
+      --result-border: rgba(154, 37, 56, 0.22);
+      --result-bg: linear-gradient(180deg, #fffaf0, #f7eddf);
+      --bottom-border: rgba(28, 22, 16, 0.14);
+      --bottom-bg: rgba(255, 250, 240, 0.94);
+      --bottom-shadow: 0 -18px 54px rgba(42, 34, 24, 0.16);
+      --display-font: "Bodoni 72", Didot, "Iowan Old Style", Georgia, serif;
+      --text-font: "Avenir Next", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono-font: "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;
+    }
+
+    :root[data-theme="dark"] {
+      --paper: #171615;
+      --paper-strong: #23201d;
+      --ink: #f6ead9;
+      --muted: #c8b8a4;
+      --line: #443a31;
+      --accent: #e48b93;
+      --accent-soft: #4a2e30;
+      --accent-2: #9ccbd4;
+      --ok: #7fd2a5;
+      --bad: #f1939a;
+      --code-bg: #111722;
+      --code-fg: #eef4f2;
+      --bg-top: #11100f;
+      --bg-mid: #1b1815;
+      --bg-bottom: #12100f;
+      --hero-bg: linear-gradient(180deg, rgba(35, 32, 29, 0.98), rgba(25, 23, 21, 0.96));
+      --hero-border: rgba(246, 234, 217, 0.13);
+      --hero-shadow: 0 20px 58px rgba(0, 0, 0, 0.35);
+      --hero-compact-shadow: 0 16px 44px rgba(0, 0, 0, 0.48);
+      --secondary-bg: #2d2924;
+      --secondary-ink: #f6ead9;
+      --paper-bg: linear-gradient(180deg, #211e1b 0%, #171514 100%);
+      --paper-border: rgba(246, 234, 217, 0.13);
+      --paper-header-bg:
+        linear-gradient(90deg, rgba(228, 139, 147, 0.11), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+      --theme-title-ink: #f8ead8;
+      --question-border: rgba(246, 234, 217, 0.15);
+      --inline-code-bg: #312b26;
+      --choice-bg: rgba(255, 255, 255, 0.035);
+      --choice-bg-hover: rgba(255, 255, 255, 0.065);
+      --choice-border: rgba(246, 234, 217, 0.14);
+      --choice-border-hover: rgba(156, 203, 212, 0.38);
+      --ok-soft: rgba(127, 210, 165, 0.10);
+      --ok-border: rgba(127, 210, 165, 0.50);
+      --result-border: rgba(228, 139, 147, 0.22);
+      --result-bg: linear-gradient(180deg, #24211d, #191715);
+      --bottom-border: rgba(246, 234, 217, 0.14);
+      --bottom-bg: rgba(29, 26, 23, 0.94);
+      --bottom-shadow: 0 -18px 54px rgba(0, 0, 0, 0.44);
+    }
+
+    body {
+      font-family: var(--text-font);
+      letter-spacing: 0;
+      background:
+        linear-gradient(90deg, rgba(154, 37, 56, 0.08), transparent 18%, transparent 82%, rgba(47, 101, 115, 0.08)),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 34%, var(--bg-bottom) 100%);
+    }
+
+    .shell {
+      max-width: 980px;
+      padding: clamp(14px, 3vw, 30px) clamp(10px, 2.8vw, 26px) calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .hero {
+      border-radius: 6px;
+      padding: clamp(14px, 2.7vw, 24px);
+      border-top: 4px solid var(--ink);
+      overflow: visible;
+    }
+
+    .eyebrow {
+      margin-bottom: 12px;
+      font: 800 0.75rem/1 var(--text-font);
+      letter-spacing: 0.24em;
+      color: var(--accent);
+    }
+
+    h1 {
+      max-width: calc(100% - 190px);
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(2.15rem, 7vw, 5.2rem);
+      font-weight: 700;
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hero-timer {
+      top: clamp(50px, 7vw, 74px);
+      right: clamp(52px, 8vw, 76px);
+      min-width: 94px;
+      border-radius: 6px;
+      border-color: var(--line);
+      font: 850 clamp(0.95rem, 2.3vw, 1.25rem)/1 var(--mono-font);
+      background: var(--paper-strong);
+      box-shadow: 0 14px 38px rgba(42, 34, 24, 0.10);
+    }
+
+    .theme-toggle {
+      top: 16px;
+      right: 16px;
+      width: 38px;
+      height: 38px;
+      background: var(--paper-strong);
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 30px rgba(42, 34, 24, 0.12);
+    }
+
+    .exam-paper {
+      margin-top: clamp(18px, 4vw, 38px);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+    }
+
+    .paper-header {
+      padding: clamp(24px, 4vw, 44px) clamp(18px, 4vw, 42px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .paper-title {
+      max-width: none;
+      white-space: nowrap;
+      font-family: var(--display-font);
+      font-size: clamp(1.35rem, 4.3vw, 3.25rem);
+      font-weight: 700;
+      line-height: 0.92;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .theme {
+      padding: clamp(16px, 3vw, 34px) clamp(16px, 4vw, 42px);
+    }
+
+    .exam-summary {
+      align-items: stretch;
+      gap: clamp(8px, 1.7vw, 14px);
+      margin: 0 0 clamp(26px, 5vw, 54px);
+    }
+
+    .metric {
+      border-radius: 6px;
+      padding: clamp(12px, 2.2vw, 18px);
+      border-top: 3px solid var(--accent);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--paper-strong) 92%, transparent), color-mix(in srgb, var(--paper) 72%, transparent));
+    }
+
+    .metric strong {
+      font-family: var(--display-font);
+      font-size: clamp(1.18rem, 3.4vw, 2.1rem);
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font: 700 0.72rem/1 var(--text-font);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .question {
+      position: relative;
+      margin: 0;
+      padding: clamp(24px, 4vw, 46px) 0;
+      border-top: 1px solid var(--question-border);
+    }
+
+    .exam-summary + .question {
+      border-top: 3px double var(--line);
+    }
+
+    .question + .question {
+      padding-top: clamp(24px, 4vw, 46px);
+      border-top: 1px solid var(--question-border);
+    }
+
+    .question-title {
+      margin: 0 0 clamp(16px, 2.2vw, 24px);
+      padding: 0;
+      font-family: var(--display-font);
+      font-size: clamp(1.65rem, 4.6vw, 3.1rem);
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .question.answered .question-title::after {
+      content: "Respondida";
+      display: inline-flex;
+      vertical-align: middle;
+      margin-left: 12px;
+      transform: translateY(-0.22em);
+      color: var(--ok);
+      font: 850 0.63rem/1 var(--text-font);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .question-body {
+      max-width: 78ch;
+    }
+
+    .question-body p {
+      margin: 0 0 18px;
+      font-size: clamp(1.08rem, 2.8vw, 1.42rem);
+      line-height: 1.34;
+      color: var(--ink);
+      text-wrap: pretty;
+    }
+
+    .question-title code,
+    .question-body code,
+    .choice-text code {
+      border-radius: 5px;
+      padding: 0.05em 0.28em;
+      font-family: var(--mono-font);
+      font-size: 0.86em;
+    }
+
+    pre {
+      border-radius: 6px;
+      margin: 18px 0 22px;
+      padding: clamp(16px, 3vw, 24px);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: none;
+    }
+
+    .choices {
+      gap: 10px;
+      margin-top: clamp(14px, 2.5vw, 22px);
+    }
+
+    .choice {
+      grid-template-columns: 32px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: clamp(12px, 2.5vw, 18px) clamp(12px, 2.5vw, 20px);
+      border-radius: 6px;
+      background: var(--choice-bg);
+      transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+
+    .choice:hover {
+      transform: translateY(-1px);
+    }
+
+    .choice input[type="radio"],
+    .choice input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      accent-color: var(--accent-2);
+    }
+
+    .choice-text {
+      font-size: clamp(1rem, 2.7vw, 1.25rem);
+      line-height: 1.32;
+      color: var(--ink);
+    }
+
+    .choice.selected {
+      border-color: var(--ok-border);
+      background:
+        linear-gradient(90deg, var(--ok-soft), transparent 68%),
+        var(--choice-bg-hover);
+    }
+
+    .start-screen,
+    .result-screen {
+      padding: clamp(24px, 5vw, 48px);
+    }
+
+    .start-panel,
+    .result-panel {
+      max-width: 720px;
+    }
+
+    .start-panel h3,
+    .result-panel h3 {
+      font-family: var(--display-font);
+      font-size: clamp(2rem, 5vw, 3.7rem);
+      font-weight: 700;
+      line-height: 0.94;
+      letter-spacing: 0;
+    }
+
+    .welcome-message {
+      border-radius: 6px;
+      border-left: 4px solid var(--accent);
+      background: var(--paper-strong);
+      font-size: 1.05rem;
+    }
+
+    .field-row input {
+      border-radius: 6px;
+      min-height: 50px;
+      background: var(--paper-strong);
+      border-color: var(--line);
+    }
+
+    .primary-button,
+    .secondary-button {
+      border-radius: 6px;
+      min-height: 48px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .primary-button {
+      background: var(--ink);
+      color: var(--paper-strong);
+    }
+
+    .primary-button:not(:disabled):hover {
+      background: var(--accent);
+    }
+
+    .bottom-bar {
+      border-radius: 6px 6px 0 0;
+      max-width: 980px;
+      background: var(--bottom-bg);
+    }
+
+    .progress-count {
+      font-family: var(--display-font);
+      font-size: clamp(1.75rem, 5vw, 2.65rem);
+      letter-spacing: 0;
+    }
+
+    .result-code {
+      border-radius: 6px;
+      border-color: var(--accent);
+      background: var(--paper-strong);
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        padding: 10px 10px calc(88px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .hero {
+        padding: 12px 10px 14px;
+        border-top-width: 3px;
+      }
+
+      .eyebrow {
+        margin-bottom: 8px;
+        font-size: 0.66rem;
+        letter-spacing: 0.20em;
+      }
+
+      h1 {
+        max-width: calc(100% - 92px);
+        font-size: clamp(2rem, 9vw, 2.8rem);
+        line-height: 0.9;
+      }
+
+      .hero-timer {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+        min-width: 66px;
+        padding: 4px 6px;
+        font-size: 0.76rem;
+      }
+
+      .theme-toggle {
+        top: 10px;
+        right: 10px;
+        width: 34px;
+        height: 34px;
+      }
+
+      .exam-paper {
+        margin-top: 16px;
+      }
+
+      .paper-header {
+        padding: 24px 18px;
+      }
+
+      .paper-title {
+        font-size: clamp(1.15rem, 5.8vw, 2.4rem);
+      }
+
+      .theme {
+        padding: 14px 18px;
+      }
+
+      .exam-summary {
+        gap: 8px;
+        margin-bottom: 28px;
+      }
+
+      .metric {
+        padding: 10px;
+      }
+
+      .metric strong {
+        font-size: clamp(1rem, 4.5vw, 1.35rem);
+      }
+
+      .metric span {
+        margin-top: 6px;
+        font-size: 0.62rem;
+        letter-spacing: 0.11em;
+      }
+
+      .question {
+        padding: 26px 0;
+      }
+
+      .question-title {
+        font-size: clamp(1.75rem, 7vw, 2.25rem);
+      }
+
+      .question-body p {
+        font-size: clamp(1.08rem, 4.8vw, 1.36rem);
+      }
+
+      .choice {
+        grid-template-columns: 30px 1fr;
+        padding: 13px 12px;
+      }
+
+      .choice-text {
+        font-size: clamp(1rem, 4.4vw, 1.2rem);
+      }
+    }
+
+    /* Aesthetic pass: mobile editorial tuning */
+    h1 {
+      max-width: calc(100% - 150px);
+      font-size: clamp(2rem, 6.3vw, 4.45rem);
+      line-height: 0.94;
+    }
+
+    .paper-title {
+      max-width: none;
+      font-size: clamp(1.35rem, 4.2vw, 3.25rem);
+      line-height: 0.96;
+    }
+
+    .paper-header {
+      position: relative;
+    }
+
+    .paper-header::after {
+      content: "";
+      position: absolute;
+      left: clamp(18px, 4vw, 42px);
+      right: clamp(18px, 4vw, 42px);
+      bottom: -1px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2) 42%, transparent 42%);
+      opacity: 0.86;
+    }
+
+    .start-panel h3,
+    .result-panel h3 {
+      max-width: 14ch;
+    }
+
+    .result-panel h3 {
+      max-width: none;
+      width: 100%;
+    }
+
+    .field-row {
+      max-width: 420px;
+    }
+
+    .field-row input:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+      border-color: var(--accent-2);
+    }
+
+    .welcome-message {
+      max-width: 58ch;
+    }
+
+    .integrity-alert {
+      margin: 0 0 clamp(16px, 3vw, 26px);
+      padding: clamp(12px, 2.5vw, 18px);
+      border: 1px solid color-mix(in srgb, var(--bad) 42%, var(--line));
+      border-left: 5px solid var(--bad);
+      border-radius: 6px;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--bad) 10%, transparent), transparent 64%),
+        var(--paper-strong);
+      color: var(--ink);
+      font: 800 clamp(0.96rem, 2.3vw, 1.08rem)/1.35 var(--text-font);
+      animation: integrity-reveal 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .question-title {
+      text-wrap: balance;
+    }
+
+    .choice:has(input:focus-visible) {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+      border-color: var(--accent-2);
+    }
+
+    .question.answered .question-title::after {
+      content: none;
+      display: none;
+    }
+
+    .primary-button:disabled,
+    .secondary-button:disabled {
+      opacity: 1;
+      color: color-mix(in srgb, var(--ink) 76%, var(--paper));
+      background: color-mix(in srgb, var(--line) 66%, var(--paper-strong));
+      border-color: color-mix(in srgb, var(--ink) 18%, var(--line));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paper-strong) 58%, transparent);
+    }
+
+    .bottom-bar .primary-button:disabled {
+      color: color-mix(in srgb, var(--ink) 82%, var(--paper));
+      background: color-mix(in srgb, var(--line) 76%, var(--paper-strong));
+    }
+
+    .primary-button:active,
+    .secondary-button:active,
+    .theme-toggle:active,
+    .progress-count:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .choice:active {
+      transform: translateY(1px);
+    }
+
+    @keyframes integrity-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero {
+        padding: 12px 10px;
+      }
+
+      h1 {
+        max-width: calc(100% - 50px);
+        font-size: clamp(1.95rem, 8.2vw, 2.55rem);
+        line-height: 0.96;
+      }
+
+      body[data-screen="exam"] h1 {
+        max-width: calc(100% - 118px);
+        font-size: clamp(1.42rem, 6.15vw, 1.95rem);
+        line-height: 1.02;
+      }
+
+      .hero-timer {
+        right: 50px;
+        bottom: 12px;
+        min-width: 58px;
+        padding: 4px 5px;
+        font-size: 0.7rem;
+        letter-spacing: 0;
+      }
+
+      .hero.compact .hero-timer {
+        top: 11px;
+        right: 50px;
+        bottom: auto;
+        min-width: 58px;
+        padding: 4px 5px;
+        font-size: 0.7rem;
+      }
+
+      .paper-header {
+        padding: 22px 18px;
+      }
+
+      .paper-title {
+        max-width: none;
+        font-size: clamp(1.05rem, 5.3vw, 1.9rem);
+      }
+
+      .start-screen,
+      .result-screen {
+        padding: 22px 18px 28px;
+      }
+
+      .start-panel h3,
+      .result-panel h3 {
+        font-size: clamp(1.65rem, 7vw, 2.25rem);
+      }
+
+      .paper-subtitle {
+        font-size: 0.96rem;
+        line-height: 1.42;
+      }
+
+      .exam-summary {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .metric {
+        min-height: 92px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .integrity-alert {
+        margin-bottom: 18px;
+        padding: 12px 13px;
+        font-size: 0.95rem;
+      }
+
+      .question-title {
+        line-height: 1.04;
+      }
+
+      .question.answered .question-title::after {
+        display: flex;
+        width: max-content;
+        margin: 8px 0 0;
+        transform: none;
+      }
+
+      .bottom-bar {
+        padding: 10px 12px;
+      }
+
+      .bottom-bar .primary-button {
+        flex-basis: min(54vw, 230px);
+      }
+    }
+
+    /* Legibility tuning: lighter Codex-like typography */
+    :root {
+      --bg-top: #f1e6da;
+      --bg-mid: #fbf7ef;
+      --bg-bottom: #f0e4d6;
+      --paper: #fbf5ea;
+      --paper-strong: #fffdf7;
+      --paper-bg: linear-gradient(180deg, #fffdf7 0%, #fbf6ec 100%);
+      --choice-bg: rgba(255, 253, 248, 0.90);
+      --choice-bg-hover: #ffffff;
+      --bottom-bg: rgba(255, 253, 248, 0.96);
+      --display-font: "SF Pro Display", "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background:
+        linear-gradient(90deg, rgba(154, 37, 56, 0.035), transparent 20%, transparent 84%, rgba(47, 101, 115, 0.035)),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 36%, var(--bg-bottom) 100%);
+    }
+
+    h1,
+    .paper-title,
+    .question-title,
+    .metric strong,
+    .progress-count,
+    .start-panel h3,
+    .result-panel h3 {
+      font-family: var(--display-font);
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .question-title,
+    .metric strong,
+    .progress-count {
+      font-weight: 620;
+    }
+
+    h1 {
+      font-size: clamp(1.85rem, 5.4vw, 3.5rem);
+      line-height: 1.02;
+    }
+
+    .paper-title {
+      max-width: none;
+      font-size: clamp(1.35rem, 4.2vw, 3.25rem);
+      line-height: 1.02;
+    }
+
+    .question-title {
+      font-size: clamp(1.35rem, 3.4vw, 2.1rem);
+      line-height: 1.12;
+    }
+
+    .question-body p {
+      font-size: clamp(1rem, 2.35vw, 1.18rem);
+      line-height: 1.42;
+    }
+
+    .choice-text {
+      font-size: clamp(0.98rem, 2.25vw, 1.08rem);
+      line-height: 1.38;
+    }
+
+    .integrity-alert {
+      border-color: color-mix(in srgb, var(--bad) 22%, var(--line));
+      border-left-width: 4px;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--bad) 7%, transparent), transparent 58%),
+        color-mix(in srgb, var(--paper-strong) 96%, white);
+      color: var(--bad);
+      font-weight: 720;
+      box-shadow: none;
+    }
+
+    @media (max-width: 720px) {
+      h1 {
+        font-size: clamp(1.72rem, 7vw, 2.18rem);
+        line-height: 1.04;
+      }
+
+      body[data-screen="exam"] h1 {
+        max-width: calc(100% - 118px);
+        font-size: clamp(1.28rem, 5.2vw, 1.58rem);
+        line-height: 1.08;
+      }
+
+      .paper-title {
+        max-width: none;
+        font-size: clamp(1.05rem, 5.3vw, 1.9rem);
+      }
+
+      .metric strong {
+        font-size: clamp(0.95rem, 4vw, 1.16rem);
+      }
+
+      .question {
+        padding: 22px 0;
+      }
+
+      .question-title {
+        font-size: clamp(1.28rem, 5.3vw, 1.58rem);
+        line-height: 1.12;
+      }
+
+      .question-body p {
+        font-size: clamp(1rem, 4.1vw, 1.12rem);
+        line-height: 1.4;
+      }
+
+      .choice-text {
+        font-size: clamp(0.98rem, 3.9vw, 1.08rem);
+        line-height: 1.36;
+      }
+
+      .integrity-alert {
+        padding: 11px 12px;
+        font-size: 0.9rem;
+        line-height: 1.34;
+      }
+
+      .progress-count {
+        font-size: clamp(1.55rem, 7vw, 2.05rem);
+      }
+    }
+
+    /* Result polish */
+    .result-grid {
+      gap: clamp(10px, 2.4vw, 16px);
+    }
+
+    .result-grid .metric {
+      min-height: clamp(118px, 18vw, 150px);
+      padding: clamp(14px, 3vw, 22px);
+    }
+
+    .result-grid .metric strong {
+      font-size: clamp(1.65rem, 5vw, 3rem);
+      line-height: 0.95;
+      color: var(--accent);
+    }
+
+    .result-screen .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 560px;
+    }
+
+    .result-screen .actions .primary-button,
+    .result-screen .actions .secondary-button {
+      width: 100%;
+      min-width: 0;
+      justify-content: center;
+      text-align: center;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    @media (max-width: 720px) {
+      .result-grid .metric {
+        min-height: 110px;
+      }
+
+      .result-grid .metric strong {
+        font-size: clamp(1.7rem, 8vw, 2.25rem);
+      }
+
+      .result-screen .actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .result-screen .actions .primary-button,
+      .result-screen .actions .secondary-button {
+        font-size: 0.95rem;
+      }
+
+      .bottom-bar {
+        width: calc(100% - 24px);
+        gap: 10px;
+        padding: 10px 10px;
+      }
+
+      .bottom-status {
+        flex: 0 0 auto;
+      }
+
+      .bottom-bar .primary-button {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: none;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 0.98rem;
+      }
+    }
+
+    #heroStudent[hidden] {
+      display: none;
+    }
+
+    body[data-screen="exam"] .hero .eyebrow,
+    body[data-screen="exam"] #heroTitle,
+    body[data-screen="exam"] .hero .lead {
+      display: none;
+    }
+
+    body[data-screen="exam"] .hero-student {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr);
+      align-items: center;
+      gap: 18px;
+      padding-right: 172px;
+    }
+
+    .hero-student-photo {
+      position: relative;
+      width: 84px;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--choice-bg-hover);
+      color: var(--accent);
+    }
+
+    .hero-student-photo img,
+    .hero-student-photo span {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-student-photo img {
+      display: block;
+      background: var(--choice-bg-hover);
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .hero-student-photo img[hidden] {
+      display: none;
+    }
+
+    .hero-student-photo span {
+      display: grid;
+      place-items: center;
+      font: 700 1.6rem/1 var(--display-font);
+    }
+
+    .hero-student-details {
+      min-width: 0;
+    }
+
+    body[data-screen="exam"] .hero-student h1 {
+      max-width: none;
+      margin: 0;
+      font-size: clamp(1.45rem, 3vw, 2.3rem);
+      line-height: 1.08;
+      overflow-wrap: anywhere;
+      text-wrap: wrap;
+    }
+
+    .hero-student-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font: 600 0.9rem/1.25 var(--text-font);
+    }
+
+    body[data-screen="exam"] .hero-timer,
+    body[data-screen="exam"] .hero.compact .hero-timer {
+      top: 50%;
+      right: 68px;
+      bottom: auto;
+      transform: translateY(-50%);
+    }
+
+    body[data-screen="exam"] .theme-toggle {
+      top: 50%;
+      right: 16px;
+      transform: translateY(-50%);
+    }
+
+    body[data-screen="exam"] .hero.compact .hero-student {
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    body[data-screen="exam"] .hero.compact .hero-student-photo {
+      width: 52px;
+    }
+
+    body[data-screen="exam"] .hero.compact .hero-student h1 {
+      font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+    }
+
+    body[data-screen="exam"] .hero.compact .hero-student-meta {
+      margin-top: 3px;
+      font-size: 0.76rem;
+    }
+
+    @media (max-width: 720px) {
+      body[data-screen="exam"] .hero-student {
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 10px;
+        padding-right: 78px;
+      }
+
+      body[data-screen="exam"] .hero-student-photo {
+        width: 64px;
+      }
+
+      body[data-screen="exam"] .hero-student h1 {
+        font-size: clamp(1rem, 4.5vw, 1.4rem);
+      }
+
+      .hero-student-meta {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.74rem;
+      }
+
+      .hero-student-meta span {
+        display: block;
+      }
+
+      body[data-screen="exam"] .hero-timer,
+      body[data-screen="exam"] .hero.compact .hero-timer {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+        transform: none;
+      }
+
+      body[data-screen="exam"] .theme-toggle {
+        top: 10px;
+        right: 10px;
+        transform: none;
+      }
+
+      body[data-screen="exam"] .hero.compact .hero-student {
+        grid-template-columns: 44px minmax(0, 1fr);
+      }
+
+      body[data-screen="exam"] .hero.compact .hero-student-photo {
+        width: 44px;
+      }
+
+      body[data-screen="exam"] .hero.compact .hero-student h1 {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body data-screen="loading">
+  <div class="shell">
+    <section id="hero" class="hero">
+      <button id="themeToggleButton" class="theme-toggle" type="button" aria-label="Cambiar tema" aria-pressed="false">🌙</button>
+      <p class="eyebrow">1<sup>er</sup> Parcial</p>
+      <h1 id="heroTitle">TUP26 - P4 : 1<sup>er</sup> Parcial</h1>
+      <div id="heroStudent" class="hero-student" hidden>
+        <div class="hero-student-photo">
+          <span id="heroStudentInitials" aria-hidden="true"></span>
+          <img id="heroStudentPhoto" alt="" />
+        </div>
+        <div class="hero-student-details">
+          <h1 id="heroStudentName"></h1>
+          <p class="hero-student-meta">
+            <span id="heroStudentLegajo"></span>
+            <span id="heroStudentCommission"></span>
+          </p>
+        </div>
+      </div>
+      <div id="heroTimer" class="hero-timer" aria-live="polite">60:00</div>
+      <p class="lead">
+      </p>
+    </section>
+
+    <main class="exam-paper">
+      <header class="paper-header">
+        <h2 id="paperTitle" class="paper-title">1<sup>er</sup> Parcial de Programación 4</h2>
+        <div id="paperStudent" class="paper-student" hidden>
+          <div class="paper-student-photo">
+            <span id="paperStudentInitials" aria-hidden="true"></span>
+            <img id="paperStudentPhoto" alt="" />
+          </div>
+          <div class="paper-student-details">
+            <h2 id="paperStudentName" class="paper-student-name"></h2>
+            <p class="paper-student-meta">
+              <span id="paperStudentLegajo"></span>
+              <span id="paperStudentCommission"></span>
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div id="examContainer" class="empty-state">
+        Preparando el examen...
+      </div>
+    </main>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="bottom-status">
+      <button id="progress" class="progress-count" type="button" aria-label="Ir a la primera pregunta sin responder">0 / 0</button>
+    </div>
+    <button id="finishButton" class="primary-button" type="button" disabled>Finalizar examen</button>
+  </footer>
+
+  <script src="./generador.js"></script>
+  <script>
+    const APP_NAME = "1er Parcial de Programación 4";
+    
+    const EXAM_QUESTION_COUNT_CHANGE_AT = Date.parse("2026-10-01T00:00:00-03:00");
+    const EXAM_QUESTION_COUNT = () => Date.now() >= EXAM_QUESTION_COUNT_CHANGE_AT ? 50 : 10;
+    const EXAM_BONUS_PERCENT  =  5;  // Porcentaje de errores permitidos para llegar a nota 10.
+    const MAX_ATTEMPTS        =  3; 
+    const EXAM_DURATION_MS    = 60;  // Minutos
+
+    const DEFAULT_MARKDOWN_FILE = "examen.md";
+    const STUDENTS_FILE         = "alumnos.md";
+    
+    const THEME_STORAGE_KEY     = "examinador-theme";
+    const SESSION_STORAGE_KEY   = "primer-parcial-sesion";
+    const EXIT_DEDUPE_MS        = 1_500;
+    const INTEGRITY_MESSAGE_TIMEOUT_MS = 6500;
+    const EXIT_WARNING_MESSAGE  = "Detectamos que saliste de la pantalla. Si vuelve a pasar, este intento se anulará y comenzará uno nuevo.";
+    const EXIT_RESET_MESSAGE    = "El intento anterior se anuló porque saliste de la pantalla. Se inició un nuevo intento.";
+    const EXIT_BLOCKED_MESSAGE  = "El intento se anuló porque saliste de la pantalla y ya no quedan intentos disponibles.";
+    const CHEVRON_LEFT_ICON     = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNoZXZyb24tbGVmdC1pY29uIGx1Y2lkZS1jaGV2cm9uLWxlZnQiPjxwYXRoIGQ9Im0xNSAxOC02LTYgNi02Ii8+PC9zdmc+";
+
+    const state = {
+      exam: null,
+      students: new Map(),
+      student: null,
+      sessionDate: getSessionDate(),
+      attempt: 1,
+      deadlineAt: null,
+      allQuestions: [],
+      currentQuestions: [],
+      answers: new Map(),
+      activeAttempt: null,
+      result: null,
+      resultHistory: [],
+      screen: "loading",
+      currentFileName: DEFAULT_MARKDOWN_FILE,
+      exitWarnings: 0,
+      lastExitAt: 0,
+      integrityMessage: "",
+      attemptBlocked: false,
+    };
+
+    const heroMetrics = {
+      expandedHeight: 0,
+      compactHeight: 0,
+    };
+
+    const hero = document.getElementById("hero");
+    const heroTitle = document.getElementById("heroTitle");
+    const heroStudent = document.getElementById("heroStudent");
+    const heroStudentPhoto = document.getElementById("heroStudentPhoto");
+    const heroStudentInitials = document.getElementById("heroStudentInitials");
+    const heroStudentName = document.getElementById("heroStudentName");
+    const heroStudentLegajo = document.getElementById("heroStudentLegajo");
+    const heroStudentCommission = document.getElementById("heroStudentCommission");
+    const paperTitle = document.getElementById("paperTitle");
+    const paperStudent = document.getElementById("paperStudent");
+    const paperStudentPhoto = document.getElementById("paperStudentPhoto");
+    const paperStudentInitials = document.getElementById("paperStudentInitials");
+    const paperStudentName = document.getElementById("paperStudentName");
+    const paperStudentLegajo = document.getElementById("paperStudentLegajo");
+    const paperStudentCommission = document.getElementById("paperStudentCommission");
+    const examContainer = document.getElementById("examContainer");
+    const themeToggleButton = document.getElementById("themeToggleButton");
+    const themeColorMeta = document.getElementById("themeColorMeta");
+    const progress = document.getElementById("progress");
+    const heroTimer = document.getElementById("heroTimer");
+    const finishButton = document.getElementById("finishButton");
+    const preferredDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+    const THEME_COLORS = {
+      light: "#efe3d3",
+      dark:  "#131110",
+    };
+    let integrityMessageTimer = 0;
+
+    initTheme();
+
+    heroStudentPhoto.addEventListener("error", () => {
+      heroStudentPhoto.hidden = true;
+    });
+
+    paperStudentPhoto.addEventListener("error", () => {
+      paperStudentPhoto.hidden = true;
+    });
+
+    themeToggleButton.addEventListener("click", () => {
+      const currentTheme = getEffectiveTheme();
+      applyTheme(currentTheme === "dark" ? "light" : "dark");
+      measureHeroHeights();
+      syncHeroState();
+    });
+    finishButton.addEventListener("click", finishExam);
+    progress.addEventListener("click", scrollToFirstUnansweredQuestion);
+
+    window.addEventListener("scroll", syncHeroState, { passive: true });
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    window.addEventListener("blur", () => handleScreenExit("blur"), { passive: true });
+    window.addEventListener("focus", refreshSessionDay, { passive: true });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        handleScreenExit("visibilitychange");
+      } else {
+        refreshSessionDay();
+      }
+    });
+    window.setInterval(updateMeta, 1000);
+
+    if (typeof preferredDarkScheme.addEventListener === "function") {
+      preferredDarkScheme.addEventListener("change", handleSystemThemeChange);
+    } else if (typeof preferredDarkScheme.addListener === "function") {
+      preferredDarkScheme.addListener(handleSystemThemeChange);
+    }
+
+    async function boot() {
+      try {
+        const [examResponse, studentsResponse] = await Promise.all([
+          fetch(DEFAULT_MARKDOWN_FILE, { cache: "no-cache" }),
+          fetch(STUDENTS_FILE, { cache: "no-cache" }),
+        ]);
+
+        if (!examResponse.ok) {
+          throw new Error(`No se pudo cargar ${DEFAULT_MARKDOWN_FILE}`);
+        }
+
+        if (!studentsResponse.ok) {
+          throw new Error(`No se pudo cargar ${STUDENTS_FILE}`);
+        }
+
+        const [examMarkdown, studentsMarkdown] = await Promise.all([
+          examResponse.text(),
+          studentsResponse.text(),
+        ]);
+
+        if (!examMarkdown.trim() || !studentsMarkdown.trim()) {
+          throw new Error("Archivo vacio");
+        }
+
+        loadExamFromMarkdown(examMarkdown, DEFAULT_MARKDOWN_FILE);
+        state.students = parseStudents(studentsMarkdown);
+        restoreSession();
+        renderStartScreen();
+      } catch (error) {
+        examContainer.className = "empty-state";
+        examContainer.textContent = window.location.protocol === "file:"
+          ? "No pude cargar los datos. Abrí esta página desde un servidor local para permitir la lectura de los archivos."
+          : "No pude cargar los datos del examen. Verificá que examen.md y alumnos.md estén junto a index.html.";
+      }
+    }
+
+    function initTheme() {
+      try {
+        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        if (storedTheme === "light" || storedTheme === "dark") {
+          document.documentElement.dataset.theme = storedTheme;
+        }
+      } catch {
+        // Si localStorage no está disponible, usamos el tema del sistema.
+      }
+
+      updateThemeColor();
+      updateThemeToggle();
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        // Ignoramos errores de persistencia y seguimos con el tema actual.
+      }
+
+      updateThemeToggle();
+      updateThemeColor();
+    }
+
+    function getStoredTheme() {
+      try {
+        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        return storedTheme === "light" || storedTheme === "dark" ? storedTheme : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function getEffectiveTheme() {
+      const explicitTheme = document.documentElement.dataset.theme;
+      if (explicitTheme === "light" || explicitTheme === "dark") {
+        return explicitTheme;
+      }
+
+      return preferredDarkScheme.matches ? "dark" : "light";
+    }
+
+    function updateThemeToggle() {
+      const isDark = getEffectiveTheme() === "dark";
+      themeToggleButton.textContent = isDark ? "☀️" : "🌙";
+      themeToggleButton.setAttribute("aria-label", isDark ? "Activar modo claro" : "Activar modo oscuro");
+      themeToggleButton.title = isDark ? "Modo claro" : "Modo oscuro";
+      themeToggleButton.setAttribute("aria-pressed", String(isDark));
+    }
+
+    function updateThemeColor() {
+      themeColorMeta.content = THEME_COLORS[getEffectiveTheme()];
+    }
+
+    function handleSystemThemeChange() {
+      if (getStoredTheme()) {
+        return;
+      }
+
+      updateThemeColor();
+      updateThemeToggle();
+      measureHeroHeights();
+      syncHeroState();
+    }
+
+    function syncHeroState() {
+      const collapseY = getHeroCollapseThreshold();
+      const expandY = 4;
+      const shouldCompact = hero.classList.contains("compact")
+        ? window.scrollY > expandY
+        : window.scrollY > collapseY;
+
+      hero.classList.toggle("compact", shouldCompact);
+    }
+
+    function handleViewportChange() {
+      measureHeroHeights();
+      syncHeroState();
+    }
+
+    function measureHeroHeights() {
+      const scrollTop = window.scrollY;
+      const wasCompact = hero.classList.contains("compact");
+
+      hero.classList.add("measuring");
+      hero.classList.remove("compact");
+      heroMetrics.expandedHeight = hero.offsetHeight;
+      hero.classList.add("compact");
+      heroMetrics.compactHeight = hero.offsetHeight;
+      hero.classList.toggle("compact", wasCompact);
+      hero.classList.remove("measuring");
+      window.scrollTo(0, scrollTop);
+    }
+
+    function getHeroCollapseThreshold() {
+      const delta = Math.max(0, heroMetrics.expandedHeight - heroMetrics.compactHeight);
+      return Math.max(72, delta + 8);
+    }
+
+    function loadExamFromMarkdown(markdown, sourceName) {
+      state.exam = parseExam(markdown);
+      state.currentFileName = sourceName;
+      state.allQuestions = state.exam.themes.flatMap((theme) =>
+        theme.questions.map((question) => ({ ...question, themeTitle: theme.title }))
+      );
+      state.answers = new Map();
+      updateMeta();
+      measureHeroHeights();
+      syncHeroState();
+    }
+
+    function getSessionDate() {
+      // Usamos el día local, no UTC, para reiniciar a medianoche.
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    function refreshSessionDay() {
+      if (!state.student || state.sessionDate === getSessionDate()) {
+        return false;
+      }
+
+      resetExamRun();
+      renderStartScreen();
+      return true;
+    }
+
+    function restoreSession() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "{}");
+        const student = state.students.get(String(saved.legajo || ""));
+        if (!student) {
+          return;
+        }
+
+        state.student = student;
+        // Las sesiones anteriores sin fecha también comienzan desde cero.
+        if (saved.sessionDate !== getSessionDate()) {
+          resetExamRun();
+          return;
+        }
+
+        state.sessionDate = saved.sessionDate;
+        state.attempt = clampInteger(saved.attempt, 1, MAX_ATTEMPTS);
+        state.deadlineAt = Number.isFinite(saved.deadlineAt) ? saved.deadlineAt : null;
+        state.attemptBlocked = Boolean(saved.attemptBlocked);
+        state.activeAttempt = saved.activeAttempt && saved.activeAttempt.attempt === state.attempt
+          && Array.isArray(saved.activeAttempt.questionIds)
+          && Array.isArray(saved.activeAttempt.answers)
+          ? saved.activeAttempt
+          : null;
+        state.exitWarnings = clampInteger(saved.exitWarnings, 0, 2);
+        state.lastExitAt = Number.isFinite(saved.lastExitAt) ? saved.lastExitAt : 0;
+        state.resultHistory = Array.isArray(saved.resultHistory)
+          ? saved.resultHistory.map(normalizeResultSnapshot).filter(isValidResultSnapshot).slice(-MAX_ATTEMPTS)
+          : [];
+      } catch {
+        // Si no hay sesión guardada, se arranca desde la validación de legajo.
+      }
+    }
+
+    function persistSession() {
+      try {
+        const payload = {
+          legajo: state.student?.legajo || "",
+          sessionDate: state.sessionDate,
+          attempt: state.attempt,
+          deadlineAt: state.deadlineAt,
+          attemptBlocked: state.attemptBlocked,
+          activeAttempt: state.activeAttempt,
+          exitWarnings: state.exitWarnings,
+          lastExitAt: state.lastExitAt,
+          resultHistory: state.resultHistory.map(normalizeResultSnapshot).filter(isValidResultSnapshot),
+        };
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+      } catch {
+        // Si falla localStorage, la app sigue funcionando en memoria.
+      }
+    }
+
+    function isValidResultSnapshot(result) {
+      return result
+        && Number.isInteger(result.attempt)
+        && result.attempt >= 1
+        && result.attempt <= MAX_ATTEMPTS
+        && typeof result.code === "string";
+    }
+
+    function normalizeResultSnapshot(result) {
+      if (!result || typeof result !== "object") {
+        return result;
+      }
+
+      const snapshot = {
+        attempt: result.attempt,
+        questionCount: result.questionCount,
+        correctCount: result.correctCount,
+        credits: result.credits,
+        grade: result.grade,
+        code: result.code,
+      };
+      const codeParts = String(snapshot.code || "").split(".");
+      if ((codeParts.length === 3 || codeParts.length === 4) && Number.isFinite(snapshot.grade)) {
+        const encodedAttemptAndGrade = encodeAttemptAndGrade(snapshot.attempt, snapshot.grade);
+        const base = `${codeParts[0]}.${encodedAttemptAndGrade}.${codeParts[2]}`;
+        snapshot.code = `${base}.${calcularSumaDeControl(base)}`;
+      }
+
+      return snapshot;
+    }
+
+    function clampInteger(value, min, max) {
+      const number = Number.parseInt(String(value), 10);
+      if (!Number.isFinite(number)) return min;
+      return Math.min(max, Math.max(min, number));
+    }
+
+    function parseExam(markdown) {
+      const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+      const themes = [];
+      let examTitle = "Examen";
+      let currentTheme = null;
+      let currentQuestion = null;
+      let questionId = 0;
+
+      function ensureTheme(title) {
+        const theme = { title, questions: [] };
+        themes.push(theme);
+        currentTheme = theme;
+      }
+
+      function pushQuestion() {
+        if (!currentQuestion) return;
+        if (!currentTheme) {
+          ensureTheme(APP_NAME);
+        }
+        currentQuestion.bodyMarkdown = currentQuestion.bodyLines
+          .filter((line) => !/^\s*>\s*\*\*Explicación:\*\*/i.test(line))
+          .join("\n")
+          .trim();
+        const isExcluded = /^\s*\d+[).]\s*🔴/.test(currentQuestion.bodyMarkdown);
+        currentQuestion.title = currentQuestion.title.replaceAll("🟢", "");
+        currentQuestion.bodyMarkdown = currentQuestion.bodyMarkdown.replaceAll("🟢", "");
+        currentQuestion.options = currentQuestion.options.map((option) => ({
+          ...option,
+          text: option.text.replaceAll("🟢", ""),
+        }));
+        currentQuestion.number = extractQuestionNumber(currentQuestion.bodyMarkdown) ?? questionId;
+        currentQuestion.correctIndex = currentQuestion.options.findIndex((option) => option.correct);
+        delete currentQuestion.bodyLines;
+        if (!isExcluded) {
+          currentTheme.questions.push(currentQuestion);
+        }
+        currentQuestion = null;
+      }
+
+      for (const rawLine of lines) {
+        const line = rawLine ?? "";
+        const trimmed = line.trim();
+
+        if (/^---+$/.test(trimmed)) {
+          continue;
+        }
+
+        if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) {
+          examTitle = trimmed.slice(2).trim() || "Examen";
+          continue;
+        }
+
+        if (trimmed.startsWith("## ")) {
+          pushQuestion();
+          ensureTheme(trimmed.slice(3).trim());
+          continue;
+        }
+
+        if (trimmed.startsWith("### ")) {
+          pushQuestion();
+          questionId += 1;
+          currentQuestion = {
+            id: `q${questionId}`,
+            title: trimmed.slice(4).trim(),
+            bodyLines: [],
+            options: [],
+          };
+          continue;
+        }
+
+        if (!currentQuestion) {
+          continue;
+        }
+
+        const optionMatch = line.match(/^\s*-\s+\[([xX\s])\]\s+(.*)$/);
+        if (optionMatch) {
+          currentQuestion.options.push({
+            text: optionMatch[2],
+            correct: optionMatch[1].toLowerCase() === "x",
+          });
+          continue;
+        }
+
+        currentQuestion.bodyLines.push(line);
+      }
+
+      pushQuestion();
+
+      return {
+        title: examTitle,
+        themes,
+        totalQuestions: themes.reduce((acc, theme) => acc + theme.questions.length, 0),
+      };
+    }
+
+    function extractQuestionNumber(markdown) {
+      const match = markdown.match(/^\s*(\d+)[).]/m);
+      return match ? Number(match[1]) : null;
+    }
+
+    function parseStudents(markdown) {
+      const students = new Map();
+      const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+      let commission = "";
+
+      for (const line of lines) {
+        const commissionMatch = line.match(/^##\s+(C\d+)\s*$/i);
+        if (commissionMatch) {
+          commission = commissionMatch[1].toUpperCase();
+          continue;
+        }
+
+        const fields = line.trim().split(/\s{2,}/, 2);
+        const legajo = fields[0]?.match(/^\d{5}$/)?.[0];
+        if (!legajo || !fields[1]) continue;
+
+        students.set(legajo, {
+          legajo,
+          nombre: fields[1].trim(),
+          nombreSaludo: formatStudentName(fields[1].trim()),
+          commission,
+        });
+      }
+
+      return students;
+    }
+
+    function formatStudentName(rawName) {
+      const parts = rawName.split(",").map((part) => part.trim()).filter(Boolean);
+      if (parts.length < 2) {
+        return rawName.trim();
+      }
+
+      return `${parts.slice(1).join(" ")} ${parts[0]}`.replace(/\s+/g, " ").trim();
+    }
+
+    function renderStartScreen(message = "") {
+      setScreen("start");
+      clearIntegrityMessageTimer();
+      state.answers = new Map();
+      state.currentQuestions = [];
+      state.result = null;
+      state.integrityMessage = "";
+      examContainer.className = "start-screen";
+      examContainer.innerHTML = `
+        <section class="start-panel">
+          <h3>Ingresá tu legajo</h3>
+          <p class="paper-subtitle">Usá el legajo con el que figurás en la lista de alumnos.</p>
+          <form id="legajoForm" novalidate>
+            <div class="field-row">
+              <label for="legajoInput">Legajo</label>
+              <input id="legajoInput" name="legajo" inputmode="numeric" autocomplete="off" required />
+            </div>
+            <p id="legajoMessage" class="form-message">${escapeHtml(message)}</p>
+            <div id="welcomeBox"></div>
+            <div class="actions">
+              <button id="startButton" class="primary-button" type="submit" disabled>Comenzar el examen</button>
+            </div>
+          </form>
+        </section>
+      `;
+
+      const legajoInput = document.getElementById("legajoInput");
+      const legajoForm = document.getElementById("legajoForm");
+      const startButton = document.getElementById("startButton");
+
+      if (state.student) {
+        legajoInput.value = state.student.legajo;
+        validateLegajo(legajoInput.value);
+      }
+
+      legajoInput.addEventListener("input", () => validateLegajo(legajoInput.value));
+      legajoForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (refreshSessionDay()) return;
+        const student = validateLegajo(legajoInput.value);
+        if (!student) return;
+
+        if (state.student?.legajo !== student.legajo) {
+          state.student = student;
+          resetExamRun();
+        }
+
+        if (state.attemptBlocked || isTimeExpired()) {
+          const lastResult = state.resultHistory[state.resultHistory.length - 1];
+          if (lastResult) {
+            state.result = lastResult;
+            renderResultScreen();
+          } else {
+            renderStartScreen(state.attemptBlocked ? EXIT_BLOCKED_MESSAGE : "Se agotó el tiempo del examen.");
+          }
+          return;
+        }
+
+        if (state.activeAttempt?.attempt === state.attempt && !isTimeExpired()) {
+          resumeExam();
+          return;
+        }
+
+        const previousResult = state.resultHistory.find((result) => result.attempt === state.attempt);
+        if (previousResult) {
+          state.result = previousResult;
+          renderResultScreen();
+          return;
+        }
+
+        beginExam();
+      });
+
+      function validateLegajo(value) {
+        const legajo = String(value || "").trim();
+        const student = state.students.get(legajo);
+        const messageNode = document.getElementById("legajoMessage");
+        const welcomeBox = document.getElementById("welcomeBox");
+
+        if (!legajo) {
+          messageNode.textContent = "";
+          welcomeBox.innerHTML = "";
+          startButton.disabled = true;
+          updateMeta();
+          return null;
+        }
+
+        if (!student) {
+          messageNode.textContent = "No encontré ese legajo. Revisá el número e intentá otra vez.";
+          welcomeBox.innerHTML = "";
+          startButton.disabled = true;
+          updateMeta();
+          return null;
+        }
+
+        const sameSession = state.student?.legajo === legajo;
+        const retriesUsed = sameSession ? Math.max(0, state.attempt - 1) : 0;
+        const hasActiveAttempt = sameSession && state.activeAttempt?.attempt === state.attempt;
+        const hasPreviousResult = sameSession && state.resultHistory.some((result) => result.attempt === state.attempt);
+        const sessionUnavailable = sameSession && (state.attemptBlocked || isTimeExpired());
+        const hasAnyResult = sameSession && state.resultHistory.length > 0;
+        const canContinue = hasActiveAttempt && !sessionUnavailable;
+        const canViewResult = hasPreviousResult || (sessionUnavailable && hasAnyResult);
+        messageNode.textContent = sessionUnavailable
+          ? (state.attemptBlocked ? EXIT_BLOCKED_MESSAGE : "Se agotó el tiempo del examen.")
+          : "";
+        welcomeBox.innerHTML = `
+          <div class="welcome-message">
+            Hola, <strong>${escapeHtml(student.nombreSaludo)}</strong>.<br><br>
+            Reintentos usados hoy: <strong>${retriesUsed} de ${MAX_ATTEMPTS - 1}</strong>.<br><br>
+            ${sameSession && state.deadlineAt
+              ? "El tiempo restante del examen se conserva al continuar."
+              : "Tenés 1 hora para completar el examen."}<br><br>
+            Al finalizar, vas a recibir un código para compartir por WhatsApp en el grupo de la comisión.<br><br>
+            <small>Podés repetir el examen mientras siga disponible el tiempo. Se tomará tu mejor resultado.</small>
+          </div>
+        `;
+        startButton.textContent = canContinue
+          ? "Continuar intento"
+          : canViewResult ? "Ver resultado" : "Comenzar el examen";
+        startButton.disabled = sessionUnavailable && !hasAnyResult;
+        updateMeta();
+        return student;
+      }
+    }
+
+    function resetExamRun() {
+      state.sessionDate = getSessionDate();
+      state.attempt = 1;
+      state.deadlineAt = null;
+      state.currentQuestions = [];
+      state.answers = new Map();
+      state.activeAttempt = null;
+      state.result = null;
+      state.resultHistory = [];
+      state.exitWarnings = 0;
+      state.lastExitAt = 0;
+      state.integrityMessage = "";
+      state.attemptBlocked = false;
+      persistSession();
+    }
+
+    function beginExam(options = {}) {
+      if (refreshSessionDay()) return;
+      if (!state.student || isTimeExpired() || state.attempt > MAX_ATTEMPTS || state.attemptBlocked) {
+        renderStartScreen("No se puede comenzar el examen. Revisá el legajo, el tiempo disponible o el número de intento.");
+        return;
+      }
+
+      if (!state.deadlineAt) {
+        state.deadlineAt = Date.now() + (EXAM_DURATION_MS * 60 * 1000);
+      }
+
+      const questionCount = EXAM_QUESTION_COUNT();
+      const questionIndexes = GenerarExamen(getSeed(), questionCount, state.allQuestions.length);
+      state.currentQuestions = questionIndexes
+        .map((number) => state.allQuestions[number - 1])
+        .filter((question) => question && Number.isInteger(question.correctIndex) && question.correctIndex >= 0)
+        .sort((a, b) => a.number - b.number);
+      state.answers = new Map();
+      state.activeAttempt = {
+        attempt: state.attempt,
+        questionIds: state.currentQuestions.map((question) => question.id),
+        answers: [],
+      };
+      state.result = null;
+      state.exitWarnings = 0;
+      state.lastExitAt = options.preserveExitDedupe ? state.lastExitAt : 0;
+      setScreen("exam");
+      persistSession();
+      renderExam();
+      scheduleIntegrityMessageClear();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resumeExam() {
+      const activeAttempt = state.activeAttempt;
+      const questionsById = new Map(state.allQuestions.map((question) => [question.id, question]));
+      const questions = activeAttempt.questionIds.map((id) => questionsById.get(id));
+      if (questions.length === 0 || questions.some((question) => !question)) {
+        state.activeAttempt = null;
+        beginExam();
+        return;
+      }
+
+      state.currentQuestions = questions;
+      state.answers = new Map(activeAttempt.answers.filter((entry) => {
+        if (!Array.isArray(entry) || entry.length !== 2) return false;
+        const question = questionsById.get(entry[0]);
+        return question && Number.isInteger(entry[1]) && entry[1] >= 0 && entry[1] < question.options.length;
+      }));
+      state.activeAttempt.answers = Array.from(state.answers);
+      setScreen("exam");
+      persistSession();
+      renderExam();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function getSeed() {
+      return Number.parseInt(`${state.student.legajo}${state.attempt}`, 10);
+    }
+
+    function renderExam() {
+      if (!state.exam || state.currentQuestions.length === 0) {
+        examContainer.className = "empty-state";
+        examContainer.textContent = "No encontré preguntas válidas para generar este intento.";
+        return;
+      }
+
+      examContainer.className = "";
+      examContainer.innerHTML = `
+        <section class="theme">
+          ${renderIntegrityMessage()}
+          <div class="exam-summary">
+            <div class="metric"><strong>${escapeHtml(state.student.nombreSaludo)}</strong><span>Alumno</span></div>
+            <div class="metric"><strong>${state.attempt} / ${MAX_ATTEMPTS}</strong><span>Intento actual</span></div>
+            <div class="metric"><strong>${state.currentQuestions.length}</strong><span>Preguntas</span></div>
+          </div>
+          ${state.currentQuestions.map(renderQuestion).join("")}
+        </section>
+      `;
+
+      examContainer.querySelectorAll('input[type="radio"]').forEach((input) => {
+        input.addEventListener("change", handleChoiceChange);
+      });
+
+      updateMeta();
+    }
+
+    function showTemporaryIntegrityMessage(message) {
+      state.integrityMessage = message;
+      persistSession();
+      renderExam();
+      scheduleIntegrityMessageClear();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function scheduleIntegrityMessageClear() {
+      clearIntegrityMessageTimer();
+      if (!state.integrityMessage || state.screen !== "exam") {
+        return;
+      }
+
+      const message = state.integrityMessage;
+      integrityMessageTimer = window.setTimeout(() => {
+        if (state.screen !== "exam" || state.integrityMessage !== message) {
+          return;
+        }
+
+        state.integrityMessage = "";
+        persistSession();
+        renderExam();
+      }, INTEGRITY_MESSAGE_TIMEOUT_MS);
+    }
+
+    function clearIntegrityMessageTimer() {
+      if (!integrityMessageTimer) {
+        return;
+      }
+
+      window.clearTimeout(integrityMessageTimer);
+      integrityMessageTimer = 0;
+    }
+
+    function renderIntegrityMessage() {
+      if (!state.integrityMessage) {
+        return "";
+      }
+
+      return `<div class="integrity-alert" role="alert">${escapeHtml(state.integrityMessage)}</div>`;
+    }
+
+    function renderQuestion(question, index) {
+      const answeredIndex = state.answers.get(question.id);
+      const answered = Number.isInteger(answeredIndex);
+      const classes = [
+        "question",
+        answered ? "answered" : "",
+      ].filter(Boolean).join(" ");
+
+      return `
+        <article class="${classes}" data-question-id="${question.id}">
+          <h3 class="question-title">${index + 1}. ${renderInlineMarkdown(question.title)}</h3>
+          <div class="question-body">${renderMarkdown(stripQuestionNumber(question.bodyMarkdown))}</div>
+          <div class="choices">
+            ${question.options.map((option, index) => renderChoice(question, option, index, answeredIndex)).join("")}
+          </div>
+        </article>
+      `;
+    }
+
+    function stripQuestionNumber(markdown) {
+      return markdown.replace(/^\s*\d+[).]\s*/, "");
+    }
+
+    function renderChoice(question, option, index, answeredIndex) {
+      const checked = answeredIndex === index ? "checked" : "";
+      const extraClass = [
+        "choice",
+        answeredIndex === index ? "selected" : "",
+      ].filter(Boolean).join(" ");
+
+      return `
+        <label class="${extraClass}">
+          <input
+            type="radio"
+            name="${question.id}"
+            data-question-id="${question.id}"
+            data-option-index="${index}"
+            ${checked}
+          />
+          <span class="choice-text">${renderInlineMarkdown(option.text)}</span>
+        </label>
+      `;
+    }
+
+    function handleChoiceChange(event) {
+      if (refreshSessionDay()) return;
+      const input = event.target;
+      const questionId = input.dataset.questionId;
+      const optionIndex = Number(input.dataset.optionIndex);
+      const questionInputs = examContainer.querySelectorAll(`input[data-question-id="${CSS.escape(questionId)}"]`);
+
+      if (!input.checked) return;
+      const wasAlreadyAnswered = state.answers.has(questionId);
+      state.answers.set(questionId, optionIndex);
+      state.activeAttempt.answers = Array.from(state.answers);
+      persistSession();
+
+      const article = input.closest(".question");
+      article.classList.toggle("answered", state.answers.has(questionId));
+      questionInputs.forEach((checkbox) => {
+        checkbox.closest(".choice")?.classList.toggle("selected", checkbox.checked);
+      });
+
+      updateMeta();
+      if (!wasAlreadyAnswered) {
+        scrollToNextUnansweredQuestion(questionId);
+      }
+    }
+
+    function scrollToNextUnansweredQuestion(questionId) {
+      const currentIndex = state.currentQuestions.findIndex((question) => question.id === questionId);
+      if (currentIndex < 0 || state.answers.size >= state.currentQuestions.length) {
+        return;
+      }
+
+      const nextQuestion = state.currentQuestions
+        .slice(currentIndex + 1)
+        .find((question) => !state.answers.has(question.id))
+        || state.currentQuestions.find((question) => !state.answers.has(question.id));
+
+      if (!nextQuestion) {
+        return;
+      }
+
+      const article = examContainer.querySelector(`[data-question-id="${CSS.escape(nextQuestion.id)}"]`);
+      if (!article) {
+        return;
+      }
+
+      window.setTimeout(() => scrollQuestionFullyIntoView(article), 80);
+    }
+
+    function scrollQuestionFullyIntoView(article, behavior = "smooth") {
+      const heroOffset = hero.getBoundingClientRect().height + 14;
+      const bottomBar = document.querySelector(".bottom-bar");
+      const bottomOffset = bottomBar && getComputedStyle(bottomBar).display !== "none"
+        ? bottomBar.getBoundingClientRect().height + 14
+        : 14;
+      const availableHeight = window.innerHeight - heroOffset - bottomOffset;
+      const rect = article.getBoundingClientRect();
+      const isFullyVisible = rect.top >= heroOffset && rect.bottom <= window.innerHeight - bottomOffset;
+
+      if (isFullyVisible) {
+        return;
+      }
+
+      const articleTop = rect.top + window.scrollY;
+      const articleBottom = rect.bottom + window.scrollY;
+      const targetTop = rect.height <= availableHeight
+        ? articleBottom - (window.innerHeight - bottomOffset)
+        : articleTop - heroOffset;
+
+      window.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior,
+      });
+    }
+
+    function scrollToFirstUnansweredQuestion() {
+      if (state.screen !== "exam" || state.answers.size >= state.currentQuestions.length) {
+        return;
+      }
+
+      const firstUnanswered = state.currentQuestions.find((question) => !state.answers.has(question.id));
+      if (!firstUnanswered) {
+        return;
+      }
+
+      const article = examContainer.querySelector(`[data-question-id="${CSS.escape(firstUnanswered.id)}"]`);
+      if (!article) {
+        return;
+      }
+
+      scrollQuestionFullyIntoView(article, "auto");
+      article.querySelector('input[type="radio"]')?.focus({ preventScroll: true });
+    }
+
+    function handleScreenExit(reason) {
+      if (refreshSessionDay()) return;
+      if (state.screen !== "exam" || state.attemptBlocked) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - state.lastExitAt < EXIT_DEDUPE_MS) {
+        return;
+      }
+
+      state.lastExitAt = now;
+      state.exitWarnings += 1;
+
+      if (state.exitWarnings === 1) {
+        showTemporaryIntegrityMessage(EXIT_WARNING_MESSAGE);
+        return;
+      }
+
+      cancelAttemptAfterScreenExit(reason);
+    }
+
+    function cancelAttemptAfterScreenExit(reason) {
+      state.answers = new Map();
+      state.currentQuestions = [];
+      state.activeAttempt = null;
+      state.result = null;
+      state.exitWarnings = 0;
+      state.lastExitAt = Date.now();
+
+      if (state.attempt >= MAX_ATTEMPTS) {
+        state.attemptBlocked = true;
+        state.integrityMessage = "";
+        persistSession();
+        renderStartScreen(EXIT_BLOCKED_MESSAGE);
+        return;
+      }
+
+      state.attempt += 1;
+      state.integrityMessage = EXIT_RESET_MESSAGE;
+      persistSession();
+      beginExam({ preserveExitDedupe: true });
+    }
+
+    function finishExam() {
+      if (refreshSessionDay()) return;
+      const questionCount = state.currentQuestions.length;
+      if (state.screen !== "exam" || state.attemptBlocked || questionCount === 0 || state.answers.size !== questionCount) {
+        return;
+      }
+
+      const correctCount = state.currentQuestions.reduce((total, question) => {
+        return total + (state.answers.get(question.id) === question.correctIndex ? 1 : 0);
+      }, 0);
+      
+      // Cada pregunta tiene tres opciones: por azar se espera acertar un tercio.
+      const chanceCorrectCount = questionCount / 3;
+      // Redondea hacia arriba para que un margen positivo admita preguntas enteras.
+      const requestedErrorMargin = Math.ceil(questionCount * clampNumber(EXAM_BONUS_PERCENT, 0, 100) / 100);
+      // La nota 10 siempre debe requerir más aciertos que los esperados por azar.
+      const maxErrorMargin = questionCount - Math.floor(chanceCorrectCount) - 1;
+      const allowedErrors = Math.min(requestedErrorMargin, maxErrorMargin);
+      const correctCountForTen = questionCount - allowedErrors;
+      const credits = correctCount - chanceCorrectCount;
+      const rawGrade = clampNumber(1 + 9 * credits / (correctCountForTen - chanceCorrectCount), 1, 10);
+      const grade = Math.ceil(rawGrade * 2) / 2;
+      const encodedAttemptAndGrade = encodeAttemptAndGrade(state.attempt, grade);
+      const answerDigits = state.currentQuestions.map((question) => state.answers.get(question.id));
+      const encodedAnswers = ConvertirBase(answerDigits, 3, 32);
+
+      state.result = {
+        attempt: state.attempt,
+        questionCount,
+        correctCount,
+        credits,
+        grade,
+        code: (() => {
+          const base = `${state.student.legajo}.${encodedAttemptAndGrade}.${encodedAnswers}`;
+          return `${base}.${calcularSumaDeControl(base)}`;
+        })(),
+      };
+
+      state.activeAttempt = null;
+      saveResultSnapshot(state.result);
+      persistSession();
+      renderResultScreen();
+    }
+
+    function saveResultSnapshot(result) {
+      const snapshot = normalizeResultSnapshot(result);
+      const existingIndex = state.resultHistory.findIndex((item) => item.attempt === snapshot.attempt);
+
+      if (existingIndex >= 0) {
+        state.resultHistory[existingIndex] = snapshot;
+      } else {
+        state.resultHistory.push(snapshot);
+      }
+
+      state.resultHistory.sort((a, b) => a.attempt - b.attempt);
+      state.resultHistory = state.resultHistory.slice(-MAX_ATTEMPTS);
+    }
+
+    function renderResultScreen() {
+      if (refreshSessionDay()) return;
+      setScreen("result");
+      clearIntegrityMessageTimer();
+      const result = normalizeResultSnapshot(state.result || state.resultHistory[state.resultHistory.length - 1]);
+      if (!result) {
+        renderStartScreen();
+        return;
+      }
+
+      state.result = result;
+      saveResultSnapshot(result);
+      persistSession();
+      state.integrityMessage = "";
+      state.exitWarnings = 0;
+      state.lastExitAt = 0;
+      const resultIndex = state.resultHistory.findIndex((item) => item.attempt === result.attempt);
+      const hasPreviousResult = resultIndex > 0;
+      const hasNextResult = resultIndex >= 0 && resultIndex < state.resultHistory.length - 1;
+      examContainer.className = "result-screen";
+      examContainer.innerHTML = `
+        <section class="result-panel">
+          <div class="result-nav" aria-label="Navegación de intentos">
+            <button id="previousResultButton" class="result-nav-button previous" type="button" aria-label="Ver intento anterior" ${hasPreviousResult ? "" : "disabled"}>
+              <img src="${CHEVRON_LEFT_ICON}" alt="" aria-hidden="true">
+            </button>
+            <h3>Intento ${result.attempt}/${MAX_ATTEMPTS}</h3>
+            <button id="nextResultButton" class="result-nav-button next" type="button" aria-label="Ver intento siguiente" ${hasNextResult ? "" : "disabled"}>
+              <img src="${CHEVRON_LEFT_ICON}" alt="" aria-hidden="true">
+            </button>
+          </div>
+          <div class="result-grid">
+            <div class="metric"><strong>${result.correctCount} / ${result.questionCount}</strong><span>Respuestas correctas</span></div>
+            <div class="metric"><strong>${formatGrade(result.grade)}</strong><span>Nota</span></div>
+          </div>
+          <p class="paper-subtitle">Código para compartir por WhatsApp</p>
+          <div id="resultCode" class="result-code">${escapeHtml(result.code)}</div>
+          <div class="actions">
+            <button id="copyCodeButton" class="primary-button" type="button">Copiar código</button>
+            <button id="newExamButton" class="secondary-button" type="button" ${state.attempt >= MAX_ATTEMPTS || isTimeExpired() ? "disabled" : ""}>Nuevo intento</button>
+          </div>
+          <p id="copyMessage" class="form-message"></p>
+        </section>
+      `;
+
+      ajustarFuenteCodigo();
+      document.getElementById("previousResultButton").addEventListener("click", () => showResultByOffset(-1));
+      document.getElementById("nextResultButton").addEventListener("click", () => showResultByOffset(1));
+      document.getElementById("copyCodeButton").addEventListener("click", copyResultCode);
+      document.getElementById("newExamButton").addEventListener("click", takeNewExam);
+      updateMeta();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function showResultByOffset(offset) {
+      const currentIndex = state.resultHistory.findIndex((item) => item.attempt === state.result?.attempt);
+      const nextResult = state.resultHistory[currentIndex + offset];
+      if (!nextResult) {
+        return;
+      }
+
+      state.result = nextResult;
+      renderResultScreen();
+    }
+
+    async function copyResultCode() {
+      const code = state.result?.code || "";
+      const message = document.getElementById("copyMessage");
+      const codeField = document.getElementById("resultCode");
+
+      try {
+        if (!navigator.clipboard?.writeText) {
+          throw new Error("Clipboard API no disponible");
+        }
+
+        await navigator.clipboard.writeText(code);
+        message.style.color = "var(--ok)";
+        message.textContent = "Código copiado.";
+      } catch {
+        const temp = document.createElement("textarea");
+        temp.value = code;
+        temp.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+        document.body.appendChild(temp);
+        temp.select();
+
+        try {
+          const copied = document.execCommand("copy");
+          document.body.removeChild(temp);
+          if (!copied) {
+            throw new Error("execCommand no copió");
+          }
+
+          message.style.color = "var(--ok)";
+          message.textContent = "Código copiado.";
+        } catch {
+          message.style.color = "var(--bad)";
+          message.textContent = "El navegador bloqueó el copiado automático. El código quedó seleccionado para copiarlo manualmente.";
+        }
+      }
+    }
+
+    function takeNewExam() {
+      if (refreshSessionDay()) return;
+      const latestAttempt = Math.max(state.attempt, ...state.resultHistory.map((result) => result.attempt), 0);
+      if (latestAttempt >= MAX_ATTEMPTS || isTimeExpired()) {
+        return;
+      }
+
+      state.attempt = latestAttempt + 1;
+      state.attemptBlocked = false;
+      state.integrityMessage = "";
+      state.exitWarnings = 0;
+      state.lastExitAt = 0;
+      persistSession();
+      beginExam();
+    }
+
+    function isTimeExpired() {
+      return Number.isFinite(state.deadlineAt) && Date.now() > state.deadlineAt;
+    }
+
+    function ajustarFuenteCodigo() {
+      const el = document.getElementById("resultCode");
+      if (!el) return;
+      el.style.fontSize = "";
+      const max = parseFloat(getComputedStyle(el).fontSize);
+      const min = 9;
+      let size = max;
+      while (el.scrollWidth > el.clientWidth && size > min) {
+        size -= 0.5;
+        el.style.fontSize = size + "px";
+      }
+    }
+
+    function clampNumber(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function formatGrade(value) {
+      if (Number.isInteger(value)) return String(value);
+      return Number.isInteger(value * 2) ? value.toFixed(1) : value.toFixed(2);
+    }
+
+    function encodeAttemptAndGrade(attempt, grade) {
+      const doubledGrade = clampNumber(Math.round(grade * 2), 2, 20);
+      const combinedScore = (attempt - 1) * 20 + doubledGrade;
+      // El máximo (intento 5 con nota 10) da 100; 00 queda reservado para ese único caso.
+      return String(combinedScore % 100).padStart(2, "0");
+    }
+
+    function updateMeta() {
+      if (refreshSessionDay()) return;
+      const total = state.currentQuestions.length || 0;
+      document.title = state.exam?.title || APP_NAME;
+      progress.textContent = `${state.answers.size} / ${total}`;
+      finishButton.disabled = state.screen !== "exam" || state.attemptBlocked || total === 0 || state.answers.size !== total || isTimeExpired();
+      updateTimeStatus();
+    }
+
+    function setScreen(screen) {
+      const changed = state.screen !== screen;
+      state.screen = screen;
+      document.body.dataset.screen = screen;
+      updateHeroStudent();
+      updatePaperStudent();
+      if (changed) {
+        measureHeroHeights();
+        syncHeroState();
+      }
+    }
+
+    function updateHeroStudent() {
+      const student = state.screen === "exam" ? state.student : null;
+      heroStudent.hidden = !student;
+      if (!student) return;
+
+      heroStudentName.textContent = student.nombre;
+      heroStudentLegajo.textContent = `Legajo ${student.legajo}`;
+      heroStudentCommission.textContent = student.commission ? `Comisión ${student.commission}` : "";
+      const [surname = "", givenNames = ""] = student.nombre.split(",");
+      heroStudentInitials.textContent = `${surname.trim().charAt(0)}${givenNames.trim().charAt(0)}`.toUpperCase();
+      heroStudentPhoto.hidden = false;
+      heroStudentPhoto.alt = `Foto de ${student.nombreSaludo}`;
+      heroStudentPhoto.src = `./fotos/${student.legajo}.jpg`;
+    }
+
+    function updatePaperStudent() {
+      const student = state.screen === "result" ? state.student : null;
+      paperTitle.hidden = Boolean(student);
+      paperStudent.hidden = !student;
+      if (!student) return;
+
+      paperStudentName.textContent = student.nombre;
+      paperStudentLegajo.textContent = `Legajo ${student.legajo}`;
+      paperStudentCommission.textContent = student.commission ? `Comisión ${student.commission}` : "";
+      const [surname = "", givenNames = ""] = student.nombre.split(",");
+      paperStudentInitials.textContent = `${surname.trim().charAt(0)}${givenNames.trim().charAt(0)}`.toUpperCase();
+      paperStudentPhoto.hidden = false;
+      paperStudentPhoto.alt = `Foto de ${student.nombreSaludo}`;
+      paperStudentPhoto.src = `./fotos/${student.legajo}.jpg`;
+    }
+
+    function updateTimeStatus() {
+      if (!state.deadlineAt) {
+        heroTimer.textContent = "60:00";
+        return;
+      }
+
+      const remaining = Math.max(0, state.deadlineAt - Date.now());
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      heroTimer.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+      if (remaining === 0 && state.screen === "exam") {
+        finishButton.disabled = true;
+      }
+    }
+
+    async function registerServiceWorker() {
+      if (!("serviceWorker" in navigator) || window.location.protocol === "file:") {
+        return;
+      }
+
+      try {
+        await navigator.serviceWorker.register("./sw.js");
+      } catch {
+        // Si el registro falla, la app sigue funcionando como sitio estático.
+      }
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.split("\n");
+      const parts = [];
+      let paragraph = [];
+      let inCode = false;
+      let codeLanguage = "";
+      let codeLines = [];
+
+      function flushParagraph() {
+        if (paragraph.length === 0) return;
+        const text = paragraph.join(" ").trim();
+        if (text) {
+          parts.push(`<p>${renderInlineMarkdown(text)}</p>`);
+        }
+        paragraph = [];
+      }
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+
+        if (trimmed.startsWith("```")) {
+          flushParagraph();
+          if (inCode) {
+            parts.push(renderCodeBlock(codeLines.join("\n"), codeLanguage));
+            codeLines = [];
+            codeLanguage = "";
+            inCode = false;
+          } else {
+            inCode = true;
+            codeLanguage = trimmed.slice(3).trim().toLowerCase();
+          }
+          continue;
+        }
+
+        if (inCode) {
+          codeLines.push(line);
+          continue;
+        }
+
+        if (!trimmed) {
+          flushParagraph();
+          continue;
+        }
+
+        paragraph.push(line);
+      }
+
+      flushParagraph();
+
+      if (inCode) {
+        parts.push(renderCodeBlock(codeLines.join("\n"), codeLanguage));
+      }
+
+      return parts.join("");
+    }
+
+    function renderCodeBlock(code, language) {
+      return `<pre><code class="language-${escapeHtml(language || "plain")}">${highlightCode(code, language)}</code></pre>`;
+    }
+
+    function highlightCode(code, language) {
+      const lang = (language || "").toLowerCase();
+
+      if (lang === "cs" || lang === "csharp") {
+        return highlightByPatterns(code, [
+          ["comment", /\/\/[^\n]*/g],
+          ["string",  /"(?:\\.|[^"\\])*"/g],
+          ["char",    /'(?:\\.|[^'\\])+'/g],
+          ["number",  /\b\d+(?:\.\d+)?\b/g],
+          ["keyword", /\b(?:using|namespace|class|record|struct|interface|enum|public|private|protected|internal|static|void|int|string|bool|var|new|return|if|else|switch|case|default|break|continue|for|foreach|while|do|try|catch|finally|throw|null|true|false|this|base|out|ref|in|is|as|params)\b/g],
+          ["type",    /\b(?:Console|List|File|Directory|Path|Environment|Exception|ConsoleKeyInfo|ConsoleKey)\b/g],
+        ]);
+      }
+
+      if (lang === "bash" || lang === "sh" || lang === "zsh" || lang === "shell") {
+        return highlightByPatterns(code, [
+          ["comment", /#[^\n]*/g],
+          ["string",  /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g],
+          ["var",     /\$[A-Za-z_][A-Za-z0-9_]*|\$\{[^}]+\}/g],
+          ["number",  /\b\d+\b/g],
+          ["keyword", /\b(?:if|then|else|fi|for|in|do|done|case|esac|while|function)\b/g],
+          ["command", /^(?:\s*)(?:dotnet|git|cd|ls|cat|rg|sed|python3|bash|zsh|mkdir|cp|mv|rm)\b/gm],
+        ]);
+      }
+
+      return escapeHtml(code);
+    }
+
+    function highlightByPatterns(code, patterns) {
+      const tokens = [];
+
+      for (const [type, regex] of patterns) {
+        for (const match of code.matchAll(regex)) {
+          if (match.index == null || match[0].length === 0) continue;
+          tokens.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            type,
+          });
+        }
+      }
+
+      tokens.sort((a, b) => a.start - b.start || b.end - a.end);
+
+      const filtered = [];
+      let lastEnd = -1;
+      for (const token of tokens) {
+        if (token.start < lastEnd) continue;
+        filtered.push(token);
+        lastEnd = token.end;
+      }
+
+      let result = "";
+      let cursor = 0;
+
+      for (const token of filtered) {
+        if (token.start > cursor) {
+          result += escapeHtml(code.slice(cursor, token.start));
+        }
+        result += `<span class="tok-${token.type}">${escapeHtml(code.slice(token.start, token.end))}</span>`;
+        cursor = token.end;
+      }
+
+      if (cursor < code.length) {
+        result += escapeHtml(code.slice(cursor));
+      }
+
+      return result;
+    }
+
+    function renderInlineMarkdown(text) {
+      let html = escapeHtml(text);
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      return html;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    boot();
+    measureHeroHeights();
+    syncHeroState();
+    registerServiceWorker();
+  </script>
+</body>
+</html>

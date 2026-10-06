@@ -21,6 +21,7 @@ describe("exportar_alumnos_md", () => {
             telefono: "(381)467-0231",
             github: "sofceq",
             asistencia: "4",
+            parcial: 6,
             assessmentStatuses: {
               tp1: "pendiente",
               tp2: "error",
@@ -35,6 +36,7 @@ describe("exportar_alumnos_md", () => {
             telefono: "(381)548-4231",
             github: null,
             asistencia: "3",
+            parcial: 9.5,
             assessmentStatuses: {},
           },
         ],
@@ -47,10 +49,10 @@ describe("exportar_alumnos_md", () => {
         "",
         "## C1",
         "```text",
-        "Legajo  Nombre y Apellido                         Teléfono        GitHub                     Asistencia  Practicos",
-        "------  ----------------------------------------  --------------  -------------------------  ----------  ----------",
-        "54865   Cequi, Sofía                              (381)467-0231   sofceq                     4           ⚫️🔴🟡🟢",
-        "63428   Albornoz, Tomás Emilio                    (381)548-4231   -                          3           ⚫️⚫️⚫️⚫️",
+        "Legajo  Nombre y Apellido                         Teléfono        GitHub                     Asistencia  Parcial  Practicos",
+        "------  ----------------------------------------  --------------  -------------------------  ----------  -------  ----------",
+        "54865   Cequi, Sofía                              (381)467-0231   sofceq                     4               6.0  ⚫️🔴🟡🟢",
+        "63428   Albornoz, Tomás Emilio                    (381)548-4231   -                          3               9.5  ⚫️⚫️⚫️⚫️",
         "```",
         "",
       ].join("\n"),
@@ -71,6 +73,7 @@ describe("exportar_alumnos_md", () => {
               telefono: null,
               github: null,
               asistencia: "0",
+              parcial: null,
               assessmentStatuses: {},
             },
           ],
@@ -81,7 +84,7 @@ describe("exportar_alumnos_md", () => {
 
     expect(markdown).toContain("# Materia de prueba\n\n## Comisión especial");
     expect(markdown).toContain(
-      "1234567  Apellido extremadamente largo para la columna, Nombre  -               -                          0           -",
+      "1234567  Apellido extremadamente largo para la columna, Nombre  -               -                          0                 -  -",
     );
   });
 });

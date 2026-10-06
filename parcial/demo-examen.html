@@ -1,0 +1,1057 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo examen</title>
+  <meta name="application-name" content="Demo examen" />
+  <meta id="themeColorMeta" name="theme-color" content="#efe3d3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Demo examen" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f8f3ea;
+      --paper-strong: #fffdf8;
+      --ink: #1f1b16;
+      --muted: #6f6558;
+      --line: #d7ccba;
+      --accent: #8a5a44;
+      --accent-soft: #e9d9c7;
+      --ok: #1f7a49;
+      --bad: #9f2d2d;
+      --code-bg: #1f2430;
+      --code-fg: #e6edf3;
+      --tok-comment: #8b949e;
+      --tok-string: #a5d6a7;
+      --tok-number: #f6bd60;
+      --tok-keyword: #f28482;
+      --tok-type: #84a8ff;
+      --tok-command: #84a8ff;
+      --tok-var: #ffd166;
+      --shadow: 0 24px 80px rgba(47, 37, 24, 0.12);
+      --focus-ring: rgba(138, 90, 68, 0.4);
+      --bg-glow-a: rgba(138, 90, 68, 0.10);
+      --bg-glow-b: rgba(138, 90, 68, 0.08);
+      --bg-top: #efe3d3;
+      --bg-mid: #f7f2ea;
+      --bg-bottom: #efe7dc;
+      --hero-bg: linear-gradient(135deg, rgba(247, 243, 234, 0.9), rgba(255, 253, 248, 0.98));
+      --hero-border: rgba(138, 90, 68, 0.18);
+      --hero-shadow: var(--shadow);
+      --hero-compact-shadow: 0 18px 42px rgba(47, 37, 24, 0.14);
+      --secondary-bg: #ece3d6;
+      --secondary-ink: var(--ink);
+      --paper-bg: linear-gradient(180deg, rgba(255,253,248,0.96), rgba(248,243,234,0.98));
+      --paper-border: rgba(138, 90, 68, 0.14);
+      --paper-header-bg:
+        linear-gradient(90deg, rgba(138, 90, 68, 0.08), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.45), transparent);
+      --theme-title-ink: #34291f;
+      --question-bg: rgba(255,255,255,0.44);
+      --question-border: rgba(138, 90, 68, 0.12);
+      --inline-code-bg: rgba(138, 90, 68, 0.10);
+      --choice-bg: rgba(255,255,255,0.6);
+      --choice-bg-hover: rgba(255,255,255,0.92);
+      --choice-border: rgba(138, 90, 68, 0.14);
+      --choice-border-hover: rgba(138, 90, 68, 0.3);
+      --ok-soft: rgba(31, 122, 73, 0.06);
+      --ok-border: rgba(31, 122, 73, 0.45);
+      --ok-answer-border: rgba(31, 122, 73, 0.35);
+      --ok-answer-bg: rgba(31, 122, 73, 0.10);
+      --bad-soft: rgba(159, 45, 45, 0.05);
+      --bad-border: rgba(159, 45, 45, 0.35);
+      --bad-answer-border: rgba(159, 45, 45, 0.28);
+      --bad-answer-bg: rgba(159, 45, 45, 0.10);
+      --result-border: rgba(138, 90, 68, 0.16);
+      --result-bg: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(248,243,234,0.96));
+      --bottom-border: rgba(138, 90, 68, 0.18);
+      --bottom-bg: linear-gradient(180deg, rgba(255, 253, 248, 0.92), rgba(247, 243, 234, 0.96));
+      --bottom-shadow: 0 20px 55px rgba(47, 37, 24, 0.18);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #1d1b1a;
+      --paper-strong: #262321;
+      --ink: #f2e6d7;
+      --muted: #c0ae9b;
+      --line: #4f4439;
+      --accent: #d3a98d;
+      --accent-soft: #4d362b;
+      --ok: #7ed6a0;
+      --bad: #f09090;
+      --code-bg: #14181f;
+      --code-fg: #ebf0f6;
+      --tok-comment: #9aa6b2;
+      --tok-string: #b8deb6;
+      --tok-number: #f6c177;
+      --tok-keyword: #f29d9d;
+      --tok-type: #9eb8ff;
+      --tok-command: #9eb8ff;
+      --tok-var: #f3d98a;
+      --shadow: 0 28px 90px rgba(5, 6, 8, 0.42);
+      --focus-ring: rgba(211, 169, 141, 0.55);
+      --bg-glow-a: rgba(211, 169, 141, 0.09);
+      --bg-glow-b: rgba(79, 58, 44, 0.14);
+      --bg-top: #131110;
+      --bg-mid: #1a1715;
+      --bg-bottom: #151311;
+      --hero-bg: linear-gradient(135deg, rgba(38, 35, 33, 0.92), rgba(28, 25, 23, 0.98));
+      --hero-border: rgba(211, 169, 141, 0.18);
+      --hero-shadow: var(--shadow);
+      --hero-compact-shadow: 0 18px 42px rgba(5, 6, 8, 0.45);
+      --secondary-bg: #2d2926;
+      --secondary-ink: var(--ink);
+      --paper-bg: linear-gradient(180deg, rgba(31, 28, 26, 0.98), rgba(24, 22, 20, 0.98));
+      --paper-border: rgba(211, 169, 141, 0.14);
+      --paper-header-bg:
+        linear-gradient(90deg, rgba(211, 169, 141, 0.10), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+      --theme-title-ink: #f0dcc7;
+      --question-bg: rgba(255,255,255,0.03);
+      --question-border: rgba(211, 169, 141, 0.14);
+      --inline-code-bg: rgba(211, 169, 141, 0.14);
+      --choice-bg: rgba(255,255,255,0.04);
+      --choice-bg-hover: rgba(255,255,255,0.07);
+      --choice-border: rgba(211, 169, 141, 0.14);
+      --choice-border-hover: rgba(211, 169, 141, 0.28);
+      --ok-soft: rgba(126, 214, 160, 0.10);
+      --ok-border: rgba(126, 214, 160, 0.45);
+      --ok-answer-border: rgba(126, 214, 160, 0.32);
+      --ok-answer-bg: rgba(126, 214, 160, 0.12);
+      --bad-soft: rgba(240, 144, 144, 0.08);
+      --bad-border: rgba(240, 144, 144, 0.35);
+      --bad-answer-border: rgba(240, 144, 144, 0.26);
+      --bad-answer-bg: rgba(240, 144, 144, 0.12);
+      --result-border: rgba(211, 169, 141, 0.14);
+      --result-bg: linear-gradient(180deg, rgba(37, 33, 30, 0.95), rgba(25, 23, 21, 0.98));
+      --bottom-border: rgba(211, 169, 141, 0.18);
+      --bottom-bg: linear-gradient(180deg, rgba(36, 33, 31, 0.94), rgba(24, 22, 20, 0.98));
+      --bottom-shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        color-scheme: dark;
+        --paper: #1d1b1a;
+        --paper-strong: #262321;
+        --ink: #f2e6d7;
+        --muted: #c0ae9b;
+        --line: #4f4439;
+        --accent: #d3a98d;
+        --accent-soft: #4d362b;
+        --ok: #7ed6a0;
+        --bad: #f09090;
+        --code-bg: #14181f;
+        --code-fg: #ebf0f6;
+        --tok-comment: #9aa6b2;
+        --tok-string: #b8deb6;
+        --tok-number: #f6c177;
+        --tok-keyword: #f29d9d;
+        --tok-type: #9eb8ff;
+        --tok-command: #9eb8ff;
+        --tok-var: #f3d98a;
+        --shadow: 0 28px 90px rgba(5, 6, 8, 0.42);
+        --focus-ring: rgba(211, 169, 141, 0.55);
+        --bg-glow-a: rgba(211, 169, 141, 0.09);
+        --bg-glow-b: rgba(79, 58, 44, 0.14);
+        --bg-top: #131110;
+        --bg-mid: #1a1715;
+        --bg-bottom: #151311;
+        --hero-bg: linear-gradient(135deg, rgba(38, 35, 33, 0.92), rgba(28, 25, 23, 0.98));
+        --hero-border: rgba(211, 169, 141, 0.18);
+        --hero-shadow: var(--shadow);
+        --hero-compact-shadow: 0 18px 42px rgba(5, 6, 8, 0.45);
+        --secondary-bg: #2d2926;
+        --secondary-ink: var(--ink);
+        --paper-bg: linear-gradient(180deg, rgba(31, 28, 26, 0.98), rgba(24, 22, 20, 0.98));
+        --paper-border: rgba(211, 169, 141, 0.14);
+        --paper-header-bg:
+          linear-gradient(90deg, rgba(211, 169, 141, 0.10), transparent 26%),
+          linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+        --theme-title-ink: #f0dcc7;
+        --question-bg: rgba(255,255,255,0.03);
+        --question-border: rgba(211, 169, 141, 0.14);
+        --inline-code-bg: rgba(211, 169, 141, 0.14);
+        --choice-bg: rgba(255,255,255,0.04);
+        --choice-bg-hover: rgba(255,255,255,0.07);
+        --choice-border: rgba(211, 169, 141, 0.14);
+        --choice-border-hover: rgba(211, 169, 141, 0.28);
+        --ok-soft: rgba(126, 214, 160, 0.10);
+        --ok-border: rgba(126, 214, 160, 0.45);
+        --ok-answer-border: rgba(126, 214, 160, 0.32);
+        --ok-answer-bg: rgba(126, 214, 160, 0.12);
+        --bad-soft: rgba(240, 144, 144, 0.08);
+        --bad-border: rgba(240, 144, 144, 0.35);
+        --bad-answer-border: rgba(240, 144, 144, 0.26);
+        --bad-answer-bg: rgba(240, 144, 144, 0.12);
+        --result-border: rgba(211, 169, 141, 0.14);
+        --result-bg: linear-gradient(180deg, rgba(37, 33, 30, 0.95), rgba(25, 23, 21, 0.98));
+        --bottom-border: rgba(211, 169, 141, 0.18);
+        --bottom-bg: linear-gradient(180deg, rgba(36, 33, 31, 0.94), rgba(24, 22, 20, 0.98));
+        --bottom-shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display",
+        "SF Pro Text", "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, var(--bg-glow-a), transparent 28%),
+        radial-gradient(circle at bottom right, var(--bg-glow-b), transparent 24%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 16%, var(--bg-bottom) 100%);
+    }
+
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 10px calc(74px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .hero {
+      background: var(--hero-bg);
+      border: 1px solid var(--hero-border);
+      border-radius: 8px;
+      box-shadow: var(--hero-shadow);
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+      transition: padding 180ms ease, border-radius 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .hero.measuring,
+    .hero.measuring * {
+      transition: none !important;
+    }
+
+    .hero.compact {
+      padding-top: 14px;
+      padding-bottom: 14px;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      box-shadow: var(--hero-compact-shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      max-height: 2rem;
+      transition: opacity 160ms ease, transform 160ms ease, max-height 180ms ease, margin 180ms ease;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      transition: font-size 180ms ease, margin 180ms ease;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 70ch;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-height: 6rem;
+      transition: opacity 160ms ease, transform 160ms ease, max-height 180ms ease, margin 180ms ease;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(47, 37, 24, 0.12);
+      transition: transform 120ms ease, opacity 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    }
+
+    .theme-toggle:hover,
+    .bottom-bar button:hover {
+      transform: translateY(-1px);
+    }
+
+    .theme-toggle:focus-visible,
+    .bottom-bar button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    :root[data-theme="dark"] .theme-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.95rem;
+      max-height: 4rem;
+      transition: opacity 160ms ease, transform 160ms ease, max-height 180ms ease, margin 180ms ease;
+    }
+
+    .meta strong {
+      color: var(--ink);
+    }
+
+    .hero.compact h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+    }
+
+    .hero.compact .eyebrow,
+    .hero.compact .lead,
+    .hero.compact .meta {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      max-height: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      overflow: hidden;
+      transform: translateY(-10px);
+    }
+
+    .exam-paper {
+      margin-top: 26px;
+      background: var(--paper-bg);
+      border: 1px solid var(--paper-border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .paper-header {
+      padding: 28px 32px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper-header-bg);
+      border-radius: 8px 8px 0 0;
+    }
+
+    .paper-title {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      line-height: 1.05;
+    }
+
+    .paper-subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .theme {
+      padding: 8px 4px;
+    }
+
+    .theme + .theme {
+      border-top: 1px solid rgba(138, 90, 68, 0.08);
+    }
+
+    .theme-title {
+      margin: 0 12px 18px;
+      font-size: 1.55rem;
+      color: var(--theme-title-ink);
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 10px;
+    }
+
+    .question {
+      background: var(--question-bg);
+      border: 0;
+      border-radius: 0;
+      padding: 8px 4px;
+      margin: 0 0 10px;
+    }
+
+    .question + .question {
+      border-top: 2px solid var(--choice-border-hover);
+      padding-top: 12px;
+    }
+
+    .question-title {
+      padding-top: 10px;
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+    }
+
+    .question-body p {
+      margin: 0 0 12px;
+      font-size: 1.02rem;
+    }
+
+    .question-body p strong { font-weight: 700; }
+    .question-body p em { font-style: italic; }
+    .question-body code,
+    .choice-text code {
+      background: var(--inline-code-bg);
+      border-radius: 0.4em;
+      padding: 0.08em 0.35em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 14px 0 16px;
+      padding: 16px 18px;
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    pre code {
+      background: none !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      color: inherit;
+      display: block;
+      line-height: 1.55;
+      font-size: 0.95rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tok-comment { color: var(--tok-comment); }
+    .tok-string, .tok-char { color: var(--tok-string); }
+    .tok-number { color: var(--tok-number); }
+    .tok-keyword { color: var(--tok-keyword); font-weight: 700; }
+    .tok-type { color: var(--tok-type); }
+    .tok-command { color: var(--tok-command); font-weight: 700; }
+    .tok-var { color: var(--tok-var); }
+
+    .choices {
+      display: grid;
+      gap: 4px;
+      margin-top: 10px;
+    }
+
+    .choice {
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 4px;
+        align-items: start;
+        padding: 8px 8px;
+        background: var(--choice-bg);
+        border: 1px solid var(--choice-border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+    }
+    .choice:hover {
+      background: var(--choice-bg-hover);
+      border-color: var(--choice-border-hover);
+      transform: translateY(-1px);
+    }
+
+    .choice input[type="checkbox"],
+    .choice input[type="radio"] {
+      margin-top: 2px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .choice-text {
+      line-height: 1.45;
+    }
+
+    .question.answered .question-title::after {
+      content: " Respondida";
+      font-size: 0.8rem;
+      color: var(--ok);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-left: 10px;
+    }
+
+    .choice.selected {
+      border-color: var(--ok-border);
+      background: var(--ok-soft);
+    }
+
+    .empty-state {
+      padding: 48px 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      left: 50%;
+      right: auto;
+      bottom: 0;
+      bottom: env(safe-area-inset-bottom, 0px);
+      transform: translateX(-50%);
+      width: min(1080px, calc(100% - 20px));
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      padding: 14px 18px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid var(--bottom-border);
+      border-bottom: 0;
+      background: var(--bottom-bg);
+      box-shadow: var(--bottom-shadow);
+      backdrop-filter: blur(14px);
+      z-index: 35;
+    }
+
+    .bottom-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.98rem;
+    }
+
+    .bottom-status strong {
+      color: var(--ink);
+    }
+
+    .seed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.98rem;
+    }
+
+    .seed-control label {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .seed-control input {
+      width: 112px;
+      border: 1px solid var(--choice-border);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: var(--choice-bg);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .seed-control input:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .bottom-spacer {
+      flex: 1;
+    }
+
+    .bottom-bar button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: var(--paper-strong);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    .bottom-bar button.secondary {
+      background: var(--secondary-bg);
+      color: var(--secondary-ink);
+      border: 1px solid var(--choice-border);
+    }
+
+    .bottom-bar button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+    }
+
+    .result-summary {
+      margin: 18px 0 0;
+      padding: 16px;
+      border: 1px solid var(--result-border);
+      border-radius: 8px;
+      background: var(--result-bg);
+      font-weight: 700;
+    }
+
+    .question.correct {
+      background: var(--ok-soft);
+    }
+
+    .question.incorrect {
+      background: var(--bad-soft);
+    }
+
+    .choice.correct-answer {
+      border-color: var(--ok-answer-border);
+      background: var(--ok-answer-bg);
+    }
+
+    .choice.wrong-answer {
+      border-color: var(--bad-answer-border);
+      background: var(--bad-answer-bg);
+    }
+
+    .answer-note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 720px) {
+      .hero,
+      .paper-header,
+      .theme {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      .question {
+        padding: 4px;
+      }
+
+      .hero.compact {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .bottom-bar {
+        width: calc(100% - 20px);
+        bottom: 0;
+        bottom: env(safe-area-inset-bottom, 0px);
+        gap: 16px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section id="hero" class="hero">
+      <button id="themeToggleButton" class="theme-toggle" type="button" aria-label="Cambiar tema" aria-pressed="false">🌙</button>
+      <p class="eyebrow">Examen aleatorio</p>
+      <h1 id="heroTitle">Demo examen</h1>
+      <p class="lead">
+      </p>
+    </section>
+
+    <main class="exam-paper">
+      <header class="paper-header">
+        <h2 class="paper-title">Examen de 10 preguntas</h2>
+        <p class="paper-subtitle">
+          Elegi una unica opcion por pregunta. Al corregir vas a ver el puntaje y las respuestas correctas.
+        </p>
+      </header>
+
+      <div id="examContainer" class="empty-state">
+        Cargando preguntas...
+      </div>
+    </main>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="bottom-status"><strong>Respondidas:</strong> <span id="progress">0 / 0</span></div>
+    <div class="bottom-status"><strong>Resultado:</strong> <span id="score">Sin corregir</span></div>
+    <div class="seed-control">
+      <label for="seedInput">Semilla</label>
+      <input id="seedInput" type="number" inputmode="numeric" value="12345" />
+    </div>
+    <div class="bottom-spacer"></div>
+    <button id="gradeButton" type="button">Corregir</button>
+  </footer>
+
+
+  <script src="./generador.js"></script>
+  <script>
+    const APP_NAME = "Demo examen";
+    const DEFAULT_MARKDOWN_FILE = "examen.md";
+    const THEME_STORAGE_KEY = "examinador-theme";
+    const EXAM_SEED_STORAGE_KEY = "examinador-seed";
+    const QUESTION_COUNT = 10;
+
+    const state = {
+      exam: null,
+      allQuestions: [],
+      currentQuestions: [],
+      answers: new Map(),
+      graded: false,
+      score: 0,
+      seed: 12345,
+    };
+
+    const hero = document.getElementById("hero");
+    const examContainer = document.getElementById("examContainer");
+    const themeToggleButton = document.getElementById("themeToggleButton");
+    const themeColorMeta = document.getElementById("themeColorMeta");
+    const progress = document.getElementById("progress");
+    const score = document.getElementById("score");
+    const gradeButton = document.getElementById("gradeButton");
+    const seedInput = document.getElementById("seedInput");
+    const preferredDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+    const THEME_COLORS = { light: "#efe3d3", dark: "#131110" };
+
+    initTheme();
+    initSeed();
+    themeToggleButton.addEventListener("click", toggleTheme);
+    gradeButton.addEventListener("click", handleActionButtonClick);
+    seedInput.addEventListener("change", handleSeedChange);
+    window.addEventListener("scroll", () => hero.classList.toggle("compact", window.scrollY > 72), { passive: true });
+
+    async function boot() {
+      try {
+        const response = await fetch(DEFAULT_MARKDOWN_FILE, { cache: "no-cache" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const markdown = await response.text();
+        if (!markdown.trim()) {
+          throw new Error("Archivo vacio");
+        }
+
+        state.exam = parseExam(markdown);
+        state.allQuestions = state.exam.themes
+          .flatMap((theme) => theme.questions.map((question) => ({ ...question, themeTitle: theme.title })))
+          .filter((question) => Number.isInteger(question.correctIndex));
+        startNewExam();
+      } catch (error) {
+        examContainer.className = "empty-state";
+        examContainer.textContent = window.location.protocol === "file:"
+          ? "No pude cargar examen.md. Abrí la página desde un servidor local para permitir la lectura del archivo."
+          : "No pude cargar examen.md. Verificá que el archivo exista junto a demo-examen.html.";
+      }
+    }
+
+    function initTheme() {
+      try {
+        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        if (storedTheme === "light" || storedTheme === "dark") {
+          document.documentElement.dataset.theme = storedTheme;
+        }
+      } catch {}
+      updateThemeUi();
+    }
+
+    function toggleTheme() {
+      const nextTheme = getEffectiveTheme() === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = nextTheme;
+      try { localStorage.setItem(THEME_STORAGE_KEY, nextTheme); } catch {}
+      updateThemeUi();
+    }
+
+    function getEffectiveTheme() {
+      const explicitTheme = document.documentElement.dataset.theme;
+      if (explicitTheme === "light" || explicitTheme === "dark") return explicitTheme;
+      return preferredDarkScheme.matches ? "dark" : "light";
+    }
+
+    function updateThemeUi() {
+      const isDark = getEffectiveTheme() === "dark";
+      themeToggleButton.textContent = isDark ? "☀️" : "🌙";
+      themeToggleButton.setAttribute("aria-label", isDark ? "Activar modo claro" : "Activar modo oscuro");
+      themeToggleButton.title = isDark ? "Modo claro" : "Modo oscuro";
+      themeToggleButton.setAttribute("aria-pressed", String(isDark));
+      themeColorMeta.content = THEME_COLORS[getEffectiveTheme()];
+    }
+
+    function initSeed() {
+      try {
+        const storedSeed = localStorage.getItem(EXAM_SEED_STORAGE_KEY);
+        if (storedSeed) {
+          state.seed = leerSemilla(storedSeed);
+        }
+      } catch {}
+      seedInput.value = String(state.seed);
+    }
+
+    function handleSeedChange() {
+      state.seed = leerSemilla(seedInput.value);
+      seedInput.value = String(state.seed);
+      try { localStorage.setItem(EXAM_SEED_STORAGE_KEY, String(state.seed)); } catch {}
+      startNewExam();
+    }
+
+    function leerSemilla(valor) {
+      const semilla = Number.parseInt(String(valor), 10);
+      return Number.isFinite(semilla) ? semilla : 1;
+    }
+
+    function parseExam(markdown) {
+      const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+      const themes = [];
+      let currentTheme = null;
+      let currentQuestion = null;
+      let questionId = 0;
+
+      function ensureTheme(title) {
+        currentTheme = { title, questions: [] };
+        themes.push(currentTheme);
+      }
+
+      function pushQuestion() {
+        if (!currentQuestion) return;
+        if (!currentTheme) ensureTheme(APP_NAME);
+        currentQuestion.bodyMarkdown = currentQuestion.bodyLines.join("\n").trim();
+        currentQuestion.number = extractQuestionNumber(currentQuestion.bodyMarkdown) ?? questionId;
+        delete currentQuestion.bodyLines;
+        currentTheme.questions.push(currentQuestion);
+        currentQuestion = null;
+      }
+
+      for (const rawLine of lines) {
+        const line = rawLine ?? "";
+        const trimmed = line.trim();
+        if (/^---+$/.test(trimmed)) continue;
+        if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) continue;
+        if (trimmed.startsWith("## ")) {
+          pushQuestion();
+          ensureTheme(trimmed.slice(3).trim());
+          continue;
+        }
+        if (trimmed.startsWith("### ")) {
+          pushQuestion();
+          questionId += 1;
+          currentQuestion = { id: `q${questionId}`, title: trimmed.slice(4).trim(), bodyLines: [], options: [], correctIndex: null };
+          continue;
+        }
+        if (!currentQuestion) continue;
+        const optionMatch = line.match(/^\s*-\s+\[([xX\s])\]\s+(.*)$/);
+        if (optionMatch) {
+          if (optionMatch[1].toLowerCase() === "x") {
+            currentQuestion.correctIndex = currentQuestion.options.length;
+          }
+          currentQuestion.options.push({ text: optionMatch[2] });
+          continue;
+        }
+        currentQuestion.bodyLines.push(line);
+      }
+      pushQuestion();
+      return { themes, totalQuestions: themes.reduce((acc, theme) => acc + theme.questions.length, 0) };
+    }
+
+    function extractQuestionNumber(markdown) {
+      const match = markdown.match(/^\s*(\d+)[).]/m);
+      return match ? Number(match[1]) : null;
+    }
+
+    function startNewExam() {
+      state.seed = leerSemilla(seedInput.value);
+      seedInput.value = String(state.seed);
+      try { localStorage.setItem(EXAM_SEED_STORAGE_KEY, String(state.seed)); } catch {}
+      const cantidad = Math.min(QUESTION_COUNT, state.allQuestions.length);
+      state.currentQuestions = numerosSinRepetir(state.seed, state.allQuestions.length, cantidad)
+        .map((numero) => state.allQuestions[numero - 1]);
+      state.answers = new Map();
+      state.graded = false;
+      state.score = 0;
+      renderExam();
+      updateMeta();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function handleActionButtonClick() {
+      if (state.graded) {
+        startNewExam();
+        return;
+      }
+      gradeExam();
+    }
+
+    function renderExam() {
+      if (state.currentQuestions.length === 0) {
+        examContainer.className = "empty-state";
+        examContainer.textContent = "No encontre preguntas con respuesta conocida.";
+        return;
+      }
+
+      examContainer.className = "";
+      examContainer.innerHTML = `
+        <section class="theme">
+          ${state.graded ? renderResultSummary() : ""}
+          ${state.currentQuestions.map(renderQuestion).join("")}
+        </section>
+      `;
+      examContainer.querySelectorAll('input[type="radio"]').forEach((input) => {
+        input.addEventListener("change", handleChoiceChange);
+      });
+    }
+
+    function renderResultSummary() {
+      const total = state.currentQuestions.length;
+      const percentage = Math.round((state.score / total) * 100);
+      return `<div class="result-summary">Resultado: ${state.score} / ${total} (${percentage}%)</div>`;
+    }
+
+    function renderQuestion(question, index) {
+      const answeredIndex = state.answers.get(question.id);
+      const correctIndex = question.correctIndex;
+      const resultClass = state.graded ? (answeredIndex === correctIndex ? "correct" : "incorrect") : "";
+      const classes = ["question", Number.isInteger(answeredIndex) ? "answered" : "", resultClass].filter(Boolean).join(" ");
+      return `
+        <article class="${classes}" data-question-id="${question.id}">
+          <h3 class="question-title">${index + 1}. ${escapeHtml(question.title)}</h3>
+          <div class="question-body">${renderMarkdown(question.bodyMarkdown)}</div>
+          <div class="choices">
+            ${question.options.map((option, optionIndex) => renderChoice(question, option, optionIndex, answeredIndex, correctIndex)).join("")}
+          </div>
+          ${state.graded ? renderAnswerNote(question, answeredIndex, correctIndex) : ""}
+        </article>
+      `;
+    }
+
+    function renderChoice(question, option, index, answeredIndex, correctIndex) {
+      const classes = [
+        "choice",
+        answeredIndex === index ? "selected" : "",
+        state.graded && index === correctIndex ? "correct-answer" : "",
+        state.graded && answeredIndex === index && index !== correctIndex ? "wrong-answer" : "",
+      ].filter(Boolean).join(" ");
+      return `
+        <label class="${classes}">
+          <input type="radio" name="${question.id}" data-question-id="${question.id}" data-option-index="${index}" ${answeredIndex === index ? "checked" : ""} ${state.graded ? "disabled" : ""} />
+          <span class="choice-text">${renderInlineMarkdown(option.text)}</span>
+        </label>
+      `;
+    }
+
+    function renderAnswerNote(question, answeredIndex, correctIndex) {
+      if (answeredIndex === correctIndex) return `<p class="answer-note">Correcta.</p>`;
+      return `<p class="answer-note">Respuesta correcta: ${renderInlineMarkdown(question.options[correctIndex]?.text ?? "No disponible")}</p>`;
+    }
+
+    function handleChoiceChange(event) {
+      if (state.graded) return;
+      const input = event.target;
+      const questionId = input.dataset.questionId;
+      state.answers.set(questionId, Number(input.dataset.optionIndex));
+      const article = input.closest(".question");
+      article.classList.add("answered");
+      article.querySelectorAll(".choice").forEach((choice) => {
+        choice.classList.toggle("selected", choice.querySelector("input").checked);
+      });
+      updateMeta();
+    }
+
+    function gradeExam() {
+      if (state.graded) return;
+      state.graded = true;
+      state.score = state.currentQuestions.reduce((total, question) => {
+        return total + (state.answers.get(question.id) === question.correctIndex ? 1 : 0);
+      }, 0);
+      renderExam();
+      updateMeta();
+    }
+
+    function updateMeta() {
+      const total = state.currentQuestions.length;
+      document.title = APP_NAME;
+      progress.textContent = `${state.answers.size} / ${total}`;
+      score.textContent = state.graded ? `${state.score} / ${total}` : "Sin corregir";
+      gradeButton.textContent = state.graded ? "Nuevo examen" : "Corregir";
+      gradeButton.classList.toggle("secondary", state.graded);
+      gradeButton.disabled = !state.graded && state.answers.size < total;
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.split("\n");
+      const parts = [];
+      let paragraph = [];
+      let inCode = false;
+      let codeLanguage = "";
+      let codeLines = [];
+
+      function flushParagraph() {
+        if (paragraph.length === 0) return;
+        const text = paragraph.join(" ").trim();
+        if (text) parts.push(`<p>${renderInlineMarkdown(text)}</p>`);
+        paragraph = [];
+      }
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("```")) {
+          flushParagraph();
+          if (inCode) {
+            parts.push(`<pre><code class="language-${escapeHtml(codeLanguage || "plain")}">${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+            codeLines = [];
+            codeLanguage = "";
+            inCode = false;
+          } else {
+            inCode = true;
+            codeLanguage = trimmed.slice(3).trim().toLowerCase();
+          }
+          continue;
+        }
+        if (inCode) {
+          codeLines.push(line);
+          continue;
+        }
+        if (!trimmed) {
+          flushParagraph();
+          continue;
+        }
+        paragraph.push(line);
+      }
+      flushParagraph();
+      if (inCode) parts.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+      return parts.join("");
+    }
+
+    function renderInlineMarkdown(text) {
+      let html = escapeHtml(text);
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      return html;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    boot();
+  </script>
+</body>
+</html>

@@ -1,10 +1,7 @@
 import { defineAction } from "@agent-native/core/action";
 import { z } from "zod";
 
-import {
-  exportar_alumnos_md,
-  TITULO_ALUMNOS_MD,
-} from "../server/agenda/exportar-alumnos-md.js";
+import { exportar_alumnos_md, TITULO_ALUMNOS_MD } from "../server/agenda/exportar-alumnos-md.js";
 import {
   assessmentGrid,
   attendanceGrid,
@@ -14,8 +11,7 @@ import {
 } from "../server/agenda/store.js";
 
 export default defineAction({
-  description:
-    "Generar el archivo alumnos.md con todas las comisiones y sus alumnos.",
+  description: "Generar el archivo alumnos.md con todas las comisiones y sus alumnos.",
   schema: z.object({}),
   http: { method: "GET" },
   readOnly: true,
@@ -33,9 +29,8 @@ export default defineAction({
         const attendanceByLegajo = new Map(
           attendance.rows.map((row) => [row.legajo, row.presentes]),
         );
-        const workByLegajo = new Map(
-          works.rows.map((row) => [row.legajo, row]),
-        );
+        const workByLegajo = new Map(works.rows.map((row) => [row.legajo, row]));
+        const parcial = works.assessments.find((assessment) => assessment.graded);
 
         return {
           name: course.name,
@@ -49,15 +44,16 @@ export default defineAction({
             nombre: student.nombre,
             telefono: student.telefono,
             github: student.github,
-            asistencia: String(
-              attendanceByLegajo.get(student.legajo) ??
-                student.clasesPresentes,
-            ),
+            asistencia: String(attendanceByLegajo.get(student.legajo) ?? student.clasesPresentes),
+            parcial: parcial
+              ? (workByLegajo
+                  .get(student.legajo)
+                  ?.cells.find((cell) => cell.assessmentId === parcial.id)?.score ?? null)
+              : null,
             assessmentStatuses: Object.fromEntries(
               workByLegajo
                 .get(student.legajo)
-                ?.cells.map((cell) => [cell.assessmentId, cell.status]) ??
-                [],
+                ?.cells.map((cell) => [cell.assessmentId, cell.status]) ?? [],
             ),
           })),
         };

@@ -779,6 +779,62 @@ export async function setAssessmentResult(
   return row;
 }
 
+/** Carga de códigos: la comparación se hace en SQL para nunca reducir una nota. */
+export async function raiseAssessmentScore(
+  ownerEmail: string,
+  input: { assessmentId: string; legajo: string; score: number },
+) {
+  const assessment = await getAssessment(ownerEmail, input.assessmentId);
+  const student = await requireStudent(ownerEmail, input.legajo);
+  if (!assessment.graded) throw new UserInputError("Este trabajo no lleva nota.");
+  if (!Number.isFinite(input.score) || input.score < 1 || input.score > 10) {
+    throw new UserInputError("La nota debe estar entre 1 y 10.");
+  }
+
+  const db = getDb();
+  const changed = await db
+    .insert(assessmentResults)
+    .values({
+      id: randomUUID(),
+      assessmentId: input.assessmentId,
+      studentId: student.id,
+      ownerEmail,
+      status: "presentado",
+      submitted: true,
+      score: input.score,
+      createdAt: stamp(),
+      updatedAt: stamp(),
+    })
+    .onConflictDoUpdate({
+      target: [assessmentResults.ownerEmail, assessmentResults.assessmentId, assessmentResults.studentId],
+      set: {
+        score: input.score,
+        // Mismo comportamiento que la carga manual de una nota en la pantalla.
+        status: sql`case when ${assessmentResults.status} = 'pendiente' then 'presentado' else ${assessmentResults.status} end`,
+        submitted: true,
+        updatedAt: stamp(),
+      },
+      setWhere: and(
+        eq(assessmentResults.ownerEmail, ownerEmail),
+        sql`(${assessmentResults.score} is null or ${assessmentResults.score} < ${input.score})`,
+      ),
+    })
+    .returning();
+
+  const [saved] = await db
+    .select()
+    .from(assessmentResults)
+    .where(and(
+      eq(assessmentResults.ownerEmail, ownerEmail),
+      eq(assessmentResults.assessmentId, input.assessmentId),
+      eq(assessmentResults.studentId, student.id),
+    ));
+  if (saved?.score === null || saved?.score === undefined || saved.score < input.score) {
+    throw new Error("No se pudo verificar la nota guardada.");
+  }
+  return { updated: changed.length > 0, score: saved.score };
+}
+
 /** Grilla global o filtrada por comisión: alumnos × trabajos comunes. */
 export async function assessmentGrid(
   ownerEmail: string,

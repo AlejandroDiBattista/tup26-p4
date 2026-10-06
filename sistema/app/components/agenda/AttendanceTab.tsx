@@ -5,6 +5,7 @@ import {
   IconCircleDashed,
   IconClock,
   IconMapPin,
+  IconSearch,
   IconSettings,
   IconX,
 } from "@tabler/icons-react";
@@ -63,6 +64,10 @@ interface AttendanceGrid {
 
 const selectClass =
   "h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+function normalizeStudentSearch(value: string) {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -156,6 +161,7 @@ export function AttendanceTab() {
   const requestedCourseId = searchParams.get("curso") ?? ALL_COURSES;
   const requestedDate = searchParams.get("fecha") ?? "";
   const legacySessionId = searchParams.get("clase") ?? "";
+  const [studentQuery, setStudentQuery] = useState("");
   const [attendanceFilter, setAttendanceFilter] = useState<AttendanceFilter>("todos");
   const [editingClass, setEditingClass] = useState(false);
   const [classStatus, setClassStatus] = useState<ClassStatus>("programada");
@@ -201,6 +207,15 @@ export function AttendanceTab() {
     const session = selectedSessions.find((item) => item.courseId === row.course.id);
     return session?.status === "programada";
   });
+  const visibleRows = useMemo(() => {
+    const terms = normalizeStudentSearch(studentQuery)
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean);
+    return attendanceRows.filter((row) => {
+      const student = normalizeStudentSearch(`${row.legajo} ${row.apellido} ${row.nombre}`);
+      return terms.every((term) => student.includes(term));
+    });
+  }, [attendanceRows, studentQuery]);
   const dateOptions = Array.from(new Set(allAvailableSessions.map((session) => session.date)));
   const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? null;
 
@@ -263,11 +278,11 @@ export function AttendanceTab() {
   }, [selectedSession]);
 
   const markedCount = useMemo(() => {
-    return attendanceRows.filter((row) => {
+    return visibleRows.filter((row) => {
       const session = selectedSessions.find((item) => item.courseId === row.course.id);
       return row.cells.some((cell) => cell.sessionId === session?.id && cell.status !== null);
     }).length;
-  }, [attendanceRows, selectedSessions]);
+  }, [visibleRows, selectedSessions]);
 
   function statusFor(row: AttendanceRow) {
     const session = selectedSessions.find((item) => item.courseId === row.course.id);
@@ -280,12 +295,12 @@ export function AttendanceTab() {
       ausente: 0,
       justificada: 0,
     };
-    for (const row of attendanceRows) {
+    for (const row of visibleRows) {
       const status = statusFor(row);
       if (status) counts[status] += 1;
     }
     return counts;
-  }, [attendanceRows, selectedSessions]);
+  }, [visibleRows, selectedSessions]);
 
   const parsedAttendance = useMemo(
     () => parseAttendanceLegajos(bulkAttendanceText, selectedDate),
@@ -330,9 +345,9 @@ export function AttendanceTab() {
   );
 
   const filteredRows = useMemo(() => {
-    if (attendanceFilter === "todos") return attendanceRows;
-    return attendanceRows.filter((row) => statusFor(row) === attendanceFilter);
-  }, [attendanceFilter, attendanceRows, selectedSessions]);
+    if (attendanceFilter === "todos") return visibleRows;
+    return visibleRows.filter((row) => statusFor(row) === attendanceFilter);
+  }, [attendanceFilter, visibleRows, selectedSessions]);
 
   useEffect(() => {
     setAttendanceFilter("todos");
@@ -417,7 +432,24 @@ export function AttendanceTab() {
 
   return (
     <section aria-labelledby="attendance-roster-title">
-      <div className="mb-5 grid gap-4 border-y border-border bg-muted/25 py-4 lg:grid-cols-[minmax(14rem,1fr)_minmax(14rem,1fr)_auto] lg:items-end">
+      <div className="mb-5 grid gap-4 border-y border-border bg-muted/25 py-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto] lg:items-end">
+        <div className="grid min-w-0 gap-1.5">
+          <Label htmlFor="attendance-student-search">{t("agenda.searchStudents")}</Label>
+          <div className="relative">
+            <IconSearch
+              aria-hidden="true"
+              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              id="attendance-student-search"
+              type="search"
+              value={studentQuery}
+              onChange={(event) => setStudentQuery(event.target.value)}
+              placeholder={t("agenda.searchWorkStudentsPlaceholder")}
+              className="h-9 ps-9"
+            />
+          </div>
+        </div>
         <div className="grid gap-1.5">
           <Label htmlFor="attendance-course">{t("agenda.course")}</Label>
           <select
@@ -580,7 +612,7 @@ export function AttendanceTab() {
                         : t("agenda.noAttendanceToConfirm")
                       : t("agenda.markedStudents", {
                           marked: markedCount,
-                          total: attendanceRows.length,
+                          total: visibleRows.length,
                         })}
               </p>
             </div>
@@ -602,7 +634,7 @@ export function AttendanceTab() {
                   )}
                 >
                   {t("agenda.allStatuses")}
-                  <span className="font-mono tabular-nums">{attendanceRows.length}</span>
+                  <span className="font-mono tabular-nums">{visibleRows.length}</span>
                 </button>
                 {ATTENDANCE_STATUS_OPTIONS.map((option) => {
                   const active = attendanceFilter === option.value;
@@ -707,7 +739,7 @@ export function AttendanceTab() {
             </div>
           ) : filteredRows.length === 0 ? (
             <p className="border-y border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-              {t("agenda.noStudentsInAttendanceStatus")}
+              {t(studentQuery.trim() ? "agenda.noStudentsFound" : "agenda.noStudentsInAttendanceStatus")}
             </p>
           ) : (
             <>

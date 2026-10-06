@@ -7,6 +7,7 @@ export interface AlumnoParaMarkdown {
   telefono: string | null;
   github: string | null;
   asistencia: string;
+  parcial: number | null;
   assessmentStatuses: Record<string, WorkStatus>;
 }
 
@@ -24,8 +25,8 @@ export interface CursoParaMarkdown {
 export const TITULO_ALUMNOS_MD = "TUP 2026 - Programación IV";
 
 const BASE_HEADERS = ["Legajo", "Nombre y Apellido", "Teléfono", "GitHub"];
-const HEADERS = [...BASE_HEADERS, "Asistencia", "Practicos"];
-const MIN_WIDTHS = [6, 40, 14, 25, 10, 10];
+const HEADERS = [...BASE_HEADERS, "Asistencia", "Parcial", "Practicos"];
+const MIN_WIDTHS = [6, 40, 14, 25, 10, 7, 10];
 
 const STATUS_ICONS: Record<WorkStatus, string> = {
   pendiente: "⚫️",
@@ -52,29 +53,27 @@ function tablaAlumnos(course: CursoParaMarkdown): string {
     student.telefono ? unaLinea(student.telefono) : "-",
     student.github ? unaLinea(student.github) : "-",
     student.asistencia,
+    student.parcial === null ? "-" : student.parcial.toFixed(1).padStart(4),
     course.assessments.length === 0
       ? "-"
       : course.assessments
           .map(
-            (assessment) =>
-              STATUS_ICONS[
-                student.assessmentStatuses[assessment.id] ?? "pendiente"
-              ],
+            (assessment) => STATUS_ICONS[student.assessmentStatuses[assessment.id] ?? "pendiente"],
           )
           .join(""),
   ]);
 
   const widths = HEADERS.map((header, index) =>
-    Math.max(
-      MIN_WIDTHS[index],
-      header.length,
-      ...rows.map((row) => row[index].length),
-    ),
+    Math.max(MIN_WIDTHS[index], header.length, ...rows.map((row) => row[index].length)),
   );
   const formatRow = (row: string[]) =>
     row
       .map((value, index) =>
-        index === row.length - 1 ? value : value.padEnd(widths[index]),
+        index === 5
+          ? value.padStart(widths[index])
+          : index === row.length - 1
+            ? value
+            : value.padEnd(widths[index]),
       )
       .join("  ");
 
@@ -90,8 +89,7 @@ export function exportar_alumnos_md(
   title = TITULO_ALUMNOS_MD,
 ): string {
   const sections = courses.map(
-    (course) =>
-      `## ${nombreSeccion(course.name)}\n\`\`\`text\n${tablaAlumnos(course)}\n\`\`\``,
+    (course) => `## ${nombreSeccion(course.name)}\n\`\`\`text\n${tablaAlumnos(course)}\n\`\`\``,
   );
 
   return [`# ${unaLinea(title)}`, ...sections].join("\n\n") + "\n";

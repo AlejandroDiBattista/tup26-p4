@@ -17,6 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { ApprovalCodesForm } from "@/components/agenda/ApprovalCodesForm";
 import { StudentIdentity } from "@/components/agenda/StudentIdentity";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,6 +122,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const [studentQuery, setStudentQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showManage, setShowManage] = useState(false);
+  const [showApprovalCodes, setShowApprovalCodes] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -215,6 +217,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
 
   useEffect(() => {
     setStatusFilter("todos");
+    setShowApprovalCodes(false);
     setCheckErrors([]);
     setCheckDetails([]);
   }, [selectedWorkId]);
@@ -487,6 +490,12 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {selectedWork?.graded ? (
+                <DropdownMenuItem onSelect={() => setShowApprovalCodes(true)} disabled={showApprovalCodes}>
+                  <IconChecklist aria-hidden="true" />
+                  {t("agenda.loadApprovalCodes")}
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem
                 onSelect={handleBajarTp}
                 disabled={downloadTp.isPending}
@@ -530,6 +539,19 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
           </Button>
         </div>
       </div>
+
+      {showApprovalCodes && selectedWork?.graded ? (
+        <ApprovalCodesForm
+          key={selectedWork.id}
+          assessmentId={selectedWork.id}
+          title={selectedWork.title}
+          roster={rows.map((row) => ({
+            legajo: row.legajo,
+            score: row.cells.find((cell) => cell.assessmentId === selectedWork.id)?.score ?? null,
+          }))}
+          onClose={() => setShowApprovalCodes(false)}
+        />
+      ) : null}
 
       {checking ? (
         <p role="status" className="mb-4 text-sm text-muted-foreground">

@@ -3,6 +3,7 @@
 // see these imports and include the action modules in the server bundle.
 // The agent-chat plugin normalizes each module into an ActionEntry shape.
 import * as a_bajar_tp from "../actions/bajar-tp";
+import * as a_cargar_codigos_aprobacion from "../actions/cargar-codigos-aprobacion";
 import * as a_comprobar_tp1 from "../actions/comprobar-tp1";
 import * as a_comprobar_tp2 from "../actions/comprobar-tp2";
 import * as a_comprobar_tp3 from "../actions/comprobar-tp3";
@@ -67,6 +68,7 @@ import * as a_send_review_thread_to_agent from "@agent-native/core/review/action
 
 const modules: Record<string, unknown> = {
   "bajar-tp": a_bajar_tp,
+  "cargar-codigos-aprobacion": a_cargar_codigos_aprobacion,
   "comprobar-tp1": a_comprobar_tp1,
   "comprobar-tp2": a_comprobar_tp2,
   "comprobar-tp3": a_comprobar_tp3,
