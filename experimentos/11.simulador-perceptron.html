@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de perceptrón</title>
+  <style>
+    :root{--ink:#1b2536;--cream:#f7f1e6;--card:#fffaf1;--red:#bd4a39;--blue:#315c7a;--green:#29704f;--line:#d5cbb9}*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Georgia,'Times New Roman',serif}.page{max-width:1180px;margin:auto;padding:clamp(1.25rem,4vw,4rem)}header{border-block:2px solid var(--ink);padding:1.1rem 0 1.35rem;display:flex;align-items:end;justify-content:space-between;gap:1rem}h1{font-size:clamp(2.3rem,6vw,5rem);letter-spacing:-.07em;line-height:.85;margin:0}header p{max-width:34ch;margin:0;font-size:1rem;line-height:1.35}main{display:grid;grid-template-columns:minmax(17rem,.7fr) minmax(0,1.3fr);gap:clamp(1.5rem,5vw,5rem);padding-top:2.4rem}h2{font:700 .88rem/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;margin:0 0 1rem}.controls{border-top:8px solid var(--red);padding-top:1rem}.dial{padding:1rem 0;border-bottom:1px solid var(--line)}.dial-head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}.dial label{font-size:1.18rem}.value{font:700 1.4rem/1 system-ui,sans-serif;color:var(--red);min-width:3ch;text-align:end}input[type=range]{width:100%;accent-color:var(--red);margin:.8rem 0 0;min-height:2rem}.scale{display:flex;justify-content:space-between;font:12px system-ui,sans-serif;color:#615e58}.presets{margin-top:1.6rem}.preset-row{display:flex;flex-wrap:wrap;gap:.5rem}button{font:600 .88rem/1 system-ui,sans-serif;background:transparent;border:1px solid var(--ink);padding:.63rem .75rem;cursor:pointer;min-height:44px}button:hover{background:#e9dfca}button:focus-visible,input:focus-visible{outline:3px solid #e4a42d;outline-offset:3px}.formula{margin-top:1.7rem;padding:1rem 1.1rem;background:#e9e4d7;line-height:1.5}.formula strong{color:var(--blue)}.stage{min-width:0}.expression{padding:1rem 1.2rem;background:var(--ink);color:#f8f1e6;font-size:clamp(1.08rem,2vw,1.45rem);overflow:auto}.expression code{font-family:Georgia,'Times New Roman',serif}.diagram{position:relative;container-type:inline-size;margin:1.3rem 0 1.1rem;background:var(--card);border:1px solid var(--line);overflow:hidden}.diagram svg{display:block;width:100%;height:auto}.signal-wire{fill:none;stroke:var(--ink);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow);transition:stroke .25s ease,filter .25s ease}.signal-wire.hot{stroke:var(--red);marker-end:url(#arrow-hot);filter:drop-shadow(0 0 4px #e5a06f)}.sum-node{fill:#dce8e1;stroke:var(--green);stroke-width:4;transition:stroke .25s ease,fill .25s ease}.sum-node.active{fill:#e8ead0;stroke:var(--red)}.activation-node{fill:#e2eaf0;stroke:var(--blue);stroke-width:4;transition:stroke .25s ease,fill .25s ease}.activation-node.active{fill:#f3e4cf;stroke:var(--red)}.output-node{fill:#eee7d7;stroke:var(--ink);stroke-width:5;transition:fill .25s ease,filter .25s ease}.output-node.on{fill:#f5cf35;filter:drop-shadow(0 0 12px #f3b822)}.diagram-label{fill:var(--ink);font:700 20px Georgia,serif}.signal-label{fill:#5f625d;font:700 14px system-ui,sans-serif;letter-spacing:.03em}.node-title{fill:var(--ink);font:700 25px Georgia,serif;text-anchor:middle}.node-value{fill:var(--ink);font:700 22px system-ui,sans-serif;text-anchor:middle}.output-value{fill:var(--blue);font:800 34px system-ui,sans-serif;text-anchor:middle}.output-value.yes{fill:var(--green)}.output-value.no{fill:var(--blue)}.step-axis{fill:none;stroke:#69717b;stroke-width:2}.step-line{fill:none;stroke:var(--blue);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.bit-node{position:absolute;transform:translate(-50%,-50%);inline-size:clamp(2.75rem,7.5cqi,4rem);aspect-ratio:1;border-radius:50%;padding:0;border:3px solid var(--ink);background:#eee7d7;font:800 clamp(1rem,3cqi,1.4rem)/1 system-ui,sans-serif;box-shadow:none;transition:background .2s ease,filter .2s ease}.bit-node:hover{background:#e9dfca}.bit-node[aria-pressed="true"]{background:#f5cf35;filter:drop-shadow(0 0 10px #f3b822)}.bit-x1{left:10%;top:29.17%}.bit-x2{left:10%;top:69.44%}.grid-title{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}.grid-title p{margin:0;font:13px system-ui,sans-serif;color:#625d55}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-family:system-ui,sans-serif;font-size:.93rem}caption{text-align:left;font:700 .88rem/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:1.1rem 0 .65rem}th,td{padding:.7rem .6rem;text-align:center;border-bottom:1px solid var(--line)}th{background:#e7dfcf;font-size:.78rem;letter-spacing:.06em}td:nth-last-child(1){font-weight:800;font-size:1.05rem}tr.active{background:#fde0ae}.yes{color:var(--green)}.no{color:var(--red)}.note{font:13px system-ui,sans-serif;line-height:1.4;color:#5c5a55;margin-top:1rem}@media(max-width:760px){main{grid-template-columns:1fr}.controls{order:2}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header><h1>Perceptrón<br>en vivo</h1><p>Ajustá los pesos y el sesgo. El perceptrón convierte las entradas binarias en una decisión: <strong>0</strong> o <strong>1</strong>.</p></header>
+    <main>
+      <section class="controls" aria-labelledby="control-title">
+        <h2 id="control-title">Ajustes</h2>
+        <form id="settings">
+          <fieldset style="border:0;padding:0;margin:0"><legend class="sr-only">Pesos y sesgo</legend>
+            <div class="dial"><div class="dial-head"><label for="w1">Peso de x₁</label><output class="value" id="w1v">1.0</output></div><input id="w1" name="w1" type="range" min="-3" max="3" step="0.5" value="1"><div class="scale"><span>−3</span><span>0</span><span>+3</span></div></div>
+            <div class="dial"><div class="dial-head"><label for="w2">Peso de x₂</label><output class="value" id="w2v">1.0</output></div><input id="w2" name="w2" type="range" min="-3" max="3" step="0.5" value="1"><div class="scale"><span>−3</span><span>0</span><span>+3</span></div></div>
+            <div class="dial"><div class="dial-head"><label for="bias">Sesgo b</label><output class="value" id="biasv">−1.5</output></div><input id="bias" name="bias" type="range" min="-3" max="3" step="0.5" value="-1.5"><div class="scale"><span>−3</span><span>0</span><span>+3</span></div></div>
+          </fieldset>
+        </form>
+        <section class="presets" aria-labelledby="preset-title"><h2 id="preset-title">Configuraciones rápidas</h2><div class="preset-row"><button type="button" data-preset="and">AND</button><button type="button" data-preset="or">OR</button><button type="button" data-preset="nand">NAND</button><button type="button" data-preset="reset">Reiniciar</button></div></section>
+        <p class="formula"><strong>Regla:</strong><br>z = w₁x₁ + w₂x₂ + b<br>Salida = 1 si z ≥ 0; de lo contrario, 0.</p>
+      </section>
+      <section class="stage" aria-labelledby="live-title">
+        <div class="grid-title"><h2 id="live-title">Resultado actual</h2><p id="description" aria-live="polite">Configuración inicial: AND</p></div>
+        <div class="expression"><code id="equation">z = 1·x₁ + 1·x₂ − 1.5</code></div>
+        <div class="diagram">
+          <svg viewBox="0 0 900 360" role="img" aria-labelledby="perceptron-title perceptron-desc">
+            <title id="perceptron-title">Diagrama tradicional de un perceptrón</title>
+            <desc id="perceptron-desc">Las entradas x₁ y x₂, multiplicadas por sus pesos, llegan al sumador junto con el sesgo. El resultado pasa por una función escalón y produce la salida.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#1b2536"/></marker>
+              <marker id="arrow-hot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#bd4a39"/></marker>
+            </defs>
+
+            <text x="38" y="112" class="diagram-label">x₁</text>
+            <text x="38" y="257" class="diagram-label">x₂</text>
+            <path id="wire-x1" class="signal-wire" d="M122 105 L320 155"/>
+            <path id="wire-x2" class="signal-wire" d="M122 250 L320 205"/>
+            <text id="svg-w1" x="205" y="112" class="signal-label">w₁ = 1.0</text>
+            <text id="svg-w2" x="205" y="250" class="signal-label">w₂ = 1.0</text>
+
+            <path id="wire-bias" class="signal-wire" d="M380 38 V108"/>
+            <text id="svg-bias" x="398" y="55" class="signal-label">b = −1.5</text>
+
+            <circle id="sum-node" class="sum-node" cx="380" cy="180" r="66"/>
+            <text x="380" y="165" class="node-title">Σ</text>
+            <text x="380" y="190" class="signal-label" text-anchor="middle">suma z</text>
+            <text id="z" x="380" y="220" class="node-value">−1.5</text>
+
+            <path id="wire-sum" class="signal-wire" d="M446 180 H520"/>
+            <rect id="activation-node" class="activation-node" x="535" y="115" width="150" height="130" rx="6"/>
+            <text x="610" y="143" class="signal-label" text-anchor="middle">FUNCIÓN ESCALÓN</text>
+            <path class="step-axis" d="M568 215 V160 M558 205 H660"/>
+            <path class="step-line" d="M563 198 H607 V170 H655"/>
+            <text x="610" y="232" class="signal-label" text-anchor="middle">z ≥ 0 → 1</text>
+
+            <path id="wire-out" class="signal-wire" d="M685 180 H792"/>
+            <circle id="output-node" class="output-node" cx="835" cy="180" r="36"/>
+            <text id="out" x="835" y="191" class="output-value no">0</text>
+            <text x="835" y="245" class="diagram-label" text-anchor="middle">salida y</text>
+          </svg>
+          <button type="button" id="x1" class="bit-node bit-x1" aria-label="Entrada x₁" aria-pressed="false">0</button>
+          <button type="button" id="x2" class="bit-node bit-x2" aria-label="Entrada x₂" aria-pressed="false">0</button>
+        </div>
+        <div class="table-wrap"><table><caption>Las cuatro entradas posibles</caption><thead><tr><th>x₁</th><th>x₂</th><th>z</th><th>salida</th></tr></thead><tbody id="rows"></tbody></table></div>
+        <p class="note">Probá AND: pesos 1 y 1, sesgo −1.5. Para OR, dejá los pesos en 1 y mové el sesgo a −0.5. Un perceptrón único no puede expresar XOR.</p>
+      </section>
+    </main>
+  </div>
+  <style>.sr-only{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}</style>
+  <script>
+    const qs=id=>document.getElementById(id), inputs=['w1','w2','bias'].map(qs), bits={x1:0,x2:0};
+    const fmt=n=>`${n<0?'−':''}${Math.abs(n).toFixed(1)}`;
+    const calc=(a,b,w1,w2,bias)=>w1*a+w2*b+bias;
+    const classify=({w1,w2,bias})=>{const key=[[0,0],[0,1],[1,0],[1,1]].map(([a,b])=>calc(a,b,w1,w2,bias)>=0?1:0).join('');return ({'0001':'AND','0111':'OR','1110':'NAND','1000':'NOR'})[key]||'función personalizada'};
+    function values(){return Object.fromEntries(inputs.map(i=>[i.id,+i.value]));}
+    function render(){
+      const {w1,w2,bias}=values(), label=classify({w1,w2,bias});
+      ['w1','w2','bias'].forEach(k=>qs(`${k}v`).textContent=fmt({w1,w2,bias}[k]));
+      qs('equation').textContent=`z = ${w1}·x₁ + ${w2}·x₂ ${bias<0?'−':'+'} ${Math.abs(bias)}`;
+      qs('description').textContent=`La tabla corresponde a: ${label}.`;
+      const z=calc(bits.x1,bits.x2,w1,w2,bias), output=+(z>=0);
+      qs('z').textContent=fmt(z);
+      qs('out').textContent=output;
+      qs('out').setAttribute('class',`output-value ${output?'yes':'no'}`);
+      qs('svg-w1').textContent=`w₁ = ${fmt(w1)}`;
+      qs('svg-w2').textContent=`w₂ = ${fmt(w2)}`;
+      qs('svg-bias').textContent=`b = ${fmt(bias)}`;
+      qs('wire-x1').classList.toggle('hot',Boolean(bits.x1));
+      qs('wire-x2').classList.toggle('hot',Boolean(bits.x2));
+      qs('wire-bias').classList.toggle('hot',bias!==0);
+      qs('wire-sum').classList.toggle('hot',z>=0);
+      qs('wire-out').classList.toggle('hot',Boolean(output));
+      qs('sum-node').classList.toggle('active',z>=0);
+      qs('activation-node').classList.toggle('active',Boolean(output));
+      qs('output-node').classList.toggle('on',Boolean(output));
+      qs('perceptron-desc').textContent=`x₁ vale ${bits.x1}, x₂ vale ${bits.x2}, la suma z es ${fmt(z)} y la salida es ${output}.`;
+      qs('rows').innerHTML=[[0,0],[0,1],[1,0],[1,1]].map(([a,b])=>{const v=calc(a,b,w1,w2,bias), y=+(v>=0), active=a===bits.x1&&b===bits.x2;return `<tr class="${active?'active':''}"><td>${a}</td><td>${b}</td><td>${fmt(v)}</td><td class="${y?'yes':'no'}">${y}</td></tr>`}).join('');
+    }
+    inputs.forEach(i=>i.addEventListener('input',render));['x1','x2'].forEach(id=>qs(id).addEventListener('click',()=>{bits[id]=+!bits[id];qs(id).textContent=bits[id];qs(id).setAttribute('aria-pressed',Boolean(bits[id]));render()}));
+    const presets={and:[1,1,-1.5],or:[1,1,-.5],nand:[-1,-1,1.5],reset:[0,0,0]};document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{[...inputs].forEach((i,n)=>i.value=presets[b.dataset.preset][n]);render()}));render();
+  </script>
+</body>
+</html>

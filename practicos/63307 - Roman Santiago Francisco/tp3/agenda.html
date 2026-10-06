@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  <title>Agenda</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      padding: 2.5rem 1.5rem;
+      font-family: "Inter", sans-serif;
+      background: #f5f6f4;
+      color: #111;
+    }
+
+    #app {
+      width: 69rem;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    header.header_container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+
+      h1 {
+        font-family: "Source Serif 4", serif;
+        font-size: 2.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .header_actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+
+        .search_input {
+          height: 2.6rem;
+          width: 16rem;
+          padding: 0 1.25rem;
+          border: 1px solid #d9ded9;
+          border-radius: 9999px;
+          background: #ffffff;
+          font: inherit;
+          font-size: 0.9375rem;
+          outline: none;
+          transition: border-color 0.15s;
+
+          &::placeholder {
+            color: rgba(0, 0, 0, 0.4);
+          }
+
+          &:focus {
+            border-color: #304035;
+          }
+        }
+
+        .add_button {
+          height: 2.6rem;
+          padding: 0 1.25rem;
+          border: none;
+          border-radius: 9999px;
+          background: #304035;
+          color: #ffffff;
+          font: inherit;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.15s;
+
+          &:hover {
+            background: #243028;
+          }
+        }
+      }
+    }
+
+    main {
+      section.cards_grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        list-style: none;
+
+        article.card {
+          min-width: 0;
+          padding: 1.5rem;
+          border: 1px solid #d9ded9;
+          border-radius: 1rem;
+          background: #ffffff;
+          cursor: pointer;
+          outline: none;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          transition: border-color 0.15s, box-shadow 0.15s;
+
+          &:hover {
+            border-color: #bcc4bc;
+          }
+
+          &:focus-visible {
+            outline: 2px solid #304035;
+            outline-offset: 2px;
+          }
+
+          .card_top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2.25rem;
+
+            .card_name {
+              font-size: 1.125rem;
+              color: rgba(0, 0, 0, 0.65);
+              font-weight: 500;
+
+              b {
+                font-family: "Source Serif 4", serif;
+                font-weight: 700;
+                font-size: 1.35rem;
+                color: #000;
+                display: block;
+              }
+            }
+
+            .card_star {
+              width: 1.35rem;
+              height: 1.35rem;
+              flex-shrink: 0;
+              stroke: #d9ded9;
+              fill: none;
+              cursor: pointer;
+              transition: transform 0.15s, stroke 0.15s, fill 0.15s;
+
+              &:hover {
+                transform: scale(1.15);
+              }
+
+              &.card_star-filled {
+                fill: #8A7B4E;
+                stroke: #8A7B4E;
+              }
+            }
+          }
+
+          address {
+            font-style: normal;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+
+            .card_phone {
+              font-weight: 600;
+              font-size: 0.95rem;
+              color: #111;
+            }
+
+            .card_github {
+              font-size: 0.9rem;
+              color: rgba(0, 0, 0, 0.6);
+            }
+          }
+
+          .card_meta {
+            display: block;
+            padding-top: 1rem;
+            margin-top: 1.25rem;
+            border-top: 1px solid #eef0ee;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            color: rgba(0, 0, 0, 0.55);
+            text-transform: uppercase;
+          }
+        }
+
+        .empty_message {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 3.5rem 1rem;
+          color: rgba(0, 0, 0, 0.5);
+          font-size: 1rem;
+          background: #ffffff;
+          border: 1px dashed #d9ded9;
+          border-radius: 1rem;
+        }
+      }
+    }
+
+    dialog {
+      width: 40rem;
+      max-width: calc(100% - 2.5rem);
+      box-sizing: border-box;
+      padding: 2.25rem;
+      border: none;
+      border-radius: 1.5rem;
+      background: #f5f6f4;
+      margin: auto;
+      box-shadow: 0 0 0 0.5rem rgba(255, 255, 255, 0.7), 0 1.5rem 3rem rgba(0, 0, 0, 0.2);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+      }
+
+      .dialog_title {
+        font-family: "Source Serif 4", serif;
+        font-size: 1.65rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+      }
+
+      .dialog_subtitle {
+        margin-bottom: 1.75rem;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.9375rem;
+      }
+
+      .dialog_grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+
+        .dialog_field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+
+          label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #222;
+          }
+
+          input {
+            height: 2.75rem;
+            padding: 0 1rem;
+            border: 1px solid #d9ded9;
+            border-radius: 0.75rem;
+            background: #ffffff;
+            font: inherit;
+            font-size: 0.9375rem;
+            outline: none;
+
+            &:focus {
+              outline: 2px solid #304035;
+              outline-offset: -1px;
+            }
+
+            &.invalid {
+              border-color: #c0392b;
+            }
+          }
+
+          .dialog_error {
+            color: #c0392b;
+            font-size: 0.8125rem;
+          }
+        }
+      }
+
+      .dialog_footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .dialog_delete {
+          padding: 0.5rem 0;
+          border: none;
+          background: none;
+          color: #c0392b;
+          font: inherit;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          cursor: pointer;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+
+        .dialog_actions {
+          display: flex;
+          gap: 0.75rem;
+
+          button {
+            height: 2.75rem;
+            padding: 0 1.5rem;
+            border-radius: 9999px;
+            font: inherit;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+          }
+
+          .dialog_cancel {
+            border: 1px solid #d9ded9;
+            background: #ffffff;
+            color: #111;
+
+            &:hover {
+              background: #ecefed;
+            }
+          }
+
+          .dialog_save {
+            border: none;
+            background: #304035;
+            color: #ffffff;
+
+            &:hover {
+              background: #243028;
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 1120px) {
+      main section.cards_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 1.5rem 1rem;
+      }
+
+      header.header_container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+
+        .header_actions {
+          .search_input {
+            width: 100%;
+          }
+        }
+      }
+
+      main section.cards_grid {
+        grid-template-columns: 1fr;
+      }
+
+      dialog .dialog_grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="module">
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core';
+    import alumnosBase from './alumnos.json' with { type: 'json' };
+
+    let data = null;
+    try {
+      data = JSON.parse(localStorage.getItem('alumnos'));
+    } catch (e) {
+      data = null;
+    }
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      data = alumnosBase;
+      localStorage.setItem('alumnos', JSON.stringify(alumnosBase));
+    }
+
+    const resetForm = () => ({
+      id: null,
+      legajo: '',
+      apellido: '',
+      nombre: '',
+      comision: '',
+      telefono: '',
+      github: '',
+      favorito: false
+    });
+
+    const state = reactive({
+      busqueda: '',
+      alumnos: data,
+      dialogAbierto: false,
+      modoEdicion: false,
+      alumnoActual: resetForm(),
+      errores: {}
+    });
+
+    watch(() => {
+      localStorage.setItem('alumnos', JSON.stringify(state.alumnos));
+    });
+
+    function abrirAgregar() {
+      state.modoEdicion = false;
+      state.alumnoActual = resetForm();
+      state.errores = {};
+      state.dialogAbierto = true;
+    }
+
+    function abrirEdicion(alumno) {
+      state.modoEdicion = true;
+      state.alumnoActual = { ...alumno };
+      state.errores = {};
+      state.dialogAbierto = true;
+    }
+
+    function cerrarDialog() {
+      state.dialogAbierto = false;
+    }
+
+    function alternarFavorito(alumno, e) {
+      if (e) e.stopPropagation();
+      alumno.favorito = !alumno.favorito;
+    }
+
+    function validar() {
+      const err = {};
+      const a = state.alumnoActual;
+
+      if (!a.apellido.trim()) err.apellido = 'El apellido es obligatorio.';
+      if (!a.nombre.trim()) err.nombre = 'El nombre es obligatorio.';
+      
+      if (!a.legajo.trim()) {
+        err.legajo = 'El legajo es obligatorio.';
+      } else if (!/^\d+$/.test(a.legajo)) {
+        err.legajo = 'El legajo debe ser numérico.';
+      } else if (state.alumnos.some(o => o.id !== a.id && o.legajo === a.legajo)) {
+        err.legajo = 'Ya existe un alumno con ese legajo.';
+      }
+
+      state.errores = err;
+      return Object.keys(err).length === 0;
+    }
+
+    function guardar() {
+      if (!validar()) return;
+
+      if (state.modoEdicion) {
+        const item = state.alumnos.find(a => a.id === state.alumnoActual.id);
+        if (item) Object.assign(item, state.alumnoActual);
+      } else {
+        const nextId = Math.max(0, ...state.alumnos.map(o => o.id || 0)) + 1;
+        state.alumnos.push({ ...state.alumnoActual, id: nextId });
+      }
+      cerrarDialog();
+    }
+
+    function eliminar() {
+      if (confirm(`¿Eliminar a ${state.alumnoActual.nombre} ${state.alumnoActual.apellido}?`)) {
+        state.alumnos = state.alumnos.filter(a => a.id !== state.alumnoActual.id);
+        cerrarDialog();
+      }
+    }
+
+    const filtrados = () => {
+      const q = state.busqueda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+      return state.alumnos
+        .filter(a => {
+          if (!q) return true;
+          const str = `${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.github}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return str.includes(q);
+        })
+        .sort((a, b) => {
+          return Number(b.favorito) - Number(a.favorito) ||
+                 a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
+                 a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+        });
+    };
+
+    const container = document.getElementById('app');
+
+    html`
+      <header class="header_container">
+        <h1>Agenda</h1>
+        <div class="header_actions">
+          <input
+            type="search"
+            class="search_input"
+            placeholder="Buscar alumno..."
+            .value="${() => state.busqueda}"
+            @input="${e => { state.busqueda = e.target.value; }}"
+          />
+          <button type="button" class="add_button" @click="${abrirAgregar}">+ Agregar</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="cards_grid">
+          ${() => {
+            const list = filtrados();
+            if (list.length === 0) {
+              return html`<div class="empty_message">No se encontraron alumnos para mostrar.</div>`;
+            }
+
+            return list.map(a => html`
+              <article
+                class="card"
+                tabindex="0"
+                @click="${() => abrirEdicion(a)}"
+                @keydown="${e => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    abrirEdicion(a);
+                  } else if (e.key === ' ' || e.code === 'Space') {
+                    e.preventDefault();
+                    alternarFavorito(a);
+                  }
+                }}"
+              >
+                <div class="card_top">
+                  <span class="card_name">
+                    <b>${a.apellido}</b>${a.nombre}
+                  </span>
+                  <svg
+                    class="${() => a.favorito ? 'card_star card_star-filled' : 'card_star'}"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    @click="${e => alternarFavorito(a, e)}"
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+                <address>
+                  <span class="card_phone">${() => a.telefono || 'Sin teléfono'}</span>
+                  <span class="card_github">${() => a.github ? `@${a.github}` : ''}</span>
+                </address>
+                <span class="card_meta">${() => `${a.comision || '-'} • ${a.legajo}`}</span>
+              </article>
+            `);
+          }}
+        </section>
+      </main>
+
+      <dialog
+        id="dialog"
+        @close="${() => { state.dialogAbierto = false; }}"
+        @click="${e => {
+          const r = e.currentTarget.getBoundingClientRect();
+          if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+            cerrarDialog();
+          }
+        }}"
+      >
+        <form @submit="${e => { e.preventDefault(); guardar(); }}">
+          <h2 class="dialog_title">${() => state.modoEdicion ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <p class="dialog_subtitle">${() => state.modoEdicion ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
+          
+          <div class="dialog_grid">
+            <div class="dialog_field">
+              <label for="f-apellido">Apellido</label>
+              <input
+                id="f-apellido"
+                class="${() => state.errores.apellido ? 'invalid' : ''}"
+                placeholder="Gómez"
+                .value="${() => state.alumnoActual.apellido}"
+                @input="${e => { state.alumnoActual.apellido = e.target.value; }}"
+              />
+              ${() => state.errores.apellido ? html`<span class="dialog_error">${state.errores.apellido}</span>` : ''}
+            </div>
+
+            <div class="dialog_field">
+              <label for="f-nombre">Nombre</label>
+              <input
+                id="f-nombre"
+                class="${() => state.errores.nombre ? 'invalid' : ''}"
+                placeholder="Juan"
+                .value="${() => state.alumnoActual.nombre}"
+                @input="${e => { state.alumnoActual.nombre = e.target.value; }}"
+              />
+              ${() => state.errores.nombre ? html`<span class="dialog_error">${state.errores.nombre}</span>` : ''}
+            </div>
+
+            <div class="dialog_field">
+              <label for="f-legajo">Legajo</label>
+              <input
+                id="f-legajo"
+                class="${() => state.errores.legajo ? 'invalid' : ''}"
+                inputmode="numeric"
+                placeholder="65000"
+                .value="${() => state.alumnoActual.legajo}"
+                @input="${e => { state.alumnoActual.legajo = e.target.value.replace(/\D/g, ''); e.target.value = state.alumnoActual.legajo; }}"
+              />
+              ${() => state.errores.legajo ? html`<span class="dialog_error">${state.errores.legajo}</span>` : ''}
+            </div>
+
+            <div class="dialog_field">
+              <label for="f-comision">Comisión</label>
+              <input
+                id="f-comision"
+                placeholder="C1"
+                .value="${() => state.alumnoActual.comision}"
+                @input="${e => { state.alumnoActual.comision = e.target.value; }}"
+              />
+            </div>
+
+            <div class="dialog_field">
+              <label for="f-telefono">Teléfono</label>
+              <input
+                id="f-telefono"
+                placeholder="(381) 555-6666"
+                .value="${() => state.alumnoActual.telefono}"
+                @input="${e => { state.alumnoActual.telefono = e.target.value; }}"
+              />
+            </div>
+
+            <div class="dialog_field">
+              <label for="f-github">GitHub</label>
+              <input
+                id="f-github"
+                placeholder="jgomez"
+                .value="${() => state.alumnoActual.github}"
+                @input="${e => { state.alumnoActual.github = e.target.value; }}"
+              />
+            </div>
+          </div>
+
+          <footer class="dialog_footer">
+            ${() => state.modoEdicion
+              ? html`<button type="button" class="dialog_delete" @click="${eliminar}">Eliminar</button>`
+              : html`<span></span>`}
+            <div class="dialog_actions">
+              <button type="submit" class="dialog_save">Guardar</button>
+              <button type="button" class="dialog_cancel" @click="${cerrarDialog}">Cancelar</button>
+            </div>
+          </footer>
+        </form>
+      </dialog>
+    `(container);
+
+    const modal = document.getElementById('dialog');
+    watch(() => {
+      if (state.dialogAbierto && !modal.open) modal.showModal();
+      else if (!state.dialogAbierto && modal.open) modal.close();
+    });
+  </script>
+</body>
+</html>

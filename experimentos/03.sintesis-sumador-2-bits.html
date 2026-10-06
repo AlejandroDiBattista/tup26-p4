@@ -1,0 +1,2395 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Guía interactiva para sintetizar funciones booleanas con AND, OR y NOT, aplicada a un sumador de dos números de dos bits.">
+  <link rel="icon" href="data:,">
+  <title>De la tabla a las compuertas · Sumador de 2 bits</title>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: oklch(97% 0.014 238);
+      --paper-2: oklch(93% 0.025 235);
+      --paper-3: oklch(88% 0.04 230);
+      --ink: oklch(22% 0.065 253);
+      --ink-soft: oklch(42% 0.055 250);
+      --line: oklch(72% 0.04 238);
+      --line-strong: oklch(48% 0.06 250);
+      --orange: oklch(65% 0.19 42);
+      --orange-pale: oklch(92% 0.055 55);
+      --yellow: oklch(85% 0.16 92);
+      --s0: oklch(55% 0.125 157);
+      --s0-pale: oklch(91% 0.055 157);
+      --s1: oklch(61% 0.145 78);
+      --s1-pale: oklch(92% 0.06 88);
+      --s2: oklch(56% 0.18 31);
+      --s2-pale: oklch(91% 0.06 35);
+      --focus: oklch(56% 0.18 245);
+      --display: "DIN Alternate", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+      --body: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-24: 6rem;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-block-start: 1rem;
+    }
+
+    body {
+      min-block-size: 100dvh;
+      margin: 0;
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 1rem;
+      line-height: 1.5;
+      font-kerning: normal;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(to right, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklab, var(--ink) 5%, transparent) 1px, transparent 1px),
+        radial-gradient(circle, color-mix(in oklab, var(--ink) 12%, transparent) 0 1px, transparent 1.5px);
+      background-size: 2rem 2rem, 2rem 2rem, 0.5rem 0.5rem;
+      content: "";
+      pointer-events: none;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    code,
+    pre {
+      font-family: var(--mono);
+      font-variant-ligatures: none;
+    }
+
+    sub {
+      font-size: 0.65em;
+      line-height: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-block-start: 0;
+    }
+
+    .skip-link {
+      position: fixed;
+      inset: 0 auto auto 0;
+      z-index: 50;
+      translate: 0 -120%;
+      border: 2px solid var(--ink);
+      background: var(--yellow);
+      padding: var(--space-3) var(--space-4);
+      color: var(--ink);
+      font-weight: 800;
+      text-decoration: none;
+      transition: translate 180ms var(--ease-out);
+    }
+
+    .skip-link:focus-visible {
+      translate: 0;
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      inline-size: min(100% - 2rem, 88rem);
+      margin-inline: auto;
+    }
+
+    .hero {
+      overflow: hidden;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .hero-inner {
+      padding-block: max(1.5rem, env(safe-area-inset-top)) clamp(3.5rem, 9vw, 7.5rem);
+    }
+
+    .hero-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding-block-end: var(--space-6);
+      border-block-end: 1px solid color-mix(in oklab, var(--paper) 38%, transparent);
+    }
+
+    .course-mark,
+    .gate-mark {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .course-mark {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      color: var(--yellow);
+    }
+
+    .course-mark::before {
+      inline-size: 2rem;
+      block-size: 0.65rem;
+      background:
+        radial-gradient(circle at 0.32rem 50%, var(--orange) 0 0.25rem, transparent 0.27rem),
+        radial-gradient(circle at calc(100% - 0.32rem) 50%, var(--orange) 0 0.25rem, transparent 0.27rem),
+        linear-gradient(var(--orange), var(--orange)) center / 1.4rem 0.12rem no-repeat;
+      content: "";
+    }
+
+    .gate-mark {
+      color: var(--paper-3);
+      word-spacing: 0.4em;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: var(--space-12);
+      align-items: end;
+      padding-block-start: clamp(3rem, 8vw, 7rem);
+    }
+
+    h1 {
+      max-inline-size: 11ch;
+      margin-block-end: var(--space-6);
+      font-family: var(--display);
+      font-size: clamp(3.6rem, 10vw, 8rem);
+      font-weight: 800;
+      letter-spacing: -0.055em;
+      line-height: 0.84;
+      text-transform: uppercase;
+      text-wrap: balance;
+    }
+
+    .hero-accent {
+      color: var(--yellow);
+    }
+
+    .hero-lead {
+      max-inline-size: 59ch;
+      margin: 0;
+      color: var(--paper-3);
+      font-size: clamp(1.05rem, 1rem + 0.45vw, 1.35rem);
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .gate-rack {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      border: 1px solid color-mix(in oklab, var(--paper) 42%, transparent);
+      background: color-mix(in oklab, var(--paper) 42%, transparent);
+    }
+
+    .gate {
+      min-inline-size: 0;
+      background: var(--ink);
+      padding: var(--space-4) var(--space-3);
+    }
+
+    .gate strong {
+      display: block;
+      color: var(--yellow);
+      font-family: var(--display);
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      line-height: 1;
+    }
+
+    .gate span {
+      display: block;
+      margin-block-start: var(--space-2);
+      color: var(--paper-3);
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .signal-flow {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-block-start: clamp(2.5rem, 6vw, 5rem);
+      border: 1px solid color-mix(in oklab, var(--paper) 50%, transparent);
+    }
+
+    .flow-step {
+      position: relative;
+      min-inline-size: 0;
+      padding: var(--space-4);
+      border-inline-end: 1px solid color-mix(in oklab, var(--paper) 35%, transparent);
+      border-block-end: 1px solid color-mix(in oklab, var(--paper) 35%, transparent);
+    }
+
+    .flow-step:nth-child(2n) {
+      border-inline-end: 0;
+    }
+
+    .flow-step:nth-last-child(-n + 2) {
+      border-block-end: 0;
+    }
+
+    .flow-step b {
+      display: block;
+      margin-block-end: var(--space-1);
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+    }
+
+    .flow-step span {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .section {
+      padding-block: clamp(4rem, 9vw, 8rem);
+      border-block-end: 1px solid var(--line-strong);
+    }
+
+    .section-heading {
+      display: grid;
+      gap: var(--space-4);
+      margin-block-end: clamp(2.5rem, 6vw, 5rem);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin: 0;
+      color: var(--orange);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      inline-size: 2.5rem;
+      block-size: 0.125rem;
+      background: currentColor;
+      content: "";
+    }
+
+    .section-heading h2 {
+      max-inline-size: 20ch;
+      margin: 0;
+      font-family: var(--display);
+      font-size: clamp(2.6rem, 6vw, 5.4rem);
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 0.92;
+      text-transform: uppercase;
+      text-wrap: balance;
+    }
+
+    .section-heading .section-intro {
+      max-inline-size: 64ch;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 1.08rem;
+      text-wrap: pretty;
+    }
+
+    .recipe {
+      display: grid;
+      gap: var(--space-8);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .recipe li {
+      display: grid;
+      grid-template-columns: 4rem minmax(0, 1fr);
+      gap: var(--space-4);
+      padding-block-end: var(--space-8);
+      border-block-end: 1px solid var(--line);
+    }
+
+    .step-number {
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .recipe h3 {
+      margin-block-end: var(--space-2);
+      font-family: var(--display);
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .recipe p {
+      max-inline-size: 62ch;
+      margin: 0;
+      color: var(--ink-soft);
+      text-wrap: pretty;
+    }
+
+    .universal-formula {
+      margin-block-start: var(--space-8);
+      border: 1px solid var(--ink);
+      background: var(--paper-2);
+      padding: var(--space-6);
+    }
+
+    .universal-formula .formula-label {
+      display: block;
+      margin-block-end: var(--space-4);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .universal-formula code {
+      display: block;
+      color: var(--ink);
+      font-size: clamp(0.86rem, 2.4vw, 1.15rem);
+      font-weight: 800;
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+
+    .worked-minterm {
+      display: grid;
+      gap: 1px;
+      margin-block-start: var(--space-8);
+      border: 1px solid var(--ink);
+      background: var(--ink);
+    }
+
+    .worked-minterm > div {
+      background: var(--paper);
+      padding: var(--space-4);
+    }
+
+    .worked-minterm .row-bits {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .worked-minterm .row-bits span {
+      display: grid;
+      min-inline-size: 2rem;
+      min-block-size: 2rem;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      background: var(--paper-2);
+    }
+
+    .worked-minterm small {
+      display: block;
+      margin-block-end: var(--space-2);
+      color: var(--ink-soft);
+      font-size: 0.67rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .worked-minterm code {
+      color: var(--orange);
+      font-size: 0.93rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .lab {
+      background: var(--paper-2);
+    }
+
+    .lab-board {
+      display: grid;
+      gap: 1px;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      box-shadow: 0.75rem 0.75rem 0 color-mix(in oklab, var(--orange) 35%, transparent);
+    }
+
+    .lab-table,
+    .lab-result {
+      min-inline-size: 0;
+      background: var(--paper);
+      padding: var(--space-6);
+    }
+
+    .lab-instruction {
+      margin-block-end: var(--space-4);
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .general-table {
+      inline-size: 100%;
+      border-collapse: collapse;
+      background: var(--paper);
+      font-family: var(--mono);
+      text-align: center;
+    }
+
+    .general-table caption {
+      margin-block-end: var(--space-3);
+      font-family: var(--display);
+      font-size: 1.3rem;
+      font-weight: 800;
+      text-align: start;
+      text-transform: uppercase;
+    }
+
+    .general-table th,
+    .general-table td {
+      border: 1px solid var(--line);
+      padding: var(--space-2);
+    }
+
+    .general-table th {
+      background: var(--paper-3);
+      font-size: 0.75rem;
+    }
+
+    .output-toggle {
+      display: inline-grid;
+      min-inline-size: 3rem;
+      min-block-size: 2.75rem;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), background-color 120ms linear, color 120ms linear;
+    }
+
+    .output-toggle[aria-pressed="true"] {
+      border-color: var(--orange);
+      background: var(--orange);
+      color: var(--paper);
+    }
+
+    .output-toggle:focus-visible,
+    .output-selector:focus-visible,
+    .sim-bit:focus-visible,
+    .sim-table-link:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .output-toggle:active,
+    .output-selector:active,
+    .sim-bit:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .lab-result {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .lab-code-label,
+    .generated-label {
+      display: block;
+      margin-block-end: var(--space-2);
+      color: var(--ink-soft);
+      font-size: 0.67rem;
+      font-weight: 900;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .lab-bits {
+      display: block;
+      margin-block-end: var(--space-6);
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: clamp(1.65rem, 5vw, 3.25rem);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.08em;
+      line-height: 0.9;
+      overflow-wrap: anywhere;
+    }
+
+    .generated-expression {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+      font-weight: 800;
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+
+    .expression-pair {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .expression-stage {
+      min-inline-size: 0;
+    }
+
+    .simplification-arrow {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .simplification-arrow::before,
+    .simplification-arrow::after {
+      flex: 1;
+      block-size: 1px;
+      background: var(--line);
+      content: "";
+    }
+
+    .simplified-stage {
+      border: 1px solid var(--orange);
+      background: var(--orange-pale);
+      padding: var(--space-4);
+    }
+
+    .simplified-expression {
+      display: block;
+      margin: 0;
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: clamp(1.25rem, 4vw, 1.85rem);
+      font-weight: 900;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .simplification-note {
+      margin: var(--space-3) 0 0;
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid color-mix(in oklab, var(--orange) 38%, var(--paper));
+      color: var(--ink-soft);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      text-wrap: pretty;
+    }
+
+    .lab-tip {
+      margin: var(--space-6) 0 0;
+      padding-block-start: var(--space-4);
+      border-block-start: 1px solid var(--line);
+      color: var(--ink-soft);
+      font-size: 0.83rem;
+    }
+
+    .adder-intro {
+      display: grid;
+      gap: var(--space-8);
+      align-items: end;
+      margin-block-end: var(--space-12);
+    }
+
+    .binary-addition {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 0 var(--space-6);
+      align-items: end;
+      inline-size: fit-content;
+      border-block-end: 3px solid var(--ink);
+      padding: var(--space-4) var(--space-4) var(--space-3);
+      background: var(--paper-2);
+      font-family: var(--mono);
+      font-size: clamp(1.4rem, 5vw, 2.35rem);
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .binary-addition span:nth-child(3) {
+      grid-column: 2;
+      color: var(--orange);
+    }
+
+    .adder-model {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-3);
+      align-items: center;
+      padding: var(--space-4);
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+    }
+
+    .input-pair,
+    .output-trio {
+      display: flex;
+      gap: var(--space-1);
+      font-family: var(--mono);
+      font-weight: 900;
+    }
+
+    .input-pair span,
+    .output-trio span {
+      display: grid;
+      min-inline-size: 1.9rem;
+      min-block-size: 2rem;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      background: var(--paper-2);
+    }
+
+    .adder-box {
+      position: relative;
+      min-inline-size: 5rem;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+      padding: var(--space-4) var(--space-2);
+      font-family: var(--display);
+      font-weight: 800;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .adder-box::before,
+    .adder-box::after {
+      position: absolute;
+      inset-block-start: 50%;
+      inline-size: var(--space-3);
+      block-size: 1px;
+      background: var(--ink);
+      content: "";
+    }
+
+    .adder-box::before {
+      inset-inline-end: 100%;
+    }
+
+    .adder-box::after {
+      inset-inline-start: 100%;
+    }
+
+    .adder-simulator {
+      margin-block-end: var(--space-12);
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 0.625rem 0.625rem 0 var(--orange);
+    }
+
+    .simulator-heading {
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-6);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .simulator-heading .eyebrow {
+      color: var(--yellow);
+    }
+
+    .simulator-heading h3 {
+      margin: 0;
+      font-family: var(--display);
+      font-size: clamp(2rem, 5vw, 3.75rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 0.95;
+      text-transform: uppercase;
+    }
+
+    .simulator-heading > p:last-child {
+      max-inline-size: 62ch;
+      margin: 0;
+      color: var(--paper-3);
+      font-size: 0.9rem;
+    }
+
+    .simulator-console {
+      display: grid;
+      gap: var(--space-3);
+      align-items: stretch;
+      padding: var(--space-6);
+      background: var(--paper-2);
+    }
+
+    .sim-operand,
+    .sim-result {
+      min-inline-size: 0;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      padding: var(--space-4);
+    }
+
+    .sim-card-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-block-end: var(--space-3);
+      color: var(--ink-soft);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sim-card-label strong {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      letter-spacing: 0;
+    }
+
+    .sim-bit-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+
+    .sim-bit {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-3);
+      align-items: center;
+      min-block-size: 5rem;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      padding: var(--space-3);
+      color: var(--paper);
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), background-color 120ms linear, color 120ms linear;
+    }
+
+    .sim-bit[aria-pressed="true"] {
+      background: var(--orange);
+      color: var(--ink);
+    }
+
+    .sim-bit-name {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .sim-bit-value {
+      font-family: var(--mono);
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+      text-align: end;
+    }
+
+    .sim-number-readout {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-block-start: var(--space-3);
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid var(--line);
+    }
+
+    .sim-number-readout strong {
+      font-family: var(--mono);
+      font-size: 1.15rem;
+    }
+
+    .sim-number-readout span {
+      color: var(--ink-soft);
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .sim-symbol {
+      display: grid;
+      min-block-size: 3rem;
+      place-items: center;
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .sim-result {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .sim-result .sim-card-label,
+    .sim-result .sim-card-label strong {
+      color: var(--paper-3);
+    }
+
+    .sim-result-bits {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+      margin-block: var(--space-3);
+    }
+
+    .sim-result-bit {
+      --wire: var(--s0);
+      display: grid;
+      min-block-size: 5rem;
+      place-items: center;
+      border: 1px solid var(--wire);
+      color: var(--wire);
+      font-family: var(--mono);
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .sim-result-bit[data-result-bit="s2"] { --wire: var(--s2); }
+    .sim-result-bit[data-result-bit="s1"] { --wire: var(--s1); }
+    .sim-result-bit[data-result-bit="s0"] { --wire: var(--s0); }
+
+    .sim-equation {
+      display: block;
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid color-mix(in oklab, var(--paper) 28%, transparent);
+      color: var(--yellow);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .simulator-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-6);
+      border-block-start: 1px solid var(--line-strong);
+      background: var(--paper);
+    }
+
+    .sim-row-status {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.8rem;
+    }
+
+    .sim-row-status::before {
+      flex: 0 0 auto;
+      inline-size: 0.75rem;
+      block-size: 0.75rem;
+      border: 1px solid var(--ink);
+      background: var(--yellow);
+      content: "";
+    }
+
+    .sim-row-status strong {
+      color: var(--ink);
+      font-family: var(--mono);
+    }
+
+    .sim-table-link {
+      flex: 0 0 auto;
+      border-block-end: 2px solid currentColor;
+      color: var(--orange);
+      font-size: 0.76rem;
+      font-weight: 900;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .truth-workspace {
+      display: grid;
+      gap: var(--space-8);
+      align-items: start;
+    }
+
+    .table-panel {
+      min-inline-size: 0;
+    }
+
+    .output-controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+      margin-block-end: var(--space-4);
+    }
+
+    .output-selector {
+      --wire: var(--s0);
+      min-block-size: 3.25rem;
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      padding: var(--space-2);
+      font-weight: 800;
+      line-height: 1.2;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), background-color 120ms linear, color 120ms linear;
+    }
+
+    .output-selector[data-output="s0"] { --wire: var(--s0); }
+    .output-selector[data-output="s1"] { --wire: var(--s1); }
+    .output-selector[data-output="s2"] { --wire: var(--s2); }
+
+    .output-selector[aria-pressed="true"] {
+      border-color: var(--wire);
+      background: var(--wire);
+      color: var(--paper);
+    }
+
+    .output-selector strong {
+      display: block;
+      font-family: var(--mono);
+      font-size: 1rem;
+    }
+
+    .output-selector span {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: 0.62rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      scrollbar-color: var(--line-strong) var(--paper-2);
+      scrollbar-width: thin;
+    }
+
+    .truth-table {
+      inline-size: 100%;
+      min-inline-size: 43rem;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    .truth-table caption {
+      padding: var(--space-3) var(--space-4);
+      border-block-end: 1px solid var(--ink);
+      background: var(--paper-2);
+      color: var(--ink-soft);
+      font-family: var(--body);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-align: start;
+      text-transform: uppercase;
+    }
+
+    .truth-table th,
+    .truth-table td {
+      border-inline-end: 1px solid var(--line);
+      border-block-end: 1px solid var(--line);
+      padding: 0.58rem 0.5rem;
+    }
+
+    .truth-table th:last-child,
+    .truth-table td:last-child {
+      border-inline-end: 0;
+    }
+
+    .truth-table thead tr:first-child th {
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--body);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .truth-table thead tr:last-child th {
+      background: var(--paper-3);
+      font-size: 0.75rem;
+    }
+
+    .truth-table tbody tr.group-start:not(:first-child) td {
+      border-block-start: 2px solid var(--ink);
+    }
+
+    .truth-table tbody tr.is-active-row {
+      background: var(--active-pale, var(--orange-pale));
+    }
+
+    .truth-table tbody tr.is-simulated-row td {
+      box-shadow: inset 0 3px 0 var(--yellow), inset 0 -3px 0 var(--yellow);
+    }
+
+    .truth-table tbody tr.is-simulated-row td:first-child {
+      box-shadow: inset 3px 0 0 var(--yellow), inset 0 3px 0 var(--yellow), inset 0 -3px 0 var(--yellow);
+    }
+
+    .truth-table tbody tr.is-simulated-row td:last-child {
+      box-shadow: inset -3px 0 0 var(--yellow), inset 0 3px 0 var(--yellow), inset 0 -3px 0 var(--yellow);
+    }
+
+    .truth-table .sum-cell {
+      min-inline-size: 7.5rem;
+      color: var(--ink-soft);
+      font-family: var(--body);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .truth-table .output-cell {
+      font-weight: 900;
+    }
+
+    .truth-table .output-cell.is-selected-column {
+      outline: 2px solid var(--active-wire, var(--orange));
+      outline-offset: -2px;
+    }
+
+    .truth-table tr.is-active-row .output-cell.is-selected-column {
+      background: var(--active-wire, var(--orange));
+      color: var(--paper);
+    }
+
+    .synthesis-panel {
+      --active-wire: var(--s0);
+      --active-pale: var(--s0-pale);
+      min-inline-size: 0;
+      border: 1px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 0.625rem 0.625rem 0 color-mix(in oklab, var(--active-wire) 34%, transparent);
+    }
+
+    .synthesis-head {
+      background: var(--ink);
+      color: var(--paper);
+      padding: var(--space-6);
+    }
+
+    .synthesis-kicker {
+      margin-block-end: var(--space-3);
+      color: var(--active-wire);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .synthesis-title {
+      margin-block-end: var(--space-2);
+      font-family: var(--display);
+      font-size: clamp(2.3rem, 7vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 0.9;
+      text-transform: uppercase;
+    }
+
+    .synthesis-description {
+      margin: 0;
+      color: var(--paper-3);
+      font-size: 0.88rem;
+    }
+
+    .synthesis-body {
+      padding: var(--space-6);
+    }
+
+    .sigma-expression {
+      display: block;
+      margin-block-end: var(--space-6);
+      padding-block-end: var(--space-6);
+      border-block-end: 1px solid var(--line);
+      color: var(--active-wire);
+      font-family: var(--mono);
+      font-size: clamp(1rem, 3vw, 1.3rem);
+      font-weight: 900;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .minterm-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-block-end: var(--space-3);
+    }
+
+    .minterm-heading h3 {
+      margin: 0;
+      font-family: var(--display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .minterm-heading span {
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+    }
+
+    .minterm-list {
+      display: grid;
+      gap: var(--space-2);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .minterm-list li {
+      display: grid;
+      grid-template-columns: 2.4rem minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: baseline;
+      border-block-end: 1px solid var(--line);
+      padding-block: var(--space-2);
+    }
+
+    .minterm-list span {
+      color: var(--active-wire);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .minterm-list code {
+      font-size: 0.78rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .or-note {
+      margin: var(--space-4) 0 0;
+      padding: var(--space-3);
+      background: var(--active-pale);
+      color: var(--ink);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .implementation {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .implementation .section-heading .section-intro {
+      color: var(--paper-3);
+    }
+
+    .carry-definition {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      align-items: center;
+      margin-block-end: var(--space-8);
+      padding: var(--space-4);
+      border: 1px solid color-mix(in oklab, var(--paper) 40%, transparent);
+    }
+
+    .carry-definition span {
+      color: var(--yellow);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .carry-definition code {
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .implementation-grid {
+      display: grid;
+      gap: 1px;
+      border: 1px solid color-mix(in oklab, var(--paper) 40%, transparent);
+      background: color-mix(in oklab, var(--paper) 40%, transparent);
+    }
+
+    .implementation-card {
+      --wire: var(--s0);
+      min-inline-size: 0;
+      background: var(--ink);
+      padding: var(--space-6);
+    }
+
+    .implementation-card.s0 { --wire: var(--s0); }
+    .implementation-card.s1 { --wire: var(--s1); }
+    .implementation-card.s2 { --wire: var(--s2); }
+
+    .output-badge {
+      display: inline-grid;
+      min-inline-size: 3.25rem;
+      aspect-ratio: 1;
+      place-items: center;
+      margin-block-end: var(--space-6);
+      border: 1px solid var(--wire);
+      color: var(--wire);
+      font-family: var(--mono);
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+
+    .implementation-card h3 {
+      margin-block-end: var(--space-2);
+      font-family: var(--display);
+      font-size: 1.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .implementation-card p {
+      min-block-size: 3rem;
+      margin-block-end: var(--space-6);
+      color: var(--paper-3);
+      font-size: 0.85rem;
+    }
+
+    .implementation-card code {
+      display: block;
+      color: var(--paper);
+      font-size: clamp(0.78rem, 2.2vw, 0.98rem);
+      font-weight: 800;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .gate-count {
+      display: block;
+      margin-block-start: var(--space-6);
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid color-mix(in oklab, var(--paper) 25%, transparent);
+      color: var(--wire);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .takeaway {
+      display: grid;
+      gap: var(--space-4);
+      padding-block: clamp(3rem, 7vw, 6rem);
+    }
+
+    .takeaway strong {
+      max-inline-size: 25ch;
+      font-family: var(--display);
+      font-size: clamp(2rem, 5vw, 4rem);
+      letter-spacing: -0.035em;
+      line-height: 0.98;
+      text-transform: uppercase;
+      text-wrap: balance;
+    }
+
+    .takeaway p {
+      max-inline-size: 62ch;
+      margin: 0;
+      color: var(--ink-soft);
+    }
+
+    .footer {
+      background: var(--paper-2);
+      color: var(--ink-soft);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: var(--space-8);
+      padding-block: var(--space-6) max(2rem, env(safe-area-inset-bottom));
+      font-size: 0.78rem;
+    }
+
+    .footer-inner p {
+      max-inline-size: 60ch;
+      margin: 0;
+    }
+
+    .footer-inner code {
+      flex: 0 0 auto;
+      color: var(--orange);
+      font-weight: 900;
+    }
+
+    .sr-only {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    @media (hover: hover) {
+      .output-toggle:hover,
+      .output-selector:hover,
+      .sim-bit:hover {
+        transform: translateY(-0.15rem);
+        border-color: var(--orange);
+      }
+
+      .sim-table-link:hover {
+        color: var(--ink);
+      }
+    }
+
+    @media (pointer: coarse) {
+      .output-toggle,
+      .output-selector,
+      .sim-bit {
+        min-block-size: 3rem;
+      }
+    }
+
+    @media (min-width: 40rem) {
+      .shell {
+        inline-size: min(100% - 3rem, 88rem);
+      }
+
+      .signal-flow {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .flow-step,
+      .flow-step:nth-child(2n) {
+        border-inline-end: 1px solid color-mix(in oklab, var(--paper) 35%, transparent);
+        border-block-end: 0;
+      }
+
+      .flow-step:last-child {
+        border-inline-end: 0;
+      }
+
+      .worked-minterm {
+        grid-template-columns: 1fr 1.35fr;
+      }
+
+      .lab-board {
+        grid-template-columns: minmax(17rem, 0.75fr) minmax(0, 1.25fr);
+      }
+
+      .simulator-heading {
+        grid-template-columns: minmax(0, 0.85fr) minmax(20rem, 1.15fr);
+        align-items: end;
+      }
+
+      .simulator-heading .eyebrow {
+        grid-column: 1 / -1;
+      }
+
+      .implementation-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .implementation-card.s1 {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (min-width: 62rem) {
+      .hero-grid {
+        grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 0.55fr);
+      }
+
+      .section-heading {
+        grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
+        align-items: end;
+      }
+
+      .section-heading .eyebrow {
+        grid-column: 1 / -1;
+      }
+
+      .recipe {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0;
+        border-block: 1px solid var(--line-strong);
+      }
+
+      .recipe li {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+        min-block-size: 17rem;
+        border-block-end: 0;
+        border-inline-end: 1px solid var(--line-strong);
+        padding: var(--space-6);
+      }
+
+      .recipe li:last-child {
+        border-inline-end: 0;
+      }
+
+      .step-number {
+        font-size: 2rem;
+      }
+
+      .adder-intro {
+        grid-template-columns: minmax(0, 0.8fr) minmax(25rem, 1.2fr);
+      }
+
+      .simulator-console {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(18rem, 1.2fr);
+        align-items: center;
+      }
+
+      .truth-workspace {
+        grid-template-columns: minmax(0, 1.55fr) minmax(20rem, 0.65fr);
+      }
+
+      .synthesis-panel {
+        position: sticky;
+        inset-block-start: var(--space-4);
+      }
+
+      .implementation-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .implementation-card.s1 {
+        grid-column: auto;
+      }
+
+      .takeaway {
+        grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
+        align-items: end;
+      }
+    }
+
+    @media (max-width: 31.99rem) {
+      .hero-topline,
+      .footer-inner {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .gate {
+        padding-inline: var(--space-2);
+      }
+
+      .recipe li {
+        grid-template-columns: 3rem minmax(0, 1fr);
+      }
+
+      .lab-table,
+      .lab-result,
+      .simulator-heading,
+      .simulator-console,
+      .synthesis-head,
+      .synthesis-body,
+      .implementation-card {
+        padding: var(--space-4);
+      }
+
+      .simulator-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: var(--space-4);
+      }
+
+      .adder-model {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+
+      .adder-box::before,
+      .adder-box::after {
+        display: none;
+      }
+
+      .minterm-list li {
+        grid-template-columns: 2rem minmax(0, 1fr);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .skip-link,
+      .output-toggle,
+      .output-selector,
+      .sim-bit {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      .output-toggle[aria-pressed="true"],
+      .output-selector[aria-pressed="true"],
+      .sim-bit[aria-pressed="true"],
+      .truth-table .output-cell.is-selected-column {
+        outline: 3px solid Highlight;
+        outline-offset: -3px;
+      }
+    }
+
+    @media print {
+      @page {
+        margin: 1.2cm;
+        size: A4 portrait;
+      }
+
+      body {
+        background: var(--paper);
+        font-size: 9pt;
+      }
+
+      body::before,
+      .skip-link,
+      .output-controls,
+      .simulator-footer,
+      .lab-instruction {
+        display: none;
+      }
+
+      .shell {
+        inline-size: 100%;
+      }
+
+      .hero-inner,
+      .section,
+      .takeaway {
+        padding-block: 1.2rem;
+      }
+
+      h1 {
+        font-size: 42pt;
+      }
+
+      .hero-grid,
+      .section-heading,
+      .truth-workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .lab-board,
+      .synthesis-panel {
+        box-shadow: none;
+      }
+
+      .truth-table {
+        min-inline-size: 0;
+        font-size: 7.5pt;
+      }
+
+      .synthesis-panel,
+      .implementation-card {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="hero">
+    <div class="hero-inner shell">
+      <div class="hero-topline">
+        <p class="course-mark">Lógica digital · Guía 02</p>
+        <p class="gate-mark">AND ∧ &nbsp; OR ∨ &nbsp; NOT ¬</p>
+      </div>
+
+      <div class="hero-grid">
+        <div>
+          <h1>De la tabla a las <span class="hero-accent">compuertas</span></h1>
+          <p class="hero-lead">
+            Cualquier función booleana puede construirse mirando las filas donde su salida vale 1, detectando cada fila con AND y reuniéndolas con OR. NOT completa las entradas que deben valer 0.
+          </p>
+        </div>
+
+        <div class="gate-rack" aria-label="Rol de las compuertas en la síntesis">
+          <div class="gate">
+            <strong>¬</strong>
+            <span>NOT prepara los ceros</span>
+          </div>
+          <div class="gate">
+            <strong>∧</strong>
+            <span>AND detecta una fila</span>
+          </div>
+          <div class="gate">
+            <strong>∨</strong>
+            <span>OR reúne las filas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="signal-flow" aria-label="Flujo de síntesis en cuatro pasos">
+        <div class="flow-step"><b>01</b><span>Tabla de verdad</span></div>
+        <div class="flow-step"><b>02</b><span>Filas con salida 1</span></div>
+        <div class="flow-step"><b>03</b><span>Minterms con AND</span></div>
+        <div class="flow-step"><b>04</b><span>Unión final con OR</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" tabindex="-1">
+    <section class="section shell" aria-labelledby="receta-title">
+      <div class="section-heading">
+        <p class="eyebrow">Método general</p>
+        <h2 id="receta-title">La receta universal</h2>
+        <p class="section-intro">
+          La forma canónica “suma de productos” funciona para cualquier cantidad de entradas. Cada producto es un minterm: una combinación que reconoce exactamente una fila.
+        </p>
+      </div>
+
+      <ol class="recipe">
+        <li>
+          <span class="step-number">01</span>
+          <div>
+            <h3>Marca los unos</h3>
+            <p>Recorre la columna de salida y conserva solamente las filas donde la función vale 1.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-number">02</span>
+          <div>
+            <h3>Escribe un minterm</h3>
+            <p>Une todas las entradas con AND. Si una entrada vale 0, escríbela negada; si vale 1, escríbela directa.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-number">03</span>
+          <div>
+            <h3>Une con OR</h3>
+            <p>Conecta todos los minterms a una OR. La función se activa cuando cualquiera de esas filas aparece.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="universal-formula">
+        <span class="formula-label">Regla para una fila r = r₁r₂…rₙ</span>
+        <code>mᵣ = término₁ ∧ término₂ ∧ … ∧ términoₙ &nbsp; donde términoᵢ = xᵢ si rᵢ=1, y ¬xᵢ si rᵢ=0</code>
+      </div>
+
+      <div class="worked-minterm">
+        <div>
+          <small>Ejemplo de fila</small>
+          <div class="row-bits" aria-label="A uno cero, A cero uno, B uno uno, B cero cero">
+            <span>0</span><span>1</span><span>1</span><span>0</span>
+          </div>
+        </div>
+        <div>
+          <small>El minterm que reconoce solamente 0110</small>
+          <code>m₆ = ¬A₁ ∧ A₀ ∧ B₁ ∧ ¬B₀</code>
+        </div>
+      </div>
+    </section>
+
+    <section class="section lab" aria-labelledby="lab-title">
+      <div class="shell">
+        <div class="section-heading">
+          <p class="eyebrow">Laboratorio interactivo</p>
+          <h2 id="lab-title">Inventá cualquier función</h2>
+          <p class="section-intro">
+            Cambia los ocho bits de salida. La expresión se genera tomando solo las filas que quedan en 1. Con tres variables hay 2⁸ = 256 funciones posibles de X, Y y Z.
+          </p>
+        </div>
+
+        <div class="lab-board">
+          <div class="lab-table">
+            <p class="lab-instruction">Selecciona cada salida para alternar entre 0 y 1.</p>
+            <table class="general-table">
+              <caption>Función general F(X, Y, Z)</caption>
+              <thead>
+                <tr>
+                  <th scope="col">X</th>
+                  <th scope="col">Y</th>
+                  <th scope="col">Z</th>
+                  <th scope="col">F</th>
+                </tr>
+              </thead>
+              <tbody id="general-function-rows"></tbody>
+            </table>
+          </div>
+
+          <div class="lab-result">
+            <span class="lab-code-label">Vector de salida · orden 000, 001, 010, 011, 100, 101, 110, 111</span>
+            <output class="lab-bits" id="general-bits">10101010</output>
+
+            <div class="expression-pair">
+              <div class="expression-stage">
+                <span class="generated-label">1 · Expresión canónica generada con minterms</span>
+                <output class="generated-expression" id="general-expression">F = (¬X ∧ ¬Y ∧ ¬Z) ∨ (¬X ∧ Y ∧ ¬Z) ∨ (X ∧ ¬Y ∧ ¬Z) ∨ (X ∧ Y ∧ ¬Z)</output>
+              </div>
+
+              <span class="simplification-arrow" aria-hidden="true">↓ simplificar ↓</span>
+
+              <div class="expression-stage simplified-stage">
+                <span class="generated-label">2 · Expresión simplificada equivalente</span>
+                <output class="simplified-expression" id="simplified-expression">F = ¬Z</output>
+                <p class="simplification-note" id="simplification-note">Las filas 000, 010, 100 y 110 forman un grupo de 4: X e Y cambian y solo queda ¬Z.</p>
+              </div>
+            </div>
+
+            <p class="lab-tip">La forma canónica explica de dónde sale la función; la simplificada realiza exactamente la misma tabla con menos compuertas.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" aria-labelledby="adder-title">
+      <div class="section-heading">
+        <p class="eyebrow">Caso de estudio</p>
+        <h2 id="adder-title">Sumador de dos números de 2 bits</h2>
+        <p class="section-intro">
+          A = A₁A₀ y B = B₁B₀ pueden valer de 0 a 3. Su suma llega hasta 6, por eso la salida necesita tres bits: S₂S₁S₀.
+        </p>
+      </div>
+
+      <div class="adder-intro">
+        <div class="binary-addition" aria-label="Ejemplo: tres más dos es cinco">
+          <span>11₂</span><span>3</span>
+          <span>+ 10₂</span><span>+ 2</span>
+          <span>101₂</span><span>5</span>
+        </div>
+
+        <div class="adder-model" aria-label="Dos entradas de dos bits producen una salida de tres bits">
+          <div>
+            <span class="generated-label">Entradas</span>
+            <div class="input-pair"><span>A₁</span><span>A₀</span></div>
+            <div class="input-pair"><span>B₁</span><span>B₀</span></div>
+          </div>
+          <div class="adder-box">Sumador<br>2 bits</div>
+          <div>
+            <span class="generated-label">Salida</span>
+            <div class="output-trio"><span>S₂</span><span>S₁</span><span>S₀</span></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="adder-simulator" aria-labelledby="simulator-title">
+        <div class="simulator-heading">
+          <div>
+            <p class="eyebrow">Simulador interactivo</p>
+            <h3 id="simulator-title">Probá el sumador</h3>
+          </div>
+          <p>
+            Pulsa cualquiera de los cuatro bits de entrada. El circuito recalcula S₂S₁S₀ y marca con amarillo la fila correspondiente en la tabla de verdad.
+          </p>
+        </div>
+
+        <div class="simulator-console">
+          <article class="sim-operand" aria-labelledby="sim-a-title">
+            <div class="sim-card-label">
+              <span id="sim-a-title">Número A</span>
+              <strong>A₁A₀</strong>
+            </div>
+            <div class="sim-bit-controls" aria-label="Bits del número A">
+              <button class="sim-bit" type="button" data-sim-bit="a1" aria-pressed="true" aria-label="Cambiar A uno">
+                <span class="sim-bit-name">A₁</span>
+                <span class="sim-bit-value" data-sim-value>1</span>
+              </button>
+              <button class="sim-bit" type="button" data-sim-bit="a0" aria-pressed="true" aria-label="Cambiar A cero">
+                <span class="sim-bit-name">A₀</span>
+                <span class="sim-bit-value" data-sim-value>1</span>
+              </button>
+            </div>
+            <div class="sim-number-readout">
+              <strong id="sim-a-binary">11₂</strong>
+              <span id="sim-a-decimal">decimal 3</span>
+            </div>
+          </article>
+
+          <span class="sim-symbol" aria-hidden="true">+</span>
+
+          <article class="sim-operand" aria-labelledby="sim-b-title">
+            <div class="sim-card-label">
+              <span id="sim-b-title">Número B</span>
+              <strong>B₁B₀</strong>
+            </div>
+            <div class="sim-bit-controls" aria-label="Bits del número B">
+              <button class="sim-bit" type="button" data-sim-bit="b1" aria-pressed="true" aria-label="Cambiar B uno">
+                <span class="sim-bit-name">B₁</span>
+                <span class="sim-bit-value" data-sim-value>1</span>
+              </button>
+              <button class="sim-bit" type="button" data-sim-bit="b0" aria-pressed="false" aria-label="Cambiar B cero">
+                <span class="sim-bit-name">B₀</span>
+                <span class="sim-bit-value" data-sim-value>0</span>
+              </button>
+            </div>
+            <div class="sim-number-readout">
+              <strong id="sim-b-binary">10₂</strong>
+              <span id="sim-b-decimal">decimal 2</span>
+            </div>
+          </article>
+
+          <span class="sim-symbol" aria-hidden="true">=</span>
+
+          <article class="sim-result" aria-labelledby="sim-result-title">
+            <div class="sim-card-label">
+              <span id="sim-result-title">Salida del circuito</span>
+              <strong>S₂S₁S₀</strong>
+            </div>
+            <output class="sim-result-bits" id="sim-result-bits" aria-label="Resultado binario: 1, 0, 1">
+              <span class="sim-result-bit" data-result-bit="s2">1</span>
+              <span class="sim-result-bit" data-result-bit="s1">0</span>
+              <span class="sim-result-bit" data-result-bit="s0">1</span>
+            </output>
+            <output class="sim-equation" id="sim-equation">3 + 2 = 5 · 101₂</output>
+          </article>
+        </div>
+
+        <div class="simulator-footer">
+          <p class="sim-row-status" id="sim-row-status">
+            <span><strong>Fila m14</strong> · entradas 1110 · salida 101</span>
+          </p>
+          <a class="sim-table-link" href="#adder-truth-table">Ver la fila en la tabla ↓</a>
+        </div>
+      </section>
+
+      <div class="truth-workspace" id="truth-workspace">
+        <div class="table-panel">
+          <div class="output-controls" aria-label="Elegir el bit de salida que se sintetizará">
+            <button class="output-selector" type="button" data-output="s0" aria-pressed="true">
+              <strong>S₀</strong><span>Unidades</span>
+            </button>
+            <button class="output-selector" type="button" data-output="s1" aria-pressed="false">
+              <strong>S₁</strong><span>Valor 2</span>
+            </button>
+            <button class="output-selector" type="button" data-output="s2" aria-pressed="false">
+              <strong>S₂</strong><span>Acarreo</span>
+            </button>
+          </div>
+
+          <div class="table-scroll" tabindex="0">
+            <table class="truth-table" id="adder-truth-table">
+              <caption>Tabla de verdad completa · Entradas A₁ A₀ B₁ B₀ · La fila amarilla corresponde al simulador</caption>
+              <thead>
+                <tr>
+                  <th colspan="2" scope="colgroup">Número A</th>
+                  <th colspan="2" scope="colgroup">Número B</th>
+                  <th rowspan="2" scope="col">Suma decimal</th>
+                  <th colspan="3" scope="colgroup">Salida binaria</th>
+                </tr>
+                <tr>
+                  <th scope="col">A₁</th>
+                  <th scope="col">A₀</th>
+                  <th scope="col">B₁</th>
+                  <th scope="col">B₀</th>
+                  <th scope="col">S₂</th>
+                  <th scope="col">S₁</th>
+                  <th scope="col">S₀</th>
+                </tr>
+              </thead>
+              <tbody id="adder-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="synthesis-panel" id="synthesis-panel" aria-labelledby="synthesis-title">
+          <div class="synthesis-head">
+            <p class="synthesis-kicker">Síntesis de la columna elegida</p>
+            <h3 class="synthesis-title" id="synthesis-title">Salida S₀</h3>
+            <p class="synthesis-description" id="synthesis-description">Bit de unidades: alterna cuando A₀ y B₀ son diferentes.</p>
+          </div>
+          <div class="synthesis-body">
+            <output class="sigma-expression" id="sigma-expression">S₀ = Σm(1, 3, 4, 6, 9, 11, 12, 14)</output>
+            <div class="minterm-heading">
+              <h3>Minterms</h3>
+              <span id="minterm-count">8 filas con 1</span>
+            </div>
+            <ol class="minterm-list" id="minterm-list"></ol>
+            <p class="or-note">La salida final es la OR de todos estos minterms.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section implementation" aria-labelledby="implementation-title">
+      <div class="shell">
+        <div class="section-heading">
+          <p class="eyebrow">Resultado simplificado</p>
+          <h2 id="implementation-title">Las tres funciones de salida</h2>
+          <p class="section-intro">
+            La forma canónica siempre funciona. Después se puede simplificar compartiendo señales intermedias. Aquí C₀ es el acarreo producido por los bits menos significativos.
+          </p>
+        </div>
+
+        <div class="carry-definition">
+          <span>Señal auxiliar</span>
+          <code>C₀ = A₀ ∧ B₀</code>
+          <span>Una sola AND</span>
+        </div>
+
+        <div class="implementation-grid">
+          <article class="implementation-card s0">
+            <span class="output-badge">S₀</span>
+            <h3>Bit de unidades</h3>
+            <p>Vale 1 cuando exactamente uno de los bits A₀ y B₀ vale 1.</p>
+            <code>S₀ = (¬A₀ ∧ B₀) ∨ (A₀ ∧ ¬B₀)</code>
+            <span class="gate-count">2 AND · 1 OR · 2 NOT</span>
+          </article>
+
+          <article class="implementation-card s1">
+            <span class="output-badge">S₁</span>
+            <h3>Bit intermedio</h3>
+            <p>Vale 1 cuando una cantidad impar entre A₁, B₁ y C₀ vale 1.</p>
+            <code>S₁ = (¬A₁ ∧ ¬B₁ ∧ C₀)<br>∨ (¬A₁ ∧ B₁ ∧ ¬C₀)<br>∨ (A₁ ∧ ¬B₁ ∧ ¬C₀)<br>∨ (A₁ ∧ B₁ ∧ C₀)</code>
+            <span class="gate-count">4 AND · 1 OR · señales negadas</span>
+          </article>
+
+          <article class="implementation-card s2">
+            <span class="output-badge">S₂</span>
+            <h3>Acarreo final</h3>
+            <p>Vale 1 cuando al menos dos entre A₁, B₁ y C₀ valen 1.</p>
+            <code>S₂ = (A₁ ∧ B₁)<br>∨ (A₁ ∧ C₀)<br>∨ (B₁ ∧ C₀)</code>
+            <span class="gate-count">3 AND · 1 OR</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="takeaway shell" aria-label="Idea principal">
+      <strong>Un circuito con tres salidas son tres funciones sintetizadas en paralelo.</strong>
+      <p>
+        Para cada bit S₂, S₁ y S₀ se repite la misma receta: se identifica dónde vale 1, se crea una AND por fila y se combinan todas con OR. La simplificación reduce compuertas, pero no cambia la función.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner shell">
+      <p>Convención de minterms: el índice decimal se obtiene leyendo las entradas en el orden A₁A₀B₁B₀.</p>
+      <code>A + B = S₂S₁S₀</code>
+    </div>
+  </footer>
+
+  <p class="sr-only" id="announcement" aria-live="polite"></p>
+
+  <script>
+    const variableMarkup = {
+      X: "X",
+      Y: "Y",
+      Z: "Z",
+      A1: "A₁",
+      A0: "A₀",
+      B1: "B₁",
+      B0: "B₀"
+    };
+
+    const makeMinterm = (bits, variables) => [...bits]
+      .map((bit, index) => `${bit === "0" ? "¬" : ""}${variableMarkup[variables[index]]}`)
+      .join(" ∧ ");
+
+    const generalVariables = ["X", "Y", "Z"];
+    const generalInputs = ["000", "001", "010", "011", "100", "101", "110", "111"];
+    const generalOutputs = [1, 0, 1, 0, 1, 0, 1, 0];
+    const generalRows = document.querySelector("#general-function-rows");
+    const generalBits = document.querySelector("#general-bits");
+    const generalExpression = document.querySelector("#general-expression");
+    const simplifiedExpression = document.querySelector("#simplified-expression");
+    const simplificationNote = document.querySelector("#simplification-note");
+    const announcement = document.querySelector("#announcement");
+
+    const joinSpanish = (items) => {
+      if (items.length <= 1) return items[0] ?? "";
+      return `${items.slice(0, -1).join(", ")} y ${items.at(-1)}`;
+    };
+
+    const implicantTerm = (pattern) => [...pattern]
+      .flatMap((bit, index) => bit === "-"
+        ? []
+        : [`${bit === "0" ? "¬" : ""}${generalVariables[index]}`])
+      .join(" ∧ ") || "1";
+
+    const simplifyThreeVariableFunction = (outputs) => {
+      const activeMinterms = outputs
+        .map((value, index) => value === 1 ? index : null)
+        .filter((index) => index !== null);
+
+      if (activeMinterms.length === 0) {
+        return {
+          expression: "F = 0",
+          note: "No hay filas activas: la función siempre vale 0."
+        };
+      }
+
+      if (activeMinterms.length === generalInputs.length) {
+        return {
+          expression: "F = 1",
+          note: "Las ocho filas están activas: X, Y y Z pueden cambiar libremente y la función siempre vale 1."
+        };
+      }
+
+      const activeSet = new Set(activeMinterms);
+      const symbols = ["0", "1", "-"];
+      const validImplicants = [];
+
+      for (const x of symbols) {
+        for (const y of symbols) {
+          for (const z of symbols) {
+            const pattern = `${x}${y}${z}`;
+            const covers = generalInputs
+              .map((input, index) => [...pattern].every((bit, position) => bit === "-" || bit === input[position]) ? index : null)
+              .filter((index) => index !== null);
+
+            if (covers.length > 0 && covers.every((index) => activeSet.has(index))) {
+              validImplicants.push({ pattern, covers });
+            }
+          }
+        }
+      }
+
+      const primeImplicants = validImplicants.filter((candidate) => !validImplicants.some((other) => {
+        if (candidate.pattern === other.pattern) return false;
+        return [...candidate.pattern].every((bit, index) => other.pattern[index] === "-" || other.pattern[index] === bit);
+      }));
+
+      let bestCover = null;
+      let bestScore = null;
+
+      for (let mask = 1; mask < 2 ** primeImplicants.length; mask += 1) {
+        const selected = primeImplicants.filter((_, index) => mask & (1 << index));
+        const covered = new Set(selected.flatMap((implicant) => implicant.covers));
+        if (!activeMinterms.every((minterm) => covered.has(minterm))) continue;
+
+        const literalCount = selected.reduce(
+          (total, implicant) => total + [...implicant.pattern].filter((bit) => bit !== "-").length,
+          0
+        );
+        const signature = selected.map((implicant) => implicant.pattern).sort().join("|");
+        const score = [selected.length, literalCount, signature];
+        const isBetter = !bestScore
+          || score[0] < bestScore[0]
+          || (score[0] === bestScore[0] && score[1] < bestScore[1])
+          || (score[0] === bestScore[0] && score[1] === bestScore[1] && score[2] < bestScore[2]);
+
+        if (isBetter) {
+          bestCover = selected;
+          bestScore = score;
+        }
+      }
+
+      const terms = bestCover.map((implicant) => implicantTerm(implicant.pattern));
+      const expression = terms.length === 1
+        ? `F = ${terms[0]}`
+        : `F = ${terms.map((term) => term.includes(" ∧ ") ? `(${term})` : term).join(" ∨ ")}`;
+
+      const groupNotes = bestCover.map((implicant) => {
+        const rows = implicant.covers.map((index) => generalInputs[index]);
+        const changingVariables = [...implicant.pattern]
+          .map((bit, index) => bit === "-" ? generalVariables[index] : null)
+          .filter(Boolean);
+        const term = implicantTerm(implicant.pattern);
+
+        if (rows.length === 1) {
+          return `La fila ${rows[0]} no puede agruparse con otra fila activa; queda ${term}.`;
+        }
+
+        const changeText = changingVariables.length === 1
+          ? `${changingVariables[0]} cambia`
+          : `${joinSpanish(changingVariables)} cambian`;
+        return `Las filas ${joinSpanish(rows)} forman un grupo de ${rows.length}: ${changeText} y queda ${term}.`;
+      });
+
+      return {
+        expression,
+        note: `${groupNotes.join(" ")}${bestCover.length > 1 ? ` Los ${bestCover.length} grupos se combinan con OR.` : ""}`
+      };
+    };
+
+    const renderGeneralFunction = () => {
+      generalRows.innerHTML = generalInputs.map((input, index) => `
+        <tr>
+          <td>${input[0]}</td>
+          <td>${input[1]}</td>
+          <td>${input[2]}</td>
+          <td>
+            <button
+              class="output-toggle"
+              type="button"
+              data-general-index="${index}"
+              aria-pressed="${generalOutputs[index] === 1}"
+              aria-label="Cambiar F para X=${input[0]}, Y=${input[1]}, Z=${input[2]}"
+            >${generalOutputs[index]}</button>
+          </td>
+        </tr>
+      `).join("");
+
+      const bits = generalOutputs.join("");
+      const terms = generalInputs
+        .filter((_, index) => generalOutputs[index] === 1)
+        .map((input) => `(${makeMinterm(input, generalVariables)})`);
+
+      generalBits.value = bits;
+      generalBits.textContent = bits;
+      generalBits.setAttribute("aria-label", `Vector de salida: ${[...bits].join(", ")}`);
+      generalExpression.value = terms.length ? `F = ${terms.join(" ∨ ")}` : "F = 0";
+      generalExpression.textContent = generalExpression.value;
+
+      const simplified = simplifyThreeVariableFunction(generalOutputs);
+      simplifiedExpression.value = simplified.expression;
+      simplifiedExpression.textContent = simplified.expression;
+      simplificationNote.textContent = simplified.note;
+    };
+
+    generalRows.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-general-index]");
+      if (!button) return;
+
+      const index = Number(button.dataset.generalIndex);
+      generalOutputs[index] = generalOutputs[index] === 1 ? 0 : 1;
+      renderGeneralFunction();
+
+      const input = generalInputs[index];
+      announcement.textContent = `La salida para X=${input[0]}, Y=${input[1]}, Z=${input[2]} ahora vale ${generalOutputs[index]}. Expresión canónica: ${generalExpression.value}. Expresión simplificada: ${simplifiedExpression.value}.`;
+      generalRows.querySelector(`[data-general-index="${index}"]`)?.focus();
+    });
+
+    const adderRows = [];
+
+    for (let a = 0; a <= 3; a += 1) {
+      for (let b = 0; b <= 3; b += 1) {
+        const aBits = a.toString(2).padStart(2, "0");
+        const bBits = b.toString(2).padStart(2, "0");
+        const sum = a + b;
+        const resultBits = sum.toString(2).padStart(3, "0");
+
+        adderRows.push({
+          a,
+          b,
+          aBits,
+          bBits,
+          inputBits: `${aBits}${bBits}`,
+          minterm: Number.parseInt(`${aBits}${bBits}`, 2),
+          sum,
+          outputs: {
+            s2: resultBits[0],
+            s1: resultBits[1],
+            s0: resultBits[2]
+          }
+        });
+      }
+    }
+
+    const outputInfo = {
+      s0: {
+        label: "S₀",
+        title: "Salida S₀",
+        description: "Bit de unidades: alterna cuando A₀ y B₀ son diferentes.",
+        wire: "var(--s0)",
+        pale: "var(--s0-pale)"
+      },
+      s1: {
+        label: "S₁",
+        title: "Salida S₁",
+        description: "Bit de valor 2: combina A₁, B₁ y el acarreo C₀ de la primera etapa.",
+        wire: "var(--s1)",
+        pale: "var(--s1-pale)"
+      },
+      s2: {
+        label: "S₂",
+        title: "Salida S₂",
+        description: "Acarreo final: indica que la suma es 4, 5 o 6.",
+        wire: "var(--s2)",
+        pale: "var(--s2-pale)"
+      }
+    };
+
+    const adderBody = document.querySelector("#adder-rows");
+    const outputButtons = [...document.querySelectorAll(".output-selector")];
+    const synthesisPanel = document.querySelector("#synthesis-panel");
+    const synthesisTitle = document.querySelector("#synthesis-title");
+    const synthesisDescription = document.querySelector("#synthesis-description");
+    const sigmaExpression = document.querySelector("#sigma-expression");
+    const mintermCount = document.querySelector("#minterm-count");
+    const mintermList = document.querySelector("#minterm-list");
+    const simulatorButtons = [...document.querySelectorAll("[data-sim-bit]")];
+    const simABinary = document.querySelector("#sim-a-binary");
+    const simADecimal = document.querySelector("#sim-a-decimal");
+    const simBBinary = document.querySelector("#sim-b-binary");
+    const simBDecimal = document.querySelector("#sim-b-decimal");
+    const simResultBits = document.querySelector("#sim-result-bits");
+    const simEquation = document.querySelector("#sim-equation");
+    const simRowStatus = document.querySelector("#sim-row-status");
+    const simTableLink = document.querySelector(".sim-table-link");
+
+    const simulatorState = {
+      a1: 1,
+      a0: 1,
+      b1: 1,
+      b0: 0
+    };
+
+    let selectedOutput = "s0";
+    let simulatedMinterm = 14;
+
+    const renderAdderTable = () => {
+      adderBody.innerHTML = adderRows.map((row) => `
+        <tr class="${row.b === 0 && row.a !== 0 ? "group-start" : ""}" data-minterm="${row.minterm}">
+          <td>${row.aBits[0]}</td>
+          <td>${row.aBits[1]}</td>
+          <td>${row.bBits[0]}</td>
+          <td>${row.bBits[1]}</td>
+          <td class="sum-cell">${row.a} + ${row.b} = ${row.sum}</td>
+          <td class="output-cell" data-output-cell="s2">${row.outputs.s2}</td>
+          <td class="output-cell" data-output-cell="s1">${row.outputs.s1}</td>
+          <td class="output-cell" data-output-cell="s0">${row.outputs.s0}</td>
+        </tr>
+      `).join("");
+    };
+
+    const selectOutput = (key) => {
+      const info = outputInfo[key];
+      selectedOutput = key;
+
+      for (const button of outputButtons) {
+        button.setAttribute("aria-pressed", String(button.dataset.output === key));
+      }
+
+      const activeRows = adderRows.filter((row) => row.outputs[key] === "1");
+      const minterms = activeRows.map((row) => row.minterm);
+
+      [...adderBody.rows].forEach((tableRow, index) => {
+        tableRow.classList.toggle("is-active-row", adderRows[index].outputs[key] === "1");
+        tableRow.style.setProperty("--active-wire", info.wire);
+        tableRow.style.setProperty("--active-pale", info.pale);
+
+        for (const cell of tableRow.querySelectorAll("[data-output-cell]")) {
+          cell.classList.toggle("is-selected-column", cell.dataset.outputCell === key);
+        }
+      });
+
+      synthesisPanel.style.setProperty("--active-wire", info.wire);
+      synthesisPanel.style.setProperty("--active-pale", info.pale);
+      synthesisTitle.textContent = info.title;
+      synthesisDescription.textContent = info.description;
+      sigmaExpression.value = `${info.label} = Σm(${minterms.join(", ")})`;
+      sigmaExpression.textContent = sigmaExpression.value;
+      mintermCount.textContent = `${minterms.length} filas con 1`;
+
+      mintermList.innerHTML = activeRows.map((row) => `
+        <li>
+          <span>m${row.minterm}</span>
+          <code>${makeMinterm(row.inputBits, ["A1", "A0", "B1", "B0"])}</code>
+        </li>
+      `).join("");
+
+      announcement.textContent = `${info.title}. Filas activas: ${minterms.join(", ")}.`;
+    };
+
+    const renderSimulator = (shouldAnnounce = false) => {
+      const aBits = `${simulatorState.a1}${simulatorState.a0}`;
+      const bBits = `${simulatorState.b1}${simulatorState.b0}`;
+      const inputBits = `${aBits}${bBits}`;
+      const a = Number.parseInt(aBits, 2);
+      const b = Number.parseInt(bBits, 2);
+      const sum = a + b;
+      const resultBits = sum.toString(2).padStart(3, "0");
+
+      simulatedMinterm = Number.parseInt(inputBits, 2);
+
+      for (const button of simulatorButtons) {
+        const key = button.dataset.simBit;
+        const value = simulatorState[key];
+        button.setAttribute("aria-pressed", String(value === 1));
+        button.querySelector("[data-sim-value]").textContent = value;
+      }
+
+      simABinary.textContent = `${aBits}₂`;
+      simADecimal.textContent = `decimal ${a}`;
+      simBBinary.textContent = `${bBits}₂`;
+      simBDecimal.textContent = `decimal ${b}`;
+
+      for (const [index, key] of ["s2", "s1", "s0"].entries()) {
+        simResultBits.querySelector(`[data-result-bit="${key}"]`).textContent = resultBits[index];
+      }
+
+      simResultBits.setAttribute("aria-label", `Resultado binario: ${[...resultBits].join(", ")}`);
+      simEquation.value = `${a} + ${b} = ${sum} · ${resultBits}₂`;
+      simEquation.textContent = simEquation.value;
+      simRowStatus.innerHTML = `<span><strong>Fila m${simulatedMinterm}</strong> · entradas ${inputBits} · salida ${resultBits}</span>`;
+
+      for (const tableRow of adderBody.rows) {
+        tableRow.classList.toggle("is-simulated-row", Number(tableRow.dataset.minterm) === simulatedMinterm);
+      }
+
+      if (shouldAnnounce) {
+        announcement.textContent = `${aBits} binario más ${bBits} binario es ${resultBits} binario; en decimal, ${a} más ${b} es ${sum}. Fila m${simulatedMinterm} resaltada.`;
+      }
+    };
+
+    for (const button of outputButtons) {
+      button.addEventListener("click", () => selectOutput(button.dataset.output));
+    }
+
+    for (const button of simulatorButtons) {
+      button.addEventListener("click", () => {
+        const key = button.dataset.simBit;
+        simulatorState[key] = simulatorState[key] === 1 ? 0 : 1;
+        renderSimulator(true);
+        button.focus();
+      });
+    }
+
+    simTableLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      const activeRow = adderBody.querySelector(`[data-minterm="${simulatedMinterm}"]`);
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      activeRow?.scrollIntoView({ behavior, block: "center", inline: "nearest" });
+    });
+
+    renderGeneralFunction();
+    renderAdderTable();
+    selectOutput(selectedOutput);
+    renderSimulator();
+  </script>
+</body>
+</html>

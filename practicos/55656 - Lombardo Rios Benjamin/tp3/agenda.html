@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda</title>
+  <style>
+    /* ===== Base ===== */
+    :root {
+      --bg: #f7f7f7;
+      --card: #ffffff;
+      --ink: #1f1f1f;
+      --muted: #75746e;
+      --line: #e0e0e0;
+      --accent: #2d352d;
+      --accent-hover: #3a423a;
+      --accent-soft: #eceee9;
+      --star: #998d75;
+      --star-off: #c2c1b8;
+      --danger: #b04040;
+      --danger-soft: #faf1f1;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 40px 24px 64px;
+      font: 16px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    main {
+      width: 1060px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+
+    /* ===== Header ===== */
+    .app-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+
+      & h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      & .toolbar {
+        margin-left: auto;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex: 1 1 320px;
+        justify-content: flex-end;
+      }
+    }
+
+
+
+    /* ===== Search ===== */
+    .search {
+      position: relative;
+      flex: 1 1 320px;
+      max-width: 360px;
+
+      & input {
+        width: 100%;
+        padding: 10px 14px 10px 38px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--card);
+        font: inherit;
+        color: var(--ink);
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+
+        &::placeholder { color: var(--muted); }
+
+        &:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+      }
+
+      & svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        color: var(--muted);
+        pointer-events: none;
+      }
+    }
+
+
+
+    /* ===== Boton ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+
+      &.btn-primary {
+        background: var(--accent);
+        color: #fff;
+
+        &:hover { background: var(--accent-hover); }
+      }
+
+      &.btn-ghost {
+        background: var(--card);
+        border-color: var(--line);
+        color: var(--ink);
+
+        &:hover { background: #f1f1ef; }
+      }
+
+      &.btn-danger {
+        background: var(--card);
+        border-color: var(--danger);
+        color: var(--danger);
+
+        &:hover { background: var(--danger-soft); }
+      }
+    }
+
+
+
+    /* ===== Grid ===== */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    @media (max-width: 880px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px)  { .grid { grid-template-columns: 1fr; } }
+
+
+
+    /* ===== Card ===== */
+    .card {
+      position: relative;
+      padding: 18px 20px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 1px 2px rgba(31,31,26,.04);
+      cursor: pointer;
+      outline: none;
+      transition: box-shadow .15s, border-color .15s, transform .05s;
+
+      &:hover { box-shadow: 0 2px 4px rgba(31,31,26,.05), 0 10px 24px rgba(31,31,26,.07); }
+      &:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      &:active { transform: translateY(1px); }
+
+      & .name {
+        margin: 0 40px 10px 0;
+        font-size: 18px;
+        line-height: 1.3;
+        overflow-wrap: break-word;
+
+        & b { font-weight: 700; }
+      }
+
+      & .contact {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 14px;
+        color: var(--muted);
+
+        & a {
+          color: var(--muted);
+          text-decoration: none;
+          width: fit-content;
+
+          &:hover { color: var(--ink); text-decoration: underline; }
+        }
+      }
+
+      & .divider {
+        margin: 14px 0 10px;
+        border-top: 1px solid var(--line);
+      }
+
+      & .meta {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: .04em;
+      }
+    }
+
+
+
+
+    /* ===== Favorito ===== */
+    .fav {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+
+      & svg { width: 20px; height: 20px; color: var(--star-off); transition: color .15s, transform .15s; }
+      &[aria-pressed="true"] svg { color: var(--star); }
+      &:hover { background: #f1f1ef; }
+      &:hover svg { transform: scale(1.12); }
+      &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    }
+
+    /* ===== Empty ===== */
+    .empty {
+      grid-column: 1 / -1;
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+
+
+
+    /* ===== Footer ===== */
+    .app-footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+
+
+
+    /* ===== Dialog ===== */
+    dialog {
+      width: min(560px, calc(100% - 32px));
+      border: none;
+      border-radius: var(--radius);
+      padding: 0;
+      box-shadow: 0 12px 40px rgba(31,31,26,.18);
+      color: var(--ink);
+
+      &::backdrop { background: rgba(127,132,123,.55); }
+
+      & form {
+        padding: 26px 26px 22px;
+
+        & h2 {
+          margin: 0 0 4px;
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        & p.sub {
+          margin: 0 0 20px;
+          font-size: 13px;
+          color: #707070;
+        }
+
+        & .form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px 12px;
+        }
+
+        @media (max-width: 520px) {
+          & .form-grid { grid-template-columns: 1fr; }
+        }
+
+        & .field {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          & label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            color: var(--ink);
+          }
+
+          & input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f5f5f5;
+            font: inherit;
+            color: var(--ink);
+            outline: none;
+            transition: border-color .15s, background .15s;
+
+            &:focus { border-color: var(--ink); background: var(--card); }
+            &.invalid { border-color: var(--danger); }
+          }
+
+          & .err {
+            font-size: 12px;
+            color: var(--danger);
+            min-height: 14px;
+          }
+        }
+
+        & .actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          justify-content: flex-end;
+          margin-top: 20px;
+          padding-top: 16px;
+          border-top: 1px solid var(--line);
+
+          & .spacer { margin-right: auto; }
+        }
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <dialog id="dialogo"></dialog>
+
+  <script type="module">
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
+
+    /* ===== Estado ===== */
+    const STORAGE_KEY = 'agenda-alumnos'
+
+    const estado = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: '',
+      dialogAbierto: false,
+      modo: 'agregar',
+      form: formularioVacio(),
+      errores: {}
+    })
+
+
+
+    /* ===== Persistencia ===== */
+    function cargarAlumnos () {
+      const guardado = localStorage.getItem(STORAGE_KEY)
+      if (guardado) {
+        try {
+          return JSON.parse(guardado)
+        } catch (err) {
+          console.warn('Datos corruptos en localStorage, se recargan desde alumnos.json', err)
+        }
+      }
+      // No había nada guardado, o lo guardado era inválido: usamos los datos
+      // iniciales y creamos/reescribimos el localStorage ya mismo.
+      const iniciales = [...alumnosIniciales]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales))
+      return iniciales
+    }
+
+    function persistir () {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.alumnos))
+    }
+
+
+
+
+    /* ===== Utilidades ===== */
+    const normalizar = s => (s ?? '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+
+    function formularioVacio () {
+      return { id: null, apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
+    }
+
+    function siguienteId () {
+      return estado.alumnos.reduce((max, a) => Math.max(max, a.id), 0) + 1
+    }
+
+
+
+
+    /* ===== Selectores / derivados ===== */
+    function alumnosVisibles () {
+      const q = normalizar(estado.busqueda)
+      return estado.alumnos
+        .filter(a => {
+          if (!q) return true
+          const blob = normalizar(`${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`)
+          return blob.includes(q)
+        })
+        .slice()
+        .sort((a, b) =>
+          (b.favorito - a.favorito) ||
+          normalizar(a.apellido).localeCompare(normalizar(b.apellido)) ||
+          normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+        )
+    }
+
+
+
+
+    /* ===== Acciones ===== */
+    function toggleFavorito (alumno, ev) {
+      if (ev) ev.stopPropagation()
+      alumno.favorito = !alumno.favorito
+      persistir()
+    }
+
+    function abrirAgregar () {
+      estado.modo = 'agregar'
+      estado.form = formularioVacio()
+      estado.errores = {}
+      estado.dialogAbierto = true
+    }
+
+    function abrirEditar (alumno) {
+      estado.modo = 'editar'
+      estado.form = { ...alumno }
+      estado.errores = {}
+      estado.dialogAbierto = true
+    }
+
+    function cerrarDialog () {
+      estado.dialogAbierto = false
+    }
+
+    function validar (f) {
+      const e = {}
+      if (!f.apellido.trim()) e.apellido = 'El apellido es obligatorio.'
+      if (!f.nombre.trim()) e.nombre = 'El nombre es obligatorio.'
+      if (!f.legajo.trim()) e.legajo = 'El legajo es obligatorio.'
+      if (!f.comision.trim()) e.comision = 'La comisión es obligatoria.'
+      if (!f.telefono.trim()) e.telefono = 'El teléfono es obligatorio.'
+      if (!f.github.trim()) e.github = 'El usuario de GitHub es obligatorio.'
+      return e
+    }
+
+    function guardar (ev) {
+      ev.preventDefault()
+      const f = estado.form
+      const errores = validar(f)
+      estado.errores = errores
+      if (Object.keys(errores).length) return
+
+      if (estado.modo === 'agregar') {
+        estado.alumnos.push({
+          id: siguienteId(),
+          apellido: f.apellido.trim(),
+          nombre: f.nombre.trim(),
+          legajo: f.legajo.trim(),
+          comision: f.comision.trim(),
+          telefono: f.telefono.trim(),
+          github: f.github.trim(),
+          favorito: false
+        })
+      } else {
+        const idx = estado.alumnos.findIndex(a => a.id === f.id)
+        if (idx !== -1) {
+          const actual = estado.alumnos[idx]
+          actual.apellido = f.apellido.trim()
+          actual.nombre = f.nombre.trim()
+          actual.legajo = f.legajo.trim()
+          actual.comision = f.comision.trim()
+          actual.telefono = f.telefono.trim()
+          actual.github = f.github.trim()
+        }
+      }
+      persistir()
+      cerrarDialog()
+    }
+
+    function eliminar () {
+      const id = estado.form.id
+      estado.alumnos = estado.alumnos.filter(a => a.id !== id)
+      persistir()
+      cerrarDialog()
+    }
+
+
+
+
+    /* ===== Plantillas ===== */
+    const estrella = on => on
+      ? html`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.8 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg>`
+      : html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.6-4.6 4 1.4 6L12 16.9 6.5 19.2l1.4-6-4.6-4 6.1-.6z"/></svg>`
+
+    function manejarTeclaTarjeta (e, a) {
+      if (e.target.closest('.fav')) return
+      if (e.key === 'Enter') { e.preventDefault(); abrirEditar(a) }
+      else if (e.key === ' ') { e.preventDefault(); toggleFavorito(a) }
+    }
+
+    function tarjeta (a) {
+      return html`
+        <li>
+          <article class="card" tabindex="0"
+            @click="${() => abrirEditar(a)}"
+            @keydown="${(e) => manejarTeclaTarjeta(e, a)}">
+            <button class="fav" type="button"
+              aria-pressed="${() => (a.favorito ? 'true' : 'false')}"
+              aria-label="${() => (a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito')}"
+              @click="${(e) => toggleFavorito(a, e)}">
+              ${() => estrella(a.favorito)}
+            </button>
+            <div class="name"><b>${() => a.apellido}</b> ${() => a.nombre}</div>
+            <div class="contact">
+              <span>${() => a.telefono}</span>
+              <a href="${() => 'https://github.com/' + a.github}" target="_blank" rel="noopener" @click="${e => e.stopPropagation()}">@${() => a.github}</a>
+            </div>
+            <div class="divider"></div>
+            <div class="meta">${() => a.comision} · ${() => a.legajo}</div>
+          </article>
+        </li>
+      `.key(a.id)
+    }
+
+
+
+    function campo (label, prop) {
+      // El id/for tiene que ser UNA sola expresión (arrow-js no soporta
+      // texto literal + ${expresión} mezclados dentro del mismo atributo).
+      const inputId = `f-${prop}`
+      return html`
+        <div class="field">
+          <label for="${inputId}">${label}</label>
+          <input id="${inputId}" type="text"
+            .value="${() => estado.form[prop] ?? ''}"
+            class="${() => (estado.errores[prop] ? 'invalid' : '')}"
+            @input="${e => { estado.form[prop] = e.target.value }}" />
+          <span class="err">${() => (estado.errores[prop] || '')}</span>
+        </div>
+      `
+    }
+
+
+
+
+    /* ===== Render principal ===== */
+    const app = document.getElementById('app')
+
+    html`
+      <header class="app-header">
+        <h1>Agenda</h1>
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            <input type="search" placeholder="Buscar alumno..."
+              .value="${() => estado.busqueda}"
+              @input="${e => { estado.busqueda = e.target.value }}"
+              aria-label="Buscar alumnos" />
+          </div>
+          <button class="btn btn-primary" type="button" @click="${abrirAgregar}">
+            + Agregar
+          </button>
+        </div>
+      </header>
+
+      <section aria-label="Listado de alumnos">
+        <ul class="grid">
+          ${() => {
+            const lista = alumnosVisibles()
+            if (!lista.length) return html`<li class="empty">No hay alumnos para mostrar.</li>`
+            return lista.map(tarjeta)
+          }}
+        </ul>
+      </section>
+
+      <footer class="app-footer">
+        <p>${() => estado.alumnos.length} alumnos cargados · almacenados localmente en el navegador</p>
+      </footer>
+    `(app)
+
+    
+
+    /* ===== Dialogo ===== */
+    const dialogo = document.getElementById('dialogo')
+
+    html`
+      <form @submit="${guardar}">
+        <h2>${() => (estado.modo === 'agregar' ? 'Agregar alumno' : 'Editar alumno')}</h2>
+        <p class="sub">${() => (estado.modo === 'agregar' ? 'Cargá los datos del nuevo alumno.' : 'Actualizá los datos del alumno.')}</p>
+
+        <div class="form-grid">
+          ${campo('Apellido', 'apellido')}
+          ${campo('Nombre', 'nombre')}
+          ${campo('Legajo', 'legajo')}
+          ${campo('Comisión', 'comision')}
+          ${campo('Teléfono', 'telefono')}
+          ${campo('GitHub', 'github')}
+        </div>
+
+        <div class="actions">
+          ${() => (estado.modo === 'editar'
+            ? html`<button class="btn btn-danger" type="button" @click="${eliminar}">Eliminar</button><span class="spacer"></span>`
+            : html`<span class="spacer"></span>`)}
+          <button class="btn btn-ghost" type="button" @click="${cerrarDialog}">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    `(dialogo)
+
+    watch(() => {
+      if (estado.dialogAbierto && !dialogo.open) dialogo.showModal()
+      else if (!estado.dialogAbierto && dialogo.open) dialogo.close()
+    })
+
+    dialogo.addEventListener('close', () => { estado.dialogAbierto = false })
+  </script>
+</body>
+</html>

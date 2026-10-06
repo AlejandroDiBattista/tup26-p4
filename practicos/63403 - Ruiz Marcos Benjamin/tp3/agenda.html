@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda</title>
+  <style>
+  /* ===== Base ===== */
+  :root {
+    --fondo: #f4f4f2;
+    --tarjeta: #fdfdf9;
+    --borde: #deded8;
+    --texto: #1f2421;
+    --suave: #5f6660;
+    --verde: #2e3b31;
+    --oliva: #857a4f;
+    --rojo: #c0413b;
+    --campo: #f1f1ef;
+    --sombra: 0 2px 8px rgb(0 0 0 / .08);
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 32px 20px;
+    font: 15px/1.4 var(--sans);
+    color: var(--texto);
+    background: var(--fondo);
+  }
+
+  button, input { font: inherit; color: inherit; }
+
+  /* ===== Contenedor principal ===== */
+  main {
+    width: 1104px;
+    max-width: 100%;
+    margin: auto;
+
+    /* ===== Encabezado: título + buscador + agregar ===== */
+    > header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+
+      h1 {
+        margin: 0 auto 0 0;
+        font-size: 1.75rem;
+        font-weight: 600;
+      }
+
+      input[type="search"] {
+        width: 300px;
+        max-width: 100%;
+        padding: 13px 20px;
+        border: 1px solid var(--borde);
+        border-radius: 999px;
+        background: var(--tarjeta);
+        font-size: .875rem;
+        outline: none;
+
+        &:focus { border-color: var(--verde); }
+      }
+
+      button {
+        padding: 13px 18px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--verde);
+        color: white;
+        font-weight: 600;
+        font-size: .875rem;
+        cursor: pointer;
+        box-shadow: var(--sombra);
+
+        &:hover { filter: brightness(1.15); }
+      }
+
+      @media (max-width: 700px) {
+        h1 { flex-basis: 100%; }
+        input[type="search"] { flex: 1; width: auto; }
+      }
+    }
+
+    /* ===== Grilla de tarjetas ===== */
+    > section {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-auto-rows: 1fr;
+      gap: 12px;
+
+      @media (max-width: 960px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      @media (max-width: 640px) { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Mensaje sin resultados ===== */
+    > p {
+      margin: 40px 0;
+      text-align: center;
+      color: var(--suave);
+
+      &:empty { display: none; }
+    }
+  }
+
+  /* ===== Tarjeta de alumno ===== */
+  article {
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    padding: 20px 20px 16px;
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    background: var(--tarjeta);
+    box-shadow: var(--sombra);
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+
+    &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgb(0 0 0 / .1); }
+    &:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+
+    > header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+
+      h2 {
+        margin: 0;
+        font: 700 1.5rem/1.2 var(--serif);
+        color: var(--verde);
+        overflow-wrap: anywhere;
+
+        span {
+          font: 400 1rem var(--sans);
+          color: var(--suave);
+        }
+      }
+
+      button {
+        flex: none;
+        padding: 0;
+        border: 0;
+        background: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: var(--oliva);
+        cursor: pointer;
+
+        &:hover { transform: scale(1.15); }
+      }
+    }
+
+    > address {
+      /* pre-line: teléfono y GitHub quedan en renglones separados */
+      margin-top: auto;
+      font-style: normal;
+      font-size: .85rem;
+      line-height: 1.9;
+      color: var(--texto);
+      white-space: pre-line;
+    }
+
+    > footer {
+      margin-top: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--borde);
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      color: var(--suave);
+    }
+  }
+
+  /* ===== Diálogo agregar / editar ===== */
+  dialog {
+    width: 620px;
+    max-width: calc(100% - 32px);
+    padding: 0;
+    border: 8px solid #dfe6df;
+    border-radius: 24px;
+    background: var(--tarjeta);
+    box-shadow: 0 20px 50px rgb(0 0 0 / .25);
+
+    &::backdrop {
+      background: rgb(60 75 62 / .35);
+      backdrop-filter: blur(4px);
+    }
+
+    > form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+
+      @media (max-width: 560px) { grid-template-columns: 1fr; }
+
+      > header {
+        grid-column: 1 / -1;
+        padding: 18px 18px 16px;
+        border-bottom: 1px solid var(--borde);
+        background: var(--fondo);
+
+        h2 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 600;
+        }
+
+        &::after {
+          content: "Ingresá los datos del nuevo alumno.";
+          display: block;
+          margin-top: 4px;
+          font-size: .8rem;
+          color: var(--suave);
+        }
+      }
+
+      /* Si existe el botón Eliminar, se está editando */
+      &:has(> footer > button:nth-last-child(3)) > header::after {
+        content: "Actualizá los datos del alumno.";
+      }
+
+      > label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: .75rem;
+        font-weight: 600;
+        color: var(--suave);
+
+        &:nth-of-type(odd) { padding-left: 18px; }
+        &:nth-of-type(even) { padding-right: 18px; }
+
+        @media (max-width: 560px) { padding-inline: 18px !important; }
+
+        input {
+          padding: 10px 12px;
+          border: 1px solid var(--borde);
+          border-radius: 8px;
+          background: var(--campo);
+          font-size: .9rem;
+          font-weight: 400;
+          color: var(--texto);
+          outline: none;
+
+          &:focus {
+            border: 2px solid var(--verde);
+            padding: 9px 11px;
+            background: var(--tarjeta);
+          }
+        }
+      }
+
+      > footer {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--borde);
+
+        button {
+          padding: 9px 16px;
+          border: 1px solid var(--borde);
+          border-radius: 8px;
+          background: white;
+          font-size: .875rem;
+          font-weight: 600;
+          cursor: pointer;
+
+          &:hover { filter: brightness(.96); }
+
+          /* Eliminar: sólo existe al editar (3 botones) */
+          &:nth-last-child(3) {
+            margin-right: auto;
+            color: var(--rojo);
+          }
+
+          &[type="submit"] {
+            border-color: var(--verde);
+            background: var(--verde);
+            color: white;
+
+            &:hover { filter: brightness(1.15); }
+          }
+        }
+      }
+    }
+  }
+</style>
+</head>
+<body>
+  <main id="app"></main>
+
+  <script type="module">
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnos from './alumnos.json' with { type: 'json' }
+    
+    const guardado = localStorage.getItem("listado")
+    
+    let listado 
+    if (guardado) {
+    listado = JSON.parse(guardado) 
+    } else {
+    listado = alumnos
+    localStorage.setItem("listado", JSON.stringify(listado))
+    }
+  
+    const personas = reactive ({ 
+    contenido : listado, busqueda: "", editandoId:null, borrador:{apellido:"", nombre:"", legajo:"", comision:"", telefono:"", github:""}
+    });
+
+  function guardarAlumnos (){
+  localStorage.setItem("listado", JSON.stringify(personas.contenido))
+  }
+
+  function alternarFavorito (alumno) {
+  alumno.favorito = !alumno.favorito
+  guardarAlumnos()
+  }
+
+  function ordenamiento (){
+  return [...personas.contenido]
+  .filter(a =>
+  convertir(`${a.apellido} ${a.nombre}`).includes(convertir(personas.busqueda)))
+  .sort((a,b) =>
+  b.favorito - a.favorito ||
+  a.apellido.localeCompare(b.apellido, "es", {sensitivity: "base"}) ||
+  a.nombre.localeCompare(b.nombre, "es", {sensitivity: "base"})
+  )}
+  
+ function convertir(texto) {
+  return texto.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, '')
+}
+
+function abrirDialogo(){
+  personas.editandoId = null
+  personas.borrador = {apellido: "", nombre:"", legajo:"", comision:"", telefono:"", github:"" }
+  document.querySelector("dialog").showModal()
+}
+
+function agregarAlumno(e){
+e.preventDefault()
+if (personas.editandoId === null){
+const nuevoId = Math.max(... personas.contenido.map(a => a.id)) +1
+personas.contenido.push({ id: nuevoId, ...personas.borrador, favorito: false })
+} else {
+const alumno = personas.contenido.find(a => a.id === personas.editandoId)
+Object.assign(alumno, personas.borrador)
+}
+guardarAlumnos()
+document.querySelector("dialog").close()
+personas.borrador = {apellido: "", nombre:"", legajo:"", comision:"", telefono:"", github:"" }
+personas.editandoId = null
+
+}
+
+function cerrarDialogo(){
+  document.querySelector("dialog").close()
+}
+
+function abrirEdicion(alumno){
+  personas.editandoId = alumno.id
+   personas.borrador= {... alumno}
+   document.querySelector("dialog").showModal()
+}
+
+function eliminarAlumno(){
+personas.contenido = personas.contenido.filter(a => a.id !== personas.editandoId)
+localStorage.setItem("listado", JSON.stringify(personas.contenido))
+document.querySelector("dialog").close()
+personas.editandoId = null
+}
+
+
+    const app = document.getElementById('app')
+    html`
+      <header>
+      <h1>Agenda</h1>
+      <input type="search"
+      
+      placeholder="Buscar alumno.."
+      .value="${() => personas.busqueda}"
+      @input="${e => personas.busqueda = e.target.value}">
+      
+       <button @click="${abrirDialogo}">+ Agregar</button>
+       </header>
+  
+
+      <section>
+       ${() => ordenamiento().map(a => html`<article tabindex="0"
+  @click="${() => abrirEdicion(a)}"
+  @keydown="${e => {
+    if (e.target !== e.currentTarget) return
+    if (e.key === 'Enter') {e.preventDefault() ; abrirEdicion(a)}
+    if (e.key === ' ') { e.preventDefault(); alternarFavorito(a)}
+  }}">
+        <header>
+        <h2>
+        ${a.apellido}
+        <span>
+        ${a.nombre}
+        </span>
+        
+        </h2>
+      
+       <button @click="${e => { e.stopPropagation(); alternarFavorito(a) }}">
+        ${() => a.favorito ? '★' : '☆'}
+        </button>
+          
+          </header>
+          <address>
+            ${a.telefono} 
+            @${a.github}
+            </address>
+             <footer>
+              ${a.comision} · ${a.legajo}
+              </footer>
+          </article>`.key(a.id))}
+      </section>
+      <p>${() =>ordenamiento().length === 0  ? "No hay alumnos para mostrar" : ""}</p>
+        <dialog>
+    <form @submit="${agregarAlumno}">
+    <header>
+      <h2>${() => personas.editandoId !== null ? "Editar alumno" : "Agregar alumno"}</h2>
+    </header>
+
+    <label>Apellido
+      <input name="apellido" required
+  .value="${() => personas.borrador.apellido}"
+  @input="${e => personas.borrador.apellido = e.target.value}">
+    </label>
+
+    <label>Nombre
+      <input name="nombre" required
+      .value="${()=> personas.borrador.nombre}"
+      @input="${e => personas.borrador.nombre = e.target.value}">
+    </label>
+
+    <label>Legajo
+      <input name="legajo" required
+      .value="${()=> personas.borrador.legajo}"
+      @input="${e => personas.borrador.legajo = e.target.value}">
+    </label>
+
+    <label>Comisión
+      <input name="comision" required
+      .value="${()=> personas.borrador.comision}"
+      @input="${e => personas.borrador.comision = e.target.value}">
+    </label>
+
+    <label>Teléfono
+      <input name="telefono" required
+      .value="${()=> personas.borrador.telefono}"
+      @input="${e => personas.borrador.telefono = e.target.value}">
+    </label>
+
+    <label>GitHub
+      <input name="github" required
+      .value="${()=> personas.borrador.github}"
+      @input="${e => personas.borrador.github = e.target.value}">
+    </label>
+    
+
+   <footer>
+  ${() => personas.editandoId !== null
+    ? html`<button type="button" @click="${eliminarAlumno}">Eliminar</button>`
+    : ""}
+  <button type="submit">Guardar</button>
+  <button type="button" @click="${cerrarDialogo}">Cancelar</button>
+</footer>
+  </form>
+</dialog>
+      `(app)
+  </script>
+</body>
+</html>

@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#17233d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317233d'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%23f2c94c'/%3E%3Cpath d='M27 20h-5v9l-5 3 5 3v9h5v-4h-2v-7l-2-1 2-1v-7h2v-4Zm10 0v4h2v7l2 1-2 1v7h-2v4h5v-9l5-3-5-3v-9h-5Z' fill='%2317233d'/%3E%3C/svg%3E">
+  <title>AulaJS — Laboratorio JavaScript para clase</title>
+  <style>
+    :root {
+      --ink: #17233d;
+      --ink-soft: #263653;
+      --paper: #f3efe4;
+      --paper-deep: #e7e0cf;
+      --chalk: #fbf8ef;
+      --accent: #e84a33;
+      --accent-dark: #b62f20;
+      --signal: #f2c94c;
+      --success: #19714f;
+      --warning: #9b5b00;
+      --danger: #b3261e;
+      --line: #a9a18f;
+      --user-editor-size: 17px;
+      --editor-size: var(--user-editor-size);
+      --console-size: calc(var(--user-editor-size) - 2px);
+      --header-height: 66px;
+      --status-height: 34px;
+      --split: 58%;
+      --radius: 5px;
+      font-family: Avenir, "Avenir Next", Futura, "Trebuchet MS", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+
+    body {
+      background:
+        linear-gradient(90deg, rgb(23 35 61 / 0.035) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(rgb(23 35 61 / 0.035) 1px, transparent 1px) 0 0 / 28px 28px,
+        var(--paper);
+    }
+
+    button, select, textarea { font: inherit; }
+
+    button, select {
+      min-height: 42px;
+      border: 2px solid var(--ink);
+      border-radius: var(--radius);
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 13px;
+      color: var(--ink);
+      background: transparent;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 140ms cubic-bezier(.22, 1, .36, 1), background-color 140ms, color 140ms;
+    }
+
+    button:hover { background: var(--paper-deep); }
+    button:active { transform: translateY(2px); }
+    button[disabled] { opacity: .45; cursor: not-allowed; }
+
+    :where(button, select, textarea, input):focus-visible {
+      outline: 4px solid var(--signal);
+      outline-offset: 2px;
+    }
+
+    .icon { width: 18px; height: 18px; flex: 0 0 auto; fill: currentColor; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 8px;
+      left: 8px;
+      padding: 10px 14px;
+      color: var(--chalk);
+      background: var(--ink);
+      transform: translateY(-150%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .app-shell { display: grid; grid-template-rows: var(--header-height) 1fr var(--status-height); height: 100dvh; }
+
+    .topbar {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 9px clamp(12px, 2vw, 24px);
+      color: var(--chalk);
+      background: var(--ink);
+      border-bottom: 4px solid var(--signal);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: max-content;
+      margin-right: auto;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      color: var(--ink);
+      background: var(--signal);
+      border: 2px solid var(--chalk);
+      border-radius: 50% 50% 46% 54% / 53% 44% 56% 47%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 19px;
+      font-weight: 900;
+      transform: rotate(-4deg);
+    }
+
+    .brand-name { font-size: 1.18rem; font-weight: 900; letter-spacing: .04em; line-height: 1; }
+    .brand-subtitle { margin-top: 4px; color: #d9d5c9; font-size: .74rem; letter-spacing: .03em; }
+
+    .topbar button, .topbar select {
+      color: var(--chalk);
+      border-color: #8f99aa;
+      background: #22314f;
+    }
+    .topbar button:hover, .topbar select:hover { background: #314262; }
+
+    .run-button {
+      min-width: 116px;
+      color: var(--ink) !important;
+      background: var(--signal) !important;
+      border-color: var(--signal) !important;
+      box-shadow: 4px 4px 0 var(--accent);
+    }
+    .run-button:hover { background: #ffda63 !important; }
+
+    .toolbar { display: flex; align-items: center; gap: 8px; }
+    .toolbar-secondary { display: flex; align-items: center; gap: 8px; }
+    .icon-button { width: 42px; padding: 0; }
+
+    .auto-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 10px;
+      border: 2px solid #8f99aa;
+      border-radius: var(--radius);
+      font-size: .83rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .auto-control input { width: 18px; height: 18px; accent-color: var(--signal); }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, var(--split)) 8px minmax(0, 1fr);
+      padding: 12px clamp(12px, 2vw, 24px);
+      gap: 0;
+    }
+
+    .workspace.rows { grid-template-columns: 1fr; grid-template-rows: minmax(0, var(--split)) 8px minmax(0, 1fr); }
+
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 44px minmax(0, 1fr);
+      overflow: hidden;
+      border: 2px solid var(--ink);
+      background: var(--chalk);
+    }
+
+    .editor-panel { border-radius: 8px 0 0 8px; }
+    .output-panel { border-radius: 0 8px 8px 0; }
+    .rows .editor-panel { border-radius: 8px 8px 0 0; }
+    .rows .output-panel { border-radius: 0 0 8px 8px; }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 11px 0 15px;
+      color: var(--ink);
+      background: var(--paper-deep);
+      border-bottom: 2px solid var(--ink);
+    }
+    .panel-heading h2 { margin: 0; font-size: .82rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .panel-heading .meta { margin-left: auto; color: #526079; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; }
+
+    .file-chip {
+      display: inline-flex;
+      align-items: center;
+      align-self: stretch;
+      padding: 0 13px;
+      margin-left: 2px;
+      background: var(--chalk);
+      border-inline: 1px solid var(--line);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+    .file-dot { width: 9px; height: 9px; margin-right: 8px; background: var(--signal); border: 1px solid var(--ink); border-radius: 50%; }
+
+    .heading-actions { display: flex; gap: 5px; margin-left: auto; }
+    .heading-actions button { min-height: 32px; height: 32px; padding: 0 9px; border-width: 1px; font-size: .75rem; }
+    .heading-actions .export-markdown {
+      color: var(--chalk);
+      background: var(--ink-soft);
+      border-color: var(--ink-soft);
+    }
+    .heading-actions .export-markdown:hover { background: #344564; }
+
+    .editor-wrap {
+      position: relative;
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      min-height: 0;
+      overflow: hidden;
+      color: #e7ebf2;
+      background: #17233d;
+    }
+
+    .line-numbers {
+      z-index: 2;
+      min-width: 3.3em;
+      height: 100%;
+      margin: 0;
+      padding: 17px 10px 40vh 8px;
+      overflow: hidden;
+      color: #77859e;
+      background: #111b31;
+      border-right: 1px solid #35435e;
+      font: 500 var(--editor-size)/1.62 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      text-align: right;
+      user-select: none;
+    }
+
+    .code-layer { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+
+    .highlight, .code-input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 17px 20px 40vh;
+      overflow: auto;
+      border: 0;
+      border-radius: 0;
+      tab-size: 2;
+      white-space: pre;
+      overflow-wrap: normal;
+      font: 500 var(--editor-size)/1.62 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      letter-spacing: .005em;
+    }
+
+    .highlight { z-index: 1; color: #e7ebf2; pointer-events: none; }
+    .code-input {
+      z-index: 2;
+      resize: none;
+      color: transparent;
+      background: transparent;
+      caret-color: var(--signal);
+      -webkit-text-fill-color: transparent;
+      outline: none;
+    }
+    .code-input::selection { background: rgb(242 201 76 / .30); }
+    .code-input:focus-visible { outline: 3px solid var(--signal); outline-offset: -3px; }
+
+    .tok-comment { color: #8ea18e; font-style: italic; }
+    .tok-string { color: #f2c94c; }
+    .tok-template { color: #eeb7df; }
+    .tok-keyword { color: #ff7a66; font-weight: 700; }
+    .tok-constant { color: #a5c7ff; }
+    .tok-number { color: #b9d982; }
+    .tok-global { color: #8fd9d2; }
+
+    .resize-handle {
+      position: relative;
+      display: grid;
+      place-items: center;
+      cursor: col-resize;
+      touch-action: none;
+    }
+    .rows .resize-handle { cursor: row-resize; }
+    .resize-handle::before { content: ""; width: 3px; height: 44px; background: var(--ink); border-radius: 4px; }
+    .rows .resize-handle::before { width: 44px; height: 3px; }
+    .resize-handle:focus-visible { outline: 4px solid var(--signal); outline-offset: -2px; }
+
+    .output {
+      min-height: 0;
+      overflow: auto;
+      background: var(--chalk);
+      font: 500 var(--console-size)/1.48 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .empty-state {
+      min-height: 100%;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      padding: 30px;
+      color: #536077;
+      text-align: center;
+    }
+    .empty-glyph { color: var(--accent); font-size: clamp(2.6rem, 6vw, 5rem); font-weight: 300; line-height: 1; transform: rotate(-5deg); }
+    .empty-state strong { margin-top: 18px; color: var(--ink); font-family: Avenir, "Avenir Next", sans-serif; font-size: 1.05rem; }
+    .empty-state p { max-width: 36ch; margin: 7px 0 0; font-family: Avenir, "Avenir Next", sans-serif; font-size: .88rem; line-height: 1.5; }
+
+    .console-row {
+      display: grid;
+      grid-template-columns: 66px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #d5cebe;
+    }
+    .console-row:hover { background: #eee8da; }
+    .console-row.warn { background: #fff2cb; border-color: #ddc478; }
+    .console-row.error { background: #fde1d9; border-color: #d99483; }
+    .console-row.result { background: #e5f1e8; border-color: #a9c8b3; }
+    .console-row.system { color: #5c667a; background: #ebe7dc; font-size: .85em; }
+
+    .console-kind {
+      padding-top: 2px;
+      color: #687287;
+      font-family: Avenir, "Avenir Next", sans-serif;
+      font-size: .69rem;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .warn .console-kind { color: var(--warning); }
+    .error .console-kind { color: var(--danger); }
+    .result .console-kind { color: var(--success); }
+    .console-values { min-width: 0; word-break: break-word; }
+    .console-value + .console-value { margin-left: .7em; }
+
+    .v-string { color: #9b4200; }
+    .v-number, .v-bigint { color: #285ca5; }
+    .v-boolean { color: #7c3ba8; }
+    .v-nullish { color: #6a7282; font-style: italic; }
+    .v-function { color: #775a00; }
+    .v-error { color: var(--danger); white-space: pre-wrap; }
+
+    .object-view { margin: 3px 0; }
+    .object-view summary { cursor: pointer; color: #324968; font-weight: 800; }
+    .object-body { margin: 6px 0 3px 12px; padding-left: 12px; border-left: 2px solid #b8b09e; }
+    .object-entry { display: grid; grid-template-columns: minmax(52px, max-content) minmax(0, 1fr); gap: 8px; padding: 2px 0; }
+    .object-key { color: #6f3a17; }
+
+    .statusbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 clamp(12px, 2vw, 24px);
+      color: #e4e7ed;
+      background: var(--ink-soft);
+      font-size: .72rem;
+      letter-spacing: .025em;
+    }
+    .run-status { display: inline-flex; align-items: center; gap: 7px; margin-right: auto; font-weight: 800; }
+    .status-dot { width: 9px; height: 9px; background: #7f8ba0; border: 1px solid var(--chalk); border-radius: 50%; }
+    .run-status.running .status-dot { background: var(--signal); animation: pulse 900ms ease-in-out infinite alternate; }
+    .run-status.success .status-dot { background: #5bd09b; }
+    .run-status.failure .status-dot { background: #ff7161; }
+    .shortcut { color: #b9c0cd; }
+    kbd { padding: 2px 5px; color: var(--chalk); background: #111b31; border: 1px solid #788398; border-radius: 3px; font: inherit; }
+
+    .toast {
+      position: fixed;
+      z-index: 30;
+      right: 20px;
+      bottom: calc(var(--status-height) + 18px);
+      max-width: min(390px, calc(100vw - 40px));
+      padding: 12px 16px;
+      color: var(--chalk);
+      background: var(--ink);
+      border: 2px solid var(--signal);
+      box-shadow: 5px 5px 0 rgb(23 35 61 / .18);
+      font-size: .9rem;
+      font-weight: 700;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 180ms, transform 180ms cubic-bezier(.22, 1, .36, 1);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip-path: inset(50%) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    @keyframes pulse { to { transform: scale(1.45); } }
+
+    html.presentation {
+      --editor-size: calc(var(--user-editor-size) + 4px);
+      --console-size: calc(var(--user-editor-size) + 1px);
+      --header-height: 76px;
+      --status-height: 38px;
+    }
+    .presentation .brand-subtitle, .presentation .secondary-label { display: none; }
+    .presentation .panel { grid-template-rows: 50px minmax(0, 1fr); }
+    .presentation .panel-heading h2 { font-size: .92rem; }
+    .presentation button, .presentation select, .presentation .auto-control { min-height: 48px; }
+
+    @media (max-width: 1120px) {
+      .brand-subtitle, .button-label.optional { display: none; }
+      .toolbar { gap: 6px; }
+      .topbar { gap: 8px; }
+      .run-button { min-width: 104px; }
+    }
+
+    @media (max-width: 840px) {
+      :root { --split: 57%; }
+      .workspace { grid-template-columns: 1fr; grid-template-rows: minmax(0, var(--split)) 8px minmax(0, 1fr); padding: 8px 10px; }
+      .resize-handle { cursor: row-resize; }
+      .resize-handle::before { width: 44px; height: 3px; }
+      .editor-panel { border-radius: 8px 8px 0 0; }
+      .output-panel { border-radius: 0 0 8px 8px; }
+      .brand { display: none; }
+      .toolbar-secondary { display: flex; margin-left: auto; }
+      #layoutButton { display: none; }
+      .auto-control span { display: none; }
+      .console-row { grid-template-columns: 56px minmax(0, 1fr); padding: 8px 10px; }
+    }
+
+    @media (max-height: 720px) {
+      :root { --header-height: 58px; --status-height: 30px; }
+      .topbar { padding-block: 6px; }
+      .brand-mark { width: 36px; height: 36px; font-size: 16px; }
+      button, select, .auto-control { min-height: 38px; }
+      .workspace { padding-block: 7px; }
+      .panel { grid-template-rows: 38px minmax(0, 1fr); }
+      .panel-heading { padding-left: 11px; }
+      .highlight, .code-input { padding-top: 12px; }
+      .line-numbers { padding-top: 12px; }
+    }
+
+    @media (max-width: 560px) {
+      .brand-name { font-size: 1rem; }
+      .brand-mark { display: none; }
+      .topbar { padding-inline: 10px; }
+      .run-button { min-width: 92px; padding-inline: 10px; }
+      .toolbar-secondary, .auto-control, #stopButton, .shortcut { display: none; }
+      .file-chip { padding-inline: 8px; }
+      .panel-heading .meta { display: none; }
+      .statusbar { gap: 8px; padding-inline: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    }
+
+    @media print {
+      .topbar, .statusbar, .resize-handle, .output-panel, .panel-heading { display: none !important; }
+      html, body, .app-shell, .workspace, .editor-panel, .editor-wrap, .code-layer { height: auto; overflow: visible; }
+      .app-shell, .workspace { display: block; }
+      .editor-panel { border: 0; }
+      .code-input { display: none; }
+      .highlight { position: static; color: #17233d; background: white; white-space: pre-wrap; }
+      .line-numbers { color: #667; background: white; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#codeInput">Ir al editor</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="AulaJS">
+        <div class="brand-mark" aria-hidden="true">{;}</div>
+        <div>
+          <div class="brand-name">AULA / JS</div>
+          <div class="brand-subtitle">laboratorio JavaScript para clase</div>
+        </div>
+      </div>
+
+      <div class="toolbar" aria-label="Ejecución">
+        <button class="run-button" id="runButton" type="button" title="Ejecutar (Ctrl o Cmd + Enter)">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l10.5-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z"/></svg>
+          Ejecutar
+        </button>
+        <button class="icon-button" id="stopButton" type="button" title="Detener ejecución" disabled>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg>
+          <span class="visually-hidden">Detener</span>
+        </button>
+        <label class="auto-control" title="Ejecutar automáticamente después de escribir">
+          <input id="autoRun" type="checkbox" checked>
+          <span>Auto</span>
+        </label>
+      </div>
+
+      <div class="toolbar-secondary" aria-label="Archivo y vista">
+        <select id="exampleSelect" aria-label="Cargar ejemplo" title="Ejemplos para clase">
+          <option value="">Ejemplos…</option>
+          <option value="fundamentos">Fundamentos</option>
+          <option value="arrays">Arrays y objetos</option>
+          <option value="clases">Clases</option>
+          <option value="asincronia">Promesas</option>
+          <option value="errores">Errores</option>
+        </select>
+        <button class="icon-button" id="newButton" type="button" title="Nuevo ejercicio">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3h-2v8H3v2h8v8h2v-8h8v-2h-8z"/></svg>
+          <span class="visually-hidden">Nuevo ejercicio</span>
+        </button>
+        <button class="icon-button" id="openButton" type="button" title="Abrir archivo JavaScript">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20H5a2 2 0 0 1-2-2V6h6l2 2h10v10a2 2 0 0 1-2 2ZM5 10v8h14v-8H5Z"/></svg>
+          <span class="visually-hidden">Abrir archivo</span>
+        </button>
+        <button class="icon-button" id="saveButton" type="button" title="Descargar archivo JavaScript">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2Zm7-17v10.17l3.59-3.58L17 11l-5 5-5-5 1.41-1.41L11 12.17V3h1Z"/></svg>
+          <span class="visually-hidden">Descargar archivo</span>
+        </button>
+        <button class="icon-button" id="layoutButton" type="button" title="Cambiar orientación de paneles" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7v14H4V5Zm9 0h7v14h-7V5Z"/></svg>
+          <span class="visually-hidden">Cambiar orientación</span>
+        </button>
+        <button id="projectorButton" type="button" title="Agrandar la interfaz y usar pantalla completa" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4V5Zm2 2v7h12V7H6Zm4 11h4v2h-4v-2Z"/></svg>
+          <span class="button-label optional">Proyector</span>
+        </button>
+      </div>
+      <input id="fileInput" class="visually-hidden" type="file" accept=".js,.mjs,.txt,text/javascript">
+    </header>
+
+    <main class="workspace" id="workspace">
+      <section class="panel editor-panel" aria-labelledby="editorTitle">
+        <div class="panel-heading">
+          <h2 id="editorTitle">Código</h2>
+          <div class="file-chip"><span class="file-dot" aria-hidden="true"></span><span id="fileName">clase.js</span></div>
+          <span class="meta" id="cursorPosition">Línea 1 · Col 1</span>
+          <div class="heading-actions">
+            <button class="export-markdown" id="markdownButton" type="button" title="Convertir comentarios y código en un archivo Markdown">Exportar .md</button>
+            <button id="fontDown" type="button" title="Reducir letra">A−</button>
+            <button id="fontUp" type="button" title="Aumentar letra">A+</button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <pre class="line-numbers" id="lineNumbers" aria-hidden="true">1</pre>
+          <div class="code-layer">
+            <pre class="highlight" id="highlight" aria-hidden="true"></pre>
+            <textarea class="code-input" id="codeInput" aria-label="Editor JavaScript" aria-describedby="editorHelp" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off"></textarea>
+            <span class="visually-hidden" id="editorHelp">Presioná Control o Comando más Enter para ejecutar. Tab indenta el código.</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="resize-handle" id="resizeHandle" role="separator" aria-label="Redimensionar editor y consola" aria-orientation="vertical" aria-valuemin="30" aria-valuemax="75" aria-valuenow="58" tabindex="0"></div>
+
+      <section class="panel output-panel" aria-labelledby="outputTitle">
+        <div class="panel-heading">
+          <h2 id="outputTitle">Resultado</h2>
+          <span class="meta" id="outputCount">Sin mensajes</span>
+          <div class="heading-actions">
+            <button id="copyOutput" type="button" title="Copiar salida">Copiar</button>
+            <button id="clearOutput" type="button" title="Limpiar consola">Limpiar</button>
+          </div>
+        </div>
+        <div class="output" id="output" tabindex="0" aria-label="Consola de resultados">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-glyph" aria-hidden="true">↳</div>
+            <strong>Escribí. Probá. Explicá.</strong>
+            <p>El resultado de la última expresión y los mensajes de consola aparecen acá.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <div class="run-status" id="runStatus" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="statusText">Listo para ejecutar</span>
+      </div>
+      <span id="executionTime">JavaScript · Navegador</span>
+      <span class="shortcut"><kbd>⌘/Ctrl</kbd> + <kbd>Enter</kbd> ejecutar</span>
+      <span class="shortcut"><kbd>⌘/Ctrl</kbd> + <kbd>/</kbd> comentar</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'aulajs.document.v1';
+      const SETTINGS_KEY = 'aulajs.settings.v1';
+      const DEFAULT_CODE = `// AulaJS ejecuta mientras escribís.
+const estudiantes = [
+  { nombre: "Ana", nota: 9 },
+  { nombre: "Leo", nota: 7 },
+  { nombre: "Sol", nota: 10 },
+];
+
+const promedio = estudiantes.reduce(
+  (total, estudiante) => total + estudiante.nota,
+  0
+) / estudiantes.length;
+
+console.log("Notas:", estudiantes.map(e => e.nota));
+promedio`;
+
+      const EXAMPLES = {
+        fundamentos: `// Variables, funciones y una expresión final
+const saludo = (nombre) => \`Hola, \${nombre}!\`;
+
+const curso = "Programación";
+console.log(saludo(curso));
+
+2 ** 8`,
+        arrays: `// Transformar y resumir datos
+const productos = [
+  { nombre: "Teclado", precio: 35, stock: 4 },
+  { nombre: "Mouse", precio: 18, stock: 0 },
+  { nombre: "Monitor", precio: 210, stock: 2 },
+];
+
+const disponibles = productos
+  .filter(producto => producto.stock > 0)
+  .map(producto => ({
+    ...producto,
+    precioConIVA: producto.precio * 1.21,
+  }));
+
+console.log("Disponibles:", disponibles);
+disponibles.reduce((total, p) => total + p.precioConIVA, 0)`,
+        clases: `class Cuenta {
+  #saldo = 0;
+
+  constructor(titular) {
+    this.titular = titular;
+  }
+
+  depositar(monto) {
+    if (monto <= 0) throw new Error("Monto inválido");
+    this.#saldo += monto;
+    return this;
+  }
+
+  get saldo() {
+    return this.#saldo;
+  }
+}
+
+const cuenta = new Cuenta("Ada");
+cuenta.depositar(100).depositar(50);
+cuenta`,
+        asincronia: `// Las promesas también se esperan automáticamente
+const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function obtenerTema() {
+  console.log("Buscando tema…");
+  await esperar(700);
+  return { tema: "Promesas", listo: true };
+}
+
+obtenerTema()`,
+        errores: `function dividir(a, b) {
+  if (b === 0) {
+    throw new RangeError("No se puede dividir por cero");
+  }
+  return a / b;
+}
+
+console.log("10 / 2 =", dividir(10, 2));
+dividir(10, 0)`
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+      const codeInput = $('#codeInput');
+      const highlight = $('#highlight');
+      const lineNumbers = $('#lineNumbers');
+      const output = $('#output');
+      const emptyState = $('#emptyState');
+      const runButton = $('#runButton');
+      const stopButton = $('#stopButton');
+      const autoRun = $('#autoRun');
+      const runStatus = $('#runStatus');
+      const statusText = $('#statusText');
+      const executionTime = $('#executionTime');
+      const outputCount = $('#outputCount');
+      const cursorPosition = $('#cursorPosition');
+      const workspace = $('#workspace');
+      const resizeHandle = $('#resizeHandle');
+      const fileName = $('#fileName');
+      const toast = $('#toast');
+
+      let currentWorker = null;
+      let executionTimer = null;
+      let autoTimer = null;
+      let toastTimer = null;
+      let messageCount = 0;
+      let outputText = [];
+      let currentFontSize = 17;
+      let currentFileName = 'clase.js';
+      let executionSequence = 0;
+
+      function escapeHTML(value) {
+        return value.replace(/[&<>]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[char]);
+      }
+
+      function sourceToMarkdown(source) {
+        const lines = source.replace(/\r\n?/g, '\n').split('\n');
+        const sections = [];
+        let codeLines = [];
+        let proseLines = [];
+        let inBlockComment = false;
+
+        const trimBlankEdges = values => {
+          let start = 0;
+          let end = values.length;
+          while (start < end && !values[start].trim()) start += 1;
+          while (end > start && !values[end - 1].trim()) end -= 1;
+          return values.slice(start, end);
+        };
+
+        const cleanBlockLine = line => line
+          .replace(/^\s*\* ?|^ /, '')
+          .replace(/[ \t]+$/, '');
+
+        const flushProse = () => {
+          const cleanLines = trimBlankEdges(proseLines);
+          if (cleanLines.length) sections.push(cleanLines.join('\n'));
+          proseLines = [];
+        };
+
+        const flushCode = () => {
+          const cleanLines = trimBlankEdges(codeLines);
+          if (cleanLines.length) {
+            const code = cleanLines.join('\n');
+            const longestBacktickRun = (code.match(/`+/g) || [])
+              .reduce((longest, run) => Math.max(longest, run.length), 0);
+            const fence = '`'.repeat(Math.max(3, longestBacktickRun + 1));
+            sections.push(`${fence}javascript\n${code}\n${fence}`);
+          }
+          codeLines = [];
+        };
+
+        lines.forEach(originalLine => {
+          if (inBlockComment) {
+            const endIndex = originalLine.indexOf('*/');
+            if (endIndex === -1) {
+              proseLines.push(cleanBlockLine(originalLine));
+              return;
+            }
+
+            proseLines.push(cleanBlockLine(originalLine.slice(0, endIndex)));
+            inBlockComment = false;
+            const trailingCode = originalLine.slice(endIndex + 2);
+            if (trailingCode.trim()) {
+              flushProse();
+              codeLines.push(trailingCode.trimStart());
+            }
+            return;
+          }
+
+          const trimmedLine = originalLine.trimStart();
+          if (trimmedLine.startsWith('//')) {
+            flushCode();
+            proseLines.push(trimmedLine.slice(2).replace(/^ ?/, ''));
+            return;
+          }
+
+          if (trimmedLine.startsWith('/*')) {
+            flushCode();
+            const commentBody = trimmedLine.slice(2);
+            const endIndex = commentBody.indexOf('*/');
+
+            if (endIndex === -1) {
+              inBlockComment = true;
+              proseLines.push(cleanBlockLine(commentBody));
+              return;
+            }
+
+            proseLines.push(cleanBlockLine(commentBody.slice(0, endIndex)));
+            const trailingCode = commentBody.slice(endIndex + 2);
+            if (trailingCode.trim()) {
+              flushProse();
+              codeLines.push(trailingCode.trimStart());
+            }
+            return;
+          }
+
+          flushProse();
+          codeLines.push(originalLine);
+        });
+
+        flushProse();
+        flushCode();
+        return sections.length ? `${sections.join('\n\n')}\n` : '';
+      }
+
+      window.AulaJS = Object.freeze({ sourceToMarkdown });
+
+      function highlightCode(source) {
+        const tokenPattern = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:\\[\s\S]|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|from|function|get|if|import|in|instanceof|let|new|of|return|set|static|super|switch|this|throw|try|typeof|var|void|while|with|yield|async|await)\b|\b(?:true|false|null|undefined|NaN|Infinity)\b|\b(?:0[xob][\da-f]+|\d+(?:\.\d+)?(?:e[+-]?\d+)?)n?\b|\b(?:Array|Object|String|Number|Boolean|BigInt|Symbol|Date|RegExp|Map|Set|WeakMap|WeakSet|Promise|Error|JSON|Math|Intl|console|document|window|fetch|setTimeout|setInterval)\b)/gi;
+        let result = '';
+        let cursor = 0;
+
+        source.replace(tokenPattern, (token, _match, offset) => {
+          result += escapeHTML(source.slice(cursor, offset));
+          let kind = 'global';
+          if (token.startsWith('//') || token.startsWith('/*')) kind = 'comment';
+          else if (token.startsWith('`')) kind = 'template';
+          else if (token.startsWith('"') || token.startsWith("'")) kind = 'string';
+          else if (/^(true|false|null|undefined|NaN|Infinity)$/i.test(token)) kind = 'constant';
+          else if (/^(?:0[xob]|\d)/i.test(token)) kind = 'number';
+          else if (/^(break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|from|function|get|if|import|in|instanceof|let|new|of|return|set|static|super|switch|this|throw|try|typeof|var|void|while|with|yield|async|await)$/i.test(token)) kind = 'keyword';
+          result += `<span class="tok-${kind}">${escapeHTML(token)}</span>`;
+          cursor = offset + token.length;
+          return token;
+        });
+
+        return result + escapeHTML(source.slice(cursor));
+      }
+
+      function updateEditorVisuals() {
+        const code = codeInput.value;
+        highlight.innerHTML = highlightCode(code) + '\n';
+        const count = Math.max(1, code.split('\n').length);
+        lineNumbers.textContent = Array.from({ length: count }, (_, index) => index + 1).join('\n');
+        syncScroll();
+        updateCursorPosition();
+      }
+
+      function syncScroll() {
+        highlight.scrollTop = codeInput.scrollTop;
+        highlight.scrollLeft = codeInput.scrollLeft;
+        lineNumbers.scrollTop = codeInput.scrollTop;
+      }
+
+      function updateCursorPosition() {
+        const before = codeInput.value.slice(0, codeInput.selectionStart);
+        const lines = before.split('\n');
+        cursorPosition.textContent = `Línea ${lines.length} · Col ${lines.at(-1).length + 1}`;
+      }
+
+      function persist() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ code: codeInput.value, fileName: currentFileName }));
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+            autoRun: autoRun.checked,
+            fontSize: currentFontSize,
+            rows: workspace.classList.contains('rows'),
+            split: getComputedStyle(document.documentElement).getPropertyValue('--split').trim()
+          }));
+        } catch (_) { /* El editor sigue funcionando si el almacenamiento está bloqueado. */ }
+      }
+
+      function restore() {
+        try {
+          const documentState = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+          codeInput.value = documentState?.code || DEFAULT_CODE;
+          currentFileName = documentState?.fileName || 'clase.js';
+          fileName.textContent = currentFileName;
+          if (settings) {
+            autoRun.checked = settings.autoRun !== false;
+            currentFontSize = Math.min(26, Math.max(13, Number(settings.fontSize) || 17));
+            if (settings.rows) setRowsLayout(true);
+            if (/^\d+(?:\.\d+)?%$/.test(settings.split || '')) {
+              document.documentElement.style.setProperty('--split', settings.split);
+            }
+          }
+        } catch (_) {
+          codeInput.value = DEFAULT_CODE;
+        }
+        applyFontSize();
+        updateEditorVisuals();
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+
+      function setStatus(state, text) {
+        runStatus.className = `run-status ${state}`;
+        statusText.textContent = text;
+      }
+
+      function clearConsole() {
+        output.replaceChildren();
+        messageCount = 0;
+        outputText = [];
+        outputCount.textContent = 'Sin mensajes';
+        output.append(emptyState);
+      }
+
+      function ensureConsoleStarted() {
+        if (emptyState.isConnected) emptyState.remove();
+      }
+
+      function scalarElement(value) {
+        const span = document.createElement('span');
+        span.className = `v-${value.type}`;
+        if (value.type === 'string') span.textContent = value.value;
+        else if (value.type === 'undefined') span.textContent = 'undefined';
+        else if (value.type === 'null') span.textContent = 'null';
+        else if (value.type === 'bigint') span.textContent = `${value.value}n`;
+        else if (value.type === 'symbol') span.textContent = `Symbol(${value.value})`;
+        else if (value.type === 'function') span.textContent = `ƒ ${value.name || 'anónima'}()`;
+        else if (value.type === 'error') {
+          span.className = 'v-error';
+          span.textContent = `${value.name}: ${value.message}${value.stack ? `\n${cleanStack(value.stack)}` : ''}`;
+        } else span.textContent = String(value.value);
+        return span;
+      }
+
+      function valuePreview(value) {
+        if (value.type === 'array') return `Array(${value.value.length})`;
+        if (value.type === 'object') return value.name || 'Object';
+        if (value.type === 'map') return `Map(${value.value.length})`;
+        if (value.type === 'set') return `Set(${value.value.length})`;
+        if (value.type === 'date') return `Date ${value.value}`;
+        if (value.type === 'regexp') return value.value;
+        if (value.type === 'typedarray') return `${value.name}(${value.value.length})`;
+        return '';
+      }
+
+      function appendValue(container, value, depth = 0) {
+        if (!value || !['array', 'object', 'map', 'set', 'typedarray'].includes(value.type)) {
+          container.append(scalarElement(value || { type: 'undefined' }));
+          return;
+        }
+
+        const details = document.createElement('details');
+        details.className = 'object-view';
+        if (depth === 0 && value.value.length <= 5) details.open = true;
+        const summary = document.createElement('summary');
+        summary.textContent = valuePreview(value);
+        const body = document.createElement('div');
+        body.className = 'object-body';
+
+        value.value.forEach((entry, index) => {
+          const row = document.createElement('div');
+          row.className = 'object-entry';
+          const key = document.createElement('span');
+          key.className = 'object-key';
+          let entryValue = entry;
+          if (value.type === 'object') {
+            key.textContent = `${entry.key}:`;
+            entryValue = entry.value;
+          } else if (value.type === 'map') {
+            key.textContent = `${entry.keyPreview} →`;
+            entryValue = entry.value;
+          } else {
+            key.textContent = `${index}:`;
+          }
+          const valueCell = document.createElement('span');
+          appendValue(valueCell, entryValue, depth + 1);
+          row.append(key, valueCell);
+          body.append(row);
+        });
+
+        if (value.truncated) {
+          const more = document.createElement('div');
+          more.textContent = '…más elementos';
+          more.className = 'object-key';
+          body.append(more);
+        }
+        details.append(summary, body);
+        container.append(details);
+      }
+
+      function valueToText(value) {
+        if (!value) return 'undefined';
+        if (['string', 'number', 'boolean'].includes(value.type)) return String(value.value);
+        if (value.type === 'bigint') return `${value.value}n`;
+        if (value.type === 'null' || value.type === 'undefined') return value.type;
+        if (value.type === 'error') return `${value.name}: ${value.message}`;
+        if (value.type === 'function') return `ƒ ${value.name || 'anónima'}()`;
+        if (['date', 'regexp'].includes(value.type)) return value.value;
+        if (value.type === 'array') return `[${value.value.map(valueToText).join(', ')}]`;
+        if (value.type === 'object') return `{ ${value.value.map(item => `${item.key}: ${valueToText(item.value)}`).join(', ')} }`;
+        return valuePreview(value);
+      }
+
+      function addConsoleRow(level, values, label) {
+        ensureConsoleStarted();
+        const row = document.createElement('div');
+        const normalizedLevel = level === 'warning' ? 'warn' : level;
+        row.className = `console-row ${normalizedLevel}`;
+        const kind = document.createElement('div');
+        kind.className = 'console-kind';
+        kind.textContent = label || ({ log: 'Log', info: 'Info', debug: 'Debug', warn: 'Aviso', error: 'Error', result: 'Resultado', system: 'Sistema' }[normalizedLevel] || level);
+        const content = document.createElement('div');
+        content.className = 'console-values';
+
+        values.forEach(value => {
+          const wrapper = document.createElement('span');
+          wrapper.className = 'console-value';
+          appendValue(wrapper, value);
+          content.append(wrapper);
+        });
+
+        row.append(kind, content);
+        output.append(row);
+        messageCount += 1;
+        outputCount.textContent = `${messageCount} ${messageCount === 1 ? 'mensaje' : 'mensajes'}`;
+        outputText.push(`${kind.textContent}: ${values.map(valueToText).join(' ')}`);
+        output.scrollTop = output.scrollHeight;
+      }
+
+      function cleanStack(stack) {
+        return stack
+          .split('\n')
+          .filter(line => !line.includes('blob:') || line.includes('<anonymous>'))
+          .slice(0, 4)
+          .join('\n');
+      }
+
+      const WORKER_SOURCE = `
+        const nativeConsole = console;
+        const timers = new Map();
+
+        function preview(value) {
+          try {
+            if (typeof value === 'string') return value;
+            if (typeof value === 'function') return 'ƒ ' + (value.name || 'anónima') + '()';
+            return String(value);
+          } catch (_) { return '[valor]'; }
+        }
+
+        function serialize(value, seen = new WeakSet(), depth = 0) {
+          const type = typeof value;
+          if (value === null) return { type: 'null' };
+          if (type === 'undefined') return { type: 'undefined' };
+          if (type === 'string' || type === 'boolean') return { type, value };
+          if (type === 'number') return { type, value: Number.isNaN(value) ? 'NaN' : value === Infinity ? 'Infinity' : value === -Infinity ? '-Infinity' : Object.is(value, -0) ? '-0' : value };
+          if (type === 'bigint') return { type, value: value.toString() };
+          if (type === 'symbol') return { type, value: value.description || '' };
+          if (type === 'function') return { type, name: value.name || '' };
+          if (value instanceof Error) return { type: 'error', name: value.name, message: value.message, stack: value.stack || '' };
+          if (value instanceof Date) return { type: 'date', value: Number.isNaN(value.getTime()) ? 'Fecha inválida' : value.toISOString() };
+          if (value instanceof RegExp) return { type: 'regexp', value: value.toString() };
+          if (depth >= 5) return { type: 'object', name: value?.constructor?.name || 'Object', value: [], truncated: true };
+          if (seen.has(value)) return { type: 'string', value: '[Circular]' };
+          seen.add(value);
+
+          if (Array.isArray(value)) {
+            const items = value.slice(0, 100).map(item => serialize(item, seen, depth + 1));
+            return { type: 'array', value: items, truncated: value.length > 100 };
+          }
+          if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
+            const items = Array.from(value).slice(0, 100).map(item => serialize(item, seen, depth + 1));
+            return { type: 'typedarray', name: value.constructor.name, value: items, truncated: value.length > 100 };
+          }
+          if (value instanceof Map) {
+            const items = Array.from(value.entries()).slice(0, 100).map(([key, item]) => ({ keyPreview: preview(key), value: serialize(item, seen, depth + 1) }));
+            return { type: 'map', value: items, truncated: value.size > 100 };
+          }
+          if (value instanceof Set) {
+            const items = Array.from(value.values()).slice(0, 100).map(item => serialize(item, seen, depth + 1));
+            return { type: 'set', value: items, truncated: value.size > 100 };
+          }
+
+          let keys = [];
+          try { keys = Object.keys(value); } catch (_) {}
+          const entries = keys.slice(0, 100).map(key => {
+            try { return { key, value: serialize(value[key], seen, depth + 1) }; }
+            catch (error) { return { key, value: serialize(error, seen, depth + 1) }; }
+          });
+          return { type: 'object', name: value?.constructor?.name || 'Object', value: entries, truncated: keys.length > 100 };
+        }
+
+        ['log', 'info', 'warn', 'error', 'debug'].forEach(level => {
+          console[level] = (...args) => postMessage({ type: 'console', level, values: args.map(value => serialize(value)) });
+        });
+        console.clear = () => postMessage({ type: 'clear' });
+        console.time = (label = 'default') => timers.set(label, performance.now());
+        console.timeEnd = (label = 'default') => {
+          const started = timers.get(label);
+          if (started === undefined) return console.warn('No existe el temporizador ' + label);
+          console.log(label + ': ' + (performance.now() - started).toFixed(2) + ' ms');
+          timers.delete(label);
+        };
+
+        self.addEventListener('unhandledrejection', event => {
+          postMessage({ type: 'error', value: serialize(event.reason instanceof Error ? event.reason : new Error(String(event.reason))) });
+        });
+
+        self.onmessage = async event => {
+          const { code, id } = event.data;
+          const started = performance.now();
+          try {
+            const value = (0, eval)(code);
+            const resolved = value && typeof value.then === 'function' ? await value : value;
+            if (resolved !== undefined) postMessage({ type: 'result', value: serialize(resolved), id });
+            postMessage({ type: 'done', duration: performance.now() - started, id });
+          } catch (error) {
+            postMessage({ type: 'error', value: serialize(error instanceof Error ? error : new Error(String(error))), duration: performance.now() - started, id });
+          }
+        };
+      `;
+
+      function stopExecution(reason = 'Ejecución detenida') {
+        if (currentWorker) {
+          currentWorker.terminate();
+          currentWorker = null;
+          clearTimeout(executionTimer);
+          executionTimer = null;
+          stopButton.disabled = true;
+          setStatus('failure', reason);
+          executionTime.textContent = 'Ejecución detenida';
+          addConsoleRow('system', [{ type: 'string', value: reason }], 'Sistema');
+        }
+      }
+
+      function runCode({ automatic = false } = {}) {
+        const code = codeInput.value;
+        executionSequence += 1;
+        const id = executionSequence;
+
+        if (currentWorker) currentWorker.terminate();
+        clearTimeout(executionTimer);
+        clearConsole();
+        persist();
+
+        if (!code.trim()) {
+          setStatus('', 'No hay código para ejecutar');
+          executionTime.textContent = 'JavaScript · Navegador';
+          return;
+        }
+
+        const workerURL = URL.createObjectURL(new Blob([WORKER_SOURCE], { type: 'text/javascript' }));
+        currentWorker = new Worker(workerURL);
+        URL.revokeObjectURL(workerURL);
+        stopButton.disabled = false;
+        setStatus('running', automatic ? 'Actualizando resultado…' : 'Ejecutando…');
+        executionTime.textContent = 'Procesando';
+
+        currentWorker.onmessage = event => {
+          if (id !== executionSequence) return;
+          const message = event.data;
+          if (message.type === 'console') addConsoleRow(message.level, message.values);
+          if (message.type === 'clear') clearConsole();
+          if (message.type === 'result') addConsoleRow('result', [message.value]);
+          if (message.type === 'error') {
+            clearTimeout(executionTimer);
+            addConsoleRow('error', [message.value]);
+            setStatus('failure', 'Hay un error');
+            executionTime.textContent = `${(message.duration || 0).toFixed(1)} ms`;
+            stopButton.disabled = true;
+          }
+          if (message.type === 'done') {
+            clearTimeout(executionTimer);
+            setStatus('success', 'Ejecutado correctamente');
+            executionTime.textContent = `${message.duration.toFixed(1)} ms · JavaScript`;
+            stopButton.disabled = true;
+          }
+        };
+
+        currentWorker.onerror = event => {
+          if (id !== executionSequence) return;
+          clearTimeout(executionTimer);
+          addConsoleRow('error', [{ type: 'error', name: 'Error', message: event.message, stack: '' }]);
+          setStatus('failure', 'No se pudo ejecutar');
+          stopButton.disabled = true;
+        };
+
+        currentWorker.postMessage({ code, id });
+        executionTimer = setTimeout(() => {
+          if (id === executionSequence && currentWorker) {
+            stopExecution('Detenido: superó los 5 segundos');
+            showToast('Se detuvo el código para proteger la clase de un bucle infinito.');
+          }
+        }, 5000);
+      }
+
+      function scheduleAutoRun() {
+        clearTimeout(autoTimer);
+        if (!autoRun.checked) return;
+        setStatus('', 'Esperando que termines de escribir…');
+        autoTimer = setTimeout(() => runCode({ automatic: true }), 650);
+      }
+
+      function replaceSelection(text, selectionStartOffset = text.length, selectionEndOffset = selectionStartOffset) {
+        const start = codeInput.selectionStart;
+        const end = codeInput.selectionEnd;
+        codeInput.setRangeText(text, start, end, 'end');
+        codeInput.selectionStart = start + selectionStartOffset;
+        codeInput.selectionEnd = start + selectionEndOffset;
+        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      function handleEditorKeydown(event) {
+        const meta = event.metaKey || event.ctrlKey;
+        if (meta && event.key === 'Enter') {
+          event.preventDefault();
+          runCode();
+          return;
+        }
+        if (meta && event.key === '/') {
+          event.preventDefault();
+          toggleComment();
+          return;
+        }
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          indentSelection(event.shiftKey);
+          return;
+        }
+        if (event.key === 'Enter') {
+          const before = codeInput.value.slice(0, codeInput.selectionStart);
+          const currentLine = before.split('\n').at(-1);
+          const indent = currentLine.match(/^\s*/)[0];
+          const extra = /[{[(]\s*$/.test(currentLine) ? '  ' : '';
+          event.preventDefault();
+          replaceSelection(`\n${indent}${extra}`);
+          return;
+        }
+
+        const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`' };
+        if (pairs[event.key] && !meta && !event.altKey) {
+          const start = codeInput.selectionStart;
+          const end = codeInput.selectionEnd;
+          const selected = codeInput.value.slice(start, end);
+          if (selected || start === end) {
+            event.preventDefault();
+            const insertion = `${event.key}${selected}${pairs[event.key]}`;
+            replaceSelection(insertion, 1, selected ? insertion.length - 1 : 1);
+          }
+        }
+      }
+
+      function indentSelection(outdent) {
+        const value = codeInput.value;
+        const start = codeInput.selectionStart;
+        const end = codeInput.selectionEnd;
+        if (start === end && !outdent) {
+          replaceSelection('  ');
+          return;
+        }
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        let lineEnd = value.indexOf('\n', end);
+        if (lineEnd === -1) lineEnd = value.length;
+        const block = value.slice(lineStart, lineEnd);
+        const transformed = outdent ? block.replace(/^ {1,2}/gm, '') : block.replace(/^/gm, '  ');
+        codeInput.setRangeText(transformed, lineStart, lineEnd, 'select');
+        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      function toggleComment() {
+        const value = codeInput.value;
+        const start = codeInput.selectionStart;
+        const end = codeInput.selectionEnd;
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        let lineEnd = value.indexOf('\n', end);
+        if (lineEnd === -1) lineEnd = value.length;
+        const block = value.slice(lineStart, lineEnd);
+        const allCommented = block.split('\n').every(line => /^\s*\/\//.test(line) || !line.trim());
+        const transformed = allCommented
+          ? block.replace(/^(\s*)\/\/ ?/gm, '$1')
+          : block.replace(/^(\s*)(?=\S)/gm, '$1// ');
+        codeInput.setRangeText(transformed, lineStart, lineEnd, 'select');
+        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      function applyFontSize() {
+        document.documentElement.style.setProperty('--user-editor-size', `${currentFontSize}px`);
+      }
+
+      function setRowsLayout(rows) {
+        workspace.classList.toggle('rows', rows);
+        $('#layoutButton').setAttribute('aria-pressed', String(rows));
+        updateSeparatorOrientation();
+      }
+
+      function updateSeparatorOrientation() {
+        const stacked = workspace.classList.contains('rows') || matchMedia('(max-width: 840px)').matches;
+        resizeHandle.setAttribute('aria-orientation', stacked ? 'horizontal' : 'vertical');
+      }
+
+      function updateSplit(clientX, clientY) {
+        const rect = workspace.getBoundingClientRect();
+        const rows = workspace.classList.contains('rows') || matchMedia('(max-width: 840px)').matches;
+        const raw = rows ? (clientY - rect.top) / rect.height : (clientX - rect.left) / rect.width;
+        const percent = Math.min(75, Math.max(30, raw * 100));
+        document.documentElement.style.setProperty('--split', `${percent.toFixed(1)}%`);
+        resizeHandle.setAttribute('aria-valuenow', String(Math.round(percent)));
+      }
+
+      codeInput.addEventListener('input', () => {
+        updateEditorVisuals();
+        persist();
+        scheduleAutoRun();
+      });
+      codeInput.addEventListener('scroll', syncScroll, { passive: true });
+      codeInput.addEventListener('click', updateCursorPosition);
+      codeInput.addEventListener('keyup', updateCursorPosition);
+      codeInput.addEventListener('keydown', handleEditorKeydown);
+
+      runButton.addEventListener('click', () => runCode());
+      stopButton.addEventListener('click', () => stopExecution());
+      autoRun.addEventListener('change', () => {
+        persist();
+        showToast(autoRun.checked ? 'Ejecución automática activada' : 'Ejecución automática pausada');
+        if (autoRun.checked) scheduleAutoRun();
+      });
+      $('#clearOutput').addEventListener('click', () => {
+        clearConsole();
+        setStatus('', 'Consola limpia');
+      });
+      $('#copyOutput').addEventListener('click', async () => {
+        if (!outputText.length) return showToast('Todavía no hay una salida para copiar.');
+        try {
+          await navigator.clipboard.writeText(outputText.join('\n'));
+          showToast('Salida copiada');
+        } catch (_) {
+          showToast('El navegador no permitió copiar automáticamente.');
+        }
+      });
+
+      $('#fontUp').addEventListener('click', () => {
+        currentFontSize = Math.min(28, currentFontSize + 1);
+        applyFontSize();
+        persist();
+      });
+      $('#fontDown').addEventListener('click', () => {
+        currentFontSize = Math.max(13, currentFontSize - 1);
+        applyFontSize();
+        persist();
+      });
+
+      $('#exampleSelect').addEventListener('change', event => {
+        if (!event.target.value) return;
+        codeInput.value = EXAMPLES[event.target.value];
+        currentFileName = `${event.target.value}.js`;
+        fileName.textContent = currentFileName;
+        event.target.value = '';
+        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        codeInput.focus();
+        showToast('Ejemplo cargado');
+      });
+
+      $('#newButton').addEventListener('click', () => {
+        if (codeInput.value.trim() && !confirm('¿Empezar un ejercicio nuevo? El código actual está guardado en este navegador.')) return;
+        codeInput.value = '// Nuevo ejercicio\n\n';
+        currentFileName = 'clase.js';
+        fileName.textContent = currentFileName;
+        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        codeInput.focus();
+      });
+
+      $('#openButton').addEventListener('click', () => $('#fileInput').click());
+      $('#fileInput').addEventListener('change', async event => {
+        const file = event.target.files[0];
+        if (!file) return;
+        codeInput.value = await file.text();
+        currentFileName = file.name;
+        fileName.textContent = currentFileName;
+        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        event.target.value = '';
+        showToast(`${file.name} abierto`);
+      });
+
+      function downloadText(content, downloadName, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = downloadName;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      $('#saveButton').addEventListener('click', () => {
+        const downloadName = currentFileName.endsWith('.js') ? currentFileName : `${currentFileName}.js`;
+        downloadText(codeInput.value, downloadName, 'text/javascript;charset=utf-8');
+        showToast('Archivo JavaScript descargado');
+      });
+
+      $('#markdownButton').addEventListener('click', () => {
+        const markdown = sourceToMarkdown(codeInput.value);
+        if (!markdown) {
+          showToast('No hay contenido para convertir.');
+          return;
+        }
+
+        const baseName = currentFileName
+          .replace(/\.(?:m?js|txt)$/i, '')
+          .trim() || 'clase';
+        downloadText(markdown, `${baseName}.md`, 'text/markdown;charset=utf-8');
+        showToast(`Markdown descargado: ${baseName}.md`);
+      });
+
+      $('#layoutButton').addEventListener('click', () => {
+        setRowsLayout(!workspace.classList.contains('rows'));
+        persist();
+      });
+
+      $('#projectorButton').addEventListener('click', async () => {
+        const active = !document.documentElement.classList.contains('presentation');
+        document.documentElement.classList.toggle('presentation', active);
+        $('#projectorButton').setAttribute('aria-pressed', String(active));
+        if (active && document.documentElement.requestFullscreen) {
+          try { await document.documentElement.requestFullscreen(); } catch (_) { /* El modo ampliado funciona igual. */ }
+        } else if (!active && document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+        showToast(active ? 'Modo proyector activado' : 'Modo proyector desactivado');
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && document.documentElement.classList.contains('presentation')) {
+          document.documentElement.classList.remove('presentation');
+          $('#projectorButton').setAttribute('aria-pressed', 'false');
+        }
+      });
+
+      resizeHandle.addEventListener('pointerdown', event => {
+        resizeHandle.setPointerCapture(event.pointerId);
+        updateSplit(event.clientX, event.clientY);
+      });
+      resizeHandle.addEventListener('pointermove', event => {
+        if (resizeHandle.hasPointerCapture(event.pointerId)) updateSplit(event.clientX, event.clientY);
+      });
+      resizeHandle.addEventListener('pointerup', event => {
+        resizeHandle.releasePointerCapture(event.pointerId);
+        persist();
+      });
+      resizeHandle.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        event.preventDefault();
+        const current = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--split')) || 58;
+        const increase = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 2 : -2;
+        const next = Math.min(75, Math.max(30, current + increase));
+        document.documentElement.style.setProperty('--split', `${next}%`);
+        resizeHandle.setAttribute('aria-valuenow', String(next));
+        persist();
+      });
+
+      matchMedia('(max-width: 840px)').addEventListener('change', updateSeparatorOrientation);
+
+      restore();
+      updateSeparatorOrientation();
+      setTimeout(() => {
+        if (autoRun.checked) runCode({ automatic: true });
+      }, 180);
+    })();
+  </script>
+</body>
+</html>

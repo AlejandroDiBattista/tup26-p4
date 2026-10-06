@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark light">
+<title>RunJS — Clase</title>
+<style>
+  /* ============ Tokens ============ */
+  :root{
+    --fs: 1.375rem;                 /* tamaño de fuente de código/salida */
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+    --bg: #0a0e13;
+    --panel: #0f151c;
+    --panel-2: #131c26;
+    --border: #223144;
+    --border-2: #33455e;
+    --fg: #e8eef5;
+    --fg-2: #b6c2d3;
+    --fg-3: #7c8ba0;
+    --accent: #4cc3ff;
+    --accent-strong: #2f9fe8;
+    --accent-fg: #06263a;
+    --green: #3ecf8e;
+    --red: #ff5d6c;
+    --amber: #ffc24b;
+
+    --t-k: #ff7ad9;     /* keyword */
+    --t-s: #ffce6b;     /* string / template */
+    --t-n: #7ee0ff;     /* number */
+    --t-c: #5f7186;     /* comment */
+    --t-f: #8bf06b;     /* function */
+    --t-p: #9ec9ff;     /* property */
+    --t-cl:#ffab70;     /* class */
+    --t-b: #5ef0c9;     /* builtin */
+    --t-r: #ff9ad5;     /* regex */
+    --t-v: #e8eef5;     /* variable */
+    --t-e: #ff6b78;     /* error */
+    --t-op:#e8eef5;
+
+    color-scheme: dark;
+  }
+  html[data-theme="light"]{
+    --bg: #eef1f5;
+    --panel: #fbfcfd;
+    --panel-2: #f2f5f9;
+    --border: #c9d3df;
+    --border-2: #aebdcd;
+    --fg: #17202c;
+    --fg-2: #3d4c60;
+    --fg-3: #7b8798;
+    --accent: #0d78b8;
+    --accent-strong: #0a5d91;
+    --accent-fg: #ffffff;
+    --green: #0f8a56;
+    --red: #c93447;
+    --amber: #9a6a00;
+
+    --t-k: #b3008f;
+    --t-s: #8f6200;
+    --t-n: #005fb8;
+    --t-c: #7d8794;
+    --t-f: #0f7b2f;
+    --t-p: #0b57a8;
+    --t-cl:#b85c00;
+    --t-b: #00786b;
+    --t-r: #c2185b;
+    --t-v: #17202c;
+    --t-e: #c93447;
+    --t-op:#17202c;
+
+    color-scheme: light;
+  }
+
+  /* ============ Base ============ */
+  *{ box-sizing: border-box; }
+  html, body{
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-ui);
+  }
+  button{
+    font-family: inherit;
+    color: var(--fg);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 16px;
+    cursor: pointer;
+    min-height: 40px;
+    transition: background .12s ease, border-color .12s ease;
+  }
+  button:hover{ border-color: var(--border-2); background: #1a2533; }
+  html[data-theme="light"] button:hover{ background: #e7ecf2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 700;
+  }
+  button.primary:hover{ background: var(--accent-strong); border-color: var(--accent-strong); }
+  button.toggle-on{ background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 700; }
+
+  /* ============ Layout ============ */
+  #app{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .topbar{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    z-index: 5;
+  }
+  .brand{
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: .5px;
+    color: var(--fg);
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  .brand .accent{ color: var(--accent); }
+  .brand .tag{
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fg-3);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: 2px;
+  }
+  .spacer{ flex: 1; }
+
+  select{
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--fg);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 40px;
+    cursor: pointer;
+  }
+  select:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ============ Tabs ============ */
+  .tabbar{
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-wrap: wrap;
+    z-index: 4;
+  }
+  .tab{
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+    max-width: 260px;
+  }
+  .tab.active{ border-color: var(--accent); background: #1a2735; }
+  html[data-theme="light"] .tab.active{ background: #e7eef7; }
+  .tab .tab-name{
+    background: transparent;
+    border: 0;
+    font-size: 15px;
+    padding: 6px 8px;
+    min-height: 0;
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tab .tab-close{
+    background: transparent;
+    border: 0;
+    padding: 4px 8px;
+    min-height: 0;
+    border-radius: 6px;
+    font-size: 15px;
+    color: var(--fg-3);
+    flex: none;
+  }
+  .tab .tab-close:hover{ color: var(--red); background: #241a1d; }
+  #tab-add{
+    flex: none;
+    background: transparent;
+    border: 1px dashed var(--border-2);
+    font-size: 17px;
+    padding: 6px 14px;
+  }
+  #tab-add:hover{ border-color: var(--accent); color: var(--accent); }
+
+  /* ============ Workspace / panes ============ */
+  #workspace{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+  #workspace.row{ flex-direction: row; }
+
+  #codePane{
+    flex: 0 0 var(--code-basis, 46%);
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  #outputPane{
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #splitter{
+    flex: none;
+    height: 7px;
+    width: 100%;
+    cursor: row-resize;
+    background: var(--border);
+    position: relative;
+  }
+  #splitter::after{
+    content: "";
+    position: absolute;
+    inset: 2px 40%;
+    background: var(--border-2);
+    border-radius: 3px;
+  }
+  #workspace.row #splitter{
+    width: 7px;
+    height: auto;
+    cursor: col-resize;
+  }
+  #workspace.row #splitter::after{ inset: 40% 2px; }
+
+  .pane-head{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex: none;
+    min-height: 38px;
+  }
+  .pane-head .spacer{ flex: 1; }
+  .pane-head button{
+    font-size: 14px;
+    padding: 5px 12px;
+    min-height: 30px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+  }
+
+  /* ============ Editor ============ */
+  .editor{
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .editor pre,
+  .editor textarea{
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border: 0;
+    padding: 12px 16px 25% 16px;
+    box-sizing: border-box;
+    font-family: var(--font-mono);
+    font-size: var(--fs);
+    line-height: 1.5;
+    tab-size: 4;
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
+    word-wrap: normal;
+    letter-spacing: normal;
+  }
+  .editor pre{
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--t-v);
+    background: transparent;
+  }
+  .editor textarea{
+    z-index: 2;
+    color: transparent;
+    background: transparent;
+    caret-color: var(--accent);
+    resize: none;
+    outline: none;
+  }
+  .editor textarea::placeholder{ color: var(--fg-3); }
+  .editor textarea::selection{ background: rgba(76,195,255,.30); }
+  html[data-theme="light"] .editor textarea::selection{ background: rgba(13,120,184,.22); }
+
+  /* ============ Sintaxis ============ */
+  .t-k{ color: var(--t-k); font-weight: 700; }
+  .t-s{ color: var(--t-s); }
+  .t-n{ color: var(--t-n); }
+  .t-c{ color: var(--t-c); font-style: italic; }
+  .t-f{ color: var(--t-f); }
+  .t-p{ color: var(--t-p); }
+  .t-cl{ color: var(--t-cl); font-weight: 600; }
+  .t-b{ color: var(--t-b); }
+  .t-r{ color: var(--t-r); }
+  .t-v{ color: var(--t-v); }
+  .t-e{ color: var(--t-e); }
+  .t-op{ color: var(--t-op); }
+
+  /* ============ Salida ============ */
+  #out{
+    flex: 1;
+    overflow: auto;
+    padding: 10px 14px 40px;
+    font-family: var(--font-mono);
+    font-size: var(--fs);
+    line-height: 1.45;
+  }
+  #outEmpty{
+    color: var(--fg-3);
+    font-family: var(--font-ui);
+    font-size: 18px;
+    line-height: 1.6;
+    padding: 18px 4px;
+  }
+  #outEmpty .kbd{
+    display: inline-block;
+    border: 1px solid var(--border-2);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    padding: 0 7px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    background: var(--panel-2);
+  }
+  .out-row{
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 3px 0;
+    border-left: 3px solid transparent;
+    padding-left: 8px;
+    margin-top: 4px;
+  }
+  .out-row.out-result{ border-left-color: var(--accent); }
+  .out-row.out-error{ border-left-color: var(--red); }
+  .out-row.out-warn{ border-left-color: var(--amber); }
+  .out-row.out-info{ border-left-color: var(--accent); }
+  .out-badge{
+    flex: none;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    border-radius: 6px;
+    padding: 2px 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--fg-3);
+    margin-top: -2px;
+  }
+  .out-badge.result{ color: var(--accent); border-color: var(--accent); }
+  .out-badge.error{ color: var(--red); border-color: var(--red); }
+  .out-badge.warn{ color: var(--amber); border-color: var(--amber); }
+  .out-args{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-width: 0; }
+  .out-args > *{ min-width: 0; overflow-wrap: anywhere; }
+
+  /* Inspector (objetos expandibles) */
+  details.insp{ display: inline; }
+  details.insp > summary{
+    display: inline;
+    cursor: pointer;
+    color: var(--t-v);
+    border-radius: 4px;
+    padding: 0 2px;
+  }
+  details.insp > summary:hover{ background: var(--panel-2); }
+  details.insp > summary::marker{ content: "▸ "; color: var(--fg-3); font-size: .85em; }
+  details.insp[open] > summary::marker{ content: "▾ "; }
+  details.insp > .insp-body{
+    display: block;
+    margin: 4px 0 6px 1.1em;
+    padding-left: .6em;
+    border-left: 1px solid var(--border);
+  }
+  .insp-row{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+    padding: 1px 0;
+  }
+  .insp-row > .t-p{ flex: none; }
+  details.insp .stack{
+    white-space: pre-wrap;
+    font-size: .8em;
+    color: var(--fg-2);
+    font-family: var(--font-mono);
+  }
+
+  /* console.table */
+  .out-table-wrap{ overflow: auto; margin: 6px 0; }
+  table.out-table{
+    border-collapse: collapse;
+    font-size: .92em;
+  }
+  table.out-table th, table.out-table td{
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.out-table thead th{ background: var(--panel-2); color: var(--fg-2); font-family: var(--font-ui); font-size: .8em; text-transform: uppercase; letter-spacing: .4px; }
+  table.out-table tbody tr:nth-child(even){ background: rgba(255,255,255,.02); }
+  html[data-theme="light"] table.out-table tbody tr:nth-child(even){ background: rgba(0,0,0,.025); }
+  table.out-table tbody td:first-child{ color: var(--fg-3); }
+
+  /* ============ Barra de estado ============ */
+  #statusbar{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 4px 14px;
+    font-size: 14px;
+    color: var(--fg-3);
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex: none;
+    font-family: var(--font-mono);
+  }
+  #statusbar .spacer{ flex: 1; }
+  #statusbar .ok{ color: var(--green); }
+  #statusbar .err{ color: var(--red); }
+
+  /* ============ Scrollbars ============ */
+  #out, .tabbar, .editor textarea, .out-table-wrap{
+    scrollbar-color: var(--border-2) transparent;
+    scrollbar-width: thin;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">Run<span class="accent">JS</span><span class="tag">modo clase</span></div>
+
+    <button id="tb-run" class="primary" title="Ejecutar (Ctrl/Cmd + Enter)">Ejecutar</button>
+    <button id="tb-auto" title="Ejecutar automáticamente al escribir">Auto</button>
+    <select id="tb-examples" title="Insertar un ejemplo en una pestaña nueva" aria-label="Ejemplos">
+      <option value="">Ejemplos…</option>
+    </select>
+
+    <button id="tb-md" title="Convertir el código a Markdown (comentarios + bloques de código) y copiarlo">Markdown</button>
+    <div class="spacer"></div>
+
+    <button id="tb-font-minus" title="Reducir letra (Ctrl/Cmd + -)">A−</button>
+    <button id="tb-font-plus" title="Agrandar letra (Ctrl/Cmd + +)">A+</button>
+    <button id="tb-layout" title="Cambiar orientación: apilado / lado a lado">Diseño</button>
+    <button id="tb-theme" title="Cambiar tema claro/oscuro">Tema</button>
+    <button id="tb-fullscreen" title="Pantalla completa">Pantalla</button>
+  </header>
+
+  <div class="tabbar" id="tabbar"></div>
+
+  <main id="workspace">
+    <section id="codePane">
+      <div class="pane-head"><span>Código</span><span class="spacer"></span></div>
+      <div class="editor">
+        <pre id="hl" aria-hidden="true"></pre>
+        <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off"
+          autocorrect="off" wrap="off" placeholder="// Escribí tu código JavaScript acá…"
+          aria-label="Editor de código JavaScript"></textarea>
+      </div>
+    </section>
+
+    <div id="splitter" role="separator" aria-orientation="horizontal" title="Arrastrá para redimensionar"></div>
+
+    <section id="outputPane">
+      <div class="pane-head">
+        <span>Salida</span>
+        <span class="spacer"></span>
+        <button id="out-autoscroll" title="Bajar automáticamente al final">Bajar</button>
+        <button id="out-clear" title="Vaciar la salida">Limpiar</button>
+        <button id="out-copy" title="Copiar la salida al portapapeles">Copiar</button>
+      </div>
+      <div id="out">
+        <div id="outEmpty">La salida aparece acá.<br>Escribí código y apretá <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> (⌘ en Mac), o activá <b>Auto</b> para ejecutar en vivo.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="statusbar">
+    <span id="status-run"></span>
+    <span class="spacer"></span>
+    <span id="status-pos"></span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+(function () {
+
+  /* ================================================================
+     PARTE 1 · Núcleo puro: transformación del código, análisis y
+     resaltado de sintaxis (sin dependencias del DOM)
+     ================================================================ */
+
+  const KW = new Set(("break case catch class const continue debugger default delete do else enum export extends finally for function if import in instanceof let new return static super switch this throw try typeof var void while with yield async await of get set true false null").split(" "));
+
+  const BUILTIN = new Set(("undefined NaN Infinity globalThis console Math JSON Promise Symbol BigInt Number String Boolean Array Object Function Date RegExp Error TypeError ReferenceError SyntaxError RangeError EvalError URIError Map Set WeakMap WeakSet Proxy Reflect parseInt parseFloat isNaN isFinite encodeURI decodeURI encodeURIComponent decodeURIComponent setTimeout setInterval clearTimeout clearInterval fetch document window navigator alert confirm").split(" "));
+
+  /* Divide el código en sentencias de nivel superior, respetando
+     cadenas, templates, comentarios y paréntesis. Devuelve
+     [{ start, end, text }] donde start/end delimitan el texto
+     recortado de cada sentencia. */
+  function splitTopLevel(code) {
+    const stmts = [];
+    let curStart = 0;
+    let paren = 0, bracket = 0, brace = 0;
+    let mode = "code", quote = "";
+    let i = 0, n = code.length;
+
+    function pushStmt(endIdx) {
+      const seg = code.slice(curStart, endIdx);
+      const lead = seg.match(/^\s*/)[0].length;
+      const trimmed = seg.slice(lead).replace(/\s+$/, "");
+      if (trimmed) {
+        const start = curStart + lead;
+        stmts.push({ start: start, end: start + trimmed.length, text: trimmed });
+      }
+      curStart = endIdx;
+    }
+
+    function lineComplete(nextIdx) {
+      const seg = code.slice(curStart, i);
+      const trimmed = seg.trimEnd();
+      if (!trimmed) return true;
+      const lastCh = trimmed[trimmed.length - 1];
+      if ("+-*/%&|^~<>=!?:.,;\\".includes(lastCh)) return false;   // termina en operador: continúa
+      if (trimmed.endsWith(";") || trimmed.endsWith("}")) return true;
+      // ¿la línea siguiente arranca con algo que continúa la expresión?
+      let k = nextIdx;
+      while (k < n && /\s/.test(code[k])) k++;
+      const nxt = code[k];
+      if (nxt && ".,(,+-*/%&|^~<>=!?:;)]}`".includes(nxt)) return false;
+      return true;
+    }
+
+    while (i < n) {
+      const c = code[i], nx = code[i + 1];
+
+      if (mode === "line") {
+        if (c === "\n") { mode = "code"; continue; }   // sin i++: reprocesa el \n como fin de sentencia
+        i++; continue;
+      }
+      if (mode === "block") { if (c === "*" && nx === "/") { mode = "code"; i++; } i++; continue; }
+      if (mode === "str") {
+        if (c === "\\") { i++; } else if (c === quote) mode = "code";
+        i++; continue;
+      }
+      if (mode === "tpl") {
+        if (c === "\\") { i++; }
+        else if (c === "`") mode = "code";
+        else if (c === "$" && nx === "{") { i++; mode = "tplx"; }
+        i++; continue;
+      }
+      if (mode === "tplx") {
+        if (c === "(") paren++;
+        else if (c === ")") paren--;
+        else if (c === "{") brace++;
+        else if (c === "}") { brace--; if (brace < 0) { brace = 0; mode = "tpl"; } }
+        i++; continue;
+      }
+
+      if (c === "/" && nx === "/") { mode = "line"; i++; continue; }
+      if (c === "/" && nx === "*") { mode = "block"; i++; continue; }
+      if (c === '"' || c === "'" || c === "`") { mode = c === "`" ? "tpl" : "str"; quote = c; i++; continue; }
+      if (c === "(") paren++;
+      else if (c === ")") paren--;
+      else if (c === "[") bracket++;
+      else if (c === "]") bracket--;
+      else if (c === "{") brace++;
+      else if (c === "}") brace--;
+
+      if ((c === ";" || c === "\n") && paren === 0 && bracket === 0 && brace === 0) {
+        if (c === "\n") {
+          if (lineComplete(i + 1)) { pushStmt(i); curStart = i + 1; }
+          else i++;
+        } else {
+          pushStmt(i);          // excluye el ";" de la sentencia
+          curStart = i + 1;
+        }
+        i++; continue;
+      }
+      i++;
+    }
+    pushStmt(n);
+    return stmts;
+  }
+
+  function hasCode(s) {
+    let mode = "code", quote = "", i = 0, n = s.length;
+    for (; i < n; i++) {
+      const c = s[i], nx = s[i + 1];
+      if (mode === "str") { if (c === "\\") i++; else if (c === quote) mode = "code"; continue; }
+      if (mode === "tpl") { if (c === "\\") i++; else if (c === "`") mode = "code"; continue; }
+      if (mode === "block") { if (c === "*" && nx === "/") { mode = "code"; i++; } continue; }
+      if (mode === "line") { if (c === "\n") mode = "code"; continue; }
+      if (c === "/" && nx === "/") { mode = "line"; i++; continue; }
+      if (c === "/" && nx === "*") { mode = "block"; i++; continue; }
+      if (c === '"' || c === "'" || c === "`") { mode = c === "`" ? "tpl" : "str"; quote = c; continue; }
+      if (!/\s/.test(c)) return true;
+    }
+    return false;
+  }
+
+  function containsTopLevelColon(s) {
+    let paren = 0, bracket = 0, mode = "code", quote = "", i = 0, n = s.length;
+    for (; i < n; i++) {
+      const c = s[i], nx = s[i + 1];
+      if (mode === "str") { if (c === "\\") i++; else if (c === quote) mode = "code"; continue; }
+      if (mode === "line") { if (c === "\n") mode = "code"; continue; }
+      if (mode === "block") { if (c === "*" && nx === "/") { mode = "code"; i++; } continue; }
+      if (mode === "tpl") { if (c === "\\") i++; else if (c === "`") mode = "code"; continue; }
+      if (c === '"' || c === "'" || c === "`") { mode = c === "`" ? "tpl" : "str"; quote = c; continue; }
+      if (c === "/" && nx === "/") { mode = "line"; i++; continue; }
+      if (c === "/" && nx === "*") { mode = "block"; i++; continue; }
+      if (c === "(") paren++;
+      else if (c === ")") paren--;
+      else if (c === "[") bracket++;
+      else if (c === "]") bracket--;
+      else if (paren === 0 && bracket === 0 && c === ":") return true;
+    }
+    return false;
+  }
+
+  function isObjectLiteral(t) {
+    if (!t.startsWith("{")) return false;
+    if (!t.endsWith("}")) return false;
+    const inner = t.slice(1, -1).trim();
+    if (!inner) return true;                 // {} es un objeto vacío
+    return containsTopLevelColon(inner);
+  }
+
+  function isExpr(s) {
+    const t = s.trim();
+    if (!t) return false;
+    if (/^(async\s+function\b|function\b|class\b|const\b|let\b|var\b|if\b|for\b|while\b|do\b|switch\b|try\b|throw\b|return\b|import\b|export\b|break\b|continue\b|debugger\b|case\b|default\b|with\b|yield\b)/.test(t)) return false;
+    if (/^[;]/.test(t)) return false;
+    if (/^[A-Za-z_$][\w$]*\s*:/.test(t)) return false;  // etiqueta
+    if (t.startsWith("{")) return isObjectLiteral(t);   // { ... }: objeto literal o bloque
+    return true;
+  }
+
+  /* Si la última sentencia es una expresión, la convierte en
+     "return (expr);" para que eval devuelva su valor. */
+  function stripTrailingLineComment(stmt) {
+    let i = 0, n = stmt.length, depth = 0, mode = "code", quote = "";
+    for (; i < n; i++) {
+      const c = stmt[i], nx = stmt[i + 1];
+      if (mode === "str") { if (c === "\\") i++; else if (c === quote) mode = "code"; continue; }
+      if (mode === "tpl") { if (c === "\\") i++; else if (c === "`") mode = "code"; continue; }
+      if (mode === "block") { if (c === "*" && nx === "/") { mode = "code"; i++; } continue; }
+      if (c === '"' || c === "'" || c === "`") { mode = c === "`" ? "tpl" : "str"; quote = c; continue; }
+      if (c === "/" && nx === "/") {
+        if (depth === 0 && stmt.indexOf("\n", i) === -1) return stmt.slice(0, i).trimEnd();
+        return stmt;
+      }
+      if (c === "/" && nx === "*") { mode = "block"; i++; continue; }
+      if (c === "(" || c === "[" || c === "{") depth++;
+      else if (c === ")" || c === "]" || c === "}") depth--;
+    }
+    return stmt;
+  }
+
+  function awaitAtDepthZero(s) {
+    let brace = 0, mode = "code", quote = "", i = 0, n = s.length;
+    for (; i < n; i++) {
+      const c = s[i], nx = s[i + 1];
+      if (mode === "str") { if (c === "\\") i++; else if (c === quote) mode = "code"; continue; }
+      if (mode === "tpl") { if (c === "\\") i++; else if (c === "`") mode = "code"; continue; }
+      if (mode === "line") { if (c === "\n") mode = "code"; continue; }
+      if (mode === "block") { if (c === "*" && nx === "/") { mode = "code"; i++; } continue; }
+      if (c === '"' || c === "'" || c === "`") { mode = c === "`" ? "tpl" : "str"; quote = c; continue; }
+      if (c === "/" && nx === "/") { mode = "line"; i++; continue; }
+      if (c === "/" && nx === "*") { mode = "block"; i++; continue; }
+      if (c === "{") { brace++; continue; }
+      if (c === "}") { brace--; continue; }
+      if (brace === 0 && /[A-Za-z_$]/.test(c)) {
+        if (/^await\b/.test(s.slice(i))) return true;
+      }
+    }
+    return false;
+  }
+
+  function hasAwait(code) {
+    const stmts = splitTopLevel(code);
+    return stmts.some(function (s) { return awaitAtDepthZero(s.text); });
+  }
+
+  function transform(code) {
+    const stmts = splitTopLevel(code);
+    let t = code;
+    const last = stmts.length ? stmts[stmts.length - 1] : null;
+    if (last && hasCode(last.text) && isExpr(last.text)) {
+      const base = stripTrailingLineComment(last.text);
+      t = code.slice(0, last.start) + "return (" + base + ");" + code.slice(last.end).replace(/^;/, "");
+    }
+    return { transformed: t, asyncMode: hasAwait(code) };
+  }
+
+  /* ---- Convierte el código a Markdown: los comentarios son texto,
+         el código va en bloques ```js ---- */
+  function toMarkdown(code) {
+    const n = code.length;
+    const comment = new Array(n).fill(false);
+    let mode = "code", quote = "";
+    let i = 0;
+    while (i < n) {
+      const c = code[i], nx = code[i + 1];
+      if (mode === "line") {
+        comment[i] = true;
+        if (c === "\n") mode = "code";
+        i++; continue;
+      }
+      if (mode === "block") {
+        comment[i] = true;
+        if (c === "*" && nx === "/") { comment[i + 1] = true; mode = "code"; i++; }
+        i++; continue;
+      }
+      if (mode === "str" || mode === "tpl") {
+        if (c === "\\") i++;
+        else if (mode === "str" && c === quote) mode = "code";
+        else if (mode === "tpl" && c === "`") mode = "code";
+        i++; continue;
+      }
+      if (c === "/" && nx === "/") { comment[i] = true; comment[i + 1] = true; mode = "line"; i++; }
+      else if (c === "/" && nx === "*") { comment[i] = true; comment[i + 1] = true; mode = "block"; i++; }
+      else if (c === '"' || c === "'" || c === "`") { mode = c === "`" ? "tpl" : "str"; quote = c; }
+      i++;
+    }
+
+    const blocks = [];
+    let runStart = 0, runKind = comment[0] ? "text" : "code";
+    const pushRun = function (end) {
+      const t = code.slice(runStart, end).trim();
+      if (t) blocks.push({ kind: runKind, text: t });
+      runStart = end;
+    };
+    for (let k = 1; k < n; k++) {
+      const kind = comment[k] ? "text" : "code";
+      if (kind !== runKind) { pushRun(k); runKind = kind; }
+    }
+    if (runStart < n) pushRun(n);
+
+    const escapeMd = function (s) {
+      return s
+        .replace(/^(\s*)([#*+-]|\d+\.)/, "$1\\$2")
+        .replace(/[`]/g, "\\`");
+    };
+    const cleanLine = function (line) {
+      let t = line.trim();
+      if (t.startsWith("//")) t = t.slice(2);
+      t = t.replace(/^\/\*+/, "").replace(/\*\/\s*$/, "").replace(/^\*/, "").trim();
+      return escapeMd(t.trim());
+    };
+
+    const out = [];
+    let textBuf = [];
+    const flushText = function () {
+      const paragraphs = [];
+      let cur = [];
+      for (const ln of textBuf) {
+        if (ln === "") { if (cur.length) { paragraphs.push(cur.join(" ")); cur = []; } }
+        else cur.push(ln);
+      }
+      if (cur.length) paragraphs.push(cur.join(" "));
+      for (const p of paragraphs) out.push(p);
+      textBuf = [];
+    };
+    for (const b of blocks) {
+      if (b.kind === "text") {
+        for (const ln of b.text.split("\n")) textBuf.push(cleanLine(ln));
+      } else {
+        flushText();
+        out.push("```js");
+        out.push(b.text.replace(/^\n/, "").replace(/\n+$/, ""));
+        out.push("```");
+      }
+    }
+    flushText();
+    return out.join("\n");
+  }
+
+  /* ---- Resaltado de sintaxis (devuelve HTML) ---- */
+  function escHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function highlight(src) {
+    const out = [];
+    let i = 0, n = src.length, prev = "none", lastKw = "";
+
+    const push = function (t, cls) {
+      if (!t) return;
+      out.push(cls ? '<span class="' + cls + '">' + escHtml(t) + "</span>" : escHtml(t));
+    };
+    const regexStart = function () {
+      return prev === "none" || prev === "op" || prev === "punct" || prev === "clos" || prev === "kw";
+    };
+
+    while (i < n) {
+      const c = src[i], nx = src[i + 1];
+
+      if (/\s/.test(c)) { let j = i; while (j < n && /\s/.test(src[j])) j++; push(src.slice(i, j)); i = j; continue; }
+
+      if (c === "/" && nx === "/") { let j = src.indexOf("\n", i); if (j < 0) j = n; push(src.slice(i, j), "t-c"); i = j; continue; }
+      if (c === "/" && nx === "*") { let j = src.indexOf("*/", i + 2); if (j < 0) j = n - 1; else j += 2; push(src.slice(i, j), "t-c"); i = j; continue; }
+
+      if (c === '"' || c === "'") {
+        let j = i + 1, q = c;
+        while (j < n) {
+          const ch = src[j];
+          if (ch === "\\") { j += 2; continue; }
+          if (ch === q || ch === "\n") break;
+          j++;
+        }
+        if (j >= n) j = n; else j++;
+        push(src.slice(i, j), "t-s"); i = j; prev = "str"; continue;
+      }
+
+      if (c === "`") {
+        let j = i + 1;
+        while (j < n) {
+          const ch = src[j];
+          if (ch === "\\") { j += 2; continue; }
+          if (ch === "`") { j++; break; }
+          if (ch === "$" && src[j + 1] === "{") {
+            let depth = 1, k = j + 2;
+            while (k < n && depth > 0) {
+              const cc = src[k];
+              if (cc === "\\") { k += 2; continue; }
+              if (cc === '"' || cc === "'" || cc === "`") {
+                const q = cc; k++;
+                while (k < n) {
+                  const c2 = src[k];
+                  if (c2 === "\\") { k += 2; continue; }
+                  if (c2 === q || c2 === "\n") break;
+                  k++;
+                }
+                k++; continue;
+              }
+              if (cc === "{") depth++;
+              if (cc === "}") depth--;
+              k++;
+            }
+            j = k; continue;
+          }
+          j++;
+        }
+        push(src.slice(i, j), "t-s"); i = j; prev = "str"; continue;
+      }
+
+      if (c === "/" && regexStart()) {
+        let j = i + 1, inClass = false;
+        while (j < n) {
+          const ch = src[j];
+          if (ch === "\\") { j += 2; continue; }
+          if (ch === "[") inClass = true;
+          else if (ch === "]") inClass = false;
+          else if (ch === "/" && !inClass) { j++; break; }
+          else if (ch === "\n") break;
+          j++;
+        }
+        while (j < n && /[a-z]/i.test(src[j])) j++;
+        push(src.slice(i, j), "t-r"); i = j; prev = "str"; continue;
+      }
+
+      const numMatch = /^(?:0[xX][0-9a-fA-F_]+n?|0[bB][01_]+n?|0[oO][0-7_]+n?|(?:\d[\d_]*\.?[\d_]*|\.\d[\d_]*)(?:[eE][+-]?\d[\d_]*)?n?)/.exec(src.slice(i));
+      if (numMatch) { push(numMatch[0], "t-n"); i += numMatch[0].length; prev = "num"; continue; }
+
+      const idMatch = /^[A-Za-z_$][\w$]*/.exec(src.slice(i));
+      if (idMatch) {
+        const w = idMatch[0];
+        if (KW.has(w)) { push(w, "t-k"); prev = "kw"; lastKw = w; }
+        else if (prev === "dot") { push(w, "t-p"); prev = "ident"; }
+        else {
+          let j = i + w.length;
+          while (j < n && /\s/.test(src[j])) j++;
+          if (src[j] === "(") push(w, "t-f");
+          else if (prev === "kw" && (lastKw === "class" || lastKw === "new" || lastKw === "extends")) push(w, "t-cl");
+          else if (BUILTIN.has(w)) push(w, "t-b");
+          else push(w, "t-v");
+          prev = "ident";
+        }
+        i += w.length; continue;
+      }
+
+      const opMatch = /^(?:\.\.\.|=>|===|!==|\*\*=|&&=|\|\|=|\?\?=|\?\?|<<=|>>=|>>>=|\*\*|&&|\|\||<<|>>>|>>|<=|>=|==|!=|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|--|\+\+|[+\-*/%&|^~!<>?=:;])/.exec(src.slice(i));
+      if (opMatch) { push(opMatch[0]); prev = "op"; i += opMatch[0].length; continue; }
+
+      const ch0 = src[i];
+      if ("()[]{},.".includes(ch0)) {
+        push(ch0);
+        prev = (ch0 === ")" || ch0 === "]" || ch0 === "}") ? "clos" : (ch0 === "." ? "dot" : "punct");
+        i++; continue;
+      }
+      push(src[i]); prev = "punct"; i++;
+    }
+    return out.join("");
+  }
+
+  /* ================================================================
+     PARTE 2 · Motor de evaluación
+     ================================================================ */
+
+  /* Cada ejecución corre en un scope propio y aislado (new Function).
+     Resultado: comportamiento predecible — el código de cada corrida
+     se evalúa por completo, sin estado residual de corridas previas. */
+  function slug(name) {
+    return (name || "x").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").slice(0, 30) || "x";
+  }
+
+  function evaluate(code, fileName) {
+    if (!code || !code.trim()) return Promise.resolve({ ok: true, value: undefined, error: null, asyncMode: false });
+    let transformed, asyncMode;
+    try {
+      const t = transform(code);
+      transformed = t.transformed;
+      asyncMode = t.asyncMode;
+    } catch (e) {
+      return Promise.resolve({ ok: false, value: undefined, error: e, asyncMode: false });
+    }
+    const srcUrl = "\n//# sourceURL=runjs-" + slug(fileName) + ".js";
+
+    return new Promise(function (resolve) {
+      try {
+        if (asyncMode) {
+          const fn = new Function('"use strict";\nreturn (async () => {\n' + transformed + "\n})();" + srcUrl);
+          fn().then(
+            function (v) { resolve({ ok: true, value: v, error: null, asyncMode: true }); },
+            function (e) { resolve({ ok: false, value: undefined, error: e, asyncMode: true }); }
+          );
+        } else {
+          const fn = new Function('"use strict";\n' + transformed + srcUrl);
+          const value = fn();
+          resolve({ ok: true, value: value, error: null, asyncMode: false });
+        }
+      } catch (e) {
+        resolve({ ok: false, value: undefined, error: e, asyncMode });
+      }
+    });
+  }
+
+  function fixStack(stack, offset) {
+    if (!stack) return "";
+    return stack.split("\n").map(function (line) {
+      return line.replace(/:(\d+):(\d+)/, function (m, ln, col) {
+        const n = parseInt(ln, 10) - offset;
+        return ":" + (n > 0 ? n : 1) + ":" + col;
+      });
+    }).join("\n");
+  }
+
+  /* ================================================================
+     PARTE 3 · Inspector de valores (salida enriquecida)
+     ================================================================ */
+
+  function spanTxt(cls, text) {
+    const sp = document.createElement("span");
+    if (cls) sp.className = cls;
+    sp.textContent = text;
+    return sp;
+  }
+
+  function getCtorName(value) {
+    try {
+      const proto = Object.getPrototypeOf(value);
+      return (proto && proto.constructor && proto.constructor.name) || "Object";
+    } catch (e) { return "Object"; }
+  }
+
+  function describeNode(node) {
+    let s = node.tagName ? node.tagName.toLowerCase() : (node.nodeName || "");
+    if (node.id) s += "#" + node.id;
+    if (node.classList && node.classList.length) s += "." + Array.from(node.classList).join(".");
+    if (node.nodeType === 3) s = '"' + String(node.nodeValue || "").slice(0, 40) + '"';
+    return s;
+  }
+
+  function describe(value) {
+    const t = typeof value;
+    if (value === null) return spanTxt("t-k", "null");
+    if (t === "undefined") return spanTxt("t-k", "undefined");
+    if (t === "string") {
+      let s = value.length > 80 ? value.slice(0, 80) + "…" : value;
+      return spanTxt("t-s", '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t") + '"');
+    }
+    if (t === "number") return spanTxt("t-n", String(value));
+    if (t === "bigint") return spanTxt("t-n", String(value) + "n");
+    if (t === "boolean") return spanTxt("t-k", String(value));
+    if (t === "symbol") return spanTxt("t-s", String(value));
+    if (t === "function") {
+      let name = value.name || "anónimo", params = "";
+      try {
+        const m = /\(([^)]*)\)/.exec(Function.prototype.toString.call(value));
+        if (m) params = m[1];
+      } catch (e) { /* noop */ }
+      return spanTxt("t-f", "ƒ " + name + "(" + params + ")");
+    }
+    if (value instanceof RegExp) return spanTxt("t-r", String(value));
+    if (value instanceof Date) {
+      let d;
+      try { d = value.toISOString().replace("T", " ").slice(0, 19); } catch (e) { d = String(value); }
+      return spanTxt("t-s", "Date " + d);
+    }
+    if (value instanceof Error) return spanTxt("t-e", value.name + ": " + value.message);
+    if (typeof Node !== "undefined" && value instanceof Node) return spanTxt("t-v", describeNode(value));
+    if (value && typeof value.then === "function") return spanTxt("t-v", "Promise {…}");
+    if (Array.isArray(value)) return spanTxt("t-v", "Array(" + value.length + ")");
+    if (value instanceof Map) return spanTxt("t-v", "Map(" + value.size + ")");
+    if (value instanceof Set) return spanTxt("t-v", "Set(" + value.size + ")");
+    if (ArrayBuffer.isView(value)) return spanTxt("t-v", value.constructor.name + "(" + value.length + ")");
+    const ctor = getCtorName(value);
+    return spanTxt("t-v", ctor === "Object" ? "{…}" : ctor + " {…}");
+  }
+
+  const CAP = 500;
+
+  function appendInspector(value, container, seen) {
+    seen = seen || new Set();
+    const t = typeof value;
+    if (value === null) { container.appendChild(spanTxt("t-k", "null")); return; }
+    if (t !== "object") { container.appendChild(describe(value)); return; }
+    if (typeof Node !== "undefined" && value instanceof Node) { container.appendChild(describe(value)); return; }
+    if (value instanceof Date || value instanceof RegExp || value instanceof Error) { container.appendChild(describe(value)); return; }
+    if (value && typeof value.then === "function") { container.appendChild(describe(value)); return; }
+    if (seen.has(value)) { container.appendChild(spanTxt("t-e", "[Circular]")); return; }
+
+    seen.add(value);
+    let kind = "obj";
+    if (Array.isArray(value)) kind = "arr";
+    else if (value instanceof Map) kind = "map";
+    else if (value instanceof Set) kind = "set";
+    else if (ArrayBuffer.isView(value)) kind = "typed";
+
+    const details = document.createElement("details");
+    details.className = "insp";
+    const sum = document.createElement("summary");
+    sum.appendChild(describe(value));
+    details.appendChild(sum);
+    const body = document.createElement("div");
+    body.className = "insp-body";
+
+    const addRow = function (keyEl, valEl) {
+      const r = document.createElement("div");
+      r.className = "insp-row";
+      if (keyEl) r.appendChild(keyEl);
+      appendInspector(valEl, r, seen);
+      body.appendChild(r);
+    };
+
+    if (kind === "arr") {
+      const total = value.length;
+      const shown = Math.min(total, CAP);
+      for (let k = 0; k < shown; k++) {
+        if (k in value) addRow(spanTxt("t-p", k + ":"), value[k]);
+        else addRow(spanTxt("t-c", k + ":"), spanTxt("t-c", "<vacío>"));
+      }
+      if (total > shown) {
+        const r = document.createElement("div");
+        r.className = "insp-row";
+        r.appendChild(spanTxt("t-c", "… y " + (total - shown) + " más"));
+        body.appendChild(r);
+      }
+    } else if (kind === "map") {
+      let c = 0;
+      for (const pair of value) {
+        if (c++ >= CAP) { break; }
+        const r = document.createElement("div");
+        r.className = "insp-row";
+        appendInspector(pair[0], r, seen);
+        r.appendChild(spanTxt("t-op", " → "));
+        appendInspector(pair[1], r, seen);
+        body.appendChild(r);
+      }
+    } else if (kind === "set") {
+      let c = 0;
+      for (const v of value) {
+        if (c++ >= CAP) { break; }
+        const r = document.createElement("div");
+        r.className = "insp-row";
+        appendInspector(v, r, seen);
+        body.appendChild(r);
+      }
+    } else if (kind === "typed") {
+      const r = document.createElement("div");
+      r.className = "insp-row";
+      r.appendChild(spanTxt("t-n", Array.from(value).join(", ")));
+      body.appendChild(r);
+    } else {
+      const keys = Object.keys(value);
+      const shown = Math.min(keys.length, CAP);
+      for (let k = 0; k < shown; k++) {
+        const key = keys[k];
+        addRow(spanTxt("t-p", key + ":"), value[key]);
+      }
+      if (keys.length > shown) {
+        const r = document.createElement("div");
+        r.className = "insp-row";
+        r.appendChild(spanTxt("t-c", "… y " + (keys.length - shown) + " claves más"));
+        body.appendChild(r);
+      }
+    }
+    details.appendChild(body);
+    container.appendChild(details);
+    seen.delete(value);
+  }
+
+  function renderTable(value) {
+    const wrap = document.createElement("div");
+    wrap.className = "out-table-wrap";
+    const table = document.createElement("table");
+    table.className = "out-table";
+
+    if (value === null || value === undefined) {
+      const row = document.createElement("tr");
+      const td = document.createElement("td");
+      td.appendChild(spanTxt("t-k", String(value)));
+      row.appendChild(td);
+      table.appendChild(row);
+      wrap.appendChild(table);
+      outputEl.appendChild(wrap);
+      return;
+    }
+
+    const th = function (txt) {
+      const e = document.createElement("th");
+      e.textContent = txt;
+      return e;
+    };
+    const cell = function (v) {
+      const td = document.createElement("td");
+      if (v === undefined) td.appendChild(spanTxt("t-k", "undefined"));
+      else if (v === null) td.appendChild(spanTxt("t-k", "null"));
+      else td.appendChild(describe(v));
+      return td;
+    };
+
+    if (value instanceof Map) {
+      const thead = document.createElement("thead");
+      const tr = document.createElement("tr");
+      tr.appendChild(th("Clave")); tr.appendChild(th("Valor"));
+      thead.appendChild(tr); table.appendChild(thead);
+      const tb = document.createElement("tbody");
+      for (const pair of value) {
+        const r = document.createElement("tr");
+        r.appendChild(cell(pair[0])); r.appendChild(cell(pair[1]));
+        tb.appendChild(r);
+      }
+      table.appendChild(tb);
+    } else if (Array.isArray(value)) {
+      const items = value.map(function (v) { return v && typeof v === "object" ? v : { "(valor)": v }; });
+      const isArr = items.every(function (o) { return Array.isArray(o); });
+      if (isArr) {
+        const width = items.reduce(function (m, o) { return Math.max(m, o.length); }, 0);
+        const thead = document.createElement("thead");
+        const tr = document.createElement("tr");
+        tr.appendChild(th("(índice)"));
+        for (let c = 0; c < width; c++) tr.appendChild(th(String(c)));
+        thead.appendChild(tr); table.appendChild(thead);
+        const tb = document.createElement("tbody");
+        items.forEach(function (o, i) {
+          const r = document.createElement("tr");
+          const td = document.createElement("td"); td.textContent = String(i); r.appendChild(td);
+          for (let c = 0; c < width; c++) r.appendChild(cell(o[c]));
+          tb.appendChild(r);
+        });
+        table.appendChild(tb);
+      } else {
+        const keys = Array.from(new Set(items.flatMap(function (o) { return Object.keys(o); })));
+        const thead = document.createElement("thead");
+        const tr = document.createElement("tr");
+        tr.appendChild(th("(índice)"));
+        keys.forEach(function (k) { tr.appendChild(th(k)); });
+        thead.appendChild(tr); table.appendChild(thead);
+        const tb = document.createElement("tbody");
+        items.forEach(function (o, i) {
+          const r = document.createElement("tr");
+          const td = document.createElement("td"); td.textContent = String(i); r.appendChild(td);
+          keys.forEach(function (k) { r.appendChild(cell(o[k])); });
+          tb.appendChild(r);
+        });
+        table.appendChild(tb);
+      }
+    } else {
+      const keys = Object.keys(value);
+      const thead = document.createElement("thead");
+      const tr = document.createElement("tr");
+      tr.appendChild(th("Clave")); tr.appendChild(th("Valor"));
+      thead.appendChild(tr); table.appendChild(thead);
+      const tb = document.createElement("tbody");
+      keys.forEach(function (k) {
+        const r = document.createElement("tr");
+        const td = document.createElement("td"); td.textContent = k; r.appendChild(td);
+        r.appendChild(cell(value[k]));
+        tb.appendChild(r);
+      });
+      table.appendChild(tb);
+    }
+    wrap.appendChild(table);
+    outputEl.appendChild(wrap);
+  }
+
+  /* ================================================================
+     PARTE 4 · Consola capturada (salida en vivo)
+     ================================================================ */
+
+  const origConsole = {};
+  for (const k of Object.keys(console)) origConsole[k] = console[k];
+
+  const counts = new Map();
+  const timers = new Map();
+  let groupIndent = 0;
+  let rowCount = 0;
+  const MAX_ROWS = 6000;
+  let truncNoticeShown = false;
+
+  function outRow(cls) {
+    const row = document.createElement("div");
+    row.className = "out-row" + (cls ? " " + cls : "");
+    if (groupIndent) row.style.marginLeft = (groupIndent * 1.2) + "em";
+    return row;
+  }
+
+  function appendOutput(node) {
+    if (rowCount >= MAX_ROWS) {
+      if (!truncNoticeShown) {
+        truncNoticeShown = true;
+        const r = document.createElement("div");
+        r.className = "out-row out-error";
+        r.appendChild(spanTxt("t-e", "… más de " + MAX_ROWS + " líneas. Usá «Limpiar»."));
+        outputEl.appendChild(r);
+      }
+      return;
+    }
+    rowCount++;
+    outputEl.appendChild(node);
+    scrollOut();
+  }
+
+  function appendLog(method, args) {
+    const meta = { log: {}, info: { cls: "out-info", label: "info" }, debug: { cls: "out-info", label: "debug" },
+      warn: { cls: "out-warn", label: "advertencia" }, error: { cls: "out-error", label: "error" } }[method] || {};
+    const row = outRow(meta.cls || "");
+    if (meta.label) row.appendChild(spanTxt("out-badge", meta.label));
+    const argsEl = document.createElement("span");
+    argsEl.className = "out-args";
+    args.forEach(function (a, idx) {
+      if (idx > 0) argsEl.appendChild(spanTxt("t-op", " "));
+      appendInspector(a, argsEl);
+    });
+    row.appendChild(argsEl);
+    appendOutput(row);
+  }
+
+  function initConsole() {
+    ["log", "info", "warn", "error", "debug"].forEach(function (m) {
+      console[m] = function () {
+        const args = Array.prototype.slice.call(arguments);
+        try { origConsole[m].apply(console, args); } catch (e) { /* noop */ }
+        appendLog(m, args);
+      };
+    });
+    console.assert = function (cond) {
+      const rest = Array.prototype.slice.call(arguments, 1);
+      try { origConsole.assert && origConsole.assert.apply(console, arguments); } catch (e) { /* noop */ }
+      if (!cond) appendLog("error", rest.length ? rest : ["Afirmación falló"]);
+    };
+    console.table = function (value) {
+      try { origConsole.table && origConsole.table.apply(console, arguments); } catch (e) { /* noop */ }
+      renderTable(value);
+    };
+    console.dir = function () {
+      const args = Array.prototype.slice.call(arguments);
+      try { origConsole.dir && origConsole.dir.apply(console, arguments); } catch (e) { /* noop */ }
+      appendLog("log", args);
+    };
+    console.trace = function () {
+      const args = Array.prototype.slice.call(arguments);
+      try { origConsole.trace && origConsole.trace.apply(console, arguments); } catch (e) { /* noop */ }
+      const st = new Error("Trace").stack;
+      appendLog("log", args.concat([st.replace(/^Error: Trace\n/, "").replace(/^\s+at [^\n]+/m, "")]));
+    };
+    console.count = function (label) {
+      label = label === undefined ? "default" : label;
+      const n = (counts.get(label) || 0) + 1;
+      counts.set(label, n);
+      try { origConsole.count && origConsole.count.call(console, label); } catch (e) { /* noop */ }
+      appendLog("log", [label + ": " + n]);
+    };
+    console.countReset = function (label) {
+      label = label === undefined ? "default" : label;
+      counts.delete(label);
+      try { origConsole.countReset && origConsole.countReset.call(console, label); } catch (e) { /* noop */ }
+    };
+    console.time = function (label) {
+      label = label === undefined ? "default" : label;
+      timers.set(label, performance.now());
+      try { origConsole.time && origConsole.time.call(console, label); } catch (e) { /* noop */ }
+    };
+    console.timeEnd = function (label) {
+      label = label === undefined ? "default" : label;
+      const st = timers.get(label);
+      if (st != null) {
+        timers.delete(label);
+        appendLog("log", [label + ": " + ((performance.now() - st) / 1000).toFixed(4) + " s"]);
+      }
+      try { origConsole.timeEnd && origConsole.timeEnd.call(console, label); } catch (e) { /* noop */ }
+    };
+    console.group = function () {
+      const args = Array.prototype.slice.call(arguments);
+      if (args.length) appendLog("log", args);
+      groupIndent++;
+    };
+    console.groupCollapsed = console.group;
+    console.groupEnd = function () {
+      groupIndent = Math.max(0, groupIndent - 1);
+      try { origConsole.groupEnd && origConsole.groupEnd.call(console); } catch (e) { /* noop */ }
+    };
+    console.clear = function () {
+      try { origConsole.clear && origConsole.clear.call(console); } catch (e) { /* noop */ }
+      clearOutput();
+    };
+  }
+
+  /* ================================================================
+     PARTE 5 · UI: editor, salida, pestañas, preferencias
+     ================================================================ */
+
+  const $ = function (id) { return document.getElementById(id); };
+  const editorEl = $("code"), hlEl = $("hl"), outputEl = $("out");
+  const tabbarEl = $("tabbar"), statusRun = $("status-run"), statusPos = $("status-pos");
+  const workspaceEl = $("workspace"), codePaneEl = $("codePane"), splitterEl = $("splitter");
+  const outEmptyEl = $("outEmpty");
+
+  let tabs = [];
+  let active = 0;
+
+  const settings = {
+    font: 22,           // px
+    theme: "dark",
+    autoRun: false,
+    layout: "col",      // col = apilado, row = lado a lado
+    codeBasis: 46,      // % de la altura/anchura para el código
+    autoScroll: true,
+    clearOnRun: false
+  };
+
+  function loadState() {
+    try {
+      const st = JSON.parse(localStorage.getItem("runjs.settings.v1") || "null");
+      if (st) Object.assign(settings, st);
+    } catch (e) { /* noop */ }
+    try {
+      const t = JSON.parse(localStorage.getItem("runjs.tabs.v1") || "null");
+      if (t && Array.isArray(t.tabs) && t.tabs.length) {
+        tabs = t.tabs;
+        active = Math.min(t.active || 0, tabs.length - 1);
+        return;
+      }
+    } catch (e) { /* noop */ }
+    tabs = [{ id: "t" + Date.now(), name: "archivo 1", code: '// Escribí tu primer programa acá\nconsole.log("Hola, mundo");\n' }];
+    active = 0;
+  }
+
+  function saveState() {
+    try { localStorage.setItem("runjs.tabs.v1", JSON.stringify({ tabs: tabs, active: active })); } catch (e) { /* noop */ }
+    try { localStorage.setItem("runjs.settings.v1", JSON.stringify(settings)); } catch (e) { /* noop */ }
+  }
+
+  function currentTab() { return tabs[active]; }
+
+  /* --- Editor --- */
+  let highlightTimer = null;
+  let saveTimer = null;
+  let autoRunTimer = null;
+
+  function renderHighlight() {
+    const v = editorEl.value;
+    hlEl.innerHTML = highlight(v) + "\n";
+  }
+
+  function onInput() {
+    if (currentTab()) currentTab().code = editorEl.value;
+    clearTimeout(highlightTimer);
+    highlightTimer = setTimeout(renderHighlight, 40);
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 350);
+    if (settings.autoRun) {
+      clearTimeout(autoRunTimer);
+      autoRunTimer = setTimeout(function () { run(); }, 700);
+    }
+    updatePos();
+  }
+
+  function updatePos() {
+    const pos = editorEl.selectionStart;
+    const upto = editorEl.value.slice(0, pos);
+    const line = (upto.match(/\n/g) || []).length + 1;
+    const col = pos - upto.lastIndexOf("\n");
+    statusPos.textContent = "Línea " + line + ", Col " + col;
+  }
+
+  function goToLine(ln) {
+    const v = editorEl.value;
+    let idx = 0;
+    for (let k = 1; k < ln; k++) {
+      const nl = v.indexOf("\n", idx);
+      if (nl === -1) break;
+      idx = nl + 1;
+    }
+    editorEl.focus();
+    editorEl.setSelectionRange(idx, idx);
+    updatePos();
+  }
+
+  /* --- Ejecución --- */
+  let running = false;
+
+  function clearOutput() {
+    outputEl.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.id = "outEmpty";
+    empty.innerHTML = "La salida aparece acá.<br>Escribí código y apretá <span class=\"kbd\">Ctrl</span>+<span class=\"kbd\">Enter</span> (⌘ en Mac), o activá <b>Auto</b> para ejecutar en vivo.";
+    outputEl.appendChild(empty);
+    rowCount = 0;
+    truncNoticeShown = false;
+  }
+
+  function scrollOut() {
+    if (!settings.autoScroll) return;
+    outputEl.scrollTop = outputEl.scrollHeight;
+  }
+
+  function showCompletion(value) {
+    const row = outRow("out-result");
+    row.appendChild(spanTxt("out-badge result", "Resultado"));
+    const a = document.createElement("span");
+    a.className = "out-args";
+    appendInspector(value, a);
+    row.appendChild(a);
+    appendOutput(row);
+  }
+
+  function showError(err, asyncMode) {
+    const offset = asyncMode ? 2 : 1;
+    const row = outRow("out-error");
+    row.appendChild(spanTxt("out-badge error", "Error"));
+    const a = document.createElement("span");
+    a.className = "out-args";
+    a.appendChild(spanTxt("t-e", (err && err.name) || "Error"));
+    a.appendChild(spanTxt("t-e", ": " + ((err && err.message) || String(err))));
+    row.appendChild(a);
+    appendOutput(row);
+
+    const stack = err && err.stack;
+    if (stack) {
+      const d = document.createElement("details");
+      d.className = "insp";
+      const s = document.createElement("summary");
+      s.appendChild(spanTxt("t-v", "Ver la traza"));
+      d.appendChild(s);
+      const b = document.createElement("div");
+      b.className = "insp-body stack";
+      b.textContent = fixStack(stack, offset);
+      d.appendChild(b);
+      const wrapRow = document.createElement("div");
+      wrapRow.className = "out-row";
+      wrapRow.appendChild(d);
+      outputEl.appendChild(wrapRow);
+    }
+    // coloca el cursor en la línea del error
+    const m = /:(\d+):\d+/.exec(stack || "");
+    if (m) goToLine(Math.max(1, parseInt(m[1], 10) - offset));
+  }
+
+  function setStatus(text, cls) {
+    statusRun.textContent = text;
+    statusRun.className = cls || "";
+  }
+
+  function run() {
+    if (running) return;
+    const code = editorEl.value;
+    if (!code.trim()) { setStatus("Sin código", "err"); return; }
+    running = true;
+    if (settings.clearOnRun) clearOutput();
+    setStatus("Ejecutando…");
+    const t0 = performance.now();
+    const tab = currentTab();
+
+    evaluate(code, tab ? tab.name : "archivo").then(function (res) {
+      const ms = (performance.now() - t0).toFixed(1);
+      if (res.ok && res.value !== undefined) showCompletion(res.value);
+      if (!res.ok) showError(res.error, res.asyncMode);
+      setStatus(res.ok ? "✓ " + ms + " ms" : "✗ " + ms + " ms", res.ok ? "ok" : "err");
+      running = false;
+    });
+  }
+
+  /* --- Pestañas --- */
+  function renderTabs() {
+    tabbarEl.innerHTML = "";
+    tabs.forEach(function (t, i) {
+      const tab = document.createElement("div");
+      tab.className = "tab" + (i === active ? " active" : "");
+
+      const nameBtn = document.createElement("button");
+      nameBtn.type = "button";
+      nameBtn.className = "tab-name";
+      nameBtn.textContent = t.name;
+      nameBtn.title = "Activar. Doble clic para renombrar.";
+      nameBtn.addEventListener("click", function () { selectTab(i); });
+      nameBtn.addEventListener("dblclick", function () { renameTab(i); });
+      tab.appendChild(nameBtn);
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "tab-close";
+      closeBtn.textContent = "×";
+      closeBtn.title = "Cerrar pestaña";
+      closeBtn.addEventListener("click", function () { closeTab(i); });
+      tab.appendChild(closeBtn);
+
+      tabbarEl.appendChild(tab);
+    });
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.id = "tab-add";
+    addBtn.textContent = "+ Nueva pestaña";
+    addBtn.title = "Crear una pestaña nueva";
+    addBtn.addEventListener("click", function () {
+      addTab("archivo " + (tabs.length + 1), "");
+    });
+    tabbarEl.appendChild(addBtn);
+  }
+
+  function selectTab(i) {
+    if (i === active) return;
+    if (currentTab()) currentTab().code = editorEl.value;
+    active = i;
+    editorEl.value = currentTab().code || "";
+    renderHighlight();
+    renderTabs();
+    updatePos();
+    saveState();
+    if (settings.autoRun) scheduleAutoRun();
+  }
+
+  function addTab(name, code) {
+    if (currentTab()) currentTab().code = editorEl.value;
+    tabs.push({ id: "t" + Date.now(), name: name, code: code });
+    active = tabs.length - 1;
+    editorEl.value = code;
+    renderHighlight();
+    renderTabs();
+    updatePos();
+    saveState();
+    if (settings.autoRun) scheduleAutoRun();
+  }
+
+  function renameTab(i) {
+    const name = prompt("Nombre de la pestaña:", tabs[i].name);
+    if (name && name.trim()) {
+      tabs[i].name = name.trim();
+      renderTabs();
+      saveState();
+    }
+  }
+
+  function closeTab(i) {
+    if (tabs.length <= 1) { clearOutput(); return; }
+    tabs.splice(i, 1);
+    if (i < active) active--;
+    else if (i === active) active = Math.max(0, active - 1);
+    editorEl.value = currentTab().code || "";
+    renderHighlight();
+    renderTabs();
+    updatePos();
+    saveState();
+    if (settings.autoRun) scheduleAutoRun();
+  }
+
+  function scheduleAutoRun() {
+    clearTimeout(autoRunTimer);
+    autoRunTimer = setTimeout(function () { run(); }, 700);
+  }
+
+  /* --- Preferencias visuales --- */
+  function applySettings() {
+    document.documentElement.style.setProperty("--fs", (settings.font / 16) + "rem");
+    document.documentElement.setAttribute("data-theme", settings.theme);
+    codePaneEl.style.setProperty("--code-basis", settings.codeBasis + "%");
+    workspaceEl.classList.toggle("row", settings.layout === "row");
+    $("tb-auto").classList.toggle("toggle-on", settings.autoRun);
+    $("out-autoscroll").classList.toggle("toggle-on", settings.autoScroll);
+    $("tb-fullscreen").textContent = document.fullscreenElement ? "Salir" : "Pantalla";
+    $("tb-layout").title = settings.layout === "row" ? "Orientación actual: lado a lado" : "Orientación actual: apilado";
+    $("tb-theme").title = settings.theme === "dark" ? "Tema actual: oscuro" : "Tema actual: claro";
+    $("tb-auto").title = settings.autoRun ? "Auto activado (ejecuta al escribir)" : "Auto desactivado";
+    splitterEl.setAttribute("aria-orientation", settings.layout === "row" ? "vertical" : "horizontal");
+    saveState();
+  }
+
+  function changeFont(delta) {
+    settings.font = Math.max(13, Math.min(44, settings.font + delta));
+    applySettings();
+  }
+
+  function toggleFull() {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () { /* noop */ });
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+
+  /* --- Ejemplos --- */
+  const EXAMPLES = [
+    { name: "Bienvenida", code: '// ¡Hola! Este es RunJS en modo clase.\nconsole.log("Hola, mundo");\nconsole.log("Esto se muestra al instante.");\n\nlet total = 2 + 3 * 4;\nconsole.log("2 + 3 * 4 =", total);\n' },
+    { name: "Variables y tipos", code: 'let nombre = "Ada";\nconst edad = 36;\nlet activo = true;\n\nconsole.log("Nombre:", nombre);\nconsole.log("Edad:", edad);\nconsole.log("Tipo de nombre:", typeof nombre);\n\nnombre = "Grace";  // se puede reasignar\nconsole.log("Nuevo nombre:", nombre);\n' },
+    { name: "Plantillas de texto", code: 'const curso = "Programación";\nconst alumnos = 12;\n\n// Template literal con ${...}\nconst mensaje = `En ${curso} hay ${alumnos} alumnos.`;\nconsole.log(mensaje);\n\n// Operaciones dentro del template\nconsole.log(`La mitad es ${alumnos / 2}.`);\n' },
+    { name: "Condicionales", code: 'const nota = 7;\n\nif (nota >= 7) {\n  console.log("Aprobado");\n} else if (nota >= 4) {\n  console.log("Recupera");\n} else {\n  console.log("Desaprobado");\n}\n\nconst resultado = nota >= 7 ? "Aprobado" : "No aprobado";\nconsole.log("Con ternario:", resultado);\n' },
+    { name: "Bucles", code: 'for (let i = 1; i <= 5; i++) {\n  console.log("Vuelta", i);\n}\n\nlet j = 1;\nwhile (j <= 3) {\n  console.log("while:", j);\n  j++;\n}\n\nconst letras = ["a", "b", "c"];\nfor (const l of letras) {\n  console.log("letra:", l);\n}\n' },
+    { name: "Funciones", code: 'function sumar(a, b) {\n  return a + b;\n}\n\nconst duplicar = (x) => x * 2;\n\nconsole.log("sumar(3, 4) =", sumar(3, 4));\nconsole.log("duplicar(5) =", duplicar(5));\n' },
+    { name: "Arrays y objetos", code: 'const notas = [8, 6, 9, 7];\nconsole.log("Notas:", notas);\nconsole.log("Cantidad:", notas.length);\nconsole.log("Primera:", notas[0]);\n\nconst persona = {\n  nombre: "Luna",\n  curso: "4to B",\n  nota: 8.5\n};\nconsole.log("Persona:", persona);\nconsole.log("Su nota:", persona.nota);\n' },
+    { name: "Métodos de arrays", code: 'const numeros = [1, 2, 3, 4, 5];\n\nconst dobles = numeros.map((n) => n * 2);\nconsole.log("Dobles:", dobles);\n\nconst pares = numeros.filter((n) => n % 2 === 0);\nconsole.log("Pares:", pares);\n\nconst suma = numeros.reduce((acc, n) => acc + n, 0);\nconsole.log("Suma:", suma);\n' },
+    { name: "Strings", code: 'const palabra = "  JavaScript  ";\n\nconsole.log("Largo:", palabra.trim().length);\nconsole.log("Mayúsculas:", palabra.trim().toUpperCase());\nconsole.log(\'¿Contiene "Script"?\', palabra.includes("Script"));\nconsole.log("Parte:", palabra.trim().slice(0, 4));\nconsole.log("Dividida:", palabra.trim().split("a"));\n' },
+    { name: "Clases", code: 'class Rectangulo {\n  constructor(base, altura) {\n    this.base = base;\n    this.altura = altura;\n  }\n  area() {\n    return this.base * this.altura;\n  }\n  perimetro() {\n    return 2 * (this.base + this.altura);\n  }\n}\n\nconst r = new Rectangulo(4, 5);\nconsole.log("Área:", r.area());\nconsole.log("Perímetro:", r.perimetro());\nconsole.log("Rectángulo:", r);\n' },
+    { name: "Errores y try/catch", code: 'try {\n  let x = noExiste;\n} catch (error) {\n  console.log("Error capturado:", error.message);\n} finally {\n  console.log("Siempre se ejecuta el finally");\n}\n\nfunction dividir(a, b) {\n  if (b === 0) throw new Error("No se puede dividir por cero");\n  return a / b;\n}\nconsole.log("10 / 2 =", dividir(10, 2));\n' },
+    { name: "Promesas y async/await", code: 'function esperar(ms) {\n  return new Promise((resolve) => setTimeout(resolve, ms));\n}\n\nasync function principal() {\n  console.log("Empiezo...");\n  await esperar(1000);\n  console.log("Pasó 1 segundo");\n  return "Listo";\n}\n\nconst resultado = await principal();\nconsole.log("Resultado:", resultado);\n' },
+    { name: "Asincronía en vivo", code: 'console.log("Inicio");\n\nsetTimeout(() => console.log("Pasó 1 segundo"), 1000);\nsetTimeout(() => console.log("Pasaron 2 segundos"), 2000);\n\nlet contador = 0;\nconst intervalo = setInterval(() => {\n  contador++;\n  console.log("Tick", contador);\n  if (contador === 3) clearInterval(intervalo);\n}, 500);\n' },
+    { name: "Set y Map", code: 'const numeros = new Set();\nnumeros.add(1).add(2).add(2).add(3);\nconsole.log("Set:", numeros);\nconsole.log("¿Tiene 2?", numeros.has(2));\n\nconst legajo = new Map();\nlegajo.set("Luna", 8);\nlegajo.set("Tomás", 7);\nlegajo.set("Sofía", 9);\nconsole.log("Map:", legajo);\nconsole.log("Nota de Sofía:", legajo.get("Sofía"));\n' },
+    { name: "Recursión", code: 'function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}\n\nfunction fib(n) {\n  if (n <= 1) return n;\n  return fib(n - 1) + fib(n - 2);\n}\n\nconsole.log("5! =", factorial(5));\nconsole.log("fib(10) =", fib(10));\n' },
+    { name: "Números y Math", code: 'console.log("Pi:", Math.PI);\nconsole.log("Redondeo:", Math.round(3.6));\nconsole.log("Piso:", Math.floor(3.9));\nconsole.log("Techo:", Math.ceil(3.1));\nconsole.log("Máximo:", Math.max(4, 9, 2));\nconsole.log("Aleatorio:", Math.floor(Math.random() * 10) + 1);\nconsole.log("Potencia:", Math.pow(2, 10));\nconsole.log("Raíz:", Math.sqrt(144));\n' },
+    { name: "console.table", code: 'const notas = [\n  { nombre: "Luna", nota: 8 },\n  { nombre: "Tomás", nota: 7 },\n  { nombre: "Sofía", nota: 9 }\n];\nconsole.table(notas);\n\nconst numeros = [1, 2, 3, 4, 5];\nconsole.table(numeros);\n' },
+    { name: "Fechas", code: 'const ahora = new Date();\nconsole.log("Hoy:", ahora);\n\nconst cumple = new Date(2005, 5, 15);\nconsole.log("Nacimiento:", cumple.toLocaleDateString());\nconsole.log("Año:", cumple.getFullYear());\n' }
+  ];
+
+  function fillExamples() {
+    const sel = $("tb-examples");
+    sel.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = ""; opt.textContent = "Ejemplos…";
+    sel.appendChild(opt);
+    EXAMPLES.forEach(function (ex, idx) {
+      const o = document.createElement("option");
+      o.value = String(idx);
+      o.textContent = ex.name;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", function () {
+      const idx = sel.value;
+      if (idx === "") return;
+      const ex = EXAMPLES[parseInt(idx, 10)];
+      if (ex) addTab(ex.name, ex.code);
+      sel.value = "";
+    });
+  }
+
+  /* --- Eventos de UI --- */
+  function wireEvents() {
+    $("tb-run").addEventListener("click", function () { run(); });
+    $("tb-auto").addEventListener("click", function () {
+      settings.autoRun = !settings.autoRun;
+      applySettings();
+      if (settings.autoRun) scheduleAutoRun();
+    });
+    $("tb-font-plus").addEventListener("click", function () { changeFont(1); });
+    $("tb-font-minus").addEventListener("click", function () { changeFont(-1); });
+    $("tb-layout").addEventListener("click", function () {
+      settings.layout = settings.layout === "row" ? "col" : "row";
+      applySettings();
+    });
+    $("tb-theme").addEventListener("click", function () {
+      settings.theme = settings.theme === "dark" ? "light" : "dark";
+      applySettings();
+    });
+    $("tb-fullscreen").addEventListener("click", toggleFull);
+    document.addEventListener("fullscreenchange", function () {
+      $("tb-fullscreen").textContent = document.fullscreenElement ? "Salir" : "Pantalla";
+    });
+    $("tb-md").addEventListener("click", function () {
+      const md = toMarkdown(currentTab().code || editorEl.value);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(md).then(function () {
+          $("tb-md").textContent = "¡Copiado!";
+          setTimeout(function () { $("tb-md").textContent = "Markdown"; }, 1500);
+        });
+      }
+    });
+
+    $("out-clear").addEventListener("click", clearOutput);
+    $("out-autoscroll").addEventListener("click", function () {
+      settings.autoScroll = !settings.autoScroll;
+      applySettings();
+      if (settings.autoScroll) scrollOut();
+    });
+    $("out-copy").addEventListener("click", function () {
+      const txt = outputEl.innerText.replace(/^La salida aparece acá\.\s*/m, "").replace(/\n{2,}/g, "\n").trim();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () {
+          $("out-copy").textContent = "¡Copiado!";
+          setTimeout(function () { $("out-copy").textContent = "Copiar"; }, 1200);
+        });
+      }
+    });
+
+    editorEl.addEventListener("input", onInput);
+    editorEl.addEventListener("keyup", updatePos);
+    editorEl.addEventListener("click", updatePos);
+    editorEl.addEventListener("scroll", function () {
+      hlEl.scrollTop = editorEl.scrollTop;
+      hlEl.scrollLeft = editorEl.scrollLeft;
+    });
+
+    editorEl.addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const s = editorEl.selectionStart, en = editorEl.selectionEnd;
+        const v = editorEl.value;
+        editorEl.value = v.slice(0, s) + "  " + v.slice(en);
+        editorEl.selectionStart = editorEl.selectionEnd = s + 2;
+        onInput();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault(); run();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault(); run();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "=") {
+        e.preventDefault(); changeFont(1);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "-") {
+        e.preventDefault(); changeFont(-1);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "0") {
+        e.preventDefault(); settings.font = 22; applySettings();
+      }
+    });
+
+    /* Splitter */
+    let dragging = false;
+    splitterEl.addEventListener("pointerdown", function (e) {
+      dragging = true;
+      splitterEl.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    splitterEl.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      const rect = workspaceEl.getBoundingClientRect();
+      let pct;
+      if (settings.layout === "row") pct = ((e.clientX - rect.left) / rect.width) * 100;
+      else pct = ((e.clientY - rect.top) / rect.height) * 100;
+      settings.codeBasis = Math.max(15, Math.min(85, pct));
+      codePaneEl.style.setProperty("--code-basis", settings.codeBasis + "%");
+      saveState();
+    });
+    ["pointerup", "pointercancel"].forEach(function (ev) {
+      splitterEl.addEventListener(ev, function () { dragging = false; });
+    });
+
+    /* Rueda sobre pestañas para cambiar */
+    let wheelLock = 0;
+    tabbarEl.addEventListener("wheel", function (e) {
+      if (tabs.length < 2) return;
+      e.preventDefault();
+      const now = Date.now();
+      if (now - wheelLock < 250) return;
+      wheelLock = now;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      selectTab((active + dir + tabs.length) % tabs.length);
+    }, { passive: false });
+
+    window.addEventListener("resize", function () {
+      renderHighlight();
+      hlEl.scrollTop = editorEl.scrollTop;
+      hlEl.scrollLeft = editorEl.scrollLeft;
+    });
+  }
+
+  /* --- Arranque --- */
+  function init() {
+    loadState();
+    initConsole();
+    editorEl.value = currentTab().code || "";
+    renderHighlight();
+    renderTabs();
+    fillExamples();
+    wireEvents();
+    applySettings();
+    updatePos();
+    if (settings.autoRun) scheduleAutoRun();
+    setTimeout(function () { hlEl.scrollTop = editorEl.scrollTop; hlEl.scrollLeft = editorEl.scrollLeft; }, 50);
+  }
+
+  init();
+
+  /* Exposición para pruebas y depuración */
+  window.__runjs = { transform: transform, splitTopLevel: splitTopLevel, toMarkdown: toMarkdown, isExpr: isExpr, hasAwait: hasAwait, highlight: highlight, evaluate: evaluate, run: run, examples: EXAMPLES };
+})();
+</script>
+</body>
+</html>

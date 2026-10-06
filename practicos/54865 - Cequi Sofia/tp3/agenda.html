@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda</title>
+    <style>
+      :root {
+        --fondo: #f5f6f4;
+        --tarjeta: #fdfcf8;
+        --borde: #e2e0d6;
+        --tinta: #22231d;
+        --suave: #5c5b52;
+        --tenue: #8b897c;
+        --acento: #2c3521;
+        --dorado: #93731f;
+        --dorado-tenue: #c7bfa4;
+        --peligro: #b5442e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 20px;
+        font: 16px sans-serif;
+        background: var(--fondo);
+        color: var(--tinta);
+      }
+      main {
+        width: 1104px;
+        max-width: 100%;
+        margin: auto;
+      }
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      :focus-visible {
+        outline: 2.5px solid var(--acento);
+        outline-offset: 2px;
+      }
+
+      .boton {
+        padding: 10px 22px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        background: var(--acento);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+
+        &.secundario {
+          background: transparent;
+          border-color: var(--borde);
+          color: var(--tinta);
+        }
+        &.peligro {
+          background: transparent;
+          color: var(--peligro);
+          padding-inline: 4px;
+        }
+      }
+
+      .cabecera {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+
+        & h1 {
+          font-size: 34px;
+        }
+
+        & > div {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        & input {
+          min-width: 240px;
+          padding: 10px 18px;
+          border: 1px solid var(--borde);
+          border-radius: 999px;
+          background: var(--tarjeta);
+          color: var(--tinta);
+        }
+      }
+
+      .grilla {
+        display: grid;
+        grid-template-columns: repeat(3, 360px);
+        justify-content: center;
+        gap: 12px;
+
+        @media (max-width: 1120px) {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        @media (max-width: 700px) {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .vacio {
+        grid-column: 1 / -1;
+        padding: 48px 0;
+        text-align: center;
+        color: var(--suave);
+      }
+
+      .tarjeta {
+        min-width: 0;
+        padding: 20px 22px;
+        border: 1px solid var(--borde);
+        border-radius: 16px;
+        cursor: pointer;
+        background: var(--tarjeta);
+        box-shadow:
+          0 1px 2px rgb(0 0 0 / 0.05),
+          0 8px 20px rgb(0 0 0 / 0.05);
+
+        & > header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        & h2 {
+          font-size: 19px;
+          line-height: 1.3;
+          font-weight: 400;
+          color: var(--suave);
+
+          & strong {
+            color: var(--tinta);
+          }
+        }
+
+        & address {
+          margin-top: 16px;
+          font-style: normal;
+          line-height: 1.7;
+
+          & p:last-child {
+            color: var(--dorado);
+          }
+        }
+
+        & > p {
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid var(--borde);
+          font-size: 12px;
+          letter-spacing: 0.08em;
+          color: var(--tenue);
+        }
+      }
+
+      .estrella {
+        flex: none;
+        padding: 2px;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        font-size: 21px;
+        line-height: 1;
+        color: var(--dorado-tenue);
+
+        &[data-activa="true"],
+        &:hover {
+          color: var(--dorado);
+        }
+      }
+
+      .pie {
+        margin-top: 24px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--tenue);
+      }
+
+      dialog {
+        width: min(560px, 92vw);
+        padding: 0;
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 24px 60px rgb(20 20 15 / 0.3);
+
+        &::backdrop {
+          background: rgb(28 29 22 / 0.45);
+        }
+
+        & form {
+          padding: 28px 30px 24px;
+        }
+        & h2 {
+          font-size: 22px;
+        }
+        & form > p {
+          margin-top: 6px;
+          font-size: 14px;
+          color: var(--suave);
+        }
+      }
+
+      .campos {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 18px;
+        margin-top: 22px;
+
+        @media (max-width: 640px) {
+          grid-template-columns: 1fr;
+        }
+
+        & label {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--suave);
+        }
+
+        & input {
+          padding: 10px 12px;
+          border: 1px solid var(--borde);
+          border-radius: 8px;
+          background: var(--tarjeta);
+          color: var(--tinta);
+          font-weight: 400;
+        }
+      }
+
+      .error {
+        margin-top: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #f6e6e1;
+        color: var(--peligro);
+        font-size: 14px;
+      }
+
+      .acciones {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 26px;
+
+        & > div {
+          display: flex;
+          gap: 10px;
+          margin-left: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+
+    <script type="module">
+      import { html, reactive, watch } from "https://esm.sh/@arrow-js/core";
+      import alumnosIniciales from "./alumnos.json" with { type: "json" };
+
+      const STORAGE_KEY = "agenda.alumnos";
+
+      function guardarAlumnos(alumnos) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(alumnos));
+        } catch {}
+      }
+
+      function leerAlumnos() {
+        try {
+          const guardados = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (Array.isArray(guardados)) return guardados;
+        } catch {}
+        const iniciales = alumnosIniciales.map((a) => ({
+          ...a,
+          favorito: Boolean(a.favorito),
+        }));
+        guardarAlumnos(iniciales);
+        return iniciales;
+      }
+
+      // estado
+      const FORM_VACIO = {
+        apellido: "",
+        nombre: "",
+        legajo: "",
+        comision: "",
+        telefono: "",
+        github: "",
+      };
+
+      const state = reactive({
+        alumnos: leerAlumnos(),
+        busqueda: "",
+        dialogo: false,
+        editandoId: null,
+        form: { ...FORM_VACIO },
+        error: "",
+      });
+
+      const normalizar = (t) =>
+        String(t ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+
+      const comparar = (a, b) =>
+        b.favorito - a.favorito ||
+        normalizar(a.apellido).localeCompare(normalizar(b.apellido), "es") ||
+        normalizar(a.nombre).localeCompare(normalizar(b.nombre), "es");
+
+      const coincide = (a, texto) => {
+        const q = normalizar(texto);
+        if (!q) return true;
+        const datos = [
+          a.apellido,
+          a.nombre,
+          a.legajo,
+          a.comision,
+          a.telefono,
+          a.github,
+        ];
+        return datos.map(normalizar).join(" ").includes(q);
+      };
+
+      const alumnosVisibles = () =>
+        state.alumnos.filter((a) => coincide(a, state.busqueda)).sort(comparar);
+
+      const nuevoId = () =>
+        globalThis.crypto?.randomUUID?.() ?? `a-${Date.now()}`;
+
+      const buscar = (id) =>
+        state.alumnos[state.alumnos.findIndex((a) => a.id === id)];
+
+      function alternarFavorito(id) {
+        const alumno = buscar(id);
+        if (!alumno) return;
+        alumno.favorito = !alumno.favorito;
+        guardarAlumnos(state.alumnos);
+      }
+
+      function abrirAlta() {
+        state.editandoId = null;
+        state.form = { ...FORM_VACIO };
+        state.error = "";
+        state.dialogo = true;
+      }
+
+      function abrirEdicion(id) {
+        const alumno = buscar(id);
+        if (!alumno) return;
+        const { apellido, nombre, legajo, comision, telefono, github } = alumno;
+        state.editandoId = id;
+        state.form = { apellido, nombre, legajo, comision, telefono, github };
+        state.error = "";
+        state.dialogo = true;
+      }
+
+      function cerrarDialogo() {
+        state.dialogo = false;
+        state.editandoId = null;
+        state.error = "";
+      }
+
+      function guardarForm() {
+        const datos = Object.fromEntries(
+          Object.entries(state.form).map(([clave, valor]) => [
+            clave,
+            String(valor).trim(),
+          ]),
+        );
+        if (Object.values(datos).some((valor) => !valor)) {
+          state.error = "Completá todos los campos.";
+          return;
+        }
+        if (!/^\d+$/.test(datos.legajo)) {
+          state.error = "El legajo debe ser numérico.";
+          return;
+        }
+        if (state.editandoId === null) {
+          state.alumnos.push({ id: nuevoId(), ...datos, favorito: false });
+        } else {
+          Object.assign(buscar(state.editandoId), datos);
+        }
+        guardarAlumnos(state.alumnos);
+        cerrarDialogo();
+      }
+
+      function eliminar() {
+        if (state.editandoId === null) return;
+        state.alumnos = state.alumnos.filter((a) => a.id !== state.editandoId);
+        guardarAlumnos(state.alumnos);
+        cerrarDialogo();
+      }
+
+      function teclaTarjeta(e, id) {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter") {
+          e.preventDefault();
+          abrirEdicion(id);
+        } else if (e.key === " ") {
+          e.preventDefault();
+          alternarFavorito(id);
+        }
+      }
+
+      // interfaz
+      const tarjeta = (a) =>
+        html`
+          <article
+            class="tarjeta"
+            tabindex="0"
+            aria-label="${() => `${a.apellido} ${a.nombre}`}"
+            @click="${() => abrirEdicion(a.id)}"
+            @keydown="${(e) => teclaTarjeta(e, a.id)}"
+          >
+            <header>
+              <h2>
+                <strong>${() => a.apellido}</strong>
+                <span>${() => a.nombre}</span>
+              </h2>
+              <button
+                type="button"
+                class="estrella"
+                data-activa="${() => String(a.favorito)}"
+                aria-pressed="${() => String(a.favorito)}"
+                aria-label="Favorito"
+                @click="${(e) => {
+                  e.stopPropagation();
+                  alternarFavorito(a.id);
+                }}"
+              >
+                ${() => (a.favorito ? "★" : "☆")}
+              </button>
+            </header>
+            <address>
+              <p>${() => a.telefono}</p>
+              <p>@${() => a.github}</p>
+            </address>
+            <p>${() => a.comision} · ${() => a.legajo}</p>
+          </article>
+        `.key(a.id);
+
+      const campo = (nombre, etiqueta, tipo = "text") => html`
+        <label
+          >${etiqueta}
+          <input
+            type="${tipo}"
+            .value="${() => state.form[nombre]}"
+            @input="${(e) => {
+              state.form[nombre] = e.target.value;
+            }}"
+          />
+        </label>
+      `;
+
+      const contenidoGrilla = () => {
+        const visibles = alumnosVisibles();
+        return visibles.length
+          ? visibles.map((a) => tarjeta(a))
+          : html`<p class="vacio">No hay alumnos para mostrar.</p>`;
+      };
+
+      const app = document.getElementById("app");
+      html`
+        <header class="cabecera">
+          <h1>Agenda</h1>
+          <div>
+            <input
+              type="search"
+              placeholder="Buscar alumno..."
+              aria-label="Buscar alumno"
+              .value="${() => state.busqueda}"
+              @input="${(e) => {
+                state.busqueda = e.target.value;
+              }}"
+            />
+            <button type="button" class="boton" @click="${() => abrirAlta()}">
+              + Agregar
+            </button>
+          </div>
+        </header>
+
+        <section class="grilla" aria-live="polite">
+          ${() => contenidoGrilla()}
+        </section>
+
+        <footer class="pie">
+          <p>
+            ${() => {
+              const n = alumnosVisibles().length;
+              return `${n} alumno${n === 1 ? "" : "s"} en la agenda`;
+            }}
+          </p>
+        </footer>
+
+        <dialog
+          id="dialogo"
+          @click="${(e) => {
+            if (e.target === e.currentTarget) cerrarDialogo();
+          }}"
+          @cancel="${(e) => {
+            e.preventDefault();
+            cerrarDialogo();
+          }}"
+        >
+          <form
+            @submit="${(e) => {
+              e.preventDefault();
+              guardarForm();
+            }}"
+          >
+            <h2>
+              ${() =>
+                state.editandoId === null ? "Agregar alumno" : "Editar alumno"}
+            </h2>
+            <p>
+              ${() =>
+                state.editandoId === null
+                  ? "Ingresá los datos del nuevo alumno."
+                  : "Actualizá los datos del alumno."}
+            </p>
+
+            <div class="campos">
+              ${campo("apellido", "Apellido")} ${campo("nombre", "Nombre")}
+              ${campo("legajo", "Legajo")} ${campo("comision", "Comisión")}
+              ${campo("telefono", "Teléfono", "tel")}
+              ${campo("github", "GitHub")}
+            </div>
+
+            ${() =>
+              state.error
+                ? html`<p class="error" role="alert">${state.error}</p>`
+                : ""}
+
+            <div class="acciones">
+              ${() =>
+                state.editandoId === null
+                  ? ""
+                  : html`<button
+                      type="button"
+                      class="boton peligro"
+                      @click="${() => eliminar()}"
+                    >
+                      Eliminar
+                    </button>`}
+              <div>
+                <button
+                  type="button"
+                  class="boton secundario"
+                  @click="${() => cerrarDialogo()}"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" class="boton">Guardar</button>
+              </div>
+            </div>
+          </form>
+        </dialog>
+      `(app);
+
+      watch(
+        () => state.dialogo,
+        (abierto) => {
+          const dialogo = document.getElementById("dialogo");
+          if (abierto && !dialogo.open) dialogo.showModal();
+          if (!abierto && dialogo.open) dialogo.close();
+        },
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contactos · Directorio</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        color: #24342f;
+        background: #f3f5f2;
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: auto;
+        padding: 48px 24px;
+      }
+
+      header {
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        color: #527064;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: 2.4rem;
+        letter-spacing: -0.05em;
+        margin: 8px 0;
+      }
+
+      p {
+        line-height: 1.6;
+      }
+
+      .muted,
+      .hint {
+        color: #5b6b64;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 340px minmax(0, 1fr);
+        background: white;
+        border: 1px solid #d9e1da;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .master {
+        border-right: 1px solid #d9e1da;
+        background: #fafbf9;
+        min-width: 0;
+      }
+
+      .search-area {
+        padding: 24px 20px 12px;
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 650;
+        margin-bottom: 8px;
+      }
+
+      .search-box {
+        display: flex;
+        gap: 8px;
+      }
+
+      input {
+        width: 100%;
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid #82958a;
+        border-radius: 7px;
+        font: inherit;
+        background: white;
+      }
+
+      button {
+        font: inherit;
+        cursor: pointer;
+        border: 1px solid #82958a;
+        border-radius: 7px;
+        background: white;
+        padding: 8px 12px;
+        color: #284d3c;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
+      :focus-visible {
+        outline: 3px solid #217a55;
+        outline-offset: 3px;
+      }
+
+      .count {
+        font-size: 0.8rem;
+        min-height: 1.3em;
+        margin: 14px 0 0;
+      }
+
+      .contact-list {
+        list-style: none;
+        margin: 0;
+        padding: 8px;
+        height: 480px;
+        overflow-y: auto;
+      }
+
+      .contact-list:focus-visible {
+        outline-offset: -3px;
+      }
+
+      .contact {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 12px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .contact:hover {
+        background: #edf2ec;
+      }
+
+      .contact[aria-selected='true'] {
+        background: #e4efe7;
+        border-color: #397753;
+      }
+
+      .avatar {
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e7ece5;
+        color: #375b45;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .contact-text {
+        min-width: 0;
+      }
+
+      .contact strong,
+      .contact small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .contact strong {
+        font-size: 0.9rem;
+      }
+
+      .contact small {
+        color: #5b6b64;
+        margin-top: 4px;
+      }
+
+      .detail {
+        padding: 36px;
+        min-width: 0;
+      }
+
+      .detail .avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5rem;
+        margin: 28px 0 20px;
+        background: #dae9df;
+      }
+
+      h2 {
+        font-size: 1.8rem;
+        letter-spacing: -0.035em;
+        margin: 0 0 6px;
+        overflow-wrap: anywhere;
+      }
+
+      .subtitle {
+        margin: 0 0 28px;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 26px 24px;
+        border-top: 1px solid #e1e7e1;
+        padding-top: 26px;
+      }
+
+      dt {
+        font-size: 0.75rem;
+        color: #5b6b64;
+        margin-bottom: 7px;
+      }
+
+      dd {
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+      }
+
+      a {
+        color: #226542;
+        text-underline-offset: 4px;
+      }
+
+      .wide {
+        grid-column: 1 / -1;
+      }
+
+      .hint {
+        font-size: 0.8rem;
+        margin: 20px 0 0;
+        line-height: 1.8;
+      }
+
+      kbd {
+        font: 0.75rem system-ui;
+        padding: 2px 5px;
+        background: white;
+        border: 1px solid #cbd5cc;
+        border-radius: 4px;
+      }
+
+      .empty {
+        padding: 32px 20px;
+        color: #5b6b64;
+      }
+
+      .notice {
+        padding: 24px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      .primary {
+        background: #286344;
+        color: white;
+      }
+
+      .danger {
+        color: #a12424;
+        border-color: #a12424;
+      }
+
+      dialog {
+        width: min(620px, calc(100% - 28px));
+        max-height: 90dvh;
+        overflow: auto;
+        border: 1px solid #82958a;
+        border-radius: 14px;
+        padding: 28px;
+        color: inherit;
+      }
+
+      dialog::backdrop {
+        background: #142c2466;
+      }
+
+      .fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 24px 0;
+      }
+
+      .feedback {
+        color: #a12424;
+      }
+
+      @media (max-width: 700px) {
+        .fields {
+          grid-template-columns: 1fr;
+        }
+
+        main {
+          padding: 24px 14px;
+        }
+
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .master {
+          border-right: 0;
+          border-bottom: 1px solid #d9e1da;
+        }
+
+        .contact-list {
+          height: 240px;
+        }
+
+        .detail {
+          padding: 24px;
+        }
+
+        dl {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">Directorio personal</span>
+        <h1>Contactos</h1>
+        <p class="muted"> Encontrá a una persona y consultá todos sus datos en un lugar. </p>
+      </header>
+      <div id="app"><p role="status">Cargando directorio…</p></div>
+      <noscript>Activá JavaScript para consultar el directorio.</noscript>
+      <p class="hint" id="keyboard-help" >
+        <kbd>↑</kbd> <kbd>↓</kbd> recorrer · <kbd>Inicio</kbd> <kbd>Fin</kbd> primero / último en la lista · <kbd>Enter</kbd> ver detalle · <kbd>Esc</kbd> limpiar y buscar · <kbd>Tab</kbd> cambiar de panel
+      </p>
+    </main>
+    <script type="module">
+      const root = document.querySelector('#app');
+      try {
+        // Arrow se importa directamente: no requiere compilación.
+        const { html, reactive } = await import('https://esm.sh/@arrow-js/core');
+        // Estado de la aplicación
+        const state = reactive({
+          contacts: [],
+          query: '',
+          selectedId: null,
+          loading: true,
+          error: '',
+          storageError: '',
+          message: '',
+          ready: false,
+        });
+        const STORAGE_KEY = 'p4.contacts.v1';
+        let editingId = null;
+        let deletingId = null;
+
+        // Búsqueda y selección
+        const normalize = (value) =>
+          String(value ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+        const initials = (name) =>
+          name
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((part) => part[0])
+            .join('');
+        const filtered = () => {
+          const terms = normalize(state.query).trim().split(/\s+/).filter(Boolean);
+          return state.contacts.filter((contact) => {
+            const text = normalize(
+              [
+                contact.name,
+                contact.username,
+                contact.email,
+                contact.phone,
+                contact.website,
+                contact.company.name,
+                contact.address.city,
+                contact.address.street,
+              ].join(' '),
+            );
+            return terms.every((term) => text.includes(term));
+          });
+        };
+
+        function search(value) {
+          state.query = value;
+          const results = filtered();
+          if (!results.some((contact) => contact.id === state.selectedId)) {
+            state.selectedId = results[0]?.id ?? null;
+          }
+        }
+
+        function select(id) {
+          state.selectedId = id;
+          // Esperar a que Arrow actualice los atributos y las opciones de la lista.
+          requestAnimationFrame(() =>
+            document
+              .getElementById(`contact-${id}`)
+              ?.scrollIntoView({ block: 'nearest' }),
+          );
+        }
+
+        function clearSearch() {
+          search('');
+          const input = document.querySelector('#search');
+          input.value = '';
+          input.focus();
+        }
+
+        // Navegación por teclado
+        function keyboard(event) {
+          if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            clearSearch();
+            return;
+          }
+          const inSearch = event.target.id === 'search';
+          const inList = event.target.id === 'contacts';
+          if (!inSearch && !inList) {
+            return;
+          }
+          const results = filtered();
+          if (!results.length) {
+            return;
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            document.querySelector('#detail').focus();
+            return;
+          }
+          let index = results.findIndex((contact) => contact.id === state.selectedId);
+          if (event.key === 'ArrowDown') {
+            index = Math.min(index + 1, results.length - 1);
+          } else if (event.key === 'ArrowUp') {
+            index = Math.max(index - 1, 0);
+          } else if (inList && event.key === 'Home') {
+            index = 0;
+          } else if (inList && event.key === 'End') {
+            index = results.length - 1;
+          } else {
+            return;
+          }
+          event.preventDefault();
+          select(results[index].id);
+          document.querySelector('#contacts').focus();
+        }
+        // Guardar primero: si falla el almacenamiento, no anunciar cambios como guardados.
+
+        function persist(contacts) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
+        }
+
+        function commit(contacts, message) {
+          try {
+            const sorted = [...contacts].sort((a, b) =>
+              a.name.localeCompare(b.name, 'es'),
+            );
+            persist(sorted);
+            state.contacts = sorted;
+            state.storageError = '';
+            state.message = message;
+            return true;
+          } catch {
+            state.storageError =
+              'No se pudo guardar. El almacenamiento está lleno o bloqueado. Liberá espacio o habilitá el almacenamiento y reintentá.';
+            return false;
+          }
+        }
+
+        // Alta, edición y eliminación
+        function openEditor(contact = null) {
+          editingId = contact?.id ?? null;
+          state.storageError = '';
+          const form = document.querySelector('#contact-form');
+          form.reset();
+          const values = {
+            name: contact?.name,
+            username: contact?.username,
+            email: contact?.email,
+            phone: contact?.phone,
+            website: contact?.website,
+            company: contact?.company.name,
+            street: contact?.address.street,
+            suite: contact?.address.suite,
+            city: contact?.address.city,
+            zipcode: contact?.address.zipcode,
+          };
+          for (const [key, value] of Object.entries(values)) {
+            form.elements.namedItem(key).value = value ?? '';
+          }
+          document.querySelector('#editor-title').textContent = contact
+            ? 'Editar contacto'
+            : 'Nuevo contacto';
+          document.querySelector('#editor').showModal();
+        }
+
+        function saveContact(event) {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const values = Object.fromEntries(
+            [...new FormData(form)].map(([key, value]) => [key, value.trim()]),
+          );
+          const nameInput = form.elements.namedItem('name');
+          nameInput.setCustomValidity(values.name ? '' : 'Ingresá un nombre.');
+          if (!form.reportValidity()) {
+            return;
+          }
+          const previous = state.contacts.find((contact) => contact.id === editingId);
+          const contact = {
+            ...previous,
+            id: editingId ?? crypto.randomUUID(),
+            name: values.name,
+            username: values.username,
+            email: values.email,
+            phone: values.phone,
+            website: values.website,
+            company: { ...previous?.company, name: values.company },
+            address: {
+              ...previous?.address,
+              street: values.street,
+              suite: values.suite,
+              city: values.city,
+              zipcode: values.zipcode,
+            },
+          };
+          const contacts =
+            editingId === null
+              ? [...state.contacts, contact]
+              : state.contacts.map((item) => (item.id === editingId ? contact : item));
+          if (
+            !commit(
+              contacts,
+              editingId === null ? 'Contacto creado.' : 'Contacto actualizado.',
+            )
+          ) {
+            return;
+          }
+          clearSearch();
+          select(contact.id);
+          document.querySelector('#editor').close();
+          requestAnimationFrame(() => document.querySelector('#detail').focus());
+        }
+
+        function askDelete(contact) {
+          deletingId = contact.id;
+          state.storageError = '';
+          document.querySelector('#delete-name').textContent = contact.name;
+          document.querySelector('#delete-dialog').showModal();
+        }
+
+        function deleteContact() {
+          const results = filtered();
+          const index = results.findIndex((contact) => contact.id === deletingId);
+          if (
+            !commit(
+              state.contacts.filter((contact) => contact.id !== deletingId),
+              'Contacto eliminado.',
+            )
+          ) {
+            return;
+          }
+          const remaining = filtered();
+          state.selectedId = remaining[Math.min(index, remaining.length - 1)]?.id ?? null;
+          document.querySelector('#delete-dialog').close();
+          document.querySelector('#contacts').focus();
+        }
+
+        // Plantilla del panel de detalle
+        function detail() {
+          const contact = state.contacts.find((item) => item.id === state.selectedId);
+          if (!contact) {
+            return html`
+              <div class="empty">
+                <h2>Sin contacto seleccionado</h2>
+                <p>
+                  ${state.loading
+                    ? 'Cargando contactos…'
+                    : state.contacts.length
+                      ? 'Probá otra búsqueda para ver sus datos.'
+                      : 'Creá un contacto para empezar.'}
+                </p>
+              </div>
+            `;
+          }
+
+          return html`
+            <span class="eyebrow">Ficha de contacto</span>
+            <div
+              class="avatar"
+              aria-hidden="true"
+            >
+              ${initials(contact.name)}
+            </div>
+            <h2>${contact.name}</h2>
+            <p class="subtitle muted">@${contact.username} · ${contact.company.name}</p>
+            <div class="actions">
+              <button @click="${() => openEditor(contact)}">Editar</button>
+              <button
+                class="danger"
+                @click="${() => askDelete(contact)}"
+              >
+                Eliminar
+              </button>
+            </div>
+            <dl>
+              <div>
+                <dt>Correo electrónico</dt>
+                <dd><a href="${`mailto:${contact.email}`}">${contact.email}</a></dd>
+              </div>
+              <div>
+                <dt>Teléfono</dt>
+                <dd>
+                  <a
+                    href="${`tel:${contact.phone.replace(/\s*x\s*/i, ';ext=').replace(/[^\d+;=ext]/g, '')}`}"
+                  >
+                    ${contact.phone}
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt>Sitio web</dt>
+                <dd>
+                  <a
+                    href="${/^https?:\/\//i.test(contact.website)
+                      ? contact.website
+                      : `https://${contact.website}`}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ${contact.website} ↗
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt>Empresa</dt>
+                <dd>${contact.company.name}</dd>
+              </div>
+              <div class="wide">
+                <dt>Dirección</dt>
+                <dd>
+                  ${contact.address.street}, ${contact.address.suite}
+                  <br />
+                  ${contact.address.city} · CP ${contact.address.zipcode}
+                </dd>
+              </div>
+            </dl>
+          `;
+        }
+
+        // Vista principal y diálogos
+        root.replaceChildren();
+        html`
+          <div
+            class="workspace"
+            @keydown="${keyboard}"
+          >
+            <section
+              class="master"
+              aria-label="Buscar contactos"
+            >
+              <div class="search-area">
+                <div class="actions">
+                  <button
+                    class="primary"
+                    disabled="${() => !state.ready}"
+                    @click="${() => openEditor()}"
+                  >
+                    + Nuevo contacto
+                  </button>
+                </div>
+                <label for="search">Buscar contactos</label>
+                <div class="search-box">
+                  <input
+                    id="search"
+                    type="search"
+                    placeholder="Nombre, correo, empresa…"
+                    autocomplete="off"
+                    aria-controls="contacts"
+                    aria-describedby="keyboard-help"
+                    @input="${(event) => search(event.target.value)}"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Limpiar búsqueda"
+                    @click="${clearSearch}"
+                    disabled="${() => !state.query}"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p
+                  class="count muted"
+                  role="status"
+                >
+                  ${() =>
+                    state.loading
+                      ? 'Cargando…'
+                      : `${filtered().length} de ${state.contacts.length} contactos`}
+                </p>
+              </div>
+              <ul
+                id="contacts"
+                class="contact-list"
+                role="listbox"
+                tabindex="0"
+                aria-label="Contactos"
+                aria-describedby="keyboard-help"
+                aria-busy="${() => String(state.loading)}"
+                aria-activedescendant="${() =>
+                  state.selectedId === null ? false : `contact-${state.selectedId}`}"
+              >
+                ${() =>
+                  filtered().map((contact) =>
+                    html`
+                      <li
+                        id="${`contact-${contact.id}`}"
+                        class="contact"
+                        role="option"
+                        aria-selected="${() => String(contact.id === state.selectedId)}"
+                        @click="${() => {
+                          select(contact.id);
+                          document.querySelector('#contacts').focus();
+                        }}"
+                      >
+                        <span
+                          class="avatar"
+                          aria-hidden="true"
+                        >
+                          ${initials(contact.name)}
+                        </span>
+                        <span class="contact-text">
+                          <strong>${contact.name}</strong>
+                          <small>${contact.company.name}</small>
+                        </span>
+                      </li>
+                    `.key(contact.id),
+                  )}
+              </ul>
+              ${() =>
+                state.error
+                  ? html`
+                      <div
+                        class="notice"
+                        role="alert"
+                      >
+                        <p>${state.error}</p>
+                        <button @click="${loadContacts}">Reintentar</button>
+                      </div>
+                    `
+                  : !state.loading && !filtered().length
+                    ? html`
+                        <p class="empty">
+                          No hay coincidencias. Probá con otro nombre, correo o empresa.
+                        </p>
+                      `
+                    : ''}
+            </section>
+            <section
+              id="detail"
+              class="detail"
+              tabindex="0"
+              aria-label="Detalle del contacto"
+            >
+              ${detail}
+            </section>
+          </div>
+          <p role="status">${() => state.message}</p>
+          <p class="muted hint">Los contactos se guardan en este navegador.</p>
+          <dialog
+            id="editor"
+            aria-labelledby="editor-title"
+          >
+            <form
+              id="contact-form"
+              @submit="${saveContact}"
+            >
+              <h2 id="editor-title">Nuevo contacto</h2>
+              <p class="muted">
+                El nombre es obligatorio. Los demás datos son opcionales.
+              </p>
+              <div class="fields">
+                ${[
+                  ['name', 'Nombre completo', 'text'],
+                  ['username', 'Usuario', 'text'],
+                  ['email', 'Correo electrónico', 'email'],
+                  ['phone', 'Teléfono', 'tel'],
+                  ['website', 'Sitio web (dominio o URL)', 'text'],
+                  ['company', 'Empresa', 'text'],
+                  ['street', 'Calle', 'text'],
+                  ['suite', 'Departamento / piso', 'text'],
+                  ['city', 'Ciudad', 'text'],
+                  ['zipcode', 'Código postal', 'text'],
+                ].map(
+                  ([name, label, type]) => html`
+                    <div>
+                      <label for="${`field-${name}`}">${label}</label>
+                      <input
+                        id="${`field-${name}`}"
+                        name="${name}"
+                        type="${type}"
+                        required="${name === 'name'}"
+                        maxlength="200"
+                        @input="${(event) => event.target.setCustomValidity('')}"
+                      />
+                    </div>
+                  `,
+                )}
+              </div>
+              <p
+                class="feedback"
+                role="alert"
+              >
+                ${() => state.storageError}
+              </p>
+              <div class="actions">
+                <button
+                  type="submit"
+                  class="primary"
+                >
+                  Guardar contacto
+                </button>
+                <button
+                  type="button"
+                  @click="${() => document.querySelector('#editor').close()}"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </dialog>
+          <dialog
+            id="delete-dialog"
+            aria-labelledby="delete-title"
+            aria-describedby="delete-description"
+          >
+            <h2 id="delete-title">Eliminar contacto</h2>
+            <p id="delete-description">
+              ¿Eliminar a
+              <strong id="delete-name"></strong>
+              ? Esta acción no se puede deshacer.
+            </p>
+            <p
+              class="feedback"
+              role="alert"
+            >
+              ${() => state.storageError}
+            </p>
+            <div class="actions">
+              <button
+                autofocus
+                @click="${() => document.querySelector('#delete-dialog').close()}"
+              >
+                Cancelar
+              </button>
+              <button
+                class="danger"
+                @click="${deleteContact}"
+              >
+                Eliminar definitivamente
+              </button>
+            </div>
+          </dialog>
+        `(root);
+
+        // Carga inicial: localStorage tiene prioridad sobre usuarios.json
+        async function loadContacts() {
+          state.loading = true;
+          state.error = '';
+          try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            let contacts;
+            if (stored !== null) {
+              contacts = JSON.parse(stored);
+            } else {
+              const response = await fetch('./usuarios.json');
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+              }
+              contacts = await response.json();
+            }
+            const stringFields = ['name', 'username', 'email', 'phone', 'website'];
+            if (
+              !Array.isArray(contacts) ||
+              !contacts.every(
+                (contact) =>
+                  contact &&
+                  (typeof contact.id === 'string' || typeof contact.id === 'number') &&
+                  stringFields.every((key) => typeof contact[key] === 'string') &&
+                  contact.name.trim() &&
+                  typeof contact.company?.name === 'string' &&
+                  ['street', 'suite', 'city', 'zipcode'].every(
+                    (key) => typeof contact.address?.[key] === 'string',
+                  ),
+              ) ||
+              new Set(contacts.map((contact) => contact.id)).size !== contacts.length
+            ) {
+              throw new Error('Formato de contactos inválido');
+            }
+            // Solo se importa el JSON la primera vez; una lista guardada vacía también es válida.
+            if (stored === null) {
+              persist(contacts);
+            }
+            state.contacts = contacts.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+            state.ready = true;
+            search(state.query);
+          } catch (error) {
+            state.error =
+              'No se pudieron cargar los contactos. Revisá que localStorage esté disponible y sus datos sean válidos. En el primer uso, serví esta carpeta por HTTP. Tus datos guardados no se reemplazaron.';
+            console.error(error);
+          } finally {
+            state.loading = false;
+          }
+        }
+        await loadContacts();
+      } catch (error) {
+        root.textContent =
+          'No se pudo iniciar el visor. Revisá la conexión a Internet y recargá la página para cargar Arrow JS.';
+        root.setAttribute('role', 'alert');
+        console.error(error);
+      }
+    </script>
+  </body>
+</html>

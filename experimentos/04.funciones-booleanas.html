@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Mapa interactivo de las 16 funciones booleanas posibles de dos entradas, con tablas de verdad en el orden 00, 01, 10, 11.">
+  <link rel="icon" href="data:,">
+  <title>Las 16 funciones booleanas de dos entradas</title>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: oklch(96% 0.022 86);
+      --paper-deep: oklch(91.5% 0.035 82);
+      --paper-light: oklch(98.5% 0.012 88);
+      --ink: oklch(25% 0.055 255);
+      --ink-soft: oklch(43% 0.04 252);
+      --ink-faint: oklch(69% 0.025 245);
+      --line: oklch(78% 0.035 80);
+      --line-strong: oklch(47% 0.045 250);
+      --signal: oklch(61% 0.19 37);
+      --signal-dark: oklch(46% 0.16 34);
+      --signal-pale: oklch(91% 0.055 48);
+      --yellow: oklch(84% 0.16 88);
+      --green: oklch(55% 0.11 155);
+      --focus: oklch(56% 0.18 245);
+      --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --font-body: "Avenir Next", Avenir, "Trebuchet MS", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-block-start: 1rem;
+    }
+
+    body {
+      min-block-size: 100dvh;
+      margin: 0;
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.5;
+      font-kerning: normal;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(to right, color-mix(in oklab, var(--ink) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklab, var(--ink) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(to right, color-mix(in oklab, var(--ink) 4%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklab, var(--ink) 4%, transparent) 1px, transparent 1px);
+      background-position: center top;
+      background-size: 6rem 6rem, 6rem 6rem, 1.5rem 1.5rem, 1.5rem 1.5rem;
+      content: "";
+      pointer-events: none;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-variant-ligatures: none;
+    }
+
+    .skip-link {
+      position: fixed;
+      inset-block-start: var(--space-3);
+      inset-inline-start: var(--space-3);
+      z-index: 20;
+      translate: 0 -160%;
+      border: 2px solid var(--ink);
+      background: var(--yellow);
+      color: var(--ink);
+      padding: var(--space-2) var(--space-4);
+      font-weight: 700;
+      text-decoration: none;
+      transition: translate 180ms var(--ease-out);
+    }
+
+    .skip-link:focus-visible {
+      translate: 0;
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .masthead,
+    .workspace,
+    .page-footer {
+      inline-size: min(100% - 2rem, 88rem);
+      margin-inline: auto;
+    }
+
+    .masthead {
+      padding-block: max(1.5rem, env(safe-area-inset-top)) clamp(2.5rem, 6vw, 6rem);
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding-block-end: var(--space-6);
+      border-block-end: 1px solid var(--line-strong);
+    }
+
+    .series-mark,
+    .scope-mark {
+      margin: 0;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .series-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .series-mark::before {
+      inline-size: 1.75rem;
+      block-size: 0.625rem;
+      background:
+        radial-gradient(circle at 0.3125rem 50%, var(--signal) 0 0.25rem, transparent 0.27rem),
+        radial-gradient(circle at calc(100% - 0.3125rem) 50%, var(--signal) 0 0.25rem, transparent 0.27rem),
+        linear-gradient(var(--signal), var(--signal)) center / 1.25rem 0.125rem no-repeat;
+      content: "";
+    }
+
+    .scope-mark {
+      color: var(--ink-soft);
+    }
+
+    .hero {
+      display: grid;
+      gap: var(--space-8);
+      padding-block-start: clamp(2.5rem, 7vw, 6.5rem);
+    }
+
+    .hero-copy {
+      max-inline-size: 57rem;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-block-start: 0;
+    }
+
+    h1 {
+      max-inline-size: 13ch;
+      margin-block-end: var(--space-6);
+      font-family: var(--font-display);
+      font-size: clamp(3.25rem, 9vw, 7.8rem);
+      font-weight: 600;
+      letter-spacing: -0.055em;
+      line-height: 0.88;
+      text-wrap: balance;
+    }
+
+    .accent-word {
+      color: var(--signal-dark);
+      font-style: italic;
+      font-weight: 500;
+    }
+
+    .intro {
+      max-inline-size: 58ch;
+      margin-block-end: 0;
+      color: var(--ink-soft);
+      font-size: clamp(1.05rem, 1rem + 0.45vw, 1.35rem);
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .hero-logic {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      box-shadow: 0.625rem 0.625rem 0 color-mix(in oklab, var(--signal) 72%, var(--paper));
+    }
+
+    .hero-logic > * {
+      min-inline-size: 0;
+      background: var(--paper-light);
+      padding: var(--space-6);
+    }
+
+    .why-sixteen {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-4);
+    }
+
+    .why-sixteen strong {
+      flex: 0 0 auto;
+      color: var(--signal-dark);
+      font-family: var(--font-display);
+      font-size: clamp(3.25rem, 8vw, 5rem);
+      font-weight: 600;
+      letter-spacing: -0.06em;
+      line-height: 0.8;
+    }
+
+    .why-sixteen p,
+    .reading-rule p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.9375rem;
+      line-height: 1.45;
+      text-wrap: pretty;
+    }
+
+    .reading-label {
+      display: block;
+      margin-block-end: var(--space-3);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .input-sequence {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin-block-end: var(--space-3);
+      border-block: 1px solid var(--line);
+    }
+
+    .input-sequence span {
+      padding-block: var(--space-2);
+      border-inline-end: 1px solid var(--line);
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .input-sequence span:last-child {
+      border-inline-end: 0;
+    }
+
+    .workspace {
+      display: grid;
+      gap: clamp(2.5rem, 5vw, 5rem);
+      align-items: start;
+      padding-block-end: var(--space-16);
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-6);
+      margin-block-end: var(--space-6);
+      padding-block-end: var(--space-4);
+      border-block-end: 2px solid var(--ink);
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 1.5rem + 2vw, 3.4rem);
+      font-weight: 600;
+      letter-spacing: -0.035em;
+      line-height: 1;
+    }
+
+    .section-note {
+      flex: 0 0 auto;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .function-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .function-card {
+      --card-bg: color-mix(in oklab, var(--paper-light) 84%, transparent);
+      position: relative;
+      display: grid;
+      grid-template-areas:
+        "bits bits"
+        "name expression";
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-4) var(--space-3);
+      min-block-size: 8.75rem;
+      inline-size: 100%;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      border-radius: 0.1875rem 1.25rem 0.1875rem 0.1875rem;
+      background: var(--card-bg);
+      padding: var(--space-4);
+      text-align: start;
+      cursor: pointer;
+      isolation: isolate;
+      transition:
+        transform 220ms var(--ease-out),
+        background-color 120ms linear,
+        color 120ms linear,
+        border-color 120ms linear;
+      animation: card-arrival 500ms var(--ease-out) both;
+      animation-delay: calc(min(var(--i), 10) * 36ms);
+    }
+
+    .function-card::after {
+      position: absolute;
+      inset: auto -2rem -2.5rem auto;
+      z-index: -1;
+      inline-size: 6rem;
+      aspect-ratio: 1;
+      border: 1px solid color-mix(in oklab, var(--ink) 13%, transparent);
+      border-radius: 50%;
+      content: "";
+      transition: scale 260ms var(--ease-out), border-color 120ms linear;
+    }
+
+    .function-card:focus-visible {
+      z-index: 2;
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .function-card:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .function-card[aria-pressed="true"] {
+      --card-bg: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper-light);
+    }
+
+    .function-card[aria-pressed="true"]::after {
+      border-color: var(--signal);
+      scale: 1.35;
+    }
+
+    .card-bits {
+      grid-area: bits;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(1.9rem, 1fr));
+      gap: var(--space-1);
+      font-family: var(--font-mono);
+      font-size: clamp(1.25rem, 2vw, 1.55rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .bit {
+      display: grid;
+      min-block-size: 2.25rem;
+      place-items: center;
+      border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
+      background: color-mix(in oklab, var(--paper-deep) 52%, transparent);
+    }
+
+    .bit.is-one {
+      border-color: color-mix(in oklab, var(--signal) 75%, var(--ink));
+      background: var(--signal-pale);
+      color: var(--signal-dark);
+    }
+
+    .function-card[aria-pressed="true"] .bit {
+      border-color: color-mix(in oklab, var(--paper) 38%, transparent);
+      background: color-mix(in oklab, var(--paper) 10%, transparent);
+      color: var(--paper-deep);
+    }
+
+    .function-card[aria-pressed="true"] .bit.is-one {
+      border-color: var(--yellow);
+      background: var(--yellow);
+      color: var(--ink);
+    }
+
+    .card-name {
+      grid-area: name;
+      align-self: end;
+      min-inline-size: 0;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+    }
+
+    .card-name small {
+      display: block;
+      margin-block-start: var(--space-1);
+      color: var(--ink-soft);
+      font-family: var(--font-body);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .function-card[aria-pressed="true"] .card-name small {
+      color: var(--paper-deep);
+    }
+
+    .card-expression {
+      grid-area: expression;
+      align-self: end;
+      color: var(--signal-dark);
+      font-size: 0.875rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .function-card[aria-pressed="true"] .card-expression {
+      color: var(--yellow);
+    }
+
+    .selection-tab {
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-end: 0;
+      display: none;
+      background: var(--signal);
+      color: var(--paper-light);
+      padding: 0.2rem 0.55rem;
+      font-size: 0.625rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .function-card[aria-pressed="true"] .selection-tab {
+      display: block;
+    }
+
+    .no-script {
+      border: 2px solid var(--signal-dark);
+      background: var(--signal-pale);
+      padding: var(--space-4);
+      font-weight: 700;
+    }
+
+    .inspector {
+      border: 1px solid var(--ink);
+      background: var(--paper-light);
+      box-shadow: 0.625rem 0.625rem 0 color-mix(in oklab, var(--ink) 15%, transparent);
+    }
+
+    .inspector-head {
+      position: relative;
+      overflow: hidden;
+      background: var(--ink);
+      color: var(--paper-light);
+      padding: var(--space-6);
+    }
+
+    .inspector-head::after {
+      position: absolute;
+      inset: -4rem -2.75rem auto auto;
+      inline-size: 9rem;
+      aspect-ratio: 1;
+      border: 1.25rem solid color-mix(in oklab, var(--signal) 75%, transparent);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+
+    .inspector-kicker {
+      position: relative;
+      z-index: 1;
+      margin-block-end: var(--space-4);
+      color: var(--yellow);
+      font-size: 0.6875rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .selected-bits {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-block-end: var(--space-6);
+      font-family: var(--font-mono);
+      font-size: clamp(2.75rem, 8vw, 4.75rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.08em;
+      line-height: 0.85;
+    }
+
+    .selected-title {
+      position: relative;
+      z-index: 1;
+      margin-block-end: var(--space-2);
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      text-wrap: balance;
+    }
+
+    .selected-alias {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      color: var(--paper-deep);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .inspector-body {
+      padding: var(--space-6);
+    }
+
+    .expression-block {
+      display: grid;
+      gap: var(--space-2);
+      margin-block-end: var(--space-6);
+      padding-block-end: var(--space-6);
+      border-block-end: 1px solid var(--line);
+    }
+
+    .expression-block span {
+      color: var(--ink-soft);
+      font-size: 0.6875rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .expression-block code {
+      color: var(--signal-dark);
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .selected-description {
+      margin-block-end: var(--space-6);
+      color: var(--ink-soft);
+      font-size: 1rem;
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .truth-figure {
+      margin: 0;
+    }
+
+    .truth-figure figcaption {
+      display: grid;
+      gap: var(--space-1);
+      margin-block-end: var(--space-3);
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .order-reminder {
+      color: var(--ink-soft);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+
+    .truth-table {
+      inline-size: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--ink);
+      background: var(--paper-light);
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    .truth-table th,
+    .truth-table td {
+      inline-size: 33.333%;
+      border-inline-end: 1px solid var(--line);
+      border-block-end: 1px solid var(--line);
+      padding: 0.65rem 0.5rem;
+    }
+
+    .truth-table th:last-child,
+    .truth-table td:last-child {
+      border-inline-end: 0;
+    }
+
+    .truth-table tbody tr:last-child td {
+      border-block-end: 0;
+    }
+
+    .truth-table thead {
+      background: var(--paper-deep);
+      font-size: 0.8125rem;
+    }
+
+    .truth-table tbody tr[data-output="1"] {
+      background: var(--signal-pale);
+    }
+
+    .truth-table tbody td:last-child {
+      color: var(--ink-soft);
+      font-weight: 900;
+    }
+
+    .truth-table tbody tr[data-output="1"] td:last-child {
+      color: var(--signal-dark);
+    }
+
+    .truth-table output {
+      display: inline-grid;
+      min-inline-size: 1.75rem;
+      aspect-ratio: 1;
+      place-items: center;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+    }
+
+    .function-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      margin: var(--space-6) 0 0;
+      border: 1px solid var(--line);
+      background: var(--line);
+    }
+
+    .function-meta > div {
+      min-inline-size: 0;
+      background: var(--paper-light);
+      padding: var(--space-3);
+    }
+
+    .function-meta dt {
+      margin-block-end: var(--space-1);
+      color: var(--ink-soft);
+      font-size: 0.625rem;
+      font-weight: 900;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .function-meta dd {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .complement-button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      min-block-size: 2.75rem;
+      inline-size: 100%;
+      margin-block-start: var(--space-4);
+      border: 0;
+      border-block-end: 1px solid var(--ink);
+      background: transparent;
+      padding: var(--space-2) 0;
+      color: var(--ink);
+      font-size: 0.8125rem;
+      font-weight: 800;
+      text-align: start;
+      cursor: pointer;
+    }
+
+    .complement-button code {
+      color: var(--signal-dark);
+      font-size: 0.875rem;
+    }
+
+    .complement-button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .complement-button:active {
+      translate: 0 1px;
+    }
+
+    .page-footer {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: var(--space-8);
+      margin-block-end: max(2rem, env(safe-area-inset-bottom));
+      padding-block: var(--space-6);
+      border-block-start: 1px solid var(--line-strong);
+      color: var(--ink-soft);
+      font-size: 0.8125rem;
+    }
+
+    .page-footer p {
+      max-inline-size: 56ch;
+      margin: 0;
+    }
+
+    .footer-formula {
+      flex: 0 0 auto;
+      color: var(--signal-dark);
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      font-weight: 800;
+    }
+
+    .sr-only {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    @keyframes card-arrival {
+      from {
+        opacity: 0;
+        transform: translateY(0.75rem);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (hover: hover) {
+      .function-card:hover {
+        transform: translateY(-0.25rem);
+        border-color: var(--signal-dark);
+      }
+
+      .function-card:hover::after {
+        scale: 1.2;
+      }
+
+      .function-card[aria-pressed="true"]:hover::after {
+        scale: 1.5;
+      }
+
+      .complement-button:hover {
+        color: var(--signal-dark);
+      }
+    }
+
+    @media (pointer: coarse) {
+      .function-card,
+      .complement-button {
+        min-block-size: 3rem;
+      }
+    }
+
+    @media (min-width: 42rem) {
+      .masthead,
+      .workspace,
+      .page-footer {
+        inline-size: min(100% - 3rem, 88rem);
+      }
+
+      .hero-logic {
+        grid-template-columns: minmax(15rem, 0.75fr) minmax(20rem, 1.25fr);
+      }
+
+      .function-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 64rem) {
+      .hero {
+        grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 0.55fr);
+        align-items: end;
+      }
+
+      .hero-logic {
+        grid-template-columns: 1fr;
+        box-shadow: 0.75rem 0.75rem 0 color-mix(in oklab, var(--signal) 72%, var(--paper));
+      }
+
+      .workspace {
+        grid-template-columns: minmax(0, 1.65fr) minmax(20rem, 0.65fr);
+      }
+
+      .function-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .inspector {
+        position: sticky;
+        inset-block-start: var(--space-4);
+      }
+    }
+
+    @media (min-width: 82rem) {
+      .function-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 31.99rem) {
+      .topline,
+      .section-heading,
+      .page-footer {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .scope-mark,
+      .section-note {
+        text-align: start;
+      }
+
+      .why-sixteen {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .function-card {
+        min-block-size: 8rem;
+        padding: var(--space-3);
+      }
+
+      .card-name {
+        font-size: 1.05rem;
+      }
+
+      .card-name small {
+        font-size: 0.6rem;
+      }
+
+      .card-expression {
+        font-size: 0.75rem;
+      }
+
+      .inspector-head,
+      .inspector-body {
+        padding: var(--space-4);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .function-card {
+        animation: none;
+        transition: background-color 120ms linear, color 120ms linear, border-color 120ms linear;
+      }
+
+      .skip-link {
+        transition: none;
+      }
+    }
+
+    @media (forced-colors: active) {
+      .function-card[aria-pressed="true"] {
+        outline: 3px solid Highlight;
+        outline-offset: -4px;
+      }
+
+      .bit.is-one,
+      .truth-table tbody tr[data-output="1"] {
+        border: 2px solid Highlight;
+      }
+    }
+
+    @media print {
+      @page {
+        margin: 1.2cm;
+        size: A4 portrait;
+      }
+
+      body {
+        background: var(--paper-light);
+        font-size: 9pt;
+      }
+
+      body::before,
+      .skip-link,
+      .complement-button {
+        display: none;
+      }
+
+      .masthead,
+      .workspace,
+      .page-footer {
+        inline-size: 100%;
+      }
+
+      .masthead {
+        padding-block: 0 1.5rem;
+      }
+
+      h1 {
+        font-size: 38pt;
+      }
+
+      .hero {
+        grid-template-columns: 1fr 0.7fr;
+      }
+
+      .hero-logic,
+      .inspector {
+        box-shadow: none;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .function-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.35rem;
+      }
+
+      .function-card {
+        min-block-size: 6.5rem;
+        break-inside: avoid;
+        animation: none;
+        padding: 0.55rem;
+      }
+
+      .inspector {
+        break-before: page;
+      }
+
+      .page-footer {
+        margin-block-end: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenido">Saltar al mapa de funciones</a>
+
+  <header class="masthead">
+    <div class="topline">
+      <p class="series-mark">Atlas de lógica</p>
+      <p class="scope-mark">2 entradas · 4 combinaciones · 16 funciones</p>
+    </div>
+
+    <div class="hero">
+      <div class="hero-copy">
+        <h1>Las 16 funciones <span class="accent-word">booleanas</span></h1>
+        <p class="intro">
+          Un mapa completo de todas las reglas posibles para dos entradas binarias. Selecciona una función y observa cómo sus cuatro bits se convierten en una tabla de verdad.
+        </p>
+      </div>
+
+      <aside class="hero-logic" aria-label="Cómo se obtienen y cómo se leen las funciones">
+        <div class="why-sixteen">
+          <strong>2⁴</strong>
+          <p>Hay cuatro filas posibles y, en cada una, la salida puede ser 0 o 1. Por eso existen exactamente 16 funciones.</p>
+        </div>
+
+        <div class="reading-rule">
+          <span class="reading-label">Orden de lectura</span>
+          <div class="input-sequence" aria-label="Orden de entradas: cero cero, cero uno, uno cero, uno uno">
+            <span>00</span>
+            <span>01</span>
+            <span>10</span>
+            <span>11</span>
+          </div>
+          <p>En un código como <code>0110</code>, cada bit indica la salida para la entrada ubicada en la misma columna.</p>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <main class="workspace" id="contenido">
+    <section class="catalogue" aria-labelledby="mapa-title">
+      <div class="section-heading">
+        <h2 id="mapa-title">Mapa de funciones</h2>
+        <p class="section-note">Selecciona una tarjeta<br>También puedes usar las flechas</p>
+      </div>
+
+      <div class="function-grid" id="function-grid" aria-label="Funciones booleanas ordenadas desde 0000 hasta 1111"></div>
+
+      <noscript>
+        <p class="no-script">Activa JavaScript para explorar las 16 funciones y actualizar la tabla de verdad.</p>
+      </noscript>
+    </section>
+
+    <aside class="inspector" id="detalle" aria-labelledby="selected-title">
+      <div class="inspector-head">
+        <p class="inspector-kicker">Función seleccionada</p>
+        <output class="selected-bits" id="selected-bits" aria-label="Bits de salida">0001</output>
+        <h2 class="selected-title" id="selected-title">AND</h2>
+        <p class="selected-alias" id="selected-alias">Conjunción</p>
+      </div>
+
+      <div class="inspector-body">
+        <div class="expression-block">
+          <span>Expresión</span>
+          <code id="selected-expression">f(A, B) = A ∧ B</code>
+        </div>
+
+        <p class="selected-description" id="selected-description">
+          Devuelve 1 únicamente cuando A y B valen 1.
+        </p>
+
+        <figure class="truth-figure">
+          <figcaption>
+            Tabla de verdad
+            <span class="order-reminder">00 → 01 → 10 → 11</span>
+          </figcaption>
+
+          <table class="truth-table">
+            <thead>
+              <tr>
+                <th scope="col">A</th>
+                <th scope="col">B</th>
+                <th scope="col">f(A, B)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="truth-row-0" data-output="0">
+                <td>0</td>
+                <td>0</td>
+                <td><output id="truth-output-0">0</output></td>
+              </tr>
+              <tr id="truth-row-1" data-output="0">
+                <td>0</td>
+                <td>1</td>
+                <td><output id="truth-output-1">0</output></td>
+              </tr>
+              <tr id="truth-row-2" data-output="0">
+                <td>1</td>
+                <td>0</td>
+                <td><output id="truth-output-2">0</output></td>
+              </tr>
+              <tr id="truth-row-3" data-output="1">
+                <td>1</td>
+                <td>1</td>
+                <td><output id="truth-output-3">1</output></td>
+              </tr>
+            </tbody>
+          </table>
+        </figure>
+
+        <dl class="function-meta">
+          <div>
+            <dt>Salidas verdaderas</dt>
+            <dd id="true-count">1 de 4</dd>
+          </div>
+          <div>
+            <dt>Clase</dt>
+            <dd id="function-class">No balanceada</dd>
+          </div>
+        </dl>
+
+        <button class="complement-button" id="complement-button" type="button">
+          <span>Ver función complementaria</span>
+          <code id="complement-code">1110 · NAND →</code>
+        </button>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="page-footer">
+    <p>Convención usada en toda la lámina: los bits siempre corresponden, de izquierda a derecha, a las entradas <code>00, 01, 10, 11</code>.</p>
+    <span class="footer-formula">f: {0,1}² → {0,1}</span>
+  </footer>
+
+  <p class="sr-only" id="selection-announcement" aria-live="polite"></p>
+
+  <script>
+    const functions = [
+      {
+        bits: "0000",
+        name: "FALSO",
+        alias: "Constante 0",
+        expression: "f(A, B) = 0",
+        cardExpression: "0",
+        description: "Devuelve 0 para cualquier combinación de A y B."
+      },
+      {
+        bits: "0001",
+        name: "AND",
+        alias: "Conjunción",
+        expression: "f(A, B) = A ∧ B",
+        cardExpression: "A ∧ B",
+        description: "Devuelve 1 únicamente cuando A y B valen 1."
+      },
+      {
+        bits: "0010",
+        name: "A Y NO B",
+        alias: "No implicación",
+        expression: "f(A, B) = A ∧ ¬B",
+        cardExpression: "A ∧ ¬B",
+        description: "Devuelve 1 cuando A vale 1 y B vale 0."
+      },
+      {
+        bits: "0011",
+        name: "A",
+        alias: "Proyección de A",
+        expression: "f(A, B) = A",
+        cardExpression: "A",
+        description: "Copia el valor de A; B no cambia el resultado."
+      },
+      {
+        bits: "0100",
+        name: "NO A Y B",
+        alias: "No implicación conversa",
+        expression: "f(A, B) = ¬A ∧ B",
+        cardExpression: "¬A ∧ B",
+        description: "Devuelve 1 cuando A vale 0 y B vale 1."
+      },
+      {
+        bits: "0101",
+        name: "B",
+        alias: "Proyección de B",
+        expression: "f(A, B) = B",
+        cardExpression: "B",
+        description: "Copia el valor de B; A no cambia el resultado."
+      },
+      {
+        bits: "0110",
+        name: "XOR",
+        alias: "Disyunción exclusiva",
+        expression: "f(A, B) = A ⊕ B",
+        cardExpression: "A ⊕ B",
+        description: "Devuelve 1 cuando las entradas son diferentes."
+      },
+      {
+        bits: "0111",
+        name: "OR",
+        alias: "Disyunción",
+        expression: "f(A, B) = A ∨ B",
+        cardExpression: "A ∨ B",
+        description: "Devuelve 1 cuando al menos una entrada vale 1."
+      },
+      {
+        bits: "1000",
+        name: "NOR",
+        alias: "Negación de OR",
+        expression: "f(A, B) = ¬(A ∨ B)",
+        cardExpression: "¬(A ∨ B)",
+        description: "Devuelve 1 únicamente cuando ambas entradas valen 0."
+      },
+      {
+        bits: "1001",
+        name: "XNOR",
+        alias: "Equivalencia",
+        expression: "f(A, B) = A ↔ B",
+        cardExpression: "A ↔ B",
+        description: "Devuelve 1 cuando las entradas son iguales."
+      },
+      {
+        bits: "1010",
+        name: "NOT B",
+        alias: "Negación de B",
+        expression: "f(A, B) = ¬B",
+        cardExpression: "¬B",
+        description: "Invierte el valor de B; A no cambia el resultado."
+      },
+      {
+        bits: "1011",
+        name: "B → A",
+        alias: "Implicación conversa",
+        expression: "f(A, B) = B → A = ¬B ∨ A",
+        cardExpression: "B → A",
+        description: "Solo devuelve 0 cuando B vale 1 y A vale 0."
+      },
+      {
+        bits: "1100",
+        name: "NOT A",
+        alias: "Negación de A",
+        expression: "f(A, B) = ¬A",
+        cardExpression: "¬A",
+        description: "Invierte el valor de A; B no cambia el resultado."
+      },
+      {
+        bits: "1101",
+        name: "A → B",
+        alias: "Implicación",
+        expression: "f(A, B) = A → B = ¬A ∨ B",
+        cardExpression: "A → B",
+        description: "Solo devuelve 0 cuando A vale 1 y B vale 0."
+      },
+      {
+        bits: "1110",
+        name: "NAND",
+        alias: "Negación de AND",
+        expression: "f(A, B) = ¬(A ∧ B)",
+        cardExpression: "¬(A ∧ B)",
+        description: "Devuelve 0 únicamente cuando ambas entradas valen 1."
+      },
+      {
+        bits: "1111",
+        name: "VERDADERO",
+        alias: "Tautología · Constante 1",
+        expression: "f(A, B) = 1",
+        cardExpression: "1",
+        description: "Devuelve 1 para cualquier combinación de A y B."
+      }
+    ];
+
+    const grid = document.querySelector("#function-grid");
+    const selectedBits = document.querySelector("#selected-bits");
+    const selectedTitle = document.querySelector("#selected-title");
+    const selectedAlias = document.querySelector("#selected-alias");
+    const selectedExpression = document.querySelector("#selected-expression");
+    const selectedDescription = document.querySelector("#selected-description");
+    const trueCount = document.querySelector("#true-count");
+    const functionClass = document.querySelector("#function-class");
+    const complementButton = document.querySelector("#complement-button");
+    const complementCode = document.querySelector("#complement-code");
+    const announcement = document.querySelector("#selection-announcement");
+    const truthRows = [...document.querySelectorAll("[id^='truth-row-']")];
+    const truthOutputs = [...document.querySelectorAll("[id^='truth-output-']")];
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    let selectedIndex = 1;
+
+    const renderBits = (bits) => [...bits]
+      .map((bit) => `<span class="bit${bit === "1" ? " is-one" : ""}">${bit}</span>`)
+      .join("");
+
+    const renderCards = () => {
+      grid.innerHTML = functions.map((item, index) => `
+        <button
+          class="function-card"
+          type="button"
+          data-index="${index}"
+          aria-pressed="${index === selectedIndex}"
+          aria-label="Seleccionar ${item.bits}: ${item.name}, ${item.alias}. ${item.expression}"
+          style="--i: ${index}"
+        >
+          <span class="selection-tab">En foco</span>
+          <span class="card-bits" aria-hidden="true">${renderBits(item.bits)}</span>
+          <span class="card-name">${item.name}<small>${item.alias}</small></span>
+          <code class="card-expression">${item.cardExpression}</code>
+        </button>
+      `).join("");
+    };
+
+    const getClassName = (ones) => {
+      if (ones === 0 || ones === 4) return "Constante";
+      if (ones === 2) return "Balanceada";
+      return "No balanceada";
+    };
+
+    const selectFunction = (index, options = {}) => {
+      const item = functions[index];
+      if (!item) return;
+
+      selectedIndex = index;
+
+      for (const card of grid.querySelectorAll(".function-card")) {
+        card.setAttribute("aria-pressed", String(Number(card.dataset.index) === index));
+      }
+
+      selectedBits.value = item.bits;
+      selectedBits.textContent = item.bits;
+      selectedBits.setAttribute("aria-label", `Bits de salida: ${[...item.bits].join(", ")}`);
+      selectedTitle.textContent = item.name;
+      selectedAlias.textContent = item.alias;
+      selectedExpression.textContent = item.expression;
+      selectedDescription.textContent = item.description;
+
+      const ones = [...item.bits].filter((bit) => bit === "1").length;
+      trueCount.textContent = `${ones} de 4`;
+      functionClass.textContent = getClassName(ones);
+
+      [...item.bits].forEach((bit, rowIndex) => {
+        truthRows[rowIndex].dataset.output = bit;
+        truthOutputs[rowIndex].value = bit;
+        truthOutputs[rowIndex].textContent = bit;
+      });
+
+      const complementIndex = 15 - index;
+      const complement = functions[complementIndex];
+      complementButton.dataset.index = String(complementIndex);
+      complementButton.setAttribute("aria-label", `Ver función complementaria ${complement.bits}: ${complement.name}`);
+      complementCode.textContent = `${complement.bits} · ${complement.name} →`;
+
+      announcement.textContent = `Función seleccionada: ${item.bits}, ${item.name}. ${item.description}`;
+
+      if (options.focusCard) {
+        grid.querySelector(`[data-index="${index}"]`)?.focus();
+      }
+
+      if (options.scrollDetail && window.matchMedia("(max-width: 63.99rem)").matches) {
+        document.querySelector("#detalle").scrollIntoView({
+          behavior: reducedMotion.matches ? "auto" : "smooth",
+          block: "start"
+        });
+      }
+
+      if (!reducedMotion.matches) {
+        document.querySelector(".inspector-body").animate(
+          [
+            { opacity: 0.45, transform: "translateY(0.35rem)" },
+            { opacity: 1, transform: "translateY(0)" }
+          ],
+          { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        );
+      }
+    };
+
+    grid.addEventListener("click", (event) => {
+      const card = event.target.closest(".function-card");
+      if (!card) return;
+      selectFunction(Number(card.dataset.index), { scrollDetail: true });
+    });
+
+    grid.addEventListener("keydown", (event) => {
+      const card = event.target.closest(".function-card");
+      if (!card) return;
+
+      const columns = getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+      const current = Number(card.dataset.index);
+      const movement = {
+        ArrowLeft: -1,
+        ArrowRight: 1,
+        ArrowUp: -columns,
+        ArrowDown: columns,
+        Home: -current,
+        End: functions.length - 1 - current
+      }[event.key];
+
+      if (movement === undefined) return;
+      event.preventDefault();
+
+      const next = Math.max(0, Math.min(functions.length - 1, current + movement));
+      selectFunction(next, { focusCard: true });
+    });
+
+    complementButton.addEventListener("click", () => {
+      const index = Number(complementButton.dataset.index);
+      selectFunction(index, { focusCard: true });
+    });
+
+    renderCards();
+    selectFunction(selectedIndex);
+  </script>
+</body>
+</html>

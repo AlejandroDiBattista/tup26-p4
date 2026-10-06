@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --fondo: #eef1f6;
+      --superficie: #ffffff;
+      --tinta: #1c2433;
+      --tenue: #677086;
+      --linea: #d6dbe5;
+      --acento: #2f4bd8;
+      --acento-hover: #243cb4;
+      --sobre-acento: #ffffff;
+      --aviso: #a3281c;
+      --aviso-fondo: #fbe9e7;
+      --codigo-fondo: #1b2231;
+      --codigo-tinta: #d3dbeb;
+      --codigo-rol: #8ea2ff;
+      color-scheme: light dark;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fondo: #131824;
+        --superficie: #1d2432;
+        --tinta: #e5e9f1;
+        --tenue: #98a1b4;
+        --linea: #2d3646;
+        --acento: #7088ff;
+        --acento-hover: #8b9dff;
+        --sobre-acento: #0c1120;
+        --aviso: #ffab9f;
+        --aviso-fondo: #3b2124;
+        --codigo-fondo: #0d121c;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body, #app { height: 100%; margin: 0; }
+
+    body {
+      font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+      font-size: 1.0625rem;
+      line-height: 1.55;
+      background: var(--fondo);
+      color: var(--tinta);
+    }
+
+    button, textarea, input { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+    /* Estructura */
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: minmax(0, 1fr);
+      height: 100%;
+      max-width: 46rem;
+      margin: 0 auto;
+    }
+
+    .app.con-historia {
+      max-width: 78rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 28rem);
+    }
+
+    .barra {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--linea);
+    }
+
+    .marca { display: flex; align-items: baseline; gap: 0.625rem; }
+    .marca h1 { margin: 0; font-size: 1.25rem; letter-spacing: -0.01em; }
+    .marca span { color: var(--tenue); font-size: 0.875rem; }
+
+    .acciones { display: flex; gap: 0.25rem; flex-wrap: wrap; justify-content: flex-end; }
+
+    .boton {
+      background: none;
+      border: 0;
+      border-radius: 0.5rem;
+      padding: 0.375rem 0.625rem;
+      color: var(--tenue);
+      cursor: pointer;
+      font-size: 0.9375rem;
+    }
+    .boton:hover:not(:disabled), .boton[aria-pressed="true"] { color: var(--tinta); background: var(--superficie); }
+    .boton:disabled { opacity: 0.45; cursor: default; }
+
+    .cuenta {
+      display: inline-block;
+      min-width: 1.5em;
+      margin-left: 0.25rem;
+      padding: 0 0.375rem;
+      border-radius: 1rem;
+      background: var(--linea);
+      color: var(--tinta);
+      font-size: 0.8125rem;
+      text-align: center;
+    }
+
+    /* Conversación */
+
+    .conversacion { overflow-y: auto; scroll-behavior: smooth; }
+    .hilo { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.75rem 1.25rem 2rem; }
+
+    .mensaje { max-width: 85%; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+    .mensaje.user {
+      align-self: flex-end;
+      padding: 0.625rem 1rem;
+      border-radius: 1.25rem 1.25rem 0.375rem 1.25rem;
+      background: var(--acento);
+      color: var(--sobre-acento);
+    }
+
+    .mensaje.assistant { align-self: flex-start; padding-left: 0.875rem; border-left: 3px solid var(--linea); }
+
+    .escribiendo { display: flex; gap: 0.3rem; padding-block: 0.6rem; }
+    .escribiendo span {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 50%;
+      background: var(--tenue);
+      animation: latido 1.2s infinite ease-in-out;
+    }
+    .escribiendo span:nth-child(2) { animation-delay: 0.15s; }
+    .escribiendo span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes latido {
+      0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+      40% { opacity: 1; transform: translateY(-0.2rem); }
+    }
+
+    .aviso {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      background: var(--aviso-fondo);
+      color: var(--aviso);
+    }
+    .aviso p { margin: 0; }
+    .aviso .boton { color: var(--aviso); border: 1px solid currentColor; }
+
+    .vacio { margin: auto 0; padding-top: 12vh; }
+    .vacio h2 { margin: 0 0 0.375rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+    .vacio p { margin: 0 0 1.25rem; color: var(--tenue); max-width: 34rem; }
+
+    .sugerencias { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .sugerencia {
+      border: 1px solid var(--linea);
+      border-radius: 2rem;
+      padding: 0.4rem 0.9rem;
+      background: var(--superficie);
+      cursor: pointer;
+      text-align: left;
+    }
+    .sugerencia:hover { border-color: var(--acento); }
+
+    /* Caja de texto */
+
+    .compositor {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+      margin: 0 1.25rem 1.25rem;
+      padding: 0.5rem 0.5rem 0.5rem 1rem;
+      border: 1px solid var(--linea);
+      border-radius: 1.5rem;
+      background: var(--superficie);
+    }
+    .compositor:focus-within { border-color: var(--acento); }
+
+    .compositor textarea {
+      flex: 1;
+      resize: none;
+      border: 0;
+      outline: 0;
+      background: none;
+      padding: 0.45rem 0;
+      max-height: 12.5rem;
+      line-height: 1.5;
+    }
+
+    .enviar {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 0;
+      border-radius: 50%;
+      background: var(--acento);
+      color: var(--sobre-acento);
+      cursor: pointer;
+    }
+    .enviar:hover:not(:disabled) { background: var(--acento-hover); }
+    .enviar:disabled { opacity: 0.4; cursor: default; }
+
+    .ayuda { margin: -0.75rem 1.25rem 1rem; color: var(--tenue); font-size: 0.8125rem; text-align: center; }
+
+    /* Historia */
+
+    .historia {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-left: 1px solid var(--linea);
+      background: var(--superficie);
+    }
+
+    .historia header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--linea);
+    }
+    .historia h2 { margin: 0; font-size: 1rem; }
+    .historia > p { margin: 0; padding: 0.875rem 1.25rem; color: var(--tenue); font-size: 0.9375rem; }
+
+    .historia pre {
+      flex: 1;
+      margin: 0 1.25rem 1.25rem;
+      padding: 1rem;
+      overflow: auto;
+      border-radius: 0.75rem;
+      background: var(--codigo-fondo);
+      color: var(--codigo-tinta);
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .bienvenida { max-width: 28rem; margin: 0 auto; padding: 18vh 1.5rem 2rem; }
+    .bienvenida h1 { margin: 0 0 0.5rem; font-size: 2rem; letter-spacing: -0.02em; }
+    .bienvenida > p { color: var(--tenue); margin: 0 0 1.5rem; }
+    .bienvenida .aviso { margin-bottom: 1rem; }
+    .form-clave { display: grid; gap: 0.5rem; }
+    .form-clave label { font-weight: 700; font-size: 0.9375rem; }
+    .form-clave input {
+      padding: 0.7rem 0.9rem;
+      border: 1px solid var(--linea);
+      border-radius: 0.75rem;
+      background: var(--superficie);
+    }
+    .primario {
+      margin-top: 0.5rem;
+      padding: 0.7rem 1rem;
+      border: 0;
+      border-radius: 0.75rem;
+      background: var(--acento);
+      color: var(--sobre-acento);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primario:hover { background: var(--acento-hover); }
+
+    @media (max-width: 60rem) {
+      .app.con-historia { grid-template-columns: minmax(0, 1fr); }
+      .historia { position: fixed; inset: 20% 0 0 0; border-left: 0; border-top: 1px solid var(--linea); border-radius: 1.25rem 1.25rem 0 0; box-shadow: 0 -1rem 3rem rgb(0 0 0 / 0.2); }
+    }
+
+    @media (max-width: 34rem) {
+      .barra { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+      .acciones { justify-content: flex-start; margin-left: -0.625rem; }
+      .ayuda { display: none; }
+      .mensaje { max-width: 92%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .conversacion { scroll-behavior: auto; }
+      .escribiendo span { animation: none; opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="module">
+    import { html, reactive } from "https://esm.sh/@arrow-js/core@1";
+
+    const URL_API = "https://api.openai.com/v1/chat/completions";
+    const MODELO = "gpt-6-luna";
+    const INSTRUCCIONES =
+      "Sos un asistente amable. Respondé en español, en pocas oraciones y sin formato Markdown.";
+    const NOMBRE_CLAVE = "openai-api-key";
+    const SUGERENCIAS = [
+      "¿Cuál es la capital de Francia?",
+      "Explicame qué es un token",
+      "Dame una idea para un proyecto web",
+    ];
+
+    // La clave de API
+
+    function leerClave() {
+      return localStorage.getItem(NOMBRE_CLAVE) ?? "";
+    }
+
+    function guardarClave(clave) {
+      localStorage.setItem(NOMBRE_CLAVE, clave);
+    }
+
+    function olvidarClave() {
+      localStorage.removeItem(NOMBRE_CLAVE);
+    }
+
+    // La llamada a la API
+
+    function armarMensajes(historia) {
+      return [{ role: "developer", content: INSTRUCCIONES }, ...historia];
+    }
+
+    async function enviarChat(historia, clave) {
+      const respuesta = await fetch(URL_API, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${clave}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODELO,
+          messages: armarMensajes(historia),
+          reasoning_effort: "low",
+        }),
+      });
+
+      if (!respuesta.ok) {
+        const error = new Error(await describirError(respuesta));
+        error.status = respuesta.status;
+        throw error;
+      }
+
+      const datos = await respuesta.json();
+      return (datos.choices[0].message.content ?? "").trim();
+    }
+
+    async function describirError(respuesta) {
+      if (respuesta.status === 401) return "La clave guardada no es válida. Ingresá otra.";
+      if (respuesta.status === 429) return "Se superó el límite de pedidos o la cuenta no tiene saldo.";
+      try {
+        const datos = await respuesta.json();
+        return datos.error?.message ?? `La API respondió ${respuesta.status}.`;
+      } catch {
+        return `La API respondió ${respuesta.status}.`;
+      }
+    }
+
+    // El estado
+
+    const estado = reactive({
+      clave: leerClave(),
+      historia: [],
+      esperando: false,
+      error: "",
+      verHistoria: false,
+    });
+
+    function historiaPlana() {
+      return estado.historia.map(({ role, content }) => ({ role, content }));
+    }
+
+    // Las acciones
+
+    async function responder() {
+      estado.esperando = true;
+      estado.error = "";
+      desplazarAlFinal();
+
+      try {
+        const contenido = await enviarChat(historiaPlana(), estado.clave);
+        estado.historia = [...historiaPlana(), { role: "assistant", content: contenido }];
+      } catch (error) {
+        estado.error = error.message;
+        if (error.status === 401) {
+          olvidarClave();
+          estado.clave = "";
+        }
+      } finally {
+        estado.esperando = false;
+        desplazarAlFinal();
+      }
+    }
+
+    function enviarTexto(texto) {
+      texto = texto.trim();
+      if (!texto || estado.esperando) return false;
+      estado.historia = [...historiaPlana(), { role: "user", content: texto }];
+      responder();
+      return true;
+    }
+
+    function alEnviar(evento) {
+      evento.preventDefault();
+      const entrada = evento.target.elements.entrada;
+      if (enviarTexto(entrada.value)) {
+        entrada.value = "";
+        ajustarAltura(entrada);
+      }
+      entrada.focus();
+    }
+
+    function alTeclear(evento) {
+      if (evento.key === "Enter" && !evento.shiftKey && !evento.isComposing) {
+        evento.preventDefault();
+        evento.target.form.requestSubmit();
+      }
+    }
+
+    function alGuardarClave(evento) {
+      evento.preventDefault();
+      const clave = evento.target.elements.clave.value.trim();
+      if (!clave) return;
+      guardarClave(clave);
+      estado.clave = clave;
+      estado.error = "";
+    }
+
+    function nuevaConversacion() {
+      estado.historia = [];
+      estado.error = "";
+      document.getElementById("entrada")?.focus();
+    }
+
+    function cambiarClave() {
+      olvidarClave();
+      estado.clave = "";
+    }
+
+    function alternarHistoria() {
+      estado.verHistoria = !estado.verHistoria;
+    }
+
+    // Ayudas de la interfaz
+
+    function ajustarAltura(entrada) {
+      entrada.style.height = "auto";
+      entrada.style.height = `${entrada.scrollHeight}px`;
+    }
+
+    function desplazarAlFinal() {
+      requestAnimationFrame(() => {
+        const conversacion = document.getElementById("conversacion");
+        if (conversacion) conversacion.scrollTop = conversacion.scrollHeight;
+      });
+    }
+
+    function resumenPedido() {
+      const mensajes = armarMensajes(historiaPlana());
+      const caracteres = mensajes.reduce((total, m) => total + m.content.length, 0);
+      return `El próximo pedido lleva ${mensajes.length} mensajes y ${caracteres} caracteres.`;
+    }
+
+    // Las vistas
+
+    function vistaClave() {
+      return html`
+        <main class="bienvenida">
+          <h1>Chat</h1>
+          <p>Para conversar hace falta una clave de API de OpenAI. Se guarda solo en este navegador.</p>
+          ${() => estado.error ? html`<div class="aviso"><p>${estado.error}</p></div>` : ""}
+          <form class="form-clave" @submit="${alGuardarClave}">
+            <label for="clave">Clave de API</label>
+            <input id="clave" name="clave" type="password" placeholder="sk-proj-…" autocomplete="off" required>
+            <button class="primario">Guardar clave</button>
+          </form>
+        </main>
+      `;
+    }
+
+    function vistaVacia() {
+      return html`
+        <div class="vacio">
+          <h2>¿De qué querés hablar?</h2>
+          <p>Cada pedido lleva la conversación entera. Abrí Historia para ver cómo crece.</p>
+          <div class="sugerencias">
+            ${SUGERENCIAS.map((texto) => html`
+              <button class="sugerencia" @click="${() => enviarTexto(texto)}">${texto}</button>
+            `)}
+          </div>
+        </div>
+      `;
+    }
+
+    function vistaHistoria() {
+      return html`
+        <aside class="historia" aria-label="Historia enviada">
+          <header>
+            <h2>Lo que viaja en cada pedido</h2>
+            <button class="boton" @click="${alternarHistoria}">Cerrar</button>
+          </header>
+          <p>${() => resumenPedido()}</p>
+          <pre>${() => JSON.stringify(armarMensajes(historiaPlana()), null, 2)}</pre>
+        </aside>
+      `;
+    }
+
+    function vistaChat() {
+      return html`
+        <div class="${() => estado.verHistoria ? "app con-historia" : "app"}">
+          <header class="barra">
+            <div class="marca">
+              <h1>Chat</h1>
+              <span>${MODELO}</span>
+            </div>
+            <nav class="acciones">
+              <button class="boton" aria-pressed="${() => String(estado.verHistoria)}" @click="${alternarHistoria}">
+                Historia<span class="cuenta">${() => estado.historia.length}</span>
+              </button>
+              <button class="boton" disabled="${() => estado.historia.length === 0 || estado.esperando}" @click="${nuevaConversacion}">
+                Nueva conversación
+              </button>
+              <button class="boton" @click="${cambiarClave}">Cambiar clave</button>
+            </nav>
+          </header>
+
+          <main class="conversacion" id="conversacion">
+            <div class="hilo" aria-live="polite">
+              ${() => estado.historia.length === 0 && !estado.esperando ? vistaVacia() : ""}
+              ${() => estado.historia.map((mensaje) => html`
+                <div class="${"mensaje " + mensaje.role}">${mensaje.content}</div>
+              `)}
+              ${() => estado.esperando ? html`
+                <div class="mensaje assistant escribiendo" aria-label="El asistente está escribiendo">
+                  <span></span><span></span><span></span>
+                </div>
+              ` : ""}
+              ${() => estado.error ? html`
+                <div class="aviso">
+                  <p>${estado.error}</p>
+                  <button class="boton" @click="${responder}">Reintentar</button>
+                </div>
+              ` : ""}
+            </div>
+          </main>
+
+          <div>
+            <form class="compositor" @submit="${alEnviar}">
+              <textarea id="entrada" name="entrada" rows="1" placeholder="Escribí un mensaje" aria-label="Mensaje"
+                @keydown="${alTeclear}" @input="${(evento) => ajustarAltura(evento.target)}"></textarea>
+              <button class="enviar" aria-label="Enviar" disabled="${() => estado.esperando}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </button>
+            </form>
+            <p class="ayuda">Enter envía. Mayúscula + Enter agrega una línea.</p>
+          </div>
+
+          ${() => estado.verHistoria ? vistaHistoria() : ""}
+        </div>
+      `;
+    }
+
+    html`${() => estado.clave ? vistaChat() : vistaClave()}`(document.getElementById("app"));
+  </script>
+</body>
+</html>

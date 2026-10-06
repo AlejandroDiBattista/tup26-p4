@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pizarra JS — playground para clases</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --code-size: 20px;
+    --pad: 14px;
+  }
+  [data-theme="dark"]{
+    --bg:#0b0e13; --panel:#12161d; --panel2:#0e1218; --border:#242c37;
+    --fg:#e9eef5; --fg-dim:#8b98a5; --accent:#4c9aff; --run:#2ea043; --run-h:#3fb950;
+    --ed-bg:#0e1218; --gutter:#55606c; --active:rgba(100,150,255,.09);
+    --sel:rgba(70,130,255,.38); --caret:#e9eef5;
+    --t-k:#ff7b72; --t-s:#5bd46a; --t-c:#93a0ad; --t-n:#ffa657; --t-l:#79c0ff;
+    --t-f:#d2a8ff; --t-t:#f2cc60; --t-re:#f69d50; --t-p:#aab4bf;
+    --v-str:#5bd46a; --v-num:#ffa657; --v-bool:#d2a8ff; --v-null:#8b98a5;
+    --v-fn:#79c0ff; --v-key:#7ab7ff; --v-cls:#f2cc60; --v-dim:#77828e;
+    --v-err:#ff7b72; --v-re:#f69d50; --v-plain:#e9eef5;
+    --e-warn-bg:rgba(210,153,34,.12); --e-warn-bd:#d29922;
+    --e-err-bg:rgba(248,81,73,.13);  --e-err-bd:#f85149;
+    --e-info-bd:#4c9aff; --e-res-bd:#3fb950;
+  }
+  [data-theme="light"]{
+    --bg:#f2f4f7; --panel:#ffffff; --panel2:#f6f8fa; --border:#c8d1da;
+    --fg:#1f2328; --fg-dim:#57606a; --accent:#0969da; --run:#1a7f37; --run-h:#116329;
+    --ed-bg:#ffffff; --gutter:#8c959f; --active:rgba(84,174,255,.16);
+    --sel:rgba(84,174,255,.45); --caret:#1f2328;
+    --t-k:#cf222e; --t-s:#0a7d33; --t-c:#6e7781; --t-n:#953800; --t-l:#0550ae;
+    --t-f:#8250df; --t-t:#9a6700; --t-re:#116329; --t-p:#424a53;
+    --v-str:#0a7d33; --v-num:#953800; --v-bool:#8250df; --v-null:#6e7781;
+    --v-fn:#0550ae; --v-key:#0550ae; --v-cls:#9a6700; --v-dim:#8c959f;
+    --v-err:#cf222e; --v-re:#116329; --v-plain:#1f2328;
+    --e-warn-bg:rgba(154,103,0,.10); --e-warn-bd:#9a6700;
+    --e-err-bg:rgba(207,34,46,.08);  --e-err-bd:#cf222e;
+    --e-info-bd:#0969da; --e-res-bd:#1a7f37;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  code,pre,textarea,.mono{
+    font-family:"Cascadia Code","Fira Code",Consolas,"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+
+  /* ---------- Barra superior ---------- */
+  .toolbar{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--border);
+  }
+  .brand{ font-weight:700; letter-spacing:.3px; margin-right:4px; white-space:nowrap; }
+  .brand small{ color:var(--fg-dim); font-weight:500; }
+  .btn{
+    background:var(--panel2); color:var(--fg); border:1px solid var(--border);
+    border-radius:8px; padding:8px 14px; font-size:15px; cursor:pointer;
+    min-height:40px; line-height:1;
+  }
+  .btn:hover{ border-color:var(--fg-dim); }
+  .btn:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--accent); outline-offset:1px;
+  }
+  .btn.run{ background:var(--run); border-color:var(--run); color:#fff; font-weight:700; }
+  .btn.run:hover{ background:var(--run-h); }
+  .chk{
+    display:flex; align-items:center; gap:6px; padding:0 6px; min-height:40px;
+    color:var(--fg-dim); cursor:pointer; user-select:none;
+  }
+  .chk input{ width:18px; height:18px; accent-color:var(--run); cursor:pointer; }
+  select{
+    background:var(--panel2); color:var(--fg); border:1px solid var(--border);
+    border-radius:8px; padding:8px 10px; font-size:15px; min-height:40px; cursor:pointer;
+    max-width:230px;
+  }
+  .spacer{ flex:1; }
+  .group{ display:flex; }
+  .group .btn{ border-radius:0; }
+  .group .btn:first-child{ border-radius:8px 0 0 8px; }
+  .group .btn:last-child{ border-radius:0 8px 8px 0; border-left:none; }
+
+  /* ---------- Paneles ---------- */
+  #split{ flex:1; display:flex; min-height:0; }
+  body[data-layout="rows"] #split{ flex-direction:column; }
+  #editorPane{
+    flex:0 0 55%; display:flex; min-width:0; min-height:0;
+    background:var(--ed-bg);
+  }
+  #outPane{ flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--panel2); }
+  #divider{
+    flex:0 0 8px; background:var(--panel); border:0 solid var(--border);
+    border-left-width:1px; border-right-width:1px; cursor:col-resize; position:relative;
+  }
+  body[data-layout="rows"] #divider{
+    cursor:row-resize; border-width:1px 0;
+  }
+  #divider::after{
+    content:""; position:absolute; inset:0; margin:auto;
+    width:3px; height:26px; border-radius:2px; background:var(--border);
+  }
+  body[data-layout="rows"] #divider::after{ width:26px; height:3px; }
+
+  /* ---------- Editor ---------- */
+  #gutter{
+    flex:0 0 auto; overflow:hidden; background:var(--ed-bg);
+    border-right:1px solid var(--border); user-select:none;
+  }
+  #gutterInner{
+    padding:var(--pad) 10px var(--pad) 6px; text-align:right;
+    color:var(--gutter); font-size:var(--code-size); line-height:1.55;
+    white-space:pre; font-family:inherit;
+  }
+  #gutter, #gutterInner{ font-family:"Cascadia Code","Fira Code",Consolas,ui-monospace,Menlo,monospace; }
+  #editorWrap{ position:relative; flex:1; min-width:0; }
+  #hl, #ta{
+    position:absolute; inset:0; margin:0; border:0;
+    padding:var(--pad) 16px; font-size:var(--code-size); line-height:1.55;
+    white-space:pre; tab-size:2; overflow:hidden; background:transparent;
+  }
+  #hl{ z-index:1; pointer-events:none; }
+  #hlCode{ position:relative; z-index:1; display:block; }
+  #activeLine{
+    position:absolute; left:0; top:var(--pad); height:calc(var(--code-size)*1.55);
+    background:var(--active); z-index:0; width:100%;
+  }
+  #ta{
+    z-index:2; overflow:auto; resize:none; outline:none;
+    color:transparent; caret-color:var(--caret); -webkit-text-fill-color:transparent;
+  }
+  #ta::selection{ background:var(--sel); color:transparent; -webkit-text-fill-color:transparent; }
+
+  .t-k{ color:var(--t-k); } .t-s{ color:var(--t-s); } .t-c{ color:var(--t-c); font-style:italic; }
+  .t-n{ color:var(--t-n); } .t-l{ color:var(--t-l); } .t-f{ color:var(--t-f); }
+  .t-t{ color:var(--t-t); } .t-re{ color:var(--t-re); } .t-p{ color:var(--t-p); }
+
+  /* ---------- Salida ---------- */
+  #outHead{
+    display:flex; align-items:center; gap:10px; padding:8px 14px;
+    border-bottom:1px solid var(--border); background:var(--panel);
+    color:var(--fg-dim); font-weight:600;
+  }
+  #stat{ margin-left:auto; font-weight:500; font-size:14px; color:var(--fg-dim); }
+  #stat.err{ color:var(--e-err-bd); font-weight:700; }
+  #results{ flex:1; overflow:auto; padding:6px 0 20px; }
+  .entry{
+    display:flex; align-items:baseline; gap:12px;
+    padding:5px 14px; font-size:var(--code-size); line-height:1.5;
+    border-left:4px solid transparent; white-space:pre-wrap; word-break:break-word;
+  }
+  .entry + .entry{ border-top:1px solid var(--border); }
+  .entry .ln{
+    flex:0 0 auto; min-width:3ch; text-align:right;
+    color:var(--v-dim); font-size:calc(var(--code-size)*.72);
+    font-family:inherit; padding-top:2px;
+  }
+  .entry .ln.link{ cursor:pointer; text-decoration:underline dotted; }
+  .entry .ln.link:hover{ color:var(--accent); }
+  .entry .val{ flex:1; min-width:0; font-family:inherit; }
+  .e-warn{ background:var(--e-warn-bg); border-left-color:var(--e-warn-bd); }
+  .e-error{ background:var(--e-err-bg); border-left-color:var(--e-err-bd); color:var(--v-err); }
+  .e-info{ border-left-color:var(--e-info-bd); }
+  .e-result{ border-left-color:var(--e-res-bd); }
+  .e-result .ln{ color:var(--e-res-bd); font-weight:700; }
+
+  .v-str{ color:var(--v-str); } .v-num{ color:var(--v-num); } .v-bool{ color:var(--v-bool); }
+  .v-null{ color:var(--v-null); font-style:italic; } .v-fn{ color:var(--v-fn); }
+  .v-key{ color:var(--v-key); } .v-cls{ color:var(--v-cls); } .v-dim{ color:var(--v-dim); }
+  .v-errv{ color:var(--v-err); } .v-sym{ color:var(--v-num); } .v-re{ color:var(--v-re); }
+  .v-pun{ color:var(--fg-dim); } .v-plain{ color:var(--v-plain); }
+
+  /* ---------- Barra de estado ---------- */
+  #statusBar{
+    display:flex; gap:16px; align-items:center; padding:5px 14px;
+    background:var(--panel); border-top:1px solid var(--border);
+    color:var(--fg-dim); font-size:13.5px; user-select:none;
+  }
+  #statusBar .mid{ margin:0 auto; }
+
+  /* Scrollbars más visibles en proyector */
+  ::-webkit-scrollbar{ width:13px; height:13px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:7px; border:3px solid transparent; background-clip:content-box; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--fg-dim); border:3px solid transparent; background-clip:content-box; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+
+  @media (max-width:700px){
+    .brand small{ display:none; }
+    #split{ flex-direction:column; }
+  }
+</style>
+</head>
+<body data-theme="dark" data-layout="cols">
+
+<header class="toolbar">
+  <div class="brand">⟨JS⟩ Pizarra <small>· playground para clases</small></div>
+  <button class="btn run" id="btnRun" title="Ctrl+Enter">▶ Ejecutar</button>
+  <label class="chk" title="Vuelve a ejecutar el código automáticamente al escribir">
+    <input type="checkbox" id="chkAuto" checked> Auto
+  </label>
+  <select id="selExample" aria-label="Cargar ejemplo">
+    <option value="" selected disabled>📚 Ejemplos…</option>
+    <option value="bienvenida">Bienvenida</option>
+    <option value="variables">Variables y tipos</option>
+    <option value="funciones">Funciones y arrow functions</option>
+    <option value="arrays">Arrays: map, filter, reduce</option>
+    <option value="objetos">Objetos y destructuring</option>
+    <option value="closures">Closures</option>
+    <option value="asincronia">Asincronía y async/await</option>
+    <option value="clases">Clases y herencia</option>
+    <option value="errores">Errores y try/catch</option>
+  </select>
+  <span class="spacer"></span>
+  <div class="group" role="group" aria-label="Tamaño de letra">
+    <button class="btn" id="btnFontMinus" title="Letra más chica">A−</button>
+    <button class="btn" id="btnFontPlus" title="Letra más grande">A+</button>
+  </div>
+  <button class="btn" id="btnLayout" title="Alternar división vertical / horizontal">⇆ Vista</button>
+  <button class="btn" id="btnTheme" title="Alternar tema (el claro suele verse mejor en proyector)">☀ Claro</button>
+  <button class="btn" id="btnClear" title="Limpiar la consola">🗑 Salida</button>
+</header>
+
+<main id="split">
+  <section id="editorPane" aria-label="Editor de código">
+    <div id="gutter"><div id="gutterInner">1</div></div>
+    <div id="editorWrap">
+      <pre id="hl" aria-hidden="true"><div id="activeLine"></div><code id="hlCode"></code></pre>
+      <textarea id="ta" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off"
+        autocorrect="off" aria-label="Código JavaScript"></textarea>
+    </div>
+  </section>
+  <div id="divider" role="separator" aria-label="Ajustar tamaño de paneles" title="Arrastrá para ajustar · doble clic restablece"></div>
+  <section id="outPane" aria-label="Consola">
+    <div id="outHead">Consola <span id="stat"></span></div>
+    <div id="results"></div>
+  </section>
+</main>
+
+<footer id="statusBar">
+  <span id="posInfo">Lín 1, Col 1</span>
+  <span class="mid">Ctrl+Enter ejecuta · Tab indenta · clic en el nº de línea de la salida salta al código</span>
+  <span id="sizeInfo">20 px</span>
+</footer>
+
+<!-- ============ Ejemplos (texto plano, no se ejecutan al cargar la página) ============ -->
+<script type="text/plain" id="ex-bienvenida">
+// 👋 Bienvenidos a la Pizarra JS
+// Todo lo que escribas acá se ejecuta al instante →
+
+const materia = "Programación";
+const anio = 2026;
+
+console.log("Hola,", materia, anio);
+
+// Los resultados aparecen a la derecha, con el número de línea:
+const cuadrados = [1, 2, 3, 4, 5].map(n => n * n);
+console.log(cuadrados);
+
+function saludar(nombre) {
+  return `¡Hola, ${nombre}!`;
+}
+
+saludar("clase");  // ← la última expresión se muestra con ⇒
+</script>
+
+<script type="text/plain" id="ex-variables">
+// Variables y tipos de datos
+let edad = 21;            // number
+const nombre = "Ana";     // string
+let activo = true;        // boolean
+let nada = null;
+let sinDefinir;
+
+console.log(typeof edad, typeof nombre, typeof activo);
+console.log(nombre, "tiene", edad, "años");
+
+// const no se puede reasignar:
+// nombre = "Otro";   // ← descomentá esta línea y mirá el error
+
+edad = edad + 1;
+edad;
+</script>
+
+<script type="text/plain" id="ex-funciones">
+// Funciones: declaración, expresión y arrow
+function sumar(a, b) {
+  return a + b;
+}
+
+const restar = function (a, b) {
+  return a - b;
+};
+
+const multiplicar = (a, b) => a * b;
+
+console.log(sumar(2, 3));
+console.log(restar(10, 4));
+console.log(multiplicar(6, 7));
+
+// Las funciones también son valores:
+const operaciones = { sumar, restar, multiplicar };
+operaciones;
+</script>
+
+<script type="text/plain" id="ex-arrays">
+// map, filter y reduce
+const notas = [4, 7, 9, 2, 6, 10, 5];
+
+const aprobados = notas.filter(n => n >= 6);
+console.log("Aprobados:", aprobados);
+
+const conPuntoExtra = notas.map(n => Math.min(10, n + 1));
+console.log("Con punto extra:", conPuntoExtra);
+
+const promedio = notas.reduce((acum, n) => acum + n, 0) / notas.length;
+console.log("Promedio:", promedio.toFixed(2));
+</script>
+
+<script type="text/plain" id="ex-objetos">
+// Objetos y destructuring
+const alumno = {
+  nombre: "Juan",
+  legajo: 12345,
+  materias: ["Programación", "Base de Datos"],
+};
+
+const { nombre, legajo } = alumno;
+console.log(nombre, legajo);
+
+// Spread: copiar y modificar sin tocar el original
+const actualizado = { ...alumno, turno: "noche" };
+console.log(actualizado);
+console.log(alumno);   // sin cambios
+</script>
+
+<script type="text/plain" id="ex-closures">
+// Closures: funciones que recuerdan su contexto
+function crearContador() {
+  let cuenta = 0;
+  return function () {
+    cuenta++;
+    return cuenta;
+  };
+}
+
+const contador = crearContador();
+console.log(contador());
+console.log(contador());
+console.log(contador());
+
+const otro = crearContador();   // contexto independiente
+console.log(otro());
+</script>
+
+<script type="text/plain" id="ex-asincronia">
+// Asincronía: setTimeout, promesas y async/await
+console.log("1. Esto se muestra primero");
+
+setTimeout(() => {
+  console.log("3. Esto llega después (1 segundo)");
+}, 1000);
+
+console.log("2. Esto no espera al timeout");
+
+// async / await (soporta await de nivel superior)
+const demorar = ms => new Promise(res => setTimeout(res, ms));
+
+await demorar(500);
+console.log("4. …y esto, medio segundo después");
+</script>
+
+<script type="text/plain" id="ex-clases">
+// Clases y herencia
+class Persona {
+  constructor(nombre) {
+    this.nombre = nombre;
+  }
+  saludar() {
+    return `Hola, soy ${this.nombre}`;
+  }
+}
+
+class Estudiante extends Persona {
+  constructor(nombre, carrera) {
+    super(nombre);
+    this.carrera = carrera;
+  }
+  saludar() {
+    return `${super.saludar()} y estudio ${this.carrera}`;
+  }
+}
+
+const e = new Estudiante("Lucía", "TUP");
+console.log(e.saludar());
+e;
+</script>
+
+<script type="text/plain" id="ex-errores">
+// Errores y try/catch
+function dividir(a, b) {
+  if (b === 0) {
+    throw new Error("No se puede dividir por cero");
+  }
+  return a / b;
+}
+
+console.log(dividir(10, 2));
+
+try {
+  dividir(1, 0);
+} catch (error) {
+  console.warn("Atrapado:", error.message);
+}
+
+dividir(3, 0);   // sin try/catch: así se ve un error
+</script>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   Runtime de ejecución. Corre dentro de un Web Worker (aislado y con
+   timeout para bucles infinitos). Si el navegador no permite Workers,
+   se usa como plan B en el hilo principal.
+   ========================================================================= */
+function __runtime(self){
+  var MAX = 500, sent = 0, lineOffset = 0, timers = {};
+
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function span(c, t){ return '<span class="'+c+'">'+esc(t)+'</span>'; }
+  function ctorName(v){
+    try{
+      var p = Object.getPrototypeOf(v);
+      return p && p.constructor && p.constructor.name || null;
+    }catch(e){ return null; }
+  }
+  function fmt(v, d, seen, top){
+    var t = typeof v;
+    if (v === null)        return span("v-null","null");
+    if (t === "undefined") return span("v-null","undefined");
+    if (t === "number")    return span("v-num", Object.is(v,-0) ? "-0" : String(v));
+    if (t === "bigint")    return span("v-num", String(v)+"n");
+    if (t === "boolean")   return span("v-bool", String(v));
+    if (t === "string")    return top ? span("v-plain", v) : span("v-str", JSON.stringify(v));
+    if (t === "symbol")    return span("v-sym", v.toString());
+    if (t === "function")  return span("v-fn", "ƒ "+(v.name || "anónima")+"()");
+
+    seen = seen || [];
+    if (seen.indexOf(v) !== -1) return span("v-null","[Circular]");
+    if (v instanceof Error)  return span("v-errv", (v.name||"Error")+": "+v.message);
+    if (v instanceof Date)   return span("v-str", isNaN(v) ? "Invalid Date" : v.toISOString());
+    if (v instanceof RegExp) return span("v-re", v.toString());
+
+    if (d >= 3){
+      if (Array.isArray(v)) return span("v-dim","Array("+v.length+")");
+      return span("v-dim", (ctorName(v)||"Object")+" {…}");
+    }
+    seen.push(v);
+    var out, items = [], i, n;
+
+    if (Array.isArray(v)){
+      n = Math.min(v.length, 20);
+      for (i=0; i<n; i++) items.push(i in v ? fmt(v[i], d+1, seen, false) : span("v-dim","vacío"));
+      if (v.length > n) items.push(span("v-dim","… +"+(v.length-n)));
+      out = span("v-pun","[") + items.join(span("v-pun",", ")) + span("v-pun","]");
+    }
+    else if (typeof Map !== "undefined" && v instanceof Map){
+      var c1 = 0;
+      v.forEach(function(val, key){
+        if (c1 < 10) items.push(fmt(key,d+1,seen,false)+span("v-pun"," ⇒ ")+fmt(val,d+1,seen,false));
+        c1++;
+      });
+      if (v.size > 10) items.push(span("v-dim","… +"+(v.size-10)));
+      out = span("v-cls","Map("+v.size+") ") + span("v-pun","{") + items.join(span("v-pun",", ")) + span("v-pun","}");
+    }
+    else if (typeof Set !== "undefined" && v instanceof Set){
+      var c2 = 0;
+      v.forEach(function(val){
+        if (c2 < 15) items.push(fmt(val,d+1,seen,false));
+        c2++;
+      });
+      if (v.size > 15) items.push(span("v-dim","… +"+(v.size-15)));
+      out = span("v-cls","Set("+v.size+") ") + span("v-pun","{") + items.join(span("v-pun",", ")) + span("v-pun","}");
+    }
+    else {
+      var keys = [];
+      try{ keys = Object.keys(v); }catch(e){}
+      var name = ctorName(v);
+      n = Math.min(keys.length, 12);
+      for (i=0; i<n; i++){
+        var k = keys[i], val2;
+        try{ val2 = v[k]; }catch(e){ val2 = "(getter)"; }
+        items.push(span("v-key", k) + span("v-pun",": ") + fmt(val2, d+1, seen, false));
+      }
+      if (keys.length > n) items.push(span("v-dim","… +"+(keys.length-n)));
+      var prefix = (name && name !== "Object") ? span("v-cls", name+" ") : "";
+      out = prefix + span("v-pun","{") + items.join(span("v-pun",", ")) + span("v-pun","}");
+    }
+    seen.pop();
+    return out;
+  }
+
+  function stackLine(s){
+    s = String(s || "");
+    var m = s.match(/<anonymous>:(\d+):\d+/) ||
+            s.match(/> eval:(\d+):\d+/) ||
+            s.match(/(?:^|[@\s(])eval:(\d+):\d+/);
+    if (!m) return null;
+    var ln = +m[1] - lineOffset;
+    return ln > 0 ? ln : null;
+  }
+  function callLine(){ return stackLine(new Error().stack); }
+  function errLine(err){ return err && err.stack ? stackLine(err.stack) : null; }
+
+  function post(m){ self.postMessage(m); }
+  function emit(method, args){
+    if (sent >= MAX){
+      if (sent === MAX){
+        sent++;
+        post({ type:"entry", method:"warn",
+               html: span("v-dim","⚠ Salida truncada (más de "+MAX+" mensajes)"), line:null });
+      }
+      return;
+    }
+    sent++;
+    var html = args.map(function(a){ return fmt(a, 0, null, typeof a === "string"); }).join(" ");
+    post({ type:"entry", method:method, html:html, line:callLine() });
+  }
+
+  ["log","info","warn","error","debug","trace"].forEach(function(m){
+    console[m] = function(){
+      var kind = (m === "debug" || m === "trace") ? "log" : m;
+      emit(kind, Array.prototype.slice.call(arguments));
+    };
+  });
+  console.table = function(){ emit("log", Array.prototype.slice.call(arguments)); };
+  console.clear = function(){ post({type:"clear"}); sent = 0; };
+  console.time = function(l){ timers[l || "default"] = performance.now(); };
+  console.timeEnd = function(l){
+    l = l || "default";
+    if (l in timers){
+      emit("log", [l+": "+(performance.now()-timers[l]).toFixed(1)+" ms"]);
+      delete timers[l];
+    }
+  };
+  console.assert = function(cond){
+    if (!cond) emit("error", ["Assertion failed:"].concat(Array.prototype.slice.call(arguments,1)));
+  };
+
+  function emitError(err){
+    var name = (err && err.name) || "Error";
+    var msg  = (err && err.message !== undefined) ? err.message : String(err);
+    post({ type:"entry", method:"error",
+           html: span("v-plain", name+": "+msg),
+           line: (err instanceof Error) ? errLine(err) : null });
+  }
+
+  self.addEventListener("error", function(e){
+    if (e.preventDefault) e.preventDefault();
+    if (e.error) emitError(e.error);
+    else post({ type:"entry", method:"error", html: span("v-plain", String(e.message||"Error")), line:null });
+  });
+  self.addEventListener("unhandledrejection", function(e){
+    if (e.preventDefault) e.preventDefault();
+    emitError(e.reason);
+  });
+
+  function finish(t0, res, showRes){
+    if (showRes && res !== undefined){
+      post({ type:"entry", method:"result", html: fmt(res, 0, null, false), line:null });
+    }
+    post({ type:"done", ms: performance.now() - t0 });
+  }
+
+  self.onmessage = function(ev){
+    var code = (ev.data && ev.data.code) || "";
+    sent = 0; lineOffset = 0; timers = {};
+    var t0 = performance.now();
+    try{
+      var res = (0, eval)(code);
+      finish(t0, res, true);
+    }catch(err){
+      if (err instanceof SyntaxError && /await/i.test(String(err.message))){
+        // await de nivel superior: reintentar envuelto en una IIFE async
+        lineOffset = 1;
+        try{
+          var p = (0, eval)("(async () => {\n" + code + "\n})()");
+          if (p && typeof p.catch === "function") p.catch(function(e2){ emitError(e2); });
+          finish(t0, undefined, false);
+        }catch(e3){
+          emitError(e3);
+          finish(t0, undefined, false);
+        }
+      } else {
+        emitError(err);
+        finish(t0, undefined, false);
+      }
+    }
+  };
+}
+
+/* =========================================================================
+   Resaltado de sintaxis (mini tokenizador, sin dependencias)
+   ========================================================================= */
+var KW = /^(?:const|let|var|function|return|if|else|for|while|do|switch|case|default|break|continue|class|extends|super|new|typeof|instanceof|in|of|try|catch|finally|throw|async|await|yield|import|export|from|delete|void|static|get|set)$/;
+var LIT = /^(?:true|false|null|undefined|this|NaN|Infinity)$/;
+
+function escHtml(s){
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function tok(c, t){ return '<span class="t-'+c+'">'+escHtml(t)+'</span>'; }
+function regexAllowed(last){
+  return last === "" || last === "kw" || /^[([{=,;:!?&|+\-*%<>^~]$/.test(last);
+}
+
+function readTemplate(src, i){
+  var n = src.length, j = i+1, buf = "`", html = "";
+  function flush(){ if (buf){ html += tok("s", buf); buf = ""; } }
+  while (j < n){
+    var c = src[j];
+    if (c === "\\"){ buf += src.slice(j, j+2); j += 2; continue; }
+    if (c === "`"){ buf += "`"; j++; break; }
+    if (c === "$" && src[j+1] === "{"){
+      flush();
+      var depth = 1, k = j+2;
+      while (k < n && depth > 0){
+        var cc = src[k];
+        if (cc === "{") depth++;
+        else if (cc === "}") depth--;
+        k++;
+      }
+      var innerEnd = depth === 0 ? k-1 : k;
+      html += tok("p","${") + highlight(src.slice(j+2, innerEnd)) + tok("p","}");
+      j = k;
+      continue;
+    }
+    buf += c; j++;
+  }
+  flush();
+  return { html: html, end: j };
+}
+
+function highlight(src){
+  var out = "", i = 0, n = src.length, lastSig = "";
+  while (i < n){
+    var ch = src[i];
+
+    if (ch === "/" && src[i+1] === "/"){
+      var j1 = src.indexOf("\n", i); if (j1 < 0) j1 = n;
+      out += tok("c", src.slice(i, j1)); i = j1; continue;
+    }
+    if (ch === "/" && src[i+1] === "*"){
+      var j2 = src.indexOf("*/", i+2); j2 = j2 < 0 ? n : j2+2;
+      out += tok("c", src.slice(i, j2)); i = j2; continue;
+    }
+    if (ch === '"' || ch === "'"){
+      var j3 = i+1;
+      while (j3 < n){
+        var c3 = src[j3];
+        if (c3 === "\\"){ j3 += 2; continue; }
+        if (c3 === ch || c3 === "\n") break;
+        j3++;
+      }
+      if (j3 < n && src[j3] === ch) j3++;
+      out += tok("s", src.slice(i, j3)); i = j3; lastSig = "id"; continue;
+    }
+    if (ch === "`"){
+      var r = readTemplate(src, i);
+      out += r.html; i = r.end; lastSig = "id"; continue;
+    }
+    if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(src[i+1] || ""))){
+      var m = /^(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|0[oO][0-7_]+|(?:\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][+-]?\d+)?)n?/.exec(src.slice(i));
+      if (m){ out += tok("n", m[0]); i += m[0].length; lastSig = "id"; continue; }
+    }
+    if (/[A-Za-z_$]/.test(ch)){
+      var j4 = i+1;
+      while (j4 < n && /[\w$]/.test(src[j4])) j4++;
+      var w = src.slice(i, j4);
+      var cls = KW.test(w) ? "k" : (LIT.test(w) ? "l" : null);
+      if (!cls){
+        var k2 = j4;
+        while (k2 < n && (src[k2] === " " || src[k2] === "\t")) k2++;
+        if (src[k2] === "(") cls = "f";
+        else if (/[A-Z]/.test(w[0])) cls = "t";
+      }
+      out += cls ? tok(cls, w) : escHtml(w);
+      i = j4; lastSig = KW.test(w) ? "kw" : "id"; continue;
+    }
+    if (ch === "/" && regexAllowed(lastSig)){
+      var j5 = i+1, inClass = false, ok = false;
+      while (j5 < n){
+        var c5 = src[j5];
+        if (c5 === "\\"){ j5 += 2; continue; }
+        if (c5 === "\n") break;
+        if (inClass){ if (c5 === "]") inClass = false; }
+        else if (c5 === "[") inClass = true;
+        else if (c5 === "/"){ ok = true; j5++; break; }
+        j5++;
+      }
+      if (ok){
+        while (j5 < n && /[a-z]/.test(src[j5])) j5++;
+        out += tok("re", src.slice(i, j5)); i = j5; lastSig = "id"; continue;
+      }
+    }
+    if (ch === "\n"){ out += "\n"; i++; continue; }
+    out += escHtml(ch);
+    if (!/\s/.test(ch)) lastSig = ch;
+    i++;
+  }
+  return out;
+}
+
+/* =========================================================================
+   UI
+   ========================================================================= */
+var $ = function(id){ return document.getElementById(id); };
+var ta = $("ta"), hl = $("hl"), hlCode = $("hlCode"), gutter = $("gutter"),
+    gutterInner = $("gutterInner"), activeLine = $("activeLine"),
+    results = $("results"), stat = $("stat"), posInfo = $("posInfo"),
+    sizeInfo = $("sizeInfo"), split = $("split"),
+    editorPane = $("editorPane"), divider = $("divider");
+
+var LH = 31, PAD = 14, codeSize = 20, lineCount = 0, entryCount = 0;
+var worker = null, killT = null, autoT = null;
+var workerURL = null, useInline = false, inlineSelf = null;
+var lastLoaded = "";
+
+try{
+  workerURL = URL.createObjectURL(
+    new Blob(["(" + __runtime.toString() + ")(self);"], { type: "text/javascript" })
+  );
+}catch(e){ useInline = true; }
+
+function measure(){
+  var cs = getComputedStyle(ta);
+  LH = parseFloat(cs.lineHeight) || codeSize * 1.55;
+  PAD = parseFloat(cs.paddingTop) || 14;
+}
+
+function updateGutter(){
+  var lines = ta.value.split("\n").length;
+  if (lines !== lineCount){
+    lineCount = lines;
+    var buf = "";
+    for (var i = 1; i <= lines; i++) buf += i + "\n";
+    gutterInner.textContent = buf;
+    var digits = String(lines).length;
+    gutter.style.width = (Math.max(2, digits) + 2.2) + "ch";
+  }
+}
+
+function updateHighlight(){
+  hlCode.innerHTML = highlight(ta.value) + "\n";
+  updateGutter();
+  updateActive();
+}
+
+function updateActive(){
+  var v = ta.value, s = ta.selectionStart || 0;
+  var line = v.slice(0, s).split("\n").length - 1;
+  activeLine.style.top = (PAD + line * LH) + "px";
+  activeLine.style.height = LH + "px";
+  activeLine.style.width = Math.max(hl.scrollWidth, hl.clientWidth) + "px";
+  var col = s - (v.lastIndexOf("\n", s - 1) + 1);
+  posInfo.textContent = "Lín " + (line + 1) + ", Col " + (col + 1);
+}
+
+function syncScroll(){
+  hl.scrollTop = ta.scrollTop;
+  hl.scrollLeft = ta.scrollLeft;
+  gutterInner.style.transform = "translateY(" + (-ta.scrollTop) + "px)";
+}
+
+/* ---------- Ejecución ---------- */
+function setStat(text, isErr){
+  stat.textContent = text;
+  stat.className = isErr ? "err" : "";
+}
+
+function stopWorker(){
+  if (worker){ worker.terminate(); worker = null; }
+  if (killT){ clearTimeout(killT); killT = null; }
+}
+
+function onMsg(ev){
+  var m = ev.data;
+  if (!m) return;
+  if (m.type === "entry") addEntry(m);
+  else if (m.type === "clear"){ results.innerHTML = ""; entryCount = 0; }
+  else if (m.type === "done"){
+    if (killT){ clearTimeout(killT); killT = null; }
+    setStat("✓ " + m.ms.toFixed(1) + " ms", false);
+  }
+}
+
+function addEntry(m){
+  if (entryCount > 800) return;
+  entryCount++;
+  var div = document.createElement("div");
+  div.className = "entry e-" + m.method;
+  var badge = document.createElement("span");
+  badge.className = "ln";
+  if (m.method === "result"){
+    badge.textContent = "⇒";
+  } else if (m.line){
+    badge.textContent = m.line;
+    badge.classList.add("link");
+    badge.title = "Ir a la línea " + m.line;
+    badge.addEventListener("click", function(){ gotoLine(m.line); });
+  } else {
+    badge.textContent = "·";
+  }
+  var val = document.createElement("span");
+  val.className = "val";
+  val.innerHTML = m.html; // el runtime ya escapó el contenido
+  div.appendChild(badge);
+  div.appendChild(val);
+  results.appendChild(div);
+}
+
+function inlineRun(code){
+  if (!inlineSelf){
+    inlineSelf = {
+      postMessage: function(m){ onMsg({ data: m }); },
+      addEventListener: function(t, f){ window.addEventListener(t, f); }
+    };
+    __runtime(inlineSelf);
+  }
+  inlineSelf.onmessage({ data: { code: code } });
+}
+
+function run(){
+  var code = ta.value;
+  stopWorker();
+  results.innerHTML = "";
+  entryCount = 0;
+  setStat("Ejecutando…", false);
+
+  if (!useInline && workerURL){
+    try{
+      worker = new Worker(workerURL);
+    }catch(e){ worker = null; useInline = true; }
+  }
+  if (worker){
+    worker.onmessage = onMsg;
+    worker.onerror = function(){
+      // el worker no pudo cargar: plan B en el hilo principal
+      stopWorker();
+      useInline = true;
+      inlineRun(code);
+    };
+    killT = setTimeout(function(){
+      stopWorker();
+      addEntry({ method:"error",
+                 html:"⏱ La ejecución tardó más de 3 segundos (¿bucle infinito?). Se detuvo.",
+                 line:null });
+      setStat("detenida", true);
+    }, 3000);
+    worker.postMessage({ code: code });
+  } else {
+    inlineRun(code);
+  }
+}
+
+function gotoLine(nl){
+  var lines = ta.value.split("\n");
+  if (nl < 1 || nl > lines.length) return;
+  var idx = 0;
+  for (var i = 0; i < nl - 1; i++) idx += lines[i].length + 1;
+  ta.focus();
+  ta.setSelectionRange(idx, idx + lines[nl-1].length);
+  ta.scrollTop = Math.max(0, (nl - 1) * LH - ta.clientHeight / 2);
+  syncScroll();
+  updateActive();
+}
+
+/* ---------- Edición ---------- */
+function onEdit(){
+  updateHighlight();
+  if ($("chkAuto").checked){
+    clearTimeout(autoT);
+    autoT = setTimeout(run, 600);
+  }
+}
+
+function insertText(t){
+  var ok = false;
+  try{ ok = document.execCommand("insertText", false, t); }catch(e){}
+  if (!ok){
+    ta.setRangeText(t, ta.selectionStart, ta.selectionEnd, "end");
+    onEdit();
+  }
+}
+
+function indentBlock(dedent){
+  var v = ta.value, s = ta.selectionStart, e2 = ta.selectionEnd;
+  var ls = v.lastIndexOf("\n", s - 1) + 1;
+  var le = v.indexOf("\n", e2); if (le < 0) le = v.length;
+  var lines = v.slice(ls, le).split("\n");
+  var outStr = lines.map(function(l){
+    return dedent ? l.replace(/^ {1,2}/, "") : "  " + l;
+  }).join("\n");
+  ta.setSelectionRange(ls, le);
+  insertText(outStr);
+  ta.setSelectionRange(ls, ls + outStr.length);
+  updateActive();
+}
+
+var PAIRS = { "(":")", "[":"]", "{":"}", '"':'"', "'":"'", "`":"`" };
+
+ta.addEventListener("keydown", function(e){
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter"){
+    e.preventDefault(); run(); return;
+  }
+  var v = ta.value, s = ta.selectionStart, e2 = ta.selectionEnd;
+
+  if (e.key === "Tab"){
+    e.preventDefault();
+    if (e.shiftKey || (s !== e2 && v.slice(s, e2).indexOf("\n") > -1)) indentBlock(e.shiftKey);
+    else insertText("  ");
+    return;
+  }
+
+  if (e.key === "Enter"){
+    e.preventDefault();
+    var lineStart = v.lastIndexOf("\n", s - 1) + 1;
+    var indent = (v.slice(lineStart, s).match(/^[ \t]*/) || [""])[0];
+    var prev = v[s - 1], next = v[e2];
+    if ((prev === "{" && next === "}") || (prev === "(" && next === ")") || (prev === "[" && next === "]")){
+      insertText("\n" + indent + "  \n" + indent);
+      var pos = s + 1 + indent.length + 2;
+      ta.setSelectionRange(pos, pos);
+      updateActive();
+    } else if (prev === "{" || prev === "(" || prev === "["){
+      insertText("\n" + indent + "  ");
+    } else {
+      insertText("\n" + indent);
+    }
+    return;
+  }
+
+  if (e.key === "Backspace" && s === e2 && s > 0){
+    var a = v[s - 1], b = v[s];
+    if (PAIRS[a] === b){
+      e.preventDefault();
+      ta.setSelectionRange(s - 1, s + 1);
+      var del = false;
+      try{ del = document.execCommand("delete"); }catch(err){}
+      if (!del){ ta.setRangeText("", s - 1, s + 1, "end"); onEdit(); }
+      return;
+    }
+  }
+
+  if ((e.key === ")" || e.key === "]" || e.key === "}") && s === e2 && v[s] === e.key){
+    e.preventDefault();
+    ta.setSelectionRange(s + 1, s + 1);
+    updateActive();
+    return;
+  }
+
+  if (PAIRS[e.key] && !e.ctrlKey && !e.metaKey && !e.altKey){
+    var close = PAIRS[e.key];
+    var isQuote = (e.key === '"' || e.key === "'" || e.key === "`");
+    if (s !== e2){
+      e.preventDefault();
+      var sel = v.slice(s, e2);
+      insertText(e.key + sel + close);
+      ta.setSelectionRange(s + 1, s + 1 + sel.length);
+      return;
+    }
+    if (isQuote && v[e2] === e.key){
+      e.preventDefault();
+      ta.setSelectionRange(s + 1, s + 1);
+      updateActive();
+      return;
+    }
+    var nx = v[e2] || "", pv = v[s - 1] || "";
+    var closeOk = isQuote
+      ? ((nx === "" || /[\s)\]}.,;:]/.test(nx)) && !/[\w$"'`]/.test(pv))
+      : (nx === "" || /[\s)\]}.,;:]/.test(nx));
+    if (closeOk){
+      e.preventDefault();
+      insertText(e.key + close);
+      ta.setSelectionRange(s + 1, s + 1);
+      return;
+    }
+  }
+});
+
+ta.addEventListener("input", onEdit);
+ta.addEventListener("scroll", syncScroll);
+ta.addEventListener("click", updateActive);
+ta.addEventListener("keyup", updateActive);
+document.addEventListener("selectionchange", function(){
+  if (document.activeElement === ta) updateActive();
+});
+document.addEventListener("keydown", function(e){
+  if (e.target === ta) return; // el editor ya maneja sus atajos
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter"){
+    e.preventDefault(); run();
+  }
+});
+
+/* ---------- Barra superior ---------- */
+$("btnRun").addEventListener("click", run);
+$("btnClear").addEventListener("click", function(){
+  results.innerHTML = ""; entryCount = 0; setStat("", false);
+});
+
+function setFont(delta){
+  codeSize = Math.min(40, Math.max(14, codeSize + delta));
+  document.documentElement.style.setProperty("--code-size", codeSize + "px");
+  sizeInfo.textContent = codeSize + " px";
+  measure();
+  updateActive();
+  syncScroll();
+}
+$("btnFontMinus").addEventListener("click", function(){ setFont(-2); });
+$("btnFontPlus").addEventListener("click", function(){ setFont(2); });
+
+$("btnTheme").addEventListener("click", function(){
+  var dark = document.body.dataset.theme === "dark";
+  document.body.dataset.theme = dark ? "light" : "dark";
+  this.textContent = dark ? "🌙 Oscuro" : "☀ Claro";
+});
+
+$("btnLayout").addEventListener("click", function(){
+  var cols = document.body.dataset.layout === "cols";
+  document.body.dataset.layout = cols ? "rows" : "cols";
+  editorPane.style.flex = "";
+});
+
+$("selExample").addEventListener("change", function(){
+  var key = this.value;
+  this.selectedIndex = 0;
+  var node = document.getElementById("ex-" + key);
+  if (!node) return;
+  var code = node.textContent.replace(/^\n+/, "").replace(/\s+$/, "") + "\n";
+  if (ta.value.trim() && ta.value !== lastLoaded){
+    if (!confirm("¿Reemplazar el código actual con el ejemplo?")) return;
+  }
+  ta.value = code;
+  lastLoaded = code;
+  ta.setSelectionRange(0, 0);
+  ta.scrollTop = 0;
+  updateHighlight();
+  syncScroll();
+  run();
+});
+
+/* ---------- Divisor arrastrable ---------- */
+var dragging = false;
+divider.addEventListener("pointerdown", function(e){
+  dragging = true;
+  divider.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+divider.addEventListener("pointermove", function(e){
+  if (!dragging) return;
+  var r = split.getBoundingClientRect();
+  var pct = document.body.dataset.layout === "rows"
+    ? (e.clientY - r.top) / r.height
+    : (e.clientX - r.left) / r.width;
+  pct = Math.min(0.85, Math.max(0.15, pct));
+  editorPane.style.flex = "0 0 " + (pct * 100).toFixed(1) + "%";
+});
+divider.addEventListener("pointerup", function(){ dragging = false; });
+divider.addEventListener("dblclick", function(){ editorPane.style.flex = ""; });
+
+/* ---------- Inicio ---------- */
+(function init(){
+  var node = document.getElementById("ex-bienvenida");
+  var code = node.textContent.replace(/^\n+/, "").replace(/\s+$/, "") + "\n";
+  ta.value = code;
+  lastLoaded = code;
+  measure();
+  updateHighlight();
+  updateActive();
+  setFont(0);
+  run();
+  ta.focus();
+})();
+</script>
+</body>
+</html>

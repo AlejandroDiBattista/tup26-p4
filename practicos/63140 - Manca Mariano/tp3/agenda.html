@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: sans-serif;
+      font-size: 16px;
+      background: #f5f6f4;
+      color: #1a1a1a;
+      padding: 32px 20px;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      & h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+
+      & .controles {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+    }
+
+
+    .buscador {
+      padding: 10px 16px;
+      border: 1px solid #d9ded9;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+      background: white;
+      width: 220px;
+
+      &:focus {
+        border-color: #8a9a7b;
+        box-shadow: 0 0 0 2px rgba(138, 154, 123, 0.2);
+      }
+    }
+
+
+
+    .btn-agregar {
+      padding: 10px 20px;
+      background: #3d4a3a;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #2e3a2b;
+      }
+    }
+
+
+
+    .grilla {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 0;
+      list-style: none;
+    }
+
+    @media (max-width: 700px) {
+      .grilla {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tarjeta {
+      position: relative;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      transition: box-shadow 0.2s, border-color 0.2s;
+
+      &:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      &:focus-visible {
+        border-color: #8a9a7b;
+        box-shadow: 0 0 0 3px rgba(138, 154, 123, 0.3);
+      }
+
+      & .tarjeta-encabezado {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      & .tarjeta-nombre {
+        & .apellido {
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1a1a1a;
+        }
+
+        & .nombre {
+          font-size: 1rem;
+          font-weight: 400;
+          color: #555;
+          margin-left: 6px;
+        }
+      }
+
+      & .tarjeta-contacto {
+        font-style: normal;
+        margin-bottom: 12px;
+
+        & .telefono {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #1a1a1a;
+          display: block;
+          margin-bottom: 2px;
+        }
+
+        & .github {
+          font-size: 0.85rem;
+          color: #666;
+          display: block;
+        }
+      }
+
+      & .tarjeta-pie {
+        font-size: 0.8rem;
+        color: #999;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+      }
+    }
+
+
+
+    .btn-favorito {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #a0a88e;
+      padding: 4px;
+      line-height: 1;
+      transition: transform 0.15s;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+
+      &.activo {
+        color: #7a8a6b;
+      }
+    }
+
+    .sin-resultados {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+      font-size: 1rem;
+    }
+
+
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 0;
+      width: 520px;
+      max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+      &::backdrop {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+      }
+
+      & .dialogo-contenido {
+        padding: 28px 32px;
+      }
+
+      & .dialogo-titulo {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      & .dialogo-subtitulo {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 24px;
+      }
+    }
+
+    .formulario {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+
+      & .campo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        & label {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #555;
+        }
+
+        & input {
+          padding: 10px 12px;
+          border: 1px solid #d9ded9;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          outline: none;
+          background: #fafafa;
+
+          &:focus {
+            border-color: #8a9a7b;
+            box-shadow: 0 0 0 2px rgba(138, 154, 123, 0.2);
+            background: white;
+          }
+        }
+      }
+    }
+
+    .dialogo-acciones {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+
+      & .btn-eliminar {
+        background: none;
+        border: none;
+        color: #c0392b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 16px;
+        margin-right: auto;
+
+        &:hover {
+          color: #a93226;
+        }
+      }
+
+      & .btn-guardar {
+        padding: 10px 24px;
+        background: #3d4a3a;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+          background: #2e3a2b;
+        }
+      }
+
+      & .btn-cancelar {
+        padding: 10px 20px;
+        background: #eee;
+        color: #333;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+
+        &:hover {
+          background: #ddd;
+        }
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app"></main>
+
+  <dialog id="dialogo">
+    <div class="dialogo-contenido">
+      <h2 class="dialogo-titulo" id="dialogo-titulo">Agregar alumno</h2>
+      <p class="dialogo-subtitulo" id="dialogo-subtitulo">Completá los datos del nuevo alumno.</p>
+
+      <form class="formulario" id="formulario-alumno">
+        <div class="campo">
+          <label for="campo-apellido">Apellido</label>
+          <input id="campo-apellido" type="text" required />
+        </div>
+        <div class="campo">
+          <label for="campo-nombre">Nombre</label>
+          <input id="campo-nombre" type="text" required />
+        </div>
+        <div class="campo">
+          <label for="campo-legajo">Legajo</label>
+          <input id="campo-legajo" type="text" required />
+        </div>
+        <div class="campo">
+          <label for="campo-comision">Comisión</label>
+          <input id="campo-comision" type="text" required />
+        </div>
+        <div class="campo">
+          <label for="campo-telefono">Teléfono</label>
+          <input id="campo-telefono" type="text" />
+        </div>
+        <div class="campo">
+          <label for="campo-github">GitHub</label>
+          <input id="campo-github" type="text" />
+        </div>
+
+        <div class="dialogo-acciones" style="grid-column: 1 / -1">
+          <button type="button" class="btn-eliminar" id="btn-eliminar" style="display:none">Eliminar</button>
+          <button type="submit" class="btn-guardar">Guardar</button>
+          <button type="button" class="btn-cancelar" id="btn-cancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <script type="module">
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import datosIniciales from './alumnos.json' with { type: 'json' }
+
+
+
+    const CLAVE_STORAGE = 'agenda-alumnos'
+
+    function cargarAlumnos() {
+      const guardados = localStorage.getItem(CLAVE_STORAGE)
+      if (guardados) {
+        try {
+          return JSON.parse(guardados)
+        } catch (e) {
+          return datosIniciales.map(a => ({ ...a }))
+        }
+      }
+      return datosIniciales.map(a => ({ ...a }))
+    }
+
+    function guardarAlumnos() {
+      localStorage.setItem(CLAVE_STORAGE, JSON.stringify(estado.alumnos))
+    }
+
+    const estado = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: ''
+    })
+
+    let alumnoEditandoId = null
+
+
+
+    function normalizar(texto) {
+      return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    }
+
+    function alumnosOrdenados() {
+      return [...estado.alumnos].sort((a, b) => {
+        if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+        const cmpApellido = normalizar(a.apellido).localeCompare(normalizar(b.apellido))
+        if (cmpApellido !== 0) return cmpApellido
+        return normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+      })
+    }
+
+
+
+    function alumnosFiltrados() {
+      const ordenados = alumnosOrdenados()
+      const termino = normalizar(estado.busqueda.trim())
+      if (!termino) return ordenados
+      return ordenados.filter(a =>
+        normalizar(a.apellido).includes(termino) ||
+        normalizar(a.nombre).includes(termino) ||
+        normalizar(a.legajo).includes(termino) ||
+        normalizar(a.comision).includes(termino) ||
+        normalizar(a.github).includes(termino)
+      )
+    }
+
+
+    const dialogo = document.getElementById('dialogo')
+    const formulario = document.getElementById('formulario-alumno')
+    const btnEliminar = document.getElementById('btn-eliminar')
+    const btnCancelar = document.getElementById('btn-cancelar')
+
+    function generarId() {
+      if (estado.alumnos.length === 0) return 1
+      return Math.max(...estado.alumnos.map(a => a.id)) + 1
+    }
+
+    function abrirDialogoAgregar() {
+      alumnoEditandoId = null
+      document.getElementById('dialogo-titulo').textContent = 'Agregar alumno'
+      document.getElementById('dialogo-subtitulo').textContent = 'Completá los datos del nuevo alumno.'
+      document.getElementById('campo-apellido').value = ''
+      document.getElementById('campo-nombre').value = ''
+      document.getElementById('campo-legajo').value = ''
+      document.getElementById('campo-comision').value = ''
+      document.getElementById('campo-telefono').value = ''
+      document.getElementById('campo-github').value = ''
+      btnEliminar.style.display = 'none'
+      dialogo.showModal()
+    }
+
+
+
+    function abrirDialogoEditar(alumno) {
+      alumnoEditandoId = alumno.id
+      document.getElementById('dialogo-titulo').textContent = 'Editar alumno'
+      document.getElementById('dialogo-subtitulo').textContent = 'Actualizá los datos del alumno.'
+      document.getElementById('campo-apellido').value = alumno.apellido
+      document.getElementById('campo-nombre').value = alumno.nombre
+      document.getElementById('campo-legajo').value = alumno.legajo
+      document.getElementById('campo-comision').value = alumno.comision
+      document.getElementById('campo-telefono').value = alumno.telefono
+      document.getElementById('campo-github').value = alumno.github
+      btnEliminar.style.display = 'inline-block'
+      dialogo.showModal()
+    }
+
+    function cerrarDialogo() {
+      dialogo.close()
+      alumnoEditandoId = null
+    }
+
+    formulario.addEventListener('submit', (evento) => {
+      evento.preventDefault()
+      const apellido = document.getElementById('campo-apellido').value.trim()
+      const nombre = document.getElementById('campo-nombre').value.trim()
+      const legajo = document.getElementById('campo-legajo').value.trim()
+      const comision = document.getElementById('campo-comision').value.trim()
+      const telefono = document.getElementById('campo-telefono').value.trim()
+      const github = document.getElementById('campo-github').value.trim()
+
+      if (!apellido || !nombre || !legajo || !comision) return
+
+      if (alumnoEditandoId === null) {
+        estado.alumnos.push({
+          id: generarId(),
+          apellido,
+          nombre,
+          legajo,
+          comision,
+          telefono,
+          github,
+          favorito: false
+        })
+      } else {
+        const indice = estado.alumnos.findIndex(a => a.id === alumnoEditandoId)
+        if (indice !== -1) {
+          estado.alumnos[indice].apellido = apellido
+          estado.alumnos[indice].nombre = nombre
+          estado.alumnos[indice].legajo = legajo
+          estado.alumnos[indice].comision = comision
+          estado.alumnos[indice].telefono = telefono
+          estado.alumnos[indice].github = github
+        }
+      }
+
+      guardarAlumnos()
+      cerrarDialogo()
+    })
+
+    btnCancelar.addEventListener('click', cerrarDialogo)
+
+    btnEliminar.addEventListener('click', () => {
+      if (alumnoEditandoId === null) return
+      const indice = estado.alumnos.findIndex(a => a.id === alumnoEditandoId)
+      if (indice !== -1) {
+        estado.alumnos.splice(indice, 1)
+        guardarAlumnos()
+      }
+      cerrarDialogo()
+    })
+
+
+    const app = document.getElementById('app')
+
+
+    html`
+      <header>
+        <h1>Agenda</h1>
+        <div class="controles">
+          <input
+            class="buscador"
+            type="search"
+            placeholder="Buscar alumno..."
+            @input="${(e) => { estado.busqueda = e.target.value }}"
+          />
+          <button class="btn-agregar" @click="${abrirDialogoAgregar}">+ Agregar</button>
+        </div>
+      </header>
+      <section aria-label="Lista de alumnos">
+        <p id="sin-resultados" class="sin-resultados" style="display:none">
+          No hay alumnos para mostrar.
+        </p>
+        <ul id="grilla" class="grilla"></ul>
+      </section>
+      <footer style="text-align: center; margin-top: 32px; color: #aaa; font-size: 0.8rem;">
+        Agenda de Alumnos — TP3
+      </footer>
+    `(app)
+
+
+    const grilla = document.getElementById('grilla')
+    const sinResultados = document.getElementById('sin-resultados')
+
+    function renderizarLista() {
+      const lista = alumnosFiltrados()
+
+      sinResultados.style.display = lista.length === 0 ? '' : 'none'
+
+      grilla.innerHTML = lista.map(alumno => `
+        <li>
+          <article class="tarjeta" tabindex="0" data-id="${alumno.id}">
+            <div class="tarjeta-encabezado">
+              <div class="tarjeta-nombre">
+                <span class="apellido">${alumno.apellido}</span>
+                <span class="nombre">${alumno.nombre}</span>
+              </div>
+              <button class="btn-favorito${alumno.favorito ? ' activo' : ''}"
+                data-id="${alumno.id}"
+                aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+              >${alumno.favorito ? '★' : '☆'}</button>
+            </div>
+            <address class="tarjeta-contacto">
+              <span class="telefono">${alumno.telefono}</span>
+              <span class="github">@${alumno.github}</span>
+            </address>
+            <footer class="tarjeta-pie">
+              ${alumno.comision} · ${alumno.legajo}
+            </footer>
+          </article>
+        </li>
+      `).join('')
+    }
+
+    grilla.addEventListener('click', (e) => {
+      const btnFav = e.target.closest('.btn-favorito')
+      if (btnFav) {
+        e.stopPropagation()
+        e.preventDefault()
+        const id = Number(btnFav.dataset.id)
+        const indice = estado.alumnos.findIndex(a => a.id === id)
+        if (indice !== -1) {
+          estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+          guardarAlumnos()
+        }
+        return
+      }
+
+
+      const tarjeta = e.target.closest('.tarjeta')
+      if (tarjeta) {
+        const id = Number(tarjeta.dataset.id)
+        const alumno = estado.alumnos.find(a => a.id === id)
+        if (alumno) abrirDialogoEditar(alumno)
+      }
+    })
+
+
+    grilla.addEventListener('keydown', (e) => {
+      const tarjeta = e.target.closest('.tarjeta')
+      if (!tarjeta) return
+      const id = Number(tarjeta.dataset.id)
+
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        const alumno = estado.alumnos.find(a => a.id === id)
+        if (alumno) abrirDialogoEditar(alumno)
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        const indice = estado.alumnos.findIndex(a => a.id === id)
+        if (indice !== -1) {
+          estado.alumnos[indice].favorito = !estado.alumnos[indice].favorito
+          guardarAlumnos()
+        }
+      }
+    })
+
+    watch(renderizarLista)
+  </script>
+</body>
+
+</html>

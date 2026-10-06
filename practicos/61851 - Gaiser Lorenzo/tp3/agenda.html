@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda</title>
+  <style>
+    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    main { width: 1104px; max-width: 100%; margin: auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+
+      h1 { margin: 0 0 24px; }
+      > div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        input { min-width: 0; padding: 8px 10px; }
+      }
+    }
+    article {
+      position: relative;
+
+      > button {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    }
+    dialog {
+      border: 0;
+      border-radius: 14px;
+      padding: 20px;
+
+      &::backdrop { background: #0006; }
+    }
+    form {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 16px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: white;
+
+      label { display: grid; gap: 4px; }
+      button {
+        grid-column: 1 / -1;
+        justify-self: start;
+        padding: 8px 12px;
+      }
+    }
+    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
+    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; }
+    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+
+  <script type="module">
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnos from './alumnos.json' with { type: 'json' }
+
+
+
+    function ordenar() {
+      const texto = estado.busqueda.toLowerCase()
+
+      return [...estado.alumnos]
+        .filter(alumno =>
+          alumno.apellido.toLowerCase().includes(texto) ||
+          alumno.nombre.toLowerCase().includes(texto)
+        )
+        .sort((a, b) =>
+          Number(b.favorito) - Number(a.favorito) ||
+          a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
+          a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+        )
+    }
+
+    const alumnosIniciales = localStorage.getItem('alumnos')
+      ? JSON.parse(localStorage.getItem('alumnos'))
+      : alumnos
+
+    const estado = reactive({
+      alumnos: alumnosIniciales,
+      busqueda: '',
+      borrador: {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
+      }
+    })
+
+    function siguienteId() {
+      return Math.max(...estado.alumnos.map(alumno => Number(alumno.id)), 0) + 1
+    }
+
+    function guardarAlumno(event) {
+      event.preventDefault()
+      if (estado.borrador.id) {
+        const alumno = estado.alumnos.find(item => item.id === estado.borrador.id)
+        Object.assign(alumno, estado.borrador)
+      } else {
+        estado.alumnos.push({
+          ...estado.borrador,
+          id: siguienteId(),
+          favorito: false
+        })
+      }
+      cerrar()
+    }
+
+    function abrir(alumno) {
+      estado.borrador = alumno ? { ...alumno } : {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
+      }
+      dialogo.showModal()
+    }
+
+    function cerrar() {
+      dialogo.close()
+    }
+
+    function eliminar() {
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== estado.borrador.id)
+      cerrar()
+    }
+
+    watch(
+      () => JSON.stringify(estado.alumnos),
+      datos => localStorage.setItem('alumnos', datos)
+    )
+
+    const app = document.getElementById('app')
+    html`
+      <header>
+        <h1>Alumnos</h1>
+        <div>
+          <input type="search" aria-label="Buscar alumnos" .value="${() => estado.busqueda}" @input="${e => estado.busqueda = e.target.value}">
+          <button @click="${() => abrir()}">+ Agregar</button>
+        </div>
+      </header>
+      <dialog>
+        <form @submit="${guardarAlumno}">
+          <label>Apellido<input type="text" .value="${() => estado.borrador.apellido}" @input="${e => estado.borrador.apellido = e.target.value}" required></label>
+          <label>Nombre<input type="text" .value="${() => estado.borrador.nombre}" @input="${e => estado.borrador.nombre = e.target.value}" required></label>
+          <label>Legajo<input type="text" .value="${() => estado.borrador.legajo}" @input="${e => estado.borrador.legajo = e.target.value}" required></label>
+          <label>Comisión<input type="text" .value="${() => estado.borrador.comision}" @input="${e => estado.borrador.comision = e.target.value}" required></label>
+          <label>Teléfono<input type="tel" .value="${() => estado.borrador.telefono}" @input="${e => estado.borrador.telefono = e.target.value}" required></label>
+          <label>GitHub<input type="text" .value="${() => estado.borrador.github}" @input="${e => estado.borrador.github = e.target.value}" required></label>
+          <button type="submit">Guardar</button>
+          <button type="button" @click="${cerrar}">Cancelar</button>
+          ${() => estado.borrador.id ? html`<button type="button" @click="${eliminar}">Eliminar</button>` : ''}
+        </form>
+      </dialog>
+      <section>
+        <ul>
+          ${() => ordenar().map (alumno => html`
+            <li>
+    <article tabindex="0" @click="${() => abrir(alumno)}" @keydown="${e => {
+      if (e.key === 'Enter') abrir(alumno)
+      if (e.key === ' ') {
+        e.preventDefault()
+        alumno.favorito = !alumno.favorito
+      }
+    }}">
+      <h2><strong>${alumno.apellido}</strong> ${alumno.nombre}</h2>
+      <button aria-label="${() => alumno.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}" @click="${e => { e.stopPropagation(); alumno.favorito = !alumno.favorito }}">${() => alumno.favorito ? '★' : '☆'}</button>
+      <address>
+        <p>${alumno.telefono}</p>
+        <p>@${alumno.github}</p>
+      </address>
+
+      <footer>${alumno.comision} · ${alumno.legajo}</footer>
+    </article>
+  </li>
+         
+          `.key(alumno.id))}
+        </ul>
+      </section>
+      ${() => ordenar().length === 0 ? html`<p>No hay alumnos para mostrar</p>` : ''}
+      
+    `(app)
+    const dialogo = document.querySelector('dialog')
+  </script>
+</body>
+</html>

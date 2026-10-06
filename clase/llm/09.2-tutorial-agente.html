@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un asistente desde cero</title>
+<meta name="description" content="Tutorial paso a paso: un asistente de programación de consola en Node.js con la API de OpenAI, sin dependencias.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+    --display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+    --texto-f: "Atkinson Hyperlegible", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+    --tinta: #0f1b2a;
+    --petroleo: #0b6e7c;
+    --cian: #62d2de;
+    --ambar: #f4b63f;
+
+    --fondo: #f3f5f6;
+    --texto: #142235;
+    --suave: #4f5f72;
+    --linea: #d8dfe5;
+    --tarjeta: #ffffff;
+    --acento: #0b6e7c;
+    --nota: #fdf3dc;
+    --nota-borde: #f4b63f;
+    --cuidado: #fde8e1;
+    --cuidado-borde: #e8795a;
+    --codigo: #0b1522;
+    --codigo-borde: #1c2b3e;
+    --codigo-texto: #dce6f2;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #0a121c;
+      --texto: #e3eaf1;
+      --suave: #9cadbf;
+      --linea: #1f3044;
+      --tarjeta: #101c2b;
+      --acento: #62d2de;
+      --nota: #221c0f;
+      --nota-borde: #c08f2c;
+      --cuidado: #26140f;
+      --cuidado-borde: #d0694c;
+      --codigo: #060c14;
+      --codigo-borde: #1a2838;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font: 18px/1.7 var(--texto-f);
+    -webkit-font-smoothing: antialiased;
+    display: grid;
+    grid-template-columns: 1fr 220px minmax(0, 760px) 1fr;
+    column-gap: 64px;
+  }
+
+  body > header, body > footer { grid-column: 1 / -1; }
+  body > nav { grid-column: 2; grid-row: 2; }
+  body > main { grid-column: 3; grid-row: 2; }
+
+  @media (max-width: 1100px) {
+    body { grid-template-columns: minmax(16px, 1fr) minmax(0, 760px) minmax(16px, 1fr); column-gap: 0; }
+    body > nav { grid-column: 2; grid-row: 2; }
+    body > main { grid-column: 2; grid-row: 3; }
+  }
+
+  /* ---------- Portada ---------- */
+
+  body > header {
+    background: radial-gradient(1200px 700px at 90% -20%, #1b3a58 0%, #0f1b2a 62%);
+    color: #eef3f6;
+    padding: clamp(56px, 9vw, 112px) 16px clamp(56px, 8vw, 96px);
+    margin-bottom: clamp(40px, 6vw, 72px);
+
+    > div {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      gap: 40px clamp(32px, 5vw, 72px);
+      align-items: center;
+    }
+
+    hgroup > p:first-child {
+      margin: 0 0 20px;
+      font: 600 14px var(--mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ambar);
+    }
+
+    h1 {
+      margin: 0;
+      font: 800 clamp(44px, 7vw, 84px)/0.95 var(--display);
+      letter-spacing: -0.035em;
+      text-wrap: balance;
+
+      em { font-style: normal; color: var(--cian); }
+    }
+
+    hgroup > p:last-child {
+      margin: 24px 0 0;
+      max-width: 34em;
+      font-size: clamp(18px, 2.2vw, 21px);
+      color: #a9bccb;
+    }
+
+    dl {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 36px;
+      margin: 0;
+
+      div { display: flex; flex-direction: column-reverse; }
+      dd { margin: 0; font: 800 40px/1 var(--display); color: var(--cian); }
+      dt { font: 13px var(--mono); color: #a9bccb; }
+    }
+
+    pre {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      position: relative;
+      margin: 0;
+      padding: 52px 24px 24px;
+      background: #08111c;
+      border: 1px solid #22364d;
+      border-radius: 16px;
+      box-shadow: 0 40px 80px -40px rgb(0 0 0 / 0.7);
+      font: 14px/1.7 var(--mono);
+      color: #c9d6e3;
+      overflow-x: auto;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ff5f57;
+        box-shadow: 20px 0 #febc2e, 40px 0 #28c840;
+      }
+    }
+
+    @media (max-width: 900px) {
+      > div { grid-template-columns: minmax(0, 1fr); }
+      pre { grid-column: 1; grid-row: auto; }
+    }
+  }
+
+  /* Sesión de terminal: lo que escribe la persona, lo que imprime el programa */
+  pre:has(> samp) { white-space: pre-wrap; }
+
+  samp {
+    font: inherit;
+
+    i { font-style: normal; color: #7f90a6; }
+    b { color: #3fd47a; }
+    kbd { font: inherit; color: #f2f6fa; }
+    small { font-size: inherit; color: #7f90a6; }
+    output { color: var(--cian); }
+
+    kbd:empty::after {
+      content: "▍";
+      color: #f2f6fa;
+      animation: parpadeo 1.1s steps(1) infinite;
+    }
+  }
+
+  @keyframes parpadeo { 50% { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    samp kbd:empty::after { animation: none; }
+  }
+
+  /* ---------- Índice ---------- */
+
+  body > nav {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.35;
+
+    > p {
+      margin: 0 0 10px 10px;
+      font: 600 12px var(--mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--suave);
+    }
+
+    ol { list-style: none; margin: 0; padding: 0; }
+
+    a {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      padding: 7px 10px;
+      border-radius: 8px;
+      color: var(--suave);
+      text-decoration: none;
+
+      span { font: 600 12px/1.6 var(--mono); }
+
+      &:hover { color: var(--texto); background: var(--tarjeta); }
+
+      &[aria-current] {
+        color: var(--acento);
+        font-weight: 700;
+        background: var(--tarjeta);
+        box-shadow: inset 3px 0 var(--acento);
+      }
+    }
+
+    @media (max-width: 1100px) {
+      position: static;
+      max-height: none;
+      margin-bottom: 48px;
+      padding: 20px 12px;
+      background: var(--tarjeta);
+      border: 1px solid var(--linea);
+      border-radius: 16px;
+
+      @media (min-width: 600px) { ol { columns: 2; } }
+    }
+  }
+
+  /* ---------- Contenido ---------- */
+
+  main {
+    counter-reset: paso;
+    min-width: 0;
+
+    > section { padding-bottom: 56px; }
+    > section + section { padding-top: 56px; border-top: 1px solid var(--linea); }
+    > section[id^="paso"] { counter-increment: paso; }
+
+    > section[id^="paso"] > h2::before {
+      content: counter(paso, decimal-leading-zero);
+      display: block;
+      margin-bottom: 14px;
+      font: 800 clamp(64px, 10vw, 96px)/0.85 var(--display);
+      letter-spacing: -0.04em;
+      color: transparent;
+      -webkit-text-stroke: 2px var(--acento);
+    }
+  }
+
+  h2 {
+    margin: 0 0 20px;
+    font: 800 clamp(32px, 4.5vw, 44px)/1.05 var(--display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  h3 { margin: 40px 0 12px; font: 700 23px/1.2 var(--display); letter-spacing: -0.01em; }
+
+  p, ul, ol { margin: 0 0 16px; }
+  li + li { margin-top: 6px; }
+  a { color: var(--acento); }
+
+  :not(pre) > code {
+    font: 0.86em var(--mono);
+    background: color-mix(in srgb, var(--acento) 11%, transparent);
+    padding: 0.1em 0.38em;
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Fundamentos y advertencias */
+  aside {
+    margin: 24px 0;
+    padding: 18px 22px;
+    background: var(--nota);
+    border-left: 4px solid var(--nota-borde);
+    border-radius: 4px 14px 14px 4px;
+    font-size: 16.5px;
+    line-height: 1.6;
+
+    > h3 {
+      margin: 0 0 6px;
+      font: 700 18px/1.3 var(--display);
+
+      &::before {
+        content: "Fundamento";
+        display: block;
+        margin-bottom: 2px;
+        font: 600 11.5px var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--suave);
+      }
+    }
+
+    > :last-child { margin-bottom: 0; }
+
+    &[data-tipo="cuidado"] {
+      background: var(--cuidado);
+      border-color: var(--cuidado-borde);
+
+      > h3::before { content: "Atención"; }
+    }
+  }
+
+  /* Bloques de código */
+  figure { margin: 28px 0; }
+
+  figure:has(> pre) {
+    background: var(--codigo);
+    border: 1px solid var(--codigo-borde);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 48px -32px rgb(15 27 42 / 0.55);
+
+    > figcaption {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      min-height: 42px;
+      padding: 6px 10px 6px 20px;
+      border-bottom: 1px solid var(--codigo-borde);
+      font: 12.5px var(--mono);
+      color: #8a9bb0;
+    }
+
+    > pre {
+      margin: 0;
+      padding: 18px 20px 20px;
+      overflow-x: auto;
+      font: 14px/1.65 var(--mono);
+      color: var(--codigo-texto);
+      tab-size: 2;
+    }
+
+    button {
+      font: 600 12px var(--mono);
+      color: #c9d6e3;
+      background: #16263a;
+      border: 1px solid #27405c;
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+
+      &:hover { background: #1d3049; }
+    }
+  }
+
+  .t-com { color: #7f90a6; font-style: italic; }
+  .t-str { color: #f4c96b; }
+  .t-kw { color: #62d2de; }
+  .t-num { color: #f59e7a; }
+  .t-fn { color: #9be7b8; }
+  .t-key { color: #a9c7ff; }
+
+  /* Diagramas */
+  figure:not(:has(> pre)) > figcaption {
+    margin-top: 12px;
+    font-size: 15px;
+    color: var(--suave);
+  }
+
+  .secuencia > div {
+    overflow-x: auto;
+    padding: 20px;
+    background: var(--tarjeta);
+    border: 1px solid var(--linea);
+    border-radius: 16px;
+  }
+
+  .secuencia svg {
+    display: block;
+    width: 100%;
+    min-width: 640px;
+    height: auto;
+
+    .actores rect { fill: var(--fondo); stroke: var(--linea); stroke-width: 1.5; }
+    .actores text { font: 700 15px var(--display); fill: var(--texto); text-anchor: middle; }
+    .actores line { stroke: var(--linea); stroke-width: 1.5; stroke-dasharray: 4 5; }
+    .bucle { fill: color-mix(in srgb, var(--ambar) 13%, transparent); stroke: var(--ambar); stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .bucle-texto { font: 600 11px var(--mono); fill: var(--suave); letter-spacing: 0.04em; }
+    .flechas line { stroke: var(--acento); stroke-width: 2; marker-end: url(#punta); }
+    .flechas line.vuelta { stroke-dasharray: 6 5; }
+    .flechas text { font: 12px var(--mono); fill: var(--texto); text-anchor: middle; paint-order: stroke; stroke: var(--tarjeta); stroke-width: 5px; }
+    marker path { fill: var(--acento); }
+  }
+
+  /* Mapa del archivo */
+  .mapa ol {
+    list-style: none;
+    margin: 0;
+    padding: 20px;
+    background: var(--tarjeta);
+    border: 1px solid var(--linea);
+    border-radius: 16px;
+
+    li {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 2px 16px;
+      align-items: center;
+      padding: 10px 0;
+    }
+
+    li + li { margin-top: 0; border-top: 1px solid var(--linea); }
+    strong { grid-row: span 2; font: 700 17px/1.2 var(--display); }
+    i { height: 14px; width: calc(var(--l) / 56 * 100%); border-radius: 4px; }
+    small { font-size: 14px; color: var(--suave); }
+
+    li:nth-child(1) i { background: var(--ambar); }
+    li:nth-child(2) i { background: var(--cian); }
+    li:nth-child(3) i { background: var(--petroleo); }
+    li:nth-child(4) i { background: var(--texto); }
+
+    @media (max-width: 560px) { li { grid-template-columns: 110px 1fr; } }
+  }
+
+  /* Roles de los mensajes */
+  b[data-rol] {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 7px;
+    font: 600 12.5px/1 var(--mono);
+  }
+
+  [data-rol="system"] { background: var(--linea); color: var(--texto); }
+  [data-rol="user"] { background: var(--cian); color: var(--tinta); }
+  [data-rol="assistant"] { background: var(--petroleo); color: #f2fafb; }
+  [data-rol="tool"] { background: var(--ambar); color: var(--tinta); }
+
+  table {
+    width: 100%;
+    margin: 24px 0;
+    border-collapse: collapse;
+    font-size: 16px;
+    line-height: 1.45;
+
+    th {
+      padding: 8px 10px;
+      text-align: left;
+      font: 600 11.5px var(--mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--suave);
+      border-bottom: 2px solid var(--linea);
+    }
+
+    td { padding: 12px 10px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  }
+
+  /* Traza de mensajes */
+  .traza {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr) auto;
+      gap: 6px 14px;
+      align-items: baseline;
+      padding: 12px 16px;
+      background: var(--tarjeta);
+      border: 1px solid var(--linea);
+      border-radius: 12px;
+    }
+
+    li + li { margin-top: 8px; }
+    li:last-child { border: 2px solid var(--acento); }
+    span { font: 13.5px/1.5 var(--mono); overflow-wrap: anywhere; }
+    small { font-size: 13.5px; color: var(--suave); text-align: right; white-space: nowrap; }
+
+    @media (max-width: 600px) {
+      li { grid-template-columns: auto minmax(0, 1fr); }
+      small { grid-column: 1 / -1; text-align: left; }
+    }
+  }
+
+  /* Dos bucles anidados */
+  .bucles > div {
+    padding: 20px;
+    background: var(--tarjeta);
+    border: 2px solid var(--acento);
+    border-radius: 18px;
+
+    > div {
+      margin-top: 18px;
+      padding: 18px;
+      background: var(--nota);
+      border: 2px dashed var(--nota-borde);
+      border-radius: 14px;
+    }
+
+    p { margin: 0 0 12px; font-size: 15px; color: var(--suave); }
+    p strong { display: block; font: 700 19px/1.2 var(--display); color: var(--texto); }
+    p strong::after { content: "  ↻"; color: var(--acento); }
+
+    ol {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    li {
+      margin: 0;
+      padding: 6px 12px;
+      background: var(--fondo);
+      border: 1px solid var(--linea);
+      border-radius: 8px;
+      font: 13px var(--mono);
+    }
+
+    li + li::before { content: "→ "; color: var(--suave); }
+  }
+
+  /* Ejercicios */
+  #seguir > ol > li { margin-bottom: 20px; }
+
+  body > footer {
+    margin-top: 32px;
+    padding: 32px 16px 48px;
+    border-top: 1px solid var(--linea);
+    text-align: center;
+    font-size: 15px;
+    color: var(--suave);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <hgroup>
+      <p>Tutorial · Node.js · API de OpenAI</p>
+      <h1>Un asistente de programación <em>desde cero</em></h1>
+      <p>Un programa de consola que conversa con un modelo de lenguaje y puede leer y escribir archivos. Lo construimos paso a paso y explicamos el fundamento de cada parte.</p>
+    </hgroup>
+
+    <dl>
+      <div><dt>archivo</dt><dd>1</dd></div>
+      <div><dt>líneas</dt><dd>132</dd></div>
+      <div><dt>dependencias</dt><dd>0</dd></div>
+      <div><dt>herramientas</dt><dd>2</dd></div>
+    </dl>
+
+    <pre><samp><i>$</i> <kbd>node asistente.js</kbd>
+
+<b>Vos:</b> <kbd>Leé package.json y decime qué tipo de módulo usa</kbd>
+<small>  🔧 leerArchivo(package.json)</small>
+
+<output>Asistente: Usa módulos ES (ESM), indicado por "type": "module".</output>
+
+<b>Vos:</b> <kbd></kbd></samp></pre>
+  </div>
+</header>
+
+<nav aria-label="Contenido">
+  <p>Contenido</p>
+  <ol>
+    <li><a href="#idea"><span>·</span>La idea</a></li>
+    <li><a href="#paso-1"><span>01</span>Preparar el proyecto</a></li>
+    <li><a href="#paso-2"><span>02</span>Configurar el acceso</a></li>
+    <li><a href="#paso-3"><span>03</span>Hablar con el modelo</a></li>
+    <li><a href="#paso-4"><span>04</span>La conversación</a></li>
+    <li><a href="#paso-5"><span>05</span>Describir herramientas</a></li>
+    <li><a href="#paso-6"><span>06</span>Implementar herramientas</a></li>
+    <li><a href="#paso-7"><span>07</span>Ejecutar los pedidos</a></li>
+    <li><a href="#paso-8"><span>08</span>El bucle del agente</a></li>
+    <li><a href="#paso-9"><span>09</span>La consola</a></li>
+    <li><a href="#paso-10"><span>10</span>Darle color</a></li>
+    <li><a href="#paso-11"><span>11</span>Ejecutarlo</a></li>
+    <li><a href="#codigo"><span>·</span>Código completo</a></li>
+    <li><a href="#seguir"><span>·</span>Para seguir</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="idea">
+  <h2>La idea</h2>
+  <p>Un modelo de lenguaje recibe texto y devuelve texto. No puede abrir un archivo ni guardar nada en tu disco. Pero puede hacer algo más modesto: <strong>pedir</strong> que alguien lo haga por él.</p>
+  <p>Un asistente de programación (también llamado <em>agente</em>) es un programa común que conversa con el modelo. Cuando el modelo pide una herramienta, el programa la ejecuta y le devuelve el resultado. <strong>El modelo decide; nuestro programa actúa.</strong></p>
+
+  <figure class="secuencia">
+    <div>
+      <svg viewBox="0 0 760 490" role="img" aria-labelledby="secuencia-titulo">
+        <title id="secuencia-titulo">Recorrido de una pregunta: la persona pregunta; el programa consulta al modelo; el modelo pide leer un archivo; el programa lo lee y le devuelve el contenido; el modelo responde con texto y el programa lo muestra.</title>
+        <defs>
+          <marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0L10 5L0 10z"/>
+          </marker>
+        </defs>
+
+        <rect class="bucle" x="200" y="120" width="552" height="208" rx="14"/>
+        <text class="bucle-texto" x="214" y="141">BUCLE DEL AGENTE · se repite mientras el modelo pida herramientas</text>
+
+        <g class="actores">
+          <rect x="15" y="10" width="130" height="46" rx="10"/><text x="80" y="38">Persona</text><line x1="80" y1="56" x2="80" y2="480"/>
+          <rect x="215" y="10" width="130" height="46" rx="10"/><text x="280" y="38">Programa</text><line x1="280" y1="56" x2="280" y2="480"/>
+          <rect x="415" y="10" width="130" height="46" rx="10"/><text x="480" y="38">Modelo</text><line x1="480" y1="56" x2="480" y2="480"/>
+          <rect x="615" y="10" width="130" height="46" rx="10"/><text x="680" y="38">Archivos</text><line x1="680" y1="56" x2="680" y2="480"/>
+        </g>
+
+        <g class="flechas">
+          <line x1="82" y1="96" x2="276" y2="96"/><text x="180" y="87">"Leé package.json…"</text>
+          <line x1="282" y1="174" x2="476" y2="174"/><text x="380" y="165">POST mensajes + tools</text>
+          <line class="vuelta" x1="478" y1="218" x2="284" y2="218"/><text x="380" y="209">tool_calls: leerArchivo</text>
+          <line x1="282" y1="262" x2="676" y2="262"/><text x="580" y="253">readFileSync(ruta)</text>
+          <line class="vuelta" x1="678" y1="306" x2="284" y2="306"/><text x="580" y="297">contenido</text>
+          <line x1="282" y1="368" x2="476" y2="368"/><text x="380" y="359">POST … + role: "tool"</text>
+          <line class="vuelta" x1="478" y1="412" x2="284" y2="412"/><text x="380" y="403">respuesta en texto</text>
+          <line x1="278" y1="456" x2="84" y2="456"/><text x="180" y="447">muestra la respuesta</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Qué pasa cuando preguntás algo que requiere leer un archivo. El modelo nunca toca el disco: solo pide.</figcaption>
+  </figure>
+
+  <p>Todo el programa se apoya en tres ideas:</p>
+  <ol>
+    <li><strong>Una conversación</strong> guardada en un array de mensajes (<a href="#paso-4">paso 4</a>).</li>
+    <li><strong>Herramientas</strong> que el modelo puede pedir. Las describimos para él y las implementamos para nosotros (<a href="#paso-5">pasos 5 a 7</a>).</li>
+    <li><strong>Un bucle</strong> que consulta al modelo, ejecuta lo que pide y vuelve a consultar hasta que responde con texto (<a href="#paso-8">paso 8</a>).</li>
+  </ol>
+
+  <h3>Cómo está organizado el archivo</h3>
+  <p>Son 132 líneas en un solo archivo, divididas en cuatro bloques. Casi la mitad son las herramientas, y la mayor parte de eso es la descripción que lee el modelo.</p>
+
+  <figure class="mapa">
+    <ol>
+      <li style="--l: 20"><strong>Configuración</strong><i></i><small>líneas 1–20 · <a href="#paso-1">pasos 1</a> y <a href="#paso-2">2</a></small></li>
+      <li style="--l: 56"><strong>Herramientas</strong><i></i><small>líneas 21–76 · <a href="#paso-5">pasos 5 a 7</a></small></li>
+      <li style="--l: 35"><strong>API y agente</strong><i></i><small>líneas 77–111 · <a href="#paso-3">pasos 3</a> y <a href="#paso-8">8</a></small></li>
+      <li style="--l: 21"><strong>Bucle principal</strong><i></i><small>líneas 112–132 · <a href="#paso-4">pasos 4</a>, <a href="#paso-9">9</a> y <a href="#paso-10">10</a></small></li>
+    </ol>
+  </figure>
+</section>
+
+<section id="paso-1">
+  <h2>Preparar el proyecto</h2>
+  <p>Trabajamos con tres archivos en la misma carpeta:</p>
+
+  <figure>
+    <figcaption>Estructura</figcaption>
+    <pre><code>clase/
+├── .env           ← clave y modelo (secreto)
+├── package.json   ← indica que usamos módulos ES
+└── asistente.js   ← el programa</code></pre>
+  </figure>
+
+  <p>Necesitás Node 22 o superior. Para saber qué versión tenés:</p>
+
+  <figure>
+    <figcaption>Terminal</figcaption>
+    <pre><code data-lang="bash">node --version</code></pre>
+  </figure>
+
+  <p>El <code>package.json</code> tiene una sola línea útil, y el <code>.env</code> guarda la clave de la API y el modelo a usar:</p>
+
+  <figure>
+    <figcaption>package.json</figcaption>
+    <pre><code data-lang="json">{ "type": "module" }</code></pre>
+  </figure>
+
+  <figure>
+    <figcaption>.env</figcaption>
+    <pre><code data-lang="env">OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-6-luna</code></pre>
+  </figure>
+
+  <aside>
+    <h3>Sin dependencias</h3>
+    <p>Todo lo que usamos viene con Node: <code>fetch</code> para hablar con la API, <code>fs</code> para los archivos, <code>readline</code> para la consola y <code>util</code> para los colores. No hay <code>npm install</code> ni carpeta <code>node_modules</code>. El prefijo <code>node:</code> de los <code>import</code> (como en <code>node:fs</code>) indica justamente eso: es un módulo de Node, no un paquete externo.</p>
+  </aside>
+
+  <aside>
+    <h3>Módulos ES</h3>
+    <p><code>"type": "module"</code> le dice a Node que los archivos <code>.js</code> usan <code>import</code> en lugar de <code>require</code>. Además habilita dos cosas que el programa necesita: <code>import.meta.url</code> (<a href="#paso-2">paso 2</a>) y usar <code>await</code> fuera de una función (<a href="#paso-9">paso 9</a>).</p>
+  </aside>
+
+  <aside data-tipo="cuidado">
+    <h3>La clave es un secreto</h3>
+    <p>Con tu clave, cualquiera puede usar la API a tu nombre y gastar tu saldo. Por eso no va en el código sino en <code>.env</code>, y <code>.env</code> va en <code>.gitignore</code> para que nunca llegue al repositorio.</p>
+  </aside>
+</section>
+
+<section id="paso-2">
+  <h2>Configurar el acceso a la API</h2>
+  <p>Para hablar con la API necesitamos tres datos: a qué dirección mandar los pedidos, con qué clave y a qué modelo. Los reunimos en una función:</p>
+
+  <figure>
+    <figcaption>asistente.js · configuración</figcaption>
+    <pre><code data-lang="js">import fs from "node:fs";
+import readline from "node:readline/promises";
+
+// ---------- Configuración ----------
+
+function configurarApi() {
+  process.loadEnvFile(new URL(".env", import.meta.url));
+  return {
+    url: "https://api.openai.com/v1/chat/completions",
+    apiKey: process.env.OPENAI_API_KEY,
+    modelo: process.env.OPENAI_MODEL,
+  };
+}
+
+const api = configurarApi();</code></pre>
+  </figure>
+
+  <p>Desde acá, el resto del programa usa <code>api.url</code>, <code>api.apiKey</code> y <code>api.modelo</code> sin saber de dónde salieron. Si mañana querés usar otro proveedor compatible con la API de OpenAI, cambiás solo esta función.</p>
+
+  <aside>
+    <h3>Variables de entorno</h3>
+    <p><code>process.env</code> es un objeto con las variables de entorno del proceso. <code>process.loadEnvFile(ruta)</code> lee un archivo <code>.env</code> y agrega cada línea <code>NOMBRE=valor</code> a ese objeto. Por eso después podemos leer <code>process.env.OPENAI_API_KEY</code>. Antes esto requería el paquete <code>dotenv</code>; desde Node 20.12 viene incluido.</p>
+  </aside>
+
+  <aside>
+    <h3>Rutas relativas al archivo</h3>
+    <p><code>import.meta.url</code> es la dirección del propio archivo: <code>file:///…/clase/asistente.js</code>. <code>new URL(".env", import.meta.url)</code> resuelve <code>.env</code> a partir de ahí y da <code>file:///…/clase/.env</code>. Si escribiéramos solo <code>".env"</code>, Node lo buscaría en la carpeta desde donde ejecutaste el comando, que puede ser otra.</p>
+  </aside>
+</section>
+
+
+<section id="clave-navegador">
+  <h2>La clave en los ejemplos del navegador</h2>
+  <p>En los ejemplos HTML, usamos <code>obtenerApiKey()</code> en lugar de leer una variable de entorno. Primero busca <code>OPENAI_API_KEY</code> en <code>localStorage</code>; si falta, la solicita con <code>prompt</code>, quita los espacios de los extremos y la guarda. Si cancelás o dejás el campo vacío, detiene la consulta sin guardar nada.</p>
+  <figure><figcaption>JavaScript del navegador · función utilitaria</figcaption>
+    <pre><code data-lang="js">function obtenerApiKey() {
+  let clave = localStorage.getItem(&quot;OPENAI_API_KEY&quot;)?.trim();
+  if (!clave) {
+    clave = prompt(&quot;Ingresá tu API key de OpenAI:&quot;)?.trim();
+    if (!clave) throw new Error(&quot;Se necesita una API key para continuar.&quot;);
+    localStorage.setItem(&quot;OPENAI_API_KEY&quot;, clave);
+  }
+  return clave;
+}
+
+// En los headers del fetch a OpenAI:
+const headers = {
+  &quot;Content-Type&quot;: &quot;application/json&quot;,
+  Authorization: `Bearer ${obtenerApiKey()}`,
+};</code></pre>
+  </figure>
+  <p>La función se llama al enviar la consulta, no al abrir la página. Los ejemplos comparten la clave cuando se sirven desde el mismo origen (protocolo, host y puerto), según <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage en MDN</a>. Para cambiarla, ejecutá <code>localStorage.removeItem("OPENAI_API_KEY")</code> en la consola del navegador y volvé a consultar. El programa de terminal de este tutorial conserva su configuración con <code>.env</code>.</p>
+</section>
+
+<section id="paso-3">
+  <h2>Hablar con el modelo por REST</h2>
+  <p>La API de OpenAI es una API REST: le hablamos con pedidos HTTP comunes, igual que un navegador le pide una página a un servidor. Cada consulta al modelo es un pedido como este:</p>
+
+  <figure>
+    <figcaption>Pedido HTTP</figcaption>
+    <pre><code data-lang="http">POST https://api.openai.com/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer sk-...
+
+{
+  "model": "gpt-6-luna",
+  "messages": [ ... ],
+  "tools": [ ... ],
+  "reasoning_effort": "none"
+}</code></pre>
+  </figure>
+
+  <p>Tiene cuatro partes:</p>
+  <ul>
+    <li>El <strong>método</strong>: <code>POST</code>, porque enviamos datos.</li>
+    <li>La <strong>dirección</strong>: el <em>endpoint</em> de chat completions.</li>
+    <li>Los <strong>encabezados</strong>: en qué formato mandamos los datos y quiénes somos. <code>Bearer</code> significa “portador”: quien porta la clave tiene acceso.</li>
+    <li>El <strong>cuerpo</strong>: los datos, en JSON.</li>
+  </ul>
+  <p>La función <code>llamarApi</code> arma exactamente ese pedido con <code>fetch</code>:</p>
+
+  <figure>
+    <figcaption>asistente.js · líneas 79–96</figcaption>
+    <pre><code data-lang="js">async function llamarApi(mensajes) {
+  const respuesta = await fetch(api.url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${api.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: api.modelo,
+      messages: mensajes,
+      tools: herramientas,
+      reasoning_effort: "none", // requerido para usar herramientas en chat completions
+    }),
+  });
+  const datos = await respuesta.json();
+  if (datos.error) throw new Error(datos.error.message);
+  return datos.choices[0].message;
+}</code></pre>
+  </figure>
+
+  <p>La API contesta con un JSON como este. De todo eso solo nos interesa <code>choices[0].message</code>: el mensaje que escribió el modelo.</p>
+
+  <figure>
+    <figcaption>Respuesta (resumida)</figcaption>
+    <pre><code data-lang="json">{
+  "id": "chatcmpl-...",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "¡Hola! ¿En qué te ayudo?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 412, "completion_tokens": 9, "total_tokens": 421 }
+}</code></pre>
+  </figure>
+
+  <aside>
+    <h3>fetch, await y JSON</h3>
+    <p><code>fetch</code> devuelve una promesa: el pedido viaja por la red y la respuesta llega más tarde. <code>await</code> espera a que llegue. Hay dos esperas: la primera recibe la respuesta (estado y encabezados) y la segunda, <code>respuesta.json()</code>, termina de leer el cuerpo.</p>
+    <p>HTTP transporta texto. <code>JSON.stringify</code> convierte nuestro objeto en texto para enviarlo, y <code>respuesta.json()</code> hace lo inverso con lo que llega.</p>
+  </aside>
+
+  <aside data-tipo="cuidado">
+    <h3>Cuando algo falla</h3>
+    <p>Si la clave es incorrecta o el pedido tiene un problema, la API no devuelve <code>choices</code> sino <code>{"error": {"message": "…"}}</code>. La línea <code>if (datos.error) throw …</code> muestra ese mensaje tal cual, en vez de un confuso <code>Cannot read properties of undefined</code>.</p>
+  </aside>
+
+  <aside data-tipo="cuidado">
+    <h3>¿Para qué es reasoning_effort?</h3>
+    <p>Con el modelo que usamos, la API no admite herramientas en chat completions si el modelo razona antes de responder. Hay dos salidas: usar otro <em>endpoint</em> (<code>/v1/responses</code>) o desactivar el razonamiento con <code>"none"</code>. Elegimos la segunda porque no cambia nada más. Si usás un modelo que no acepta este parámetro, borrá esa línea.</p>
+  </aside>
+</section>
+
+<section id="paso-4">
+  <h2>La conversación es un array</h2>
+  <p>Hay un detalle de la API que define todo el diseño: <strong>no tiene memoria</strong>. Cada pedido es independiente, y el modelo no recuerda nada de los anteriores.</p>
+  <p>¿Cómo mantiene entonces una conversación? En cada pedido le mandamos <strong>la conversación completa</strong>. La memoria del asistente es un array que vamos agrandando:</p>
+
+  <figure>
+    <figcaption>asistente.js · líneas 114–119</figcaption>
+    <pre><code data-lang="js">const mensajes = [
+  {
+    role: "system",
+    content: "Sos un asistente de programación. Podés leer y escribir archivos con las herramientas disponibles. Respondé en español y en forma breve.",
+  },
+];</code></pre>
+  </figure>
+
+  <p>Cada mensaje tiene un <code>role</code> (quién lo dice) y un contenido. Hay cuatro roles:</p>
+
+  <table>
+    <thead>
+      <tr><th>Rol</th><th>Lo escribe</th><th>Para qué</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b data-rol="system">system</b></td><td>Nosotros, una vez</td><td>Instrucciones generales: qué es, qué puede hacer, cómo responder.</td></tr>
+      <tr><td><b data-rol="user">user</b></td><td>La persona</td><td>Lo que escribe en la consola.</td></tr>
+      <tr><td><b data-rol="assistant">assistant</b></td><td>El modelo</td><td>Su respuesta: texto o pedidos de herramientas.</td></tr>
+      <tr><td><b data-rol="tool">tool</b></td><td>Nuestro programa</td><td>El resultado de ejecutar una herramienta.</td></tr>
+    </tbody>
+  </table>
+
+  <aside>
+    <h3>Una API sin estado</h3>
+    <p>Una API sin estado (<em>stateless</em>) no guarda nada entre pedidos. Es más simple de construir y de escalar, pero traslada la responsabilidad al cliente: nosotros guardamos la historia y la reenviamos. Consecuencia práctica: cada pedido es más largo que el anterior, y el costo se calcula según la cantidad de texto (<em>tokens</em>) que se envía.</p>
+  </aside>
+</section>
+
+<section id="paso-5">
+  <h2>Describir las herramientas</h2>
+  <p>El modelo no ve nuestro código. Para que sepa qué herramientas existen, se las describimos: nombre, para qué sirve y qué parámetros recibe. Esa descripción viaja en cada pedido, en el campo <code>tools</code>.</p>
+
+  <figure>
+    <figcaption>asistente.js · líneas 23–54</figcaption>
+    <pre><code data-lang="js">// Lo que el modelo "ve": nombre, descripción y parámetros de cada herramienta.
+const herramientas = [
+  {
+    type: "function",
+    function: {
+      name: "leerArchivo",
+      description: "Lee un archivo de texto y devuelve su contenido",
+      parameters: {
+        type: "object",
+        properties: {
+          ruta: { type: "string", description: "Ruta del archivo" },
+        },
+        required: ["ruta"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "escribirArchivo",
+      description: "Crea o reemplaza un archivo de texto con el contenido indicado",
+      parameters: {
+        type: "object",
+        properties: {
+          ruta: { type: "string", description: "Ruta del archivo" },
+          contenido: { type: "string", description: "Texto completo a guardar" },
+        },
+        required: ["ruta", "contenido"],
+      },
+    },
+  },
+];</code></pre>
+  </figure>
+
+  <p>Es la parte más larga del programa, pero son solo datos. Cada herramienta tiene tres campos:</p>
+  <ul>
+    <li><code>name</code>: debe coincidir con el nombre de nuestra función. En el <a href="#paso-7">paso 7</a> usamos ese nombre para encontrarla.</li>
+    <li><code>description</code>: para qué sirve y cuándo conviene usarla.</li>
+    <li><code>parameters</code>: qué datos necesita.</li>
+  </ul>
+
+  <aside>
+    <h3>JSON Schema</h3>
+    <p><code>parameters</code> usa JSON Schema, un formato estándar para describir la forma de un JSON. Acá dice: “los argumentos son un objeto (<code>type: "object"</code>) con una propiedad <code>ruta</code> de tipo texto, y es obligatoria (<code>required</code>)”. El modelo sigue ese esquema cuando arma los argumentos de su pedido.</p>
+  </aside>
+
+  <aside>
+    <h3>La descripción también es un prompt</h3>
+    <p>El modelo decide <strong>cuándo</strong> usar una herramienta leyendo su descripción. Por eso <code>escribirArchivo</code> aclara “Crea o <strong>reemplaza</strong>” y <code>contenido</code> pide el “texto <strong>completo</strong>”: así el modelo sabe que, si escribe, pisa lo que había.</p>
+  </aside>
+</section>
+
+<section id="paso-6">
+  <h2>Implementar las herramientas</h2>
+  <p>Ahora la otra cara: lo que realmente se ejecuta. Cada herramienta es una función de una línea:</p>
+
+  <figure>
+    <figcaption>asistente.js · líneas 56–66</figcaption>
+    <pre><code data-lang="js">// Lo que realmente se ejecuta cuando el modelo pide una herramienta.
+function leerArchivo({ ruta }) {
+  return fs.readFileSync(ruta, "utf8");
+}
+
+function escribirArchivo({ ruta, contenido }) {
+  fs.writeFileSync(ruta, contenido);
+  return "Archivo guardado";
+}
+
+const funciones = { leerArchivo, escribirArchivo };</code></pre>
+  </figure>
+
+  <p>Usamos las versiones síncronas (<code>readFileSync</code> y <code>writeFileSync</code>) porque son las más fáciles de leer. Bloquean el programa mientras trabajan, pero acá no importa: la persona está esperando la respuesta de todos modos.</p>
+
+  <aside>
+    <h3>Desestructuración</h3>
+    <p><code>function leerArchivo({ ruta })</code> recibe un objeto y extrae su propiedad <code>ruta</code>. Coincide con lo que manda el modelo: <code>{ "ruta": "suma.js" }</code>. Así no hace falta escribir <code>argumentos.ruta</code> dentro de la función.</p>
+  </aside>
+
+  <aside>
+    <h3>Siempre devolver texto</h3>
+    <p>El resultado vuelve al modelo como contenido de un mensaje, y ese contenido es texto. Con <code>"utf8"</code>, <code>readFileSync</code> devuelve un string; sin esa opción devolvería bytes (un <code>Buffer</code>). <code>escribirArchivo</code> devuelve <code>"Archivo guardado"</code> para que el modelo sepa que funcionó.</p>
+  </aside>
+
+  <aside>
+    <h3>Un diccionario de funciones</h3>
+    <p><code>{ leerArchivo, escribirArchivo }</code> es la forma abreviada de <code>{ leerArchivo: leerArchivo, escribirArchivo: escribirArchivo }</code>. Es un objeto que asocia cada nombre con su función. En el próximo paso lo usamos para llamar a una herramienta a partir de su nombre, sin <code>if</code> ni <code>switch</code>.</p>
+  </aside>
+
+  <aside data-tipo="cuidado">
+    <h3>Solo el camino feliz</h3>
+    <p>Si el archivo no existe, <code>readFileSync</code> lanza un error y el programa termina. Es una decisión deliberada para que el código se entienda. En <a href="#seguir">Para seguir</a> está cómo resolverlo.</p>
+  </aside>
+</section>
+
+<section id="paso-7">
+  <h2>Ejecutar lo que pide el modelo</h2>
+  <p>Cuando el modelo quiere usar una herramienta, no responde con texto. Responde con un mensaje que trae <code>tool_calls</code>: la lista de herramientas que quiere ejecutar y con qué argumentos.</p>
+
+  <figure>
+    <figcaption>Mensaje del modelo que pide una herramienta</figcaption>
+    <pre><code data-lang="json">{
+  "role": "assistant",
+  "content": null,
+  "tool_calls": [
+    {
+      "id": "call_Ab12Cd34",
+      "type": "function",
+      "function": {
+        "name": "leerArchivo",
+        "arguments": "{\"ruta\":\"package.json\"}"
+      }
+    }
+  ]
+}</code></pre>
+  </figure>
+
+  <p><code>ejecutarHerramienta</code> recibe uno de esos pedidos, ejecuta la función que corresponde y arma el mensaje con el resultado:</p>
+
+  <figure>
+    <figcaption>asistente.js · líneas 68–75</figcaption>
+    <pre><code data-lang="js">function ejecutarHerramienta(llamada) {
+  const nombre = llamada.function.name;
+  const argumentos = JSON.parse(llamada.function.arguments);
+  console.log(`  🔧 ${nombre}(${argumentos.ruta})`);
+
+  const resultado = funciones[nombre](argumentos);
+  return { role: "tool", tool_call_id: llamada.id, content: resultado };
+}</code></pre>
+  </figure>
+
+  <p>Para el pedido de arriba, devuelve:</p>
+
+  <figure>
+    <figcaption>Mensaje con el resultado</figcaption>
+    <pre><code data-lang="json">{
+  "role": "tool",
+  "tool_call_id": "call_Ab12Cd34",
+  "content": "{\n  \"type\": \"module\"\n}\n"
+}</code></pre>
+  </figure>
+
+  <aside>
+    <h3>arguments es texto</h3>
+    <p>Fijate en las comillas: <code>arguments</code> no es un objeto sino un <strong>string que contiene JSON</strong>. Por eso hay que convertirlo con <code>JSON.parse</code> antes de usarlo.</p>
+  </aside>
+
+  <aside>
+    <h3>Llamar a una función por su nombre</h3>
+    <p><code>funciones[nombre]</code> busca en el diccionario la función cuyo nombre está guardado en la variable <code>nombre</code>. Si <code>nombre</code> vale <code>"leerArchivo"</code>, entonces <code>funciones[nombre](argumentos)</code> es lo mismo que <code>leerArchivo(argumentos)</code>.</p>
+  </aside>
+
+  <aside>
+    <h3>tool_call_id</h3>
+    <p>Une cada resultado con su pedido. El modelo puede pedir varias herramientas a la vez, y el <code>id</code> le indica qué resultado responde a cada pedido.</p>
+  </aside>
+</section>
+
+<section id="paso-8">
+  <h2>El bucle del agente</h2>
+  <p>Este es el corazón del programa. Una sola pregunta puede requerir varias herramientas en secuencia: leer un archivo, escribir otro, volver a leer para verificar. No sabemos de antemano cuántas, así que usamos un bucle:</p>
+
+  <figure>
+    <figcaption>asistente.js · líneas 98–110</figcaption>
+    <pre><code data-lang="js">// Consulta al modelo hasta que deje de pedir herramientas y devuelva texto.
+async function responder(mensajes) {
+  while (true) {
+    const mensaje = await llamarApi(mensajes);
+    mensajes.push(mensaje);
+
+    if (!mensaje.tool_calls) return mensaje.content;
+
+    for (const llamada of mensaje.tool_calls) {
+      mensajes.push(ejecutarHerramienta(llamada));
+    }
+  }
+}</code></pre>
+  </figure>
+
+  <p>En palabras:</p>
+  <ol>
+    <li>Consultar al modelo con toda la conversación.</li>
+    <li>Guardar su respuesta en <code>mensajes</code>.</li>
+    <li>Si no pidió herramientas, terminó: devolver el texto.</li>
+    <li>Si pidió, ejecutar cada una, guardar los resultados y volver al punto 1.</li>
+  </ol>
+  <p><code>while (true)</code> parece peligroso, pero la salida está garantizada por el <code>return</code>: en cuanto el modelo responde sin pedir herramientas, la función termina.</p>
+
+  <h3>Un ejemplo, mensaje por mensaje</h3>
+  <p>Supongamos que la persona escribe <em>“Creá suma.js con una función suma y decime cuántas líneas tiene”</em>. Así crece el array durante esa única pregunta:</p>
+
+  <figure>
+    <ol class="traza">
+      <li><b data-rol="system">system</b><span>Sos un asistente de programación…</span><small>al iniciar</small></li>
+      <li><b data-rol="user">user</b><span>Creá suma.js con una función suma y decime cuántas líneas tiene</span><small>la persona</small></li>
+      <li><b data-rol="assistant">assistant</b><span>tool_calls: escribirArchivo("suma.js", "function suma(a, b) {…")</span><small>el modelo · 1.ª llamada</small></li>
+      <li><b data-rol="tool">tool</b><span>Archivo guardado</span><small>nuestro programa</small></li>
+      <li><b data-rol="assistant">assistant</b><span>tool_calls: leerArchivo("suma.js")</span><small>el modelo · 2.ª llamada</small></li>
+      <li><b data-rol="tool">tool</b><span>function suma(a, b) {↵  return a + b;↵}…</span><small>nuestro programa</small></li>
+      <li><b data-rol="assistant">assistant</b><span>El archivo suma.js tiene 5 líneas.</span><small>el modelo · 3.ª llamada</small></li>
+    </ol>
+    <figcaption>Tres llamadas a la API para una sola pregunta. En cada llamada se envía todo lo que está arriba. El último mensaje no tiene <code>tool_calls</code>, así que <code>responder</code> devuelve su texto.</figcaption>
+  </figure>
+
+  <aside>
+    <h3>El orden importa</h3>
+    <p>Primero va el mensaje del modelo con <code>tool_calls</code> y después un mensaje <code>tool</code> por cada pedido. Por eso hacemos <code>mensajes.push(mensaje)</code> antes del <code>for</code>. Si falta alguno de los dos, la API responde con un error.</p>
+  </aside>
+
+  <aside>
+    <h3>Por qué un for</h3>
+    <p><code>tool_calls</code> es un array. Muchas veces trae un solo pedido, pero el modelo puede pedir varios juntos (por ejemplo, leer tres archivos a la vez). El <code>for…of</code> los ejecuta todos.</p>
+  </aside>
+</section>
+
+<section id="paso-9">
+  <h2>La consola</h2>
+  <p>Falta la parte que ve la persona: leer lo que escribe, pasárselo a <code>responder</code> y mostrar la respuesta. Es otro bucle:</p>
+
+  <figure>
+    <figcaption>asistente.js · bucle principal (todavía sin colores)</figcaption>
+    <pre><code data-lang="js">const consola = readline.createInterface({ input: process.stdin, output: process.stdout });
+consola.on("close", () =&gt; process.exit()); // Ctrl+C o Ctrl+D también terminan
+
+while (true) {
+  const texto = await consola.question("\nVos: ");
+  if (texto === "salir") break;
+
+  mensajes.push({ role: "user", content: texto });
+  console.log(`\nAsistente: ${await responder(mensajes)}`);
+}
+
+consola.close();</code></pre>
+  </figure>
+
+  <aside>
+    <h3>readline</h3>
+    <p><code>readline.createInterface</code> conecta la entrada (<code>process.stdin</code>, el teclado) con la salida (<code>process.stdout</code>, la pantalla). <code>consola.question(texto)</code> muestra el texto y devuelve una promesa. Esa promesa se cumple cuando la persona presiona Enter, y trae la línea que escribió.</p>
+  </aside>
+
+  <aside>
+    <h3>await fuera de una función</h3>
+    <p>El bucle principal no está dentro de ninguna función <code>async</code> y, aun así, usa <code>await</code>. Funciona porque el archivo es un módulo ES (<a href="#paso-1">paso 1</a>): en los módulos, Node permite <code>await</code> en el nivel superior (<em>top-level await</em>).</p>
+  </aside>
+
+  <aside>
+    <h3>Cómo termina</h3>
+    <p>Si la persona escribe <code>salir</code>, el <code>break</code> corta el bucle. Con Ctrl+C o Ctrl+D, la interfaz se cierra sola y el evento <code>close</code> termina el proceso con <code>process.exit()</code>. Sin esa línea, Node mostraría un error, porque <code>question</code> quedaba esperando una respuesta que nunca llega.</p>
+  </aside>
+
+  <h3>Dos bucles, uno dentro del otro</h3>
+
+  <figure class="bucles">
+    <div>
+      <p><strong>Bucle principal</strong> una vuelta por cada mensaje de la persona</p>
+      <ol>
+        <li>consola.question()</li>
+        <li>responder(mensajes)</li>
+        <li>console.log()</li>
+      </ol>
+      <div>
+        <p><strong>responder()</strong> una vuelta por cada llamada a la API</p>
+        <ol>
+          <li>llamarApi()</li>
+          <li>¿pidió herramientas?</li>
+          <li>ejecutarHerramienta()</li>
+        </ol>
+      </div>
+    </div>
+    <figcaption>El bucle de afuera es la conversación con la persona. El de adentro es el agente trabajando. Separarlos en dos lugares es lo que hace que el programa se lea fácil.</figcaption>
+  </figure>
+</section>
+
+<section id="paso-10">
+  <h2>Darle color</h2>
+  <p>El programa ya funciona, pero en la terminal todo se ve igual y cuesta distinguir lo que escribiste de lo que respondió el asistente. Node trae <code>styleText</code> en <code>node:util</code> para colorear texto sin instalar nada. Alcanza con cambiar tres líneas:</p>
+
+  <figure>
+    <figcaption>asistente.js · los cambios</figcaption>
+    <pre><code data-lang="js">import { styleText } from "node:util";
+
+// en ejecutarHerramienta: las herramientas, en gris
+console.log(styleText("gray", `  🔧 ${nombre}(${argumentos.ruta})`));
+
+// en el bucle principal: la etiqueta "Vos:" en verde y la respuesta en cian
+const texto = await consola.question(styleText(["bold", "green"], "\nVos: "));
+console.log(styleText("cyan", `\nAsistente: ${await responder(mensajes)}`));</code></pre>
+  </figure>
+
+  <p><code>styleText(formato, texto)</code> devuelve el mismo texto con los códigos de color incluidos. El formato puede ser un nombre (<code>"cyan"</code>) o un array para combinar varios (<code>["bold", "green"]</code>). Lo que escribe la persona queda en el color normal de la terminal, así que se distingue de la respuesta.</p>
+
+  <aside>
+    <h3>Códigos ANSI</h3>
+    <p>La terminal no entiende la palabra “cian”: entiende secuencias especiales. <code>styleText("cyan", "hola")</code> devuelve <code>"\x1b[36mhola\x1b[39m"</code>. El primer código dice “empezá a escribir en cian” y el segundo, “volvé al color normal”. Si la salida no es una terminal (por ejemplo, si la redirigís a un archivo) o si está definida la variable <code>NO_COLOR</code>, <code>styleText</code> no agrega los códigos.</p>
+  </aside>
+</section>
+
+<section id="paso-11">
+  <h2>Ejecutarlo</h2>
+  <p>Desde la carpeta del programa:</p>
+
+  <figure>
+    <figcaption>Terminal</figcaption>
+    <pre><code data-lang="bash">cd clase
+node asistente.js</code></pre>
+  </figure>
+
+  <figure>
+    <figcaption>Una sesión de ejemplo</figcaption>
+    <pre><samp><b>Vos:</b> <kbd>Creá suma.js con una función suma(a, b) exportada y decime cuántas líneas tiene</kbd>
+<small>  🔧 escribirArchivo(suma.js)</small>
+<small>  🔧 leerArchivo(suma.js)</small>
+
+<output>Asistente: El archivo suma.js tiene 5 líneas. La función suma(a, b) está exportada.</output>
+
+<b>Vos:</b> <kbd>Leé package.json y decime qué tipo de módulo usa</kbd>
+<small>  🔧 leerArchivo(package.json)</small>
+
+<output>Asistente: Usa módulos ES (ESM), indicado por "type": "module".</output>
+
+<b>Vos:</b> <kbd>salir</kbd></samp></pre>
+  </figure>
+
+  <p>Para ver al agente trabajar, probá pedidos que lo obliguen a usar herramientas:</p>
+  <ul>
+    <li><em>“Leé asistente.js y explicame qué hace la función responder”</em></li>
+    <li><em>“Creá fizzbuzz.js que imprima los números del 1 al 30”</em></li>
+    <li><em>“Agregale comentarios a suma.js”</em>: tiene que leer el archivo antes de escribirlo.</li>
+  </ul>
+</section>
+
+<section id="codigo">
+  <h2>El código completo</h2>
+  <p>Todo junto, tal como queda en <code>clase/asistente.js</code>:</p>
+
+  <figure>
+    <figcaption>asistente.js · 132 líneas</figcaption>
+    <pre><code data-lang="js">// Asistente de programación mínimo usando la API de OpenAI (chat completions).
+// Ejecutar con: node asistente.js   (escribir "salir" para terminar)
+
+import fs from "node:fs";
+import readline from "node:readline/promises";
+import { styleText } from "node:util";
+
+// ---------- Configuración ----------
+
+function configurarApi() {
+  process.loadEnvFile(new URL(".env", import.meta.url));
+  return {
+    url: "https://api.openai.com/v1/chat/completions",
+    apiKey: process.env.OPENAI_API_KEY,
+    modelo: process.env.OPENAI_MODEL,
+  };
+}
+
+const api = configurarApi();
+
+// ---------- Herramientas ----------
+
+// Lo que el modelo "ve": nombre, descripción y parámetros de cada herramienta.
+const herramientas = [
+  {
+    type: "function",
+    function: {
+      name: "leerArchivo",
+      description: "Lee un archivo de texto y devuelve su contenido",
+      parameters: {
+        type: "object",
+        properties: {
+          ruta: { type: "string", description: "Ruta del archivo" },
+        },
+        required: ["ruta"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "escribirArchivo",
+      description: "Crea o reemplaza un archivo de texto con el contenido indicado",
+      parameters: {
+        type: "object",
+        properties: {
+          ruta: { type: "string", description: "Ruta del archivo" },
+          contenido: { type: "string", description: "Texto completo a guardar" },
+        },
+        required: ["ruta", "contenido"],
+      },
+    },
+  },
+];
+
+// Lo que realmente se ejecuta cuando el modelo pide una herramienta.
+function leerArchivo({ ruta }) {
+  return fs.readFileSync(ruta, "utf8");
+}
+
+function escribirArchivo({ ruta, contenido }) {
+  fs.writeFileSync(ruta, contenido);
+  return "Archivo guardado";
+}
+
+const funciones = { leerArchivo, escribirArchivo };
+
+function ejecutarHerramienta(llamada) {
+  const nombre = llamada.function.name;
+  const argumentos = JSON.parse(llamada.function.arguments);
+  console.log(styleText("gray", `  🔧 ${nombre}(${argumentos.ruta})`));
+
+  const resultado = funciones[nombre](argumentos);
+  return { role: "tool", tool_call_id: llamada.id, content: resultado };
+}
+
+// ---------- API ----------
+
+async function llamarApi(mensajes) {
+  const respuesta = await fetch(api.url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${api.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: api.modelo,
+      messages: mensajes,
+      tools: herramientas,
+      reasoning_effort: "none", // requerido para usar herramientas en chat completions
+    }),
+  });
+  const datos = await respuesta.json();
+  if (datos.error) throw new Error(datos.error.message);
+  return datos.choices[0].message;
+}
+
+// Consulta al modelo hasta que deje de pedir herramientas y devuelva texto.
+async function responder(mensajes) {
+  while (true) {
+    const mensaje = await llamarApi(mensajes);
+    mensajes.push(mensaje);
+
+    if (!mensaje.tool_calls) return mensaje.content;
+
+    for (const llamada of mensaje.tool_calls) {
+      mensajes.push(ejecutarHerramienta(llamada));
+    }
+  }
+}
+
+// ---------- Bucle principal ----------
+
+const mensajes = [
+  {
+    role: "system",
+    content: "Sos un asistente de programación. Podés leer y escribir archivos con las herramientas disponibles. Respondé en español y en forma breve.",
+  },
+];
+
+const consola = readline.createInterface({ input: process.stdin, output: process.stdout });
+consola.on("close", () =&gt; process.exit()); // Ctrl+C o Ctrl+D también terminan
+
+while (true) {
+  const texto = await consola.question(styleText(["bold", "green"], "\nVos: "));
+  if (texto === "salir") break;
+
+  mensajes.push({ role: "user", content: texto });
+  console.log(styleText("cyan", `\nAsistente: ${await responder(mensajes)}`));
+}
+
+consola.close();</code></pre>
+  </figure>
+</section>
+
+<section id="seguir">
+  <h2>Para seguir</h2>
+  <p>Tres ejercicios para practicar, de menor a mayor dificultad:</p>
+  <ol>
+    <li>
+      <p><strong>Una herramienta nueva.</strong> Agregá <code>listarArchivos</code>, que devuelva los archivos de una carpeta con <code>fs.readdirSync(ruta).join("\n")</code>. Solo hay que tocar dos lugares: su descripción en <code>herramientas</code> y su implementación en <code>funciones</code>. El bucle no cambia.</p>
+    </li>
+    <li>
+      <p><strong>Errores que el modelo pueda ver.</strong> Si una herramienta falla, devolvé el error como resultado en lugar de cortar el programa. Así, si el archivo no existe, el modelo se entera y puede reaccionar (por ejemplo, preguntando otra ruta).</p>
+      <figure>
+        <figcaption>En ejecutarHerramienta</figcaption>
+        <pre><code data-lang="js">let resultado;
+try {
+  resultado = funciones[nombre](argumentos);
+} catch (error) {
+  resultado = `Error: ${error.message}`;
+}</code></pre>
+      </figure>
+    </li>
+    <li>
+      <p><strong>Pedir permiso antes de escribir.</strong> En <code>escribirArchivo</code>, preguntá con <code>consola.question</code> si la persona acepta el cambio. Pista: la función pasa a ser <code>async</code>, así que <code>ejecutarHerramienta</code> y el <code>for</code> de <code>responder</code> tienen que esperar su resultado con <code>await</code>.</p>
+    </li>
+  </ol>
+</section>
+
+</main>
+
+<footer>
+  <p>Material de clase · El programa completo está en <code>clase/asistente.js</code></p>
+</footer>
+
+<script>
+  // Resaltado de sintaxis mínimo: cada lenguaje es una expresión regular y la lista de tipos de sus grupos.
+  const lenguajes = {
+    js: [/(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(import|from|const|let|function|async|await|return|if|while|for|of|new|break|throw|try|catch|true|false|null)\b|\b(\d+)\b|([A-Za-z_$][\w$]*)(?=\()/g, ["com", "str", "kw", "num", "fn"]],
+    json: [/("(?:[^"\\]|\\.)*")(?=\s*:)|("(?:[^"\\]|\\.)*")|\b(true|false|null)\b|(-?\b\d+)/g, ["key", "str", "kw", "num"]],
+    http: [/^(POST)\b|^([\w-]+)(?=:)|("(?:[^"\\]|\\.)*")(?=\s*:)|("(?:[^"\\]|\\.)*")/gm, ["kw", "key", "key", "str"]],
+    env: [/^([A-Z_]+)(?==)/gm, ["key"]],
+    bash: [/^(node|cd)\b/gm, ["kw"]],
+  };
+
+  function escapar(texto) {
+    return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function resaltar(codigo, [regla, tipos]) {
+    let html = "";
+    let desde = 0;
+    for (const m of codigo.matchAll(regla)) {
+      const tipo = tipos[m.slice(1).findIndex((grupo) => grupo !== undefined)];
+      html += escapar(codigo.slice(desde, m.index)) + `<span class="t-${tipo}">${escapar(m[0])}</span>`;
+      desde = m.index + m[0].length;
+    }
+    return html + escapar(codigo.slice(desde));
+  }
+
+  for (const code of document.querySelectorAll("pre > code[data-lang]")) {
+    code.innerHTML = resaltar(code.textContent, lenguajes[code.dataset.lang]);
+  }
+
+  // Botón "Copiar" en cada bloque de código
+  for (const figura of document.querySelectorAll("figure:has(> pre > code)")) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = "Copiar";
+    boton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(figura.querySelector("code").textContent);
+        boton.textContent = "Copiado ✓";
+      } catch {
+        getSelection().selectAllChildren(figura.querySelector("code"));
+        boton.textContent = "Seleccionado";
+      }
+      setTimeout(() => (boton.textContent = "Copiar"), 1600);
+    });
+    figura.querySelector("figcaption").append(boton);
+  }
+
+  // Marca en el índice la sección que se está leyendo
+  const enlaces = new Map([...document.querySelectorAll("nav a")].map((a) => [a.hash.slice(1), a]));
+  const observador = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      enlaces.forEach((a) => a.removeAttribute("aria-current"));
+      enlaces.get(entrada.target.id)?.setAttribute("aria-current", "location");
+    }
+  }, { rootMargin: "-15% 0px -75% 0px" });
+  document.querySelectorAll("main > section").forEach((seccion) => observador.observe(seccion));
+</script>
+</body>
+</html>

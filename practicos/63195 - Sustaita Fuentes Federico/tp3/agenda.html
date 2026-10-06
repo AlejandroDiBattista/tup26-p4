@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda</title>
+  <style>
+    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
+    main { max-width: 1104px; margin: auto; }
+
+    main > header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+
+      h1 { margin: 0 auto 0 0; }
+      input { width: 300px; max-width: 100%; padding: 12px 20px; font: inherit; border: 1px solid #d9ded9; border-radius: 999px; background: #fefef9; }
+      button { padding: 12px 20px; font: inherit; font-weight: bold; color: white; background: #2c3b30; border: 0; border-radius: 999px; cursor: pointer; }
+    }
+
+    section { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    section > p { grid-column: 1 / -1; text-align: center; color: #5f6b62; }
+
+    article {
+      padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9; cursor: pointer;
+
+      &:focus-visible { outline: 3px solid #2c3b30; outline-offset: 2px; }
+      header { display: flex; justify-content: space-between; }
+      h2 { margin: 0; font-size: 1rem; font-weight: 400; color: #5f6b62; }
+      strong { font: bold 1.4rem Georgia, serif; color: #2c3b30; }
+      button { padding: 0; font-size: 1.5rem; line-height: 1; color: #8a7a4f; background: none; border: 0; cursor: pointer; }
+      address { margin: 16px 0; font-style: normal; }
+      footer { padding-top: 10px; border-top: 1px solid #d9ded9; font-size: .8rem; color: #5f6b62; }
+    }
+
+    dialog {
+      width: min(600px, calc(100% - 32px)); padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: #fefef9;
+
+      &::backdrop { background: #2c3b3059; }
+      h2 { margin: 0 0 16px; }
+      form > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      label { display: grid; gap: 4px; font-size: .8rem; font-weight: bold; color: #5f6b62; }
+      input { padding: 10px 12px; font: inherit; border: 1px solid #d9ded9; border-radius: 8px; background: #f3f4f1; }
+      p { min-height: 1.2em; margin: 12px 0 0; font-size: .9rem; color: #c0392b; }
+      footer { display: flex; gap: 8px; margin-top: 12px; }
+      footer button { padding: 10px 18px; font: inherit; font-weight: bold; border: 1px solid #d9ded9; border-radius: 10px; background: white; cursor: pointer; }
+      footer button[type="submit"] { margin-left: auto; color: white; background: #2c3b30; border-color: #2c3b30; }
+      footer button.eliminar { color: #c0392b; }
+    }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+
+  <script type="module">
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+
+    // ---------- Estado ----------
+    const CLAVE = 'agenda:alumnos'
+
+    // Usa lo guardado; si no hay nada, usa alumnos.json
+    function cargar() {
+      try {
+        const guardado = localStorage.getItem(CLAVE)
+        if (guardado) return JSON.parse(guardado)
+      } catch {}
+      return JSON.parse(JSON.stringify(alumnosIniciales))
+    }
+
+    const state = reactive({ alumnos: cargar(), busqueda: '' })
+    // id === null: alta de un alumno nuevo. Con id: edición de un alumno existente
+    const form = reactive({ id: null, apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '', error: '' })
+
+    // ---------- Funciones ----------
+    const guardar = () => localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
+
+    const alternarFavorito = id => {
+      state.alumnos = state.alumnos.map(a => a.id === id ? { ...a, favorito: !a.favorito } : a)
+      guardar()
+    }
+
+    const norm = s => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
+    const coincide = (a, texto) =>
+      norm([a.apellido, a.nombre, a.legajo, a.comision, a.telefono, a.github].join(' ')).includes(texto)
+
+    // Filtra por lo buscado; favoritos primero, luego apellido y nombre
+    const visibles = () => {
+      const texto = norm(state.busqueda).trim()
+      return state.alumnos
+        .filter(a => coincide(a, texto))
+        .sort((a, b) =>
+          (Number(!!b.favorito) - Number(!!a.favorito)) ||
+          norm(a.apellido).localeCompare(norm(b.apellido)) ||
+          norm(a.nombre).localeCompare(norm(b.nombre)))
+    }
+
+    const CAMPOS = [
+      ['apellido', 'Apellido'], ['nombre', 'Nombre'], ['legajo', 'Legajo'],
+      ['comision', 'Comisión'], ['telefono', 'Teléfono'], ['github', 'GitHub'],
+    ]
+    const dialogo = () => document.getElementById('dialogo')
+
+    // Carga el formulario con los datos del alumno (o vacío si es nuevo) y abre el diálogo
+    const abrirForm = (alumno = {}) => {
+      for (const [k] of CAMPOS) form[k] = alumno[k] ?? ''
+      form.id = alumno.id ?? null
+      form.error = ''
+      dialogo().showModal()
+    }
+    const abrirNuevo = () => abrirForm()
+    const abrirEdicion = id => abrirForm(state.alumnos.find(a => a.id === id))
+
+    const cancelar = () => dialogo().close()
+
+    // Devuelve los datos limpios o un mensaje de error
+    function validar() {
+      const datos = {}
+      for (const [k] of CAMPOS) datos[k] = String(form[k]).trim()
+      datos.github = datos.github.replace(/^@/, '')
+      for (const [k, titulo] of CAMPOS)
+        if (!datos[k]) return { error: `Completá el campo ${titulo}.` }
+      if (!/^\d+$/.test(datos.legajo)) return { error: 'El legajo debe contener solo números.' }
+      if (!/^[\d\s()+-]{6,}$/.test(datos.telefono)) return { error: 'El teléfono no es válido.' }
+      if (!/^[\w-]+$/.test(datos.github)) return { error: 'El usuario de GitHub no es válido.' }
+      return { datos }
+    }
+
+    const guardarForm = () => {
+      const { datos, error } = validar()
+      form.error = error ?? ''
+      if (error) return
+      if (form.id !== null) {
+        // Edición: se pisan solo los campos del formulario, el resto (id, favorito) se conserva
+        state.alumnos = state.alumnos.map(a => a.id === form.id ? { ...a, ...datos } : a)
+      } else {
+        const ids = state.alumnos.map(a => Number(a.id)).filter(Number.isFinite)
+        const id = ids.length ? Math.max(...ids) + 1 : 1
+        state.alumnos = [...state.alumnos, { id, ...datos, favorito: false }]
+      }
+      guardar()
+      dialogo().close()
+    }
+
+    const eliminar = () => {
+      state.alumnos = state.alumnos.filter(a => a.id !== form.id)
+      guardar()
+      dialogo().close()
+    }
+
+    // Teclado en la tarjeta: Enter abre la edición, barra espaciadora alterna el favorito
+    const teclado = (e, id) => {
+      if (e.target !== e.currentTarget) return
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        abrirEdicion(id)
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        alternarFavorito(id)
+        // la tarjeta cambia de lugar al reordenarse: se le devuelve el foco
+        requestAnimationFrame(() => document.querySelector(`[data-id="${id}"]`)?.focus())
+      }
+    }
+
+    guardar() // crea el almacenamiento local la primera vez
+
+    // ---------- Interfaz ----------
+    const tarjeta = a => html`
+      <article tabindex="0" data-id="${a.id}"
+        @click="${() => abrirEdicion(a.id)}"
+        @keydown="${e => teclado(e, a.id)}">
+        <header>
+          <h2><strong>${a.apellido}</strong> ${a.nombre}</h2>
+          <button type="button" tabindex="-1" aria-pressed="${String(!!a.favorito)}"
+            aria-label="${a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+            @click="${e => { e.stopPropagation(); alternarFavorito(a.id) }}">${a.favorito ? '★' : '☆'}</button>
+        </header>
+        <address>
+          <div>${a.telefono}</div>
+          <div>${'@' + a.github}</div>
+        </address>
+        <footer>${a.comision} · ${a.legajo}</footer>
+      </article>
+    `.key(a.id)
+
+    const campo = ([k, titulo]) => html`
+      <label>
+        ${titulo}
+        <input name="${k}" autocomplete="off"
+          .value="${() => form[k]}"
+          @input="${e => { form[k] = e.target.value }}">
+      </label>
+    `.key(k)
+
+    html`
+      <header>
+        <h1>Agenda</h1>
+        <input type="search" placeholder="Buscar alumno..." aria-label="Buscar alumno"
+          .value="${() => state.busqueda}"
+          @input="${e => { state.busqueda = e.target.value }}">
+        <button type="button" @click="${abrirNuevo}">+ Agregar</button>
+      </header>
+      <section>
+        ${() => visibles().map(tarjeta)}
+        ${() => visibles().length ? '' : html`<p>No hay alumnos para mostrar.</p>`}
+      </section>
+      <dialog id="dialogo">
+        <form novalidate @submit="${e => { e.preventDefault(); guardarForm() }}">
+          <h2>${() => form.id !== null ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <div>${CAMPOS.map(campo)}</div>
+          <p role="alert">${() => form.error}</p>
+          <footer>
+            ${() => form.id !== null
+              ? html`<button type="button" class="eliminar" @click="${eliminar}">Eliminar</button>`
+              : ''}
+            <button type="submit">Guardar</button>
+            <button type="button" @click="${cancelar}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
+    `(document.getElementById('app'))
+  </script>
+</body>
+</html>

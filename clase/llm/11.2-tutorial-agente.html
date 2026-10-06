@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="description" content="Tutorial paso a paso: un asistente de programación en un único archivo Node.js, con Chat Completions y herramientas locales."><title>Un asistente, desde los fundamentos · Tutorial Node.js</title><style>
+:root{--papel:#f5f1e8;--tinta:#242d2b;--suave:#58605a;--linea:#d6d3c7;--acento:#9e3c26;--verde:#315b4c;--codigo:#1e2a29;--fuente:"Avenir Next","Segoe UI",sans-serif;--serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:95px}body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--fuente);font-size:17px;line-height:1.75}a{color:var(--acento);text-underline-offset:4px}button{font:inherit;cursor:pointer}button:disabled{cursor:default;opacity:.4}a:focus-visible,button:focus-visible,summary:focus-visible,pre:focus-visible{outline:3px solid var(--acento);outline-offset:5px}h1,h2,h3,p,figure{margin:0}p+p{margin-top:18px}h1,h2,h3{font-family:var(--serif);font-weight:500}h1{font-size:clamp(48px,6vw,82px);letter-spacing:-.05em;line-height:1.05}h2{font-size:clamp(31px,3.2vw,45px);letter-spacing:-.025em;line-height:1.15}h3{font-size:25px;line-height:1.25}strong{font-weight:650}code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:.83em}p code,dd code,li code,td code{background:#e9e5da;padding:2px 5px;border-radius:3px;overflow-wrap:anywhere}pre code{font-size:13px;line-height:1.8}pre{margin:0;overflow:auto;padding:25px 28px;tab-size:2}::selection{background:#e3bea5;color:#242d2b}.salto{position:fixed;top:-90px;left:16px;z-index:100;background:var(--papel);padding:12px}.salto:focus{top:10px}.barra{position:sticky;top:0;z-index:10;background:var(--papel);border-bottom:1px solid var(--linea)}.barra-interior{max-width:1450px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:17px 42px;gap:20px}.marca{color:var(--tinta);text-decoration:none;font-size:15px;font-weight:650;letter-spacing:.04em;display:flex;align-items:center;gap:13px}.marca-signo{white-space:nowrap;flex-shrink:0;font-family:var(--serif);font-size:28px;color:var(--acento);line-height:1}.barra nav{display:flex;align-items:center;gap:25px}.barra nav a,.boton-texto{font-size:13px;color:var(--tinta);text-decoration:none}.boton-texto{background:none;border:0;border-bottom:1px solid var(--linea);padding:4px 0}.progreso{position:absolute;bottom:-1px;left:0;height:2px;width:100%;background:var(--acento);transform:scaleX(var(--progreso,0));transform-origin:left}.pagina{max-width:1450px;margin:auto;display:grid;grid-template-columns:210px minmax(0,1fr);gap:65px;padding:0 42px}.indice{padding-top:58px;align-self:start;position:sticky;top:72px;max-height:calc(100vh - 80px);overflow:auto}.etiqueta{font-size:10px;font-weight:650;letter-spacing:.15em;text-transform:uppercase;line-height:1.5;color:var(--suave)}.indice .etiqueta{margin-bottom:20px}.indice ol{list-style:none;padding:0;margin:0}.indice a{font-size:12px;display:flex;gap:12px;padding:7px 0;text-decoration:none;color:var(--suave);line-height:1.5}.indice a span{font-family:monospace;color:#858b80;font-size:11px;min-width:20px}.indice a:hover,.indice a[aria-current]{color:var(--acento)}.indice .separador{border-top:1px solid var(--linea);margin-top:15px;padding-top:15px}.indice-nota{font-size:11px;line-height:1.8;color:var(--suave);margin-top:26px}.principal{min-width:0;max-width:1000px}.portada{padding:63px 0 45px}.portada .etiqueta{color:var(--acento);margin-bottom:26px}.portada h1 em{color:var(--acento);font-weight:500}.hero-fila{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(180px,1fr);gap:35px;align-items:end}.portada .bajada{max-width:590px;font-size:18px;line-height:1.7;margin-top:27px;color:var(--suave)}.sellos{display:flex;gap:22px;flex-wrap:wrap;margin-top:29px;font-size:11px;letter-spacing:.04em;color:var(--verde)}.sellos span{display:flex;align-items:center;gap:7px}.sellos span:before{content:"";width:4px;height:4px;background:var(--verde)}.esquema{border-top:1px solid var(--tinta);border-bottom:1px solid var(--tinta);padding:18px 0 15px;align-self:end;margin-bottom:7px}.esquema p{font-family:var(--serif);font-size:25px;line-height:1.4}.esquema .etiqueta{font-family:var(--fuente);font-size:10px;margin:0 0 10px;color:var(--suave)}.esquema .flujo{font-family:monospace;font-size:13px;display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--linea)}.esquema small{font-size:11px;color:var(--suave);display:block;line-height:1.6;margin-top:13px}.intro{border-top:1px solid var(--linea);padding:35px 0 20px}.intro p{max-width:730px}.intro strong{color:var(--verde)}.simulador{margin:30px 0 62px;background:#e9e6db;border:1px solid #d1d2c2;padding:30px}.simulador-cabecera{display:flex;justify-content:space-between;align-items:start;gap:20px;margin-bottom:22px}.simulador h2{font-size:29px}.simulador .etiqueta{margin-bottom:9px}.simulador .nota{margin-top:14px;font-size:12px}.estados{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;list-style:none;padding:0;margin:0 0 23px}.estados button{width:100%;min-height:44px;background:transparent;color:var(--tinta);border:0;border-bottom:2px solid #bcbfac;font-size:11px;text-align:left;padding:8px 4px}.estados button[aria-current]{border-color:var(--acento);color:var(--acento);font-weight:650}.demo-fila{display:grid;grid-template-columns:.9fr 1.1fr;gap:28px;min-height:320px}.demo-explica h3{margin:8px 0 15px;font-size:28px}.demo-explica p{font-size:15px;line-height:1.75}.demo-explica p.etiqueta{font-size:10px}.demo-fila pre{background:var(--codigo);color:#e5ebdf;border-radius:2px;padding:18px;font-size:11px;min-height:300px}.demo-fila pre code{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}.demo-controles{display:flex;justify-content:space-between;align-items:center;margin-top:20px;border-top:1px solid #c8ccba;padding-top:17px;gap:10px}.demo-controles button,.boton{border:1px solid var(--tinta);background:transparent;color:var(--tinta);font-size:12px;padding:9px 15px;min-height:42px}.demo-controles button:hover:not(:disabled){background:var(--tinta);color:var(--papel)}.demo-controles span{font-size:11px;color:var(--suave)}.paso{padding:45px 0 53px;border-top:1px solid var(--linea);scroll-margin-top:25px}.paso-titulo{display:grid;grid-template-columns:62px 1fr;align-items:start;gap:15px;margin-bottom:29px}.paso-numero{font-family:var(--serif);font-size:48px;color:var(--acento);line-height:1}.paso-titulo .etiqueta{margin-bottom:10px}.paso-cuerpo{margin-left:77px;max-width:805px}.paso-cuerpo>p{max-width:730px}.codigo{margin:24px 0;background:var(--codigo);color:#e3e8df;border-radius:3px;overflow:hidden}.codigo figcaption{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;background:#283736;border-bottom:1px solid #40504b;font-size:11px;letter-spacing:.035em;gap:16px;color:#c0cec2}.copiar{background:none;color:#dce7d5;border:1px solid #718478;padding:5px 11px;font-size:10px;border-radius:2px;min-height:31px}.copiar:hover{background:#40544a}.cadena{color:#c5d9a9}.palabra{color:#f1c59d}.comentario{color:#a4b3ac;font-style:italic}.numero{color:#c7c4ed}.conceptos{margin:24px 0}.conceptos>div{display:grid;grid-template-columns:145px 1fr;gap:15px;padding:14px 0;border-bottom:1px solid var(--linea)}.conceptos dt{font-weight:600}.conceptos dd{margin:0;font-size:15px;line-height:1.7}.idea{margin:29px 0 6px;padding:23px 0 0;border-top:1px solid #abbbae}.idea .etiqueta{color:var(--verde)}.idea h3{color:var(--verde);margin:9px 0 11px}.idea p{font-size:15px;color:#40534a;line-height:1.75}.nota{font-size:13px;color:var(--suave);line-height:1.7;margin-top:22px}.referencia{font-size:11px;color:var(--suave);margin-top:22px}.conversion{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin:26px 0;padding:20px 0;border-block:1px solid var(--linea)}.conversion h3{font-size:23px;margin:8px 0 10px}.conversion p{font-size:13px;line-height:1.65}.tabla{overflow:auto;margin:25px 0}table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}caption{text-align:left;font-size:12px;color:var(--suave);padding-bottom:13px}th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:10px 15px;background:#e8e5da}td{padding:13px 15px;border-bottom:1px solid var(--linea)}.explicacion{padding-left:22px;margin-top:22px}.explicacion li{padding-left:7px;margin-bottom:15px}.explicacion li::marker{color:var(--acento);font-weight:650}.final{padding-top:43px;border-top:1px solid var(--tinta)}.final h2{margin:9px 0 20px}.acciones{display:flex;gap:15px;margin:25px 0;flex-wrap:wrap}.boton{background:var(--tinta);color:var(--papel);padding:11px 20px}.boton:hover{background:var(--verde)}.repaso{padding:35px 0 55px}.repaso h3{font-size:29px;margin:20px 0}.repaso details{border-top:1px solid var(--linea);padding:15px 0}.repaso summary{cursor:pointer;font-size:15px;font-weight:600}.repaso details p{font-size:14px;padding:14px 22px 0;color:var(--suave)}.pie{border-top:1px solid var(--linea);padding:27px 0 45px;color:var(--suave);font-size:12px;display:flex;justify-content:space-between;gap:20px}.pie a{white-space:nowrap}.terminal-preview{margin:28px 0;background:#182322;color:#e6ede8;border-radius:3px;overflow:hidden}.terminal-preview figcaption{padding:12px 19px;background:#283936;font-size:11px;color:#c0cec2}.terminal-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.7}.terminal-preview pre code{font-size:12px}.t-titulo{color:#7ad3d4;font-weight:700}.t-usuario{color:#dab3ea;font-weight:700}.t-respuesta{color:#a0dbaa;font-weight:700}.t-herramienta{color:#efd29b}.t-suave{color:#adb9b3}.sin-js{padding:12px;background:#e2d5be;font-size:14px}.solo-impresion{display:none}
+@media(min-width:1300px){.pagina{gap:82px}.portada{padding-top:80px}.paso{padding-top:56px}}@media(max-width:1050px){.pagina{grid-template-columns:170px minmax(0,1fr);gap:35px;padding:0 28px}.barra-interior{padding-inline:28px}.hero-fila{grid-template-columns:1fr}.esquema{max-width:400px;display:none}.paso-cuerpo{margin-left:0}.paso-titulo{grid-template-columns:50px 1fr}.demo-fila{grid-template-columns:1fr}.demo-fila pre{min-height:210px}.demo-explica{min-height:160px}.estados{gap:3px}.estados button{font-size:10px}}@media(max-width:760px){body{font-size:16px}.pagina{display:block;padding:0 22px}.barra-interior{padding:14px 22px}.marca{font-size:12px;gap:8px}.barra nav{gap:15px}.barra nav>a:first-child{display:none}.barra nav a,.boton-texto{font-size:11px}.indice{position:static;max-height:none;padding-top:24px}.indice .etiqueta{margin-bottom:10px}.indice ol{display:flex;gap:18px;overflow:auto;padding-bottom:11px}.indice li{flex:0 0 auto}.indice a{white-space:nowrap;font-size:11px;gap:7px}.indice .separador{border:0;padding:0;margin:0}.indice-nota{display:none}.portada{padding-top:32px}.portada .bajada{font-size:17px}.portada .etiqueta{margin-bottom:20px}.sellos{gap:15px;font-size:10px}.simulador{padding:20px 17px;margin-bottom:40px}.simulador-cabecera{display:block}.estados{grid-template-columns:repeat(3,1fr)}.estados button{font-size:11px}.demo-fila{gap:12px}.demo-controles span{font-size:10px}.demo-controles button{font-size:11px;padding-inline:10px}.paso{padding:33px 0 39px}.paso-numero{font-size:40px}.paso-titulo{gap:10px;grid-template-columns:45px 1fr;margin-bottom:23px}.paso-titulo .etiqueta{font-size:9px}.conceptos>div{grid-template-columns:1fr;gap:5px}.codigo figcaption{padding-inline:14px}pre{padding:19px 16px}pre code{font-size:11px}.conversion{grid-template-columns:1fr;gap:20px}.pie{display:block}.pie p+p{margin-top:12px}.explicacion{padding-left:19px}.paso-titulo h2{font-size:31px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+@media print{body{background:#fff;color:#222;font-size:11pt}.barra,.indice,.copiar,.acciones,.demo-controles,.estados{display:none}.pagina{display:block;padding:0;max-width:none}.principal{max-width:none}.portada{padding-top:0}.portada h1{font-size:42pt}.portada .bajada{font-size:13pt}.hero-fila{grid-template-columns:1fr}.esquema{display:none}.paso{padding:26px 0;break-inside:auto}.paso-titulo{break-after:avoid}.paso-cuerpo{margin-left:0}.codigo{background:#f1f2ed;color:#222;break-inside:auto;border:1px solid #ccc}.codigo figcaption{background:#e6e8e1;color:#222}pre{white-space:pre-wrap;overflow:visible;padding:15px}pre code{font-size:8pt;overflow-wrap:anywhere}.terminal-preview{background:#eee;color:#222}.terminal-preview figcaption{background:#e6e8e1;color:#222}.t-titulo,.t-usuario,.t-respuesta,.t-herramienta,.t-suave{color:#222}.cadena,.palabra,.numero{color:#222}.comentario{color:#555}.simulador{padding:20px;background:#f3f3ef;break-inside:avoid}.demo-fila{grid-template-columns:1fr 1fr;min-height:0}.demo-fila pre{background:#eee;color:#222;min-height:0}.demo-explica{min-height:0}.simulador .nota{display:none}.solo-impresion{display:block;font-size:10pt;margin-top:15px}.repaso details p{display:block}.pie{padding-bottom:0}a{color:#333}.idea{break-inside:avoid}h2{font-size:25pt}}
+</style></head>
+<body id="inicio">
+<a class="salto" href="#contenido">Saltar al tutorial</a>
+<header class="barra"><div class="barra-interior"><a class="marca" href="#inicio"><span class="marca-signo" aria-hidden="true">{ }</span>Cuaderno de programación</a><nav aria-label="Acciones del tutorial"><a href="#modelo-mental">Recorrido</a><a href="#completo">Código completo ↗</a><button type="button" class="boton-texto" id="imprimir">Imprimir</button></nav></div><div class="progreso" aria-hidden="true"></div></header>
+<div class="pagina"><aside class="indice"><p class="etiqueta">En este cuaderno</p><nav aria-label="Índice del tutorial"><ol><li><a href="#modelo-mental"><span>↳</span>El recorrido</a></li><li><a href="#preparar"><span>00</span>Preparar el lugar de trabajo</a></li><li><a href="#importar"><span>01</span>Usar lo que Node ya trae</a></li><li><a href="#colores"><span>02</span>Dar color a la terminal</a></li><li><a href="#archivos"><span>03</span>Implementar las dos herramientas</a></li><li><a href="#configurar"><span>04</span>Configurar la llamada a OpenAI</a></li><li><a href="#describir"><span>05</span>Describir las herramientas al modelo</a></li><li><a href="#invocar"><span>06</span>Hacer la petición HTTP</a></li><li><a href="#ejecutar"><span>07</span>Traducir una solicitud en una llamada</a></li><li><a href="#historial"><span>08</span>Preparar la consola y el historial</a></li><li><a href="#usuario"><span>09</span>Repetir la conversación</a></li><li><a href="#modelo"><span>10</span>Procesar texto o herramientas</a></li><li><a href="#correr"><span>11</span>Cerrar y ejecutar el programa</a></li><li class="separador"><a href="#completo"><span>{ }</span>Código completo</a></li></ol></nav><p class="indice-nota">Un archivo de programa.<br>Dos herramientas locales.<br>Node.js y JavaScript.</p></aside>
+<main class="principal" id="contenido">
+<header class="portada"><p class="etiqueta">Tutorial de desarrollo · de la idea al código</p><div class="hero-fila"><div><h1>Un asistente.<br>Un archivo.<br><em>Los fundamentos.</em></h1><p class="bajada">Construí un asistente de programación en la terminal y entendé qué ocurre entre un mensaje, una llamada a OpenAI y una función que trabaja con tus archivos.</p><div class="sellos"><span>Node.js 22.13+</span><span>Sin dependencias</span><span>12 pasos</span></div></div><aside class="esquema" aria-label="Arquitectura del programa"><p class="etiqueta">La arquitectura</p><p>Una conversación<br>que puede actuar.</p><div class="flujo"><span>Terminal</span><span>↔</span><span>OpenAI</span></div><div class="flujo"><span>Node.js</span><span>→</span><span>Archivos</span></div><small>HTTP para consultar al modelo.<br>Funciones locales para leer y escribir.</small></aside></div></header>
+<section class="intro" id="modelo-mental" aria-label="Cómo funciona el asistente"><p>La idea central es sencilla: <strong>enviar mensajes, interpretar la respuesta y ejecutar las funciones solicitadas</strong>. Después devolvemos sus resultados al modelo. Repetimos hasta obtener una respuesta para la persona.</p></section>
+<section class="simulador" aria-labelledby="simulador-h"><div class="simulador-cabecera"><div><p class="etiqueta">Antes de programar · explorá una vuelta completa</p><h2 id="simulador-h">Del pedido al archivo.</h2></div></div><ol class="estados"><li><button type="button" data-step="0" aria-label="Paso 1: La persona escribe un pedido">01 · Pedido</button></li><li><button type="button" data-step="1" aria-label="Paso 2: El programa consulta a OpenAI">02 · Consulta</button></li><li><button type="button" data-step="2" aria-label="Paso 3: El modelo solicita escribirArchivo">03 · Solicitud</button></li><li><button type="button" data-step="3" aria-label="Paso 4: Node ejecuta la función local">04 · Ejecución</button></li><li><button type="button" data-step="4" aria-label="Paso 5: El resultado vuelve al modelo">05 · Resultado</button></li><li><button type="button" data-step="5" aria-label="Paso 6: El asistente responde con texto">06 · Respuesta</button></li></ol><div class="demo-fila"><div class="demo-explica" aria-live="polite" aria-atomic="true"><p class="etiqueta" id="demo-lugar">Terminal → historial</p><h3 id="demo-titulo">La persona escribe un pedido</h3><p id="demo-texto">Agregamos un mensaje con rol user. Todavía no se ejecutó ninguna herramienta.</p></div><pre tabindex="0" aria-label="Datos de la etapa seleccionada"><code id="demo-codigo">{ role: "user", content: "Creá saludo.js con un console.log." }</code></pre></div><div class="demo-controles"><button id="anterior" type="button" disabled>← Anterior</button><span id="demo-contador">Paso 1 de 6</span><button id="siguiente" type="button">Siguiente →</button></div><p class="nota">Simulación didáctica. Los mensajes y la respuesta son ejemplos; esta página no llama a la API ni modifica archivos.</p><p class="solo-impresion">Pedido → consulta HTTP → solicitud del modelo → función local → resultado asociado → respuesta de texto.</p></section>
+<noscript><p class="sin-js">El tutorial y el código se pueden leer completos. Activá JavaScript para usar el recorrido interactivo, copiar y descargar.</p></noscript>
+<section class="paso" id="preparar" aria-labelledby="h-preparar"><header class="paso-titulo"><span class="paso-numero">00</span><div><p class="etiqueta">Antes de escribir código</p><h2 id="h-preparar">Preparar el lugar de trabajo</h2></div></header><div class="paso-cuerpo"><p>Vamos a desarrollar un asistente de programación que recibe mensajes en la terminal. Puede responder con texto, leer archivos y escribirlos. Todo el programa vive en <code>app.mjs</code>; la configuración queda en <code>.env</code>.</p><p>Necesitás <strong>Node.js 22.13 o superior</strong> y una clave de OpenAI con acceso a la API. Podés comprobar tu versión con:</p><figure class="codigo"><figcaption><span>Terminal</span><button type="button" class="copiar" data-copy="codigo-1" aria-label="Copiar Terminal">Copiar</button></figcaption><pre tabindex="0" aria-label="Código Shell"><code id="codigo-1">node --version</code></pre></figure><p>Creá una carpeta y, dentro, estos dos archivos:</p><figure class="codigo"><figcaption><span>Carpeta de trabajo</span><button type="button" class="copiar" data-copy="codigo-2" aria-label="Copiar Carpeta de trabajo">Copiar</button></figcaption><pre tabindex="0" aria-label="Código Texto"><code id="codigo-2">asistente/
+├── app.mjs
+└── .env</code></pre></figure><p>En <code>.env</code>, guardá la configuración. Reemplazá el valor de ejemplo por tu clave:</p><figure class="codigo"><figcaption><span>.env</span><button type="button" class="copiar" data-copy="codigo-3" aria-label="Copiar .env">Copiar</button></figcaption><pre tabindex="0" aria-label="Código Configuración"><code id="codigo-3">OPENAI_API_KEY=tu_clave_aqui
+OPENAI_MODEL=gpt-<span class="numero">6</span>-luna</code></pre></figure><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Código y configuración son cosas distintas</h3><p>El archivo <code>.mjs</code> indica que usamos módulos de JavaScript, con <code>import</code> y <code>await</code> en el nivel superior. <code>.env</code> contiene valores que pueden cambiar sin modificar la lógica. La clave queda fuera del código; si usás Git, agregá <code>.env</code> a <code>.gitignore</code>.</p></aside><p class="nota">Los siguientes fragmentos se agregan a <code>app.mjs</code> en este orden. Al final tenés el archivo completo, listo para descargar.</p></div></section><section class="paso" id="importar" aria-labelledby="h-importar"><header class="paso-titulo"><span class="paso-numero">01</span><div><p class="etiqueta">Los módulos nativos</p><h2 id="h-importar">Usar lo que Node ya trae</h2></div></header><div class="paso-cuerpo"><p>Primero importamos las cuatro capacidades que necesitamos: cargar configuración, trabajar con archivos leer la terminal y dar estilo al texto.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-4" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-4"><span class="palabra">import</span> { loadEnvFile } <span class="palabra">from</span> <span class="cadena">&quot;node:process&quot;</span>;
+<span class="palabra">import</span> { readFile, writeFile } <span class="palabra">from</span> <span class="cadena">&quot;node:fs/promises&quot;</span>;
+<span class="palabra">import</span> { createInterface } <span class="palabra">from</span> <span class="cadena">&quot;node:readline/promises&quot;</span>;
+<span class="palabra">import</span> { styleText } <span class="palabra">from</span> <span class="cadena">&quot;node:util&quot;</span>;</code></pre></figure><dl class="conceptos"><div><dt><code>node:process</code></dt><dd>Ofrece <code>loadEnvFile</code> para cargar <code>.env</code> en las variables de entorno del proceso.</dd></div><div><dt><code>node:fs/promises</code></dt><dd>Provee operaciones de archivos que devuelven promesas.</dd></div><div><dt><code>node:readline/promises</code></dt><dd>Permite preguntar por una línea de texto y esperar la respuesta.</dd></div><div><dt><code>node:util</code></dt><dd>Ofrece <code>styleText</code> para dar color y formato a los textos de la terminal.</dd></div></dl><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Una promesa representa un resultado pendiente</h3><p>Leer un archivo o pedir una respuesta al usuario lleva tiempo. <code>async</code> permite que una función use <code>await</code>; <code>await</code> suspende esa ejecución hasta obtener el resultado. El entorno puede seguir atendiendo otras tareas mientras espera.</p></aside></div></section><section class="paso" id="colores" aria-labelledby="h-colores"><header class="paso-titulo"><span class="paso-numero">02</span><div><p class="etiqueta">Presentación con styleText</p><h2 id="h-colores">Dar color a la terminal</h2></div></header><div class="paso-cuerpo"><p>La interfaz usa color para distinguir quién está hablando y qué está haciendo el programa. Usamos <code>styleText</code>, una función nativa de <code>node:util</code>. Recibe primero el estilo y después el texto, y devuelve una cadena lista para mostrar.</p><figure class="codigo"><figcaption><span>Encabezado de la consola · fragmento de app.mjs</span><button type="button" class="copiar" data-copy="codigo-5" aria-label="Copiar Encabezado de la consola · fragmento de app.mjs">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-5">console.log(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;cyan&quot;</span>], <span class="cadena">&quot;\n  ◆ ASISTENTE DE PROGRAMACIÓN&quot;</span>));
+console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  ──────────────────────────────────────&quot;</span>));
+console.log(<span class="cadena">`  Modelo: ${styleText([&quot;bold&quot;, &quot;green&quot;], configuracion.model)}`</span>);
+console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  Leé y escribí archivos. Escribí &#x27;salir&#x27; para terminar.\n&quot;</span>));</code></pre></figure><p><code>styleText("yellow", texto)</code> aplica amarillo. <code>styleText(["bold", "cyan"], texto)</code> combina negrita y cian. El estilo puede ser un nombre o un arreglo de nombres. La función genera las secuencias ANSI y restablece el formato al terminar el texto.</p><p class="referencia">Referencia: <a href="https://nodejs.org/download/release/latest-jod/docs/api/util.html#utilstyletextformat-text-options">Node.js · styleText</a>. Es estable desde Node.js 22.13.</p><dl class="conceptos"><div><dt>Cian</dt><dd>Identifica el encabezado del asistente.</dd></div><div><dt>Violeta</dt><dd>Destaca el prompt donde escribís tu mensaje.</dd></div><div><dt>Verde</dt><dd>Identifica la respuesta y confirma una herramienta completada.</dd></div><div><dt>Amarillo y gris</dt><dd>El amarillo marca las herramientas; el gris separa los estados de espera y la información secundaria.</dd></div></dl><figure class="terminal-preview"><figcaption>Una sesión de ejemplo · aspecto de la consola</figcaption><pre tabindex="0"><code><span class="t-titulo">  ◆ ASISTENTE DE PROGRAMACIÓN</span>
+<span class="t-suave">  ──────────────────────────────────────</span>
+  Modelo: <span class="t-respuesta">gpt-6-luna</span>
+<span class="t-suave">  Leé y escribí archivos. Escribí 'salir' para terminar.</span>
+
+<span class="t-usuario">Vos: </span>Creá saludo.js con un console.log.
+<span class="t-suave">  … Consultando al modelo</span>
+<span class="t-herramienta">  → escribirArchivo · saludo.js</span>
+<span class="t-respuesta">  ✓ Herramienta completada</span>
+<span class="t-suave">  … Consultando al modelo</span>
+
+<span class="t-respuesta">Asistente: </span>Creé saludo.js con console.log(1).</code></pre></figure><aside class="idea"><span class="etiqueta">Fundamento</span><h3>El color cambia la presentación, no el contenido</h3><p><code>styleText</code> devuelve una cadena. Los mensajes enviados a OpenAI y los resultados de las herramientas conservan sus textos originales. <code>styleText</code> comprueba por defecto si la salida admite color y respeta variables como <code>NO_COLOR</code>. Así la función nativa también decide cuándo devolver texto plano; no necesitamos controles propios.</p></aside></div></section><section class="paso" id="archivos" aria-labelledby="h-archivos"><header class="paso-titulo"><span class="paso-numero">03</span><div><p class="etiqueta">Funciones que hacen trabajo real</p><h2 id="h-archivos">Implementar las dos herramientas</h2></div></header><div class="paso-cuerpo"><p>Antes de conectar el modelo, escribimos las operaciones locales. Cada función recibe un objeto con sus argumentos y devuelve un texto.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-6" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-6"><span class="palabra">async</span> <span class="palabra">function</span> leerArchivo({ ruta }) {
+  <span class="palabra">return</span> <span class="palabra">await</span> readFile(ruta, <span class="cadena">&quot;utf8&quot;</span>);
+}
+
+<span class="palabra">async</span> <span class="palabra">function</span> escribirArchivo({ ruta, contenido }) {
+  <span class="palabra">await</span> writeFile(ruta, contenido, <span class="cadena">&quot;utf8&quot;</span>);
+  <span class="palabra">return</span> <span class="cadena">&quot;Archivo guardado.&quot;</span>;
+}</code></pre></figure><p><code>{ ruta }</code> extrae la propiedad <code>ruta</code> del objeto recibido. Es la <strong>desestructuración</strong> de JavaScript. Escribir <code>leerArchivo({ ruta: "saludo.js" })</code> entrega ese objeto a la función.</p><p><code>"utf8"</code> indica que trabajamos con texto. <code>readFile</code> devuelve el contenido; <code>writeFile</code> crea el archivo o reemplaza todo lo que tenía. Esperamos a que termine antes de devolver <code>"Archivo guardado."</code>.</p><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Las herramientas son funciones normales</h3><p>Estas funciones funcionan por sí solas. Más adelante, nuestro programa decidirá cuál invocar usando el nombre que devuelva el modelo. Las rutas relativas se resuelven desde la carpeta donde ejecutás el comando, y la carpeta de destino debe existir.</p></aside></div></section><section class="paso" id="configurar" aria-labelledby="h-configurar"><header class="paso-titulo"><span class="paso-numero">04</span><div><p class="etiqueta">Una función, tres valores</p><h2 id="h-configurar">Configurar la llamada a OpenAI</h2></div></header><div class="paso-cuerpo"><p>Centralizamos la configuración para que el resto del programa reciba un objeto claro.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-7" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-7"><span class="palabra">function</span> configurarOpenAI() {
+  loadEnvFile(<span class="cadena">&quot;.env&quot;</span>);
+  <span class="palabra">return</span> {
+    url: <span class="cadena">&quot;https://api.openai.com/v1/chat/completions&quot;</span>,
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL || <span class="cadena">&quot;gpt-6-luna&quot;</span>,
+  };
+}</code></pre></figure><dl class="conceptos"><div><dt><code>url</code></dt><dd>Es la dirección del endpoint de Chat Completions.</dd></div><div><dt><code>apiKey</code></dt><dd>Es la credencial que enviamos en la cabecera de autorización.</dd></div><div><dt><code>model</code></dt><dd>Es el modelo elegido. <code>||</code> usa <code>gpt-6-luna</code> como valor por defecto si la variable está vacía o ausente.</dd></div></dl><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Una variable de entorno es un dato del proceso</h3><p><code>loadEnvFile(".env")</code> carga el archivo y después consultamos sus valores mediante <code>process.env</code>. Si una variable ya está definida en el entorno que inicia Node, conserva ese valor. En este ejemplo, <code>.env</code> se busca desde la carpeta de ejecución.</p></aside><p class="nota">Modelo actualizado al 1 de octubre de 2026: <code>gpt-6-luna</code>, de la familia GPT-6. Lo elegimos para conservar Chat Completions con herramientas. Si ya tenías <code>.env</code>, cambiá también su <code>OPENAI_MODEL</code>.</p><p class="referencia">Referencia: <a href="https://nodejs.org/docs/latest-v22.x/api/process.html#processloadenvfilepath">Node.js · carga de archivos de entorno</a>.</p></div></section>
+<section class="paso" id="clave-navegador" aria-labelledby="h-clave-navegador"><header class="paso-titulo"><span class="paso-numero">↳</span><div><p class="etiqueta">Variante para HTML</p><h2 id="h-clave-navegador">La clave en el navegador</h2></div></header><div class="paso-cuerpo"><p>En los ejemplos HTML, usamos <code>obtenerApiKey()</code> en lugar de leer una variable de entorno. Primero busca <code>OPENAI_API_KEY</code> en <code>localStorage</code>; si falta, la solicita con <code>prompt</code>, quita los espacios de los extremos y la guarda. Si cancelás o dejás el campo vacío, detiene la consulta sin guardar nada.</p><figure class="codigo"><figcaption><span>JavaScript del navegador · función utilitaria</span><button type="button" class="copiar" data-copy="codigo-clave-navegador">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-clave-navegador">function obtenerApiKey() {
+  let clave = localStorage.getItem(&quot;OPENAI_API_KEY&quot;)?.trim();
+  if (!clave) {
+    clave = prompt(&quot;Ingresá tu API key de OpenAI:&quot;)?.trim();
+    if (!clave) throw new Error(&quot;Se necesita una API key para continuar.&quot;);
+    localStorage.setItem(&quot;OPENAI_API_KEY&quot;, clave);
+  }
+  return clave;
+}
+
+// En los headers del fetch a OpenAI:
+const headers = {
+  &quot;Content-Type&quot;: &quot;application/json&quot;,
+  Authorization: `Bearer ${obtenerApiKey()}`,
+};</code></pre></figure><p>La función se llama al enviar la consulta, no al abrir la página. Los ejemplos comparten la clave cuando se sirven desde el mismo origen (protocolo, host y puerto), según <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage en MDN</a>. Para cambiarla, ejecutá <code>localStorage.removeItem("OPENAI_API_KEY")</code> en la consola del navegador y volvé a consultar. El programa de terminal de este tutorial conserva su configuración con <code>.env</code>.</p></div></section>
+<section class="paso" id="describir" aria-labelledby="h-describir"><header class="paso-titulo"><span class="paso-numero">05</span><div><p class="etiqueta">El contrato de cada función</p><h2 id="h-describir">Describir las herramientas al modelo</h2></div></header><div class="paso-cuerpo"><p>El modelo recibe una lista de capacidades disponibles. Usamos el formato <code>tools</code> de Chat Completions y un esquema JSON para explicar qué argumentos espera cada función.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-8" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-8"><span class="comentario">// Estas definiciones describen las herramientas al modelo; no las ejecutan.</span>
+<span class="palabra">const</span> herramientas = [
+  {
+    type: <span class="cadena">&quot;function&quot;</span>,
+    <span class="palabra">function</span>: {
+      name: <span class="cadena">&quot;leerArchivo&quot;</span>,
+      description: <span class="cadena">&quot;Lee el contenido de un archivo de texto existente.&quot;</span>,
+      parameters: {
+        type: <span class="cadena">&quot;object&quot;</span>,
+        properties: {
+          ruta: { type: <span class="cadena">&quot;string&quot;</span>, description: <span class="cadena">&quot;Ruta del archivo.&quot;</span> },
+        },
+        required: [<span class="cadena">&quot;ruta&quot;</span>],
+      },
+    },
+  },
+  {
+    type: <span class="cadena">&quot;function&quot;</span>,
+    <span class="palabra">function</span>: {
+      name: <span class="cadena">&quot;escribirArchivo&quot;</span>,
+      description: <span class="cadena">&quot;Crea o reemplaza un archivo de texto. La carpeta debe existir.&quot;</span>,
+      parameters: {
+        type: <span class="cadena">&quot;object&quot;</span>,
+        properties: {
+          ruta: { type: <span class="cadena">&quot;string&quot;</span>, description: <span class="cadena">&quot;Ruta del archivo.&quot;</span> },
+          contenido: { type: <span class="cadena">&quot;string&quot;</span>, description: <span class="cadena">&quot;Texto completo a guardar.&quot;</span> },
+        },
+        required: [<span class="cadena">&quot;ruta&quot;</span>, <span class="cadena">&quot;contenido&quot;</span>],
+      },
+    },
+  },
+];</code></pre></figure><dl class="conceptos"><div><dt><code>name</code></dt><dd>El nombre con el que el modelo podrá solicitar la función. Debe coincidir con el nombre que usaremos para buscarla.</dd></div><div><dt><code>description</code></dt><dd>Explica para qué sirve la herramienta y cuándo usarla.</dd></div><div><dt><code>parameters</code></dt><dd>Describe un objeto: sus propiedades, los tipos de sus valores y cuáles son obligatorias mediante <code>required</code>.</dd></div></dl><aside class="idea"><span class="etiqueta">Fundamento</span><h3>La descripción y la implementación cumplen roles distintos</h3><p>La lista <code>herramientas</code> contiene datos que enviamos al modelo. Las funciones <code>leerArchivo</code> y <code>escribirArchivo</code> contienen el código que ejecuta Node. El esquema orienta los argumentos generados; este ejemplo asume que esos argumentos son válidos.</p></aside></div></section><section class="paso" id="invocar" aria-labelledby="h-invocar"><header class="paso-titulo"><span class="paso-numero">06</span><div><p class="etiqueta">REST con fetch</p><h2 id="h-invocar">Hacer la petición HTTP</h2></div></header><div class="paso-cuerpo"><p>Ahora escribimos la función que recibe la configuración y el historial, envía una petición y devuelve el mensaje del asistente.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-9" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-9"><span class="palabra">async</span> <span class="palabra">function</span> invocarOpenAI(configuracion, mensajes) {
+  <span class="palabra">const</span> respuesta = <span class="palabra">await</span> fetch(configuracion.url, {
+    method: <span class="cadena">&quot;POST&quot;</span>,
+    headers: {
+      <span class="cadena">&quot;Content-Type&quot;</span>: <span class="cadena">&quot;application/json&quot;</span>,
+      Authorization: <span class="cadena">`Bearer ${configuracion.apiKey}`</span>,
+    },
+    body: JSON.stringify({
+      model: configuracion.model,
+      <span class="comentario">// GPT-6 Luna admite herramientas en Chat Completions con este valor.</span>
+      reasoning_effort: <span class="cadena">&quot;none&quot;</span>,
+      messages: mensajes,
+      tools: herramientas,
+    }),
+  });
+
+  <span class="palabra">const</span> datos = <span class="palabra">await</span> respuesta.json();
+  <span class="palabra">if</span> (!respuesta.ok) <span class="palabra">throw</span> <span class="palabra">new</span> Error(datos.error.message);
+  <span class="palabra">return</span> datos.choices[<span class="numero">0</span>].message;
+}</code></pre></figure><p><code>fetch</code> viene incluido en Node.js. Usamos <code>POST</code> porque enviamos un cuerpo con el modelo, la conversación y las herramientas. <code>Content-Type</code> identifica ese cuerpo como JSON; <code>Authorization</code> transporta la clave con el formato <code>Bearer</code>.</p><div class="conversion"><div><span class="etiqueta">Al enviar</span><h3><code>JSON.stringify</code></h3><p>Objeto JavaScript → texto JSON para el cuerpo HTTP.</p></div><div><span class="etiqueta">Al recibir</span><h3><code>respuesta.json()</code></h3><p>Cuerpo JSON → objeto JavaScript que podemos consultar.</p></div></div><p><code>reasoning_effort: "none"</code> es necesario para que GPT-6 Luna use funciones en Chat Completions. El primer <code>await</code> espera la respuesta HTTP. El segundo espera la lectura y conversión del cuerpo. <code>respuesta.ok</code> indica un estado HTTP exitoso; si hay un error de la API, lanzamos su mensaje. Finalmente tomamos <code>choices[0].message</code>, el primer mensaje generado.</p><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Una respuesta puede pedir una acción</h3><p>El mensaje puede traer <code>content</code> con texto o <code>tool_calls</code> con solicitudes de herramientas. Devolver el mensaje entero permite conservar ambas posibilidades en el bucle.</p></aside><p class="referencia">Referencia: <a href="https://developers.openai.com/api/reference/resources/chat">OpenAI · referencia de Chat Completions</a> y <a href="https://developers.openai.com/api/docs/models/gpt-6-luna">GPT-6 Luna · compatibilidad con herramientas</a>.</p></div></section><section class="paso" id="ejecutar" aria-labelledby="h-ejecutar"><header class="paso-titulo"><span class="paso-numero">07</span><div><p class="etiqueta">Un nombre, unos argumentos, una función</p><h2 id="h-ejecutar">Traducir una solicitud en una llamada</h2></div></header><div class="paso-cuerpo"><p>Cuando el modelo solicita una herramienta, recibimos su nombre y una cadena JSON con los argumentos. Esta función conecta esos datos con nuestro código.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-10" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-10"><span class="palabra">async</span> <span class="palabra">function</span> ejecutarHerramienta(llamada) {
+  <span class="palabra">const</span> funciones = { leerArchivo, escribirArchivo };
+  <span class="palabra">const</span> argumentos = JSON.parse(llamada.<span class="palabra">function</span>.arguments);
+  console.log(styleText(<span class="cadena">&quot;yellow&quot;</span>, <span class="cadena">`  → ${llamada.function.name} · ${argumentos.ruta}`</span>));
+  <span class="palabra">const</span> resultado = <span class="palabra">await</span> funciones[llamada.<span class="palabra">function</span>.name](argumentos);
+  console.log(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;green&quot;</span>], <span class="cadena">&quot;  ✓ Herramienta completada&quot;</span>));
+  <span class="palabra">return</span> resultado;
+}</code></pre></figure><p>El objeto <code>funciones</code> asocia nombres con referencias a funciones. <code>funciones["leerArchivo"]</code> devuelve la función <code>leerArchivo</code>; los paréntesis posteriores la invocan.</p><p><code>JSON.parse</code> convierte los argumentos, que llegan como texto JSON, en un objeto. Después entregamos ese objeto a la función seleccionada y esperamos su resultado.</p><figure class="codigo"><figcaption><span>Ejemplo de la transformación</span><button type="button" class="copiar" data-copy="codigo-11" aria-label="Copiar Ejemplo de la transformación">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-11"><span class="palabra">const</span> argumentos = JSON.parse(<span class="cadena">&#x27;{&quot;ruta&quot;:&quot;saludo.js&quot;}&#x27;</span>);
+<span class="comentario">// argumentos es ahora: { ruta: &quot;saludo.js&quot; }</span>
+
+<span class="palabra">const</span> resultado = <span class="palabra">await</span> leerArchivo(argumentos);</code></pre></figure><aside class="idea"><span class="etiqueta">Fundamento</span><h3>El modelo propone; el programa ejecuta</h3><p>La petición a OpenAI devuelve datos. La lectura o escritura ocurre en el proceso de Node cuando llamamos a una función local. Así podemos señalar exactamente dónde se produce cada acción.</p></aside></div></section><section class="paso" id="historial" aria-labelledby="h-historial"><header class="paso-titulo"><span class="paso-numero">08</span><div><p class="etiqueta">El estado de la conversación</p><h2 id="h-historial">Preparar la consola y el historial</h2></div></header><div class="paso-cuerpo"><p>Con las funciones definidas, comienza la ejecución del programa. Cargamos la configuración, abrimos la entrada de consola y creamos un arreglo de mensajes.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-12" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-12"><span class="palabra">const</span> configuracion = configurarOpenAI();
+<span class="palabra">const</span> consola = createInterface({ input: process.stdin, output: process.stdout });
+<span class="palabra">const</span> mensajes = [
+  {
+    role: <span class="cadena">&quot;system&quot;</span>,
+    content: <span class="cadena">&quot;Sos un asistente de programación. Respondé en español. Usá las herramientas para leer y escribir archivos cuando sea necesario. Las rutas relativas parten de la carpeta donde se ejecuta la app.&quot;</span>,
+  },
+];
+
+console.log(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;cyan&quot;</span>], <span class="cadena">&quot;\n  ◆ ASISTENTE DE PROGRAMACIÓN&quot;</span>));
+console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  ──────────────────────────────────────&quot;</span>));
+console.log(<span class="cadena">`  Modelo: ${styleText([&quot;bold&quot;, &quot;green&quot;], configuracion.model)}`</span>);
+console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  Leé y escribí archivos. Escribí &#x27;salir&#x27; para terminar.\n&quot;</span>));</code></pre></figure><p><code>process.stdin</code> recibe la entrada de la terminal y <code>process.stdout</code> muestra la salida. El objeto <code>consola</code> nos permitirá esperar una línea con <code>question</code>.</p><div class="tabla"><table><caption>Los cuatro roles que usa nuestro historial</caption><thead><tr><th>Rol</th><th>Qué representa</th></tr></thead><tbody><tr><td><code>system</code></td><td>Las instrucciones iniciales para el asistente.</td></tr><tr><td><code>user</code></td><td>Un mensaje escrito por la persona.</td></tr><tr><td><code>assistant</code></td><td>La respuesta del modelo, con texto o llamadas a herramientas.</td></tr><tr><td><code>tool</code></td><td>El resultado de una herramienta ejecutada por el programa.</td></tr></tbody></table></div><aside class="idea"><span class="etiqueta">Fundamento</span><h3>El historial es la memoria que enviamos</h3><p>Cada petición lleva el arreglo <code>mensajes</code> completo. Agregamos elementos con <code>push</code> para que el modelo reciba el contexto anterior. <code>const</code> impide reasignar el arreglo, pero permite modificar su contenido. Esta memoria dura mientras corre el proceso.</p></aside></div></section><section class="paso" id="usuario" aria-labelledby="h-usuario"><header class="paso-titulo"><span class="paso-numero">09</span><div><p class="etiqueta">El bucle exterior</p><h2 id="h-usuario">Repetir la conversación</h2></div></header><div class="paso-cuerpo"><p>La aplicación sigue pidiendo mensajes hasta que la persona escribe <code>salir</code>. Esta es la estructura del bucle exterior; en el próximo paso completamos el procesamiento.</p><figure class="codigo"><figcaption><span>Estructura del bucle exterior</span><button type="button" class="copiar" data-copy="codigo-13" aria-label="Copiar Estructura del bucle exterior">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-13"><span class="palabra">while</span> (<span class="palabra">true</span>) {
+  <span class="palabra">const</span> texto = <span class="palabra">await</span> consola.question(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;magenta&quot;</span>], <span class="cadena">&quot;Vos: &quot;</span>));
+  <span class="palabra">if</span> (texto === <span class="cadena">&quot;salir&quot;</span>) <span class="palabra">break</span>;
+  mensajes.push({ role: <span class="cadena">&quot;user&quot;</span>, content: texto });
+
+  <span class="comentario">// Acá va el bucle que procesa la respuesta del modelo.</span>
+}</code></pre></figure><p><code>while (true)</code> repite el cuerpo indefinidamente. <code>question</code> espera la entrada y devuelve el texto. <code>break</code> abandona el bucle cuando se cumple la condición de salida. Si seguimos, guardamos el mensaje con rol <code>user</code>.</p><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Esperar entrada evita un bucle que consume CPU</h3><p>Aunque la condición sea siempre verdadera, la ejecución se suspende en <code>await consola.question(...)</code> hasta recibir una línea. Cada vuelta representa un turno nuevo de la persona. El prompt usa <code>styleText</code> para mostrar la etiqueta en violeta y negrita.</p></aside></div></section><section class="paso" id="modelo" aria-labelledby="h-modelo"><header class="paso-titulo"><span class="paso-numero">10</span><div><p class="etiqueta">El bucle interior</p><h2 id="h-modelo">Procesar texto o herramientas</h2></div></header><div class="paso-cuerpo"><p>Un turno puede necesitar varias llamadas al modelo. Por ejemplo: leer un archivo, usar su contenido para decidir un cambio, escribirlo y confirmar el resultado. Por eso agregamos un segundo bucle dentro del anterior.</p><figure class="codigo"><figcaption><span>app.mjs · fragmento</span><button type="button" class="copiar" data-copy="codigo-14" aria-label="Copiar app.mjs · fragmento">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-14"><span class="comentario">// Un mensaje del usuario puede requerir varias rondas de herramientas.</span>
+<span class="palabra">while</span> (<span class="palabra">true</span>) {
+  console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  … Consultando al modelo&quot;</span>));
+  <span class="palabra">const</span> mensaje = <span class="palabra">await</span> invocarOpenAI(configuracion, mensajes);
+  mensajes.push(mensaje);
+
+  <span class="palabra">if</span> (!mensaje.tool_calls?.length) {
+    console.log(<span class="cadena">`\n${styleText([&quot;bold&quot;, &quot;green&quot;], &quot;Asistente: &quot;)}${mensaje.content}\n`</span>);
+    <span class="palabra">break</span>;
+  }
+
+  <span class="palabra">for</span> (<span class="palabra">const</span> llamada of mensaje.tool_calls) {
+    <span class="palabra">const</span> resultado = <span class="palabra">await</span> ejecutarHerramienta(llamada);
+    mensajes.push({
+      role: <span class="cadena">&quot;tool&quot;</span>,
+      tool_call_id: llamada.id,
+      content: resultado,
+    });
+  }
+}</code></pre></figure><ol class="explicacion"><li><strong>Consultar y guardar.</strong> Llamamos a <code>invocarOpenAI</code> y agregamos el mensaje completo al historial, incluidas sus solicitudes de herramientas.</li><li><strong>Si terminó, mostrar.</strong> <code>mensaje.tool_calls?.length</code> consulta la cantidad de llamadas si la propiedad existe. Si no hay llamadas, mostramos <code>content</code> y salimos del bucle interior.</li><li><strong>Si pidió acciones, ejecutarlas.</strong> El <code>for...of</code> recorre cada llamada. Las ejecutamos una a una y guardamos cada resultado.</li><li><strong>Volver a consultar.</strong> Después del <code>for</code>, empieza otra vuelta: el modelo recibe los resultados y puede responder o solicitar más herramientas.</li></ol><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Cada resultado tiene que identificar su solicitud</h3><p>El mensaje <code>tool</code> usa <code>tool_call_id: llamada.id</code> para asociar el resultado con la llamada original. <code>content</code> contiene el texto devuelto por nuestra función. Guardamos todas las solicitudes y sus resultados antes de la siguiente consulta.</p></aside><p class="nota">El <code>break</code> interior vuelve a la pregunta de consola. El <code>break</code> exterior termina la conversación. Cada uno abandona el bucle más cercano.</p></div></section><section class="paso" id="correr" aria-labelledby="h-correr"><header class="paso-titulo"><span class="paso-numero">11</span><div><p class="etiqueta">Del código a la terminal</p><h2 id="h-correr">Cerrar y ejecutar el programa</h2></div></header><div class="paso-cuerpo"><p>En el archivo completo, el bucle exterior está dentro de <code>try</code>. Su bloque <code>finally</code> cierra la interfaz de consola cuando salimos o cuando ocurre un error.</p><figure class="codigo"><figcaption><span>Estructura del cierre</span><button type="button" class="copiar" data-copy="codigo-15" aria-label="Copiar Estructura del cierre">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-15"><span class="palabra">try</span> {
+  <span class="comentario">// Aquí están los dos bucles de la conversación.</span>
+} <span class="palabra">finally</span> {
+  consola.close();
+}</code></pre></figure><p><code>finally</code> sirve para liberar un recurso al finalizar una operación. En nuestro programa ese recurso es la interfaz de lectura de la terminal.</p><p>Guardá el código completo en <code>app.mjs</code> y, desde la misma carpeta donde está <code>.env</code>, ejecutá:</p><figure class="codigo"><figcaption><span>Terminal</span><button type="button" class="copiar" data-copy="codigo-16" aria-label="Copiar Terminal">Copiar</button></figcaption><pre tabindex="0" aria-label="Código Shell"><code id="codigo-16">node app.mjs</code></pre></figure><p>Podés recorrer las dos herramientas con esta conversación:</p><figure class="codigo"><figcaption><span>Mensajes de ejemplo · escribir uno por vez</span><button type="button" class="copiar" data-copy="codigo-17" aria-label="Copiar Mensajes de ejemplo · escribir uno por vez">Copiar</button></figcaption><pre tabindex="0" aria-label="Código Texto"><code id="codigo-17">Vos: Creá saludo.js con una función saludar(nombre) que devuelva un saludo.
+Vos: Leé saludo.js y explicame qué hace.
+Vos: Modificá saludo.js para que el nombre por defecto sea <span class="cadena">&quot;mundo&quot;</span>.
+Vos: salir</code></pre></figure><aside class="idea"><span class="etiqueta">Fundamento</span><h3>Este ejemplo sigue el camino feliz</h3><p>Suponemos que el archivo a leer existe, la carpeta de destino existe, los argumentos son correctos y la API está disponible. La escritura reemplaza el archivo completo. Los errores detienen la ejecución; cada consulta vuelve a enviar el historial acumulado.</p></aside></div></section>
+<section class="final" id="completo" aria-labelledby="h-completo"><p class="etiqueta">Todo junto · el archivo que construimos</p><h2 id="h-completo">El programa completo.</h2><p>Este es el contenido exacto de <code>app.mjs</code>. Incluye los colores de la consola, las herramientas, su descripción, las funciones auxiliares y los dos bucles. Guardalo junto a tu <code>.env</code> y ejecutá <code>node app.mjs</code>.</p><div class="acciones"><button class="boton" type="button" id="descargar">Descargar app.mjs ↓</button><button type="button" class="boton-texto" data-copy="codigo-completo">Copiar el programa</button></div><figure class="codigo"><figcaption><span>app.mjs · archivo completo</span><button type="button" class="copiar" data-copy="codigo-completo" aria-label="Copiar app.mjs · archivo completo">Copiar</button></figcaption><pre tabindex="0" aria-label="Código JavaScript"><code id="codigo-completo"><span class="comentario">// Ejecutar con Node.js 22.13+: node app.mjs</span>
+<span class="palabra">import</span> { loadEnvFile } <span class="palabra">from</span> <span class="cadena">&quot;node:process&quot;</span>;
+<span class="palabra">import</span> { readFile, writeFile } <span class="palabra">from</span> <span class="cadena">&quot;node:fs/promises&quot;</span>;
+<span class="palabra">import</span> { createInterface } <span class="palabra">from</span> <span class="cadena">&quot;node:readline/promises&quot;</span>;
+<span class="palabra">import</span> { styleText } <span class="palabra">from</span> <span class="cadena">&quot;node:util&quot;</span>;
+
+<span class="palabra">async</span> <span class="palabra">function</span> leerArchivo({ ruta }) {
+  <span class="palabra">return</span> <span class="palabra">await</span> readFile(ruta, <span class="cadena">&quot;utf8&quot;</span>);
+}
+
+<span class="palabra">async</span> <span class="palabra">function</span> escribirArchivo({ ruta, contenido }) {
+  <span class="palabra">await</span> writeFile(ruta, contenido, <span class="cadena">&quot;utf8&quot;</span>);
+  <span class="palabra">return</span> <span class="cadena">&quot;Archivo guardado.&quot;</span>;
+}
+
+<span class="palabra">function</span> configurarOpenAI() {
+  loadEnvFile(<span class="cadena">&quot;.env&quot;</span>);
+  <span class="palabra">return</span> {
+    url: <span class="cadena">&quot;https://api.openai.com/v1/chat/completions&quot;</span>,
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL || <span class="cadena">&quot;gpt-6-luna&quot;</span>,
+  };
+}
+
+<span class="comentario">// Estas definiciones describen las herramientas al modelo; no las ejecutan.</span>
+<span class="palabra">const</span> herramientas = [
+  {
+    type: <span class="cadena">&quot;function&quot;</span>,
+    <span class="palabra">function</span>: {
+      name: <span class="cadena">&quot;leerArchivo&quot;</span>,
+      description: <span class="cadena">&quot;Lee el contenido de un archivo de texto existente.&quot;</span>,
+      parameters: {
+        type: <span class="cadena">&quot;object&quot;</span>,
+        properties: {
+          ruta: { type: <span class="cadena">&quot;string&quot;</span>, description: <span class="cadena">&quot;Ruta del archivo.&quot;</span> },
+        },
+        required: [<span class="cadena">&quot;ruta&quot;</span>],
+      },
+    },
+  },
+  {
+    type: <span class="cadena">&quot;function&quot;</span>,
+    <span class="palabra">function</span>: {
+      name: <span class="cadena">&quot;escribirArchivo&quot;</span>,
+      description: <span class="cadena">&quot;Crea o reemplaza un archivo de texto. La carpeta debe existir.&quot;</span>,
+      parameters: {
+        type: <span class="cadena">&quot;object&quot;</span>,
+        properties: {
+          ruta: { type: <span class="cadena">&quot;string&quot;</span>, description: <span class="cadena">&quot;Ruta del archivo.&quot;</span> },
+          contenido: { type: <span class="cadena">&quot;string&quot;</span>, description: <span class="cadena">&quot;Texto completo a guardar.&quot;</span> },
+        },
+        required: [<span class="cadena">&quot;ruta&quot;</span>, <span class="cadena">&quot;contenido&quot;</span>],
+      },
+    },
+  },
+];
+
+<span class="palabra">async</span> <span class="palabra">function</span> invocarOpenAI(configuracion, mensajes) {
+  <span class="palabra">const</span> respuesta = <span class="palabra">await</span> fetch(configuracion.url, {
+    method: <span class="cadena">&quot;POST&quot;</span>,
+    headers: {
+      <span class="cadena">&quot;Content-Type&quot;</span>: <span class="cadena">&quot;application/json&quot;</span>,
+      Authorization: <span class="cadena">`Bearer ${configuracion.apiKey}`</span>,
+    },
+    body: JSON.stringify({
+      model: configuracion.model,
+      <span class="comentario">// GPT-6 Luna admite herramientas en Chat Completions con este valor.</span>
+      reasoning_effort: <span class="cadena">&quot;none&quot;</span>,
+      messages: mensajes,
+      tools: herramientas,
+    }),
+  });
+
+  <span class="palabra">const</span> datos = <span class="palabra">await</span> respuesta.json();
+  <span class="palabra">if</span> (!respuesta.ok) <span class="palabra">throw</span> <span class="palabra">new</span> Error(datos.error.message);
+  <span class="palabra">return</span> datos.choices[<span class="numero">0</span>].message;
+}
+
+<span class="palabra">async</span> <span class="palabra">function</span> ejecutarHerramienta(llamada) {
+  <span class="palabra">const</span> funciones = { leerArchivo, escribirArchivo };
+  <span class="palabra">const</span> argumentos = JSON.parse(llamada.<span class="palabra">function</span>.arguments);
+  console.log(styleText(<span class="cadena">&quot;yellow&quot;</span>, <span class="cadena">`  → ${llamada.function.name} · ${argumentos.ruta}`</span>));
+  <span class="palabra">const</span> resultado = <span class="palabra">await</span> funciones[llamada.<span class="palabra">function</span>.name](argumentos);
+  console.log(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;green&quot;</span>], <span class="cadena">&quot;  ✓ Herramienta completada&quot;</span>));
+  <span class="palabra">return</span> resultado;
+}
+
+<span class="palabra">const</span> configuracion = configurarOpenAI();
+<span class="palabra">const</span> consola = createInterface({ input: process.stdin, output: process.stdout });
+<span class="palabra">const</span> mensajes = [
+  {
+    role: <span class="cadena">&quot;system&quot;</span>,
+    content: <span class="cadena">&quot;Sos un asistente de programación. Respondé en español. Usá las herramientas para leer y escribir archivos cuando sea necesario. Las rutas relativas parten de la carpeta donde se ejecuta la app.&quot;</span>,
+  },
+];
+
+console.log(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;cyan&quot;</span>], <span class="cadena">&quot;\n  ◆ ASISTENTE DE PROGRAMACIÓN&quot;</span>));
+console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  ──────────────────────────────────────&quot;</span>));
+console.log(<span class="cadena">`  Modelo: ${styleText([&quot;bold&quot;, &quot;green&quot;], configuracion.model)}`</span>);
+console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  Leé y escribí archivos. Escribí &#x27;salir&#x27; para terminar.\n&quot;</span>));
+
+<span class="palabra">try</span> {
+  <span class="palabra">while</span> (<span class="palabra">true</span>) {
+    <span class="palabra">const</span> texto = <span class="palabra">await</span> consola.question(styleText([<span class="cadena">&quot;bold&quot;</span>, <span class="cadena">&quot;magenta&quot;</span>], <span class="cadena">&quot;Vos: &quot;</span>));
+    <span class="palabra">if</span> (texto === <span class="cadena">&quot;salir&quot;</span>) <span class="palabra">break</span>;
+    mensajes.push({ role: <span class="cadena">&quot;user&quot;</span>, content: texto });
+
+    <span class="comentario">// Un mensaje del usuario puede requerir varias rondas de herramientas.</span>
+    <span class="palabra">while</span> (<span class="palabra">true</span>) {
+      console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;  … Consultando al modelo&quot;</span>));
+      <span class="palabra">const</span> mensaje = <span class="palabra">await</span> invocarOpenAI(configuracion, mensajes);
+      mensajes.push(mensaje);
+
+      <span class="palabra">if</span> (!mensaje.tool_calls?.length) {
+        console.log(<span class="cadena">`\n${styleText([&quot;bold&quot;, &quot;green&quot;], &quot;Asistente: &quot;)}${mensaje.content}\n`</span>);
+        <span class="palabra">break</span>;
+      }
+
+      <span class="palabra">for</span> (<span class="palabra">const</span> llamada of mensaje.tool_calls) {
+        <span class="palabra">const</span> resultado = <span class="palabra">await</span> ejecutarHerramienta(llamada);
+        mensajes.push({
+          role: <span class="cadena">&quot;tool&quot;</span>,
+          tool_call_id: llamada.id,
+          content: resultado,
+        });
+      }
+    }
+  }
+} <span class="palabra">finally</span> {
+  consola.close();
+  console.log(styleText(<span class="cadena">&quot;gray&quot;</span>, <span class="cadena">&quot;\n  Sesión finalizada.\n&quot;</span>));
+}
+</code></pre></figure></section>
+<section class="repaso" aria-labelledby="repaso-h"><p class="etiqueta">Para discutir en clase</p><h2 id="repaso-h">Comprobá lo que entendiste.</h2><details><summary>¿Por qué necesitamos dos bucles?</summary><p>El exterior recibe nuevos mensajes de la persona. El interior resuelve un mensaje mediante las consultas y llamadas a herramientas que hagan falta. Una respuesta de texto termina el interior; escribir salir termina el exterior.</p></details><details><summary>¿Quién escribe realmente el archivo?</summary><p>La función escribirArchivo ejecutada por Node. El modelo devuelve una solicitud con un nombre y argumentos. ejecutarHerramienta transforma esa solicitud en una invocación local.</p></details><details><summary>¿Qué pasa si no guardamos el resultado de una herramienta?</summary><p>La siguiente consulta no incluye lo que devolvió la función. Además, el protocolo espera un resultado asociado a cada llamada. Conservamos la solicitud del asistente y cada mensaje tool con su tool_call_id.</p></details><details><summary>¿Dónde está la memoria de la conversación?</summary><p>En el arreglo mensajes del proceso de Node. Lo enviamos de nuevo en cada petición. Al cerrar el programa se pierde; esta implementación no guarda sesiones en disco.</p></details><details><summary>¿Podría agregar una tercera herramienta?</summary><p>Sí. Implementá una función que reciba un objeto y devuelva texto, agregá su descripción al arreglo herramientas y su referencia al objeto funciones. El bucle puede procesar su solicitud con el mismo mecanismo.</p></details></section>
+<footer class="pie"><p>Fundamentos: funciones, promesas, JSON, HTTP y estado.<br>Un programa pequeño que se puede leer de principio a fin.</p><p><a href="#inicio">Volver al comienzo ↑</a></p></footer>
+</main></div><script>
+const pasosDemo = [{"titulo": "La persona escribe un pedido", "lugar": "Terminal → historial", "texto": "Agregamos un mensaje con rol user. Todavía no se ejecutó ninguna herramienta.", "code": "{ role: \"user\", content: \"Creá saludo.js con un console.log.\" }"}, {"titulo": "El programa consulta a OpenAI", "lugar": "Node → OpenAI · HTTP POST", "texto": "Enviamos modelo, historial y descripciones de herramientas. La API recibe datos de la conversación.", "code": "{\n  model: \"gpt-6-luna\",\n  reasoning_effort: \"none\",\n  messages: [/* system, user */],\n  tools: herramientas\n}"}, {"titulo": "El modelo solicita escribirArchivo", "lugar": "OpenAI → Node · assistant", "texto": "La respuesta contiene el nombre de la función y argumentos JSON como texto. Guardamos este mensaje completo.", "code": "{\n  role: \"assistant\",\n  content: null,\n  tool_calls: [{\n    id: \"call_1\",\n    type: \"function\",\n    function: {\n      name: \"escribirArchivo\",\n      arguments: '{\"ruta\":\"saludo.js\",\"contenido\":\"console.log(1);\"}'\n    }\n  }]\n}"}, {"titulo": "Node ejecuta la función local", "lugar": "Node → archivo en disco", "texto": "Convertimos los argumentos con JSON.parse y llamamos a escribirArchivo. En este momento cambia el archivo.", "code": "await escribirArchivo({\n  ruta: \"saludo.js\",\n  contenido: \"console.log(1);\"\n});\n// Resultado: \"Archivo guardado.\""}, {"titulo": "El resultado vuelve al modelo", "lugar": "Historial → OpenAI · HTTP POST", "texto": "Agregamos el resultado con rol tool y la misma identificación call_1. La siguiente consulta incluye todo el historial.", "code": "{\n  role: \"tool\",\n  tool_call_id: \"call_1\",\n  content: \"Archivo guardado.\"\n}"}, {"titulo": "El asistente responde con texto", "lugar": "OpenAI → terminal", "texto": "Al no haber nuevas herramientas, mostramos el texto, salimos del bucle interior y esperamos otro mensaje de la persona.", "code": "{\n  role: \"assistant\",\n  content: \"Creé saludo.js con console.log(1).\"\n}"}];
+const botonesPaso = [...document.querySelectorAll('[data-step]')];
+let actual = 0;
+function mostrarPaso(i) {
+  actual = Math.max(0, Math.min(pasosDemo.length - 1, i));
+  const paso = pasosDemo[actual];
+  document.querySelector('#demo-titulo').textContent = paso.titulo;
+  document.querySelector('#demo-lugar').textContent = paso.lugar;
+  document.querySelector('#demo-texto').textContent = paso.texto;
+  document.querySelector('#demo-codigo').textContent = paso.code;
+  document.querySelector('#demo-contador').textContent = `Paso ${actual + 1} de ${pasosDemo.length}`;
+  document.querySelector('#anterior').disabled = actual === 0;
+  document.querySelector('#siguiente').disabled = actual === pasosDemo.length - 1;
+  botonesPaso.forEach((b, n) => { if(n === actual) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); });
+}
+botonesPaso.forEach(b => b.addEventListener('click', () => mostrarPaso(Number(b.dataset.step))));
+document.querySelector('#anterior').addEventListener('click', () => mostrarPaso(actual - 1));
+document.querySelector('#siguiente').addEventListener('click', () => mostrarPaso(actual + 1));
+mostrarPaso(0);
+async function copiar(texto) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(texto); return; } catch {}
+  }
+  const area = document.createElement('textarea');
+  area.value = texto;
+  area.style.position = 'fixed'; area.style.opacity = '0';
+  document.body.append(area); area.select();
+  const ok = document.execCommand('copy'); area.remove();
+  if (!ok) throw new Error('Copia no disponible');
+}
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  const anterior = b.textContent;
+  try { await copiar(document.getElementById(b.dataset.copy).textContent); b.textContent = 'Copiado'; }
+  catch { b.textContent = 'Seleccioná el código'; }
+  b.focus({preventScroll:true});
+  setTimeout(() => b.textContent = anterior, 1800);
+}));
+document.querySelector('#descargar').addEventListener('click', () => {
+  const blob = new Blob([document.querySelector('#codigo-completo').textContent], {type:'text/javascript;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='app.mjs'; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url),1000);
+});
+document.querySelector('#imprimir').addEventListener('click', () => window.print());
+const anclas = [...document.querySelectorAll('.indice a')];
+const secciones = anclas.map(a => document.querySelector(a.getAttribute('href')));
+let pendiente = false;
+function actualizar() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  document.documentElement.style.setProperty('--progreso', max > 0 ? Math.min(1, Math.max(0,window.scrollY/max)) : 1);
+  let visible = secciones[0];
+  for (const s of secciones) if(s.getBoundingClientRect().top <= 170) visible=s;
+  anclas.forEach(a => { if(a.getAttribute('href') === '#' + visible.id) a.setAttribute('aria-current','location'); else a.removeAttribute('aria-current'); });
+  pendiente=false;
+}
+window.addEventListener('scroll', () => { if(!pendiente){pendiente=true;requestAnimationFrame(actualizar);} }, {passive:true});
+window.addEventListener('resize',actualizar); actualizar();
+</script></body></html>

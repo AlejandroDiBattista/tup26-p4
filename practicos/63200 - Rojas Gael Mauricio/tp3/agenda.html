@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda</title>
+  <style>
+    /* ===== Base ===== */
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px Georgia, serif;
+      background: #f5f6f4;
+      color: #1f2a24;
+    }
+    main { width: 1104px; max-width: 100%; margin: auto; }
+
+    /* ===== Encabezado (título + buscador + botón agregar) ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+
+      h1 { margin: 0; font-size: 1.6rem; }
+
+      div { display: flex; gap: 8px; }
+
+      input[type="search"] {
+        padding: 8px 12px;
+        border: 1px solid #d9ded9;
+        border-radius: 999px;
+        font: 14px sans-serif;
+        width: 220px;
+      }
+
+      button {
+        padding: 8px 16px;
+        border: 0;
+        border-radius: 999px;
+        background: #2c3a30;
+        color: white;
+        font: bold 14px sans-serif;
+        cursor: pointer;
+      }
+    }
+
+    /* ===== Lista de tarjetas ===== */
+    section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+
+      > p { grid-column: 1 / -1; text-align: center; color: #667; }
+    }
+
+    /* ===== Tarjeta de alumno ===== */
+    article {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+
+      &:hover, &:focus { border-color: #2c3a30; outline: none; box-shadow: 0 0 0 2px #2c3a3033; }
+
+      h2 {
+        margin: 0;
+        padding-right: 30px;
+        font-size: 1.05rem;
+
+        span { font-weight: normal; font-size: .85rem; }
+      }
+
+      address {
+        font: normal 13px sans-serif;
+
+        b { display: block; margin-bottom: 4px; }
+        small { color: #667; }
+      }
+
+      footer {
+        padding-top: 8px;
+        border-top: 1px solid #e5e8e5;
+        font: 12px sans-serif;
+        color: #667;
+      }
+
+      button {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        border: 0;
+        background: none;
+        font-size: 1.2rem;
+        color: #8a6d1d;
+        cursor: pointer;
+      }
+    }
+
+    /* ===== Diálogo de alta / edición ===== */
+    dialog {
+      width: 480px;
+      max-width: 92vw;
+      border: 0;
+      border-radius: 14px;
+      padding: 20px;
+      font: 14px sans-serif;
+
+      &::backdrop { background: #2c3a3099; }
+
+      h3 { margin: 0; font-family: Georgia, serif; }
+      p { margin: 2px 0 14px; color: #667; font-size: 12px; }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+
+        label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+        input { padding: 7px; border: 1px solid #d9ded9; border-radius: 6px; font: 14px sans-serif; }
+
+        .error { grid-column: 1 / -1; margin: 0; color: #b3261e; }
+
+        .botones {
+          grid-column: 1 / -1;
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+
+          button { padding: 7px 14px; border: 0; border-radius: 6px; cursor: pointer; }
+          .guardar { background: #2c3a30; color: white; }
+          .cancelar { background: #e5e8e5; }
+          .eliminar { background: none; color: #b3261e; margin-right: auto; }
+        }
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+
+  <script type="module">
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+    import datosIniciales from './alumnos.json' with { type: 'json' }
+
+    /* =====================================================
+       1) ESTADO: los datos que usa la aplicación
+       ===================================================== */
+    const CLAVE = 'agenda-alumnos'
+
+    function cargarAlumnos() {
+      const guardado = localStorage.getItem(CLAVE)
+      if (guardado) return JSON.parse(guardado)          // ya había datos guardados
+      localStorage.setItem(CLAVE, JSON.stringify(datosIniciales)) // primera vez: usar alumnos.json
+      return datosIniciales
+    }
+
+    const state = reactive({
+      alumnos: cargarAlumnos(),
+      busqueda: '',
+      dialogoAbierto: false,
+      editando: null,   // null = alumno nuevo, o el alumno que se está editando
+      error: ''
+    })
+
+    /* =====================================================
+       2) FUNCIONES QUE ACTUALIZAN EL ESTADO
+       ===================================================== */
+    function guardar() {
+      localStorage.setItem(CLAVE, JSON.stringify(state.alumnos))
+    }
+
+    // Pasa a minúsculas y quita acentos: "Ríos" -> "rios"
+    function normalizar(texto) {
+      return String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    }
+
+    function alumnosVisibles() {
+      const buscado = normalizar(state.busqueda.trim())
+      return state.alumnos
+        .filter(a => normalizar(Object.values(a).join(' ')).includes(buscado))
+        .sort((a, b) =>
+          Number(b.favorito) - Number(a.favorito) ||                 // favoritos primero
+          normalizar(a.apellido).localeCompare(normalizar(b.apellido)) ||
+          normalizar(a.nombre).localeCompare(normalizar(b.nombre)))
+    }
+
+    function alternarFavorito(id) {
+      state.alumnos = state.alumnos.map(a => a.id === id ? { ...a, favorito: !a.favorito } : a)
+      guardar()
+    }
+
+    function abrirDialogo(alumno = null) {
+      state.editando = alumno
+      state.error = ''
+      state.dialogoAbierto = true
+      document.querySelector('dialog').showModal()
+    }
+
+    function cerrarDialogo() {
+      state.dialogoAbierto = false
+      const dialogo = document.querySelector('dialog')
+      if (dialogo.open) dialogo.close()
+    }
+
+    function guardarAlumno(evento) {
+      evento.preventDefault()
+      const datos = Object.fromEntries(new FormData(evento.target))
+      for (const clave in datos) datos[clave] = datos[clave].trim()
+
+      // Validaciones simples
+      if (Object.values(datos).some(v => v === '')) {
+        state.error = 'Completá todos los campos.'
+        return
+      }
+      if (!/^\d+$/.test(datos.legajo)) {
+        state.error = 'El legajo debe contener solo números.'
+        return
+      }
+
+      if (state.editando) {
+        const id = state.editando.id
+        state.alumnos = state.alumnos.map(a => a.id === id ? { ...a, ...datos } : a)
+      } else {
+        const id = Math.max(0, ...state.alumnos.map(a => a.id)) + 1
+        state.alumnos = [...state.alumnos, { id, ...datos, favorito: false }]
+      }
+      guardar()
+      cerrarDialogo()
+    }
+
+    function eliminarAlumno() {
+      state.alumnos = state.alumnos.filter(a => a.id !== state.editando.id)
+      guardar()
+      cerrarDialogo()
+    }
+
+    // Teclado en la tarjeta: Enter edita, Espacio alterna favorito
+    function teclaEnTarjeta(evento, alumno) {
+      if (evento.key === 'Enter') abrirDialogo(alumno)
+      if (evento.key === ' ') {
+        evento.preventDefault()
+        alternarFavorito(alumno.id)
+      }
+    }
+
+    /* =====================================================
+       3) INTERFAZ: plantillas de Arrow.js
+       ===================================================== */
+    const tarjeta = a => html`
+      <article tabindex="0"
+               @click="${() => abrirDialogo(a)}"
+               @keydown="${e => teclaEnTarjeta(e, a)}">
+        <h2>${a.apellido} <span>${a.nombre}</span></h2>
+        <button type="button" tabindex="-1"
+                aria-label="Marcar favorito"
+                @click="${e => { e.stopPropagation(); alternarFavorito(a.id) }}">
+          ${a.favorito ? '★' : '☆'}
+        </button>
+        <address>
+          <b>${a.telefono}</b>
+          <small>@${a.github}</small>
+        </address>
+        <footer>${a.comision} · ${a.legajo}</footer>
+      </article>
+    `.key(a.id)
+
+    const campo = (etiqueta, nombre, valor) => html`
+      <label>${etiqueta}
+        <input name="${nombre}" value="${valor}">
+      </label>
+    `
+
+    const formulario = () => {
+      const a = state.editando || { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
+      return html`
+        <h3>${state.editando ? 'Editar alumno' : 'Agregar alumno'}</h3>
+        <p>${state.editando ? 'Actualizá los datos del alumno.' : 'Completá los datos del nuevo alumno.'}</p>
+        <form @submit="${guardarAlumno}">
+          ${campo('Apellido', 'apellido', a.apellido)}
+          ${campo('Nombre', 'nombre', a.nombre)}
+          ${campo('Legajo', 'legajo', a.legajo)}
+          ${campo('Comisión', 'comision', a.comision)}
+          ${campo('Teléfono', 'telefono', a.telefono)}
+          ${campo('GitHub', 'github', a.github)}
+          <p class="error">${() => state.error}</p>
+          <div class="botones">
+            ${state.editando
+              ? html`<button type="button" class="eliminar" @click="${eliminarAlumno}">Eliminar</button>`
+              : ''}
+            <button type="submit" class="guardar">Guardar</button>
+            <button type="button" class="cancelar" @click="${cerrarDialogo}">Cancelar</button>
+          </div>
+        </form>
+      `
+    }
+
+    html`
+      <header>
+        <h1>Agenda</h1>
+        <div>
+          <input type="search" placeholder="Buscar alumno..."
+                 @input="${e => { state.busqueda = e.target.value }}">
+          <button type="button" @click="${() => abrirDialogo()}">+ Agregar</button>
+        </div>
+      </header>
+
+      <section>
+        ${() => alumnosVisibles().length
+          ? alumnosVisibles().map(tarjeta)
+          : html`<p>No hay alumnos para mostrar.</p>`}
+      </section>
+
+      <dialog @close="${() => { state.dialogoAbierto = false }}">
+        ${() => state.dialogoAbierto ? formulario() : ''}
+      </dialog>
+    `(document.getElementById('app'))
+  </script>
+</body>
+</html>

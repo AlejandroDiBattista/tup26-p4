@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API REST con Express</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --papel: #F7F9FC;
+  --tinta: #14213D;
+  --tinta-2: #2C3B57;
+  --gris: #5B6B85;
+  --linea: #C9D3E3;
+  --acento: #2F5BEA;
+  --acento-suave: #E3EAFD;
+  --codigo: #0F1B33;
+  --ok: #1F8A4C;
+  --redir: #2F5BEA;
+  --cliente: #B26A00;
+  --falla: #C4302B;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", "Cascadia Code", Consolas, "SF Mono", "Liberation Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #E4EAF3; font-family: var(--sans); color: var(--tinta); }
+
+#stage {
+  position: absolute; left: 50%; top: 50%;
+  width: 1280px; height: 800px;
+  background: var(--papel);
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+/* Diapositivas */
+.slide {
+  position: absolute; inset: 0 0 64px 0;
+  padding: 48px 72px 24px;
+  display: none; flex-direction: column; gap: 22px;
+  overflow: hidden;
+  --cs: 22px;
+}
+.slide.on { display: flex; }
+.slide h2 { margin: 0; font-size: 46px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.slide p { margin: 0; }
+.lead { font-size: 28px; line-height: 1.35; color: var(--tinta-2); max-width: 30em; }
+.note { font-size: 23px; line-height: 1.4; color: var(--gris); }
+.note code, .lead code, li code, td code, .aside code {
+  font-family: var(--mono); font-size: 0.9em; background: var(--acento-suave); color: var(--tinta);
+  padding: 0.05em 0.3em; border-radius: 4px;
+}
+
+/* Código */
+pre.code {
+  margin: 0; background: var(--codigo); color: #E3EAF6;
+  font-family: var(--mono); font-size: var(--cs); line-height: 1.42;
+  padding: 18px 0; border-radius: 10px; overflow: hidden; white-space: pre;
+  min-width: 0;
+}
+pre.code .ln { display: block; padding: 0 26px; border-left: 5px solid transparent; }
+pre.code .ln.add { background: rgba(91, 140, 255, 0.22); border-left-color: #5B8CFF; }
+.slide.on pre.code .ln.add { animation: marca 1.2s ease-out; }
+@keyframes marca { from { background: rgba(91, 140, 255, 0.55); } }
+@media (prefers-reduced-motion: reduce) { .slide.on pre.code .ln.add { animation: none; } }
+
+.t-kw { color: #7FA8FF; }
+.t-str { color: #F2C879; }
+.t-num { color: #F59E8B; }
+.t-rx { color: #F59E8B; }
+.t-com { color: #8794AE; }
+.t-fn { color: #7FE0D6; }
+.t-type { color: #C9AEFF; }
+.t-key { color: #7FA8FF; }
+.t-attr { color: #7FE0D6; }
+.t-hval { color: #E3EAF6; }
+.t-meth { color: #7FA8FF; font-weight: 600; }
+.t-path { color: #F2C879; }
+.t-ver { color: #8794AE; }
+.t-dim { color: #6E7C98; }
+.t-s2 { color: #5BD68A; font-weight: 600; }
+.t-s3 { color: #8FB4FF; font-weight: 600; }
+.t-s4 { color: #FFB547; font-weight: 600; }
+.t-s5 { color: #FF7A70; font-weight: 600; }
+
+.fig { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cap { font-size: 20px; color: var(--gris); font-weight: 500; }
+
+/* Disposiciones */
+.side { display: grid; grid-template-columns: minmax(0, max-content) minmax(260px, 1fr); gap: 36px; align-items: start; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+.aside { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+.aside p { font-size: 23px; line-height: 1.4; color: var(--tinta-2); border-left: 4px solid var(--acento); padding-left: 16px; }
+.aside p.warn { border-left-color: var(--cliente); }
+
+ul.plain, ol.plain { margin: 0; padding-left: 1.2em; font-size: 27px; line-height: 1.5; color: var(--tinta-2); }
+ul.plain li, ol.plain li { margin: 4px 0; }
+
+/* Tablas */
+table.t { border-collapse: collapse; font-size: 24px; }
+table.t th { text-align: left; font-weight: 600; color: var(--gris); font-size: 20px; padding: 0 22px 10px 0; border-bottom: 2px solid var(--linea); }
+table.t td { padding: 10px 22px 10px 0; border-bottom: 1px solid #E1E7F0; vertical-align: top; }
+.m { font-family: var(--mono); font-weight: 600; color: var(--acento); }
+.mono { font-family: var(--mono); }
+.si { color: var(--ok); font-weight: 600; }
+.no { color: var(--falla); font-weight: 600; }
+
+/* Familias de estado */
+.familias { display: flex; flex-direction: column; gap: 14px; }
+.familia { display: grid; grid-template-columns: 130px 1fr auto; align-items: baseline; gap: 24px; padding: 12px 0; border-bottom: 1px solid #E1E7F0; }
+.familia b { font-family: var(--mono); font-size: 44px; font-weight: 600; }
+.familia span { font-size: 28px; }
+.familia em { font-style: normal; font-family: var(--mono); font-size: 21px; color: var(--gris); }
+.f2 b { color: var(--ok); } .f3 b { color: var(--redir); } .f4 b { color: var(--cliente); } .f5 b { color: var(--falla); }
+
+/* Diagramas */
+.duo { display: grid; grid-template-columns: 260px 1fr 260px; align-items: center; gap: 24px; margin-top: 24px; }
+.box { border: 3px solid var(--tinta); border-radius: 14px; padding: 26px 20px; text-align: center; font-size: 30px; font-weight: 600; background: #fff; }
+.box small { display: block; font-size: 19px; font-weight: 400; color: var(--gris); margin-top: 8px; }
+.box.soft { border-style: dashed; border-color: var(--gris); color: var(--gris); }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack .box { padding: 14px; font-size: 24px; }
+.wires { display: flex; flex-direction: column; gap: 44px; }
+.wire { position: relative; border-top: 3px solid var(--acento); text-align: center; padding-top: 10px; font-size: 22px; color: var(--acento); font-weight: 500; }
+.wire::after { content: ""; position: absolute; top: -10px; border: 8px solid transparent; }
+.wire.go::after { right: -4px; border-left: 14px solid var(--acento); border-right: 0; }
+.wire.back { border-top-color: var(--ok); color: var(--ok); }
+.wire.back::after { left: -4px; border-right: 14px solid var(--ok); border-left: 0; }
+.wire.cut { border-top-color: var(--falla); border-top-style: dashed; color: var(--falla); }
+.wire.cut::after { right: -4px; border-left: 14px solid var(--falla); border-right: 0; }
+
+.flow { display: flex; align-items: flex-start; gap: 34px; flex-wrap: nowrap; margin-top: 16px; }
+.node { position: relative; flex: 1 1 auto; min-width: 0; text-align: center; }
+.node .b { border: 3px solid var(--tinta); border-radius: 12px; padding: 18px 14px; font-family: var(--mono); font-size: 18px; font-weight: 600; background: #fff; white-space: nowrap; }
+.node small { display: block; font-size: 19px; color: var(--gris); margin-top: 10px; }
+.node:not(:last-child)::after { content: ""; position: absolute; right: -30px; top: 28px; width: 26px; height: 3px; background: var(--acento); }
+.node:not(:last-child)::before { content: ""; position: absolute; right: -32px; top: 22px; border: 7px solid transparent; border-left: 12px solid var(--acento); border-right: 0; }
+.node.resp .b { border-color: var(--ok); color: var(--ok); }
+.node.err .b { border-color: var(--falla); color: var(--falla); }
+.node.out .b { border-style: dashed; border-color: var(--gris); color: var(--gris); }
+.node.pedido .b { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+
+.lugares { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 0; font-size: 27px; }
+.lugares > div { padding: 18px 20px 18px 0; border-bottom: 1px solid #E1E7F0; }
+.lugares .q { font-weight: 600; }
+.lugares .ej { font-family: var(--mono); font-size: 25px; color: var(--acento); }
+
+.big-arrow { font-size: 48px; color: var(--acento); align-self: center; }
+.trio { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 28px; align-items: start; }
+
+/* Portada */
+.slide.portada { justify-content: center; gap: 0; }
+.portada .hero { display: grid; grid-template-columns: 1fr 470px; gap: 56px; align-items: center; }
+.portada h1 { font-size: 84px; line-height: 1; margin: 0 0 24px; font-weight: 700; letter-spacing: -0.02em; }
+.portada .sub { font-size: 30px; color: var(--tinta-2); line-height: 1.35; margin: 0 0 40px; }
+.portada .ayuda { font-size: 20px; color: var(--gris); }
+.portada .ayuda kbd, .ov-head kbd {
+  font-family: var(--mono); font-size: 0.9em; border: 2px solid var(--linea); border-bottom-width: 3px;
+  border-radius: 6px; padding: 1px 8px; background: #fff; color: var(--tinta);
+}
+.portada .hero .fig { gap: 14px; }
+.portada pre.code { font-size: 21px; }
+
+/* Barra de recorrido */
+.rail {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+  display: flex; align-items: center; gap: 18px; padding: 0 24px 0 36px;
+  border-top: 1px solid #DCE3EE; background: #fff;
+}
+.nodes { flex: 1; display: flex; align-items: center; }
+.nodes .link { flex: 1; height: 2px; background: var(--linea); min-width: 8px; }
+.nodes .link.done { background: var(--acento); }
+.sec {
+  font: 500 15px var(--sans); border: 2px solid var(--linea); color: var(--gris); background: #fff;
+  border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap;
+}
+.sec.done { border-color: var(--acento); color: var(--acento); }
+.sec.now { background: var(--acento); border-color: var(--acento); color: #fff; }
+.sec:focus-visible, .navb:focus-visible, .card:focus-visible { outline: 3px solid var(--cliente); outline-offset: 2px; }
+.contador { font: 500 17px var(--mono); color: var(--gris); min-width: 72px; text-align: right; }
+.navb {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--linea); background: #fff;
+  color: var(--tinta); font-size: 20px; cursor: pointer; display: grid; place-items: center;
+}
+.navb:hover { border-color: var(--acento); color: var(--acento); }
+
+/* Índice */
+.overview {
+  position: absolute; inset: 0; background: rgba(247, 249, 252, 0.98); display: none;
+  flex-direction: column; padding: 36px 48px; gap: 20px; z-index: 5;
+}
+.overview.on { display: flex; }
+.ov-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ov-head h2 { margin: 0; font-size: 36px; font-weight: 600; }
+.ov-head span { font-size: 18px; color: var(--gris); }
+.ov-grid { flex: 1; overflow: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-content: start; padding: 4px; }
+.card {
+  text-align: left; border: 2px solid #DCE3EE; background: #fff; border-radius: 10px; padding: 12px 14px;
+  font: 500 17px/1.3 var(--sans); color: var(--tinta); cursor: pointer; display: flex; gap: 10px;
+}
+.card b { font-family: var(--mono); color: var(--gris); font-weight: 600; min-width: 28px; }
+.card i { font-style: normal; display: block; font-size: 14px; color: var(--gris); margin-top: 2px; }
+.card:hover { border-color: var(--acento); }
+.card.now { border-color: var(--acento); background: var(--acento-suave); }
+
+.tl { border-collapse: collapse; font-size: 24px; }
+.tl th { text-align: left; color: var(--gris); font-weight: 600; font-size: 20px; padding: 0 28px 10px 0; border-bottom: 2px solid var(--linea); }
+.tl td { padding: 12px 28px 12px 0; border-bottom: 1px solid #E1E7F0; font-family: var(--mono); font-size: 22px; }
+.tl td.paso { font-family: var(--sans); color: var(--gris); }
+.tl tr.mal td:last-child { color: var(--falla); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- ============ PORTADA ============ -->
+<section class="slide portada" data-sec="-1">
+  <div class="hero">
+    <div>
+      <h1>API REST con Express</h1>
+      <p class="sub">Construimos el servidor de la agenda de contactos, un paso por vez.</p>
+      <p class="ayuda"><kbd>←</kbd> <kbd>→</kbd> para avanzar, <kbd>O</kbd> para el índice, <kbd>F</kbd> para pantalla completa.</p>
+    </div>
+    <div class="fig">
+<script type="text/x-code" data-lang="http">
+GET /contactos HTTP/1.1
+Host: localhost:3000
+</script>
+<script type="text/x-code" data-lang="http">
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[{"id":1,"nombre":"Ana Díaz"}]
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HTTP ============ -->
+<section class="slide" data-sec="0">
+  <h2>Un servidor espera y responde</h2>
+  <div class="duo">
+    <div class="box">Cliente<small>navegador, app, curl</small></div>
+    <div class="wires">
+      <div class="wire go">pedido</div>
+      <div class="wire back">respuesta</div>
+    </div>
+    <div class="box">Servidor<small>escucha en el puerto 3000</small></div>
+  </div>
+  <p class="lead" style="margin-top:40px">El servidor nunca habla primero. Solo responde.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>Un pedido es texto</h2>
+  <div class="side">
+<script type="text/x-code" data-lang="http">
+POST /contactos HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+Content-Length: 48
+
+{"nombre":"Ana Díaz","telefono":"381-555-0101"}
+</script>
+    <ol class="plain">
+      <li>método y ruta</li>
+      <li>encabezados</li>
+      <li>línea en blanco</li>
+      <li>cuerpo</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>La respuesta trae un código de estado</h2>
+<script type="text/x-code" data-lang="http">
+HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Location: /contactos/3
+
+{"id":3,"nombre":"Ana Díaz","telefono":"381-555-0101"}
+</script>
+  <p class="note"><code>Content-Type</code> dice en qué formato viene el cuerpo.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>La primera cifra dice qué pasó</h2>
+  <div class="familias">
+    <div class="familia f2"><b>2xx</b><span>salió bien</span><em>200 201 204</em></div>
+    <div class="familia f3"><b>3xx</b><span>el recurso está en otro lado</span><em>301 304</em></div>
+    <div class="familia f4"><b>4xx</b><span>el cliente se equivocó</span><em>400 404 409</em></div>
+    <div class="familia f5"><b>5xx</b><span>el servidor falló</span><em>500</em></div>
+  </div>
+  <p class="note">Un 4xx pide corregir el pedido. Un 5xx dice que el problema es nuestro.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>Un servidor con Node solo</h2>
+  <p class="lead">Node ejecuta la función una vez por cada pedido.</p>
+<script type="text/x-code" data-lang="js">
+import http from 'node:http';
+
+const servidor = http.createServer((req, res) => {
+  console.log(req.method, req.url);
+  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Hola desde Node');
+});
+
+servidor.listen(3000, () => {
+  console.log('Escuchando en http://localhost:3000');
+});
+</script>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>Decidir según método y ruta</h2>
+<script type="text/x-code" data-lang="js">
+const url = new URL(req.url, `http://${req.headers.host}`);
+
+if (req.method === 'GET' && url.pathname === '/contactos') {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(contactos));
+  return;
+}
+
+const coincidencia = url.pathname.match(/^\/contactos\/(\d+)$/);
+if (req.method === 'GET' && coincidencia) {
+  const contacto = contactos.find(c => c.id === Number(coincidencia[1]));
+  // ...responder 200 o 404
+}
+</script>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>El cuerpo llega en trozos</h2>
+<script type="text/x-code" data-lang="js">
+if (req.method === 'POST' && url.pathname === '/contactos') {
+  let texto = '';
+  for await (const trozo of req) {
+    texto += trozo;
+  }
+  const datos = JSON.parse(texto);
+  const contacto = { id: contactos.length + 1, ...datos };
+  contactos.push(contacto);
+  res.writeHead(201, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(contacto));
+  return;
+}
+</script>
+  <p class="note">Si el JSON viene mal formado, <code>JSON.parse</code> lanza y el servidor se cae.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>Todo esto se repite</h2>
+  <ul class="plain">
+    <li>un <code>if</code> por cada ruta, y el orden importa</li>
+    <li>una expresión regular para sacar el id</li>
+    <li>el cuerpo se junta a mano</li>
+    <li><code>JSON.parse</code> sin protección</li>
+    <li><code>writeHead</code> y <code>JSON.stringify</code> en cada respuesta</li>
+  </ul>
+  <p class="lead">Express ordena este trabajo. Usa <code>http</code> por debajo.</p>
+</section>
+
+<!-- ============ REST ============ -->
+<section class="slide" data-sec="1">
+  <h2>Las URL son sustantivos</h2>
+  <p class="lead">Nombran recursos. El método dice qué hacer con ellos.</p>
+  <div class="two">
+<script type="text/x-code" data-lang="http" data-cap="Así no">
+GET /obtenerContactos
+POST /crearContacto
+GET /borrarContacto?id=3
+</script>
+<script type="text/x-code" data-lang="http" data-cap="Así sí">
+GET /contactos
+POST /contactos
+DELETE /contactos/3
+</script>
+  </div>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>La API de la agenda</h2>
+  <table class="t">
+    <tr><th>Método</th><th>Ruta</th><th>Qué hace</th><th>Si sale bien</th></tr>
+    <tr><td class="m">GET</td><td class="mono">/contactos</td><td>lista todos</td><td>200 y un arreglo</td></tr>
+    <tr><td class="m">GET</td><td class="mono">/contactos?buscar=ana</td><td>lista los que coinciden</td><td>200 y un arreglo</td></tr>
+    <tr><td class="m">GET</td><td class="mono">/contactos/3</td><td>trae uno</td><td>200 y un objeto</td></tr>
+    <tr><td class="m">POST</td><td class="mono">/contactos</td><td>crea</td><td>201 y el creado</td></tr>
+    <tr><td class="m">PUT</td><td class="mono">/contactos/3</td><td>reemplaza completo</td><td>200 y el contacto</td></tr>
+    <tr><td class="m">PATCH</td><td class="mono">/contactos/3</td><td>cambia algunos campos</td><td>200 y el contacto</td></tr>
+    <tr><td class="m">DELETE</td><td class="mono">/contactos/3</td><td>borra</td><td>204 sin cuerpo</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Tres lugares para enviar datos</h2>
+  <div class="lugares">
+    <div class="q">Ruta</div><div>identifica el recurso</div><div class="ej">/contactos/3</div>
+    <div class="q">Consulta</div><div>filtra, ordena o pagina</div><div class="ej">?buscar=ana</div>
+    <div class="q">Cuerpo</div><div>lleva los datos</div><div class="ej">{"email":"ana@mail.com"}</div>
+  </div>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Seguro e idempotente</h2>
+  <table class="t">
+    <tr><th>Método</th><th>¿Cambia datos?</th><th>¿Repetirlo deja lo mismo?</th></tr>
+    <tr><td class="m">GET</td><td class="si">no</td><td class="si">sí</td></tr>
+    <tr><td class="m">PUT</td><td>sí</td><td class="si">sí</td></tr>
+    <tr><td class="m">DELETE</td><td>sí</td><td class="si">sí</td></tr>
+    <tr><td class="m">POST</td><td>sí</td><td class="no">no</td></tr>
+  </table>
+  <p class="lead">Un <code>POST</code> repetido crea 2 contactos. Un <code>PUT</code> repetido no.</p>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Cada pedido trae todo lo necesario</h2>
+  <div class="duo">
+    <div class="box">Cliente<small>manda todo en cada pedido</small></div>
+    <div class="wires"><div class="wire go">pedido</div></div>
+    <div class="stack">
+      <div class="box">Servidor A</div>
+      <div class="box">Servidor B</div>
+      <div class="box">Servidor C</div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:24px">El servidor no recuerda pedidos anteriores. Cualquier copia puede atender cualquier pedido.</p>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Viaja una representación</h2>
+  <div class="side">
+<script type="text/x-code" data-lang="json">
+{
+  "id": 3,
+  "nombre": "Ana Díaz",
+  "telefono": "381-555-0101",
+  "email": "ana@mail.com"
+}
+</script>
+    <div class="aside">
+      <p>En el servidor, el contacto puede estar en memoria, en un archivo o en una base de datos.</p>
+      <p>Lo que viaja es siempre JSON.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXPRESS ============ -->
+<section class="slide" data-sec="2">
+  <h2>Preparar el proyecto</h2>
+<script type="text/x-code" data-lang="bash">
+mkdir agenda-api
+cd agenda-api
+npm init -y
+npm pkg set type=module
+npm install express
+</script>
+  <p class="note"><code>type=module</code> habilita <code>import</code> y <code>export</code>. Se instala Express 5.</p>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Scripts para trabajar</h2>
+  <div class="side">
+<script type="text/x-code" data-lang="json">
+{
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/servidor.js",
+    "start": "node src/servidor.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
+</script>
+    <div class="aside">
+      <p><code>npm run dev</code> reinicia el servidor cada vez que guardás.</p>
+      <p><code>npm start</code> lo arranca en producción.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>El primer servidor con Express</h2>
+<script type="text/x-code" data-lang="js">
+import express from 'express';
+
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Hola desde Express');
+});
+
+app.listen(3000, () => {
+  console.log('API escuchando en http://localhost:3000');
+});
+</script>
+  <p class="note">Cuando llegue un <code>GET</code> a <code>/</code>, ejecutá esta función. Hay uno por verbo: <code>get</code>, <code>post</code>, <code>put</code>, <code>patch</code>, <code>delete</code>.</p>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Responder JSON</h2>
+<script type="text/x-code" data-lang="js">
+import express from 'express';
+
+const app = express();
+
++ const contactos = [
++   { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },
++   { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },
++ ];
++ 
++ app.get('/contactos', (req, res) => {
++   res.json(contactos);
++ });
+
+app.listen(3000, () => {
+  console.log('API escuchando en http://localhost:3000');
+});
+</script>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Elegir el código de estado</h2>
+<script type="text/x-code" data-lang="js">
+res.status(201).json(contacto);
+res.status(404).json({ error: 'Contacto inexistente' });
+res.status(204).end();
+</script>
+  <p class="lead"><code>status</code> solo anota el código. La respuesta sale con <code>json</code>, <code>send</code> o <code>end</code>.</p>
+  <p class="note">Cada pedido se responde una sola vez.</p>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Parámetros de ruta</h2>
+<script type="text/x-code" data-lang="js">
+app.get('/contactos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const contacto = contactos.find(c => c.id === id);
+
+  if (!contacto) {
+    return res.status(404).json({ error: 'Contacto inexistente' });
+  }
+  res.json(contacto);
+});
+</script>
+  <div class="two">
+    <p class="note">Todo llega como texto: <code>'2' === 2</code> es <code>false</code>.</p>
+    <p class="note">El <code>return</code> evita responder 2 veces.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Parámetros de consulta</h2>
+<script type="text/x-code" data-lang="js">
+app.get('/contactos', (req, res) => {
+  const { buscar } = req.query;
+
+  if (typeof buscar !== 'string') {
+    return res.json(contactos);
+  }
+
+  const texto = buscar.toLowerCase();
+  const encontrados = contactos.filter(c =>
+    c.nombre.toLowerCase().includes(texto)
+  );
+  res.json(encontrados);
+});
+</script>
+  <p class="note"><code>?buscar=a&amp;buscar=b</code> llega como arreglo. Nunca supongas la forma.</p>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Leer el cuerpo</h2>
+<script type="text/x-code" data-lang="js">
++ app.use(express.json());
+
++ let siguienteId = 3;
++ 
++ app.post('/contactos', (req, res) => {
++   const contacto = { id: siguienteId++, ...req.body };
++   contactos.push(contacto);
++   res.status(201).location(`/contactos/${contacto.id}`).json(contacto);
++ });
+</script>
+  <div class="aside">
+    <p><code>express.json()</code> junta los trozos y deja el resultado en <code>req.body</code>. Va antes de las rutas.</p>
+    <p class="warn">Problema: si el cuerpo trae <code>"id": 99</code>, pisa el nuestro.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>PUT reemplaza, PATCH modifica</h2>
+  <div class="two">
+<script type="text/x-code" data-lang="json" data-cap="Guardado">
+{
+  "id": 1,
+  "nombre": "Ana Díaz",
+  "telefono": "381-555-0101"
+}
+</script>
+<script type="text/x-code" data-lang="json" data-cap="Cuerpo enviado">
+{
+  "nombre": "Ana D."
+}
+</script>
+<script type="text/x-code" data-lang="json" data-cap="Después de PUT">
+{
+  "id": 1,
+  "nombre": "Ana D."
+}
+</script>
+<script type="text/x-code" data-lang="json" data-cap="Después de PATCH">
+{
+  "id": 1,
+  "nombre": "Ana D.",
+  "telefono": "381-555-0101"
+}
+</script>
+  </div>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>PUT y PATCH en código</h2>
+<script type="text/x-code" data-lang="js">
+app.put('/contactos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const indice = contactos.findIndex(c => c.id === id);
+  if (indice === -1) {
+    return res.status(404).json({ error: 'Contacto inexistente' });
+  }
+  contactos[indice] = { id, ...req.body };
+  res.json(contactos[indice]);
+});
+
+app.patch('/contactos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const contacto = contactos.find(c => c.id === id);
+  if (!contacto) {
+    return res.status(404).json({ error: 'Contacto inexistente' });
+  }
+  Object.assign(contacto, req.body, { id });
+  res.json(contacto);
+});
+</script>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Borrar responde 204</h2>
+<script type="text/x-code" data-lang="js">
+app.delete('/contactos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const indice = contactos.findIndex(c => c.id === id);
+  if (indice === -1) {
+    return res.status(404).json({ error: 'Contacto inexistente' });
+  }
+  contactos.splice(indice, 1);
+  res.status(204).end();
+});
+</script>
+  <p class="note">204 significa que salió bien y no hay nada que devolver. Por eso <code>end</code> y no <code>json</code>.</p>
+</section>
+
+<!-- ============ MIDDLEWARE ============ -->
+<section class="slide" data-sec="3">
+  <h2>Una cadena de funciones</h2>
+  <p class="lead">Cada pedido recorre la cadena en el orden en que la registraste.</p>
+  <div class="flow">
+    <div class="node pedido"><div class="b">pedido</div></div>
+    <div class="node"><div class="b">registrarPedidos</div><small>next()</small></div>
+    <div class="node"><div class="b">express.json</div><small>next()</small></div>
+    <div class="node resp"><div class="b">rutas</div><small>responde</small></div>
+    <div class="node out"><div class="b">rutaInexistente</div><small>si nadie respondió</small></div>
+  </div>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Responder o pasar</h2>
+<script type="text/x-code" data-lang="js">
+function middleware(req, res, next) {
+  // prepara algo en req...
+  next();                    // pasa a la siguiente función
+}
+
+function manejador(req, res) {
+  res.json({ ok: true });    // responde y la cadena termina
+}
+</script>
+  <p class="lead">Si no hace ninguna de las 2 cosas, el pedido queda colgado.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Registrar cada pedido</h2>
+<script type="text/x-code" data-lang="js">
+function registrarPedidos(req, res, next) {
+  const inicio = Date.now();
+  res.on('finish', () => {
+    const duracion = Date.now() - inicio;
+    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);
+  });
+  next();
+}
+
+app.use(registrarPedidos);
+</script>
+<script type="text/x-code" data-lang="log">
+POST /contactos → 201 (13 ms)
+GET /contactos?buscar=an → 200 (7 ms)
+GET /contactos/50 → 404 (8 ms)
+</script>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>El orden importa</h2>
+  <div class="two">
+<script type="text/x-code" data-lang="js" data-cap="Mal: req.body llega undefined">
+app.post('/contactos', crear);
+app.use(express.json());
+</script>
+    <ol class="plain">
+      <li>preparar: registro, cuerpo</li>
+      <li>rutas</li>
+      <li>ruta inexistente</li>
+      <li>manejador de errores</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Middleware para una sola ruta</h2>
+<script type="text/x-code" data-lang="js">
+function cargarContacto(req, res, next) {
+  const contacto = contactos.find(c => c.id === Number(req.params.id));
+  if (!contacto) {
+    return res.status(404).json({ error: 'Contacto inexistente' });
+  }
+  req.contacto = contacto;
+  next();
+}
+
+app.get('/contactos/:id', cargarContacto, (req, res) => {
+  res.json(req.contacto);
+});
+</script>
+  <p class="note">Busca, lo deja en <code>req</code> y pasa. Si no existe, corta con 404.</p>
+</section>
+
+<!-- ============ ERRORES ============ -->
+<section class="slide" data-sec="4">
+  <h2>Un solo lugar para los errores</h2>
+<script type="text/x-code" data-lang="js">
+function manejarErrores(err, req, res, next) {
+  const status = err.status ?? 500;
+  if (status >= 500) {
+    console.error(err);
+    return res.status(status).json({ error: 'Error interno del servidor' });
+  }
+  res.status(status).json({ error: err.message, detalles: err.detalles });
+}
+</script>
+  <div class="two">
+    <p class="note">4 parámetros: así lo reconoce Express. <code>next</code> va aunque no se use.</p>
+    <p class="note">Al cliente, un 500 no le muestra detalles internos.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="4">
+  <h2>Errores con código de estado</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/errores.js">
+export class ErrorHttp extends Error {
+  constructor(status, mensaje, detalles) {
+    super(mensaje);
+    this.status = status;
+    this.detalles = detalles;
+  }
+}
+</script>
+<script type="text/x-code" data-lang="js" data-cap="En cualquier manejador">
+throw new ErrorHttp(404, 'Contacto inexistente');
+</script>
+</section>
+
+<section class="slide" data-sec="4">
+  <h2>Funciones async sin try y catch</h2>
+<script type="text/x-code" data-lang="js">
+app.get('/contactos/:id', async (req, res) => {
+  const contacto = await repositorio.obtener(Number(req.params.id));
+  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');
+  res.json(contacto);
+});
+</script>
+  <div class="aside">
+    <p>Express 5 lleva el error al manejador de errores.</p>
+    <p class="warn">En Express 4 el pedido quedaba colgado. Por eso los tutoriales viejos usan <code>try</code>, <code>catch</code> y <code>next(error)</code>.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="4">
+  <h2>JSON mal formado</h2>
+  <p class="lead"><code>express.json()</code> genera un error 400. Le cambiamos el mensaje.</p>
+<script type="text/x-code" data-lang="js">
+function manejarErrores(err, req, res, next) {
++   if (err.type === 'entity.parse.failed') {
++     return res.status(400).json({ error: 'El cuerpo no es un JSON válido' });
++   }
+  const status = err.status ?? 500;
+  if (status >= 500) {
+    console.error(err);
+    return res.status(status).json({ error: 'Error interno del servidor' });
+  }
+  res.status(status).json({ error: err.message, detalles: err.detalles });
+}
+</script>
+</section>
+
+<section class="slide" data-sec="4">
+  <h2>Rutas inexistentes en JSON</h2>
+<script type="text/x-code" data-lang="js">
+function rutaInexistente(req, res) {
+  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });
+}
+</script>
+  <p class="lead">Va al final, antes del manejador de errores. Si un pedido llegó hasta acá, nadie lo respondió.</p>
+</section>
+
+<!-- ============ VALIDACIÓN ============ -->
+<section class="slide" data-sec="5">
+  <h2>No confiar en el cliente</h2>
+  <ul class="plain">
+    <li>el cuerpo es un objeto, no un arreglo ni un valor suelto</li>
+    <li><code>nombre</code> es obligatorio y es un texto no vacío</li>
+    <li><code>telefono</code> es opcional y, si viene, es texto</li>
+    <li><code>email</code> es opcional y, si viene, tiene formato de correo</li>
+    <li>cualquier otro campo, incluido <code>id</code>, se ignora</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Revisar la forma y el nombre</h2>
+<script type="text/x-code" data-lang="js">
+import { ErrorHttp } from './errores.js';
+
+const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function validarContacto(datos, { parcial = false } = {}) {
+  if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) {
+    throw new ErrorHttp(400, 'El cuerpo debe ser un objeto JSON');
+  }
+
+  const errores = [];
+  const limpio = {};
+
+  if (!parcial || 'nombre' in datos) {
+    if (typeof datos.nombre !== 'string' || datos.nombre.trim() === '') {
+      errores.push('nombre: es obligatorio y debe ser un texto no vacío');
+    } else {
+      limpio.nombre = datos.nombre.trim();
+    }
+  }
+</script>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Los campos opcionales</h2>
+<script type="text/x-code" data-lang="js">
+  if ('telefono' in datos) {
+    if (typeof datos.telefono !== 'string') {
+      errores.push('telefono: debe ser un texto');
+    } else {
+      limpio.telefono = datos.telefono.trim();
+    }
+  }
+
+  if ('email' in datos) {
+    if (typeof datos.email !== 'string' || !FORMATO_EMAIL.test(datos.email)) {
+      errores.push('email: no tiene un formato válido');
+    } else {
+      limpio.email = datos.email.trim().toLowerCase();
+    }
+  }
+</script>
+  <p class="note"><code>parcial</code> sirve para PATCH: el nombre deja de ser obligatorio, pero si viene se revisa.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Juntar todos los errores</h2>
+  <div class="side" style="grid-template-columns: max-content; gap: 16px;">
+<script type="text/x-code" data-lang="js" data-cap="Al final de validarContacto">
+  if (errores.length > 0) {
+    throw new ErrorHttp(400, 'Datos inválidos', errores);
+  }
+  return limpio;
+}
+</script>
+<script type="text/x-code" data-lang="json" data-cap="Lo que recibe el cliente">
+{
+  "error": "Datos inválidos",
+  "detalles": [
+    "nombre: es obligatorio...",
+    "email: no tiene un formato..."
+  ]
+}
+</script>
+  </div>
+  <p class="lead">El cliente se entera de todo lo que tiene que corregir en una sola respuesta.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Lo limpio no trae id</h2>
+  <div class="trio">
+<script type="text/x-code" data-lang="json" data-cap="Llega">
+{
+  "id": 99,
+  "nombre": "  Ana Díaz ",
+  "email": "ANA@Mail.com",
+  "esAdmin": true
+}
+</script>
+    <div class="big-arrow">→</div>
+<script type="text/x-code" data-lang="json" data-cap="Devuelve validarContacto">
+{
+  "nombre": "Ana Díaz",
+  "email": "ana@mail.com"
+}
+</script>
+  </div>
+  <p class="lead">Revisa, limpia y filtra. El <code>id</code> ya no se puede pisar desde afuera.</p>
+</section>
+
+<!-- ============ ARCHIVO ============ -->
+<section class="slide" data-sec="6">
+  <h2>Las rutas no saben dónde se guarda</h2>
+  <div class="flow">
+    <div class="node"><div class="b">rutas</div><small>piden: listar, crear...</small></div>
+    <div class="node resp"><div class="b">repositorio</div><small>sabe cómo se guarda</small></div>
+    <div class="node"><div class="b">contactos.json</div><small>hoy</small></div>
+  </div>
+  <p class="lead" style="margin-top:28px">Si mañana usamos una base de datos, se reescribe el repositorio. Las rutas no se tocan.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Leer el archivo</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.repositorio.js">
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+
+const CARPETA = new URL('../datos/', import.meta.url);
+const ARCHIVO = new URL('contactos.json', CARPETA);
+
+async function leerTodos() {
+  try {
+    const texto = await readFile(ARCHIVO, 'utf-8');
+    return JSON.parse(texto);
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+</script>
+  <div class="two">
+    <p class="note">La ruta es relativa al módulo, no a donde ejecutás <code>node</code>.</p>
+    <p class="note"><code>ENOENT</code>: el archivo todavía no existe. Agenda vacía.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Guardar y listar</h2>
+<script type="text/x-code" data-lang="js">
+async function guardarTodos(contactos) {
+  await mkdir(CARPETA, { recursive: true });
+  await writeFile(ARCHIVO, JSON.stringify(contactos, null, 2));
+}
+
+export async function listar() {
+  return leerTodos();
+}
+</script>
+  <p class="note"><code>recursive: true</code> crea la carpeta si falta y no hace nada si ya existe.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Crear con un id nuevo</h2>
+<script type="text/x-code" data-lang="js">
+export async function crear(datos) {
+  const contactos = await leerTodos();
+  const id = contactos.reduce((maximo, c) => Math.max(maximo, c.id), 0) + 1;
+  const contacto = { id, ...datos };
+  contactos.push(contacto);
+  await guardarTodos(contactos);
+  return contacto;
+}
+</script>
+  <p class="lead">El mayor más uno. Contar los elementos repetiría ids después de borrar.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Obtener y reemplazar</h2>
+<script type="text/x-code" data-lang="js">
+export async function obtener(id) {
+  const contactos = await leerTodos();
+  return contactos.find(c => c.id === id) ?? null;
+}
+
+export async function reemplazar(id, datos) {
+  const contactos = await leerTodos();
+  const indice = contactos.findIndex(c => c.id === id);
+  if (indice === -1) return null;
+  contactos[indice] = { id, ...datos };
+  await guardarTodos(contactos);
+  return contactos[indice];
+}
+</script>
+  <p class="note">El repositorio devuelve <code>null</code>. La ruta decide que eso es un 404.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Modificar y borrar</h2>
+<script type="text/x-code" data-lang="js">
+export async function modificar(id, cambios) {
+  const contactos = await leerTodos();
+  const indice = contactos.findIndex(c => c.id === id);
+  if (indice === -1) return null;
+  contactos[indice] = { ...contactos[indice], ...cambios, id };
+  await guardarTodos(contactos);
+  return contactos[indice];
+}
+
+export async function borrar(id) {
+  const contactos = await leerTodos();
+  const restantes = contactos.filter(c => c.id !== id);
+  if (restantes.length === contactos.length) return false;
+  await guardarTodos(restantes);
+  return true;
+}
+</script>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Un límite: pedidos simultáneos</h2>
+  <table class="tl">
+    <tr><th></th><th>Crear Ana</th><th>Crear Bruno</th><th>En el archivo</th></tr>
+    <tr><td class="paso">1</td><td>lee []</td><td></td><td>[]</td></tr>
+    <tr><td class="paso">2</td><td></td><td>lee []</td><td>[]</td></tr>
+    <tr><td class="paso">3</td><td>guarda [Ana]</td><td></td><td>[Ana]</td></tr>
+    <tr class="mal"><td class="paso">4</td><td></td><td>guarda [Bruno]</td><td>[Bruno]</td></tr>
+  </table>
+  <p class="lead">Ana se perdió. Las bases de datos resuelven estos accesos simultáneos.</p>
+</section>
+
+<!-- ============ ORGANIZACIÓN ============ -->
+<section class="slide" data-sec="7">
+  <h2>Agrupar las rutas con Router</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.rutas.js">
+import { Router } from 'express';
+import * as repositorio from './contactos.repositorio.js';
+import { validarContacto } from './contactos.validacion.js';
+import { ErrorHttp } from './errores.js';
+
+export const rutasContactos = Router();
+
+function leerId(req) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new ErrorHttp(400, 'El id debe ser un entero positivo');
+  }
+  return id;
+}
+</script>
+  <p class="note"><code>/contactos/abc</code> no es un contacto inexistente: es un pedido mal armado. 400.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Listar y traer uno</h2>
+<script type="text/x-code" data-lang="js">
+rutasContactos.get('/', async (req, res) => {
+  let contactos = await repositorio.listar();
+  const { buscar } = req.query;
+  if (typeof buscar === 'string') {
+    const texto = buscar.toLowerCase();
+    contactos = contactos.filter(c => c.nombre.toLowerCase().includes(texto));
+  }
+  res.json(contactos);
+});
+
+rutasContactos.get('/:id', async (req, res) => {
+  const contacto = await repositorio.obtener(leerId(req));
+  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');
+  res.json(contacto);
+});
+</script>
+  <p class="note">Dentro del router las rutas son relativas: <code>'/'</code> y <code>'/:id'</code>.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Cada manejador en 3 pasos</h2>
+  <p class="lead">Leer y validar, pedirle al repositorio, responder.</p>
+<script type="text/x-code" data-lang="js">
+rutasContactos.post('/', async (req, res) => {
+  const datos = validarContacto(req.body);
+  const contacto = await repositorio.crear(datos);
+  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);
+});
+
+rutasContactos.put('/:id', async (req, res) => {
+  const id = leerId(req);
+  const datos = validarContacto(req.body);
+  const contacto = await repositorio.reemplazar(id, datos);
+  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');
+  res.json(contacto);
+});
+</script>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Modificar y borrar</h2>
+<script type="text/x-code" data-lang="js">
+rutasContactos.patch('/:id', async (req, res) => {
+  const id = leerId(req);
+  const cambios = validarContacto(req.body, { parcial: true });
+  const contacto = await repositorio.modificar(id, cambios);
+  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');
+  res.json(contacto);
+});
+
+rutasContactos.delete('/:id', async (req, res) => {
+  const borrado = await repositorio.borrar(leerId(req));
+  if (!borrado) throw new ErrorHttp(404, 'Contacto inexistente');
+  res.status(204).end();
+});
+</script>
+  <p class="note">Los errores no se manejan acá. Se lanzan.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>app.js arma la cadena</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/app.js">
+import express from 'express';
+import { rutasContactos } from './contactos.rutas.js';
+import { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';
+
+export const app = express();
+
+app.use(registrarPedidos);
+app.use(express.json());
+
+app.use('/contactos', rutasContactos);
+
+app.use(rutaInexistente);
+app.use(manejarErrores);
+</script>
+  <p class="note">Se lee de arriba abajo el recorrido completo de un pedido.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>servidor.js solo arranca</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/servidor.js">
+import { app } from './app.js';
+
+const PUERTO = process.env.PUERTO ?? 3000;
+
+app.listen(PUERTO, () => {
+  console.log(`API escuchando en http://localhost:${PUERTO}`);
+});
+</script>
+<script type="text/x-code" data-lang="bash">
+PUERTO=8080 npm start
+</script>
+  <p class="note">Una prueba automática puede importar <code>app</code> sin abrir un puerto.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Un archivo por pregunta</h2>
+<script type="text/x-code" data-lang="tree">
+agenda-api/
+├── package.json
+├── datos/
+│   └── contactos.json            se crea con el primer contacto
+└── src/
+    ├── servidor.js               arranca
+    ├── app.js                    arma la cadena
+    ├── middlewares.js            registro, 404 y errores
+    ├── errores.js                ErrorHttp
+    ├── contactos.rutas.js        qué se responde
+    ├── contactos.validacion.js   qué se acepta
+    └── contactos.repositorio.js  cómo se guarda
+</script>
+  <p class="note">Para sumar empresas o tareas: 3 archivos nuevos y una línea <code>app.use</code>.</p>
+</section>
+
+<!-- ============ PRUEBAS ============ -->
+<section class="slide" data-sec="8">
+  <h2>Probar con curl</h2>
+<script type="text/x-code" data-lang="bash">
+curl -i -X POST http://localhost:3000/contactos \
+  -H "Content-Type: application/json" \
+  -d '{"nombre":"Ana Díaz","telefono":"381-555-0101"}'
+
+curl "http://localhost:3000/contactos?buscar=ana"
+
+curl -X PATCH http://localhost:3000/contactos/1 \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@mail.com"}'
+
+curl -i -X DELETE http://localhost:3000/contactos/1
+</script>
+  <p class="note">Sin <code>Content-Type</code>, <code>req.body</code> queda <code>undefined</code>. Es el error más común.</p>
+</section>
+
+<section class="slide" data-sec="8">
+  <h2>Un archivo .http</h2>
+  <div class="side">
+<script type="text/x-code" data-lang="http">
+### Listar
+GET http://localhost:3000/contactos
+
+### Crear
+POST http://localhost:3000/contactos
+Content-Type: application/json
+
+{
+  "nombre": "Ana Díaz",
+  "telefono": "381-555-0101"
+}
+
+### Borrar
+DELETE http://localhost:3000/contactos/1
+</script>
+    <div class="aside">
+      <p>Con la extensión REST Client de Visual Studio Code, cada pedido se envía con un clic.</p>
+      <p>Es el mismo formato del mensaje HTTP.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="8">
+  <h2>Desde JavaScript con fetch</h2>
+<script type="text/x-code" data-lang="js">
+const BASE = 'http://localhost:3000';
+
+const respuesta = await fetch(`${BASE}/contactos`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ nombre: 'Carla Ruiz', telefono: '381-555-0303' }),
+});
+
+console.log(respuesta.status);
+console.log(respuesta.headers.get('Location'));
+console.log(await respuesta.json());
+</script>
+  <p class="note"><code>fetch</code> no falla con 404 ni 400. Mirá <code>respuesta.ok</code>.</p>
+</section>
+
+<section class="slide" data-sec="8">
+  <h2>Otro puerto es otro origen</h2>
+  <div class="duo">
+    <div class="box">Página<small>localhost:5173</small></div>
+    <div class="wires"><div class="wire cut">el navegador bloquea</div></div>
+    <div class="box">API<small>localhost:3000</small></div>
+  </div>
+  <p class="lead" style="margin-top:28px">Origen = protocolo + dominio + puerto. Una página no lee respuestas de otro origen si la API no lo permite.</p>
+  <p class="note">curl y Node no aplican esta regla. Por eso funciona en la terminal y falla en el navegador.</p>
+</section>
+
+<section class="slide" data-sec="8">
+  <h2>Habilitar CORS</h2>
+<script type="text/x-code" data-lang="bash">
+npm install cors
+</script>
+<script type="text/x-code" data-lang="js" data-cap="src/app.js">
+import express from 'express';
++ import cors from 'cors';
+
+export const app = express();
+
++ app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(registrarPedidos);
+app.use(express.json());
+</script>
+  <p class="note">Agrega <code>Access-Control-Allow-Origin</code> y atiende el <code>OPTIONS</code> previo. Si el frontend sale de <code>express.static</code>, no hace falta.</p>
+</section>
+
+<section class="slide" data-sec="8">
+  <h2>El recorrido de un pedido</h2>
+  <div class="flow">
+    <div class="node pedido"><div class="b">pedido</div></div>
+    <div class="node"><div class="b">rutas</div><small>qué responder</small></div>
+    <div class="node"><div class="b">validación</div><small>qué se acepta</small></div>
+    <div class="node"><div class="b">repositorio</div><small>cómo se guarda</small></div>
+    <div class="node resp"><div class="b">respuesta</div><small>código y JSON</small></div>
+  </div>
+  <p class="lead" style="margin-top:28px">Los errores se lanzan desde cualquier lugar y se responden en uno solo.</p>
+</section>
+
+<!-- Índice -->
+<div class="overview" id="overview" role="dialog" aria-label="Índice de diapositivas">
+  <div class="ov-head"><h2>Índice</h2><span><kbd>O</kbd> o <kbd>Esc</kbd> para cerrar</span></div>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
+
+<!-- Barra de recorrido -->
+<nav class="rail" aria-label="Secciones">
+  <div class="nodes" id="nodes"></div>
+  <span class="contador" id="contador"></span>
+  <button class="navb" id="prev" aria-label="Anterior">‹</button>
+  <button class="navb" id="next" aria-label="Siguiente">›</button>
+</nav>
+</div>
+
+<script>
+const SECCIONES = ['HTTP', 'REST', 'Express', 'Middleware', 'Errores', 'Validación', 'Archivo', 'Organización', 'Pruebas'];
+
+/* ---------- Resaltado de código ---------- */
+const PALABRAS = new Set(('import export from const let var function async await return if else throw new class ' +
+  'extends constructor super for of in typeof null undefined true false this default try catch').split(' '));
+
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const sp = (clase, s) => `<span class="t-${clase}">${esc(s)}</span>`;
+
+function lineaJs(linea) {
+  const re = /(\/\/.*$)|(`(?:\\[\s\S]|[^`\\])*`)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|(\/(?![*\/])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^\/\\\[])+\/[gimsuy]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|(\s+)|([\s\S])/g;
+  let out = '';
+  let previo = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    const [t, com, tpl, str, rx, num, id, ws] = m;
+    if (com) out += sp('com', t);
+    else if (tpl) { out += plantilla(t); previo = 'x'; }
+    else if (str) { out += sp('str', t); previo = 'x'; }
+    else if (rx) {
+      if (previo === '' || /[=(,:!&|?{};\[]$/.test(previo) || previo === 'return') { out += sp('rx', t); previo = 'x'; }
+      else { out += esc('/'); re.lastIndex = m.index + 1; previo = '/'; }
+    }
+    else if (num) { out += sp('num', t); previo = 'x'; }
+    else if (id) {
+      if (PALABRAS.has(id)) out += sp('kw', id);
+      else if (linea[re.lastIndex] === '(') out += sp('fn', id);
+      else if (/^[A-Z]/.test(id)) out += sp('type', id);
+      else out += esc(id);
+      previo = id;
+    }
+    else if (ws) out += t;
+    else { out += esc(t); previo = t; }
+  }
+  return out;
+}
+
+function plantilla(t) {
+  let out = '';
+  let ultimo = 0;
+  const re = /\$\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(t))) {
+    out += sp('str', t.slice(ultimo, m.index));
+    out += sp('kw', '${') + lineaJs(m[1]) + sp('kw', '}');
+    ultimo = re.lastIndex;
+  }
+  return out + sp('str', t.slice(ultimo));
+}
+
+function lineaJson(linea) {
+  const re = /("(?:\\.|[^"\\])*")(\s*:)?|(-?\b\d+(?:\.\d+)?\b)|\b(true|false|null)\b|([\s\S])/g;
+  let out = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    if (m[1]) out += sp(m[2] ? 'key' : 'str', m[1]) + (m[2] ? esc(m[2]) : '');
+    else if (m[3]) out += sp('num', m[3]);
+    else if (m[4]) out += sp('kw', m[4]);
+    else out += esc(m[5]);
+  }
+  return out;
+}
+
+function lineaBash(linea) {
+  if (/^\s*#/.test(linea)) return sp('com', linea);
+  const re = /('[^']*'|"(?:\\.|[^"\\])*")|(\s--?[\w-]+)|(\\$)|(\S+)|(\s+)/g;
+  let out = '';
+  let primera = !/^\s/.test(linea);
+  let m;
+  while ((m = re.exec(linea))) {
+    if (m[1]) out += sp('str', m[1]);
+    else if (m[2]) out += sp('attr', m[2]);
+    else if (m[3]) out += sp('com', m[3]);
+    else if (m[4]) {
+      if (primera) out += sp('fn', m[4]);
+      else if (/^"?https?:/.test(m[4]) || /^[A-Z_]+=/.test(m[4])) out += sp('path', m[4]);
+      else out += esc(m[4]);
+      primera = false;
+    }
+    else out += m[5];
+  }
+  return out;
+}
+
+function lineasHttp(lineas) {
+  let estado = 'nada';
+  return lineas.map(linea => {
+    let m;
+    if (/^###/.test(linea)) { estado = 'nada'; return sp('com', linea); }
+    if ((m = linea.match(/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)(\s+)(\S+)(.*)$/))) {
+      estado = 'encabezados';
+      return sp('meth', m[1]) + esc(m[2]) + sp('path', m[3]) + sp('ver', m[4]);
+    }
+    if ((m = linea.match(/^(HTTP\/[\d.]+)(\s+)(\d)(\d\d.*)$/))) {
+      estado = 'encabezados';
+      return sp('ver', m[1]) + esc(m[2]) + sp('s' + m[3], m[3] + m[4]);
+    }
+    if (estado === 'encabezados') {
+      if (linea.trim() === '') { estado = 'cuerpo'; return ''; }
+      if ((m = linea.match(/^([\w-]+)(:)(.*)$/))) return sp('attr', m[1]) + esc(m[2]) + sp('hval', m[3]);
+    }
+    if (estado === 'cuerpo') return lineaJson(linea);
+    return esc(linea);
+  });
+}
+
+function lineaLog(linea) {
+  const m = linea.match(/^(\w+) (\S+) → (\d)(\d\d)(.*)$/);
+  if (!m) return esc(linea);
+  return sp('meth', m[1]) + ' ' + sp('path', m[2]) + ' → ' + sp('s' + m[3], m[3] + m[4]) + sp('com', m[5]);
+}
+
+function lineaArbol(linea) {
+  const m = linea.match(/^([│├└─\s]*)(\S+)(\s{2,}.*)?$/);
+  if (!m) return esc(linea);
+  return sp('dim', m[1]) + esc(m[2]) + (m[3] ? sp('com', m[3]) : '');
+}
+
+function resaltar(lenguaje, lineas) {
+  switch (lenguaje) {
+    case 'js': return lineas.map(lineaJs);
+    case 'json': return lineas.map(lineaJson);
+    case 'bash': return lineas.map(lineaBash);
+    case 'http': return lineasHttp(lineas);
+    case 'log': return lineas.map(lineaLog);
+    case 'tree': return lineas.map(lineaArbol);
+    default: return lineas.map(esc);
+  }
+}
+
+function prepararCodigo() {
+  document.querySelectorAll('script[type="text/x-code"]').forEach(fuente => {
+    const crudo = fuente.textContent.replace(/^\n/, '').replace(/\s+$/, '');
+    const lineas = crudo.split('\n');
+    const marcas = lineas.map(l => l.startsWith('+ '));
+    const limpias = lineas.map(l => (l.startsWith('+ ') ? l.slice(2) : l));
+    const html = resaltar(fuente.dataset.lang || 'text', limpias);
+
+    const pre = document.createElement('pre');
+    pre.className = 'code';
+    pre.innerHTML = html.map((h, i) => `<span class="ln${marcas[i] ? ' add' : ''}">${h || ' '}</span>`).join('');
+
+    if (fuente.dataset.cap) {
+      const fig = document.createElement('div');
+      fig.className = 'fig';
+      fig.innerHTML = `<div class="cap">${esc(fuente.dataset.cap)}</div>`;
+      fig.appendChild(pre);
+      fuente.replaceWith(fig);
+    } else {
+      fuente.replaceWith(pre);
+    }
+  });
+}
+
+/* ---------- Presentación ---------- */
+prepararCodigo();
+
+const stage = document.getElementById('stage');
+const slides = [...document.querySelectorAll('.slide')];
+const nodos = document.getElementById('nodes');
+const contador = document.getElementById('contador');
+const overview = document.getElementById('overview');
+const ovGrid = document.getElementById('ovGrid');
+let actual = 0;
+
+function escalar() {
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
+  stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+
+function ajustar(slide) {
+  const pres = [...slide.querySelectorAll('pre.code')];
+  if (!pres.length) return;
+  let tam = 22;
+  const desborda = () =>
+    slide.scrollHeight > slide.clientHeight + 1 ||
+    slide.scrollWidth > slide.clientWidth + 1 ||
+    pres.some(p => p.scrollWidth > p.clientWidth + 1);
+  slide.style.setProperty('--cs', `${tam}px`);
+  while (desborda() && tam > 14) {
+    tam -= 1;
+    slide.style.setProperty('--cs', `${tam}px`);
+  }
+}
+
+function seccionDe(i) { return Number(slides[i].dataset.sec); }
+
+function construirBarra() {
+  nodos.innerHTML = SECCIONES.map((nombre, k) =>
+    `${k ? '<span class="link"></span>' : ''}<button class="sec" data-k="${k}">${nombre}</button>`
+  ).join('');
+  nodos.addEventListener('click', e => {
+    const b = e.target.closest('.sec');
+    if (!b) return;
+    const destino = slides.findIndex((_, i) => seccionDe(i) === Number(b.dataset.k));
+    if (destino >= 0) mostrar(destino);
+  });
+}
+
+function actualizarBarra() {
+  const sec = seccionDe(actual);
+  nodos.querySelectorAll('.sec').forEach(b => {
+    const k = Number(b.dataset.k);
+    b.classList.toggle('now', k === sec);
+    b.classList.toggle('done', k < sec);
+  });
+  nodos.querySelectorAll('.link').forEach((l, k) => l.classList.toggle('done', k < sec));
+  contador.textContent = `${actual + 1} / ${slides.length}`;
+}
+
+function construirIndice() {
+  ovGrid.innerHTML = slides.map((s, i) => {
+    const titulo = (s.querySelector('h1, h2') || {}).textContent || '';
+    const sec = seccionDe(i);
+    const etiqueta = sec >= 0 ? SECCIONES[sec] : 'Portada';
+    return `<button class="card" data-i="${i}"><b>${i + 1}</b><span>${esc(titulo)}<i>${etiqueta}</i></span></button>`;
+  }).join('');
+  ovGrid.addEventListener('click', e => {
+    const c = e.target.closest('.card');
+    if (!c) return;
+    alternarIndice(false);
+    mostrar(Number(c.dataset.i));
+  });
+}
+
+function alternarIndice(abrir = !overview.classList.contains('on')) {
+  overview.classList.toggle('on', abrir);
+  if (abrir) {
+    ovGrid.querySelectorAll('.card').forEach((c, i) => c.classList.toggle('now', i === actual));
+    const c = ovGrid.querySelector('.card.now');
+    if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); }
+  }
+}
+
+function mostrar(i) {
+  actual = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, j) => s.classList.toggle('on', j === actual));
+  ajustar(slides[actual]);
+  actualizarBarra();
+  history.replaceState(null, '', `#${actual + 1}`);
+}
+
+function pantallaCompleta() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (overview.classList.contains('on')) {
+    if (k === 'Escape' || k === 'o' || k === 'O') { e.preventDefault(); alternarIndice(false); }
+    return;
+  }
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(k)) { e.preventDefault(); mostrar(actual + 1); }
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); mostrar(actual - 1); }
+  else if (k === 'Home') mostrar(0);
+  else if (k === 'End') mostrar(slides.length - 1);
+  else if (k === 'o' || k === 'O') alternarIndice(true);
+  else if (k === 'f' || k === 'F') pantallaCompleta();
+});
+
+document.getElementById('prev').addEventListener('click', () => mostrar(actual - 1));
+document.getElementById('next').addEventListener('click', () => mostrar(actual + 1));
+
+let toqueX = null;
+stage.addEventListener('touchstart', e => { toqueX = e.touches[0].clientX; }, { passive: true });
+stage.addEventListener('touchend', e => {
+  if (toqueX === null) return;
+  const dx = e.changedTouches[0].clientX - toqueX;
+  if (Math.abs(dx) > 50) mostrar(actual + (dx < 0 ? 1 : -1));
+  toqueX = null;
+});
+
+window.addEventListener('resize', escalar);
+
+construirBarra();
+construirIndice();
+escalar();
+mostrar((parseInt(location.hash.slice(1), 10) || 1) - 1);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ajustar(slides[actual]));
+</script>
+</body>
+</html>

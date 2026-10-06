@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e6">
+  <title>Laboratorio de variables y tipos · JavaScript</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f0e6;
+      --paper-deep: #e8e0cf;
+      --ink: #17241f;
+      --ink-soft: #526059;
+      --blue: #0f5c6e;
+      --blue-deep: #083b48;
+      --lime: #dff06f;
+      --lime-deep: #bdd235;
+      --coral: #ef684e;
+      --coral-soft: #ffd7ce;
+      --gold: #f4ba3d;
+      --line: #c8c1b2;
+      --white: #fffdf7;
+      --shadow: 0 14px 35px rgb(35 48 41 / 0.11);
+      --radius: 1.25rem;
+      --display: Baskerville, "Iowan Old Style", "Palatino Linotype", serif;
+      --body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      --code: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 20rem;
+      color: var(--ink);
+      background:
+        linear-gradient(rgb(23 36 31 / 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 100% 2rem;
+      font-family: var(--body);
+      line-height: 1.62;
+      accent-color: var(--blue);
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+    a { color: var(--blue-deep); text-underline-offset: .2em; }
+    code, pre { font-family: var(--code); }
+    code { font-size: .92em; }
+
+    :where(a, button, input, select, textarea, summary):focus-visible {
+      outline: .2rem solid var(--coral);
+      outline-offset: .2rem;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: .75rem;
+      left: .75rem;
+      padding: .7rem 1rem;
+      background: var(--ink);
+      color: var(--white);
+      border-radius: .5rem;
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .reading-progress {
+      position: fixed;
+      z-index: 80;
+      inset: 0 0 auto;
+      height: .35rem;
+      background: var(--paper-deep);
+    }
+    .reading-progress span {
+      display: block;
+      width: var(--progress, 0%);
+      height: 100%;
+      background: var(--coral);
+      transition: width .15s linear;
+    }
+
+    .shell {
+      width: min(100% - 2rem, 78rem);
+      margin-inline: auto;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(5rem, 10vw, 8.5rem) 0 clamp(3rem, 7vw, 6rem);
+      border-bottom: 1px solid var(--line);
+    }
+    .hero::before {
+      content: "JS";
+      position: absolute;
+      z-index: -1;
+      top: clamp(1rem, 3vw, 2.2rem);
+      right: max(2vw, calc((100vw - 78rem) / 2));
+      color: rgb(15 92 110 / .07);
+      font: 900 clamp(12rem, 32vw, 30rem)/.8 var(--body);
+      letter-spacing: -.09em;
+      transform: rotate(-5deg);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      margin: 0 0 1rem;
+      color: var(--blue-deep);
+      font-weight: 800;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      font-size: .78rem;
+    }
+    .eyebrow::before { content: ""; width: 2.4rem; height: .24rem; background: var(--coral); }
+    h1, h2, h3 { text-wrap: balance; }
+    h1 {
+      max-width: 12ch;
+      margin: 0;
+      font: 700 clamp(3.1rem, 9vw, 7rem)/.88 var(--display);
+      letter-spacing: -.055em;
+    }
+    h1 em { color: var(--blue); font-weight: 400; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, .58fr);
+      gap: clamp(2rem, 7vw, 6rem);
+      align-items: end;
+    }
+    .hero-copy { max-width: 38rem; padding-bottom: .45rem; }
+    .hero-copy p { margin: 0 0 1.35rem; font-size: clamp(1.05rem, 2vw, 1.28rem); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .7rem; }
+
+    .button {
+      display: inline-flex;
+      min-height: 2.85rem;
+      align-items: center;
+      justify-content: center;
+      gap: .55rem;
+      padding: .7rem 1.05rem;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 800;
+      transition: transform .16s ease, background .16s ease, color .16s ease;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button.primary { background: var(--ink); color: var(--white); }
+    .button.accent { background: var(--lime); color: var(--ink); }
+    .button.small { min-height: 2.3rem; padding: .45rem .8rem; font-size: .87rem; }
+
+    .lesson-nav {
+      position: sticky;
+      z-index: 50;
+      top: .35rem;
+      border-bottom: 1px solid var(--line);
+      background: rgb(244 240 230 / .94);
+      backdrop-filter: blur(10px);
+    }
+    .lesson-nav .shell {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .lesson-nav strong { flex: 0 0 auto; font: 700 1.1rem var(--display); }
+    .lesson-nav ol {
+      display: flex;
+      gap: .25rem;
+      margin: 0;
+      padding: .65rem 0;
+      list-style: none;
+    }
+    .lesson-nav a {
+      display: block;
+      padding: .45rem .72rem;
+      border-radius: 999px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      white-space: nowrap;
+      font-size: .84rem;
+      font-weight: 700;
+    }
+    .lesson-nav a:hover, .lesson-nav a[aria-current="true"] { background: var(--ink); color: var(--white); }
+
+    main { overflow: clip; }
+    .chapter {
+      position: relative;
+      padding: clamp(4.5rem, 9vw, 8rem) 0;
+      border-bottom: 1px solid var(--line);
+      scroll-margin-top: 4.5rem;
+    }
+    .chapter-heading {
+      display: grid;
+      grid-template-columns: 7rem minmax(0, 46rem);
+      gap: clamp(1rem, 4vw, 3rem);
+      margin-bottom: clamp(2.8rem, 6vw, 5.5rem);
+    }
+    .chapter-number {
+      color: var(--coral);
+      font: 700 clamp(3rem, 7vw, 5rem)/1 var(--display);
+    }
+    h2 { margin: 0 0 .8rem; font: 700 clamp(2.3rem, 5vw, 4.4rem)/.98 var(--display); letter-spacing: -.035em; }
+    .chapter-heading p { margin: 0; color: var(--ink-soft); font-size: 1.08rem; max-width: 62ch; }
+    h3 { margin: 0 0 .7rem; font: 700 clamp(1.45rem, 3vw, 2rem)/1.1 var(--display); }
+    p { max-width: 72ch; }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3rem); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; }
+    .stack { display: grid; gap: 1.2rem; }
+    .mt-1 { margin-top: 1rem; }
+    .mt-13 { margin-top: 1.3rem; }
+    .mt-2 { margin-top: 2rem; }
+    .mt-3 { margin-top: 3rem; }
+    .mt-4 { margin-top: 4rem; }
+    .field-spacer { display: block; margin-top: .8rem; }
+    .action-row { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; margin-top: 1rem; }
+
+    .concept {
+      padding: clamp(1.4rem, 3vw, 2rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgb(255 253 247 / .72);
+    }
+    .concept p:last-child { margin-bottom: 0; }
+    .concept.highlight { background: var(--lime); border-color: var(--lime-deep); }
+    .concept.danger { background: var(--coral-soft); border-color: var(--coral); }
+    .concept.dark { background: var(--blue-deep); color: var(--white); border-color: var(--blue-deep); }
+    .concept.dark p { color: #d7e7e3; }
+
+    .code-block {
+      position: relative;
+      overflow-x: auto;
+      margin: 1rem 0;
+      padding: 1.25rem;
+      border-radius: .9rem;
+      background: #17241f;
+      color: #f7f1e2;
+      font: .91rem/1.7 var(--code);
+      tab-size: 2;
+      white-space: pre;
+    }
+    .code-block .kw { color: #f5c14e; }
+    .code-block .str { color: #aee06f; }
+    .code-block .comment { color: #9aafa6; }
+    .code-block .num { color: #ff927d; }
+
+    .arrow-lab {
+      min-height: 22rem;
+      display: grid;
+      grid-template-columns: .72fr 1.3fr;
+      gap: 1.5rem;
+      align-items: center;
+      padding: clamp(1.5rem, 4vw, 3rem);
+      border-radius: 2rem;
+      background: var(--blue-deep);
+      color: var(--white);
+      box-shadow: var(--shadow);
+    }
+    .variable-label {
+      position: relative;
+      z-index: 1;
+      padding: 1.4rem;
+      border: 2px dashed #b4d5ce;
+      border-radius: .8rem;
+      text-align: center;
+      font: 800 1.15rem var(--code);
+    }
+    .variable-label::after {
+      content: "";
+      position: absolute;
+      top: 50%; left: 100%;
+      width: clamp(2rem, 7vw, 6rem);
+      height: .18rem;
+      background: var(--lime);
+      transform-origin: left;
+      transform: rotate(var(--arrow-angle, 0deg));
+      transition: transform .45s cubic-bezier(.22, 1, .36, 1);
+    }
+    .values { display: grid; gap: .7rem; }
+    .value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 4rem;
+      padding: .8rem 1rem .8rem 1.6rem;
+      border: 1px solid rgb(255 255 255 / .25);
+      border-radius: 999px;
+      color: #d7e7e3;
+      transition: transform .3s ease, color .3s ease, background .3s ease;
+    }
+    .value.active { transform: translateX(.8rem); background: var(--lime); color: var(--ink); border-color: var(--lime); }
+    .value button { border: 0; background: transparent; color: inherit; cursor: pointer; font-weight: 800; }
+    .value output { font: .83rem var(--code); }
+
+    .declaration-table { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: rgb(255 253 247 / .65); }
+    caption { padding: 0 0 .8rem; text-align: left; font-weight: 800; }
+    th, td { padding: .9rem .8rem; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--blue-deep); font-size: .8rem; text-transform: uppercase; letter-spacing: .07em; }
+    td:first-child { font-family: var(--code); font-weight: 800; }
+    .yes { color: #1b6a45; font-weight: 800; }
+    .no { color: #9a321f; font-weight: 800; }
+
+    .scope-map { display: grid; gap: .85rem; padding: clamp(1rem, 4vw, 2.5rem); background: var(--white); border: 1px solid var(--line); }
+    .scope {
+      padding: 1rem;
+      border: 2px solid var(--blue);
+      background: rgb(15 92 110 / .045);
+    }
+    .scope .scope { margin: 1rem 0 0 1.5rem; border-color: var(--coral); background: rgb(239 104 78 / .06); }
+    .scope .scope .scope { border-color: var(--gold); background: rgb(244 186 61 / .09); }
+    .scope-label { display: inline-block; font-size: .76rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .scope code { display: block; margin-top: .5rem; }
+
+    .input-group { display: grid; gap: .45rem; }
+    label, legend { font-weight: 800; }
+    input[type="text"], select, textarea {
+      width: 100%;
+      border: 1px solid #8f998f;
+      border-radius: .65rem;
+      background: var(--white);
+      color: var(--ink);
+      padding: .8rem .9rem;
+    }
+    textarea { min-height: 7.5rem; resize: vertical; font-family: var(--code); line-height: 1.55; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-bottom: .65rem; }
+    .hint { color: var(--ink-soft); font-size: .86rem; }
+
+    .feedback {
+      min-height: 2rem;
+      margin-top: .7rem;
+      padding: .55rem .75rem;
+      border-radius: .55rem;
+      color: var(--ink-soft);
+      font-size: .91rem;
+    }
+    .feedback.good { background: #dcebd4; color: #194e34; }
+    .feedback.bad { background: var(--coral-soft); color: #702719; }
+    .feedback.info { background: #dbeaed; color: var(--blue-deep); }
+
+    .type-deck {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .75rem;
+      margin-top: 2rem;
+    }
+    .type-card {
+      min-height: 9rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      background: var(--white);
+      transform: rotate(var(--tilt));
+      transition: transform .2s ease, background .2s ease;
+    }
+    .type-card:hover { transform: rotate(0) translateY(-.25rem); background: var(--lime); }
+    .type-card strong { display: block; color: var(--blue-deep); font: 700 1.25rem var(--code); }
+    .type-card span { display: block; margin-top: .55rem; color: var(--ink-soft); font-size: .88rem; }
+
+    .predictor {
+      padding: clamp(1.4rem, 4vw, 2.4rem);
+      border: 2px solid var(--ink);
+      background: var(--white);
+      box-shadow: .6rem .6rem 0 var(--ink);
+    }
+    .predictor-head { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; margin-bottom: 1.1rem; }
+    .expression { font: 700 clamp(1.1rem, 3vw, 1.55rem) var(--code); }
+    .choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .choice {
+      padding: .55rem .8rem;
+      border: 1px solid var(--ink);
+      background: transparent;
+      border-radius: .45rem;
+      cursor: pointer;
+      font-family: var(--code);
+    }
+    .choice:hover { background: var(--paper-deep); }
+    .choice.correct { background: var(--lime); }
+    .choice.wrong { background: var(--coral-soft); }
+    .quiz-meta { margin-top: 1rem; display: flex; gap: .8rem; align-items: center; justify-content: space-between; }
+
+    .falsy-strip { display: flex; flex-wrap: wrap; gap: .55rem; margin: 1rem 0; }
+    .token { padding: .5rem .7rem; border: 1px solid var(--ink); border-radius: .4rem; background: var(--white); font: 700 .9rem var(--code); }
+
+    .toggle-lab { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 1rem; align-items: stretch; }
+    .toggle-lab article { padding: 1.2rem; border: 1px solid var(--line); background: var(--white); }
+    .toggle-lab .versus { align-self: center; font: 700 2rem var(--display); color: var(--coral); }
+    .result-display { display: block; margin-top: 1rem; padding: .8rem; background: var(--ink); color: var(--lime); font-family: var(--code); }
+
+    .precision-demo output {
+      display: block;
+      margin: .7rem 0;
+      color: var(--coral);
+      font: 700 clamp(1.2rem, 3.5vw, 2.2rem) var(--code);
+      overflow-wrap: anywhere;
+    }
+    input[type="range"] { width: 100%; }
+
+    .string-stage {
+      display: grid;
+      grid-template-columns: .75fr 1.25fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .method-list { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .method-button {
+      border: 1px solid var(--blue);
+      background: transparent;
+      color: var(--blue-deep);
+      padding: .46rem .66rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: var(--code);
+      font-size: .84rem;
+    }
+    .method-button:hover { background: var(--blue); color: var(--white); }
+    .string-output { min-height: 5rem; padding: 1.2rem; background: var(--blue-deep); color: var(--white); overflow-wrap: anywhere; }
+    .string-output code { color: var(--lime); }
+
+    .conversion-machine {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      padding: clamp(1.3rem, 4vw, 2.4rem);
+      background: var(--gold);
+      border: 2px solid var(--ink);
+    }
+    .machine-arrow { font-size: 2rem; }
+    .machine-output { min-height: 7rem; padding: 1rem; background: var(--ink); color: var(--white); font-family: var(--code); }
+    .machine-output strong { color: var(--lime); }
+
+    .quiz-list { display: grid; gap: 1rem; }
+    .quiz-item { padding: 1.1rem; border-left: .3rem solid var(--blue); background: var(--white); }
+    .quiz-item.good { border-left-color: #2f8058; }
+    .quiz-item.bad { border-left-color: var(--coral); }
+    .radio-row { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: .7rem; }
+    .radio-row label { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--code); cursor: pointer; }
+
+    .recap {
+      background: var(--ink);
+      color: var(--white);
+    }
+    .recap .chapter-number { color: var(--lime); }
+    .recap .chapter-heading p { color: #bdcbc4; }
+    .rule-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: rgb(255 255 255 / .2); border: 1px solid rgb(255 255 255 / .2); }
+    .rule { padding: 1.2rem; background: var(--ink); }
+    .rule strong { color: var(--lime); }
+
+    .finish-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 3rem;
+      padding: clamp(1.5rem, 4vw, 2.5rem);
+      background: var(--lime);
+      color: var(--ink);
+      border-radius: var(--radius);
+    }
+    .finish-card h3 { font-size: clamp(1.8rem, 4vw, 3rem); }
+    .score-ring {
+      display: grid;
+      width: 8rem; aspect-ratio: 1;
+      place-items: center;
+      border: .8rem solid var(--blue-deep);
+      border-radius: 50%;
+      font: 800 1.5rem var(--code);
+    }
+
+    footer { padding: 2.5rem 0; background: var(--ink); color: #b9c6c0; border-top: 1px solid rgb(255 255 255 / .18); }
+    footer p { margin: 0; }
+
+    .toast {
+      position: fixed;
+      z-index: 90;
+      right: 1rem;
+      bottom: 1rem;
+      max-width: min(24rem, calc(100vw - 2rem));
+      padding: .8rem 1rem;
+      border: 1px solid var(--lime-deep);
+      border-radius: .6rem;
+      background: var(--lime);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      transform: translateY(150%);
+      transition: transform .28s cubic-bezier(.22, 1, .36, 1);
+    }
+    .toast.show { transform: translateY(0); }
+
+    .reveal { opacity: 0; transform: translateY(1.5rem); transition: opacity .55s ease, transform .55s cubic-bezier(.22, 1, .36, 1); }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 52rem) {
+      .hero-grid, .grid-2, .string-stage { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .type-deck { grid-template-columns: repeat(2, 1fr); }
+      .chapter-heading { grid-template-columns: 4rem 1fr; }
+      .toggle-lab { grid-template-columns: 1fr; }
+      .toggle-lab .versus { text-align: center; }
+      .rule-list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 36rem) {
+      .shell { width: min(100% - 1.2rem, 78rem); }
+      .hero { padding-top: 4.5rem; }
+      .hero-grid { gap: 2.5rem; }
+      .chapter-heading { grid-template-columns: 1fr; gap: .4rem; }
+      .chapter-number { font-size: 2rem; }
+      .grid-3, .type-deck { grid-template-columns: 1fr; }
+      .arrow-lab { grid-template-columns: 1fr; }
+      .variable-label::after { display: none; }
+      .value.active { transform: translateX(.25rem); }
+      .conversion-machine { grid-template-columns: 1fr; }
+      .machine-arrow { transform: rotate(90deg); text-align: center; }
+      .finish-card { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+    @media print {
+      .lesson-nav, .reading-progress, .hero-actions, .toast { display: none !important; }
+      body { background: white; }
+      .chapter { break-inside: avoid; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <div class="reading-progress" aria-hidden="true"><span id="readingBar"></span></div>
+
+  <header class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Programación IV · Laboratorio 02</p>
+        <h1>Variables y <em>tipos</em> básicos</h1>
+      </div>
+      <div class="hero-copy">
+        <p>Una clase interactiva para entender qué guarda JavaScript, cómo lo guarda y qué pasa cuando mezclás valores distintos.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#variable">Empezar la clase ↓</a>
+          <button class="button" id="resetProgress" type="button">Volver a empezar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="lesson-nav" aria-label="Estaciones de la clase">
+    <div class="shell">
+      <strong>Tu recorrido</strong>
+      <ol role="list">
+        <li><a href="#variable">01 Variable</a></li>
+        <li><a href="#declarar">02 Declarar</a></li>
+        <li><a href="#tipos">03 Tipos</a></li>
+        <li><a href="#booleanos">04 Booleanos</a></li>
+        <li><a href="#numeros">05 Números</a></li>
+        <li><a href="#cadenas">06 Cadenas</a></li>
+        <li><a href="#conversion">07 Conversión</a></li>
+        <li><a href="#cierre">08 Cierre</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main id="contenido" tabindex="-1">
+    <section class="chapter" id="variable" data-section="variable">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">01</div>
+          <div>
+            <h2>La variable es una flecha</h2>
+            <p>En JavaScript el nombre no tiene tipo. El tipo pertenece al valor, y la variable es una etiqueta que puede apuntar a distintos valores.</p>
+          </div>
+        </header>
+
+        <div class="grid-2">
+          <div class="stack reveal">
+            <div class="concept highlight">
+              <h3>Modelo mental</h3>
+              <p>No imagines una caja con algo adentro. Imaginá una flecha que une un nombre con un valor en memoria.</p>
+            </div>
+            <pre class="code-block" aria-label="Ejemplo de una variable que cambia de valor"><span class="kw">let</span> dato = <span class="num">42</span>;
+dato = <span class="str">"cuarenta"</span>;
+dato = <span class="kw">true</span>;</pre>
+            <p>En C# escribirías <code>int edad</code>: el nombre y el tipo quedan unidos. En JavaScript, <code>dato</code> puede cambiar incluso de tipo.</p>
+          </div>
+
+          <div class="arrow-lab reveal" aria-label="Simulación de una variable que apunta a distintos valores">
+            <div class="variable-label" id="variableLabel">dato</div>
+            <div class="values">
+              <div class="value active" data-value="42" data-type="number"><button type="button">Apuntar acá</button><output>42 · number</output></div>
+              <div class="value" data-value="cuarenta" data-type="string"><button type="button">Apuntar acá</button><output>"cuarenta" · string</output></div>
+              <div class="value" data-value="true" data-type="boolean"><button type="button">Apuntar acá</button><output>true · boolean</output></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="declarar" data-section="declarar">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">02</div>
+          <div>
+            <h2>Tres formas de declarar</h2>
+            <p><code>var</code> es historia. <code>const</code> es el punto de partida. <code>let</code> aparece cuando necesitás reasignar.</p>
+          </div>
+        </header>
+
+        <div class="declaration-table reveal">
+          <table>
+            <caption>Comparación rápida</caption>
+            <thead><tr><th>Declaración</th><th>Alcance</th><th>Antes de declarar</th><th>Redeclarar</th><th>Reasignar</th><th>Inicializar</th></tr></thead>
+            <tbody>
+              <tr><td>var</td><td>función</td><td><code>undefined</code></td><td class="yes">sí</td><td class="yes">sí</td><td>opcional</td></tr>
+              <tr><td>let</td><td>bloque</td><td class="no">error</td><td class="no">no</td><td class="yes">sí</td><td>opcional</td></tr>
+              <tr><td>const</td><td>bloque</td><td class="no">error</td><td class="no">no</td><td class="no">no</td><td>obligatoria</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-3 mt-2">
+          <article class="concept danger reveal">
+            <h3><code>var</code></h3>
+            <p>No respeta bloques, permite redeclarar y antes de su línea vale <code>undefined</code> por hoisting.</p>
+            <p><strong>Aprendelo para leer código viejo. No lo uses.</strong></p>
+          </article>
+          <article class="concept reveal">
+            <h3><code>let</code></h3>
+            <p>Respeta el bloque, no permite redeclarar y vive en zona muerta temporal hasta su declaración.</p>
+            <p><strong>Usalo si el nombre debe apuntar a otro valor.</strong></p>
+          </article>
+          <article class="concept highlight reveal">
+            <h3><code>const</code></h3>
+            <p>Congela la referencia, no el contenido. Un objeto declarado con <code>const</code> todavía puede cambiar por dentro.</p>
+            <p><strong>Usalo por defecto.</strong></p>
+          </article>
+        </div>
+
+        <div class="grid-2 mt-3">
+          <div class="reveal">
+            <h3>Alcance: desde adentro se ve hacia afuera</h3>
+            <p>El motor busca el nombre en el bloque actual y sube por la cadena de alcances. Si un nombre se repite, gana el más cercano: eso es <em>sombreado</em>.</p>
+            <div class="scope-map" aria-label="Mapa de alcances anidados">
+              <div class="scope"><span class="scope-label">Global</span><code>const nivel1 = "global";</code>
+                <div class="scope"><span class="scope-label">Función</span><code>const nivel2 = "función";</code>
+                  <div class="scope"><span class="scope-label">Bloque</span><code>const nivel3 = "bloque";</code><br><small>Acá se ven los tres niveles.</small></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="stack reveal">
+            <div class="concept dark">
+              <h3>¿<code>const</code> significa inmutable?</h3>
+              <pre class="code-block"><span class="kw">const</span> contacto = { nombre: <span class="str">"Ana"</span> };
+contacto.nombre = <span class="str">"Luis"</span>; <span class="comment">// ✓</span>
+contacto.email = <span class="str">"l@mail.com"</span>; <span class="comment">// ✓</span>
+contacto = {};                 <span class="comment">// ✗ TypeError</span></pre>
+              <p>Las dos primeras operaciones modifican el objeto. La última intenta mover la flecha.</p>
+            </div>
+            <form class="concept" id="nameChecker">
+              <h3>Inspector de nombres</h3>
+              <div class="input-group">
+                <label for="variableName">Probá un nombre de variable</label>
+                <input id="variableName" name="variableName" type="text" value="precioTotal" spellcheck="false" aria-describedby="nameHint nameFeedback">
+                <span class="hint" id="nameHint">Letras, <code>_</code> o <code>$</code> al inicio; después también dígitos.</span>
+              </div>
+              <div class="feedback info" id="nameFeedback" aria-live="polite">✓ Nombre válido y en camelCase.</div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="tipos" data-section="tipos">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">03</div>
+          <div>
+            <h2>Ocho tipos de datos</h2>
+            <p>Siete son primitivos. El octavo, <code>object</code>, cubre objetos, arreglos, fechas y mucho más.</p>
+          </div>
+        </header>
+
+        <div class="type-deck reveal">
+          <article class="type-card" style="--tilt:-1deg"><strong>number</strong><span>Todos los números: <code>42</code>, <code>3.14</code>.</span></article>
+          <article class="type-card" style="--tilt:1.3deg"><strong>string</strong><span>Texto: <code>"hola"</code>.</span></article>
+          <article class="type-card" style="--tilt:-.7deg"><strong>boolean</strong><span>Decisiones: <code>true</code> o <code>false</code>.</span></article>
+          <article class="type-card" style="--tilt:1deg"><strong>undefined</strong><span>Ausencia por omisión.</span></article>
+          <article class="type-card" style="--tilt:1.1deg"><strong>null</strong><span>Ausencia deliberada.</span></article>
+          <article class="type-card" style="--tilt:-1.4deg"><strong>bigint</strong><span>Enteros enormes: <code>10n</code>.</span></article>
+          <article class="type-card" style="--tilt:.8deg"><strong>symbol</strong><span>Identificadores únicos.</span></article>
+          <article class="type-card" style="--tilt:-.9deg"><strong>object</strong><span>Objetos, arreglos, funciones, fechas.</span></article>
+        </div>
+
+        <div class="grid-2 mt-3">
+          <div class="concept reveal">
+            <h3><code>typeof</code>: útil, con dos rarezas</h3>
+            <pre class="code-block"><span class="kw">typeof</span> [<span class="num">1</span>, <span class="num">2</span>]; <span class="comment">// "object"</span>
+Array.isArray([<span class="num">1</span>, <span class="num">2</span>]); <span class="comment">// true</span>
+
+<span class="kw">typeof</span> <span class="kw">null</span>; <span class="comment">// "object" ← error de 1995</span>
+<span class="kw">typeof</span> <span class="kw">function</span>() {}; <span class="comment">// "function"</span></pre>
+          </div>
+          <div class="concept reveal">
+            <h3>Por valor vs. por referencia</h3>
+            <p><strong>Primitivo:</strong> se copia el valor. Cada variable queda independiente.</p>
+            <p><strong>Objeto:</strong> se copia la referencia. Ambas variables apuntan al mismo objeto.</p>
+            <pre class="code-block"><span class="kw">const</span> original = { nombre: <span class="str">"Ana"</span> };
+<span class="kw">const</span> copia = original;
+copia.nombre = <span class="str">"Luis"</span>;
+<span class="comment">// original.nombre también es "Luis"</span></pre>
+          </div>
+        </div>
+
+        <div class="predictor reveal mt-3" id="typeQuiz">
+          <div class="predictor-head">
+            <div><span class="eyebrow">Ronda relámpago</span><h3>¿Qué devuelve <code>typeof</code>?</h3></div>
+            <strong id="typeScore">0 / 0</strong>
+          </div>
+          <div class="expression" id="typeExpression">typeof 42</div>
+          <div class="choices" id="typeChoices" aria-label="Opciones de respuesta"></div>
+          <div class="feedback info" id="typeFeedback" aria-live="polite">Elegí el resultado antes de avanzar.</div>
+          <div class="quiz-meta"><span id="typeCounter">Pregunta 1 de 8</span><button class="button small" id="nextType" type="button" disabled>Siguiente →</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="booleanos" data-section="booleanos">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">04</div>
+          <div>
+            <h2>Booleanos y decisiones</h2>
+            <p>Cuando JavaScript espera un booleano, convierte. La lista de valores falsy es corta; todo lo demás es truthy.</p>
+          </div>
+        </header>
+
+        <div class="grid-2">
+          <div class="concept highlight reveal">
+            <h3>Los ocho falsy</h3>
+            <div class="falsy-strip" aria-label="Lista de valores falsy">
+              <span class="token">false</span><span class="token">0</span><span class="token">-0</span><span class="token">0n</span><span class="token">""</span><span class="token">null</span><span class="token">undefined</span><span class="token">NaN</span>
+            </div>
+            <p>Todo lo demás es truthy, incluidos <code>"0"</code>, <code>"false"</code>, <code>[]</code> y <code>{}</code>.</p>
+          </div>
+          <div class="concept reveal">
+            <h3>La regla de comparación</h3>
+            <p>Usá <code>===</code> y <code>!==</code>. La igualdad débil <code>==</code> convierte antes de comparar y produce sorpresas.</p>
+            <pre class="code-block"><span class="num">1</span> === <span class="str">"1"</span>; <span class="comment">// false</span>
+<span class="num">1</span> == <span class="str">"1"</span>;  <span class="comment">// true ← convirtió</span></pre>
+          </div>
+        </div>
+
+        <div class="predictor reveal mt-3" id="truthyQuiz">
+          <div class="predictor-head">
+            <div><span class="eyebrow">Antes de ejecutar</span><h3>¿Truthy o falsy?</h3></div>
+            <strong id="truthyScore">0 / 0</strong>
+          </div>
+          <div class="expression" id="truthyExpression">Boolean("false")</div>
+          <div class="choices" id="truthyChoices">
+            <button class="choice" type="button" data-answer="true">true</button>
+            <button class="choice" type="button" data-answer="false">false</button>
+          </div>
+          <div class="feedback info" id="truthyFeedback" aria-live="polite">No leas “false”: mirá qué tipo de valor es.</div>
+          <div class="quiz-meta"><span id="truthyCounter">Pregunta 1 de 6</span><button class="button small" id="nextTruthy" type="button" disabled>Siguiente →</button></div>
+        </div>
+
+        <div class="reveal mt-4">
+          <h3><code>||</code> versus <code>??</code></h3>
+          <p>Los operadores <code>&&</code> y <code>||</code> devuelven uno de sus operandos y cortan la evaluación. Para valores por defecto, la diferencia entre <code>||</code> y <code>??</code> importa.</p>
+          <div class="toggle-lab">
+            <article>
+              <h3><code>valor || 1</code></h3>
+              <p>Reemplaza cualquier falsy: <code>0</code>, <code>""</code>, <code>false</code>, <code>null</code>…</p>
+              <label for="orValue">Valor de entrada</label>
+              <select id="orValue"><option value="0">0</option><option value="empty">""</option><option value="null">null</option><option value="undefined">undefined</option><option value="5">5</option></select>
+              <output class="result-display" id="orResult">1</output>
+            </article>
+            <div class="versus" aria-hidden="true">vs.</div>
+            <article>
+              <h3><code>valor ?? 1</code></h3>
+              <p>Reemplaza solamente <code>null</code> y <code>undefined</code>. Conserva <code>0</code>, <code>""</code> y <code>false</code>.</p>
+              <label for="nullishValue">Valor de entrada</label>
+              <select id="nullishValue"><option value="0">0</option><option value="empty">""</option><option value="null">null</option><option value="undefined">undefined</option><option value="5">5</option></select>
+              <output class="result-display" id="nullishResult">0</output>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="numeros" data-section="numeros">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">05</div>
+          <div>
+            <h2>Un solo tipo numérico</h2>
+            <p><code>number</code> usa punto flotante IEEE 754 de 64 bits. Es simple, rápido y tiene límites que conviene conocer.</p>
+          </div>
+        </header>
+
+        <div class="grid-2">
+          <div class="concept danger precision-demo reveal">
+            <h3>El decimal imposible</h3>
+            <p>Algunos decimales no tienen representación binaria exacta.</p>
+            <output id="precisionOutput">0.1 + 0.2 = 0.30000000000000004</output>
+            <button class="button small" id="precisionButton" type="button">Comparar con tolerancia</button>
+            <div class="feedback" id="precisionFeedback" aria-live="polite"></div>
+          </div>
+          <div class="concept highlight reveal">
+            <h3>Para plata: enteros</h3>
+            <p>Guardá centavos, no decimales. <code>1050</code> representa $10,50. Para enteros mayores a <code>Number.MAX_SAFE_INTEGER</code>, existe <code>bigint</code>.</p>
+            <pre class="code-block"><span class="kw">const</span> grande = <span class="num">9007199254740993n</span>;
+grande + <span class="num">1n</span>; <span class="comment">// ✓</span>
+grande + <span class="num">1</span>;  <span class="comment">// TypeError</span></pre>
+          </div>
+        </div>
+
+        <div class="grid-3 mt-2">
+          <article class="concept reveal"><h3><code>Infinity</code></h3><p><code>1 / 0</code> no lanza excepción: devuelve <code>Infinity</code>.</p></article>
+          <article class="concept reveal"><h3><code>NaN</code></h3><p>No es igual a sí mismo. Detectalo con <code>Number.isNaN()</code>, no con la función global.</p></article>
+          <article class="concept reveal"><h3>32 bits</h3><p>Los operadores de bits convierten a entero de 32 bits. Usalos para máscaras y permisos, no para truncar.</p></article>
+        </div>
+
+        <div class="grid-2 mt-3">
+          <div class="concept reveal">
+            <h3>Laboratorio de <code>Math</code></h3>
+            <div class="input-group">
+              <label for="mathValue">Número</label>
+              <input type="range" id="mathValue" min="-5" max="5" step="0.1" value="2.5">
+              <output id="mathRaw">2.5</output>
+            </div>
+            <table>
+              <tbody>
+                <tr><td>Math.round</td><td id="mathRound">3</td></tr>
+                <tr><td>Math.floor</td><td id="mathFloor">2</td></tr>
+                <tr><td>Math.ceil</td><td id="mathCeil">3</td></tr>
+                <tr><td>Math.trunc</td><td id="mathTrunc">2</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="concept dark reveal">
+            <h3>Precedencia: hacela visible</h3>
+            <pre class="code-block"><span class="num">2</span> + <span class="num">3</span> * <span class="num">4</span>;     <span class="comment">// 14</span>
+(<span class="num">2</span> + <span class="num">3</span>) * <span class="num">4</span>;   <span class="comment">// 20</span>
+<span class="num">2</span> ** <span class="num">3</span> ** <span class="num">2</span>;   <span class="comment">// 512</span></pre>
+            <p>Aprendé la precedencia para leer; usá paréntesis para que los demás no tengan que recordarla.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="cadenas" data-section="cadenas">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">06</div>
+          <div>
+            <h2>Cadenas: texto inmutable</h2>
+            <p>Comillas simples, dobles o invertidas producen <code>string</code>. Las invertidas agregan interpolación y múltiples líneas.</p>
+          </div>
+        </header>
+
+        <div class="grid-2">
+          <div class="concept highlight reveal">
+            <h3>Plantillas de texto</h3>
+            <pre class="code-block"><span class="kw">const</span> nombre = <span class="str">"Ana"</span>;
+<span class="kw">const</span> edad = <span class="num">30</span>;
+
+<span class="kw">const</span> mensaje =
+  <span class="str">`Hola ${nombre}, tenés ${edad} años`</span>;</pre>
+            <p>Dentro de <code>${…}</code> puede ir cualquier expresión: cálculos, ternarios o acceso opcional.</p>
+          </div>
+          <div class="concept reveal">
+            <h3>Inmutable no significa inútil</h3>
+            <pre class="code-block"><span class="kw">let</span> saludo = <span class="str">"hola"</span>;
+saludo[<span class="num">0</span>] = <span class="str">"H"</span>; <span class="comment">// no cambia nada</span>
+saludo = saludo.toUpperCase();
+<span class="comment">// ahora apunta a una cadena nueva</span></pre>
+          </div>
+        </div>
+
+        <div class="string-stage mt-3">
+          <div class="concept reveal">
+            <h3>Mesa de métodos</h3>
+            <div class="input-group">
+              <label for="stringInput">Texto de prueba</label>
+              <input id="stringInput" type="text" value="  Ana Pérez,JavaScript  ">
+            </div>
+            <div class="method-list mt-1" aria-label="Métodos de cadena">
+              <button class="method-button" type="button" data-method="trim">.trim()</button>
+              <button class="method-button" type="button" data-method="upper">.toUpperCase()</button>
+              <button class="method-button" type="button" data-method="lower">.toLowerCase()</button>
+              <button class="method-button" type="button" data-method="slice">.slice(2, 10)</button>
+              <button class="method-button" type="button" data-method="split">.split(",")</button>
+              <button class="method-button" type="button" data-method="includes">.includes("Java")</button>
+              <button class="method-button" type="button" data-method="length">.length</button>
+            </div>
+          </div>
+          <div class="reveal">
+            <div class="string-output" id="stringOutput" aria-live="polite">Elegí un método para transformar <code>"  Ana Pérez,JavaScript  "</code>.</div>
+            <p class="hint">Cada método devuelve un valor nuevo. El texto original permanece igual.</p>
+            <div class="concept danger mt-13">
+              <strong>Detalle UTF-16:</strong> <code>"😀".length</code> devuelve <code>2</code>, porque cuenta unidades de 16 bits, no caracteres percibidos.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="conversion" data-section="conversion">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">07</div>
+          <div>
+            <h2>Conversión de tipos</h2>
+            <p>La explícita la controlás. La automática ocurre cuando una operación recibe tipos distintos; ahí nacen muchos errores raros.</p>
+          </div>
+        </header>
+
+        <div class="conversion-machine reveal">
+          <div>
+            <label for="conversionValue">Valor de entrada</label>
+            <select id="conversionValue">
+              <option value="42">"42"</option><option value="3.14">"3.14"</option><option value="empty">""</option><option value="spaces">"  "</option><option value="42px">"42px"</option><option value="true">true</option><option value="null">null</option><option value="undefined">undefined</option><option value="array">[]</option><option value="object">{}</option>
+            </select>
+            <label class="field-spacer" for="conversionType">Conversión</label>
+            <select id="conversionType"><option value="Number">Number()</option><option value="String">String()</option><option value="Boolean">Boolean()</option><option value="parseInt">parseInt()</option></select>
+          </div>
+          <div class="machine-arrow" aria-hidden="true">→</div>
+          <output class="machine-output" id="conversionOutput"><strong>42</strong><br>tipo: number</output>
+        </div>
+
+        <div class="grid-2 mt-3">
+          <div class="concept reveal">
+            <h3>La regla especial de <code>+</code></h3>
+            <p>Si algún operando es cadena, concatena. Los demás operadores aritméticos convierten a número.</p>
+            <pre class="code-block"><span class="str">"5"</span> + <span class="num">3</span>;     <span class="comment">// "53"</span>
+<span class="str">"5"</span> - <span class="num">3</span>;     <span class="comment">// 2</span>
+<span class="num">1</span> + <span class="num">2</span> + <span class="str">"3"</span>; <span class="comment">// "33"</span>
+<span class="str">"1"</span> + <span class="num">2</span> + <span class="num">3</span>; <span class="comment">// "123"</span></pre>
+          </div>
+          <div class="concept danger reveal">
+            <h3>El formulario siempre entrega texto</h3>
+            <pre class="code-block"><span class="kw">const</span> cantidad = <span class="str">"3"</span>;
+<span class="kw">const</span> precio = <span class="str">"100"</span>;
+
+cantidad * precio; <span class="comment">// 300, de casualidad</span>
+cantidad + precio; <span class="comment">// "3100"</span>
+
+Number(cantidad) * Number(precio); <span class="comment">// 300 ✓</span></pre>
+          </div>
+        </div>
+
+        <form class="predictor reveal mt-3" id="equalityQuiz">
+          <div class="predictor-head"><div><span class="eyebrow">Desafío final</span><h3>La igualdad débil bajo la lupa</h3></div><strong id="equalityScore">0 / 5</strong></div>
+          <div class="quiz-list">
+            <fieldset class="quiz-item" data-answer="true"><legend><code>1 == "1"</code></legend><div class="radio-row"><label><input type="radio" name="eq1" value="true"> true</label><label><input type="radio" name="eq1" value="false"> false</label></div></fieldset>
+            <fieldset class="quiz-item" data-answer="true"><legend><code>0 == false</code></legend><div class="radio-row"><label><input type="radio" name="eq2" value="true"> true</label><label><input type="radio" name="eq2" value="false"> false</label></div></fieldset>
+            <fieldset class="quiz-item" data-answer="false"><legend><code>null == 0</code></legend><div class="radio-row"><label><input type="radio" name="eq3" value="true"> true</label><label><input type="radio" name="eq3" value="false"> false</label></div></fieldset>
+            <fieldset class="quiz-item" data-answer="true"><legend><code>[] == false</code></legend><div class="radio-row"><label><input type="radio" name="eq4" value="true"> true</label><label><input type="radio" name="eq4" value="false"> false</label></div></fieldset>
+            <fieldset class="quiz-item" data-answer="false"><legend><code>1 === "1"</code></legend><div class="radio-row"><label><input type="radio" name="eq5" value="true"> true</label><label><input type="radio" name="eq5" value="false"> false</label></div></fieldset>
+          </div>
+          <div class="action-row"><button class="button primary" type="submit">Corregir desafío</button><div class="feedback info" id="equalityFeedback" aria-live="polite">Respondé las cinco expresiones.</div></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="chapter recap" id="cierre" data-section="cierre">
+      <div class="shell">
+        <header class="chapter-heading reveal">
+          <div class="chapter-number">08</div>
+          <div>
+            <h2>Lo que te llevás</h2>
+            <p>Si estas reglas quedan claras, desaparece buena parte del “JavaScript hace cosas raras”.</p>
+          </div>
+        </header>
+        <div class="rule-list reveal">
+          <div class="rule"><strong>01.</strong> La variable apunta; el valor tiene el tipo.</div>
+          <div class="rule"><strong>02.</strong> <code>const</code> por defecto, <code>let</code> si reasignás, nunca <code>var</code>.</div>
+          <div class="rule"><strong>03.</strong> <code>const</code> congela la referencia, no el objeto.</div>
+          <div class="rule"><strong>04.</strong> Primitivos por valor; objetos por referencia.</div>
+          <div class="rule"><strong>05.</strong> Solo ocho valores son falsy; <code>[]</code> y <code>{}</code> son truthy.</div>
+          <div class="rule"><strong>06.</strong> Para ausencia usá <code>??</code>; <code>||</code> reemplaza todo falsy.</div>
+          <div class="rule"><strong>07.</strong> <code>number</code> es punto flotante; para plata, enteros.</div>
+          <div class="rule"><strong>08.</strong> Convertí explícitamente y compará con <code>===</code>.</div>
+        </div>
+
+        <div class="finish-card reveal">
+          <div>
+            <h3>Tu progreso en el laboratorio</h3>
+            <p>El puntaje combina las rondas de tipos, truthy/falsy y el desafío de igualdad.</p>
+            <button class="button" id="copySummary" type="button">Copiar reglas clave</button>
+          </div>
+          <div class="score-ring" id="totalScore" aria-label="Puntaje total">0 / 19</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell"><p>Programación IV · Desarrollo Web · Etapa 1, fundamentos técnicos</p></div>
+  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const state = { typeCorrect: 0, typeAnswered: 0, truthyCorrect: 0, truthyAnswered: 0, equalityCorrect: 0 };
+
+      const toast = (message) => {
+        const element = $("#toast");
+        element.textContent = message;
+        element.classList.add("show");
+        window.clearTimeout(toast.timer);
+        toast.timer = window.setTimeout(() => element.classList.remove("show"), 2600);
+      };
+
+      const formatValue = (value) => {
+        if (typeof value === "string") return `"${value}"`;
+        if (typeof value === "number" && Number.isNaN(value)) return "NaN";
+        if (value === undefined) return "undefined";
+        if (value === null) return "null";
+        if (Array.isArray(value)) return JSON.stringify(value);
+        if (typeof value === "object") return "{}";
+        return String(value);
+      };
+
+      const updateTotal = () => {
+        const total = state.typeCorrect + state.truthyCorrect + state.equalityCorrect;
+        $("#totalScore").textContent = `${total} / 19`;
+        $("#totalScore").setAttribute("aria-label", `Puntaje total: ${total} de 19`);
+      };
+
+      // Progreso de lectura y navegación activa
+      const updateReading = () => {
+        const max = document.documentElement.scrollHeight - innerHeight;
+        $("#readingBar").style.setProperty("--progress", `${max > 0 ? (scrollY / max) * 100 : 0}%`);
+      };
+      addEventListener("scroll", updateReading, { passive: true });
+      updateReading();
+
+      const sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          $$(".lesson-nav a").forEach((link) => link.removeAttribute("aria-current"));
+          const active = $(`.lesson-nav a[href="#${entry.target.id}"]`);
+          if (active) active.setAttribute("aria-current", "true");
+        });
+      }, { rootMargin: "-35% 0px -55%", threshold: 0 });
+      $$("[data-section]").forEach((section) => sectionObserver.observe(section));
+
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: .08 });
+      $$(".reveal").forEach((el) => revealObserver.observe(el));
+
+      // Flecha de la variable
+      $$(".value button").forEach((button, index) => {
+        button.addEventListener("click", () => {
+          $$(".value").forEach((item) => item.classList.remove("active"));
+          button.closest(".value").classList.add("active");
+          $("#variableLabel").style.setProperty("--arrow-angle", `${(index - 1) * 17}deg`);
+        });
+      });
+
+      // Validador de nombres
+      const reserved = new Set(["let", "const", "var", "class", "return", "function", "if", "else", "for", "while", "true", "false", "null", "undefined", "new", "this", "import", "export"]);
+      const nameInput = $("#variableName");
+      const checkName = () => {
+        const value = nameInput.value.trim();
+        const feedback = $("#nameFeedback");
+        let message = "";
+        let kind = "good";
+        if (!value) { message = "Escribí un nombre para analizarlo."; kind = "info"; }
+        else if (reserved.has(value)) { message = `✗ “${value}” es una palabra reservada.`; kind = "bad"; }
+        else if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(value)) { message = "✗ No cumple las reglas de un identificador simple de JavaScript."; kind = "bad"; }
+        else if (/^[A-Z][A-Za-z0-9]*$/.test(value)) { message = "✓ Es válido. Parece PascalCase: reservá ese estilo para clases y componentes."; kind = "info"; }
+        else if (/^[A-Z0-9_]+$/.test(value)) { message = "✓ Es válido. El formato sugiere una constante de configuración."; }
+        else if (/^[a-z][A-Za-z0-9]*$/.test(value)) { message = "✓ Nombre válido y en camelCase."; }
+        else { message = "✓ JavaScript lo acepta, aunque un nombre más convencional se leería mejor."; kind = "info"; }
+        feedback.textContent = message;
+        feedback.className = `feedback ${kind}`;
+      };
+      nameInput.addEventListener("input", checkName);
+
+      // Quiz genérico de una respuesta por pantalla
+      const makeQuiz = ({ items, expression, choices, feedback, counter, next, score, optionValues, onScore }) => {
+        let index = 0;
+        let correct = 0;
+        let answered = false;
+        const render = () => {
+          answered = false;
+          expression.textContent = items[index].expression;
+          counter.textContent = `Pregunta ${index + 1} de ${items.length}`;
+          feedback.textContent = items[index].hint;
+          feedback.className = "feedback info";
+          next.disabled = true;
+          choices.innerHTML = "";
+          optionValues.forEach((value) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "choice";
+            button.dataset.answer = value;
+            button.textContent = value;
+            button.addEventListener("click", () => answer(button));
+            choices.append(button);
+          });
+        };
+        const answer = (button) => {
+          if (answered) return;
+          answered = true;
+          const isCorrect = button.dataset.answer === items[index].answer;
+          if (isCorrect) correct += 1;
+          choices.querySelectorAll("button").forEach((choice) => {
+            choice.disabled = true;
+            if (choice.dataset.answer === items[index].answer) choice.classList.add("correct");
+          });
+          if (!isCorrect) button.classList.add("wrong");
+          feedback.textContent = `${isCorrect ? "✓ Bien." : "✗ Casi."} ${items[index].explanation}`;
+          feedback.className = `feedback ${isCorrect ? "good" : "bad"}`;
+          score.textContent = `${correct} / ${index + 1}`;
+          next.disabled = false;
+          onScore(correct, index + 1);
+        };
+        next.addEventListener("click", () => {
+          if (index < items.length - 1) { index += 1; render(); }
+          else { next.disabled = true; feedback.textContent = `Ronda completa: ${correct} de ${items.length}.`; feedback.className = "feedback good"; }
+        });
+        render();
+      };
+
+      makeQuiz({
+        items: [
+          { expression: "typeof 42", answer: "number", hint: "Un entero y un decimal comparten tipo.", explanation: "JavaScript tiene un solo tipo numérico." },
+          { expression: "typeof \"hola\"", answer: "string", hint: "Las comillas crean texto.", explanation: "Es una cadena." },
+          { expression: "typeof true", answer: "boolean", hint: "Es uno de los dos literales booleanos.", explanation: "true y false son boolean." },
+          { expression: "typeof undefined", answer: "undefined", hint: "Acá el nombre y el resultado coinciden.", explanation: "undefined es también un tipo primitivo." },
+          { expression: "typeof 10n", answer: "bigint", hint: "La n final cambia el tipo.", explanation: "Es un entero arbitrariamente grande." },
+          { expression: "typeof []", answer: "object", hint: "Los arreglos son una clase de objeto.", explanation: "Para distinguirlos se usa Array.isArray()." },
+          { expression: "typeof null", answer: "object", hint: "Recordá el error histórico de 1995.", explanation: "Devuelve object por compatibilidad histórica." },
+          { expression: "typeof function(){}", answer: "function", hint: "Es una excepción práctica de typeof.", explanation: "Devuelve function, aunque las funciones son objetos." }
+        ],
+        expression: $("#typeExpression"), choices: $("#typeChoices"), feedback: $("#typeFeedback"), counter: $("#typeCounter"), next: $("#nextType"), score: $("#typeScore"),
+        optionValues: ["number", "string", "boolean", "undefined", "bigint", "object", "function"],
+        onScore: (correct, answered) => { state.typeCorrect = correct; state.typeAnswered = answered; updateTotal(); }
+      });
+
+      makeQuiz({
+        items: [
+          { expression: "Boolean(\"false\")", answer: "true", hint: "No leas la palabra: mirá si la cadena está vacía.", explanation: "Es una cadena con cinco caracteres, por eso es truthy." },
+          { expression: "Boolean([])", answer: "true", hint: "Todo objeto es truthy.", explanation: "Un arreglo vacío sigue siendo un objeto." },
+          { expression: "Boolean(0n)", answer: "false", hint: "El cero también existe como bigint.", explanation: "0n es uno de los ocho falsy." },
+          { expression: "Boolean(\"0\")", answer: "true", hint: "Número cero y texto \"0\" no son lo mismo.", explanation: "La cadena contiene un carácter." },
+          { expression: "Boolean(NaN)", answer: "false", hint: "El resultado numérico imposible está en la lista.", explanation: "NaN es falsy." },
+          { expression: "Boolean({})", answer: "true", hint: "Vacío no significa ausente.", explanation: "Todo objeto es truthy, incluso uno sin propiedades." }
+        ],
+        expression: $("#truthyExpression"), choices: $("#truthyChoices"), feedback: $("#truthyFeedback"), counter: $("#truthyCounter"), next: $("#nextTruthy"), score: $("#truthyScore"),
+        optionValues: ["true", "false"],
+        onScore: (correct, answered) => { state.truthyCorrect = correct; state.truthyAnswered = answered; updateTotal(); }
+      });
+
+      // || y ??
+      const selectValue = (key) => ({ "0": 0, empty: "", null: null, undefined: undefined, "5": 5 })[key];
+      const updateDefaults = () => {
+        const orInput = selectValue($("#orValue").value);
+        const nullishInput = selectValue($("#nullishValue").value);
+        $("#orResult").textContent = formatValue(orInput || 1);
+        $("#nullishResult").textContent = formatValue(nullishInput ?? 1);
+      };
+      $("#orValue").addEventListener("change", updateDefaults);
+      $("#nullishValue").addEventListener("change", updateDefaults);
+
+      // Números
+      $("#precisionButton").addEventListener("click", () => {
+        const direct = .1 + .2 === .3;
+        const tolerant = Math.abs(.1 + .2 - .3) < Number.EPSILON;
+        $("#precisionFeedback").textContent = `Igualdad directa: ${direct}. Con tolerancia: ${tolerant}.`;
+        $("#precisionFeedback").className = "feedback good";
+      });
+      const updateMath = () => {
+        const value = Number($("#mathValue").value);
+        $("#mathRaw").textContent = value;
+        $("#mathRound").textContent = Math.round(value);
+        $("#mathFloor").textContent = Math.floor(value);
+        $("#mathCeil").textContent = Math.ceil(value);
+        $("#mathTrunc").textContent = Math.trunc(value);
+      };
+      $("#mathValue").addEventListener("input", updateMath);
+
+      // Cadenas
+      const stringMethods = {
+        trim: (value) => value.trim(),
+        upper: (value) => value.toUpperCase(),
+        lower: (value) => value.toLowerCase(),
+        slice: (value) => value.slice(2, 10),
+        split: (value) => value.split(","),
+        includes: (value) => value.includes("Java"),
+        length: (value) => value.length
+      };
+      $$(".method-button").forEach((button) => button.addEventListener("click", () => {
+        const original = $("#stringInput").value;
+        const result = stringMethods[button.dataset.method](original);
+        const output = $("#stringOutput");
+        const resultCode = document.createElement("code");
+        const originalText = document.createElement("small");
+        resultCode.textContent = formatValue(result);
+        originalText.textContent = `Original: ${formatValue(original)}`;
+        output.replaceChildren("Resultado: ", resultCode, document.createElement("br"), originalText);
+      }));
+
+      // Conversión explícita
+      const conversionValues = {
+        "42": "42", "3.14": "3.14", empty: "", spaces: "  ", "42px": "42px", true: true, null: null, undefined: undefined, array: [], object: {}
+      };
+      const updateConversion = () => {
+        const value = conversionValues[$("#conversionValue").value];
+        const conversion = $("#conversionType").value;
+        let result;
+        if (conversion === "Number") result = Number(value);
+        else if (conversion === "String") result = String(value);
+        else if (conversion === "Boolean") result = Boolean(value);
+        else result = Number.parseInt(value, 10);
+        $("#conversionOutput").innerHTML = `<strong>${formatValue(result)}</strong><br>tipo: ${typeof result}`;
+      };
+      $("#conversionValue").addEventListener("change", updateConversion);
+      $("#conversionType").addEventListener("change", updateConversion);
+
+      // Igualdad
+      $("#equalityQuiz").addEventListener("submit", (event) => {
+        event.preventDefault();
+        let answered = 0;
+        let correct = 0;
+        $$(".quiz-item", event.currentTarget).forEach((item) => {
+          const checked = $("input:checked", item);
+          item.classList.remove("good", "bad");
+          if (!checked) return;
+          answered += 1;
+          const isCorrect = checked.value === item.dataset.answer;
+          if (isCorrect) correct += 1;
+          item.classList.add(isCorrect ? "good" : "bad");
+        });
+        const feedback = $("#equalityFeedback");
+        if (answered < 5) { feedback.textContent = `Faltan ${5 - answered} respuestas.`; feedback.className = "feedback bad"; return; }
+        state.equalityCorrect = correct;
+        $("#equalityScore").textContent = `${correct} / 5`;
+        feedback.textContent = correct === 5 ? "✓ Perfecto. Ahora la conclusión: en código real, usá siempre ===." : `${correct} correctas. La tabla de == existe, pero la regla útil es evitarla y usar ===.`;
+        feedback.className = `feedback ${correct >= 4 ? "good" : "bad"}`;
+        updateTotal();
+      });
+
+      // Cierre
+      $("#copySummary").addEventListener("click", async () => {
+        const summary = "Variables y tipos en JavaScript\n• La variable apunta; el valor tiene el tipo.\n• const por defecto, let si reasignás, nunca var.\n• Primitivos por valor; objetos por referencia.\n• Solo ocho falsy; [] y {} son truthy.\n• ?? para ausencia.\n• number es punto flotante.\n• Conversión explícita y === siempre.";
+        try { await navigator.clipboard.writeText(summary); toast("Reglas copiadas al portapapeles."); }
+        catch { toast("No se pudo copiar automáticamente."); }
+      });
+
+      $("#resetProgress").addEventListener("click", () => {
+        location.reload();
+      });
+
+      updateDefaults();
+      updateConversion();
+      updateTotal();
+    })();
+  </script>
+</body>
+</html>

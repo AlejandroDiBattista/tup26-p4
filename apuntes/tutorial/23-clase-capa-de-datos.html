@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La capa de datos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --papel: #F7F9FC;
+  --tinta: #14213D;
+  --tinta-2: #2C3B57;
+  --gris: #5B6B85;
+  --linea: #C9D3E3;
+  --acento: #2F5BEA;
+  --acento-suave: #E3EAFD;
+  --codigo: #0F1B33;
+  --ok: #1F8A4C;
+  --redir: #2F5BEA;
+  --cliente: #B26A00;
+  --falla: #C4302B;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", "Cascadia Code", Consolas, "SF Mono", "Liberation Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #E4EAF3; font-family: var(--sans); color: var(--tinta); }
+
+#stage {
+  position: absolute; left: 50%; top: 50%;
+  width: 1280px; height: 800px;
+  background: var(--papel);
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+/* Diapositivas */
+.slide {
+  position: absolute; inset: 0 0 64px 0;
+  padding: 48px 72px 24px;
+  display: none; flex-direction: column; gap: 22px;
+  overflow: hidden;
+  --cs: 22px;
+}
+.slide.on { display: flex; }
+.slide h2 { margin: 0; font-size: 46px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.slide p { margin: 0; }
+.lead { font-size: 28px; line-height: 1.35; color: var(--tinta-2); max-width: 30em; }
+.note { font-size: 23px; line-height: 1.4; color: var(--gris); }
+.note code, .lead code, li code, td code, .aside code {
+  font-family: var(--mono); font-size: 0.9em; background: var(--acento-suave); color: var(--tinta);
+  padding: 0.05em 0.3em; border-radius: 4px;
+}
+
+/* Código */
+pre.code {
+  margin: 0; background: var(--codigo); color: #E3EAF6;
+  font-family: var(--mono); font-size: var(--cs); line-height: 1.42;
+  padding: 18px 0; border-radius: 10px; overflow: hidden; white-space: pre;
+  min-width: 0;
+}
+pre.code .ln { display: block; padding: 0 26px; border-left: 5px solid transparent; }
+pre.code .ln.add { background: rgba(91, 140, 255, 0.22); border-left-color: #5B8CFF; }
+.slide.on pre.code .ln.add { animation: marca 1.2s ease-out; }
+@keyframes marca { from { background: rgba(91, 140, 255, 0.55); } }
+@media (prefers-reduced-motion: reduce) { .slide.on pre.code .ln.add { animation: none; } }
+
+.t-kw { color: #7FA8FF; }
+.t-str { color: #F2C879; }
+.t-num { color: #F59E8B; }
+.t-rx { color: #F59E8B; }
+.t-com { color: #8794AE; }
+.t-fn { color: #7FE0D6; }
+.t-type { color: #C9AEFF; }
+.t-key { color: #7FA8FF; }
+.t-attr { color: #7FE0D6; }
+.t-hval { color: #E3EAF6; }
+.t-meth { color: #7FA8FF; font-weight: 600; }
+.t-path { color: #F2C879; }
+.t-ver { color: #8794AE; }
+.t-dim { color: #6E7C98; }
+.t-s2 { color: #5BD68A; font-weight: 600; }
+.t-s3 { color: #8FB4FF; font-weight: 600; }
+.t-s4 { color: #FFB547; font-weight: 600; }
+.t-s5 { color: #FF7A70; font-weight: 600; }
+
+.fig { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cap { font-size: 20px; color: var(--gris); font-weight: 500; }
+
+/* Disposiciones */
+.side { display: grid; grid-template-columns: minmax(0, max-content) minmax(260px, 1fr); gap: 36px; align-items: start; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+.aside { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+.aside p { font-size: 23px; line-height: 1.4; color: var(--tinta-2); border-left: 4px solid var(--acento); padding-left: 16px; }
+.aside p.warn { border-left-color: var(--cliente); }
+
+ul.plain, ol.plain { margin: 0; padding-left: 1.2em; font-size: 27px; line-height: 1.5; color: var(--tinta-2); }
+ul.plain li, ol.plain li { margin: 4px 0; }
+
+/* Tablas */
+table.t { border-collapse: collapse; font-size: 24px; }
+table.t th { text-align: left; font-weight: 600; color: var(--gris); font-size: 20px; padding: 0 22px 10px 0; border-bottom: 2px solid var(--linea); }
+table.t td { padding: 10px 22px 10px 0; border-bottom: 1px solid #E1E7F0; vertical-align: top; }
+.m { font-family: var(--mono); font-weight: 600; color: var(--acento); }
+.mono { font-family: var(--mono); }
+.si { color: var(--ok); font-weight: 600; }
+.no { color: var(--falla); font-weight: 600; }
+
+/* Tabla de base de datos */
+.dbt-cap { font: 500 20px var(--mono); color: var(--gris); }
+table.dbt { border-collapse: collapse; font: 24px var(--mono); background: #fff; }
+table.dbt th { background: var(--tinta); color: #fff; font-weight: 600; text-align: left; padding: 10px 22px; border: 2px solid var(--tinta); }
+table.dbt td { padding: 10px 22px; border: 2px solid var(--linea); }
+table.dbt td.nulo { color: var(--gris); font-style: italic; }
+table.dbt td.n { text-align: right; }
+
+/* Familias de estado */
+.familias { display: flex; flex-direction: column; gap: 14px; }
+.familia { display: grid; grid-template-columns: 130px 1fr auto; align-items: baseline; gap: 24px; padding: 12px 0; border-bottom: 1px solid #E1E7F0; }
+.familia b { font-family: var(--mono); font-size: 44px; font-weight: 600; }
+.familia span { font-size: 28px; }
+.familia em { font-style: normal; font-family: var(--mono); font-size: 21px; color: var(--gris); }
+.f2 b { color: var(--ok); } .f3 b { color: var(--redir); } .f4 b { color: var(--cliente); } .f5 b { color: var(--falla); }
+
+/* Diagramas */
+.duo { display: grid; grid-template-columns: 260px 1fr 260px; align-items: center; gap: 24px; margin-top: 24px; }
+.box { border: 3px solid var(--tinta); border-radius: 14px; padding: 26px 20px; text-align: center; font-size: 30px; font-weight: 600; background: #fff; }
+.box small { display: block; font-size: 19px; font-weight: 400; color: var(--gris); margin-top: 8px; }
+.box.soft { border-style: dashed; border-color: var(--gris); color: var(--gris); }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack .box { padding: 14px; font-size: 24px; }
+.wires { display: flex; flex-direction: column; gap: 44px; }
+.wire { position: relative; border-top: 3px solid var(--acento); text-align: center; padding-top: 10px; font-size: 22px; color: var(--acento); font-weight: 500; }
+.wire::after { content: ""; position: absolute; top: -10px; border: 8px solid transparent; }
+.wire.go::after { right: -4px; border-left: 14px solid var(--acento); border-right: 0; }
+.wire.back { border-top-color: var(--ok); color: var(--ok); }
+.wire.back::after { left: -4px; border-right: 14px solid var(--ok); border-left: 0; }
+.wire.cut { border-top-color: var(--falla); border-top-style: dashed; color: var(--falla); }
+.wire.cut::after { right: -4px; border-left: 14px solid var(--falla); border-right: 0; }
+
+.flow { display: flex; align-items: flex-start; gap: 34px; flex-wrap: nowrap; margin-top: 16px; }
+.node { position: relative; flex: 1 1 auto; min-width: 0; text-align: center; }
+.node .b { border: 3px solid var(--tinta); border-radius: 12px; padding: 18px 14px; font-family: var(--mono); font-size: 18px; font-weight: 600; background: #fff; white-space: nowrap; }
+.node small { display: block; font-size: 19px; color: var(--gris); margin-top: 10px; }
+.node:not(:last-child)::after { content: ""; position: absolute; right: -30px; top: 28px; width: 26px; height: 3px; background: var(--acento); }
+.node:not(:last-child)::before { content: ""; position: absolute; right: -32px; top: 22px; border: 7px solid transparent; border-left: 12px solid var(--acento); border-right: 0; }
+.node.resp .b { border-color: var(--ok); color: var(--ok); }
+.node.err .b { border-color: var(--falla); color: var(--falla); }
+.node.out .b { border-style: dashed; border-color: var(--gris); color: var(--gris); }
+.node.pedido .b { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+
+.lugares { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 0; font-size: 27px; }
+.lugares > div { padding: 18px 20px 18px 0; border-bottom: 1px solid #E1E7F0; }
+.lugares .q { font-weight: 600; }
+.lugares .ej { font-family: var(--mono); font-size: 25px; color: var(--acento); }
+
+.big-arrow { font-size: 48px; color: var(--acento); align-self: center; }
+.trio { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 28px; align-items: start; }
+
+/* Portada */
+.slide.portada { justify-content: center; gap: 0; }
+.portada .hero { display: grid; grid-template-columns: minmax(440px, 1fr) minmax(0, max-content); gap: 48px; align-items: center; }
+.portada h1 { font-size: 80px; line-height: 1; margin: 0 0 24px; font-weight: 700; letter-spacing: -0.02em; }
+.portada .sub { font-size: 30px; color: var(--tinta-2); line-height: 1.35; margin: 0 0 40px; }
+.portada .ayuda { font-size: 20px; color: var(--gris); }
+.portada .ayuda kbd, .ov-head kbd {
+  font-family: var(--mono); font-size: 0.9em; border: 2px solid var(--linea); border-bottom-width: 3px;
+  border-radius: 6px; padding: 1px 8px; background: #fff; color: var(--tinta);
+}
+.portada .hero .fig { gap: 14px; }
+
+/* Barra de recorrido */
+.rail {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+  display: flex; align-items: center; gap: 18px; padding: 0 24px 0 36px;
+  border-top: 1px solid #DCE3EE; background: #fff;
+}
+.nodes { flex: 1; display: flex; align-items: center; }
+.nodes .link { flex: 1; height: 2px; background: var(--linea); min-width: 8px; }
+.nodes .link.done { background: var(--acento); }
+.sec {
+  font: 500 15px var(--sans); border: 2px solid var(--linea); color: var(--gris); background: #fff;
+  border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap;
+}
+.sec.done { border-color: var(--acento); color: var(--acento); }
+.sec.now { background: var(--acento); border-color: var(--acento); color: #fff; }
+.sec:focus-visible, .navb:focus-visible, .card:focus-visible { outline: 3px solid var(--cliente); outline-offset: 2px; }
+.contador { font: 500 17px var(--mono); color: var(--gris); min-width: 72px; text-align: right; }
+.navb {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--linea); background: #fff;
+  color: var(--tinta); font-size: 20px; cursor: pointer; display: grid; place-items: center;
+}
+.navb:hover { border-color: var(--acento); color: var(--acento); }
+
+/* Índice */
+.overview {
+  position: absolute; inset: 0; background: rgba(247, 249, 252, 0.98); display: none;
+  flex-direction: column; padding: 36px 48px; gap: 20px; z-index: 5;
+}
+.overview.on { display: flex; }
+.ov-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ov-head h2 { margin: 0; font-size: 36px; font-weight: 600; }
+.ov-head span { font-size: 18px; color: var(--gris); }
+.ov-grid { flex: 1; overflow: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-content: start; padding: 4px; }
+.card {
+  text-align: left; border: 2px solid #DCE3EE; background: #fff; border-radius: 10px; padding: 12px 14px;
+  font: 500 17px/1.3 var(--sans); color: var(--tinta); cursor: pointer; display: flex; gap: 10px;
+}
+.card b { font-family: var(--mono); color: var(--gris); font-weight: 600; min-width: 28px; }
+.card i { font-style: normal; display: block; font-size: 14px; color: var(--gris); margin-top: 2px; }
+.card:hover { border-color: var(--acento); }
+.card.now { border-color: var(--acento); background: var(--acento-suave); }
+
+.tl { border-collapse: collapse; font-size: 24px; }
+.tl th { text-align: left; color: var(--gris); font-weight: 600; font-size: 20px; padding: 0 28px 10px 0; border-bottom: 2px solid var(--linea); }
+.tl td { padding: 12px 28px 12px 0; border-bottom: 1px solid #E1E7F0; font-family: var(--mono); font-size: 22px; }
+.tl td.paso { font-family: var(--sans); color: var(--gris); }
+.tl tr.mal td:last-child { color: var(--falla); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- ============ PORTADA ============ -->
+<section class="slide portada" data-sec="-1">
+  <div class="hero">
+    <div>
+      <h1>La capa de datos</h1>
+      <p class="sub">De un archivo JSON a SQLite, de SQL a mano a Drizzle, de tu máquina a una base remota.</p>
+      <p class="ayuda"><kbd>←</kbd> <kbd>→</kbd> para avanzar, <kbd>O</kbd> para el índice, <kbd>F</kbd> para pantalla completa.</p>
+    </div>
+    <div class="fig">
+<script type="text/x-code" data-lang="sql">
+SELECT * FROM contactos
+WHERE nombre LIKE ?
+ORDER BY nombre;
+</script>
+<script type="text/x-code" data-lang="js">
+db.select().from(contactos)
+  .where(like(contactos.nombre, `%${buscar}%`))
+  .orderBy(asc(contactos.nombre));
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BASE DE DATOS ============ -->
+<section class="slide" data-sec="0">
+  <h2>El archivo JSON ya no alcanza</h2>
+  <ul class="plain">
+    <li>2 pedidos simultáneos pueden pisarse y perder un contacto</li>
+    <li>para traer uno solo, se lee el archivo entero</li>
+    <li>las reglas viven solo en nuestro código</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>Una base de datos resuelve eso</h2>
+  <ul class="plain">
+    <li>coordina los accesos simultáneos</li>
+    <li>encuentra datos sin recorrer todo</li>
+    <li>hace cumplir reglas sobre lo que se guarda</li>
+  </ul>
+  <p class="lead">Es un programa especializado en guardar y consultar.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>De servidor o embebida</h2>
+  <div class="two" style="margin-top:12px">
+    <div class="box">PostgreSQL, MySQL<small>otro proceso, a veces otra máquina. Se conecta por la red.</small></div>
+    <div class="box">SQLite<small>una librería dentro de tu programa. La base es un archivo.</small></div>
+  </div>
+  <p class="lead">Para desarrollar, SQLite es ideal: no hay nada que instalar ni configurar.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>libSQL: una librería, 2 destinos</h2>
+  <p class="lead">Es SQLite con una ventaja: la misma librería abre un archivo o se conecta a una base remota.</p>
+<script type="text/x-code" data-lang="text">
+desarrollo   file:agenda.db                        un archivo en tu máquina
+producción   libsql://agenda-tu-usuario.turso.io   una base en la nube
+</script>
+  <p class="note">Solo cambia la dirección. Las consultas son las mismas.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>Tablas, filas y columnas</h2>
+<div class="fig">
+    <div class="dbt-cap">contactos</div>
+    <table class="dbt">
+      <tr><th>id</th><th>nombre</th><th>telefono</th><th>email</th></tr>
+      <tr><td class="n">1</td><td>Ana Díaz</td><td>381-555-0101</td><td class="nulo">NULL</td></tr>
+      <tr><td class="n">2</td><td>Bruno Paz</td><td class="nulo">NULL</td><td>bruno@mail.com</td></tr>
+    </table>
+  </div>
+  <p class="note">Cada columna tiene un tipo: <code>INTEGER</code>, <code>REAL</code>, <code>TEXT</code>, <code>BLOB</code>.</p>
+  <p class="note"><code>NULL</code> es "no está". No es texto vacío ni cero.</p>
+</section>
+
+<section class="slide" data-sec="0">
+  <h2>La clave primaria</h2>
+  <p class="lead">Una columna que identifica a cada fila sin repetirse.</p>
+<script type="text/x-code" data-lang="sql">
+id INTEGER PRIMARY KEY
+</script>
+  <p class="lead">Si al insertar no le damos valor, la base genera el siguiente número.</p>
+  <p class="note">Se terminan los ids repetidos del archivo JSON.</p>
+</section>
+
+<!-- ============ SQL ============ -->
+<section class="slide" data-sec="1">
+  <h2>Crear la tabla</h2>
+<script type="text/x-code" data-lang="sql">
+CREATE TABLE IF NOT EXISTS contactos (
+  id       INTEGER PRIMARY KEY,
+  nombre   TEXT NOT NULL,
+  telefono TEXT,
+  email    TEXT UNIQUE
+);
+</script>
+  <div class="two">
+    <p class="note"><code>NOT NULL</code>: la columna tiene que tener valor.</p>
+    <p class="note"><code>UNIQUE</code>: no se repite. Varias filas pueden tener <code>NULL</code>.</p>
+  </div>
+  <p class="note">Estas reglas las controla la base. Ningún programa puede saltarlas.</p>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Insertar</h2>
+<script type="text/x-code" data-lang="sql">
+INSERT INTO contactos (nombre, telefono)
+VALUES ('Ana Díaz', '381-555-0101');
+</script>
+  <p class="lead">Columnas y valores, en el mismo orden. Lo que no se nombra queda en <code>NULL</code>. El <code>id</code> lo pone la base.</p>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Consultar</h2>
+<script type="text/x-code" data-lang="sql">
+SELECT * FROM contactos;
+
+SELECT id, nombre FROM contactos WHERE id = 1;
+
+SELECT * FROM contactos ORDER BY nombre;
+</script>
+  <div class="two">
+    <p class="note"><code>SELECT</code> elige columnas. <code>*</code> es todas.</p>
+    <p class="note"><code>WHERE</code> filtra filas. <code>ORDER BY</code> las ordena.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Buscar por patrón</h2>
+<script type="text/x-code" data-lang="sql">
+SELECT * FROM contactos WHERE nombre LIKE '%ana%';
+</script>
+  <p class="lead"><code>%</code> reemplaza a cualquier cantidad de caracteres. Encuentra "Ana Díaz" y "Mariana Paz".</p>
+  <p class="note">En SQLite, <code>LIKE</code> no distingue mayúsculas en letras sin tilde.</p>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>Modificar y borrar</h2>
+<script type="text/x-code" data-lang="sql">
+UPDATE contactos SET email = 'ana@mail.com' WHERE id = 1;
+
+DELETE FROM contactos WHERE id = 1;
+</script>
+  <div class="aside">
+    <p class="warn">Sin <code>WHERE</code>, afecta a todas las filas de la tabla.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="1">
+  <h2>RETURNING devuelve lo que cambió</h2>
+<script type="text/x-code" data-lang="sql">
+INSERT INTO contactos (nombre) VALUES ('Ana Díaz') RETURNING *;
+</script>
+<table class="dbt">
+    <tr><th>id</th><th>nombre</th><th>telefono</th><th>email</th></tr>
+    <tr><td class="n">3</td><td>Ana Díaz</td><td class="nulo">NULL</td><td class="nulo">NULL</td></tr>
+  </table>
+  <p class="lead">Inserta y devuelve la fila, con el <code>id</code> generado. Sin una segunda consulta.</p>
+</section>
+
+<!-- ============ libSQL ============ -->
+<section class="slide" data-sec="2">
+  <h2>Instalar y abrir la base</h2>
+<script type="text/x-code" data-lang="bash">
+npm install @libsql/client
+</script>
+<script type="text/x-code" data-lang="js">
+import { createClient } from '@libsql/client';
+
+const cliente = createClient({ url: 'file:practica.db' });
+</script>
+  <p class="note">El archivo se crea si no existe, relativo a donde ejecutás <code>node</code>. La carpeta tiene que existir.</p>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>execute envía una instrucción</h2>
+<script type="text/x-code" data-lang="js">
+await cliente.execute(`
+  CREATE TABLE IF NOT EXISTS contactos (
+    id       INTEGER PRIMARY KEY,
+    nombre   TEXT NOT NULL,
+    telefono TEXT,
+    email    TEXT UNIQUE
+  )
+`);
+
+const insercion = await cliente.execute({
+  sql: 'INSERT INTO contactos (nombre, telefono) VALUES (?, ?)',
+  args: ['Ana Díaz', '381-555-0101'],
+});
+</script>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Qué devuelve execute</h2>
+<script type="text/x-code" data-lang="js">
+console.log(insercion.lastInsertRowid);   // 1n
+console.log(insercion.rowsAffected);      // 1
+
+const consulta = await cliente.execute('SELECT * FROM contactos');
+console.log(consulta.columns);            // [ 'id', 'nombre', 'telefono', 'email' ]
+console.log(consulta.rows[0].nombre);     // Ana Díaz
+</script>
+  <table class="t">
+    <tr><td class="mono">rows</td><td>las filas, se leen por nombre de columna</td></tr>
+    <tr><td class="mono">rowsAffected</td><td>cuántas filas cambió</td></tr>
+    <tr><td class="mono">lastInsertRowid</td><td>el último id insertado, como <code>BigInt</code></td></tr>
+  </table>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>Inyección de SQL</h2>
+<script type="text/x-code" data-lang="js" data-cap="No hacer esto">
+const sql = `SELECT * FROM contactos WHERE nombre = '${nombre}'`;
+</script>
+<script type="text/x-code" data-lang="sql" data-cap="Si nombre vale  ' OR '1'='1">
+SELECT * FROM contactos WHERE nombre = '' OR '1'='1'
+</script>
+  <p class="lead">La condición siempre se cumple: devuelve toda la tabla. Con otros valores, borra datos.</p>
+</section>
+
+<section class="slide" data-sec="2">
+  <h2>El SQL y los datos viajan separados</h2>
+<script type="text/x-code" data-lang="js">
+await cliente.execute({
+  sql: 'SELECT * FROM contactos WHERE nombre = ?',
+  args: [nombre],
+});
+
+await cliente.execute({
+  sql: 'INSERT INTO contactos (nombre, email) VALUES (:nombre, :email)',
+  args: { nombre: 'Bruno Paz', email: 'bruno@mail.com' },
+});
+</script>
+  <div class="two">
+    <p class="note">La base nunca interpreta un valor como parte de la instrucción.</p>
+    <p class="note"><code>args</code> no acepta <code>undefined</code>: un dato ausente es <code>null</code>.</p>
+  </div>
+</section>
+
+<!-- ============ REPOSITORIO ============ -->
+<section class="slide" data-sec="3">
+  <h2>Del REST al SQL</h2>
+  <table class="t">
+    <tr><th>Pedido</th><th>SQL</th><th>Sin filas</th></tr>
+    <tr><td><span class="m">GET</span> <span class="mono">/contactos</span></td><td class="mono">SELECT</td><td>arreglo vacío</td></tr>
+    <tr><td><span class="m">GET</span> <span class="mono">?buscar=ana</span></td><td class="mono">SELECT ... WHERE LIKE</td><td>arreglo vacío</td></tr>
+    <tr><td><span class="m">GET</span> <span class="mono">/contactos/3</span></td><td class="mono">SELECT ... WHERE id</td><td>404</td></tr>
+    <tr><td><span class="m">POST</span> <span class="mono">/contactos</span></td><td class="mono">INSERT ... RETURNING</td><td></td></tr>
+    <tr><td><span class="m">PUT</span> <span class="mono">/contactos/3</span></td><td class="mono">UPDATE todas las columnas</td><td>404</td></tr>
+    <tr><td><span class="m">PATCH</span> <span class="mono">/contactos/3</span></td><td class="mono">UPDATE algunas columnas</td><td>404</td></tr>
+    <tr><td><span class="m">DELETE</span> <span class="mono">/contactos/3</span></td><td class="mono">DELETE ... WHERE id</td><td>404</td></tr>
+  </table>
+  <p class="note">Y al revés: una restricción <code>UNIQUE</code> violada es un 409.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Un cliente para toda la aplicación</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/db/cliente.js">
+import { createClient } from '@libsql/client';
+
+export const cliente = createClient({
+  url: process.env.DB_URL ?? 'file:agenda.db',
+  authToken: process.env.DB_TOKEN,
+});
+</script>
+  <p class="lead">Sin variables de entorno, usa un archivo local. Al final las usamos para la base remota.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Crear la tabla al arrancar</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.repositorio.js">
+import { cliente } from './db/cliente.js';
+import { ErrorHttp } from './errores.js';
+
+export async function crearTabla() {
+  await cliente.execute(`
+    CREATE TABLE IF NOT EXISTS contactos (
+      id       INTEGER PRIMARY KEY,
+      nombre   TEXT NOT NULL,
+      telefono TEXT,
+      email    TEXT UNIQUE
+    )
+  `);
+}
+</script>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>El servidor espera a la tabla</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/servidor.js">
+import { app } from './app.js';
++ import { crearTabla } from './contactos.repositorio.js';
+
+const PUERTO = process.env.PUERTO ?? 3000;
+
++ await crearTabla();
+
+app.listen(PUERTO, () => {
+  console.log(`API escuchando en http://localhost:${PUERTO}`);
+});
+</script>
+  <p class="note"><code>await</code> en el nivel superior funciona porque usamos módulos.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Listar y buscar</h2>
+<script type="text/x-code" data-lang="js">
+export async function listar({ buscar } = {}) {
+  if (buscar) {
+    const resultado = await cliente.execute({
+      sql: 'SELECT * FROM contactos WHERE nombre LIKE ? ORDER BY nombre',
+      args: [`%${buscar}%`],
+    });
+    return resultado.rows;
+  }
+  const resultado = await cliente.execute('SELECT * FROM contactos ORDER BY nombre');
+  return resultado.rows;
+}
+</script>
+  <p class="note">El filtro pasa al <code>WHERE</code>. Los <code>%</code> van en el valor, no en el SQL.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>La ruta le pasa la búsqueda</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.rutas.js">
+rutasContactos.get('/', async (req, res) => {
+  const { buscar } = req.query;
++   const contactos = await repositorio.listar({
++     buscar: typeof buscar === 'string' ? buscar : undefined,
++   });
+  res.json(contactos);
+});
+</script>
+  <p class="lead">Es el único cambio en las rutas de toda la clase.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Obtener uno</h2>
+<script type="text/x-code" data-lang="js">
+export async function obtener(id) {
+  const resultado = await cliente.execute({
+    sql: 'SELECT * FROM contactos WHERE id = ?',
+    args: [id],
+  });
+  return resultado.rows[0] ?? null;
+}
+</script>
+  <p class="note">Un <code>SELECT</code> siempre devuelve un arreglo, aunque busques por clave primaria.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Un correo repetido es 409</h2>
+<script type="text/x-code" data-lang="js">
+async function cuidandoEmail(operacion) {
+  try {
+    return await operacion();
+  } catch (error) {
+    const codigo = error.extendedCode ?? error.cause?.extendedCode;
+    if (codigo === 'SQLITE_CONSTRAINT_UNIQUE') {
+      throw new ErrorHttp(409, 'Ya existe un contacto con ese email');
+    }
+    throw error;
+  }
+}
+</script>
+  <p class="note">Traduce un solo error. Los demás siguen al manejador como 500.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Crear</h2>
+<script type="text/x-code" data-lang="js">
+export async function crear(datos) {
+  return cuidandoEmail(async () => {
+    const resultado = await cliente.execute({
+      sql: `INSERT INTO contactos (nombre, telefono, email)
+            VALUES (?, ?, ?)
+            RETURNING *`,
+      args: [datos.nombre, datos.telefono ?? null, datos.email ?? null],
+    });
+    return resultado.rows[0];
+  });
+}
+</script>
+  <p class="note"><code>datos</code> viene de <code>validarContacto</code>. Los opcionales que faltan pasan como <code>null</code>.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Reemplazar</h2>
+<script type="text/x-code" data-lang="js">
+export async function reemplazar(id, datos) {
+  return cuidandoEmail(async () => {
+    const resultado = await cliente.execute({
+      sql: `UPDATE contactos
+            SET nombre = ?, telefono = ?, email = ?
+            WHERE id = ?
+            RETURNING *`,
+      args: [datos.nombre, datos.telefono ?? null, datos.email ?? null, id],
+    });
+    return resultado.rows[0] ?? null;
+  });
+}
+</script>
+  <p class="note">Si el id no existe, <code>RETURNING</code> no devuelve nada: <code>null</code>, y la ruta responde 404.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Modificar arma el SET</h2>
+<script type="text/x-code" data-lang="js">
+export async function modificar(id, cambios) {
+  const columnas = Object.keys(cambios);
+  if (columnas.length === 0) return obtener(id);
+
+  return cuidandoEmail(async () => {
+    const asignaciones = columnas.map(columna => `${columna} = ?`).join(', ');
+    const resultado = await cliente.execute({
+      sql: `UPDATE contactos SET ${asignaciones} WHERE id = ? RETURNING *`,
+      args: [...Object.values(cambios), id],
+    });
+    return resultado.rows[0] ?? null;
+  });
+}
+</script>
+  <div class="aside">
+    <p class="warn">Pegamos los nombres de columna. Es seguro solo porque <code>validarContacto</code> filtra las claves.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Borrar</h2>
+<script type="text/x-code" data-lang="js">
+export async function borrar(id) {
+  const resultado = await cliente.execute({
+    sql: 'DELETE FROM contactos WHERE id = ?',
+    args: [id],
+  });
+  return resultado.rowsAffected > 0;
+}
+</script>
+  <p class="lead">Cero filas borradas: el contacto no existía.</p>
+</section>
+
+<section class="slide" data-sec="3">
+  <h2>Lo que ganamos</h2>
+  <ul class="plain">
+    <li>la base genera los ids y ordena las escrituras</li>
+    <li>la búsqueda la hace la base</li>
+    <li>un correo repetido responde 409</li>
+    <li>las rutas no se enteraron del cambio</li>
+  </ul>
+<script type="text/x-code" data-lang="json">
+{"id":1,"nombre":"Ana Díaz","telefono":"381-555-0101","email":null}
+</script>
+  <p class="note">Los campos ausentes ahora llegan como <code>null</code>.</p>
+</section>
+
+<!-- ============ ORM ============ -->
+<section class="slide" data-sec="4">
+  <h2>Los costos del SQL a mano</h2>
+  <ul class="plain">
+    <li>el SQL es texto: un error de tipeo aparece recién al ejecutar</li>
+    <li>los nombres de columna se repiten en cada función</li>
+    <li>el <code>UPDATE</code> de PATCH se arma pegando texto</li>
+    <li>la tabla vive en un texto dentro de <code>crearTabla</code></li>
+    <li><code>IF NOT EXISTS</code> no sirve para cambiar una tabla con datos</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="4">
+  <h2>Qué es un ORM</h2>
+  <p class="lead">Mapeo objeto-relacional: traduce entre tablas y filas, y objetos y funciones.</p>
+  <ul class="plain">
+    <li>describe las tablas en código, en un solo lugar</li>
+    <li>arma las consultas con funciones, siempre con parámetros</li>
+    <li>convierte las filas en objetos</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="4">
+  <h2>Drizzle se lee como SQL</h2>
+  <div class="two">
+<script type="text/x-code" data-lang="sql" data-cap="SQL">
+SELECT * FROM contactos
+WHERE id = ?;
+
+UPDATE contactos
+SET email = ?
+WHERE id = ?
+RETURNING *;
+</script>
+<script type="text/x-code" data-lang="js" data-cap="Drizzle">
+db.select().from(contactos)
+  .where(eq(contactos.id, id));
+
+db.update(contactos)
+  .set({ email })
+  .where(eq(contactos.id, id))
+  .returning();
+</script>
+  </div>
+  <p class="note">Quien sabe SQL lee Drizzle sin esfuerzo. Por eso empezamos por SQL.</p>
+</section>
+
+<!-- ============ DRIZZLE ============ -->
+<section class="slide" data-sec="5">
+  <h2>Instalar Drizzle</h2>
+<script type="text/x-code" data-lang="bash">
+npm install drizzle-orm
+npm install -D drizzle-kit
+</script>
+  <div class="two">
+    <p class="note"><code>drizzle-orm</code>: la librería que consulta.</p>
+    <p class="note"><code>drizzle-kit</code>: herramienta para la estructura de la base. Solo en desarrollo.</p>
+  </div>
+  <p class="note">Usamos la versión estable, 0.45. La 1.0 todavía es candidata.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Describir la tabla</h2>
+  <div class="side" style="grid-template-columns: max-content max-content;">
+<script type="text/x-code" data-lang="js" data-cap="src/db/esquema.js">
+import { sqliteTable, integer, text }
+  from 'drizzle-orm/sqlite-core';
+
+export const contactos = sqliteTable('contactos', {
+  id: integer('id').primaryKey(),
+  nombre: text('nombre').notNull(),
+  telefono: text('telefono'),
+  email: text('email').unique(),
+});
+</script>
+<script type="text/x-code" data-lang="sql" data-cap="Lo mismo en SQL">
+CREATE TABLE contactos (
+  id       INTEGER PRIMARY KEY,
+  nombre   TEXT NOT NULL,
+  telefono TEXT,
+  email    TEXT UNIQUE
+);
+</script>
+  </div>
+  <p class="note">La clave es el nombre en JavaScript. El texto entre paréntesis, el nombre en la base.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Drizzle usa nuestro cliente</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/db/index.js">
+import { drizzle } from 'drizzle-orm/libsql';
+import { cliente } from './cliente.js';
+
+export const db = drizzle(cliente);
+</script>
+  <p class="lead"><code>db</code> es el objeto con el que se arman todas las consultas.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Consultar</h2>
+<script type="text/x-code" data-lang="js">
+import { eq, like, asc } from 'drizzle-orm';
+import { db } from './db/index.js';
+import { contactos } from './db/esquema.js';
+
+// SELECT * FROM contactos WHERE id = ?
+await db.select().from(contactos).where(eq(contactos.id, 3));
+
+// SELECT * FROM contactos WHERE nombre LIKE ? ORDER BY nombre
+await db.select().from(contactos)
+  .where(like(contactos.nombre, '%ana%'))
+  .orderBy(asc(contactos.nombre));
+</script>
+  <p class="note">Las condiciones son funciones: <code>eq</code>, <code>like</code>, <code>asc</code>, <code>desc</code>.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Insertar, modificar y borrar</h2>
+<script type="text/x-code" data-lang="js">
+await db.insert(contactos)
+  .values({ nombre: 'Ana Díaz' })
+  .returning();
+
+await db.update(contactos)
+  .set({ email: 'ana@mail.com' })
+  .where(eq(contactos.id, 1))
+  .returning();
+
+await db.delete(contactos)
+  .where(eq(contactos.id, 1))
+  .returning();
+</script>
+  <p class="note"><code>values</code> y <code>set</code> reciben objetos. El <code>UPDATE</code> armado a mano desaparece.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Es SQL por debajo</h2>
+<script type="text/x-code" data-lang="js">
+const consulta = db.select().from(contactos).where(like(contactos.nombre, '%ana%'));
+console.log(consulta.toSQL());
+</script>
+<script type="text/x-code" data-lang="text">
+{
+  sql: 'select "id", "nombre", "telefono", "email" from "contactos"
+        where "contactos"."nombre" like ?',
+  params: [ '%ana%' ]
+}
+</script>
+  <p class="note">La consulta se ejecuta recién con <code>await</code>. Antes es solo una descripción.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Repositorio: listar y obtener</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.repositorio.js">
+import { eq, like, asc } from 'drizzle-orm';
+import { db } from './db/index.js';
+import { contactos } from './db/esquema.js';
+import { ErrorHttp } from './errores.js';
+
+export async function listar({ buscar } = {}) {
+  return db
+    .select()
+    .from(contactos)
+    .where(buscar ? like(contactos.nombre, `%${buscar}%`) : undefined)
+    .orderBy(asc(contactos.nombre));
+}
+
+export async function obtener(id) {
+  const [contacto] = await db.select().from(contactos).where(eq(contactos.id, id));
+  return contacto ?? null;
+}
+</script>
+  <p class="note"><code>where(undefined)</code> se ignora. <code>cuidandoEmail</code> queda igual que antes.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Repositorio: crear y reemplazar</h2>
+<script type="text/x-code" data-lang="js">
+export async function crear(datos) {
+  return cuidandoEmail(async () => {
+    const [contacto] = await db.insert(contactos).values(datos).returning();
+    return contacto;
+  });
+}
+
+export async function reemplazar(id, datos) {
+  return cuidandoEmail(async () => {
+    const [contacto] = await db
+      .update(contactos)
+      .set({ telefono: null, email: null, ...datos })
+      .where(eq(contactos.id, id))
+      .returning();
+    return contacto ?? null;
+  });
+}
+</script>
+  <p class="note">PUT: primero todo en <code>null</code>, después lo que vino.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>Repositorio: modificar y borrar</h2>
+<script type="text/x-code" data-lang="js">
+export async function modificar(id, cambios) {
+  if (Object.keys(cambios).length === 0) return obtener(id);
+  return cuidandoEmail(async () => {
+    const [contacto] = await db
+      .update(contactos)
+      .set(cambios)
+      .where(eq(contactos.id, id))
+      .returning();
+    return contacto ?? null;
+  });
+}
+
+export async function borrar(id) {
+  const borrados = await db.delete(contactos).where(eq(contactos.id, id)).returning();
+  return borrados.length > 0;
+}
+</script>
+  <p class="note">Drizzle no acepta un <code>set</code> vacío. Ningún texto de SQL, ninguna lista de columnas.</p>
+</section>
+
+<section class="slide" data-sec="5">
+  <h2>¿Quién crea la tabla ahora?</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/servidor.js">
+import { app } from './app.js';
+
+const PUERTO = process.env.PUERTO ?? 3000;
+
+app.listen(PUERTO, () => {
+  console.log(`API escuchando en http://localhost:${PUERTO}`);
+});
+</script>
+  <p class="lead"><code>crearTabla</code> desaparece. La estructura la manejan las migraciones.</p>
+</section>
+
+<!-- ============ MIGRACIONES ============ -->
+<section class="slide" data-sec="6">
+  <h2>La base también cambia</h2>
+  <p class="lead">Hoy 4 columnas. El mes que viene, notas o una tabla de empresas.</p>
+  <div class="duo">
+    <div class="box">Cambio<small>agregar una columna</small></div>
+    <div class="wires"><div class="wire go">se aplica en cada copia</div></div>
+    <div class="stack">
+      <div class="box">tu base</div>
+      <div class="box">la de un compañero</div>
+      <div class="box">producción, con datos</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Qué es una migración</h2>
+  <p class="lead">Un archivo SQL con un cambio puntual. Se numeran y se aplican en orden, una sola vez.</p>
+  <div class="flow">
+    <div class="node"><div class="b">0000_crear_contactos</div><small>CREATE TABLE</small></div>
+    <div class="node"><div class="b">0001_agregar_notas</div><small>ALTER TABLE</small></div>
+    <div class="node out"><div class="b">0002_...</div><small>la próxima</small></div>
+  </div>
+  <p class="note" style="margin-top:20px">La base anota en una tabla propia cuáles ya aplicó. Cualquier copia se pone al día con las que le faltan.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Configurar drizzle-kit</h2>
+<script type="text/x-code" data-lang="js" data-cap="drizzle.config.js">
+import { defineConfig } from 'drizzle-kit';
+
+try {
+  process.loadEnvFile();
+} catch {
+  // sin archivo .env: se usa la base local
+}
+
+export default defineConfig({
+  dialect: 'turso',
+  schema: './src/db/esquema.js',
+  out: './drizzle',
+  dbCredentials: {
+    url: process.env.DB_URL ?? 'file:agenda.db',
+    authToken: process.env.DB_TOKEN,
+  },
+});
+</script>
+  <p class="note"><code>dialect: 'turso'</code> habla con libSQL, local o remoto.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Comandos en package.json</h2>
+<script type="text/x-code" data-lang="json">
+"scripts": {
+  "dev": "node --env-file-if-exists=.env --watch src/servidor.js",
+  "start": "node --env-file-if-exists=.env src/servidor.js",
+  "db:generate": "drizzle-kit generate",
+  "db:migrate": "drizzle-kit migrate",
++   "db:seed": "node --env-file-if-exists=.env src/db/semilla.js",
+  "db:studio": "drizzle-kit studio"
+}
+</script>
+  <p class="note"><code>--env-file-if-exists</code> carga <code>.env</code> si existe. Necesita Node 22 o posterior.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Generar la primera migración</h2>
+<script type="text/x-code" data-lang="bash">
+npm run db:generate -- --name crear_contactos
+</script>
+<script type="text/x-code" data-lang="sql" data-cap="drizzle/0000_crear_contactos.sql">
+CREATE TABLE `contactos` (
+	`id` integer PRIMARY KEY NOT NULL,
+	`nombre` text NOT NULL,
+	`telefono` text,
+	`email` text
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `contactos_email_unique` ON `contactos` (`email`);
+</script>
+  <p class="note">Compara el esquema con la última vez y escribe la diferencia. Todavía no toca la base.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Aplicar</h2>
+<script type="text/x-code" data-lang="bash">
+npm run db:migrate
+</script>
+<script type="text/x-code" data-lang="text">
+tablas en agenda.db
+  __drizzle_migrations     qué migraciones se aplicaron
+  contactos
+</script>
+  <p class="lead">Si lo ejecutás otra vez, no hace nada.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Una semilla con datos de ejemplo</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/db/semilla.js">
+import { db } from './index.js';
+import { cliente } from './cliente.js';
+import { contactos } from './esquema.js';
+
+const ejemplos = [
+  { nombre: 'Ana Díaz', telefono: '381-555-0101', email: 'ana@mail.com' },
+  { nombre: 'Bruno Paz', telefono: '381-555-0202', email: 'bruno@mail.com' },
+  { nombre: 'Carla Ruiz', telefono: '381-555-0303', email: null },
+];
+
+const [, insertados] = await db.batch([
+  db.delete(contactos),
+  db.insert(contactos).values(ejemplos).returning(),
+]);
+
+console.log(`Semilla cargada: ${insertados.length} contactos`);
+cliente.close();
+</script>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Siempre los mismos 3 contactos</h2>
+<script type="text/x-code" data-lang="bash">
+npm run db:seed
+</script>
+  <ul class="plain">
+    <li>borra y vuelve a insertar: correrla 2 veces deja lo mismo</li>
+    <li>todos tienen los ids 1, 2 y 3 para probar</li>
+    <li><code>batch</code> es una transacción: o se aplican las 2, o ninguna</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>La semilla no toca producción</h2>
+<script type="text/x-code" data-lang="js" data-cap="Al principio de src/db/semilla.js">
+if (process.env.DB_URL?.startsWith('libsql://')) {
+  console.error('La semilla borra todo: no se ejecuta en la base remota.');
+  process.exit(1);
+}
+</script>
+  <p class="lead">Una protección simple contra un error caro: correrla con el <code>.env</code> de producción.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Agregar una columna</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/db/esquema.js">
+  email: text('email').unique(),
++   notas: text('notas'),
+});
+</script>
+<script type="text/x-code" data-lang="bash">
+npm run db:generate -- --name agregar_notas
+</script>
+<script type="text/x-code" data-lang="sql" data-cap="drizzle/0001_agregar_notas.sql">
+ALTER TABLE `contactos` ADD `notas` text;
+</script>
+  <p class="note">Solo la diferencia. Los contactos existentes quedan con <code>notas</code> en <code>NULL</code>.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Qué va al control de versiones</h2>
+<script type="text/x-code" data-lang="tree">
+drizzle/
+├── 0000_crear_contactos.sql   sí
+├── 0001_agregar_notas.sql     sí
+└── meta/                      sí: fotos del esquema para comparar
+agenda.db                      no: cada uno tiene sus datos
+</script>
+  <p class="lead">Un compañero baja tus cambios, ejecuta <code>npm run db:migrate</code> y su base queda igual a la tuya.</p>
+</section>
+
+<section class="slide" data-sec="6">
+  <h2>Studio y push</h2>
+  <table class="t">
+    <tr><td class="mono">npm run db:studio</td><td>ver y editar los datos en el navegador</td></tr>
+    <tr><td class="mono">npx drizzle-kit push</td><td>aplicar el esquema sin generar migraciones</td></tr>
+  </table>
+  <p class="note"><code>push</code> sirve para probar ideas en tu máquina. No deja registro: no se usa con datos que importan.</p>
+</section>
+
+<!-- ============ REMOTO ============ -->
+<section class="slide" data-sec="7">
+  <h2>La dirección no pertenece al código</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/db/cliente.js">
+export const cliente = createClient({
+  url: process.env.DB_URL ?? 'file:agenda.db',
+  authToken: process.env.DB_TOKEN,
+});
+</script>
+<script type="text/x-code" data-lang="env" data-cap=".env">
+DB_URL=libsql://agenda-tu-usuario.turso.io
+DB_TOKEN=eyJhbGciOi...
+</script>
+  <p class="note">Sin <code>.env</code>, todo apunta al archivo local.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>El token es una contraseña</h2>
+<script type="text/x-code" data-lang="env" data-cap=".gitignore">
+node_modules/
+.env
+*.db
+</script>
+  <p class="lead">Quien tenga el token puede leer y borrar la base. <code>.env</code> nunca va a git.</p>
+  <p class="note">En producción, las variables se cargan en el panel del servicio.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Crear la base en Turso</h2>
+<script type="text/x-code" data-lang="bash">
+curl -sSfL https://get.tur.so/install.sh | bash
+
+turso auth signup                 # o turso auth login
+turso db create agenda
+turso db show agenda --url        # libsql://...
+turso db tokens create agenda     # el token
+</script>
+  <p class="note">En Windows, la herramienta se instala dentro de WSL. El plan gratuito alcanza para la materia.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Migrar y arrancar</h2>
+<script type="text/x-code" data-lang="bash">
+npm run db:migrate
+npm run dev
+</script>
+  <p class="lead">Los mismos comandos de siempre. Con <code>.env</code> presente, los 2 van a la base remota.</p>
+  <p class="note">Borrás o renombrás <code>.env</code> y todo vuelve al archivo local.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>Mismo código, 2 destinos</h2>
+  <div class="duo">
+    <div class="box">API<small>cliente.js lee DB_URL</small></div>
+    <div class="wires">
+      <div class="wire go">sin .env</div>
+      <div class="wire go">con .env</div>
+    </div>
+    <div class="stack">
+      <div class="box">agenda.db<small>en tu máquina</small></div>
+      <div class="box">Turso<small>en la nube</small></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:20px">Con la base remota, cada consulta viaja por internet. Pedile a la base solo lo que necesitás.</p>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>La estructura final</h2>
+<script type="text/x-code" data-lang="tree">
+agenda-api/
+├── .env                          solo con base remota; no va a git
+├── drizzle.config.js
+├── drizzle/                      migraciones; sí va a git
+└── src/
+    ├── contactos.rutas.js        un cambio: pasa buscar
+    ├── contactos.repositorio.js  ahora con Drizzle
+    └── db/
+        ├── cliente.js            el cliente de libSQL
+        ├── index.js              Drizzle sobre ese cliente
+        ├── esquema.js            la descripción de las tablas
+        └── semilla.js            3 contactos de ejemplo
+</script>
+</section>
+
+<section class="slide" data-sec="7">
+  <h2>El recorrido de un pedido</h2>
+  <div class="flow">
+    <div class="node pedido"><div class="b">pedido</div></div>
+    <div class="node"><div class="b">rutas</div><small>qué responder</small></div>
+    <div class="node"><div class="b">repositorio</div><small>qué pedir</small></div>
+    <div class="node"><div class="b">Drizzle</div><small>arma el SQL</small></div>
+    <div class="node resp"><div class="b">libSQL</div><small>archivo o nube</small></div>
+  </div>
+  <p class="lead" style="margin-top:28px">Cambiar de base es cambiar variables, no código.</p>
+</section>
+
+<!-- Índice -->
+<div class="overview" id="overview" role="dialog" aria-label="Índice de diapositivas">
+  <div class="ov-head"><h2>Índice</h2><span><kbd>O</kbd> o <kbd>Esc</kbd> para cerrar</span></div>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
+
+<!-- Barra de recorrido -->
+<nav class="rail" aria-label="Secciones">
+  <div class="nodes" id="nodes"></div>
+  <span class="contador" id="contador"></span>
+  <button class="navb" id="prev" aria-label="Anterior">‹</button>
+  <button class="navb" id="next" aria-label="Siguiente">›</button>
+</nav>
+</div>
+
+<script>
+const SECCIONES = ['Base de datos', 'SQL', 'libSQL', 'Repositorio', 'ORM', 'Drizzle', 'Migraciones', 'Remoto'];
+
+/* ---------- Resaltado de código ---------- */
+const PALABRAS = new Set(('import export from const let var function async await return if else throw new class ' +
+  'extends constructor super for of in typeof null undefined true false this default try catch').split(' '));
+
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const sp = (clase, s) => `<span class="t-${clase}">${esc(s)}</span>`;
+
+function lineaJs(linea) {
+  const re = /(\/\/.*$)|(`(?:\\[\s\S]|[^`\\])*`)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|(\/(?![*\/])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^\/\\\[])+\/[gimsuy]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|(\s+)|([\s\S])/g;
+  let out = '';
+  let previo = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    const [t, com, tpl, str, rx, num, id, ws] = m;
+    if (com) out += sp('com', t);
+    else if (tpl) { out += plantilla(t); previo = 'x'; }
+    else if (str) { out += sp('str', t); previo = 'x'; }
+    else if (rx) {
+      if (previo === '' || /[=(,:!&|?{};\[]$/.test(previo) || previo === 'return') { out += sp('rx', t); previo = 'x'; }
+      else { out += esc('/'); re.lastIndex = m.index + 1; previo = '/'; }
+    }
+    else if (num) { out += sp('num', t); previo = 'x'; }
+    else if (id) {
+      if (PALABRAS.has(id)) out += sp('kw', id);
+      else if (linea[re.lastIndex] === '(') out += sp('fn', id);
+      else if (/^[A-Z]/.test(id)) out += sp('type', id);
+      else out += esc(id);
+      previo = id;
+    }
+    else if (ws) out += t;
+    else { out += esc(t); previo = t; }
+  }
+  return out;
+}
+
+function plantilla(t) {
+  let out = '';
+  let ultimo = 0;
+  const re = /\$\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(t))) {
+    out += sp('str', t.slice(ultimo, m.index));
+    out += sp('kw', '${') + lineaJs(m[1]) + sp('kw', '}');
+    ultimo = re.lastIndex;
+  }
+  return out + sp('str', t.slice(ultimo));
+}
+
+function lineaJson(linea) {
+  const re = /("(?:\\.|[^"\\])*")(\s*:)?|(-?\b\d+(?:\.\d+)?\b)|\b(true|false|null)\b|([\s\S])/g;
+  let out = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    if (m[1]) out += sp(m[2] ? 'key' : 'str', m[1]) + (m[2] ? esc(m[2]) : '');
+    else if (m[3]) out += sp('num', m[3]);
+    else if (m[4]) out += sp('kw', m[4]);
+    else out += esc(m[5]);
+  }
+  return out;
+}
+
+function lineaBash(linea) {
+  if (/^\s*#/.test(linea)) return sp('com', linea);
+  const re = /(\s#.*$)|('[^']*'|"(?:\\.|[^"\\])*")|(\s--?[\w-]+)|(\\$)|(\S+)|(\s+)/g;
+  let out = '';
+  let primera = !/^\s/.test(linea);
+  let m;
+  while ((m = re.exec(linea))) {
+    const [, comentario, cadena, opcion, sigue, palabra, espacio] = m;
+    if (comentario) out += sp('com', comentario);
+    else if (cadena) out += sp('str', cadena);
+    else if (opcion) out += sp('attr', opcion);
+    else if (sigue) out += sp('com', sigue);
+    else if (palabra) {
+      if (primera) out += sp('fn', palabra);
+      else if (/^"?https?:/.test(palabra) || /^[A-Z_]+=/.test(palabra)) out += sp('path', palabra);
+      else out += esc(palabra);
+      primera = false;
+    }
+    else out += espacio;
+  }
+  return out;
+}
+
+function lineasHttp(lineas) {
+  let estado = 'nada';
+  return lineas.map(linea => {
+    let m;
+    if (/^###/.test(linea)) { estado = 'nada'; return sp('com', linea); }
+    if ((m = linea.match(/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)(\s+)(\S+)(.*)$/))) {
+      estado = 'encabezados';
+      return sp('meth', m[1]) + esc(m[2]) + sp('path', m[3]) + sp('ver', m[4]);
+    }
+    if ((m = linea.match(/^(HTTP\/[\d.]+)(\s+)(\d)(\d\d.*)$/))) {
+      estado = 'encabezados';
+      return sp('ver', m[1]) + esc(m[2]) + sp('s' + m[3], m[3] + m[4]);
+    }
+    if (estado === 'encabezados') {
+      if (linea.trim() === '') { estado = 'cuerpo'; return ''; }
+      if ((m = linea.match(/^([\w-]+)(:)(.*)$/))) return sp('attr', m[1]) + esc(m[2]) + sp('hval', m[3]);
+    }
+    if (estado === 'cuerpo') return lineaJson(linea);
+    return esc(linea);
+  });
+}
+
+const SQL_PALABRAS = new Set(('CREATE TABLE IF NOT EXISTS INTEGER TEXT REAL BLOB PRIMARY KEY NULL UNIQUE INSERT INTO ' +
+  'VALUES SELECT FROM WHERE LIKE ORDER BY UPDATE SET DELETE RETURNING AND OR ALTER ADD INDEX ON ASC DESC').split(' '));
+
+function lineaSql(linea) {
+  const re = /(--.*$)|('(?:[^']|'')*')|(`[^`]*`)|(\?|:[A-Za-z_]\w*)|(\b\d+\b)|([A-Za-z_]\w*)|([\s\S])/g;
+  let out = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    if (m[1]) out += sp('com', m[1]);
+    else if (m[2]) out += sp('str', m[2]);
+    else if (m[3]) out += sp('fn', m[3]);
+    else if (m[4]) out += sp('num', m[4]);
+    else if (m[5]) out += sp('num', m[5]);
+    else if (m[6]) out += SQL_PALABRAS.has(m[6].toUpperCase()) ? sp('kw', m[6]) : esc(m[6]);
+    else out += esc(m[7]);
+  }
+  return out;
+}
+
+function lineaEnv(linea) {
+  if (/^\s*#/.test(linea)) return sp('com', linea);
+  const m = linea.match(/^([A-Za-z_]\w*)(=)(.*)$/);
+  if (!m) return esc(linea);
+  return sp('attr', m[1]) + esc(m[2]) + sp('str', m[3]);
+}
+
+function lineaLog(linea) {
+  const m = linea.match(/^(\w+) (\S+) → (\d)(\d\d)(.*)$/);
+  if (!m) return esc(linea);
+  return sp('meth', m[1]) + ' ' + sp('path', m[2]) + ' → ' + sp('s' + m[3], m[3] + m[4]) + sp('com', m[5]);
+}
+
+function lineaArbol(linea) {
+  const m = linea.match(/^([│├└─\s]*)(\S+)(\s{2,}.*)?$/);
+  if (!m) return esc(linea);
+  return sp('dim', m[1]) + esc(m[2]) + (m[3] ? sp('com', m[3]) : '');
+}
+
+function resaltar(lenguaje, lineas) {
+  switch (lenguaje) {
+    case 'js': return lineas.map(lineaJs);
+    case 'json': return lineas.map(lineaJson);
+    case 'bash': return lineas.map(lineaBash);
+    case 'http': return lineasHttp(lineas);
+    case 'log': return lineas.map(lineaLog);
+    case 'sql': return lineas.map(lineaSql);
+    case 'env': return lineas.map(lineaEnv);
+    case 'tree': return lineas.map(lineaArbol);
+    default: return lineas.map(esc);
+  }
+}
+
+function prepararCodigo() {
+  document.querySelectorAll('script[type="text/x-code"]').forEach(fuente => {
+    const crudo = fuente.textContent.replace(/^\n/, '').replace(/\s+$/, '');
+    const lineas = crudo.split('\n');
+    const marcas = lineas.map(l => l.startsWith('+ '));
+    const limpias = lineas.map(l => (l.startsWith('+ ') ? l.slice(2) : l));
+    const html = resaltar(fuente.dataset.lang || 'text', limpias);
+
+    const pre = document.createElement('pre');
+    pre.className = 'code';
+    pre.innerHTML = html.map((h, i) => `<span class="ln${marcas[i] ? ' add' : ''}">${h || ' '}</span>`).join('');
+
+    if (fuente.dataset.cap) {
+      const fig = document.createElement('div');
+      fig.className = 'fig';
+      fig.innerHTML = `<div class="cap">${esc(fuente.dataset.cap)}</div>`;
+      fig.appendChild(pre);
+      fuente.replaceWith(fig);
+    } else {
+      fuente.replaceWith(pre);
+    }
+  });
+}
+
+/* ---------- Presentación ---------- */
+prepararCodigo();
+
+const stage = document.getElementById('stage');
+const slides = [...document.querySelectorAll('.slide')];
+const nodos = document.getElementById('nodes');
+const contador = document.getElementById('contador');
+const overview = document.getElementById('overview');
+const ovGrid = document.getElementById('ovGrid');
+let actual = 0;
+
+function escalar() {
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
+  stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+
+function ajustar(slide) {
+  const pres = [...slide.querySelectorAll('pre.code')];
+  if (!pres.length) return;
+  let tam = 22;
+  const desborda = () =>
+    slide.scrollHeight > slide.clientHeight + 1 ||
+    slide.scrollWidth > slide.clientWidth + 1 ||
+    pres.some(p => p.scrollWidth > p.clientWidth + 1);
+  slide.style.setProperty('--cs', `${tam}px`);
+  while (desborda() && tam > 14) {
+    tam -= 1;
+    slide.style.setProperty('--cs', `${tam}px`);
+  }
+}
+
+function seccionDe(i) { return Number(slides[i].dataset.sec); }
+
+function construirBarra() {
+  nodos.innerHTML = SECCIONES.map((nombre, k) =>
+    `${k ? '<span class="link"></span>' : ''}<button class="sec" data-k="${k}">${nombre}</button>`
+  ).join('');
+  nodos.addEventListener('click', e => {
+    const b = e.target.closest('.sec');
+    if (!b) return;
+    const destino = slides.findIndex((_, i) => seccionDe(i) === Number(b.dataset.k));
+    if (destino >= 0) mostrar(destino);
+  });
+}
+
+function actualizarBarra() {
+  const sec = seccionDe(actual);
+  nodos.querySelectorAll('.sec').forEach(b => {
+    const k = Number(b.dataset.k);
+    b.classList.toggle('now', k === sec);
+    b.classList.toggle('done', k < sec);
+  });
+  nodos.querySelectorAll('.link').forEach((l, k) => l.classList.toggle('done', k < sec));
+  contador.textContent = `${actual + 1} / ${slides.length}`;
+}
+
+function construirIndice() {
+  ovGrid.innerHTML = slides.map((s, i) => {
+    const titulo = (s.querySelector('h1, h2') || {}).textContent || '';
+    const sec = seccionDe(i);
+    const etiqueta = sec >= 0 ? SECCIONES[sec] : 'Portada';
+    return `<button class="card" data-i="${i}"><b>${i + 1}</b><span>${esc(titulo)}<i>${etiqueta}</i></span></button>`;
+  }).join('');
+  ovGrid.addEventListener('click', e => {
+    const c = e.target.closest('.card');
+    if (!c) return;
+    alternarIndice(false);
+    mostrar(Number(c.dataset.i));
+  });
+}
+
+function alternarIndice(abrir = !overview.classList.contains('on')) {
+  overview.classList.toggle('on', abrir);
+  if (abrir) {
+    ovGrid.querySelectorAll('.card').forEach((c, i) => c.classList.toggle('now', i === actual));
+    const c = ovGrid.querySelector('.card.now');
+    if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); }
+  }
+}
+
+function mostrar(i) {
+  actual = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, j) => s.classList.toggle('on', j === actual));
+  ajustar(slides[actual]);
+  actualizarBarra();
+  history.replaceState(null, '', `#${actual + 1}`);
+}
+
+function pantallaCompleta() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (overview.classList.contains('on')) {
+    if (k === 'Escape' || k === 'o' || k === 'O') { e.preventDefault(); alternarIndice(false); }
+    return;
+  }
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(k)) { e.preventDefault(); mostrar(actual + 1); }
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); mostrar(actual - 1); }
+  else if (k === 'Home') mostrar(0);
+  else if (k === 'End') mostrar(slides.length - 1);
+  else if (k === 'o' || k === 'O') alternarIndice(true);
+  else if (k === 'f' || k === 'F') pantallaCompleta();
+});
+
+document.getElementById('prev').addEventListener('click', () => mostrar(actual - 1));
+document.getElementById('next').addEventListener('click', () => mostrar(actual + 1));
+
+let toqueX = null;
+stage.addEventListener('touchstart', e => { toqueX = e.touches[0].clientX; }, { passive: true });
+stage.addEventListener('touchend', e => {
+  if (toqueX === null) return;
+  const dx = e.changedTouches[0].clientX - toqueX;
+  if (Math.abs(dx) > 50) mostrar(actual + (dx < 0 ? 1 : -1));
+  toqueX = null;
+});
+
+window.addEventListener('resize', escalar);
+
+construirBarra();
+construirIndice();
+escalar();
+mostrar((parseInt(location.hash.slice(1), 10) || 1) - 1);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ajustar(slides[actual]));
+</script>
+</body>
+</html>

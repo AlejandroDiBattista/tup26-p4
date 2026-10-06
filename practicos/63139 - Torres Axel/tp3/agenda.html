@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 32px 20px;
+        font: 16px sans-serif;
+        background: #f5f6f4;
+      }
+      main {
+        width: 1104px;
+        max-width: 100%;
+        margin: auto;
+      }
+      h1 {
+        margin: 0 0 24px;
+      }
+      main ul {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+
+        & > li {
+          min-width: 0;
+
+          & > article {
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 200px;
+            padding: 20px;
+            border: 1px solid #d9ded9;
+            border-radius: 16px;
+            background: #fffefa;
+            box-shadow: 0 2px 5px #26352b12;
+            cursor: pointer;
+            overflow-wrap: anywhere;
+
+            &:hover {
+              border-color: #8b9b8d;
+            }
+
+            &:focus-visible {
+              outline: 3px solid #355e46;
+              outline-offset: 3px;
+            }
+
+            & > header {
+              display: flex;
+              align-items: flex-start;
+              justify-content: space-between;
+              gap: 12px;
+              margin-bottom: 28px;
+
+              & > h2 {
+                margin: 0;
+                line-height: 1.3;
+
+                & > strong {
+                  font-family: Georgia, serif;
+                  font-size: 27px;
+                  color: #303f35;
+                }
+
+                & > span {
+                  font-size: 15px;
+                  font-weight: normal;
+                  color: #596259;
+                }
+              }
+
+              & > button {
+                flex-shrink: 0;
+                padding: 0 2px;
+                border: 0;
+                background: transparent;
+                color: #81764b;
+                font-size: 28px;
+                line-height: 1;
+                cursor: pointer;
+              }
+            }
+
+            & > address {
+              margin-top: auto;
+              font-style: normal;
+
+              & > p {
+                margin: 0 0 10px;
+                font-size: 14px;
+              }
+
+              & > p:last-child {
+                color: #596259;
+              }
+            }
+
+            & > footer {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px 16px;
+              margin-top: 6px;
+              padding-top: 12px;
+              border-top: 1px solid #d9ded9;
+              font-size: 12px;
+              color: #596259;
+            }
+          }
+        }
+      }
+      @media (max-width: 1120px) {
+        main ul {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 700px) {
+        main ul {
+          grid-template-columns: 1fr;
+        }
+      }
+      article:focus-visible {
+        outline: 3px solid #355e46;
+        outline-offset: 4px;
+        border-radius: 8px;
+      }
+      main > header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 28px;
+
+        & > h1 {
+          margin: 0;
+          font-size: 28px;
+          color: #303d33;
+        }
+
+        & > section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+
+          & > input {
+            box-sizing: border-box;
+            width: 300px;
+            min-width: 0;
+            padding: 14px 20px;
+            border: 1px solid #d9ded9;
+            border-radius: 28px;
+            background: #fffefa;
+            font: inherit;
+          }
+
+          & > button {
+            padding: 14px 20px;
+            border: 0;
+            border-radius: 28px;
+            background: #303f35;
+            color: white;
+            font: inherit;
+            font-weight: bold;
+            white-space: nowrap;
+            cursor: pointer;
+
+            &:hover {
+              background: #405647;
+            }
+          }
+        }
+
+        @media (max-width: 700px) {
+          flex-direction: column;
+          align-items: stretch;
+
+          & > section {
+            & > input {
+              flex: 1;
+              width: 0;
+            }
+          }
+        }
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid #355e46;
+        outline-offset: 3px;
+      }
+      dialog {
+        box-sizing: border-box;
+        width: 600px;
+        max-width: calc(100% - 32px);
+        max-height: calc(100dvh - 32px);
+        padding: 24px;
+        border: 6px solid #d9e1da;
+        border-radius: 24px;
+        background: #fffefa;
+        color: #303d33;
+        overflow-y: auto;
+
+        &::backdrop {
+          background: #25382a70;
+          backdrop-filter: blur(3px);
+        }
+
+        & > form {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+
+          & > h2 {
+            grid-column: 1 / -1;
+            margin: 0 0 8px;
+            font-size: 22px;
+          }
+
+          & > p {
+            margin: 0;
+            min-width: 0;
+
+            & > label {
+              display: grid;
+              gap: 6px;
+              font-size: 14px;
+
+              & > input {
+                box-sizing: border-box;
+                width: 100%;
+                min-width: 0;
+                padding: 12px;
+                border: 1px solid #d9ded9;
+                border-radius: 10px;
+                background: #f5f6f4;
+                font: inherit;
+              }
+            }
+          }
+
+          & > footer {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 16px;
+            border-top: 1px solid #d9ded9;
+
+            & > button {
+              padding: 10px 14px;
+              border: 1px solid #d9ded9;
+              border-radius: 10px;
+              background: white;
+              font: inherit;
+              cursor: pointer;
+            }
+
+            & > button[type="submit"] {
+              background: #303f35;
+              color: white;
+            }
+
+            & > #eliminar-alumno {
+              margin-right: auto;
+              color: #b33333;
+            }
+          }
+
+          @media (max-width: 500px) {
+            grid-template-columns: 1fr;
+          }
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <dialog id="dialogo-alumno" aria-labelledby="titulo-formulario">
+      <form id="formulario-alumno">
+        <h2 id="titulo-formulario">Agregar alumno</h2>
+        <p>
+          <label
+            >Apellido
+            <input name="apellido" required />
+          </label>
+        </p>
+        <p>
+          <label
+            >Nombre
+            <input name="nombre" required />
+          </label>
+        </p>
+        <p>
+          <label
+            >Legajo
+            <input
+              name="legajo"
+              inputmode="numeric"
+              pattern="[0-9]+"
+              required
+            />
+          </label>
+        </p>
+        <p>
+          <label>
+            Comision
+            <input name="comision" required />
+          </label>
+        </p>
+        <p>
+          <label
+            >Telefono
+            <input type="tel" name="telefono" required />
+          </label>
+        </p>
+        <p>
+          <label>
+            Usuario de github
+            <input name="github" required />
+          </label>
+        </p>
+        <footer>
+          <button type="button" id="eliminar-alumno" hidden>Eliminar</button>
+          <button type="button" id="cancelar-alumno">Cancelar</button>
+          <button type="submit">Guardar</button>
+        </footer>
+      </form>
+    </dialog>
+    <script type="module">
+      import { html, reactive, watch } from "https://esm.sh/@arrow-js/core";
+      import alumnos from "./alumnos.json" with { type: "json" };
+
+      const app = document.getElementById("app");
+      const CLAVE_STORAGE = "agenda-63139";
+
+      const guardados = localStorage.getItem(CLAVE_STORAGE);
+      const datosIniciales =
+        guardados !== null ? JSON.parse(guardados) : alumnos;
+
+      const estado = reactive({
+        busqueda: "",
+        alumnos: datosIniciales.map((a) => ({
+          ...a,
+          favorito: Boolean(a.favorito),
+        })),
+      });
+      watch(() => {
+        localStorage.setItem(CLAVE_STORAGE, JSON.stringify(estado.alumnos));
+      });
+      const dialogo = document.getElementById("dialogo-alumno");
+      const formulario = document.getElementById("formulario-alumno");
+      const tituloformulario = document.getElementById("titulo-formulario");
+      const botonEliminar = document.getElementById("eliminar-alumno");
+
+      let idEnEdicion = null;
+
+      function prepararFormulario() {
+        formulario.reset();
+
+        for (const campo of formulario.querySelectorAll("input")) {
+          campo.setCustomValidity("");
+        }
+      }
+      function abrirAgregar() {
+        prepararFormulario();
+        idEnEdicion = null;
+        tituloformulario.textContent = "Agregar alumno";
+        botonEliminar.hidden = true;
+        dialogo.showModal();
+      }
+      function abrirEditar(id) {
+        const alumno = estado.alumnos.find((a) => a.id === id);
+        if (!alumno) return;
+
+        prepararFormulario();
+        idEnEdicion = id;
+        tituloformulario.textContent = "Editar alumno";
+        botonEliminar.hidden = false;
+
+        for (const campo of formulario.querySelectorAll("input")) {
+          campo.value = alumno[campo.name] ?? "";
+        }
+        dialogo.showModal();
+      }
+      document
+        .getElementById("cancelar-alumno")
+        .addEventListener("click", () => {
+          dialogo.close();
+        });
+      formulario.addEventListener("input", (e) => {
+        if (e.target instanceof HTMLInputElement) {
+          e.target.setCustomValidity("");
+        }
+      });
+      formulario.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        for (const campo of formulario.querySelectorAll("input")) {
+          campo.value = campo.value.trim();
+          campo.setCustomValidity(campo.value ? "" : "Completa este Campo.");
+        }
+        if (!formulario.reportValidity()) return;
+
+        const datos = Object.fromEntries(new FormData(formulario));
+        if (idEnEdicion === null) {
+          const nuevoAlumno = {
+            ...datos,
+            id: crypto.randomUUID(),
+            favorito: false,
+          };
+          estado.alumnos = [...estado.alumnos, nuevoAlumno];
+        } else {
+          estado.alumnos = estado.alumnos.map((a) =>
+            a.id === idEnEdicion ? { ...a, ...datos } : a,
+          );
+        }
+        dialogo.close();
+      });
+      botonEliminar.addEventListener("click", () => {
+        if (idEnEdicion === null) return;
+        estado.alumnos = estado.alumnos.filter((a) => a.id !== idEnEdicion);
+        dialogo.close();
+      });
+      function normalizar(texto) {
+        return String(texto ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+      }
+      function alumnosFiltrados() {
+        const texto = normalizar(estado.busqueda).trim();
+        return estado.alumnos
+          .filter((a) =>
+            normalizar(
+              [
+                a.nombre,
+                a.apellido,
+                a.telefono,
+                a.github,
+                a.comision,
+                a.legajo,
+              ].join(" "),
+            ).includes(texto),
+          )
+          .sort(
+            (a, b) =>
+              Number(b.favorito) - Number(a.favorito) ||
+              a.apellido.localeCompare(b.apellido, "es", {
+                sensitivity: "base",
+              }) ||
+              a.nombre.localeCompare(b.nombre, "es", {
+                sensitivity: "base",
+              }),
+          );
+      }
+      function cambiarFavorito(id) {
+        estado.alumnos = estado.alumnos.map((a) =>
+          a.id === id ? { ...a, favorito: !a.favorito } : a,
+        );
+      }
+      function manejarTeclado(e, id) {
+        if (e.target !== e.currentTarget) return;
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        if (e.repeat) return;
+
+        if (e.key === "Enter") {
+          abrirEditar(id);
+        } else {
+          cambiarFavorito(id);
+
+          requestAnimationFrame(() => {
+            const tarjeta = [
+              ...document.querySelectorAll("article[data-id]"),
+            ].find((elemento) => elemento.dataset.id === String(id));
+
+            tarjeta?.focus();
+          });
+        }
+      }
+      html`
+        <header>
+          <h1>Agenda</h1>
+          <section aria-label="Controles de la agenda">
+            <input
+              id="buscador"
+              type="search"
+              aria-label="buscar alumnos"
+              placeholder="buscar alumno..."
+              @input="${(e) => (estado.busqueda = e.target.value)}"
+            />
+            <button type="button" @click="${abrirAgregar}">+ Agregar</button>
+          </section>
+        </header>
+        <ul>
+          ${() =>
+            alumnosFiltrados().map(
+              (a) =>
+                html` <li>
+                  <article
+                    tabindex="0"
+                    data-id="${a.id}"
+                    aria-label="${a.apellido +
+                    ", " +
+                    a.nombre +
+                    ". Enter para editar, espacio para favorito"}"
+                    @click="${(e) => {
+                      if (e.target.closest("button")) return;
+                      abrirEditar(a.id);
+                    }}"
+                    @keydown="${(e) => manejarTeclado(e, a.id)}"
+                  >
+                    <header>
+                      <h2>
+                        <strong>${a.apellido}</strong>
+                        <span>${a.nombre}</span>
+                      </h2>
+                      <button
+                        type="button"
+                        aria-label="Marcar o desmarcar favorito"
+                        aria-pressed="${() => String(a.favorito)}"
+                        @click="${() => cambiarFavorito(a.id)}"
+                      >
+                        ${() => (a.favorito ? "Favorito" : " Fav")}
+                      </button>
+                    </header>
+                    <address>
+                      <p>Telefono: ${a.telefono}</p>
+                      <p>Github: ${a.github}</p>
+                    </address>
+                    <footer>
+                      <span>Comision: ${a.comision}</span>
+                      <span>Legajo: ${a.legajo}</span>
+                    </footer>
+                  </article>
+                </li>`,
+            )}
+        </ul>
+        <p role="status">
+          ${() =>
+            alumnosFiltrados().length === 0
+              ? "No hay alumnos para mostrar."
+              : ""}
+        </p>
+      `(app);
+    </script>
+  </body>
+</html>
