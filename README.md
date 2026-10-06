@@ -7,7 +7,7 @@
 
 ---
 
-# ## C1
+# C1
 ```text
 Legajo  Nombre y Apellido                          Asistencia  Parcial  Practicos
 ------  ----------------------------------------   ----------  -------  ----------
