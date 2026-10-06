@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La API de la agenda, paso a paso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --papel: #FFFFFF;
+  --tinta: #0B1324;
+  --tinta-2: #2C3B57;
+  --gris: #5B6B85;
+  --linea: #C9D3E3;
+  --acento: #2F5BEA;
+  --acento-suave: #E3EAFD;
+  --codigo: #F3F6FB;
+  --codigo-borde: #D3DCEA;
+  --ok: #147A3C;
+  --cliente: #A35200;
+  --falla: #B4232A;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", "Cascadia Code", Consolas, "SF Mono", "Liberation Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #E4EAF3; font-family: var(--sans); color: var(--tinta); }
+#stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 800px; background: var(--papel); overflow: hidden; }
+
+.pantalla { position: absolute; inset: 0 0 50px 0; padding: 20px 28px 14px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.cab { display: flex; align-items: center; gap: 14px; }
+.num { font: 700 18px var(--mono); color: #fff; background: var(--acento); border-radius: 8px; padding: 4px 10px; white-space: nowrap; }
+.cab h2 { margin: 0; font-size: 40px; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+.idea { margin: 0; font-size: 25px; line-height: 1.3; color: var(--tinta-2); }
+
+/* Paso: código a la izquierda, diálogo a la derecha */
+.dos { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; }
+.col { min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.rotulo { font: 600 19px var(--sans); color: var(--tinta-2); display: flex; align-items: center; gap: 10px; }
+.rotulo .archivo { font-family: var(--mono); font-weight: 600; color: var(--tinta); background: var(--codigo); border: 2px solid var(--codigo-borde); border-bottom: 0; border-radius: 8px 8px 0 0; padding: 3px 12px; }
+.caja { flex: 1; min-height: 0; overflow: hidden; background: var(--codigo); border: 2px solid var(--codigo-borde); border-radius: 0 8px 8px 8px; padding: 10px 0; }
+.caja-libre { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.caja-libre > .dialogo { flex: none; }
+
+pre.code { margin: 0; font-family: var(--mono); font-weight: 500; font-size: 20px; line-height: 1.32; white-space: pre; tab-size: 2; color: var(--tinta); width: max-content; }
+pre.code .ln { display: block; padding: 0 16px 0 10px; border-left: 6px solid transparent; }
+pre.code .ln.add { background: #DCE7FF; border-left-color: var(--acento); }
+pre.code .ln.pliegue { color: var(--gris); font-family: var(--sans); font-style: italic; font-weight: 500; }
+.on pre.code .ln.add { animation: marca 1.2s ease-out; }
+@keyframes marca { from { background: #B9CCFF; } }
+
+.dialogo { display: flex; flex-direction: column; gap: 8px; }
+.dialogo .bloque { display: flex; flex-direction: column; gap: 4px; }
+.dialogo .etq { font: 600 16px var(--sans); color: var(--tinta-2); }
+.dialogo pre.code { width: auto; background: var(--codigo); border: 2px solid var(--codigo-borde); border-radius: 8px; padding: 8px 0; overflow: hidden; }
+.dialogo pre.code .ln { padding: 0 12px; }
+.dialogo pre.term { background: #F6F3EC; border-color: #E2D9C6; }
+.caida { font-size: 22px; font-weight: 600; color: var(--falla); border: 2px dashed var(--falla); border-radius: 8px; padding: 10px 14px; }
+.nota { font-size: 21px; line-height: 1.3; border-left: 5px solid var(--cliente); background: #FFF6E8; padding: 8px 12px; border-radius: 0 8px 8px 0; }
+.contador { display: flex; align-items: center; gap: 8px; font: 600 17px var(--sans); color: var(--gris); }
+.contador i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--acento); display: inline-block; }
+.contador i.si { background: var(--acento); }
+.on .dialogo { animation: aparece .35s ease-out; }
+.dos.solo-codigo { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) !important; }
+.dos.solo-codigo > .col:last-child, .dos.solo-dialogo > .col:first-child { display: none; }
+.dos.solo-dialogo { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) !important; }
+.solo-dialogo .dialogo.apilada { grid-template-columns: max-content; }
+.apilado .dialogo, .solo-dialogo .dialogo { display: grid; grid-template-columns: max-content max-content; column-gap: 16px; row-gap: 8px; align-items: start; }
+.apilado .dialogo > .contador, .apilado .dialogo > .nota, .apilado .dialogo > .ancho, .apilado .dialogo > .caida,
+.solo-dialogo .dialogo > .contador, .solo-dialogo .dialogo > .nota, .solo-dialogo .dialogo > .ancho, .solo-dialogo .dialogo > .caida { grid-column: 1 / -1; }
+@keyframes aparece { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .on pre.code .ln.add, .on .dialogo { animation: none; } }
+
+.t-kw { color: #1D3FC2; font-weight: 600; }
+.t-str { color: #9A3412; }
+.t-num { color: #B4232A; }
+.t-rx { color: #B4232A; }
+.t-com { color: #5A6982; font-style: italic; }
+.t-fn { color: #0B6E66; font-weight: 600; }
+.t-type { color: #6B2BD9; }
+.t-key { color: #1D3FC2; }
+.t-attr { color: #0B6E66; font-weight: 600; }
+.t-hval { color: var(--tinta); }
+.t-meth { color: #1D3FC2; font-weight: 700; }
+.t-path { color: #9A3412; }
+.t-ver { color: #5A6982; }
+.t-dim { color: #8A97AD; }
+.t-s2 { color: var(--ok); font-weight: 700; }
+.t-s3 { color: #1D3FC2; font-weight: 700; }
+.t-s4 { color: var(--cliente); font-weight: 700; }
+.t-s5 { color: var(--falla); font-weight: 700; }
+.t-cmd { color: var(--tinta); font-weight: 700; }
+.t-err { color: var(--falla); font-weight: 600; }
+
+/* Conceptos, portada y cierre: un área que se escala */
+.area { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; overflow: hidden; }
+.cuerpo { flex: none; display: flex; flex-direction: column; gap: 14px; }
+.par { display: grid; grid-template-columns: max-content max-content; gap: 24px; align-items: start; }
+.par .bloque { display: flex; flex-direction: column; gap: 6px; }
+.par .etq { font: 600 19px var(--sans); color: var(--tinta-2); }
+.tarjeta { display: flex; flex-direction: column; gap: 8px; border: 3px solid var(--tinta); border-radius: 14px; padding: 20px 24px; font-size: 25px; width: 420px; }
+.tarjeta b { font-size: 32px; }
+.tarjeta em { font: 600 23px var(--mono); font-style: normal; color: var(--cliente); margin-top: 6px; }
+.cuerpo > .bloque { display: flex; flex-direction: column; gap: 6px; }
+.cuerpo > .bloque .etq { font: 600 19px var(--sans); color: var(--tinta-2); }
+.cuerpo > .bloque pre.code { background: var(--codigo); border: 2px solid var(--codigo-borde); border-radius: 8px; padding: 8px 0; }
+.par pre.code { background: var(--codigo); border: 2px solid var(--codigo-borde); border-radius: 8px; padding: 8px 0; }
+ol.plain { margin: 0; padding-left: 1.3em; font-size: 24px; line-height: 1.45; }
+table.t { border-collapse: collapse; font-size: 24px; }
+table.t th { text-align: left; font-weight: 600; color: var(--tinta-2); font-size: 20px; padding: 0 26px 8px 0; border-bottom: 2px solid var(--linea); white-space: nowrap; }
+table.t td { padding: 8px 26px 8px 0; border-bottom: 1px solid #E1E7F0; white-space: nowrap; }
+.m { font-family: var(--mono); font-weight: 700; color: #1D3FC2; }
+.mono { font-family: var(--mono); }
+.familia { display: grid; grid-template-columns: 110px max-content; gap: 20px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid #E1E7F0; font-size: 28px; }
+.familia b { font: 700 38px var(--mono); }
+.familia em { font: 500 22px var(--mono); color: var(--tinta-2); font-style: normal; margin-left: 14px; }
+.f2 b { color: var(--ok); } .f3 b { color: #1D3FC2; } .f4 b { color: var(--cliente); } .f5 b { color: var(--falla); }
+
+.portada h1 { margin: 0 0 14px; font-size: 64px; line-height: 1.02; letter-spacing: -0.02em; }
+.portada .sub { margin: 0 0 22px; font-size: 26px; color: var(--tinta-2); max-width: 30em; }
+.boceto { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; width: 760px; }
+.boceto div { border: 2px solid var(--codigo-borde); background: var(--codigo); border-radius: 8px; padding: 14px; font-size: 20px; color: var(--tinta-2); min-height: 130px; }
+.boceto b { display: block; font-size: 22px; color: var(--tinta); margin-bottom: 6px; }
+.ayuda { font-size: 19px; color: var(--gris); margin-top: 18px; }
+kbd { font: 600 0.9em var(--mono); border: 2px solid var(--linea); border-bottom-width: 3px; border-radius: 6px; padding: 1px 7px; background: #fff; color: var(--tinta); }
+
+.flow { display: flex; align-items: flex-start; gap: 30px; width: max-content; }
+.node { position: relative; text-align: center; }
+.node .b { border: 3px solid var(--tinta); border-radius: 12px; padding: 16px 12px; font: 600 20px var(--mono); background: #fff; white-space: nowrap; }
+.node small { display: block; font-size: 19px; color: var(--tinta-2); margin-top: 8px; }
+.node:not(:last-child)::after { content: ""; position: absolute; right: -27px; top: 26px; width: 23px; height: 3px; background: var(--acento); }
+.node:not(:last-child)::before { content: ""; position: absolute; right: -29px; top: 20px; border: 7px solid transparent; border-left: 12px solid var(--acento); border-right: 0; }
+.node.pedido .b { background: var(--tinta); color: #fff; }
+.node.resp .b { border-color: var(--ok); color: var(--ok); }
+.lead { font-size: 27px; line-height: 1.3; margin: 0; max-width: 34em; }
+
+/* Barra */
+.rail { position: absolute; left: 0; right: 0; bottom: 0; height: 50px; display: flex; align-items: center; gap: 14px; padding: 0 16px 0 24px; border-top: 1px solid #DCE3EE; background: #fff; }
+.nodes { flex: 1; display: flex; align-items: center; }
+.nodes .link { flex: 1; height: 2px; background: var(--linea); min-width: 6px; }
+.nodes .link.done { background: var(--acento); }
+.sec { font: 600 16px var(--sans); border: 2px solid var(--linea); color: var(--gris); background: #fff; border-radius: 999px; padding: 3px 11px; cursor: pointer; white-space: nowrap; }
+.sec.done { border-color: var(--acento); color: var(--acento); }
+.sec.now { background: var(--acento); border-color: var(--acento); color: #fff; }
+.cont { font: 600 16px var(--mono); color: var(--gris); min-width: 64px; text-align: right; }
+.navb { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--linea); background: #fff; color: var(--tinta); font-size: 20px; cursor: pointer; }
+.navb:hover { border-color: var(--acento); color: var(--acento); }
+.sec:focus-visible, .navb:focus-visible, .card:focus-visible { outline: 3px solid var(--cliente); outline-offset: 2px; }
+
+.overview { position: absolute; inset: 0; background: rgba(255,255,255,0.98); display: none; flex-direction: column; padding: 28px 40px; gap: 16px; z-index: 5; }
+.overview.on { display: flex; }
+.ov-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ov-head h2 { margin: 0; font-size: 34px; }
+.ov-head span { font-size: 18px; color: var(--gris); }
+.ov-grid { flex: 1; overflow: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; padding: 4px; }
+.card { text-align: left; border: 2px solid #DCE3EE; background: #fff; border-radius: 10px; padding: 10px 12px; font: 500 19px/1.3 var(--sans); color: var(--tinta); cursor: pointer; display: flex; gap: 10px; }
+.card b { font-family: var(--mono); color: var(--gris); min-width: 28px; }
+.card i { display: block; font-style: normal; font-size: 15px; color: var(--gris); }
+.card.now { border-color: var(--acento); background: var(--acento-suave); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="pantalla" class="pantalla on"></div>
+  <div class="overview" id="overview" role="dialog" aria-label="Índice">
+    <div class="ov-head"><h2>Índice</h2><span><kbd>O</kbd> o <kbd>Esc</kbd> para cerrar</span></div>
+    <div class="ov-grid" id="ovGrid"></div>
+  </div>
+  <nav class="rail" aria-label="Secciones">
+    <div class="nodes" id="nodes"></div>
+    <span class="cont" id="contador"></span>
+    <button class="navb" id="prev" aria-label="Anterior">‹</button>
+    <button class="navb" id="next" aria-label="Siguiente">›</button>
+  </nav>
+</div>
+
+<script type="application/json" id="datos">{"secciones": ["HTTP", "Node solo", "Express", "Middleware", "Errores", "Validación", "Módulos", "Frontend", "Cuentas"], "pantallas": [{"tipo": "portada", "sec": -1}, {"tipo": "concepto", "sec": 0, "titulo": "Un pedido y su respuesta son texto", "idea": "Método, ruta, encabezados, una línea en blanco y el cuerpo. La respuesta empieza con un código de estado.", "html": "DIALOGO", "pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\"nombre\":\"Carla Ruiz\",\"telefono\":\"381-555-0303\"}", "respuesta": "HTTP/1.1 201 Created\nLocation: /contactos/3\nContent-Type: application/json; charset=utf-8\n\n{\n  \"id\": 3,\n  \"nombre\": \"Carla Ruiz\",\n  \"telefono\": \"381-555-0303\"\n}"}, {"tipo": "concepto", "sec": 0, "titulo": "La primera cifra dice qué pasó", "idea": "Un 4xx pide corregir el pedido. Un 5xx dice que el problema es del servidor.", "html": "CODIGOS"}, {"tipo": "concepto", "sec": 0, "titulo": "La API que vamos a construir", "idea": "Las URL nombran recursos. El método dice qué hacer con ellos.", "html": "TABLA"}, {"tipo": "paso", "sec": 1, "titulo": "Un servidor con Node solo", "idea": "Node ejecuta la función una vez por cada pedido.", "archivo": "servidor-minimo.js", "codigo": "import http from 'node:http';\n\nconst servidor = http.createServer((req, res) => {\n  console.log(req.method, req.url);\n  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });\n  res.end('Hola desde Node');\n});\n\nservidor.listen(3000, () => {\n  console.log('Escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET / HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: text/plain; charset=utf-8\n\nHola desde Node", "curl": 0, "terminal": "GET /"}, {"pedido": "GET /lo-que-sea HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: text/plain; charset=utf-8\n\nHola desde Node", "curl": 0, "terminal": "GET /lo-que-sea", "nota": "La misma respuesta para cualquier ruta: todavía no la mira."}], "diff": true}, {"tipo": "paso", "sec": 1, "titulo": "Rutas a mano", "idea": "Cada ruta es un if más. Para sacar el id hace falta una expresión regular.", "archivo": "servidor-a-mano.js", "codigo": "import http from 'node:http';\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n];\n\nconst servidor = http.createServer(async (req, res) => {\n  const url = new URL(req.url, `http://${req.headers.host}`);\n\n  if (req.method === 'GET' && url.pathname === '/contactos') {\n    res.writeHead(200, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(contactos));\n    return;\n  }\n\n  const coincidencia = url.pathname.match(/^\\/contactos\\/(\\d+)$/);\n  if (req.method === 'GET' && coincidencia) {\n    const contacto = contactos.find(c => c.id === Number(coincidencia[1]));\n    if (!contacto) {\n      res.writeHead(404, { 'Content-Type': 'application/json' });\n      res.end(JSON.stringify({ error: 'Contacto inexistente' }));\n      return;\n    }\n    res.writeHead(200, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(contacto));\n    return;\n  }\n\n  if (req.method === 'POST' && url.pathname === '/contactos') {\n    let texto = '';\n    for await (const trozo of req) {\n      texto += trozo;\n    }\n    const datos = JSON.parse(texto);\n    const contacto = { id: contactos.length + 1, ...datos };\n    contactos.push(contacto);\n    res.writeHead(201, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(contacto));\n    return;\n  }\n\n  res.writeHead(404, { 'Content-Type': 'application/json' });\n  res.end(JSON.stringify({ error: 'Ruta inexistente' }));\n});\n\nservidor.listen(3000);\n", "intercambios": [{"pedido": "GET /contactos HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: application/json\n\n[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ana Díaz\",\n    \"telefono\": \"381-555-0101\"\n  }\n]", "curl": 0, "terminal": ""}, {"pedido": "GET /contactos/9 HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\nContent-Type: application/json\n\n{\n  \"error\": \"Contacto inexistente\"\n}", "curl": 0, "terminal": ""}], "diff": false, "foco": [[7, 25]]}, {"tipo": "paso", "sec": 1, "titulo": "El cuerpo llega en trozos", "idea": "Hay que juntarlo y convertirlo a mano. Si el JSON está mal, nadie lo atrapa.", "archivo": "servidor-a-mano.js", "codigo": "import http from 'node:http';\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n];\n\nconst servidor = http.createServer(async (req, res) => {\n  const url = new URL(req.url, `http://${req.headers.host}`);\n\n  if (req.method === 'GET' && url.pathname === '/contactos') {\n    res.writeHead(200, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(contactos));\n    return;\n  }\n\n  const coincidencia = url.pathname.match(/^\\/contactos\\/(\\d+)$/);\n  if (req.method === 'GET' && coincidencia) {\n    const contacto = contactos.find(c => c.id === Number(coincidencia[1]));\n    if (!contacto) {\n      res.writeHead(404, { 'Content-Type': 'application/json' });\n      res.end(JSON.stringify({ error: 'Contacto inexistente' }));\n      return;\n    }\n    res.writeHead(200, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(contacto));\n    return;\n  }\n\n  if (req.method === 'POST' && url.pathname === '/contactos') {\n    let texto = '';\n    for await (const trozo of req) {\n      texto += trozo;\n    }\n    const datos = JSON.parse(texto);\n    const contacto = { id: contactos.length + 1, ...datos };\n    contactos.push(contacto);\n    res.writeHead(201, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(contacto));\n    return;\n  }\n\n  res.writeHead(404, { 'Content-Type': 'application/json' });\n  res.end(JSON.stringify({ error: 'Ruta inexistente' }));\n});\n\nservidor.listen(3000);\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\"nombre\":\"Bruno Paz\"}", "respuesta": "HTTP/1.1 201 Created\nContent-Type: application/json\n\n{\n  \"id\": 2,\n  \"nombre\": \"Bruno Paz\"\n}", "curl": 0, "terminal": ""}, {"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{malo", "respuesta": null, "curl": 52, "terminal": "SyntaxError: Expected property name or '}' in JSON at position 1\n\nNode.js v22.22.2", "nota": "JSON.parse lanzó y el proceso terminó. No se atiende ningún pedido más."}], "diff": false, "foco": [[29, 46]]}, {"tipo": "paso", "sec": 2, "titulo": "El primer servidor con Express", "idea": "Una ruta se registra por método y camino. Lo que no coincide, Express lo responde solo.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\n\napp.get('/', (req, res) => {\n  res.send('Hola desde Express');\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET / HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\n\nHola desde Express", "curl": 0, "terminal": ""}, {"pedido": "GET /nada HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=utf-8\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error<\/title>\n<\/head>\n<body>\n<pre>Cannot GET /nada<\/pre>\n<\/body>\n<\/html>\n", "curl": 0, "terminal": "", "nota": "El 404 automático viene en HTML. Una API debería responder JSON."}], "diff": false}, {"tipo": "paso", "sec": 2, "titulo": "Responder JSON", "idea": "res.json convierte el valor a texto y pone el Content-Type.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\n\napp.get('/contactos', (req, res) => {\n  res.json(contactos);\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET /contactos HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\n\n[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ana Díaz\",\n    \"telefono\": \"381-555-0101\"\n  },\n  {\n    \"id\": 2,\n    \"nombre\": \"Bruno Paz\",\n    \"telefono\": \"381-555-0202\"\n  }\n]", "curl": 0, "terminal": ""}], "diff": true}, {"tipo": "paso", "sec": 2, "titulo": "Parámetros de ruta", "idea": "req.params.id llega como texto: hay que convertirlo antes de comparar.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\n\napp.get('/contactos', (req, res) => {\n  res.json(contactos);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  res.json(contacto);\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET /contactos/2 HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\n\n{\n  \"id\": 2,\n  \"nombre\": \"Bruno Paz\",\n  \"telefono\": \"381-555-0202\"\n}", "curl": 0, "terminal": ""}, {"pedido": "GET /contactos/50 HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\n\n{\n  \"error\": \"Contacto inexistente\"\n}", "curl": 0, "terminal": "", "nota": "El return corta la función y evita responder 2 veces."}], "diff": true}, {"tipo": "paso", "sec": 2, "titulo": "Parámetros de consulta", "idea": "Lo que va después del ? llega en req.query, ya separado.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  res.json(contacto);\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET /contactos?buscar=ana HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\n\n[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ana Díaz\",\n    \"telefono\": \"381-555-0101\"\n  }\n]", "curl": 0, "terminal": ""}], "diff": true}, {"tipo": "paso", "sec": 2, "titulo": "Leer el cuerpo", "idea": "express.json() junta los trozos y deja el resultado en req.body.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\n  \"nombre\": \"Carla Ruiz\",\n  \"telefono\": \"381-555-0303\"\n}", "respuesta": "HTTP/1.1 201 Created\nLocation: /contactos/3\n\n{\n  \"id\": 3,\n  \"nombre\": \"Carla Ruiz\",\n  \"telefono\": \"381-555-0303\"\n}", "curl": 0, "terminal": "", "nota": "201 y Location: dónde quedó el recurso nuevo."}, {"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\"id\":99,\"nombre\":\"Intrusa\"}", "respuesta": "HTTP/1.1 201 Created\nLocation: /contactos/99\n\n{\n  \"id\": 99,\n  \"nombre\": \"Intrusa\"\n}", "curl": 0, "terminal": "", "nota": "El cuerpo trajo un id y pisó el nuestro. Falta validar."}], "diff": true}, {"tipo": "paso", "sec": 2, "titulo": "Reemplazar y modificar", "idea": "PUT reemplaza el recurso completo. PATCH cambia solo lo que viene.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  contactos[indice] = { id, ...req.body };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  Object.assign(contacto, req.body, { id });\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "PUT /contactos/1 HTTP/1.1\nContent-Type: application/json\n\n{\"nombre\":\"Ana D.\"}", "respuesta": "HTTP/1.1 200 OK\n\n{\n  \"id\": 1,\n  \"nombre\": \"Ana D.\"\n}", "curl": 0, "terminal": "", "nota": "PUT: el teléfono desapareció, porque no venía en el cuerpo."}, {"pedido": "PATCH /contactos/2 HTTP/1.1\nContent-Type: application/json\n\n{\"email\":\"bruno@mail.com\"}", "respuesta": "HTTP/1.1 200 OK\n\n{\n  \"id\": 2,\n  \"nombre\": \"Bruno Paz\",\n  \"telefono\": \"381-555-0202\",\n  \"email\": \"bruno@mail.com\"\n}", "curl": 0, "terminal": "", "nota": "PATCH: el resto de los campos quedó como estaba."}], "diff": true, "foco": [[42, 59]]}, {"tipo": "paso", "sec": 2, "titulo": "Borrar", "idea": "Un 204 dice que salió bien y que no hay nada que devolver.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  contactos[indice] = { id, ...req.body };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  Object.assign(contacto, req.body, { id });\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "DELETE /contactos/2 HTTP/1.1", "respuesta": "HTTP/1.1 204 No Content", "curl": 0, "terminal": "", "nota": "204: sin cuerpo. Por eso end y no json."}], "diff": true, "foco": [[62, 69]]}, {"tipo": "paso", "sec": 3, "titulo": "Registrar cada pedido", "idea": "Un middleware recibe req, res y next: prepara algo y pasa el pedido a la función siguiente.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  contactos[indice] = { id, ...req.body };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  Object.assign(contacto, req.body, { id });\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) {\n    return res.status(404).json({ error: 'Contacto inexistente' });\n  }\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET /contactos?buscar=an HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\n\n[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ana Díaz\",\n    \"telefono\": \"381-555-0101\"\n  }\n]", "curl": 0, "terminal": "GET /contactos?buscar=an → 200 (4 ms)", "nota": "El registro aparece en la terminal del servidor."}, {"pedido": "GET /contactos/50 HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\n\n{\n  \"error\": \"Contacto inexistente\"\n}", "curl": 0, "terminal": "GET /contactos/50 → 404 (1 ms)"}], "diff": true}, {"tipo": "paso", "sec": 4, "titulo": "Lanzar errores", "idea": "Los manejadores lanzan un ErrorHttp con su código, en lugar de armar la respuesta.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nclass ErrorHttp extends Error {\n  constructor(status, mensaje, detalles) {\n    super(mensaje);\n    this.status = status;\n    this.detalles = detalles;\n  }\n}\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos[indice] = { id, ...req.body };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  Object.assign(contacto, req.body, { id });\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\nfunction rutaInexistente(req, res) {\n  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });\n}\n\nfunction manejarErrores(err, req, res, next) {\n  const status = err.status ?? 500;\n  if (status >= 500) {\n    console.error(err);\n    return res.status(status).json({ error: 'Error interno del servidor' });\n  }\n  res.status(status).json({ error: err.message, detalles: err.detalles });\n}\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET /contactos/50 HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\n\n{\n  \"error\": \"Contacto inexistente\"\n}", "curl": 0, "terminal": "GET /contactos/50 → 404 (6 ms)"}], "diff": true, "foco": [[3, 9], [45, 50]]}, {"tipo": "paso", "sec": 4, "titulo": "Responderlos en un solo lugar", "idea": "Un middleware de 4 parámetros arma todas las respuestas de error.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nclass ErrorHttp extends Error {\n  constructor(status, mensaje, detalles) {\n    super(mensaje);\n    this.status = status;\n    this.detalles = detalles;\n  }\n}\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos[indice] = { id, ...req.body };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  Object.assign(contacto, req.body, { id });\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\nfunction rutaInexistente(req, res) {\n  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });\n}\n\nfunction manejarErrores(err, req, res, next) {\n  const status = err.status ?? 500;\n  if (status >= 500) {\n    console.error(err);\n    return res.status(status).json({ error: 'Error interno del servidor' });\n  }\n  res.status(status).json({ error: err.message, detalles: err.detalles });\n}\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "GET /nada HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\n\n{\n  \"error\": \"No existe GET /nada\"\n}", "curl": 0, "terminal": "GET /nada → 404 (1 ms)", "nota": "La ruta inexistente ahora responde JSON, no HTML."}], "diff": true, "foco": [[83, 97]]}, {"tipo": "paso", "sec": 4, "titulo": "JSON mal formado", "idea": "express.json() genera un error 400. Le ponemos un mensaje claro.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nclass ErrorHttp extends Error {\n  constructor(status, mensaje, detalles) {\n    super(mensaje);\n    this.status = status;\n    this.detalles = detalles;\n  }\n}\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const contacto = { id: siguienteId++, ...req.body };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos[indice] = { id, ...req.body };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  Object.assign(contacto, req.body, { id });\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\nfunction rutaInexistente(req, res) {\n  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });\n}\n\nfunction manejarErrores(err, req, res, next) {\n  if (err.type === 'entity.parse.failed') {\n    return res.status(400).json({ error: 'El cuerpo no es un JSON válido' });\n  }\n  const status = err.status ?? 500;\n  if (status >= 500) {\n    console.error(err);\n    return res.status(status).json({ error: 'Error interno del servidor' });\n  }\n  res.status(status).json({ error: err.message, detalles: err.detalles });\n}\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{malo", "respuesta": "HTTP/1.1 400 Bad Request\n\n{\n  \"error\": \"El cuerpo no es un JSON válido\"\n}", "curl": 0, "terminal": "POST /contactos → 400 (12 ms)", "nota": "Antes el servidor se caía. Ahora responde 400 y sigue atendiendo."}], "diff": true}, {"tipo": "paso", "sec": 5, "titulo": "Validar: la forma y el nombre", "idea": "El cuerpo tiene que ser un objeto, y el nombre un texto no vacío.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nclass ErrorHttp extends Error {\n  constructor(status, mensaje, detalles) {\n    super(mensaje);\n    this.status = status;\n    this.detalles = detalles;\n  }\n}\n\nconst FORMATO_EMAIL = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nfunction validarContacto(datos, { parcial = false } = {}) {\n  if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) {\n    throw new ErrorHttp(400, 'El cuerpo debe ser un objeto JSON');\n  }\n\n  const errores = [];\n  const limpio = {};\n\n  if (!parcial || 'nombre' in datos) {\n    if (typeof datos.nombre !== 'string' || datos.nombre.trim() === '') {\n      errores.push('nombre: es obligatorio y debe ser un texto no vacío');\n    } else {\n      limpio.nombre = datos.nombre.trim();\n    }\n  }\n\n  if ('telefono' in datos) {\n    if (typeof datos.telefono !== 'string') {\n      errores.push('telefono: debe ser un texto');\n    } else {\n      limpio.telefono = datos.telefono.trim();\n    }\n  }\n\n  if ('email' in datos) {\n    if (typeof datos.email !== 'string' || !FORMATO_EMAIL.test(datos.email)) {\n      errores.push('email: no tiene un formato válido');\n    } else {\n      limpio.email = datos.email.trim().toLowerCase();\n    }\n  }\n\n  if (errores.length > 0) {\n    throw new ErrorHttp(400, 'Datos inválidos', errores);\n  }\n  return limpio;\n}\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const datos = validarContacto(req.body);\n  const contacto = { id: siguienteId++, ...datos };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos[indice] = { id, ...validarContacto(req.body) };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  Object.assign(contacto, validarContacto(req.body, { parcial: true }));\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\nfunction rutaInexistente(req, res) {\n  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });\n}\n\nfunction manejarErrores(err, req, res, next) {\n  if (err.type === 'entity.parse.failed') {\n    return res.status(400).json({ error: 'El cuerpo no es un JSON válido' });\n  }\n  const status = err.status ?? 500;\n  if (status >= 500) {\n    console.error(err);\n    return res.status(status).json({ error: 'Error interno del servidor' });\n  }\n  res.status(status).json({ error: err.message, detalles: err.detalles });\n}\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\"email\":\"sin-arroba\"}", "respuesta": "HTTP/1.1 400 Bad Request\n\n{\n  \"error\": \"Datos inválidos\",\n  \"detalles\": [\n    \"nombre: es obligatorio y debe ser un texto no vacío\",\n    \"email: no tiene un formato válido\"\n  ]\n}", "curl": 0, "terminal": "POST /contactos → 400 (11 ms)", "nota": "Todos los errores juntos, con detalle."}], "diff": true, "foco": [[11, 25]]}, {"tipo": "paso", "sec": 5, "titulo": "Validar: opcionales y resultado", "idea": "Revisa, limpia y filtra. Lo que no conoce, no pasa.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nclass ErrorHttp extends Error {\n  constructor(status, mensaje, detalles) {\n    super(mensaje);\n    this.status = status;\n    this.detalles = detalles;\n  }\n}\n\nconst FORMATO_EMAIL = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nfunction validarContacto(datos, { parcial = false } = {}) {\n  if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) {\n    throw new ErrorHttp(400, 'El cuerpo debe ser un objeto JSON');\n  }\n\n  const errores = [];\n  const limpio = {};\n\n  if (!parcial || 'nombre' in datos) {\n    if (typeof datos.nombre !== 'string' || datos.nombre.trim() === '') {\n      errores.push('nombre: es obligatorio y debe ser un texto no vacío');\n    } else {\n      limpio.nombre = datos.nombre.trim();\n    }\n  }\n\n  if ('telefono' in datos) {\n    if (typeof datos.telefono !== 'string') {\n      errores.push('telefono: debe ser un texto');\n    } else {\n      limpio.telefono = datos.telefono.trim();\n    }\n  }\n\n  if ('email' in datos) {\n    if (typeof datos.email !== 'string' || !FORMATO_EMAIL.test(datos.email)) {\n      errores.push('email: no tiene un formato válido');\n    } else {\n      limpio.email = datos.email.trim().toLowerCase();\n    }\n  }\n\n  if (errores.length > 0) {\n    throw new ErrorHttp(400, 'Datos inválidos', errores);\n  }\n  return limpio;\n}\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const datos = validarContacto(req.body);\n  const contacto = { id: siguienteId++, ...datos };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos[indice] = { id, ...validarContacto(req.body) };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  Object.assign(contacto, validarContacto(req.body, { parcial: true }));\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\nfunction rutaInexistente(req, res) {\n  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });\n}\n\nfunction manejarErrores(err, req, res, next) {\n  if (err.type === 'entity.parse.failed') {\n    return res.status(400).json({ error: 'El cuerpo no es un JSON válido' });\n  }\n  const status = err.status ?? 500;\n  if (status >= 500) {\n    console.error(err);\n    return res.status(status).json({ error: 'Error interno del servidor' });\n  }\n  res.status(status).json({ error: err.message, detalles: err.detalles });\n}\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [], "diff": true, "foco": [[29, 49]], "panel": {"titulo": "Lo que devuelve validarContacto", "lang": "json", "texto": "// llega\n{\"id\":99,\"nombre\":\"  Carla Ruiz \",\"email\":\"CARLA@Mail.com\",\"esAdmin\":true}\n\n// devuelve\n{\"nombre\":\"Carla Ruiz\",\"email\":\"carla@mail.com\"}"}}, {"tipo": "paso", "sec": 5, "titulo": "Las rutas usan la validación", "idea": "Primero se valida, después se asigna el id.", "archivo": "src/servidor.js", "codigo": "import express from 'express';\n\nclass ErrorHttp extends Error {\n  constructor(status, mensaje, detalles) {\n    super(mensaje);\n    this.status = status;\n    this.detalles = detalles;\n  }\n}\n\nconst FORMATO_EMAIL = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nfunction validarContacto(datos, { parcial = false } = {}) {\n  if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) {\n    throw new ErrorHttp(400, 'El cuerpo debe ser un objeto JSON');\n  }\n\n  const errores = [];\n  const limpio = {};\n\n  if (!parcial || 'nombre' in datos) {\n    if (typeof datos.nombre !== 'string' || datos.nombre.trim() === '') {\n      errores.push('nombre: es obligatorio y debe ser un texto no vacío');\n    } else {\n      limpio.nombre = datos.nombre.trim();\n    }\n  }\n\n  if ('telefono' in datos) {\n    if (typeof datos.telefono !== 'string') {\n      errores.push('telefono: debe ser un texto');\n    } else {\n      limpio.telefono = datos.telefono.trim();\n    }\n  }\n\n  if ('email' in datos) {\n    if (typeof datos.email !== 'string' || !FORMATO_EMAIL.test(datos.email)) {\n      errores.push('email: no tiene un formato válido');\n    } else {\n      limpio.email = datos.email.trim().toLowerCase();\n    }\n  }\n\n  if (errores.length > 0) {\n    throw new ErrorHttp(400, 'Datos inválidos', errores);\n  }\n  return limpio;\n}\n\nconst app = express();\n\nfunction registrarPedidos(req, res, next) {\n  const inicio = Date.now();\n  res.on('finish', () => {\n    const duracion = Date.now() - inicio;\n    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${duracion} ms)`);\n  });\n  next();\n}\n\napp.use(registrarPedidos);\napp.use(express.json());\n\nconst contactos = [\n  { id: 1, nombre: 'Ana Díaz', telefono: '381-555-0101' },\n  { id: 2, nombre: 'Bruno Paz', telefono: '381-555-0202' },\n];\nlet siguienteId = 3;\n\napp.get('/contactos', (req, res) => {\n  const { buscar } = req.query;\n\n  if (typeof buscar !== 'string') {\n    return res.json(contactos);\n  }\n\n  const texto = buscar.toLowerCase();\n  const encontrados = contactos.filter(c =>\n    c.nombre.toLowerCase().includes(texto)\n  );\n  res.json(encontrados);\n});\n\napp.get('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\napp.post('/contactos', (req, res) => {\n  const datos = validarContacto(req.body);\n  const contacto = { id: siguienteId++, ...datos };\n  contactos.push(contacto);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\napp.put('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos[indice] = { id, ...validarContacto(req.body) };\n  res.json(contactos[indice]);\n});\n\napp.patch('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const contacto = contactos.find(c => c.id === id);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  Object.assign(contacto, validarContacto(req.body, { parcial: true }));\n  res.json(contacto);\n});\n\napp.delete('/contactos/:id', (req, res) => {\n  const id = Number(req.params.id);\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) throw new ErrorHttp(404, 'Contacto inexistente');\n  contactos.splice(indice, 1);\n  res.status(204).end();\n});\n\nfunction rutaInexistente(req, res) {\n  res.status(404).json({ error: `No existe ${req.method} ${req.originalUrl}` });\n}\n\nfunction manejarErrores(err, req, res, next) {\n  if (err.type === 'entity.parse.failed') {\n    return res.status(400).json({ error: 'El cuerpo no es un JSON válido' });\n  }\n  const status = err.status ?? 500;\n  if (status >= 500) {\n    console.error(err);\n    return res.status(status).json({ error: 'Error interno del servidor' });\n  }\n  res.status(status).json({ error: err.message, detalles: err.detalles });\n}\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n\napp.listen(3000, () => {\n  console.log('API escuchando en http://localhost:3000');\n});\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\n  \"id\": 99,\n  \"nombre\": \"  Carla Ruiz \",\n  \"email\": \"CARLA@Mail.com\",\n  \"esAdmin\": true\n}", "respuesta": "HTTP/1.1 201 Created\nLocation: /contactos/3\n\n{\n  \"id\": 3,\n  \"nombre\": \"Carla Ruiz\",\n  \"email\": \"carla@mail.com\"\n}", "curl": 0, "terminal": "POST /contactos → 201 (1 ms)", "nota": "El id y esAdmin se ignoran. El nombre y el correo llegan limpios."}], "diff": true, "foco": [[93, 97], [100, 104], [108, 112]]}, {"tipo": "paso", "sec": 6, "titulo": "Guardar en un archivo", "idea": "El repositorio esconde cómo se guardan los datos. Las rutas solo le piden cosas.", "archivo": "src/contactos.repositorio.js", "codigo": "import { readFile, writeFile, mkdir } from 'node:fs/promises';\n\nconst CARPETA = new URL('../datos/', import.meta.url);\nconst ARCHIVO = new URL('contactos.json', CARPETA);\n\nasync function leerTodos() {\n  try {\n    const texto = await readFile(ARCHIVO, 'utf-8');\n    return JSON.parse(texto);\n  } catch (error) {\n    if (error.code === 'ENOENT') return [];\n    throw error;\n  }\n}\n\nasync function guardarTodos(contactos) {\n  await mkdir(CARPETA, { recursive: true });\n  await writeFile(ARCHIVO, JSON.stringify(contactos, null, 2));\n}\n\nexport async function listar() {\n  return leerTodos();\n}\n\nexport async function obtener(id) {\n  const contactos = await leerTodos();\n  return contactos.find(c => c.id === id) ?? null;\n}\n\nexport async function crear(datos) {\n  const contactos = await leerTodos();\n  const id = contactos.reduce((maximo, c) => Math.max(maximo, c.id), 0) + 1;\n  const contacto = { id, ...datos };\n  contactos.push(contacto);\n  await guardarTodos(contactos);\n  return contacto;\n}\n\nexport async function reemplazar(id, datos) {\n  const contactos = await leerTodos();\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) return null;\n  contactos[indice] = { id, ...datos };\n  await guardarTodos(contactos);\n  return contactos[indice];\n}\n\nexport async function modificar(id, cambios) {\n  const contactos = await leerTodos();\n  const indice = contactos.findIndex(c => c.id === id);\n  if (indice === -1) return null;\n  contactos[indice] = { ...contactos[indice], ...cambios, id };\n  await guardarTodos(contactos);\n  return contactos[indice];\n}\n\nexport async function borrar(id) {\n  const contactos = await leerTodos();\n  const restantes = contactos.filter(c => c.id !== id);\n  if (restantes.length === contactos.length) return false;\n  await guardarTodos(restantes);\n  return true;\n}\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\n\n{\n  \"nombre\": \"Ana Díaz\",\n  \"telefono\": \"381-555-0101\"\n}", "respuesta": "HTTP/1.1 201 Created\nLocation: /contactos/1\n\n{\n  \"id\": 1,\n  \"nombre\": \"Ana Díaz\",\n  \"telefono\": \"381-555-0101\"\n}", "curl": 0, "terminal": "POST /contactos → 201 (14 ms)"}, {"reinicio": true, "terminal": "API escuchando en http://localhost:3000", "nota": "Reiniciamos el servidor."}, {"pedido": "GET /contactos HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\n\n[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ana Díaz\",\n    \"telefono\": \"381-555-0101\"\n  }\n]", "curl": 0, "terminal": "GET /contactos → 200 (6 ms)", "nota": "El contacto sigue ahí: está en el archivo."}, {"comando": "cat datos/contactos.json", "terminal": "[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ana Díaz\",\n    \"telefono\": \"381-555-0101\"\n  }\n]"}], "diff": false, "foco": [[1, 4], [6, 18], [30, 36]]}, {"tipo": "paso", "sec": 6, "titulo": "Agrupar las rutas con Router", "idea": "Dentro del router las rutas son relativas. El prefijo se pone al montarlo.", "archivo": "src/contactos.rutas.js", "codigo": "import { Router } from 'express';\nimport * as repositorio from './contactos.repositorio.js';\nimport { validarContacto } from './contactos.validacion.js';\nimport { ErrorHttp } from './errores.js';\n\nexport const rutasContactos = Router();\n\nfunction leerId(req) {\n  const id = Number(req.params.id);\n  if (!Number.isInteger(id) || id <= 0) {\n    throw new ErrorHttp(400, 'El id debe ser un entero positivo');\n  }\n  return id;\n}\n\nrutasContactos.get('/', async (req, res) => {\n  let contactos = await repositorio.listar();\n  const { buscar } = req.query;\n  if (typeof buscar === 'string') {\n    const texto = buscar.toLowerCase();\n    contactos = contactos.filter(c => c.nombre.toLowerCase().includes(texto));\n  }\n  res.json(contactos);\n});\n\nrutasContactos.get('/:id', async (req, res) => {\n  const contacto = await repositorio.obtener(leerId(req));\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\nrutasContactos.post('/', async (req, res) => {\n  const datos = validarContacto(req.body);\n  const contacto = await repositorio.crear(datos);\n  res.status(201).location(`/contactos/${contacto.id}`).json(contacto);\n});\n\nrutasContactos.put('/:id', async (req, res) => {\n  const id = leerId(req);\n  const datos = validarContacto(req.body);\n  const contacto = await repositorio.reemplazar(id, datos);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\nrutasContactos.patch('/:id', async (req, res) => {\n  const id = leerId(req);\n  const cambios = validarContacto(req.body, { parcial: true });\n  const contacto = await repositorio.modificar(id, cambios);\n  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.json(contacto);\n});\n\nrutasContactos.delete('/:id', async (req, res) => {\n  const borrado = await repositorio.borrar(leerId(req));\n  if (!borrado) throw new ErrorHttp(404, 'Contacto inexistente');\n  res.status(204).end();\n});\n", "intercambios": [{"pedido": "GET /contactos/abc HTTP/1.1", "respuesta": "HTTP/1.1 400 Bad Request\n\n{\n  \"error\": \"El id debe ser un entero positivo\"\n}", "curl": 0, "terminal": "GET /contactos/abc → 400 (1 ms)", "nota": "abc no es un contacto inexistente: es un pedido mal armado. 400."}], "diff": false, "foco": [[6, 13], [26, 29]]}, {"tipo": "paso", "sec": 6, "titulo": "app.js arma la cadena", "idea": "Se lee de arriba abajo el recorrido completo de un pedido.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nexport const app = express();\n\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/contactos', rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [], "diff": false, "panel": {"titulo": "Un archivo por pregunta", "lang": "tree", "texto": "src/\n├── servidor.js               arranca\n├── app.js                    arma la cadena\n├── middlewares.js            registro, 404 y errores\n├── errores.js                ErrorHttp\n├── contactos.rutas.js        qué se responde\n├── contactos.validacion.js   qué se acepta\n└── contactos.repositorio.js  cómo se guarda"}}, {"tipo": "paso", "sec": 6, "titulo": "servidor.js solo arranca", "idea": "El puerto sale de una variable de entorno. Una prueba puede importar app sin abrir un puerto.", "archivo": "src/servidor.js", "codigo": "import { app } from './app.js';\n\nconst PUERTO = process.env.PUERTO ?? 3000;\n\napp.listen(PUERTO, () => {\n  console.log(`API escuchando en http://localhost:${PUERTO}`);\n});\n", "intercambios": [], "diff": false, "panel": {"titulo": "Terminal", "lang": "terminal", "texto": "$ npm run dev\nAPI escuchando en http://localhost:3000\n\n$ PUERTO=8080 npm start\nAPI escuchando en http://localhost:8080"}}, {"tipo": "paso", "sec": 7, "titulo": "Servir una carpeta a mano", "idea": "Leer el archivo que corresponde a la ruta y enviarlo con el Content-Type correcto.", "archivo": "src/estatico.js", "codigo": "import { readFile } from 'node:fs/promises';\nimport path from 'node:path';\n\nconst TIPOS = {\n  '.html': 'text/html; charset=utf-8',\n  '.css': 'text/css; charset=utf-8',\n  '.js': 'text/javascript; charset=utf-8',\n  '.png': 'image/png',\n  '.jpg': 'image/jpeg',\n  '.svg': 'image/svg+xml',\n};\n\nexport function servirCarpeta(carpeta) {\n  return async (req, res, next) => {\n    if (req.method !== 'GET' && req.method !== 'HEAD') return next();\n\n    let relativa;\n    try {\n      relativa = decodeURIComponent(req.path);\n    } catch {\n      return next();\n    }\n    if (relativa.endsWith('/')) relativa += 'index.html';\n\n    const ruta = path.join(carpeta, relativa);\n    if (!ruta.startsWith(carpeta + path.sep)) return next();\n\n    try {\n      const contenido = await readFile(ruta);\n      res.type(TIPOS[path.extname(ruta)] ?? 'application/octet-stream');\n      res.send(contenido);\n    } catch (error) {\n      if (error.code === 'ENOENT' || error.code === 'EISDIR') return next();\n      throw error;\n    }\n  };\n}\n", "intercambios": [{"pedido": "GET / HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\nETag: W/\"36-fHNm5zdjK86o6xIeVkhiE6SXhF0\"\n\n<!DOCTYPE html>\n<title>Agenda<\/title>\n<h1>Agenda<\/h1>", "terminal": ""}, {"pedido": "GET /estilos.css HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: text/css; charset=utf-8\nETag: W/\"14-oEvukyVKdoxURpwT/3SYlJ5A3iw\"\n\nh1 { color: navy; }", "terminal": "", "nota": "El tipo sale de la extensión. Sin él, el navegador no aplica el CSS."}, {"pedido": "GET /img/logo.png HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: image/png\nETag: W/\"49-aUjZhmYnTv/7yWub3rEG6IiVkl4\"\n\n‹73 bytes de imagen PNG›", "terminal": "", "nota": "La imagen viaja como bytes. El navegador la dibuja porque el Content-Type dice image/png."}], "diff": false, "foco": [[4, 11], [13, 23]]}, {"tipo": "paso", "sec": 7, "titulo": "Que nadie salga de la carpeta", "idea": "path.join resuelve los .. y startsWith verifica que el resultado siga adentro.", "archivo": "src/estatico.js", "codigo": "import { readFile } from 'node:fs/promises';\nimport path from 'node:path';\n\nconst TIPOS = {\n  '.html': 'text/html; charset=utf-8',\n  '.css': 'text/css; charset=utf-8',\n  '.js': 'text/javascript; charset=utf-8',\n  '.png': 'image/png',\n  '.jpg': 'image/jpeg',\n  '.svg': 'image/svg+xml',\n};\n\nexport function servirCarpeta(carpeta) {\n  return async (req, res, next) => {\n    if (req.method !== 'GET' && req.method !== 'HEAD') return next();\n\n    let relativa;\n    try {\n      relativa = decodeURIComponent(req.path);\n    } catch {\n      return next();\n    }\n    if (relativa.endsWith('/')) relativa += 'index.html';\n\n    const ruta = path.join(carpeta, relativa);\n    if (!ruta.startsWith(carpeta + path.sep)) return next();\n\n    try {\n      const contenido = await readFile(ruta);\n      res.type(TIPOS[path.extname(ruta)] ?? 'application/octet-stream');\n      res.send(contenido);\n    } catch (error) {\n      if (error.code === 'ENOENT' || error.code === 'EISDIR') return next();\n      throw error;\n    }\n  };\n}\n", "intercambios": [{"pedido": "GET /%2e%2e/package.json HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\nContent-Type: application/json; charset=utf-8\nETag: W/\"2e-w4YxaK5qr5qXZUluL8kPEnR18oQ\"\n\n{\n  \"error\": \"No existe GET /%2e%2e/package.json\"\n}", "terminal": "GET /%2e%2e/package.json → 404 (3 ms)", "nota": "Decodificada, la ruta es /../package.json. Sin el control, el servidor entregaría el archivo."}, {"pedido": "GET /img/nada.png HTTP/1.1", "respuesta": "HTTP/1.1 404 Not Found\nContent-Type: application/json; charset=utf-8\nETag: W/\"27-bIMX8ZgOzafHdNRa52/xe1ejXfs\"\n\n{\n  \"error\": \"No existe GET /img/nada.png\"\n}", "terminal": "GET /img/nada.png → 404 (2 ms)", "nota": "Si el archivo no existe, next(): el 404 lo responde rutaInexistente, en JSON."}, {"pedido": "GET /contactos HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nETag: W/\"2-l9Fw4VUO7kr8CvBlt4zaMCqXZ0w\"\n\n[]", "terminal": "GET /contactos → 200 (1 ms)", "nota": "Las rutas de la API siguen funcionando."}], "diff": false, "foco": [[25, 36]]}, {"tipo": "paso", "sec": 7, "titulo": "Una función que arma un middleware", "idea": "servirCarpeta recibe la carpeta y devuelve el middleware. Por eso express.json() lleva paréntesis.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport path from 'node:path';\nimport { servirCarpeta } from './estatico.js';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nconst PUBLICA = path.join(import.meta.dirname, '..', 'public');\n\nexport const app = express();\n\napp.use(servirCarpeta(PUBLICA));\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/contactos', rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [], "diff": true, "panel": {"titulo": "El mismo patrón", "lang": "js", "texto": "app.use(servirCarpeta(PUBLICA));   // devuelve un middleware\napp.use(express.json());           // también\napp.use(registrarPedidos);         // ya es un middleware"}}, {"tipo": "paso", "sec": 7, "titulo": "express.static", "idea": "Hace lo mismo, envía el archivo de a trozos y agrega todo lo necesario para el caché.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport path from 'node:path';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nconst PUBLICA = path.join(import.meta.dirname, '..', 'public');\n\nexport const app = express();\n\napp.use(express.static(PUBLICA, { maxAge: '1h' }));\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/contactos', rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [{"pedido": "GET /img/logo.png HTTP/1.1", "respuesta": "HTTP/1.1 200 OK\nCache-Control: public, max-age=3600\nLast-Modified: Tue, 06 Oct 2026 04:58:42 GMT\nETag: W/\"49-1a10f9408c6\"\nContent-Type: image/png\n\n‹73 bytes de imagen PNG›", "terminal": "", "nota": "Cache-Control, Last-Modified y ETag: el navegador guarda la imagen y sabe cómo preguntar si cambió."}, {"pedido": "GET /img/logo.png HTTP/1.1\nIf-None-Match: W/\"49-1a10f9408c6\"", "respuesta": "HTTP/1.1 304 Not Modified\nCache-Control: public, max-age=3600\nLast-Modified: Tue, 06 Oct 2026 04:58:42 GMT\nETag: W/\"49-1a10f9408c6\"", "terminal": "", "nota": "304: no cambió. El servidor no la envía otra vez."}], "diff": true}, {"tipo": "paso", "sec": 7, "titulo": "Un frontend de una sola página", "idea": "Cualquier GET que pida HTML y nadie atendió recibe index.html. La API pasa a /api.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport path from 'node:path';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nconst PUBLICA = path.join(import.meta.dirname, '..', 'public');\n\nexport const app = express();\n\napp.use(express.static(PUBLICA, { maxAge: '1h' }));\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/api/contactos', rutasContactos);\n\napp.use((req, res, next) => {\n  if (req.method !== 'GET' || !req.accepts('html') || req.path.startsWith('/api/')) return next();\n  res.sendFile(path.join(PUBLICA, 'index.html'));\n});\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [{"pedido": "GET /contactos/7 HTTP/1.1\nAccept: text/html", "respuesta": "HTTP/1.1 200 OK\nCache-Control: public, max-age=0\nLast-Modified: Tue, 06 Oct 2026 04:58:42 GMT\nETag: W/\"36-1a10f9408a5\"\nContent-Type: text/html; charset=utf-8\n\n<!DOCTYPE html>\n<title>Agenda<\/title>\n<h1>Agenda<\/h1>", "terminal": "GET /contactos/7 → 200 (7 ms)", "nota": "No hay archivo contactos/7: llega index.html y el JavaScript de la página resuelve la ruta."}, {"pedido": "GET /api/contactos HTTP/1.1\nAccept: */*", "respuesta": "HTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nETag: W/\"2-l9Fw4VUO7kr8CvBlt4zaMCqXZ0w\"\n\n[]", "terminal": "GET /api/contactos → 200 (2 ms)", "nota": "La API, bajo /api, sigue respondiendo JSON."}, {"pedido": "GET /img/nada.png HTTP/1.1\nAccept: image/png", "respuesta": "HTTP/1.1 404 Not Found\nContent-Type: application/json; charset=utf-8\nETag: W/\"27-bIMX8ZgOzafHdNRa52/xe1ejXfs\"\n\n{\n  \"error\": \"No existe GET /img/nada.png\"\n}", "terminal": "GET /img/nada.png → 404 (0 ms)", "nota": "Una imagen no pide HTML: sigue respondiendo 404."}], "diff": true}, {"tipo": "paso", "sec": 7, "titulo": "Habilitar CORS", "idea": "Una página en otro puerto es otro origen. El navegador pregunta antes con OPTIONS.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport cors from 'cors';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nexport const app = express();\n\napp.use(cors({ origin: 'http://localhost:5173' }));\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/contactos', rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [{"pedido": "OPTIONS /contactos HTTP/1.1\nOrigin: http://localhost:5173\nAccess-Control-Request-Method: POST\nAccess-Control-Request-Headers: content-type", "respuesta": "HTTP/1.1 204 No Content\nAccess-Control-Allow-Origin: http://localhost:5173\nAccess-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE\nAccess-Control-Allow-Headers: content-type", "curl": 0, "terminal": "", "nota": "La API autoriza ese origen. Ahora el navegador entrega la respuesta."}], "diff": true, "anterior": "import express from 'express';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nexport const app = express();\n\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/contactos', rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n"}, {"tipo": "paso", "sec": 7, "titulo": "Desde JavaScript con fetch", "idea": "Así es como un frontend va a usar la API.", "archivo": "probar.js", "codigo": "const BASE = 'http://localhost:3000';\n\nconst respuesta = await fetch(`${BASE}/contactos`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ nombre: 'Carla Ruiz', telefono: '381-555-0303' }),\n});\n\nconsole.log(respuesta.status);\nconsole.log(respuesta.headers.get('Location'));\nconsole.log(await respuesta.json());\n", "intercambios": [{"comando": "node probar.js", "terminal": "201\n/contactos/2\n{ id: 2, nombre: 'Carla Ruiz', telefono: '381-555-0303' }", "nota": "fetch no falla con 404 ni 400: hay que mirar respuesta.ok."}], "diff": false}, {"tipo": "concepto", "sec": 8, "titulo": "Autenticación y autorización", "idea": "Son 2 problemas distintos, y cada uno tiene su código de estado.", "html": "CUENTAS"}, {"tipo": "concepto", "sec": 8, "titulo": "La sesión viaja en una cookie", "idea": "Al iniciar sesión, el servidor pide guardar un identificador. Después, el navegador lo envía solo en cada pedido.", "html": "COOKIE", "respuesta": "HTTP/1.1 201 Created\nSet-Cookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE;\n    Max-Age=604800; Path=/;\n    HttpOnly; SameSite=Lax\n\n{\n  \"id\": 1,\n  \"email\": \"ana@mail.com\"\n}", "pedido": "GET /usuarios/yo HTTP/1.1\nCookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE"}, {"tipo": "paso", "sec": 8, "titulo": "Una ayuda para las colecciones", "idea": "Contactos, usuarios y sesiones se guardan igual. Lo sacamos a un módulo.", "archivo": "src/archivos.js", "codigo": "import { readFile, writeFile, mkdir } from 'node:fs/promises';\n\nconst CARPETA = new URL('../datos/', import.meta.url);\n\nexport async function leerColeccion(nombre) {\n  try {\n    const texto = await readFile(new URL(`${nombre}.json`, CARPETA), 'utf-8');\n    return JSON.parse(texto);\n  } catch (error) {\n    if (error.code === 'ENOENT') return [];\n    throw error;\n  }\n}\n\nexport async function guardarColeccion(nombre, elementos) {\n  await mkdir(CARPETA, { recursive: true });\n  await writeFile(new URL(`${nombre}.json`, CARPETA), JSON.stringify(elementos, null, 2));\n}\n", "intercambios": [], "diff": false, "panel": {"titulo": "Lo que queda en datos/", "lang": "tree", "texto": "datos/\n├── contactos.json\n├── usuarios.json\n└── sesiones.json"}}, {"tipo": "paso", "sec": 8, "titulo": "Las contraseñas no se guardan", "idea": "Se guarda un hash con sal, calculado con una función lenta a propósito.", "archivo": "src/contrasenas.js", "codigo": "import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';\nimport { promisify } from 'node:util';\n\nconst derivar = promisify(scrypt);\n\nexport async function hashear(contrasena) {\n  const sal = randomBytes(16).toString('hex');\n  const clave = await derivar(contrasena, sal, 64);\n  return `${sal}:${clave.toString('hex')}`;\n}\n\nexport async function verificar(contrasena, guardado) {\n  const [sal, claveGuardada] = guardado.split(':');\n  const clave = await derivar(contrasena, sal, 64);\n  return timingSafeEqual(clave, Buffer.from(claveGuardada, 'hex'));\n}\n", "intercambios": [{"comando": "node demo-hash.js", "terminal": "e906c2664baf5c83673cb6939e1b278b:089e297430298c4...\n84c48eb90d8584208b57638528af78bb:d563d2aead02de6...\ntrue\nfalse", "nota": "Misma contraseña, hashes distintos: cada uno tiene su sal."}], "diff": false}, {"tipo": "paso", "sec": 8, "titulo": "Registrarse", "idea": "El hash nunca sale de la API. Registrarse no inicia sesión.", "archivo": "src/cuentas.rutas.js", "codigo": "import { Router } from 'express';\nimport * as usuarios from './usuarios.repositorio.js';\nimport * as sesiones from './sesiones.repositorio.js';\nimport { validarCredenciales } from './usuarios.validacion.js';\nimport { hashear, verificar } from './contrasenas.js';\nimport { COOKIE_SESION, opcionesCookie, requerirSesion } from './sesion.js';\nimport { ErrorHttp } from './errores.js';\n\nexport const rutasUsuarios = Router();\nexport const rutasSesiones = Router();\n\nfunction publico(usuario) {\n  return { id: usuario.id, email: usuario.email };\n}\n\nrutasUsuarios.post('/', async (req, res) => {\n  const { email, contrasena } = validarCredenciales(req.body);\n  if (await usuarios.buscarPorEmail(email)) {\n    throw new ErrorHttp(409, 'Ya existe una cuenta con ese email');\n  }\n  const usuario = await usuarios.crear(email, await hashear(contrasena));\n  res.status(201).location('/usuarios/yo').json(publico(usuario));\n});\n\nrutasUsuarios.get('/yo', requerirSesion, (req, res) => {\n  res.json(publico(req.usuario));\n});\n\nconst HASH_DE_RELLENO = await hashear('una contraseña que nadie usa');\n\nrutasSesiones.post('/', async (req, res) => {\n  const { email, contrasena } = validarCredenciales(req.body);\n  const usuario = await usuarios.buscarPorEmail(email);\n  const coincide = await verificar(contrasena, usuario?.hash ?? HASH_DE_RELLENO);\n  if (!usuario || !coincide) {\n    throw new ErrorHttp(401, 'Email o contraseña incorrectos');\n  }\n  const sesion = await sesiones.crear(usuario.id);\n  res.cookie(COOKIE_SESION, sesion.id, { ...opcionesCookie, maxAge: sesiones.DURACION_SESION });\n  res.status(201).json(publico(usuario));\n});\n\nrutasSesiones.delete('/actual', requerirSesion, async (req, res) => {\n  await sesiones.borrar(req.sesion.id);\n  res.clearCookie(COOKIE_SESION, opcionesCookie);\n  res.status(204).end();\n});\n", "intercambios": [{"pedido": "POST /usuarios HTTP/1.1\nContent-Type: application/json\n\n{\n  \"email\": \"ana@mail.com\",\n  \"contrasena\": \"secreta123\"\n}", "respuesta": "HTTP/1.1 201 Created\nLocation: /usuarios/yo\n\n{\n  \"id\": 1,\n  \"email\": \"ana@mail.com\"\n}", "terminal": "POST /usuarios → 201 (68 ms)"}, {"pedido": "POST /usuarios HTTP/1.1\nContent-Type: application/json\n\n{\n  \"email\": \"ANA@mail.com\",\n  \"contrasena\": \"otraclave1\"\n}", "respuesta": "HTTP/1.1 409 Conflict\n\n{\n  \"error\": \"Ya existe una cuenta con ese email\"\n}", "terminal": "POST /usuarios → 409 (2 ms)", "nota": "El email se pasa a minúsculas: es la misma cuenta."}, {"pedido": "POST /usuarios HTTP/1.1\nContent-Type: application/json\n\n{\"email\":\"ana\",\"contrasena\":\"123\"}", "respuesta": "HTTP/1.1 400 Bad Request\n\n{\n  \"error\": \"Datos inválidos\",\n  \"detalles\": [\n    \"email: no tiene un formato válido\",\n    \"contrasena: debe tener al menos 8 caracteres\"\n  ]\n}", "terminal": "POST /usuarios → 400 (1 ms)"}], "diff": false, "foco": [[12, 14], [16, 23]]}, {"tipo": "paso", "sec": 8, "titulo": "Iniciar sesión", "idea": "Mismo mensaje y mismo tiempo, exista o no el email.", "archivo": "src/cuentas.rutas.js", "codigo": "import { Router } from 'express';\nimport * as usuarios from './usuarios.repositorio.js';\nimport * as sesiones from './sesiones.repositorio.js';\nimport { validarCredenciales } from './usuarios.validacion.js';\nimport { hashear, verificar } from './contrasenas.js';\nimport { COOKIE_SESION, opcionesCookie, requerirSesion } from './sesion.js';\nimport { ErrorHttp } from './errores.js';\n\nexport const rutasUsuarios = Router();\nexport const rutasSesiones = Router();\n\nfunction publico(usuario) {\n  return { id: usuario.id, email: usuario.email };\n}\n\nrutasUsuarios.post('/', async (req, res) => {\n  const { email, contrasena } = validarCredenciales(req.body);\n  if (await usuarios.buscarPorEmail(email)) {\n    throw new ErrorHttp(409, 'Ya existe una cuenta con ese email');\n  }\n  const usuario = await usuarios.crear(email, await hashear(contrasena));\n  res.status(201).location('/usuarios/yo').json(publico(usuario));\n});\n\nrutasUsuarios.get('/yo', requerirSesion, (req, res) => {\n  res.json(publico(req.usuario));\n});\n\nconst HASH_DE_RELLENO = await hashear('una contraseña que nadie usa');\n\nrutasSesiones.post('/', async (req, res) => {\n  const { email, contrasena } = validarCredenciales(req.body);\n  const usuario = await usuarios.buscarPorEmail(email);\n  const coincide = await verificar(contrasena, usuario?.hash ?? HASH_DE_RELLENO);\n  if (!usuario || !coincide) {\n    throw new ErrorHttp(401, 'Email o contraseña incorrectos');\n  }\n  const sesion = await sesiones.crear(usuario.id);\n  res.cookie(COOKIE_SESION, sesion.id, { ...opcionesCookie, maxAge: sesiones.DURACION_SESION });\n  res.status(201).json(publico(usuario));\n});\n\nrutasSesiones.delete('/actual', requerirSesion, async (req, res) => {\n  await sesiones.borrar(req.sesion.id);\n  res.clearCookie(COOKIE_SESION, opcionesCookie);\n  res.status(204).end();\n});\n", "intercambios": [{"pedido": "POST /sesiones HTTP/1.1\nContent-Type: application/json\n\n{\n  \"email\": \"ana@mail.com\",\n  \"contrasena\": \"equivocada\"\n}", "respuesta": "HTTP/1.1 401 Unauthorized\n\n{\n  \"error\": \"Email o contraseña incorrectos\"\n}", "terminal": "POST /sesiones → 401 (49 ms)", "nota": "Contraseña equivocada."}, {"pedido": "POST /sesiones HTTP/1.1\nContent-Type: application/json\n\n{\n  \"email\": \"nadie@mail.com\",\n  \"contrasena\": \"equivocada\"\n}", "respuesta": "HTTP/1.1 401 Unauthorized\n\n{\n  \"error\": \"Email o contraseña incorrectos\"\n}", "terminal": "POST /sesiones → 401 (52 ms)", "nota": "Email inexistente: el mismo mensaje y casi el mismo tiempo, gracias al hash de relleno."}, {"pedido": "POST /sesiones HTTP/1.1\nContent-Type: application/json\n\n{\n  \"email\": \"ana@mail.com\",\n  \"contrasena\": \"secreta123\"\n}", "respuesta": "HTTP/1.1 201 Created\nSet-Cookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE;\n    Max-Age=604800; Path=/;\n    HttpOnly; SameSite=Lax\n\n{\n  \"id\": 1,\n  \"email\": \"ana@mail.com\"\n}", "terminal": "POST /sesiones → 201 (53 ms)", "nota": "Set-Cookie: el navegador guarda la sesión. HttpOnly: JavaScript no la puede leer."}], "diff": false, "foco": [[29, 40]]}, {"tipo": "paso", "sec": 8, "titulo": "Exigir una sesión", "idea": "Un middleware lee la cookie, busca la sesión y deja el usuario en req.", "archivo": "src/sesion.js", "codigo": "import * as sesiones from './sesiones.repositorio.js';\nimport * as usuarios from './usuarios.repositorio.js';\nimport { ErrorHttp } from './errores.js';\n\nexport const COOKIE_SESION = 'sesion';\n\nexport const opcionesCookie = {\n  httpOnly: true,\n  sameSite: 'lax',\n  secure: process.env.NODE_ENV === 'production',\n  path: '/',\n};\n\nexport function leerCookie(req, nombre) {\n  const encabezado = req.headers.cookie ?? '';\n  for (const par of encabezado.split(';')) {\n    const [clave, ...valor] = par.trim().split('=');\n    if (clave === nombre) return decodeURIComponent(valor.join('='));\n  }\n  return null;\n}\n\nexport async function requerirSesion(req, res, next) {\n  const id = leerCookie(req, COOKIE_SESION);\n  const sesion = id ? await sesiones.obtenerVigente(id) : null;\n  const usuario = sesion ? await usuarios.obtener(sesion.usuarioId) : null;\n  if (!usuario) throw new ErrorHttp(401, 'Hay que iniciar sesión');\n  req.sesion = sesion;\n  req.usuario = usuario;\n  next();\n}\n", "intercambios": [{"pedido": "GET /contactos HTTP/1.1", "respuesta": "HTTP/1.1 401 Unauthorized\n\n{\n  \"error\": \"Hay que iniciar sesión\"\n}", "terminal": "GET /contactos → 401 (2 ms)", "nota": "Sin cookie: 401."}, {"pedido": "GET /usuarios/yo HTTP/1.1\nCookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE", "respuesta": "HTTP/1.1 200 OK\n\n{\n  \"id\": 1,\n  \"email\": \"ana@mail.com\"\n}", "terminal": "GET /usuarios/yo → 200 (1 ms)"}, {"pedido": "GET /contactos HTTP/1.1\nCookie: sesion=inventada", "respuesta": "HTTP/1.1 401 Unauthorized\n\n{\n  \"error\": \"Hay que iniciar sesión\"\n}", "terminal": "GET /contactos → 401 (2 ms)", "nota": "Una cookie inventada no corresponde a ninguna sesión: 401."}], "diff": false, "foco": [[14, 21], [23, 31]]}, {"tipo": "paso", "sec": 8, "titulo": "Cada contacto tiene dueño", "idea": "El repositorio filtra todos los accesos por usuario. Es el único lugar por donde pasan todos.", "archivo": "src/contactos.repositorio.js", "codigo": "import { leerColeccion, guardarColeccion } from './archivos.js';\n\nfunction sinDueno({ usuarioId, ...contacto }) {\n  return contacto;\n}\n\nexport async function listar(usuarioId) {\n  const contactos = await leerColeccion('contactos');\n  return contactos.filter(c => c.usuarioId === usuarioId).map(sinDueno);\n}\n\nexport async function obtener(usuarioId, id) {\n  const contactos = await leerColeccion('contactos');\n  const contacto = contactos.find(c => c.id === id && c.usuarioId === usuarioId);\n  return contacto ? sinDueno(contacto) : null;\n}\n\nexport async function crear(usuarioId, datos) {\n  const contactos = await leerColeccion('contactos');\n  const id = contactos.reduce((maximo, c) => Math.max(maximo, c.id), 0) + 1;\n  const contacto = { id, usuarioId, ...datos };\n  contactos.push(contacto);\n  await guardarColeccion('contactos', contactos);\n  return sinDueno(contacto);\n}\n\nexport async function reemplazar(usuarioId, id, datos) {\n  const contactos = await leerColeccion('contactos');\n  const indice = contactos.findIndex(c => c.id === id && c.usuarioId === usuarioId);\n  if (indice === -1) return null;\n  contactos[indice] = { id, usuarioId, ...datos };\n  await guardarColeccion('contactos', contactos);\n  return sinDueno(contactos[indice]);\n}\n\nexport async function modificar(usuarioId, id, cambios) {\n  const contactos = await leerColeccion('contactos');\n  const indice = contactos.findIndex(c => c.id === id && c.usuarioId === usuarioId);\n  if (indice === -1) return null;\n  contactos[indice] = { ...contactos[indice], ...cambios, id, usuarioId };\n  await guardarColeccion('contactos', contactos);\n  return sinDueno(contactos[indice]);\n}\n\nexport async function borrar(usuarioId, id) {\n  const contactos = await leerColeccion('contactos');\n  const restantes = contactos.filter(c => !(c.id === id && c.usuarioId === usuarioId));\n  if (restantes.length === contactos.length) return false;\n  await guardarColeccion('contactos', restantes);\n  return true;\n}\n", "intercambios": [{"pedido": "POST /contactos HTTP/1.1\nContent-Type: application/json\nCookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE\n\n{\n  \"nombre\": \"Carla Ruiz\",\n  \"telefono\": \"381-555-0303\"\n}", "respuesta": "HTTP/1.1 201 Created\nLocation: /contactos/1\n\n{\n  \"id\": 1,\n  \"nombre\": \"Carla Ruiz\",\n  \"telefono\": \"381-555-0303\"\n}", "terminal": "POST /contactos → 201 (3 ms)", "nota": "Ana crea un contacto."}, {"pedido": "GET /contactos HTTP/1.1\nCookie: sesion=NQswGWX5qL4g0IMZnR2TUgIEYYS35OhLMsGiuyuMFcI", "respuesta": "HTTP/1.1 200 OK\n\n[]", "terminal": "GET /contactos → 200 (2 ms)", "nota": "Bruno no ve los contactos de Ana."}, {"pedido": "GET /contactos/1 HTTP/1.1\nCookie: sesion=NQswGWX5qL4g0IMZnR2TUgIEYYS35OhLMsGiuyuMFcI", "respuesta": "HTTP/1.1 404 Not Found\n\n{\n  \"error\": \"Contacto inexistente\"\n}", "terminal": "GET /contactos/1 → 404 (2 ms)", "nota": "404 y no 403: no confirmamos que el contacto exista."}], "diff": true, "foco": [[3, 5], [7, 10], [12, 16]]}, {"tipo": "paso", "sec": 8, "titulo": "Montar todo en app.js", "idea": "requerirSesion protege todas las rutas de contactos de una vez.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { rutasUsuarios, rutasSesiones } from './cuentas.rutas.js';\nimport { requerirSesion } from './sesion.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nexport const app = express();\n\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/usuarios', rutasUsuarios);\napp.use('/sesiones', rutasSesiones);\napp.use('/contactos', requerirSesion, rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [], "diff": true, "panel": {"titulo": "Terminal del servidor", "lang": "terminal", "texto": "POST /usuarios → 201 (68 ms)\nPOST /usuarios → 409 (2 ms)\nPOST /usuarios → 400 (1 ms)\nPOST /sesiones → 401 (49 ms)\nPOST /sesiones → 401 (52 ms)\nPOST /sesiones → 201 (53 ms)\nGET /contactos → 401 (2 ms)\nGET /usuarios/yo → 200 (1 ms)\nGET /contactos → 401 (2 ms)\nPOST /contactos → 201 (3 ms)\nGET /contactos → 200 (2 ms)\nGET /contactos/1 → 404 (2 ms)\nDELETE /sesiones/actual → 204 (3 ms)\nGET /contactos → 401 (1 ms)"}}, {"tipo": "paso", "sec": 8, "titulo": "Cerrar sesión", "idea": "Borrar la sesión y pedirle al navegador que borre la cookie.", "archivo": "src/cuentas.rutas.js", "codigo": "import { Router } from 'express';\nimport * as usuarios from './usuarios.repositorio.js';\nimport * as sesiones from './sesiones.repositorio.js';\nimport { validarCredenciales } from './usuarios.validacion.js';\nimport { hashear, verificar } from './contrasenas.js';\nimport { COOKIE_SESION, opcionesCookie, requerirSesion } from './sesion.js';\nimport { ErrorHttp } from './errores.js';\n\nexport const rutasUsuarios = Router();\nexport const rutasSesiones = Router();\n\nfunction publico(usuario) {\n  return { id: usuario.id, email: usuario.email };\n}\n\nrutasUsuarios.post('/', async (req, res) => {\n  const { email, contrasena } = validarCredenciales(req.body);\n  if (await usuarios.buscarPorEmail(email)) {\n    throw new ErrorHttp(409, 'Ya existe una cuenta con ese email');\n  }\n  const usuario = await usuarios.crear(email, await hashear(contrasena));\n  res.status(201).location('/usuarios/yo').json(publico(usuario));\n});\n\nrutasUsuarios.get('/yo', requerirSesion, (req, res) => {\n  res.json(publico(req.usuario));\n});\n\nconst HASH_DE_RELLENO = await hashear('una contraseña que nadie usa');\n\nrutasSesiones.post('/', async (req, res) => {\n  const { email, contrasena } = validarCredenciales(req.body);\n  const usuario = await usuarios.buscarPorEmail(email);\n  const coincide = await verificar(contrasena, usuario?.hash ?? HASH_DE_RELLENO);\n  if (!usuario || !coincide) {\n    throw new ErrorHttp(401, 'Email o contraseña incorrectos');\n  }\n  const sesion = await sesiones.crear(usuario.id);\n  res.cookie(COOKIE_SESION, sesion.id, { ...opcionesCookie, maxAge: sesiones.DURACION_SESION });\n  res.status(201).json(publico(usuario));\n});\n\nrutasSesiones.delete('/actual', requerirSesion, async (req, res) => {\n  await sesiones.borrar(req.sesion.id);\n  res.clearCookie(COOKIE_SESION, opcionesCookie);\n  res.status(204).end();\n});\n", "intercambios": [{"pedido": "DELETE /sesiones/actual HTTP/1.1\nCookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE", "respuesta": "HTTP/1.1 204 No Content\nSet-Cookie: sesion=;\n    Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;\n    HttpOnly; SameSite=Lax", "terminal": "DELETE /sesiones/actual → 204 (3 ms)", "nota": "La cookie vuelve vacía y vencida: el navegador la descarta."}, {"pedido": "GET /contactos HTTP/1.1\nCookie: sesion=m4ja-eNnBI5YIvXUi2gWsEGUPz2E5FCBBWu1k4uurvE", "respuesta": "HTTP/1.1 401 Unauthorized\n\n{\n  \"error\": \"Hay que iniciar sesión\"\n}", "terminal": "GET /contactos → 401 (1 ms)", "nota": "La misma cookie ya no sirve: la sesión no existe."}], "diff": false, "foco": [[43, 47]]}, {"tipo": "paso", "sec": 8, "titulo": "Cookies desde otro origen", "idea": "Con credentials, CORS autoriza las cookies. El origen tiene que ser exacto.", "archivo": "src/app.js", "codigo": "import express from 'express';\nimport cors from 'cors';\nimport { rutasContactos } from './contactos.rutas.js';\nimport { rutasUsuarios, rutasSesiones } from './cuentas.rutas.js';\nimport { requerirSesion } from './sesion.js';\nimport { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';\n\nexport const app = express();\n\napp.use(cors({ origin: 'http://localhost:5173', credentials: true }));\napp.use(registrarPedidos);\napp.use(express.json());\n\napp.use('/usuarios', rutasUsuarios);\napp.use('/sesiones', rutasSesiones);\napp.use('/contactos', requerirSesion, rutasContactos);\n\napp.use(rutaInexistente);\napp.use(manejarErrores);\n", "intercambios": [{"pedido": "OPTIONS /contactos HTTP/1.1\nOrigin: http://localhost:5173\nAccess-Control-Request-Method: GET", "respuesta": "HTTP/1.1 204 No Content\nAccess-Control-Allow-Origin: http://localhost:5173\nAccess-Control-Allow-Credentials: true\nAccess-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE", "terminal": "", "nota": "Del lado del frontend, cada fetch lleva credentials: 'include'."}], "diff": true}, {"tipo": "cierre", "sec": 8, "titulo": "El recorrido de un pedido"}]}</script>
+<script>
+/* ---------- Resaltado de código ---------- */
+const PALABRAS = new Set(('import export from const let var function async await return if else throw new class ' +
+  'extends constructor super for of in typeof null undefined true false this default try catch').split(' '));
+
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const sp = (clase, s) => `<span class="t-${clase}">${esc(s)}</span>`;
+
+function lineaJs(linea) {
+  const re = /(\/\/.*$)|(`(?:\\[\s\S]|[^`\\])*`)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|(\/(?![*\/])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^\/\\\[])+\/[gimsuy]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|(\s+)|([\s\S])/g;
+  let out = '';
+  let previo = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    const [t, com, tpl, str, rx, num, id, ws] = m;
+    if (com) out += sp('com', t);
+    else if (tpl) { out += plantilla(t); previo = 'x'; }
+    else if (str) { out += sp('str', t); previo = 'x'; }
+    else if (rx) {
+      if (previo === '' || /[=(,:!&|?{};\[]$/.test(previo) || previo === 'return') { out += sp('rx', t); previo = 'x'; }
+      else { out += esc('/'); re.lastIndex = m.index + 1; previo = '/'; }
+    }
+    else if (num) { out += sp('num', t); previo = 'x'; }
+    else if (id) {
+      if (PALABRAS.has(id)) out += sp('kw', id);
+      else if (linea[re.lastIndex] === '(') out += sp('fn', id);
+      else if (/^[A-Z]/.test(id)) out += sp('type', id);
+      else out += esc(id);
+      previo = id;
+    }
+    else if (ws) out += t;
+    else { out += esc(t); previo = t; }
+  }
+  return out;
+}
+
+function plantilla(t) {
+  let out = '';
+  let ultimo = 0;
+  const re = /\$\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(t))) {
+    out += sp('str', t.slice(ultimo, m.index));
+    out += sp('kw', '${') + lineaJs(m[1]) + sp('kw', '}');
+    ultimo = re.lastIndex;
+  }
+  return out + sp('str', t.slice(ultimo));
+}
+
+function lineaJson(linea) {
+  const re = /("(?:\\.|[^"\\])*")(\s*:)?|(-?\b\d+(?:\.\d+)?\b)|\b(true|false|null)\b|([\s\S])/g;
+  let out = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    if (m[1]) out += sp(m[2] ? 'key' : 'str', m[1]) + (m[2] ? esc(m[2]) : '');
+    else if (m[3]) out += sp('num', m[3]);
+    else if (m[4]) out += sp('kw', m[4]);
+    else out += esc(m[5]);
+  }
+  return out;
+}
+
+function lineaBash(linea) {
+  if (/^\s*#/.test(linea)) return sp('com', linea);
+  const re = /(\s#.*$)|('[^']*'|"(?:\\.|[^"\\])*")|(\s--?[\w-]+)|(\\$)|(\S+)|(\s+)/g;
+  let out = '';
+  let primera = !/^\s/.test(linea);
+  let m;
+  while ((m = re.exec(linea))) {
+    const [, comentario, cadena, opcion, sigue, palabra, espacio] = m;
+    if (comentario) out += sp('com', comentario);
+    else if (cadena) out += sp('str', cadena);
+    else if (opcion) out += sp('attr', opcion);
+    else if (sigue) out += sp('com', sigue);
+    else if (palabra) {
+      if (primera) out += sp('fn', palabra);
+      else if (/^"?https?:/.test(palabra) || /^[A-Z_]+=/.test(palabra)) out += sp('path', palabra);
+      else out += esc(palabra);
+      primera = false;
+    }
+    else out += espacio;
+  }
+  return out;
+}
+
+function lineasHttp(lineas) {
+  let estado = 'nada';
+  return lineas.map(linea => {
+    let m;
+    if (/^###/.test(linea)) { estado = 'nada'; return sp('com', linea); }
+    if ((m = linea.match(/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)(\s+)(\S+)(.*)$/))) {
+      estado = 'encabezados';
+      return sp('meth', m[1]) + esc(m[2]) + sp('path', m[3]) + sp('ver', m[4]);
+    }
+    if ((m = linea.match(/^(HTTP\/[\d.]+)(\s+)(\d)(\d\d.*)$/))) {
+      estado = 'encabezados';
+      return sp('ver', m[1]) + esc(m[2]) + sp('s' + m[3], m[3] + m[4]);
+    }
+    if (estado === 'encabezados') {
+      if (linea.trim() === '') { estado = 'cuerpo'; return ''; }
+      if ((m = linea.match(/^([\w-]+)(:)(.*)$/))) return sp('attr', m[1]) + esc(m[2]) + sp('hval', m[3]);
+    }
+    if (estado === 'cuerpo') return lineaJson(linea);
+    return esc(linea);
+  });
+}
+
+const SQL_PALABRAS = new Set(('CREATE TABLE IF NOT EXISTS INTEGER TEXT REAL BLOB PRIMARY KEY NULL UNIQUE INSERT INTO ' +
+  'VALUES SELECT FROM WHERE LIKE ORDER BY UPDATE SET DELETE RETURNING AND OR ALTER ADD INDEX ON ASC DESC').split(' '));
+
+function lineaSql(linea) {
+  const re = /(--.*$)|('(?:[^']|'')*')|(`[^`]*`)|(\?|:[A-Za-z_]\w*)|(\b\d+\b)|([A-Za-z_]\w*)|([\s\S])/g;
+  let out = '';
+  let m;
+  while ((m = re.exec(linea))) {
+    if (m[1]) out += sp('com', m[1]);
+    else if (m[2]) out += sp('str', m[2]);
+    else if (m[3]) out += sp('fn', m[3]);
+    else if (m[4]) out += sp('num', m[4]);
+    else if (m[5]) out += sp('num', m[5]);
+    else if (m[6]) out += SQL_PALABRAS.has(m[6].toUpperCase()) ? sp('kw', m[6]) : esc(m[6]);
+    else out += esc(m[7]);
+  }
+  return out;
+}
+
+function lineaEnv(linea) {
+  if (/^\s*#/.test(linea)) return sp('com', linea);
+  const m = linea.match(/^([A-Za-z_]\w*)(=)(.*)$/);
+  if (!m) return esc(linea);
+  return sp('attr', m[1]) + esc(m[2]) + sp('str', m[3]);
+}
+
+function lineaLog(linea) {
+  const m = linea.match(/^(\w+) (\S+) → (\d)(\d\d)(.*)$/);
+  if (!m) return esc(linea);
+  return sp('meth', m[1]) + ' ' + sp('path', m[2]) + ' → ' + sp('s' + m[3], m[3] + m[4]) + sp('com', m[5]);
+}
+
+function lineaArbol(linea) {
+  const m = linea.match(/^([│├└─\s]*)(\S+)(\s{2,}.*)?$/);
+  if (!m) return esc(linea);
+  return sp('dim', m[1]) + esc(m[2]) + (m[3] ? sp('com', m[3]) : '');
+}
+
+function resaltar(lenguaje, lineas) {
+  switch (lenguaje) {
+    case 'js': return lineas.map(lineaJs);
+    case 'json': return lineas.map(lineaJson);
+    case 'bash': return lineas.map(lineaBash);
+    case 'http': return lineasHttp(lineas);
+    case 'log': return lineas.map(lineaLog);
+    case 'sql': return lineas.map(lineaSql);
+    case 'env': return lineas.map(lineaEnv);
+    case 'tree': return lineas.map(lineaArbol);
+    default: return lineas.map(esc);
+  }
+}
+
+
+
+function lineaTerminal(linea) {
+  if (linea.startsWith('$ ')) return sp('dim', '$ ') + sp('cmd', linea.slice(2));
+  if (/→ \d{3}/.test(linea)) return lineaLog(linea);
+  if (/Error|^<anonymous|^Node\.js v/.test(linea)) return sp('err', linea);
+  return esc(linea);
+}
+
+/* ---------- Datos ---------- */
+const DATOS = JSON.parse(document.getElementById('datos').textContent);
+const SECCIONES = DATOS.secciones;
+const PANTALLAS = DATOS.pantallas;
+
+// Un paso se recorre así: primero el código a pantalla completa,
+// después cada pedido con su respuesta, también a pantalla completa.
+const VISTAS = [];
+PANTALLAS.forEach((p, i) => {
+  if (p.tipo !== 'paso') { VISTAS.push({ i, k: 0 }); return; }
+  VISTAS.push({ i, k: -1 });
+  const n = Math.max(1, p.intercambios.length);
+  for (let k = 0; k < n; k++) VISTAS.push({ i, k });
+});
+
+// Número de paso, solo para las pantallas con código
+let contadorPasos = 0;
+PANTALLAS.forEach(p => { if (p.tipo === 'paso') p.numero = ++contadorPasos; });
+
+/* ---------- Diferencias entre versiones de un archivo ---------- */
+function versionAnterior(i) {
+  const actual = PANTALLAS[i];
+  for (let j = i - 1; j >= 0; j--) {
+    const p = PANTALLAS[j];
+    if (p.tipo === 'paso' && p.archivo === actual.archivo && p.codigo !== actual.codigo) return p.codigo;
+  }
+  return null;
+}
+
+function lineasNuevas(antes, ahora) {
+  const a = antes.split('\n');
+  const b = ahora.split('\n');
+  const t = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let x = a.length - 1; x >= 0; x--) {
+    for (let y = b.length - 1; y >= 0; y--) {
+      t[x][y] = a[x] === b[y] ? t[x + 1][y + 1] + 1 : Math.max(t[x + 1][y], t[x][y + 1]);
+    }
+  }
+  const nuevas = new Set();
+  let x = 0;
+  let y = 0;
+  while (y < b.length) {
+    if (x < a.length && a[x] === b[y]) { x++; y++; }
+    else if (x < a.length && t[x + 1][y] >= t[x][y + 1]) x++;
+    else { nuevas.add(y); y++; }
+  }
+  return nuevas;
+}
+
+function codigoDelPaso(i) {
+  const p = PANTALLAS[i];
+  const lineas = p.codigo.replace(/\n$/, '').split('\n');
+  const anterior = p.diff ? (p.anterior ?? versionAnterior(i)) : null;
+  const nuevas = anterior ? lineasNuevas(anterior.replace(/\n$/, ''), lineas.join('\n')) : new Set();
+
+  let visible;
+  if (p.foco) {
+    visible = new Set();
+    p.foco.forEach(([a, b]) => { for (let n = a - 1; n <= b - 1; n++) visible.add(n); });
+  } else if (nuevas.size && lineas.length > 24) {
+    visible = new Set();
+    nuevas.forEach(n => { for (let d = -1; d <= 1; d++) visible.add(n + d); });
+  } else {
+    visible = new Set(lineas.map((_, n) => n));
+  }
+
+  const html = resaltar(p.archivo.endsWith('.js') ? 'js' : 'text', lineas);
+  const salida = [];
+  let n = 0;
+  while (n < lineas.length) {
+    if (visible.has(n)) {
+      salida.push(`<span class="ln${nuevas.has(n) ? ' add' : ''}">${html[n] || ' '}</span>`);
+      n++;
+      continue;
+    }
+    let fin = n;
+    while (fin < lineas.length && !visible.has(fin)) fin++;
+    const cantidad = fin - n;
+    if (cantidad === 1) salida.push(`<span class="ln">${html[n] || ' '}</span>`);
+    else salida.push(`<span class="ln pliegue">⋯ ${cantidad} líneas${anterior ? ' sin cambios' : ''}</span>`);
+    n = fin;
+  }
+  return `<pre class="code">${salida.join('')}</pre>`;
+}
+
+function bloqueCodigo(lenguaje, texto, clase = '') {
+  const lineas = texto.split('\n');
+  const html = lenguaje === 'terminal' ? lineas.map(lineaTerminal) : resaltar(lenguaje, lineas);
+  return `<pre class="code ${clase}">${html.map(h => `<span class="ln">${h || ' '}</span>`).join('')}</pre>`;
+}
+
+/* ---------- Armado de cada tipo de pantalla ---------- */
+function dialogoDe(p, k) {
+  if (!p.intercambios.length) {
+    const panel = p.panel;
+    return `<div class="dialogo"><div class="bloque ancho"><div class="etq">${esc(panel.titulo)}</div>${bloqueCodigo(panel.lang, panel.texto, panel.lang === 'terminal' ? 'term' : '')}</div></div>`;
+  }
+  const x = p.intercambios[k];
+  const total = p.intercambios.length;
+  let html = '';
+  if (total > 1) {
+    const puntos = p.intercambios.map((_, n) => `<i class="${n <= k ? 'si' : ''}"></i>`).join('');
+    html += `<div class="contador">${puntos}<span>${k + 1} de ${total}</span></div>`;
+  }
+  if (x.reinicio) {
+    html += `<div class="bloque ancho"><div class="etq">Terminal del servidor</div>${bloqueCodigo('terminal', `$ node src/servidor.js\n${x.terminal}`, 'term')}</div>`;
+  } else if (x.comando) {
+    html += `<div class="bloque ancho"><div class="etq">Terminal</div>${bloqueCodigo('terminal', `$ ${x.comando}\n${x.terminal}`, 'term')}</div>`;
+  } else {
+    html += `<div class="bloque"><div class="etq">Pedido</div>${bloqueCodigo('http', x.pedido)}</div>`;
+    html += x.respuesta
+      ? `<div class="bloque"><div class="etq">Respuesta</div>${bloqueCodigo('http', x.respuesta)}</div>`
+      : `<div class="caida">Sin respuesta: el servidor se cayó.</div>`;
+    if (x.terminal) html += `<div class="bloque ancho"><div class="etq">Terminal del servidor</div>${bloqueCodigo('terminal', x.terminal, 'term')}</div>`;
+  }
+  if (x.nota) html += `<div class="nota">${esc(x.nota)}</div>`;
+  return `<div class="dialogo">${html}</div>`;
+}
+
+function pantallaPaso(p, i, k) {
+  return `
+    <div class="cab"><span class="num">Paso ${p.numero}</span><h2>${esc(p.titulo)}</h2></div>
+    <p class="idea">${esc(p.idea)}</p>
+    <div class="dos">
+      <div class="col">
+        <div class="rotulo"><span class="archivo">${esc(p.archivo)}</span>${k < 0 ? `<span>→ ${p.intercambios.length ? (p.intercambios.length > 1 ? `${p.intercambios.length} pedidos` : 'el pedido') : esc(p.panel.titulo.toLowerCase())}</span>` : ''}</div>
+        <div class="caja" data-ajuste="codigo">${codigoDelPaso(i)}</div>
+      </div>
+      <div class="col">
+        <div class="caja-libre" data-ajuste="dialogo">${dialogoDe(p, Math.max(0, k))}</div>
+      </div>
+    </div>`;
+}
+
+const CONCEPTOS = {
+  CUENTAS: () => `
+    <div class="par">
+      <div class="tarjeta"><b>Autenticación</b><span>¿Quién hace el pedido?</span><span>Se resuelve al iniciar sesión.</span><em class="f4">401: no sé quién sos</em></div>
+      <div class="tarjeta"><b>Autorización</b><span>¿Qué puede hacer?</span><span>Se resuelve en cada pedido.</span><em class="f4">403: sé quién sos, pero no podés</em></div>
+    </div>`,
+  COOKIE: p => `
+    <div class="bloque"><div class="etq">Respuesta al iniciar sesión</div>${bloqueCodigo('http', p.respuesta)}</div>
+    <div class="bloque"><div class="etq">Cada pedido siguiente</div>${bloqueCodigo('http', p.pedido)}</div>
+    <ol class="plain">
+      <li><span class="mono">HttpOnly</span>: JavaScript no puede leerla</li>
+      <li><span class="mono">SameSite=Lax</span>: otros sitios no la usan en segundo plano</li>
+      <li><span class="mono">Max-Age</span>: dura 7 días; <span class="mono">Secure</span> la limita a HTTPS en producción</li>
+    </ol>`,
+  DIALOGO: p => `
+    <div class="par">
+      <div class="bloque"><div class="etq">Pedido</div>${bloqueCodigo('http', p.pedido)}</div>
+      <div class="bloque"><div class="etq">Respuesta</div>${bloqueCodigo('http', p.respuesta)}</div>
+    </div>
+    <ol class="plain">
+      <li>la primera línea: método y ruta, o código de estado</li>
+      <li>los encabezados: <span class="mono">Content-Type</span> dice el formato del cuerpo</li>
+      <li>una línea en blanco y el cuerpo</li>
+    </ol>`,
+  CODIGOS: () => `
+    <div>
+      <div class="familia f2"><b>2xx</b><span>salió bien<em>200 201 204</em></span></div>
+      <div class="familia f3"><b>3xx</b><span>el recurso está en otro lado<em>301 304</em></span></div>
+      <div class="familia f4"><b>4xx</b><span>el cliente se equivocó<em>400 404 409</em></span></div>
+      <div class="familia f5"><b>5xx</b><span>el servidor falló<em>500</em></span></div>
+    </div>`,
+  TABLA: () => `
+    <table class="t">
+      <tr><th>Método</th><th>Ruta</th><th>Qué hace</th><th>Si sale bien</th></tr>
+      <tr><td class="m">GET</td><td class="mono">/contactos</td><td>lista todos</td><td>200 y un arreglo</td></tr>
+      <tr><td class="m">GET</td><td class="mono">/contactos?buscar=ana</td><td>lista los que coinciden</td><td>200 y un arreglo</td></tr>
+      <tr><td class="m">GET</td><td class="mono">/contactos/3</td><td>trae uno</td><td>200 y un objeto</td></tr>
+      <tr><td class="m">POST</td><td class="mono">/contactos</td><td>crea</td><td>201 y el creado</td></tr>
+      <tr><td class="m">PUT</td><td class="mono">/contactos/3</td><td>reemplaza completo</td><td>200 y el contacto</td></tr>
+      <tr><td class="m">PATCH</td><td class="mono">/contactos/3</td><td>cambia algunos campos</td><td>200 y el contacto</td></tr>
+      <tr><td class="m">DELETE</td><td class="mono">/contactos/3</td><td>borra</td><td>204 sin cuerpo</td></tr>
+    </table>`,
+};
+
+function pantallaConcepto(p) {
+  return `
+    <div class="cab"><h2>${esc(p.titulo)}</h2></div>
+    <p class="idea">${esc(p.idea)}</p>
+    <div class="area" data-ajuste="area" data-tope="1.6"><div class="cuerpo">${CONCEPTOS[p.html](p)}</div></div>`;
+}
+
+function pantallaPortada() {
+  return `
+    <div class="area portada" data-ajuste="area" data-tope="1.2"><div class="cuerpo">
+      <h1>La API de la agenda,<br>paso a paso</h1>
+      <p class="sub">Construimos el servidor de a un cambio por vez. En cada paso, el código que cambió y lo que responde el servidor de verdad.</p>
+      <div class="boceto">
+        <div><b>1. El código</b>Las líneas nuevas, resaltadas. Lo que no cambió, plegado.</div>
+        <div><b>2. El diálogo</b>El pedido que enviamos, la respuesta que llegó y lo que mostró la terminal.</div>
+      </div>
+      <p class="ayuda"><kbd>←</kbd> <kbd>→</kbd> para avanzar, <kbd>A</kbd> para ver código y diálogo juntos, <kbd>O</kbd> para el índice, <kbd>F</kbd> para pantalla completa.</p>
+    </div></div>`;
+}
+
+function pantallaCierre(p) {
+  return `
+    <div class="cab"><h2>${esc(p.titulo)}</h2></div>
+    <div class="area" data-ajuste="area" data-tope="1.5"><div class="cuerpo">
+      <div class="flow">
+        <div class="node pedido"><div class="b">pedido</div></div>
+        <div class="node"><div class="b">registro</div><small>anota</small></div>
+        <div class="node"><div class="b">express.json</div><small>lee el cuerpo</small></div>
+        <div class="node"><div class="b">requerirSesion</div><small>quién pide</small></div>
+        <div class="node"><div class="b">rutas</div><small>validan y piden</small></div>
+        <div class="node"><div class="b">repositorio</div><small>filtra por dueño</small></div>
+        <div class="node resp"><div class="b">respuesta</div><small>código y JSON</small></div>
+      </div>
+      <p class="lead">La cookie dice quién pide; el repositorio decide qué puede ver. Si algo falla en cualquier punto, se lanza un error y lo responde un solo manejador.</p>
+    </div></div>`;
+}
+
+/* ---------- Ajuste al espacio disponible ---------- */
+const ZOOM = CSS.supports('zoom', '1');
+
+function buscarZoom(entra, minimo, maximo) {
+  if (entra(maximo)) return maximo;
+  let bajo = minimo;
+  let alto = maximo;
+  for (let n = 0; n < 10; n++) {
+    const medio = (bajo + alto) / 2;
+    if (entra(medio)) bajo = medio;
+    else alto = medio;
+  }
+  entra(bajo);
+  return bajo;
+}
+
+function ajustarCodigo(caja, tope = 1.6) {
+  const pre = caja.firstElementChild;
+  return buscarZoom(z => {
+    pre.style.zoom = z;
+    const c = caja.getBoundingClientRect();
+    const r = pre.getBoundingClientRect();
+    return r.width <= c.width - 4 && r.bottom <= c.bottom - 8;
+  }, 0.5, tope);
+}
+
+function ajustarBloque(caja, tope) {
+  const cuerpo = caja.firstElementChild;
+  const ancho = caja.clientWidth;
+  return buscarZoom(z => {
+    cuerpo.style.zoom = z;
+    cuerpo.style.width = caja.dataset.ajuste === 'dialogo' ? `${ancho / z}px` : '';
+    const c = caja.getBoundingClientRect();
+    const r = cuerpo.getBoundingClientRect();
+    if (r.height > c.height + 1 || r.width > c.width + 1) return false;
+    if (cuerpo.scrollWidth > cuerpo.clientWidth + 1) return false;
+    return [...cuerpo.querySelectorAll('pre')].every(p => p.scrollWidth <= p.clientWidth + 1);
+  }, 0.4, tope);
+}
+
+// Código y diálogo pueden ir lado a lado o uno arriba del otro.
+// Se prueban varias proporciones y se queda la que deja la letra más grande.
+const DISPOSICIONES = [
+  ['lado', 0.5], ['lado', 0.58], ['lado', 0.66],
+  ['apilado', 0.45], ['apilado', 0.55], ['apilado', 0.65],
+];
+
+function disponer(dos, modo, f) {
+  dos.classList.toggle('apilado', modo === 'apilado');
+  dos.style.gridTemplateColumns = modo === 'lado' ? `minmax(0, ${f}fr) minmax(0, ${1 - f}fr)` : 'minmax(0, 1fr)';
+  dos.style.gridTemplateRows = modo === 'lado' ? '' : `minmax(0, ${f}fr) minmax(0, ${1 - f}fr)`;
+}
+
+// Con A se ven el código y el diálogo juntos en la misma pantalla.
+let juntos = false;
+
+function ajustarPaso(dos) {
+  const ampliado = juntos ? null : (VISTAS[actual].k < 0 ? 'codigo' : 'dialogo');
+  const codigo = dos.querySelector('[data-ajuste=codigo]');
+  const dialogo = dos.querySelector('[data-ajuste=dialogo]');
+  dos.classList.toggle('solo-codigo', ampliado === 'codigo');
+  dos.classList.toggle('solo-dialogo', ampliado === 'dialogo');
+  if (ampliado === 'codigo') { dos.style.gridTemplateColumns = ''; dos.style.gridTemplateRows = ''; ajustarCodigo(codigo, 2); return; }
+  if (ampliado === 'dialogo') {
+    dos.style.gridTemplateColumns = '';
+    dos.style.gridTemplateRows = '';
+    // Pedido y respuesta lado a lado, o uno debajo del otro: lo que deje la letra más grande
+    const d = dialogo.firstElementChild;
+    d.classList.remove('apilada');
+    const enFila = ajustarBloque(dialogo, 2.4);
+    d.classList.add('apilada');
+    const enColumna = ajustarBloque(dialogo, 2.4);
+    if (enFila > enColumna) { d.classList.remove('apilada'); ajustarBloque(dialogo, 2.4); }
+    return;
+  }
+  const medir = () => Math.min(20 * ajustarCodigo(codigo), 18 * ajustarBloque(dialogo, 1.5));
+  let mejor = null;
+  for (const [modo, f] of DISPOSICIONES) {
+    disponer(dos, modo, f);
+    const letra = medir();
+    if (!mejor || letra > mejor.letra) mejor = { modo, f, letra };
+  }
+  disponer(dos, mejor.modo, mejor.f);
+  medir();
+}
+
+function ajustar() {
+  if (!ZOOM) return;
+  const dos = contenedor.querySelector('.dos');
+  if (dos) ajustarPaso(dos);
+  contenedor.querySelectorAll('[data-ajuste=area]').forEach(caja => ajustarBloque(caja, Number(caja.dataset.tope) || 1.5));
+}
+
+/* ---------- Navegación ---------- */
+const stage = document.getElementById('stage');
+const contenedor = document.getElementById('pantalla');
+const nodos = document.getElementById('nodes');
+const contador = document.getElementById('contador');
+const overview = document.getElementById('overview');
+const ovGrid = document.getElementById('ovGrid');
+let actual = 0;
+
+const ANCHO = 1280;
+function escalar() {
+  const alto = Math.round(Math.min(1024, Math.max(640, ANCHO * window.innerHeight / window.innerWidth)));
+  stage.style.height = `${alto}px`;
+  const s = Math.min(window.innerWidth / ANCHO, window.innerHeight / alto);
+  stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+
+function dibujar() {
+  const { i, k } = VISTAS[actual];
+  const p = PANTALLAS[i];
+  const html = p.tipo === 'paso' ? pantallaPaso(p, i, k)
+    : p.tipo === 'concepto' ? pantallaConcepto(p)
+    : p.tipo === 'portada' ? pantallaPortada()
+    : pantallaCierre(p);
+  contenedor.classList.remove('on');
+  contenedor.innerHTML = html;
+  void contenedor.offsetWidth;
+  contenedor.classList.add('on');
+  ajustar();
+  actualizarBarra(p, i);
+  history.replaceState(null, '', `#${actual + 1}`);
+}
+
+function mostrar(n) {
+  actual = Math.max(0, Math.min(VISTAS.length - 1, n));
+  dibujar();
+}
+
+function primeraVista(i) { return VISTAS.findIndex(v => v.i === i); }
+
+function construirBarra() {
+  nodos.innerHTML = SECCIONES.map((nombre, k) =>
+    `${k ? '<span class="link"></span>' : ''}<button class="sec" data-k="${k}">${nombre}</button>`).join('');
+  nodos.addEventListener('click', e => {
+    const b = e.target.closest('.sec');
+    if (!b) return;
+    const i = PANTALLAS.findIndex(p => p.sec === Number(b.dataset.k));
+    if (i >= 0) mostrar(primeraVista(i));
+  });
+}
+
+function actualizarBarra(p, i) {
+  nodos.querySelectorAll('.sec').forEach(b => {
+    const k = Number(b.dataset.k);
+    b.classList.toggle('now', k === p.sec);
+    b.classList.toggle('done', k < p.sec);
+  });
+  nodos.querySelectorAll('.link').forEach((l, k) => l.classList.toggle('done', k < p.sec));
+  contador.textContent = `${i + 1} / ${PANTALLAS.length}`;
+}
+
+function construirIndice() {
+  ovGrid.innerHTML = PANTALLAS.map((p, i) => {
+    const titulo = p.tipo === 'portada' ? 'La API de la agenda, paso a paso' : p.titulo;
+    const seccion = p.sec >= 0 ? SECCIONES[p.sec] : 'Portada';
+    const etiqueta = p.tipo === 'paso' ? `Paso ${p.numero} · ${seccion}` : seccion;
+    return `<button class="card" data-i="${i}"><b>${i + 1}</b><span>${esc(titulo)}<i>${esc(etiqueta)}</i></span></button>`;
+  }).join('');
+  ovGrid.addEventListener('click', e => {
+    const c = e.target.closest('.card');
+    if (!c) return;
+    alternarIndice(false);
+    mostrar(primeraVista(Number(c.dataset.i)));
+  });
+}
+
+function alternarIndice(abrir = !overview.classList.contains('on')) {
+  overview.classList.toggle('on', abrir);
+  if (!abrir) return;
+  const i = VISTAS[actual].i;
+  ovGrid.querySelectorAll('.card').forEach((c, n) => c.classList.toggle('now', n === i));
+  const c = ovGrid.querySelector('.card.now');
+  if (c) { c.scrollIntoView({ block: 'center' }); c.focus(); }
+}
+
+function pantallaCompleta() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (overview.classList.contains('on')) {
+    if (k === 'Escape' || k === 'o' || k === 'O') { e.preventDefault(); alternarIndice(false); }
+    return;
+  }
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(k)) { e.preventDefault(); mostrar(actual + 1); }
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); mostrar(actual - 1); }
+  else if (k === 'Home') mostrar(0);
+  else if (k === 'End') mostrar(VISTAS.length - 1);
+  else if (k === 'o' || k === 'O') alternarIndice(true);
+  else if (k === 'f' || k === 'F') pantallaCompleta();
+  else if (k === 'a' || k === 'A') { juntos = !juntos; ajustar(); }
+});
+
+document.getElementById('prev').addEventListener('click', () => mostrar(actual - 1));
+document.getElementById('next').addEventListener('click', () => mostrar(actual + 1));
+
+let toqueX = null;
+stage.addEventListener('touchstart', e => { toqueX = e.touches[0].clientX; }, { passive: true });
+stage.addEventListener('touchend', e => {
+  if (toqueX === null) return;
+  const dx = e.changedTouches[0].clientX - toqueX;
+  if (Math.abs(dx) > 50) mostrar(actual + (dx < 0 ? 1 : -1));
+  toqueX = null;
+});
+
+window.addEventListener('resize', () => { escalar(); ajustar(); });
+
+construirBarra();
+construirIndice();
+escalar();
+mostrar((parseInt(location.hash.slice(1), 10) || 1) - 1);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustar);
+</script>
+</body>
+</html>

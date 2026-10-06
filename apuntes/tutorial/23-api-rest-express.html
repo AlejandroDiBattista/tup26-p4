@@ -177,15 +177,15 @@ table.dbt td.n { text-align: right; }
 /* Barra de recorrido */
 .rail {
   position: absolute; left: 0; right: 0; bottom: 0; height: 50px;
-  display: flex; align-items: center; gap: 14px; padding: 0 16px 0 24px;
+  display: flex; align-items: center; gap: 10px; padding: 0 12px 0 16px;
   border-top: 1px solid #DCE3EE; background: #fff;
 }
 .nodes { flex: 1; display: flex; align-items: center; }
 .nodes .link { flex: 1; height: 2px; background: var(--linea); min-width: 8px; }
 .nodes .link.done { background: var(--acento); }
 .sec {
-  font: 600 16px var(--sans); border: 2px solid var(--linea); color: var(--gris); background: #fff;
-  border-radius: 999px; padding: 3px 11px; cursor: pointer; white-space: nowrap;
+  font: 600 14px var(--sans); border: 2px solid var(--linea); color: var(--gris); background: #fff;
+  border-radius: 999px; padding: 2px 8px; cursor: pointer; white-space: nowrap;
 }
 .sec.done { border-color: var(--acento); color: var(--acento); }
 .sec.now { background: var(--acento); border-color: var(--acento); color: #fff; }
@@ -1268,7 +1268,190 @@ console.log(await respuesta.json());
   <p class="note"><code>fetch</code> no falla con 404 ni 400. Mirá <code>respuesta.ok</code>.</p>
 </section>
 
-<section class="slide" data-sec="8">
+<!-- ============ ARCHIVOS ESTÁTICOS ============ -->
+<section class="slide" data-sec="9">
+  <h2>Archivos estáticos</h2>
+  <p class="lead">El mismo servidor puede entregar el frontend: páginas, estilos, JavaScript e imágenes.</p>
+<script type="text/x-code" data-lang="tree">
+public/
+├── index.html        →  GET /
+├── estilos.css       →  GET /estilos.css
+└── img/
+    └── logo.png      →  GET /img/logo.png
+</script>
+  <p class="note">Leer el archivo y enviarlo con el <code>Content-Type</code> correcto. Primero a mano.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>El tipo sale de la extensión</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/estatico.js">
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+const TIPOS = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+};
+</script>
+  <p class="note">Si un CSS llega con otro <code>Content-Type</code>, el navegador no lo aplica.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>Un middleware a mano</h2>
+<script type="text/x-code" data-lang="js">
+export function servirCarpeta(carpeta) {
+  return async (req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+
+    let relativa;
+    try {
+      relativa = decodeURIComponent(req.path);
+    } catch {
+      return next();
+    }
+    if (relativa.endsWith('/')) relativa += 'index.html';
+</script>
+  <p class="note">Solo <code>GET</code> y <code>HEAD</code>. Ruta decodificada. Carpetas completadas con <code>index.html</code>.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>Leer y enviar</h2>
+<script type="text/x-code" data-lang="js">
+    const ruta = path.join(carpeta, relativa);
+    if (!ruta.startsWith(carpeta + path.sep)) return next();
+
+    try {
+      const contenido = await readFile(ruta);
+      res.type(TIPOS[path.extname(ruta)] ?? 'application/octet-stream');
+      res.send(contenido);
+    } catch (error) {
+      if (error.code === 'ENOENT' || error.code === 'EISDIR') return next();
+      throw error;
+    }
+  };
+}
+</script>
+  <p class="note">Si el archivo no existe, <code>next()</code>: el pedido sigue hasta las rutas o hasta <code>rutaInexistente</code>.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>Que nadie salga de la carpeta</h2>
+<script type="text/x-code" data-lang="text">
+GET /%2e%2e/package.json
+
+decodificada   /../package.json
+path.join      /proyecto/package.json      fuera de public/
+startsWith     false                       next()
+</script>
+  <p class="lead">Sin el control, el servidor entregaría cualquier archivo que pueda leer: <code>.env</code>, <code>datos/</code>.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>Una función que arma un middleware</h2>
+<script type="text/x-code" data-lang="js">
+app.use(servirCarpeta(PUBLICA));   // devuelve un middleware
+app.use(express.json());           // también
+app.use(registrarPedidos);         // ya es un middleware
+</script>
+  <p class="lead"><code>servirCarpeta</code> recibe la configuración y devuelve el middleware. Por eso <code>express.json()</code> lleva paréntesis.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>express.static</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/app.js">
+import express from 'express';
++ import path from 'node:path';
+import { rutasContactos } from './contactos.rutas.js';
+import { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';
+
++ const PUBLICA = path.join(import.meta.dirname, '..', 'public');
+
+export const app = express();
+
++ app.use(express.static(PUBLICA, { maxAge: '1h' }));
+app.use(registrarPedidos);
+app.use(express.json());
+
+app.use('/contactos', rutasContactos);
+
+app.use(rutaInexistente);
+app.use(manejarErrores);
+</script>
+  <p class="note">Ruta absoluta con <code>import.meta.dirname</code>: <code>'public'</code> solo buscaría donde ejecutás <code>node</code>.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>Lo que agrega express.static</h2>
+  <ul class="plain">
+    <li>cientos de tipos de archivo</li>
+    <li>envía de a trozos: no carga un video entero en memoria</li>
+    <li><code>ETag</code> y <code>Last-Modified</code>: el navegador pregunta si cambió</li>
+    <li><code>maxAge</code>: durante ese tiempo, ni pregunta</li>
+    <li>pedidos parciales, para adelantar un video</li>
+    <li>no sirve archivos ocultos</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>El caché del navegador</h2>
+<script type="text/x-code" data-lang="http" data-cap="Primera vez">
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=3600
+Last-Modified: Tue, 06 Oct 2026 04:58:42 GMT
+ETag: W/"49-1a10f9408c6"
+Content-Type: image/png
+</script>
+<script type="text/x-code" data-lang="http" data-cap="Otra vez, con la huella">
+GET /img/logo.png HTTP/1.1
+If-None-Match: W/"49-1a10f9408c6"
+
+HTTP/1.1 304 Not Modified
+</script>
+  <p class="note">304: no cambió, el servidor no la envía de nuevo.</p>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>El lugar en la cadena</h2>
+  <ul class="plain">
+    <li>antes de <code>registrarPedidos</code>: las imágenes no llenan el registro</li>
+    <li>antes de las rutas: si el archivo no existe, pasa enseguida</li>
+    <li>antes de exigir una sesión: la página de inicio de sesión se puede pedir</li>
+  </ul>
+<script type="text/x-code" data-lang="js">
+app.use('/archivos', express.static(PUBLICA));   // /archivos/img/logo.png
+</script>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>Un frontend de una sola página</h2>
+<script type="text/x-code" data-lang="js">
+app.use('/api/contactos', rutasContactos);
+
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !req.accepts('html') || req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(PUBLICA, 'index.html'));
+});
+</script>
+  <div class="aside">
+    <p>Si recargan en <code>/contactos/7</code>, no hay archivo: llega <code>index.html</code> y el JavaScript de la página resuelve la ruta.</p>
+    <p>Una imagen no pide HTML: sigue siendo 404. La API pasa a <code>/api</code> para no pisarse.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="9">
+  <h2>En producción</h2>
+  <ul class="plain">
+    <li>los archivos estáticos los suele servir nginx o una CDN, y Express queda para la API</li>
+    <li>las imágenes que suben los usuarios son otro tema: recibirlas con <code>multer</code>, validarlas y decidir dónde guardarlas</li>
+    <li>en Express 5, <code>app.get('*')</code> ya no funciona: el comodín es <code>'/{*ruta}'</code></li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="9">
   <h2>Otro puerto es otro origen</h2>
   <div class="duo">
     <div class="box">Página<small>localhost:5173</small></div>
@@ -1279,7 +1462,7 @@ console.log(await respuesta.json());
   <p class="note">curl y Node no aplican esta regla. Por eso funciona en la terminal y falla en el navegador.</p>
 </section>
 
-<section class="slide" data-sec="8">
+<section class="slide" data-sec="9">
   <h2>Habilitar CORS</h2>
 <script type="text/x-code" data-lang="bash">
 npm install cors
@@ -1297,13 +1480,391 @@ app.use(express.json());
   <p class="note">Agrega <code>Access-Control-Allow-Origin</code> y atiende el <code>OPTIONS</code> previo. Si el frontend sale de <code>express.static</code>, no hace falta.</p>
 </section>
 
-<section class="slide" data-sec="8">
+<!-- ============ CUENTAS ============ -->
+<section class="slide" data-sec="10">
+  <h2>Autenticación y autorización</h2>
+  <div class="two">
+    <div class="box">Autenticación<small>¿quién hace el pedido? Se resuelve al iniciar sesión.</small></div>
+    <div class="box">Autorización<small>¿qué puede hacer? Se resuelve en cada pedido.</small></div>
+  </div>
+  <div class="familias">
+    <div class="familia f4"><b>401</b><span>no sé quién sos</span><em></em></div>
+    <div class="familia f4"><b>403</b><span>sé quién sos, pero no podés</span><em></em></div>
+  </div>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>La sesión viaja en una cookie</h2>
+  <p class="lead">El servidor verifica la contraseña una vez y pide guardar un identificador. Después, el navegador lo envía solo.</p>
+<script type="text/x-code" data-lang="http" data-cap="Al iniciar sesión">
+HTTP/1.1 201 Created
+Set-Cookie: sesion=NIcPHN3zlSBfozgnolGsqWWJi589nP4iUwhNytyfs9s;
+    Max-Age=604800; Path=/; HttpOnly; SameSite=Lax
+</script>
+<script type="text/x-code" data-lang="http" data-cap="En cada pedido siguiente">
+GET /contactos HTTP/1.1
+Cookie: sesion=NIcPHN3zlSBfozgnolGsqWWJi589nP4iUwhNytyfs9s
+</script>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Las opciones de la cookie</h2>
+  <table class="t">
+    <tr><td class="mono">HttpOnly</td><td>JavaScript no puede leerla: un script inyectado no roba la sesión</td></tr>
+    <tr><td class="mono">SameSite=Lax</td><td>otros sitios no la usan en pedidos de segundo plano</td></tr>
+    <tr><td class="mono">Secure</td><td>solo viaja por HTTPS; la activamos en producción</td></tr>
+    <tr><td class="mono">Max-Age</td><td>cuántos segundos dura</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Por qué cookies y no JWT</h2>
+  <ul class="plain">
+    <li>un JWT se guarda donde JavaScript lo lea: un script inyectado también lo lee</li>
+    <li>vale hasta que vence: cerrar sesión antes requiere guardar una lista en el servidor</li>
+    <li>con una sesión guardada y una cookie <code>HttpOnly</code>, cerrar sesión es borrar una fila</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>La API de cuentas</h2>
+  <table class="t">
+    <tr><th>Método</th><th>Ruta</th><th>Qué hace</th><th>Si sale bien</th></tr>
+    <tr><td class="m">POST</td><td class="mono">/usuarios</td><td>registra una cuenta</td><td>201</td></tr>
+    <tr><td class="m">POST</td><td class="mono">/sesiones</td><td>inicia sesión</td><td>201 y la cookie</td></tr>
+    <tr><td class="m">GET</td><td class="mono">/usuarios/yo</td><td>quién tiene la sesión</td><td>200</td></tr>
+    <tr><td class="m">DELETE</td><td class="mono">/sesiones/actual</td><td>cierra la sesión</td><td>204</td></tr>
+  </table>
+  <p class="note">Iniciar sesión es crear una sesión. Sin verbos en la URL.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Una ayuda para las colecciones</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/archivos.js">
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+
+const CARPETA = new URL('../datos/', import.meta.url);
+
+export async function leerColeccion(nombre) {
+  try {
+    const texto = await readFile(new URL(`${nombre}.json`, CARPETA), 'utf-8');
+    return JSON.parse(texto);
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+export async function guardarColeccion(nombre, elementos) {
+  await mkdir(CARPETA, { recursive: true });
+  await writeFile(new URL(`${nombre}.json`, CARPETA), JSON.stringify(elementos, null, 2));
+}
+</script>
+  <p class="note"><code>leerColeccion('usuarios')</code> lee <code>datos/usuarios.json</code>.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Las contraseñas no se guardan</h2>
+  <ul class="plain">
+    <li>se guarda un hash: no se puede invertir</li>
+    <li>con una función lenta a propósito, para frenar a quien prueba millones</li>
+    <li>con una sal aleatoria por usuario: misma contraseña, hash distinto</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Hashear y verificar</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contrasenas.js">
+import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
+
+const derivar = promisify(scrypt);
+
+export async function hashear(contrasena) {
+  const sal = randomBytes(16).toString('hex');
+  const clave = await derivar(contrasena, sal, 64);
+  return `${sal}:${clave.toString('hex')}`;
+}
+
+export async function verificar(contrasena, guardado) {
+  const [sal, claveGuardada] = guardado.split(':');
+  const clave = await derivar(contrasena, sal, 64);
+  return timingSafeEqual(clave, Buffer.from(claveGuardada, 'hex'));
+}
+</script>
+  <p class="note"><code>timingSafeEqual</code> tarda siempre lo mismo: no delata cuántos bytes coinciden.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Validar las credenciales</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/usuarios.validacion.js">
+export function validarCredenciales(datos) {
+  if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) {
+    throw new ErrorHttp(400, 'El cuerpo debe ser un objeto JSON');
+  }
+
+  const errores = [];
+  if (typeof datos.email !== 'string' || !FORMATO_EMAIL.test(datos.email)) {
+    errores.push('email: no tiene un formato válido');
+  }
+  if (typeof datos.contrasena !== 'string' || datos.contrasena.length < 8) {
+    errores.push('contrasena: debe tener al menos 8 caracteres');
+  }
+  if (errores.length > 0) {
+    throw new ErrorHttp(400, 'Datos inválidos', errores);
+  }
+
+  return { email: datos.email.trim().toLowerCase(), contrasena: datos.contrasena };
+}
+</script>
+  <p class="note">El email va en minúsculas. La contraseña no se toca.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Crear una sesión</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/sesiones.repositorio.js">
+export const DURACION_SESION = 7 * 24 * 60 * 60 * 1000;   // 7 días, en milisegundos
+
+export async function crear(usuarioId) {
+  const ahora = Date.now();
+  const vigentes = (await leerColeccion('sesiones')).filter(s => s.vence > ahora);
+  const sesion = {
+    id: randomBytes(32).toString('base64url'),
+    usuarioId,
+    vence: ahora + DURACION_SESION,
+  };
+  vigentes.push(sesion);
+  await guardarColeccion('sesiones', vigentes);
+  return sesion;
+}
+</script>
+  <p class="note"><code>randomBytes</code> usa el generador criptográfico. <code>Math.random()</code> se puede predecir.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Leer la cookie</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/sesion.js">
+export function leerCookie(req, nombre) {
+  const encabezado = req.headers.cookie ?? '';
+  for (const par of encabezado.split(';')) {
+    const [clave, ...valor] = par.trim().split('=');
+    if (clave === nombre) return decodeURIComponent(valor.join('='));
+  }
+  return null;
+}
+</script>
+  <p class="note">Express escribe cookies con <code>res.cookie</code>, pero no las lee: el encabezado llega como texto.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Exigir una sesión</h2>
+<script type="text/x-code" data-lang="js">
+export async function requerirSesion(req, res, next) {
+  const id = leerCookie(req, COOKIE_SESION);
+  const sesion = id ? await sesiones.obtenerVigente(id) : null;
+  const usuario = sesion ? await usuarios.obtener(sesion.usuarioId) : null;
+  if (!usuario) throw new ErrorHttp(401, 'Hay que iniciar sesión');
+  req.sesion = sesion;
+  req.usuario = usuario;
+  next();
+}
+</script>
+  <p class="lead">Busca, deja el usuario en <code>req</code> y pasa. Si falta algo, 401.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Registrarse</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/cuentas.rutas.js">
+function publico(usuario) {
+  return { id: usuario.id, email: usuario.email };
+}
+
+rutasUsuarios.post('/', async (req, res) => {
+  const { email, contrasena } = validarCredenciales(req.body);
+  if (await usuarios.buscarPorEmail(email)) {
+    throw new ErrorHttp(409, 'Ya existe una cuenta con ese email');
+  }
+  const usuario = await usuarios.crear(email, await hashear(contrasena));
+  res.status(201).location('/usuarios/yo').json(publico(usuario));
+});
+</script>
+  <p class="note">El hash nunca sale de la API. Registrarse no inicia sesión.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Iniciar sesión</h2>
+<script type="text/x-code" data-lang="js">
+const HASH_DE_RELLENO = await hashear('una contraseña que nadie usa');
+
+rutasSesiones.post('/', async (req, res) => {
+  const { email, contrasena } = validarCredenciales(req.body);
+  const usuario = await usuarios.buscarPorEmail(email);
+  const coincide = await verificar(contrasena, usuario?.hash ?? HASH_DE_RELLENO);
+  if (!usuario || !coincide) {
+    throw new ErrorHttp(401, 'Email o contraseña incorrectos');
+  }
+  const sesion = await sesiones.crear(usuario.id);
+  res.cookie(COOKIE_SESION, sesion.id, { ...opcionesCookie, maxAge: sesiones.DURACION_SESION });
+  res.status(201).json(publico(usuario));
+});
+</script>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Sin pistas para un atacante</h2>
+  <ul class="plain">
+    <li>el mismo mensaje para email inexistente y contraseña equivocada</li>
+    <li>el mismo tiempo: si el email no existe, igual se calcula un hash contra <code>HASH_DE_RELLENO</code></li>
+  </ul>
+<script type="text/x-code" data-lang="log">
+POST /sesiones → 401 (56 ms)
+POST /sesiones → 401 (50 ms)
+POST /sesiones → 201 (54 ms)
+</script>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Cerrar sesión</h2>
+<script type="text/x-code" data-lang="js">
+rutasSesiones.delete('/actual', requerirSesion, async (req, res) => {
+  await sesiones.borrar(req.sesion.id);
+  res.clearCookie(COOKIE_SESION, opcionesCookie);
+  res.status(204).end();
+});
+</script>
+<script type="text/x-code" data-lang="http">
+HTTP/1.1 204 No Content
+Set-Cookie: sesion=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;
+    HttpOnly; SameSite=Lax
+</script>
+  <p class="note">La cookie vuelve vacía y vencida: el navegador la descarta.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Cada contacto tiene dueño</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.repositorio.js">
+function sinDueno({ usuarioId, ...contacto }) {
+  return contacto;
+}
+
+export async function listar(usuarioId) {
+  const contactos = await leerColeccion('contactos');
+  return contactos.filter(c => c.usuarioId === usuarioId).map(sinDueno);
+}
+
+export async function obtener(usuarioId, id) {
+  const contactos = await leerColeccion('contactos');
+  const contacto = contactos.find(c => c.id === id && c.usuarioId === usuarioId);
+  return contacto ? sinDueno(contacto) : null;
+}
+</script>
+  <p class="note">Todas las funciones reciben primero el usuario y filtran por él.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Las rutas pasan el usuario</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/contactos.rutas.js (fragmento)">
+rutasContactos.get('/:id', async (req, res) => {
++   const contacto = await repositorio.obtener(req.usuario.id, leerId(req));
+  if (!contacto) throw new ErrorHttp(404, 'Contacto inexistente');
+  res.json(contacto);
+});
+</script>
+  <div class="aside">
+    <p>Un contacto ajeno responde 404, no 403: no confirmamos que exista.</p>
+    <p class="warn">Si una sola función del repositorio se olvida el filtro, cualquiera ve contactos ajenos.</p>
+  </div>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Montar todo en app.js</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/app.js">
+import express from 'express';
+import { rutasContactos } from './contactos.rutas.js';
++ import { rutasUsuarios, rutasSesiones } from './cuentas.rutas.js';
++ import { requerirSesion } from './sesion.js';
+import { registrarPedidos, rutaInexistente, manejarErrores } from './middlewares.js';
+
+export const app = express();
+
+app.use(registrarPedidos);
+app.use(express.json());
+
++ app.use('/usuarios', rutasUsuarios);
++ app.use('/sesiones', rutasSesiones);
++ app.use('/contactos', requerirSesion, rutasContactos);
+
+app.use(rutaInexistente);
+app.use(manejarErrores);
+</script>
+  <p class="note"><code>requerirSesion</code> entre el prefijo y el router protege todas las rutas de contactos.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Probar con curl</h2>
+<script type="text/x-code" data-lang="bash">
+curl -c ana.txt -X POST http://localhost:3000/sesiones \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@mail.com","contrasena":"secreta123"}'
+
+curl -b ana.txt http://localhost:3000/contactos
+</script>
+  <p class="note"><code>-c</code> guarda las cookies que llegan. <code>-b</code> envía las guardadas.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>El recorrido de códigos</h2>
+  <div class="side">
+<script type="text/x-code" data-lang="log">
+POST /usuarios → 201
+POST /usuarios → 409
+POST /usuarios → 400
+GET /contactos → 401
+POST /sesiones → 401
+POST /sesiones → 201
+GET /usuarios/yo → 200
+POST /contactos → 201
+GET /contactos/1 → 404
+DELETE /sesiones/actual → 204
+GET /contactos → 401
+</script>
+    <ol class="plain">
+      <li>registro</li><li>email repetido</li><li>datos inválidos</li><li>sin sesión</li><li>contraseña equivocada</li><li>inicio de sesión</li><li>quién soy</li><li>crear contacto</li><li>contacto de otro usuario</li><li>cerrar sesión</li><li>cookie ya sin sesión</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Cookies desde otro origen</h2>
+<script type="text/x-code" data-lang="js" data-cap="src/app.js">
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+</script>
+<script type="text/x-code" data-lang="js" data-cap="En el frontend">
+const respuesta = await fetch('http://localhost:3000/contactos', {
+  credentials: 'include',
+});
+</script>
+  <p class="note">Con credenciales, el origen tiene que ser exacto. El puerto no cuenta para <code>SameSite</code>: la cookie viaja.</p>
+</section>
+
+<section class="slide" data-sec="10">
+  <h2>Lo que falta para producción</h2>
+  <ul class="plain">
+    <li>HTTPS siempre; con <code>NODE_ENV=production</code> la cookie es <code>Secure</code></li>
+    <li>un límite de intentos de inicio de sesión</li>
+    <li>guardar un hash del identificador de sesión</li>
+    <li>una base de datos: los accesos simultáneos al archivo se pisan</li>
+  </ul>
+</section>
+
+<section class="slide" data-sec="10">
   <h2>El recorrido de un pedido</h2>
   <div class="flow">
     <div class="node pedido"><div class="b">pedido</div></div>
+    <div class="node"><div class="b">sesión</div><small>quién pide</small></div>
     <div class="node"><div class="b">rutas</div><small>qué responder</small></div>
     <div class="node"><div class="b">validación</div><small>qué se acepta</small></div>
-    <div class="node"><div class="b">repositorio</div><small>cómo se guarda</small></div>
+    <div class="node"><div class="b">repositorio</div><small>qué puede ver</small></div>
     <div class="node resp"><div class="b">respuesta</div><small>código y JSON</small></div>
   </div>
   <p class="lead" style="margin-top:28px">Los errores se lanzan desde cualquier lugar y se responden en uno solo.</p>
@@ -1325,7 +1886,7 @@ app.use(express.json());
 </div>
 
 <script>
-const SECCIONES = ['HTTP', 'REST', 'Express', 'Middleware', 'Errores', 'Validación', 'Archivo', 'Organización', 'Pruebas'];
+const SECCIONES = ['HTTP', 'REST', 'Express', 'Middleware', 'Errores', 'Validación', 'Archivo', 'Organización', 'Pruebas', 'Frontend', 'Cuentas'];
 
 /* ---------- Resaltado de código ---------- */
 const PALABRAS = new Set(('import export from const let var function async await return if else throw new class ' +
