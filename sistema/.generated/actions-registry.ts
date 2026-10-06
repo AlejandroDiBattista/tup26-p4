@@ -21,6 +21,7 @@ import * as a_exportar_alumnos_vcard from "../actions/exportar-alumnos-vcard";
 import * as a_genera_carpetas_alumnos from "../actions/genera-carpetas-alumnos";
 import * as a_generate_classes from "../actions/generate-classes";
 import * as a_hello from "../actions/hello";
+import * as a_leer_whatsapp from "../actions/leer-whatsapp";
 import * as a_list_assessments from "../actions/list-assessments";
 import * as a_list_classes from "../actions/list-classes";
 import * as a_list_courses from "../actions/list-courses";
@@ -86,6 +87,7 @@ const modules: Record<string, unknown> = {
   "genera-carpetas-alumnos": a_genera_carpetas_alumnos,
   "generate-classes": a_generate_classes,
   "hello": a_hello,
+  "leer-whatsapp": a_leer_whatsapp,
   "list-assessments": a_list_assessments,
   "list-classes": a_list_classes,
   "list-courses": a_list_courses,

@@ -32,6 +32,7 @@ declare global {
     "genera-carpetas-alumnos": ActionEntry<typeof import("../actions/genera-carpetas-alumnos")>;
     "generate-classes": ActionEntry<typeof import("../actions/generate-classes")>;
     "hello": ActionEntry<typeof import("../actions/hello")>;
+    "leer-whatsapp": ActionEntry<typeof import("../actions/leer-whatsapp")>;
     "list-assessments": ActionEntry<typeof import("../actions/list-assessments")>;
     "list-classes": ActionEntry<typeof import("../actions/list-classes")>;
     "list-courses": ActionEntry<typeof import("../actions/list-courses")>;

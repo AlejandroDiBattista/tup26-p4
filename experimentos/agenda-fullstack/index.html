@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenda · Arrow.js + Drizzle</title>
+  <link rel="icon" href="data:,">
+
+  <!-- #region Presentación: CSS sin dependencias externas -->
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #203530;
+      --muted: #63746e;
+      --line: #dfe7e2;
+      --accent: #176b50;
+      --soft: #edf5f0;
+      --danger: #ad3535;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f6f8f6;
+      color: var(--ink);
+      font: 15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    button,input,select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 14px;
+      background: white;
+      color: var(--ink);
+    }
+
+    button: hover {
+      background: var(--soft);
+    }
+
+    button: disabled {
+      opacity: .5;
+      cursor: default;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    button.danger {
+      color: var(--danger);
+    }
+
+    button.small {
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    :focus-visible {
+      outline: 3px solid #9bd4bd;
+      outline-offset: 3px;
+    }
+
+    input,select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #cddbd2;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: white;
+    }
+
+    input: :placeholder {
+      color: #88958f;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    label input,label select {
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 400;
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 30px 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+    }
+
+    h1 {
+      font-size: 29px;
+      line-height: 1.2;
+      letter-spacing: -.04em;
+      margin: 6px 0;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: -.02em;
+    }
+
+    p {
+      margin: 6px 0;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .badge {
+      font: 12px/1.4 ui-monospace,monospace;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 7px 12px;
+      white-space: nowrap;
+      background: white;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 310px minmax(0,1fr);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+      overflow: hidden;
+      min-height: 535px;
+    }
+
+    .master {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .master-head {
+      padding: 21px 18px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .master h2 {
+      font-size: 15px;
+    }
+
+    .search {
+      margin-top: 17px;
+    }
+
+    .counter {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .contact-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px;
+      overflow: auto;
+      max-height: 480px;
+    }
+
+    .contact {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      width: 100%;
+      border-color: transparent;
+      margin: 2px 0;
+      padding: 12px 10px;
+    }
+
+    .contact.selected {
+      background: var(--soft);
+      border-color: #c4dece;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 37px;
+      height: 37px;
+      background: #eaf0ec;
+      color: #4b675b;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .contact.selected .avatar {
+      background: #d2e8da;
+      color: var(--accent);
+    }
+
+    .contact-copy {
+      min-width: 0;
+    }
+
+    .contact-copy strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contact-copy small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .detail {
+      padding: 26px 28px;
+      min-width: 0;
+    }
+
+    .detail-head {
+      margin-bottom: 24px;
+    }
+
+    .detail-head p {
+      font-size: 13px;
+    }
+
+    .empty {
+      padding: 48px 22px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty h2 {
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .empty button {
+      margin-top: 15px;
+    }
+
+    fieldset {
+      padding: 0;
+      margin: 0;
+      border: 0;
+      min-width: 0;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .full {
+      grid-column: 1/-1;
+    }
+
+    .addresses {
+      margin-top: 26px;
+      padding-top: 23px;
+      border-top: 1px solid var(--line);
+    }
+
+    .addresses h3 {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .addresses .muted {
+      font-size: 12px;
+    }
+
+    .address-row {
+      display: grid;
+      grid-template-columns: 140px minmax(0,1fr) 34px;
+      align-items: end;
+      gap: 10px;
+      margin-top: 13px;
+    }
+
+    .remove {
+      height: 43px;
+      padding: 0;
+      font-size: 21px;
+      color: var(--muted);
+      border-color: transparent;
+    }
+
+    .remove:hover {
+      color: var(--danger);
+      background: #fff0f0;
+    }
+
+    .no-address {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding-top: 24px;
+      margin-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .actions .danger {
+      margin-right: auto;
+    }
+
+    .status {
+      padding: 0 0 16px;
+      font-size: 13px;
+    }
+
+    .error {
+      color: #972626;
+      padding: 12px 15px;
+      border: 1px solid #edcccc;
+      background: #fff4f4;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+
+    .notice {
+      color: var(--accent);
+      padding: 0 0 14px;
+    }
+
+    .dirty {
+      color: #986a13;
+      font-size: 12px;
+    }
+
+    details {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 10px;
+      padding: 13px 17px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .trace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .trace h3 {
+      margin: 0 0 7px;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
+      max-height: 250px;
+      overflow: auto;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 17px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media(max-width:700px) {
+      .page {
+        padding: 20px 13px;
+      }
+
+      .header {
+        align-items: flex-start;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .header .badge {
+        display: none;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .master {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .contact-list {
+        max-height: 200px;
+      }
+
+      .master-head {
+        padding: 16px;
+      }
+
+      .detail {
+        padding: 22px 17px;
+      }
+
+      .fields {
+        gap: 13px;
+      }
+
+      .address-row {
+        grid-template-columns: 108px minmax(0,1fr) 28px;
+        gap: 6px;
+      }
+
+      .address-row input,.address-row select {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      .trace {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        flex-direction: column;
+        gap: 3px;
+      }
+
+    }
+  </style>
+  <!-- #endregion -->
+</head>
+<body>
+  <div id="app"><p>Cargando la agenda…</p></div>
+  <noscript>Esta aplicación necesita JavaScript.</noscript>
+
+  <!--
+    CÓDIGO DE LA CLASE
+    El módulo se ejecuta al terminar de leer el HTML. Para entonces,
+    la biblioteca Arrow.js, incluida al final, ya está disponible.
+    Todo el código que se modifica para la clase está en este bloque.
+  -->
+  <script type="module" id="codigo-agenda">
+    /**
+     * AGENDA — INTERFAZ
+     *
+     * Orden de lectura: estado → cliente REST → acciones → vistas → inicio.
+     * Este código vive dentro de index.html: esta copia es solo para leer en clase.
+     * La interfaz no conoce tablas SQL ni importa Drizzle.
+     */
+
+    const { reactive, html } = window.Arrow;
+
+    // #region 1. Configuración y estado de la interfaz
+
+    const parametros = new URLSearchParams(location.search);
+    const URL_API = (parametros.get('api') || '/api').replace(/\/$/, '');
+    const ESPERA_BUSQUEDA_MS = 220;
+    const MAXIMO_DIRECCIONES = 20;
+
+    const TIPOS_DE_DIRECCION = [
+      { valor: 'telefono', etiqueta: 'Teléfono' },
+      { valor: 'celular',  etiqueta: 'Celular' },
+      { valor: 'email',    etiqueta: 'Email' },
+    ];
+
+    const estado = reactive({
+      contactos: [],
+      textoBusqueda: '',
+      contactoOriginal: null,
+      contactoEnEdicion: null,
+      hayCambios: false,
+      procesando: false,
+      buscando: false,
+      error: '',
+      aviso: '',
+      ultimaOperacion: null,
+    });
+
+    let siguienteClaveLocal = 0;
+    let ultimaBusqueda      = 0;
+    let temporizadorBusqueda;
+
+    function crearContactoVacio() {
+      return {
+        nombre: '',
+        apellido: '',
+        domicilio: '',
+        direcciones: [],
+      };
+    }
+
+    function extraerDatosEditables(contacto) {
+      // La API recibe datos del contacto, no claves de renderizado ni estado visual.
+      return {
+        nombre:      contacto.nombre,
+        apellido:    contacto.apellido,
+        domicilio:   contacto.domicilio,
+        direcciones: contacto.direcciones.map((direccion) => ({
+          tipo:  direccion.tipo,
+          valor: direccion.valor,
+        })),
+      };
+    }
+
+    function mostrarContacto(contacto) {
+      if (contacto === null) {
+        estado.contactoOriginal  = null;
+        estado.contactoEnEdicion = null;
+      } else {
+        const datos = extraerDatosEditables(contacto);
+        estado.contactoOriginal  = { id: contacto.id, ...datos };
+        estado.contactoEnEdicion = {
+          id: contacto.id,
+          ...datos,
+          direcciones: datos.direcciones.map((direccion) => ({ ...direccion, claveLocal: ++siguienteClaveLocal })),
+        };
+      }
+
+      estado.hayCambios = false;
+    }
+
+    function marcarCambios() {
+      estado.hayCambios = true;
+      estado.aviso      = '';
+    }
+
+    function limpiarMensajes() {
+      estado.error = '';
+      estado.aviso = '';
+    }
+
+    function confirmarDescarte() {
+      if (!estado.hayCambios) {
+        return true;
+      }
+
+      return confirm('Hay cambios sin guardar. ¿Descartarlos?');
+    }
+
+    // #endregion
+
+    // #region 2. Cliente REST — un único lugar realiza fetch y procesa JSON
+
+    const apiContactos = {
+      listar(textoBusqueda) {
+        const consulta = encodeURIComponent(textoBusqueda.trim());
+        return solicitarJson(`/contactos?q=${consulta}`, { registrar: false });
+      },
+
+      obtener(id) {
+        return solicitarJson(`/contactos/${id}`);
+      },
+
+      crear(datos) {
+        return solicitarJson('/contactos', { metodo: 'POST', cuerpo: datos });
+      },
+
+      actualizar(id, datos) {
+        return solicitarJson(`/contactos/${id}`, { metodo: 'PUT', cuerpo: datos });
+      },
+
+      eliminar(id) {
+        return solicitarJson(`/contactos/${id}`, { metodo: 'DELETE' });
+      },
+    };
+
+    async function solicitarJson(ruta, { metodo = 'GET', cuerpo, registrar = true } = {}) {
+      const opciones = {
+        method:  metodo,
+        headers: { Accept: 'application/json' },
+        cache:   'no-store',
+      };
+
+      if (cuerpo !== undefined) {
+        opciones.headers['Content-Type'] = 'application/json';
+        opciones.body = JSON.stringify(cuerpo);
+      }
+
+      let respuesta;
+
+      try {
+        respuesta = await fetch(URL_API + ruta, opciones);
+      } catch {
+        throw new Error('No se pudo conectar con la API. Comprobá que el servidor esté iniciado.');
+      }
+
+      const texto = await respuesta.text();
+      let datos   = null;
+
+      try {
+        // DELETE devuelve 204 y no contiene un documento JSON.
+        if (texto !== '') {
+          datos = JSON.parse(texto);
+        }
+      } catch {
+        throw new Error('La API no devolvió JSON. Revisá la URL del servidor.');
+      }
+
+      if (registrar) {
+        registrarOperacion(metodo, ruta, cuerpo, respuesta.status, datos);
+      }
+
+      if (!respuesta.ok) {
+        throw new Error(datos?.error || `Error HTTP ${respuesta.status}`);
+      }
+
+      return datos;
+    }
+
+    function registrarOperacion(metodo, ruta, cuerpo, codigoHttp, datos) {
+      estado.ultimaOperacion = {
+        metodo,
+        url:    URL_API + ruta,
+        cuerpo: cuerpo ?? null,
+        codigoHttp,
+        datos,
+      };
+    }
+
+    // #endregion
+
+    // #region 3. Acciones del maestro — buscar, seleccionar y crear un borrador
+
+    async function cargarContactos(registrar = true) {
+      const numeroBusqueda = ++ultimaBusqueda;
+      const textoBusqueda  = estado.textoBusqueda;
+      estado.buscando      = true;
+
+      try {
+        const contactosEncontrados = await apiContactos.listar(textoBusqueda);
+
+        // Una búsqueda anterior puede responder después de la más reciente.
+        if (numeroBusqueda !== ultimaBusqueda) {
+          return;
+        }
+
+        estado.contactos = contactosEncontrados;
+
+        if (registrar) {
+          const consulta = encodeURIComponent(textoBusqueda.trim());
+          registrarOperacion('GET', `/contactos?q=${consulta}`, null, 200, contactosEncontrados);
+        }
+      } catch (error) {
+        if (numeroBusqueda === ultimaBusqueda) {
+          estado.error = error.message;
+        }
+      } finally {
+        if (numeroBusqueda === ultimaBusqueda) {
+          estado.buscando = false;
+        }
+      }
+    }
+
+    function alEscribirBusqueda(evento) {
+      estado.textoBusqueda = evento.target.value;
+      estado.error = '';
+
+      clearTimeout(temporizadorBusqueda);
+      ultimaBusqueda++; // Invalida respuestas anteriores incluso durante la espera.
+      temporizadorBusqueda = setTimeout(cargarContactos, ESPERA_BUSQUEDA_MS);
+    }
+
+    async function seleccionarContacto(id) {
+      if (estado.procesando || estado.contactoEnEdicion?.id === id) {
+        return;
+      }
+
+      if (!confirmarDescarte()) {
+        return;
+      }
+
+      limpiarMensajes();
+      estado.procesando = true;
+
+      try {
+        const contacto = await apiContactos.obtener(id);
+        mostrarContacto(contacto);
+      } catch (error) {
+        estado.error = error.message;
+      } finally {
+        estado.procesando = false;
+      }
+    }
+
+    function nuevoContacto() {
+      if (estado.procesando || !confirmarDescarte()) {
+        return;
+      }
+
+      limpiarMensajes();
+      mostrarContacto(crearContactoVacio());
+      requestAnimationFrame(() => document.querySelector('#nombre')?.focus());
+    }
+
+    // #endregion
+
+    // #region 4. Acciones del detalle — editar el borrador, guardar o eliminar
+
+    function actualizarCampoContacto(campo, valor) {
+      estado.contactoEnEdicion[campo] = valor;
+      marcarCambios();
+    }
+
+    function actualizarCampoDireccion(direccion, campo, valor) {
+      direccion[campo] = valor;
+      marcarCambios();
+    }
+
+    function agregarDireccion() {
+      const contacto = estado.contactoEnEdicion;
+
+      if (contacto.direcciones.length >= MAXIMO_DIRECCIONES) {
+        return;
+      }
+
+      contacto.direcciones.push({
+        claveLocal: ++siguienteClaveLocal,
+        tipo:       'celular',
+        valor:      '',
+      });
+
+      marcarCambios();
+    }
+
+    function quitarDireccion(direccion) {
+      const contacto = estado.contactoEnEdicion;
+
+      contacto.direcciones = contacto.direcciones.filter((otraDireccion) => {
+        return otraDireccion.claveLocal !== direccion.claveLocal;
+      });
+
+      marcarCambios();
+    }
+
+    function cancelarEdicion() {
+      mostrarContacto(estado.contactoOriginal);
+      limpiarMensajes();
+    }
+
+    async function guardarContacto(evento) {
+      evento.preventDefault();
+
+      if (estado.procesando) {
+        return;
+      }
+
+      limpiarMensajes();
+      estado.procesando = true;
+
+      try {
+        const contacto = estado.contactoEnEdicion;
+        const datos = extraerDatosEditables(contacto);
+        let contactoGuardado;
+
+        if (contacto.id) {
+          contactoGuardado = await apiContactos.actualizar(contacto.id, datos);
+        } else {
+          contactoGuardado = await apiContactos.crear(datos);
+        }
+
+        mostrarContacto(contactoGuardado);
+        estado.aviso = 'Contacto y direcciones guardados.';
+
+        // Refrescar el maestro sin tapar la traza didáctica del POST o PUT.
+        await cargarContactos(false);
+      } catch (error) {
+        estado.error = error.message;
+      } finally {
+        estado.procesando = false;
+      }
+    }
+
+    async function eliminarContacto() {
+      const id = estado.contactoEnEdicion?.id;
+
+      if (estado.procesando || !id) {
+        return;
+      }
+
+      if (!confirm('¿Eliminar este contacto y todas sus direcciones?')) {
+        return;
+      }
+
+      limpiarMensajes();
+      estado.procesando = true;
+
+      try {
+        await apiContactos.eliminar(id);
+        mostrarContacto(null);
+        estado.aviso = 'Contacto eliminado.';
+        await cargarContactos(false);
+      } catch (error) {
+        estado.error = error.message;
+      } finally {
+        estado.procesando = false;
+      }
+    }
+
+    // #endregion
+
+    // #region 5. Vistas — componer plantillas pequeñas, sin consultas ni escrituras
+
+    // En Arrow, ${valor} se evalúa una vez. ${() => valor} sigue al estado reactivo.
+    // Las vistas del detalle leen el borrador vigente, no una copia capturada al crearlas.
+    function vistaAplicacion() {
+      return html`<main class="page">
+        <header class="header">
+          <div>
+            <span class="eyebrow">Demostración · maestro / detalle</span>
+            <h1>Agenda de contactos</h1>
+            <p class="muted">Una interfaz, una API y una relación uno a muchos.</p>
+          </div>
+          <span class="badge">Arrow.js → REST → Drizzle</span>
+        </header>
+
+        ${vistaMensajes()}
+
+        <div class="workspace">
+          ${vistaMaestro()}
+          <section class="detail" aria-label="Detalle del contacto">
+            ${vistaDetalle}
+          </section>
+        </div>
+
+        ${vistaComunicacionRest()}
+
+        <footer class="footer">
+          <span>Frontend: Arrow.js · Backend: Express + Drizzle + SQLite</span>
+          <span>Demo local, sin autenticación · Datos iniciales ficticios</span>
+        </footer>
+      </main>`;
+    }
+
+    function vistaMensajes() {
+      return html`<div role="alert" class="error" hidden="${() => !estado.error}">
+        ${() => estado.error}
+      </div>
+      <div role="status" class="notice" hidden="${() => !estado.aviso}">
+        ${() => estado.aviso}
+      </div>`;
+    }
+
+    function vistaMaestro() {
+      return html`<aside class="master" aria-label="Listado de contactos">
+        <div class="master-head">
+          <div class="row">
+            <h2>Contactos</h2>
+            <button
+              type="button"
+              class="primary small"
+              disabled="${() => estado.procesando}"
+              @click="${nuevoContacto}"
+            >+ Nuevo</button>
+          </div>
+
+          <label class="search">
+            Buscar contactos
+            <input
+              type="search"
+              maxlength="100"
+              placeholder="Nombre, teléfono o email…"
+              .value="${() => estado.textoBusqueda}"
+              @input="${alEscribirBusqueda}"
+            >
+          </label>
+          <div class="counter" role="status">${textoDelContador}</div>
+        </div>
+
+        <ul class="contact-list">${() => estado.contactos.map(vistaContacto)}</ul>
+        <p class="empty" hidden="${() => estado.buscando || estado.contactos.length > 0}">
+          No hay contactos para mostrar.
+        </p>
+      </aside>`;
+    }
+
+    function textoDelContador() {
+      if (estado.buscando) {
+        return 'Buscando…';
+      }
+
+      return `${estado.contactos.length} contactos encontrados`;
+    }
+
+    function vistaContacto(contacto) {
+      const iniciales = (contacto.nombre[0] + contacto.apellido[0]).toUpperCase();
+      const etiquetaCantidad = contacto.cantidadDirecciones === 1 ? 'dirección' : 'direcciones';
+      const estaSeleccionado = () => estado.contactoEnEdicion?.id === contacto.id;
+
+      return html`<li>
+        <button
+          type="button"
+          class="${() => estaSeleccionado() ? 'contact selected' : 'contact'}"
+          aria-pressed="${() => String(estaSeleccionado())}"
+          disabled="${() => estado.procesando}"
+          @click="${() => seleccionarContacto(contacto.id)}"
+        >
+          <span class="avatar" aria-hidden="true">${iniciales}</span>
+          <span class="contact-copy">
+            <strong>${contacto.apellido}, ${contacto.nombre}</strong>
+            <small>${contacto.cantidadDirecciones} ${etiquetaCantidad}</small>
+          </span>
+        </button>
+      </li>`.key(contacto.id);
+    }
+
+    function vistaDetalle() {
+      if (estado.contactoEnEdicion === null) {
+        return html`<div class="empty">
+          <span class="eyebrow">Tu agenda</span>
+          <h2>Seleccioná un contacto</h2>
+          <p>O creá uno nuevo y agregá sus direcciones.</p>
+          <button
+            type="button"
+            disabled="${() => estado.procesando}"
+            @click="${nuevoContacto}"
+          >Crear un contacto</button>
+        </div>`;
+      }
+
+      return vistaFormulario();
+    }
+
+    function vistaFormulario() {
+      return html`<form @submit="${guardarContacto}">
+        ${vistaEncabezadoDetalle()}
+
+        <fieldset disabled="${() => estado.procesando}">
+          ${vistaDatosPersonales()}
+          ${vistaDirecciones()}
+          ${vistaAcciones()}
+        </fieldset>
+      </form>`;
+    }
+
+    function vistaEncabezadoDetalle() {
+      function etiquetaDelContacto() {
+        const id = estado.contactoEnEdicion?.id;
+        return id ? `Contacto #${id}` : 'Nuevo contacto';
+      }
+
+      function tituloDelFormulario() {
+        return estado.contactoEnEdicion?.id ? 'Detalle del contacto' : 'Crear contacto';
+      }
+
+      return html`<div class="detail-head row">
+        <div>
+          <span class="eyebrow">${etiquetaDelContacto}</span>
+          <h2>${tituloDelFormulario}</h2>
+          <p class="muted">Los cambios se envían al presionar Guardar.</p>
+        </div>
+        <span class="dirty">${() => estado.hayCambios ? 'Sin guardar' : ''}</span>
+      </div>`;
+    }
+
+    function vistaDatosPersonales() {
+      return html`<div class="fields">
+        <label>
+          Nombre
+          <input
+            id="nombre"
+            name="nombre"
+            required
+            maxlength="80"
+            autocomplete="given-name"
+            .value="${() => estado.contactoEnEdicion?.nombre ?? ''}"
+            @input="${(evento) => actualizarCampoContacto('nombre', evento.target.value)}"
+          >
+        </label>
+
+        <label>
+          Apellido
+          <input
+            name="apellido"
+            required
+            maxlength="80"
+            autocomplete="family-name"
+            .value="${() => estado.contactoEnEdicion?.apellido ?? ''}"
+            @input="${(evento) => actualizarCampoContacto('apellido', evento.target.value)}"
+          >
+        </label>
+
+        <label class="full">
+          Domicilio <span class="muted">· opcional</span>
+          <input
+            name="domicilio"
+            maxlength="200"
+            autocomplete="street-address"
+            placeholder="Calle, número y localidad"
+            .value="${() => estado.contactoEnEdicion?.domicilio ?? ''}"
+            @input="${(evento) => actualizarCampoContacto('domicilio', evento.target.value)}"
+          >
+        </label>
+      </div>`;
+    }
+
+    function vistaDirecciones() {
+      return html`<section class="addresses" aria-label="Direcciones del contacto">
+        <div class="row">
+          <div>
+            <h3>Direcciones de contacto <span class="muted">1:N</span></h3>
+            <p class="muted">Teléfonos, celulares y emails. Hasta 20 por contacto.</p>
+          </div>
+          <button
+            type="button"
+            class="small"
+            disabled="${() => estado.contactoEnEdicion?.direcciones.length >= MAXIMO_DIRECCIONES}"
+            @click="${agregarDireccion}"
+          >+ Agregar</button>
+        </div>
+
+        ${() => (estado.contactoEnEdicion?.direcciones ?? []).map(vistaDireccion)}
+
+        <p class="no-address" hidden="${() => estado.contactoEnEdicion?.direcciones.length > 0}">
+          Sin direcciones. Podés guardar el contacto así o agregar una.
+        </p>
+      </section>`;
+    }
+
+    function vistaDireccion(direccion) {
+      function sugerenciaDeValor() {
+        return direccion.tipo === 'email' ? 'nombre@ejemplo.com' : 'Número de contacto';
+      }
+
+      function alCambiarTipo(evento) {
+        actualizarCampoDireccion(direccion, 'tipo', evento.target.value);
+      }
+
+      function alCambiarValor(evento) {
+        actualizarCampoDireccion(direccion, 'valor', evento.target.value);
+      }
+
+      return html`<div class="address-row">
+        <label>
+          Tipo
+          <select aria-label="Tipo de dirección" @change="${alCambiarTipo}">
+            ${TIPOS_DE_DIRECCION.map((tipo) => html`<option value="${tipo.valor}" selected="${() => direccion.tipo === tipo.valor}">
+                ${tipo.etiqueta}
+              </option>`)}
+          </select>
+        </label>
+
+        <label>
+          Valor
+          <input
+            aria-label="Valor de dirección"
+            type="${() => direccion.tipo === 'email' ? 'email' : 'tel'}"
+            placeholder="${sugerenciaDeValor}"
+            required
+            maxlength="254"
+            .value="${() => direccion.valor}"
+            @input="${alCambiarValor}"
+          >
+        </label>
+
+        <button
+          type="button"
+          class="remove"
+          aria-label="Quitar dirección"
+          title="Quitar dirección"
+          @click="${() => quitarDireccion(direccion)}"
+        >×</button>
+      </div>`.key(direccion.claveLocal);
+    }
+
+    function vistaAcciones() {
+      return html`<div class="actions">
+        <button type="button" class="danger" disabled="${() => !estado.contactoEnEdicion?.id}" @click="${eliminarContacto}">
+          Eliminar
+        </button>
+        <button type="button" @click="${cancelarEdicion}">Cancelar</button>
+        <button type="submit" class="primary">
+          ${() => estado.procesando ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>`;
+    }
+
+    function vistaComunicacionRest() {
+      return html`<details>
+        <summary>Ver comunicación REST <span class="muted">· última operación</span></summary>
+        <div class="trace">
+          <section>
+            <h3>Petición del navegador</h3>
+            <pre>${textoDePeticion}</pre>
+          </section>
+          <section>
+            <h3>Respuesta del servidor</h3>
+            <pre>${textoDeRespuesta}</pre>
+          </section>
+        </div>
+      </details>`;
+    }
+
+    function formatearJson(datos) {
+      if (datos === null) {
+        return '(sin cuerpo)';
+      }
+
+      return JSON.stringify(datos, null, 2);
+    }
+
+    function textoDePeticion() {
+      const operacion = estado.ultimaOperacion;
+
+      if (!operacion) {
+        return 'Todavía no hay operaciones.';
+      }
+
+      return `${operacion.metodo} ${operacion.url}\n\n${formatearJson(operacion.cuerpo)}`;
+    }
+
+    function textoDeRespuesta() {
+      const operacion = estado.ultimaOperacion;
+
+      if (!operacion) {
+        return '';
+      }
+
+      return `HTTP ${operacion.codigoHttp}\n\n${formatearJson(operacion.datos)}`;
+    }
+
+    // #endregion
+
+    // #region 6. Inicio
+
+    async function iniciarAgenda() {
+      const contenedor = document.querySelector('#app');
+      contenedor.replaceChildren();
+      vistaAplicacion()(contenedor);
+
+      if (location.protocol === 'file:') {
+        estado.error = 'No abras el HTML con doble clic. Ejecutá npm start y abrí http://127.0.0.1:3000.';
+        return;
+      }
+
+      await cargarContactos();
+
+      if (estado.contactos.length > 0 && estado.contactoEnEdicion === null) {
+        await seleccionarContacto(estado.contactos[0].id);
+      }
+    }
+
+    window.addEventListener('beforeunload', (evento) => {
+      if (estado.hayCambios) {
+        evento.preventDefault();
+        evento.returnValue = '';
+      }
+    });
+
+    iniciarAgenda();
+
+    // #endregion
+  </script>
+
+  <!-- #region Biblioteca externa: Arrow.js 1.0.6 (MIT)
+    FIN DEL CÓDIGO DE LA AGENDA.
+    Este bloque es la biblioteca de terceros, no el ejemplo a estudiar.
+    Se conserva al final para mantener el HTML autocontenido, sin CDN.
+    Puede plegarse en el editor. No hace falta leerlo ni modificarlo.
+  -->
+  <script id="biblioteca-arrow">
+/* Copyright 2022-2026 Justin Schroeder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+  window.Arrow = {};
+  // Único ajuste al bundle oficial: exponer sus exportaciones en window.Arrow.
+  !function(e){"use strict";const n=Symbol();let o=[],i=[],c=null;function s(e){return"function"==typeof e&&!!e.isT}function l(e){return null!==e&&"object"==typeof e}function u(e){return l(e)&&"$on"in e}function f(e){return l(e)&&"ref"in e}function d(){const e=o;o=[];const c=i;i=[];for(let o=0;o<e.length;o++){const i=e[o],c=i._n,s=i._o;i._n=void 0,i._o=void 0,i[n]=0,i(c,s)}for(let e=0;e<c.length;e++)c[e]();o.length&&queueMicrotask(d)}function a(e){const n=c;return c=e,n}function h(e,n,o){".innerhtml"===n&&(n=".innerHTML"),("value"===n&&"value"in e||"checked"===n||"."===n[0]&&(n=n.slice(1)))&&(e[n]=o,e.getAttribute(n)!=o&&(o=0)),0!=o?e.setAttribute(n,o):e.removeAttribute(n)}const p=[],g=[],v=[],m=[];let _=0;function k(e,n,o){g[e]=n,v[e]=o}const y=new WeakMap,b=[],x=[],A=e=>y.get(e);let C=-1,T=0,N=0;const M=[],j=[],E=[],O=[],S={push:1,pop:1,shift:1,unshift:1,splice:1,sort:1,copyWithin:1,fill:1,reverse:1},D=[];function R(e){if("function"==typeof e){const n=R({value:void 0});return b[A(n)]=1,G(e,e=>n.value=e),n}if(u(e))return e;if(!l(e))throw Error("Expected object");const n=++C;x[n]={};const o=new Proxy(e,F);return y.set(e,n).set(o,n),o}const F={has:(e,key)=>key in $?1:(q(A(e),key),key in e),get(e,key,n){const o=A(e);if(key in $)return $[key];const i=Reflect.get(e,key,n);let c;l(i)&&!u(i)&&(c=W(i,o,key),e[key]=c);const s=c??i;return Array.isArray(e)?((e,key,n,o)=>{if("function"==typeof o&&S[key]){let i=O[e];i||(i=O[e]={});let c=i[key];return c||(c=(...i)=>{const c=Reflect.apply(o,n,i);return H(e),c},i[key]=c),c}return B(o)?L(o,e,key):("length"!==key&&"function"!=typeof o&&q(e,key),o)})(o,key,e,s):B(s)?L(s,o,key):(q(o,key),s)},set(e,key,n,o){const i=A(e),c=!(key in e),s=l(n)&&!u(n)?W(n,i,key):null,f=e[key],d=s??n;u(d)&&b[A(d)]&&P(A(d),i,key);const a=Reflect.set(e,key,d,o);if(f!==d&&u(f)&&u(d)){const e=D[A(f)];if(e){let n=-1;for(let o=0;o<e.length;o++){const[c,s]=e[o];if(c==i&&s==key){n=o;break}}n>-1&&e.splice(n,1)}P(A(d),i,key)}return V(i,key,n,f,c||"value"===key&&b[i]),Array.isArray(e)&&"length"===key&&H(i),a}};function W(e,n,key){const r=R(e);return P(A(e),n,key),r}function B(e){return u(e)&&b[A(e)]}function L(e,n,key){const o=A(e);return q(n,key),P(o,n,key),q(o,"value"),e.value}function P(e,n,key){const o=D[e];if(o)for(let e=0;e<o.length;e++){const[i,c]=o[e];if(i===n&&c===key)return}else D[e]=[];D[e].push([n,key])}function V(e,key,n,o,i){const c=x[e][key];if(c)if(Array.isArray(c))for(let e=0;e<c.length;e++)c[e](n,o);else c(n,o);i&&H(e)}function H(e){const n=D[e];if(n)for(let e=0;e<n.length;e++){const[o,i]=n[e];V(o,i)}}const $={$on(e,n){I(x[A(this)],e,n)},$off(e,n){z(x[A(this)],e,n)}};function q(e,n){N&&M[N].push(e,n)}function K(e,n){if(e){for(let o=0;o<e.length;o+=2)z(x[e[o]],e[o+1],n);e.length=0,E.push(e)}}function I(e,key,n){const o=e[key];o?Array.isArray(o)?o.includes(n)||o.push(n):o!==n&&(e[key]=[o,n]):e[key]=n}function z(e,key,n){const o=e[key];if(o){if(Array.isArray(o)){const i=o.indexOf(n);if(i<0)return;return 2===o.length?void(e[key]=o[i?0:1]):void o.splice(i,1)}o===n&&delete e[key]}}function G(e,i){const s=++T,l="number"==typeof e;let u=(e=>{const i=e;return(e,c)=>{i[n]||(i[n]=1,i._n=e,i._o=c,o.length||queueMicrotask(d),o.push(i))}})(f);function f(){M[++N]=E.pop()??[];const n=l?p[e]():e();return((e,n)=>{const key=N--,o=M[key],i=j[e],c=i?.length;if(c&&c===o.length){let n=1;for(let e=0;e<c;e++)if(i[e]!==o[e]){n=0;break}if(n)return j[e]=i,o.length=0,E.push(o),void(M[key]=void 0)}K(i,n);for(let e=0;e<o.length;e+=2)I(x[o[e]],o[e+1],n);j[e]=o,M[key]=void 0})(s,u),i?i(n):n}const a=()=>{K(j[s],u),j[s]=void 0,l&&k(e),u=null};var h;return l||(h=a,c?.push(h)),l&&k(e,f),[f(),a]}const J=(async()=>{}).constructor;function Q(key){return this.k=key,this}const U={get:(e,key)=>e[0]?.[key],has:(e,key)=>key in(e[0]||{}),ownKeys:e=>Reflect.ownKeys(e[0]||{}),getOwnPropertyDescriptor(e,key){const n=e[0];return n&&{configurable:1,enumerable:1,writable:1,value:n[key]}},set:(e,key,n)=>!!e[0]&&Reflect.set(e[0],key,n)},X={get:(e,key)=>e.k.includes(key)?e.s[key]:void 0,set:(e,key,n)=>e.k.includes(key)?Reflect.set(e.s,key,n):0};function Y(e,...n){return n.length?new Proxy({k:n,s:e},X):e}function Z(e,n){if(n||e.constructor===J)throw Error("Async runtime missing.");return(n,o)=>({h:e,k:void 0,p:n,e:o,key:Q})}function tt(e){return!!e&&"object"==typeof e&&"h"in e}const et=Symbol();let nt=-1;const rt=[],ot=[],it="\x3c!--¤--\x3e",ct=new WeakMap,st=new WeakMap,lt=new Map,ut=new Map;let ft,dt=0;function at(e,n,o){let i=e.f;if(!n||!i)return;const c=e.l;for(;;){const e=i===c?null:i.nextSibling;if(n.insertBefore(i,o||null),!e)return;i=e}}function ht(e,n){return n.g===pt(e).g}function pt(e){return e._p||(e._p=gt(e._s))}function gt(e,n){const o=document;let i=n?void 0:st.get(e);const c=i?.get(o);if(c)return c;const s=e.join(it),l=n?"¤"+s:s;let u=ct.get(o);u||(u={},ct.set(o,u));const f=u[l];if(f)return n||(i??=new WeakMap,i.set(o,f),st.set(e,i)),f;const d=document.createElement("template");if(n){d.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg">${s}</svg>`;const e=d.content.firstChild;if(e){const n=d.content;for(;e.firstChild;)n.appendChild(e.firstChild);n.removeChild(e)}}else d.innerHTML=s;const a=(e=>{const n=[],o=[],i=[],c=[],s=e=>{const s=i.length,l=c.length,u=s<l?s:l;let f=0;for(;f<u&&c[f]===i[f];)f++;n.push(f,s-f);for(let e=f;e<s;e++)n.push(i[e]);n.push(e?o.push(e):0),c.length=s;for(let e=0;e<s;e++)c[e]=i[e]},l=e=>{if(1===e.nodeType){const n=e.attributes;for(let e=0;e<n.length;e++){const o=n[e];o.value===it&&s(o.name)}}else(8===e.nodeType||3===e.nodeType&&e.nodeValue===it)&&s();const n=e.childNodes;for(let e=0;e<n.length;e++)i.push(e),l(n[e]),i.pop()},u=e.childNodes;for(let e=0;e<u.length;e++)i.push(e),l(u[e]),i.pop();return[n,o]})(d.content);(e=>{const n=e=>{const o=e.childNodes;for(let i=0;i<o.length;i++){const c=o[i];8!==c.nodeType||"¤"!==c.data?(3===c.nodeType&&c.nodeValue===it&&(c.nodeValue=""),c.firstChild&&n(c)):e.replaceChild(document.createTextNode(""),c)}};n(e)})(d.content);const h=e.length-1;let p=0;for(let e=0;e<a[0].length;)e+=(a[0][e+1]??0)+3,p++;if(p!==h)throw Error("Invalid HTML position");const g={template:d,paths:a,g:l,expressions:h};return n||(i??=new WeakMap,i.set(o,g),st.set(e,i)),u[l]=g,g}function vt(e,n,o=0){if(n._t===e)return n.k=e._k,n.i=e._i,e._h=n,void(e._m=o);if(n._t&&n._t!==e){const e=n._t;e._h===n&&(e._m=0,e._h=void 0)}n._t=e,n.k=e._k,n.i=e._i,e._h=n,e._m=o,((e,n,o=0)=>{const i=p[n];for(let c=1;c<=i;c++){const i=e[o+c-1],s=n+c;if(Object.is(p[s],i))continue;p[s]=i;const l=g[s];if(!l)continue;const u=v[s];void 0!==u?h(l,u,i):"function"==typeof l?l(i):l.data=i||0===i?i:""}})(e._a,n.e)}function mt(e){const n=e._t;n._h===e&&(n._m=0,n._h=void 0)}function _t(e){let n,o;for(let i=0;i<e;i++){const e={paths:[[],[]],dom:null,ref:{f:null,l:null},_t:null,e:-1,g:"",b:0,r:1,st:0,u:null,v:null,s:void 0,k:void 0,i:void 0,bkn:void 0,next:void 0};o?o.next=e:n=e,o=e}o&&(o.next=ft),ft=n}function kt(e){if(!e.st)return;const n=ut.get(e.g);if(n){let o,i=n.h;for(;i&&i!==e;)o=i,i=i.bkn;i&&(o?o.bkn=i.bkn:n.h=i.bkn,n.h||ut.delete(e.g))}void 0!==e.i&&lt.get(e.i)===e&&lt.delete(e.i),e.st=0,e.bkn=void 0}function yt(e){const n=this[et]?.[e.type];n&&n.c._t._m&&p[n.p]?.(e)}function bt(e){return tt(e)?e.k:e._k}function html(e,...n){const o=e=>((e,n)=>{const o=e._c();return e._m?(at(o.ref,o.dom),n?n.appendChild(o.dom):o.dom):(e._m=1,o.b?(at(o.ref,n??o.dom),n??o.dom):((e,n)=>{const o=e.e,i=p[o],[c,s]=e.paths,l=nt+1;let u=0;ot[0]=e.dom;for(let e=0;e<i;e++){const e=c[u++];let n=c[u++],o=e,i=ot[o];for(;n--;)i=i.childNodes[c[u++]],ot[++o]=i;rt[++nt]=i,rt[++nt]=c[u++]}const f=nt;for(let n=l,i=o+1;n<f;n++,i++){const o=rt[n],c=rt[++n];c?wt(o,s[c-1],i,e):Tt(o,i,e)}return rt.length=l,nt=l-1,e.b=1,n?n.appendChild(e.dom)&&n:e.dom})(o,n))})(o,e);return o.isT=1,o._a=n,o._c=xt,o._m=0,o._s=e,o.key=At,o.id=Ct,o}function xt(){let e=this._h;return e||(e=(e=>{const n=pt(e),o=lt.get(e._i);if(o){if(o.g!==n.g)throw Error("shape mismatch");if(o.r)return kt(o),vt(e,o),o}const i=ut.get(n.g),c=i?.h;if(c)return kt(c),vt(e,c),c;ft||_t(1024);const s=ft;return ft=s.next,s.next=void 0,((e,n,o)=>{e.paths=n.paths,e.g=n.g,e.dom=n.template.content.cloneNode(1),e.ref.f=e.dom.firstChild,e.ref.l=e.dom.lastChild,e.e=(e=>{const n=m[e],o=n?.length?n.pop():_;return p[o]=e,o===_&&(_+=e+1),o})(n.expressions),e.b=e.st=0,e.r=1,e.u=e.v=null,e.s=e.bkn=void 0,vt(o,e)})(s,n,e),s})(this),this._h=e),e}function At(key){return this._k=key,this._h&&(this._h.k=key),this}function Ct(e){return this._i=e,this._h&&(this._h.i=e),this}function Tt(e,n,o){let i;const c=p[n],l=3===e.nodeType?e:null;if(tt(c)||s(c)||Array.isArray(c))o.r=0,i=Nt()(c);else if("function"==typeof c){let e=l,c=null;const[u,f]=G(n,n=>{if(!c){if(tt(n)||s(n)||Array.isArray(n)){o.r=0,c=Nt();const i=c(n);return e&&(e.parentNode?.replaceChild(i,e),e=null),i}e||(e=document.createTextNode(""));const i=Bt(n);return e.nodeValue!==i&&(e.nodeValue=i),e}return c(n)});(o.u??=[]).push(f),i=u}else{let e=l??document.createTextNode("");e.data=Bt(c),i=e,k(n,e)}if(e===o.ref.f||e===o.ref.l){const n=11===i.nodeType?i.lastChild:i;e===o.ref.f&&(o.ref.f=11===i.nodeType?i.firstChild:i),e===o.ref.l&&(o.ref.l=n)}i!==e&&e.parentNode?.replaceChild(i,e)}function wt(e,n,o,i){if(1!==e.nodeType)return;let c=e;const l=p[o];if("@"===n[0]){const e=n.slice(1);(c[et]??={})[e]={c:i,p:o};const s=[c,e];c.addEventListener(e,yt),c.removeAttribute(n),(i.v??=[]).push(s)}else if("function"!=typeof l||s(l))h(c,n,l),k(o,c,n);else{const[,e]=G(o,e=>h(c,n,e));(i.u??=[]).push(e)}}function Nt(e){let n,o=Object.create(null);const i=e=>{if(!n){if(tt(e)){const[o,i]=_(e);return n=g(o,i),o}if(s(e)){const o=e();return n=g(o,e._h),o}if(Array.isArray(e)){const[o,i]=c(e);return n=i,o}return n=document.createTextNode(Bt(e))}if(Array.isArray(e))if(Array.isArray(n)){let i=0;const l=e.length,d=n.length;if(l&&1===d&&!f(n[0])&&!n[0].data){const[o,i]=c(e);return n[0].replaceWith(o),void(n=i)}if(l===d){const o=Array(l);for(;i<l;i++){const c=e[i];if(tt(c)&&void 0!==c.k||s(c)&&void 0!==c._k){i=-1;break}const l=n[i];if(s(c)&&f(l)&&l._t===c&&c._h===l&&c._m)o[i]=l;else{if(s(c)&&f(l)){const e=c,n=e._p??pt(e);if(l.g===n.g){vt(e,l,1),o[i]=l;continue}}o[i]=h(c,l)}}if(i===l)return void(n=o);i=0}const a=((e,n)=>{const i=e.length,c=n.length;if(!i){const e=document.createTextNode(""),i=Ot(n),c=i&&St(n,e);return c||Lt(n).after(e),o=Object.create(null),i?Dt(n,c):Wt(n),[e]}const l=Array(i),d=Lt(n[0]).parentNode;if(!d)return null;let a=0;const h=Object.create(null);for(;a<c&&a<i;a++){const o=n[a];if(!f(o)||void 0===o.k)return null;const i=e[a];if(!tt(i)&&!s(i))return null;const key=bt(i);if(void 0===key||key!==o.k)break;if(h[key]=1,!(s(i)&&o._t===i&&i._h===o&&i._m||u(i,o)))return null;l[a]=o}if(a===c){if(a===i)return l;const o=document.createDocumentFragment();for(let n=a;n<i;n++){const i=e[n];if(!tt(i)&&!s(i))return null;const key=bt(i);if(void 0===key||key in h)return null;h[key]=1,l[n]=p(i,o)}return d.insertBefore(o,c?Lt(n[c-1]).nextSibling:null),l}if(a===i){for(let e=a;e<c;e++){const o=n[e];m(o),Wt(o)}return l}let g=a,v=a,_=c-1,k=i-1;for(;g<=_&&v<=k;){const o=n[g],i=n[_],c=o.k,f=i.k,a=e[v],h=e[k],p=tt(a)||s(a)?bt(a):void 0,m=tt(h)||s(h)?bt(h):void 0;if(void 0===p||void 0===m)return null;if(c!==p)if(f!==m)if(c!==m){if(f!==p)break;if(!(s(a)&&i._t===a&&a._h===i&&a._m||u(a,i)))return null;at(i.ref,d,Lt(o,void 0,1)),l[v++]=i,_--}else{if(!(s(h)&&o._t===h&&h._h===o&&h._m||u(h,o)))return null;at(o.ref,d,Lt(i).nextSibling),l[k--]=o,g++}else{if(!(s(h)&&i._t===h&&h._h===i&&h._m||u(h,i)))return null;l[k--]=i,_--}else{if(!(s(a)&&o._t===a&&a._h===o&&a._m||u(a,o)))return null;l[v++]=o,g++}}if(v>k){for(let e=g;e<=_;e++){const o=n[e];m(o),Wt(o)}return l}if(g>_){const n=document.createDocumentFragment();for(let o=v;o<=k;o++){const i=e[o];if(!tt(i)&&!s(i))return null;l[o]=p(i,n)}return d.insertBefore(n,k+1<i?Lt(l[k+1],void 0,1):null),l}const y=Object.create(null);for(let e=g;e<=_;e++){const o=n[e];if(!f(o)||void 0===o.k)return null;const key=o.k;if(key in y)return null;y[key]=e+1}const b=Object.create(null);let x=0;for(let n=v;n<=k;n++){const o=e[n],key=tt(o)||s(o)?bt(o):void 0;if(void 0===key||key in b)return null;b[key]=n+1,key in y&&x++}if(!x){const o=Lt(n[g],void 0,1),i=Lt(n[_]),c=document.createDocumentFragment();for(let n=v;n<=k;n++){const o=e[n];if(!tt(o)&&!s(o))return null;l[n]=p(o,c)}const u=o.parentNode;if(u&&o===u.firstChild&&i===u.lastChild)u.replaceChildren(c);else{const e=document.createRange();e.setStartBefore(o),e.setEndAfter(i),e.deleteContents(),e.insertNode(c)}for(let e=g;e<=_;e++){const o=n[e];m(o),jt(o,1)}return l}for(let o=g;o<=_;o++){const i=n[o],c=b[i.k];if(void 0!==c){if(!u(e[c-1],i))return null;l[c-1]=i}else m(i),Wt(i)}let A=k+1<i?Lt(l[k+1],void 0,1):Lt(n[c-1]).nextSibling;for(let n=k;n>=v;n--){const o=l[n];if(!o){const o=e[n];if(!tt(o)&&!s(o))return null;const i=document.createDocumentFragment(),c=p(o,i);l[n]=c,d.insertBefore(i,A),A=Lt(c,void 0,1);continue}const i=Lt(o,void 0,1);i.parentNode===d&&i.nextSibling===A||at(o.ref,d,A),A=i}return l})(e,n);if(a)return void(n=a);if(l>d&&d){for(;i<d;i++){const o=e[i],c=n[i];if(!(s(o)&&f(c)&&c._t===o&&o._h===c&&o._m)){i=-1;break}}if(i===d){const o=document.createDocumentFragment(),c=n.slice();for(i=d;i<l;i++)c[i]=p(e[i],o);return Lt(n[d-1]).after(o),void(n=c)}i=0}let g;const v=[],_=++dt,k=l>d?document.createDocumentFragment():null;for(;i<l;i++){let c=e[i];const l=n[i];let key;if(s(c)&&void 0!==(key=c._k)&&key in o){const e=o[key];ht(c,e)&&(vt(c,e,1),c=e._t)}if(i>d-1){v[i]=p(c,k);continue}if(s(c)&&f(l)&&l._t===c&&c._h===l&&c._m){g=Lt(l),v[i]=l,l.mk=_;continue}const u=h(c,l,g);g=Lt(u),v[i]=u,u.mk=_}if(!l){const e=v[0]=document.createTextNode(""),i=Ot(n),c=i&&St(n,e);return c||Lt(n).after(e),o=Object.create(null),i?Dt(n,c):Wt(n),void(n=v)}for(l>d&&g?.after(k),i=0;i<d;i++){const e=n[i];e.mk!==_&&(m(e),Wt(e))}n=v}else{const[o,i]=c(e);Lt(n).after(o),m(n),Wt(n),n=i}else Array.isArray(n)&&(o=Object.create(null)),n=h(e,n)};function c(e){const n=document.createDocumentFragment();if(!e.length){const e=document.createTextNode("");return n.appendChild(e),[n,[e]]}const o=Array(e.length);for(let i=0;i<e.length;i++)o[i]=p(e[i],n);return[n,o]}function l(e,n){return n.s?.[1]!==e.h?0:(n.s[0]!==e.p&&(n.s[0]=e.p),n.s[2]!==e.e&&(n.s[2]=e.e),1)}function u(e,n){return tt(e)?l(e,n):ht(e,n)?(vt(e,n,1),1):0}function d(e,n,o){if(o)return void at(e.ref,o.parentNode,o.nextSibling);const i=Lt(n,void 0,1);at(e.ref,i.parentNode,i)}function h(e,n,i){const c=n.nodeType??0;if(tt(e)){const key=e.k;if(void 0!==key&&key in o){const c=o[key];if(l(e,c))return c===n?n:(d(c,n,i),c)}else if(f(n)&&l(e,n))return n.k!==e.k&&(m(n),n.k=e.k,v(n)),n;const[c,s]=_(e),u=g(c,s);return Lt(n,i).after(c),m(n),Wt(n),v(s),u}if(!s(e)&&3===c){const o=Bt(e);return n.data!==o&&(n.data=o),n}if(s(e)){const c=e,key=c._k;if(void 0!==key&&key in o){const e=o[key];if(ht(c,e))return vt(c,e,1),e===n?n:(d(e,n,i),e)}const s=pt(c);if(f(n)&&n.g===s.g)return vt(c,n,1),n;const l=e(),u=c._h,a=g(l,u);return Lt(n,i).after(l),m(n),Wt(n),v(u),a}const u=document.createTextNode(Bt(e));return Lt(n,i).after(u),m(n),Wt(n),u}function p(e,n){if(tt(e)){const[o,i]=_(e);return n.appendChild(o),v(i),g(n,i)}if(s(e)){e(n);const o=e._h;return v(o),g(n,o)}const o=document.createTextNode(Bt(e));return n.appendChild(o),o}function g(e,n){if(n.ref.f)return n;const o=document.createTextNode("");return e.appendChild(o),o}function v(e){void 0!==e.k&&(o[e.k]=e)}function m(e){f(e)&&void 0!==e.k&&o[e.k]===e&&delete o[e.k]}function _(e){const[n,o,i]=((e,n,o)=>{const i=R({0:e,1:n,2:o});return[new Proxy(i,U),(e,n)=>{const o=i[2]?.[e];"function"==typeof o&&o(n)},i]})(e.p,e.h,e.e),c=[],s=a(c);let l,u;try{l=e.h(n,o),u=l()}finally{a(s)}const f=l._c();return c.length&&(f.u??=[]).push(...c),f.r=0,f.s=i,f.k=e.k,[u,f]}return i.adopt=()=>{},i}_t(1024);let Mt=[];function jt(e,n=0){if(e.st&&kt(e),mt(e),e.v)for(let n=0;n<e.v.length;n++){const[o,i]=e.v[n],c=o[et];if(c){delete c[i];let e=0;for(const key in c){e=1;break}e||delete o[et]}o.removeEventListener(i,yt)}if(e.u){for(let n=0;n<e.u.length;n++)e.u[n]();e.u=null}e.e+1&&((e=>{const n=p[e];if(void 0!==n){for(let o=0;o<=n;o++)p[e+o]=void 0,g[e+o]=void 0,v[e+o]=void 0;(m[n]??=[]).push(e)}})(e.e),e.e=-1);let o=e.ref.f;if(!n&&o){const n=e.ref.l;if(o===n)o.remove();else for(;o;){const e=o===n?null:o.nextSibling;if(o.remove(),!e)break;o=e}}e.dom.textContent="",e.ref.f=e.ref.l=null,e.k=e.i=e.s=void 0,e.u=e.v=null,e.b=e.st=0,e.r=1,e.g="",(e=>{e.next=ft,ft=e})(e)}let Et=0;function Ot(e){for(let n=0;n<e.length;n++){const o=e[n];if(f(o)&&!o.r)return 0}return 1}function St(e,n){if(!e.length)return 0;const o=Lt(e[0],void 0,1),i=Lt(e[e.length-1]),c=o.parentNode;return c&&o===c.firstChild&&i===c.lastChild?(c.replaceChildren(n),1):0}function Dt(e,n=0){if(f(e))e.r?((e,n=0)=>{if(n||at(e.ref,e.dom),mt(e),e.st||!e.r)return;e.st=1;let o=ut.get(e.g);o||(o={},ut.set(e.g,o)),e.bkn=o.h,o.h=e,void 0!==e.i&&lt.set(e.i,e)})(e,n):jt(e,n);else{if(Array.isArray(e)){if(!n&&e.length){const o=Lt(e[0],void 0,1),i=Lt(e[e.length-1]),c=o.parentNode;if(c){if(o===c.firstChild&&i===c.lastChild)c.textContent="";else{const e=document.createRange();e.setStartBefore(o),e.setEndAfter(i),e.deleteContents()}n=1}}let o,i="";for(let c=0;c<e.length;c++){const s=e[c];if(f(s)){if(!s.r){jt(s,n);continue}if(n||at(s.ref,s.dom),mt(s),s.st)continue;s.st=1,i!==s.g&&(i=s.g,o=ut.get(i),o||(o={},ut.set(i,o))),s.bkn=o.h,o.h=s,void 0!==s.i&&lt.set(s.i,s)}else n||s.remove()}return}n||e.remove()}}function Rt(){Et=0;const e=Mt;Mt=[];for(let n=0;n<e.length;n++)Dt(e[n]);Mt.length&&Ft()}function Ft(){Et||(Et=1,queueMicrotask(Rt))}function Wt(e){e&&(Mt.push(e),Ft())}function Bt(e){return e||0===e?e:""}function Lt(e,n,o){return f(e)?o?e.ref.f:e.ref.l:Array.isArray(e)?Lt(e[o?0:e.length-1],n,o):e}e.c=Z,e.component=Z,e.html=html,e.nextTick=e=>o.length?new Promise(n=>i.push(()=>{e?.(),n()})):Promise.resolve(e?.()),e.onCleanup=e=>{const n=c;if(!n)throw Error("onCleanup needs component");let o=1;const i=()=>o--&&(n.splice(n.indexOf(i),1),e());return n.push(i),i},e.pick=Y,e.props=Y,e.r=R,e.reactive=R,e.svg=(e,...n)=>{const o=html(e,...n);return o._p=gt(e,1),o},e.t=html,e.w=G,e.watch=G}(window.Arrow);
+  </script>
+  <!-- #endregion -->
+</body>
+</html>

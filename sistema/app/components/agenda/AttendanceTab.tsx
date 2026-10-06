@@ -18,6 +18,7 @@ import {
   AttendanceStatusControl,
   type AttendanceStatus,
 } from "@/components/agenda/AttendanceStatusControl";
+import { WhatsAppTextImport } from "./WhatsAppTextImport";
 import { StudentIdentity } from "@/components/agenda/StudentIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +169,7 @@ export function AttendanceTab() {
   const [reason, setReason] = useState<CancellationReason>("feriado");
   const [note, setNote] = useState("");
   const [bulkAttendanceOpen, setBulkAttendanceOpen] = useState(false);
+  const [importingWhatsapp, setImportingWhatsapp] = useState(false);
   const [bulkAttendanceText, setBulkAttendanceText] = useState("");
   const [loadingBulkAttendance, setLoadingBulkAttendance] = useState(false);
 
@@ -339,11 +341,6 @@ export function AttendanceTab() {
     (total, group) => total + group.entries.length,
     0,
   );
-  const bulkAttendanceUnknownCount = Math.max(
-    parsedAttendance.entries.length - bulkAttendanceImportableCount,
-    0,
-  );
-
   const filteredRows = useMemo(() => {
     if (attendanceFilter === "todos") return visibleRows;
     return visibleRows.filter((row) => statusFor(row) === attendanceFilter);
@@ -355,6 +352,7 @@ export function AttendanceTab() {
 
   useEffect(() => {
     setBulkAttendanceOpen(false);
+    setImportingWhatsapp(false);
     setBulkAttendanceText("");
   }, [selectedCourseId, selectedDate]);
 
@@ -370,6 +368,7 @@ export function AttendanceTab() {
 
   async function loadBulkAttendance(event: React.FormEvent) {
     event.preventDefault();
+    if (importingWhatsapp || loadingBulkAttendance) return;
     if (bulkAttendanceGroups.length === 0) {
       toast.error(t("agenda.attendanceNothingDetected"));
       return;
@@ -516,52 +515,40 @@ export function AttendanceTab() {
           {bulkAttendanceOpen ? (
             <form
               onSubmit={loadBulkAttendance}
-              className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 border-y border-border bg-muted/25 py-4"
+              className="mb-6 grid gap-4 border-y border-border bg-muted/25 py-4"
             >
               <div className="grid gap-1.5">
                 <Label htmlFor="bulk-attendance-text">{t("agenda.loadAttendance")}</Label>
-                <textarea
-                  id="bulk-attendance-text"
-                  rows={5}
-                  value={bulkAttendanceText}
-                  onChange={(event) => setBulkAttendanceText(event.target.value)}
-                  placeholder={t("agenda.loadAttendancePlaceholder")}
-                  className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                />
-                <p className="text-xs text-muted-foreground">{t("agenda.loadAttendanceHint")}</p>
-                <div className="grid gap-0.5 text-xs" aria-live="polite">
-                  {parsedAttendance.dates.length > 0 ? (
-                    <span>
-                      {t("agenda.attendanceDatesDetected", {
-                        dates: parsedAttendance.dates.map(formatDate).join(", "),
-                      })}
-                    </span>
-                  ) : null}
-                  <span>
-                    {t("agenda.attendanceDetected", {
-                      count: parsedAttendance.valid.length,
-                    })}
-                  </span>
-                  {parsedAttendance.invalid.length > 0 ? (
-                    <span className="text-amber-700 dark:text-amber-300">
-                      {t("agenda.attendanceInvalid", {
-                        count: parsedAttendance.invalid.length,
-                      })}
-                    </span>
-                  ) : null}
-                  {bulkAttendanceUnknownCount > 0 ? (
-                    <span className="text-amber-700 dark:text-amber-300">
-                      {t("agenda.attendanceUnknown", {
-                        count: bulkAttendanceUnknownCount,
-                      })}
-                    </span>
-                  ) : null}
+                <div className="flex items-start gap-2">
+                  <textarea
+                    id="bulk-attendance-text"
+                    disabled={importingWhatsapp || loadingBulkAttendance}
+                    rows={5}
+                    value={bulkAttendanceText}
+                    onChange={(event) => setBulkAttendanceText(event.target.value)}
+                    placeholder={t("agenda.loadAttendancePlaceholder")}
+                    className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <WhatsAppTextImport
+                    targetId="bulk-attendance-text"
+                    disabled={loadingBulkAttendance}
+                    onText={(value) =>
+                      setBulkAttendanceText((current) =>
+                        current ? `${current}${current.endsWith("\n") ? "" : "\n"}${value}` : value,
+                      )
+                    }
+                    onBusy={setImportingWhatsapp}
+                  />
                 </div>
               </div>
               <div className="flex items-center justify-end gap-2">
                 <Button
                   type="submit"
-                  disabled={loadingBulkAttendance || bulkAttendanceImportableCount === 0}
+                  disabled={
+                    importingWhatsapp ||
+                    loadingBulkAttendance ||
+                    bulkAttendanceImportableCount === 0
+                  }
                 >
                   {loadingBulkAttendance ? t("agenda.loadingAttendance") : t("agenda.save")}
                 </Button>
@@ -739,7 +726,11 @@ export function AttendanceTab() {
             </div>
           ) : filteredRows.length === 0 ? (
             <p className="border-y border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-              {t(studentQuery.trim() ? "agenda.noStudentsFound" : "agenda.noStudentsInAttendanceStatus")}
+              {t(
+                studentQuery.trim()
+                  ? "agenda.noStudentsFound"
+                  : "agenda.noStudentsInAttendanceStatus",
+              )}
             </p>
           ) : (
             <>

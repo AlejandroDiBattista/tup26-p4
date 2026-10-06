@@ -1,5 +1,8 @@
 const messages = {
   agenda: {
+    whatsappFetch: "Traer de WApp",
+    whatsappFailed: "Error al traer de WApp",
+
     coursesTitle: "Cursos",
     coursesDescription: "Configuración de las comisiones, sus aulas y horarios semanales.",
     newCourse: "Nueva comisión",
@@ -94,11 +97,13 @@ const messages = {
     checkTp1: "Comprobar TP1 ({{count}})",
     checkTp2: "Comprobar TP2 ({{count}})",
     checkingTp2: "Comprobando TP2…",
-    checkTp2Hint: "Comprueba los alumnos filtrados: tp2/edit.jsx con al menos 100 líneas y compilación JSX sin errores. No verifica ejecución ni funcionamiento.",
+    checkTp2Hint:
+      "Comprueba los alumnos filtrados: tp2/edit.jsx con al menos 100 líneas y compilación JSX sin errores. No verifica ejecución ni funcionamiento.",
     tp2Checked: "TP2: {{count}} estados actualizados.",
     checkTp3: "Comprobar TP3 ({{count}})",
     checkingTp3: "Comprobando TP3…",
-    checkTp3Hint: "Comprueba los alumnos filtrados: tp3/agenda.html debe tener al menos 100 líneas agregadas respecto del enunciado original. El detalle muestra cuántas líneas se agregaron.",
+    checkTp3Hint:
+      "Comprueba los alumnos filtrados: tp3/agenda.html debe tener al menos 100 líneas agregadas respecto del enunciado original. El detalle muestra cuántas líneas se agregaron.",
     tp3Checked: "TP3: {{count}} estados actualizados.",
     checkFailures: "{{count}} comprobaciones fallaron; revisá el detalle.",
     checkDetails: "Detalle de la comprobación",
@@ -197,11 +202,14 @@ const messages = {
     loadingApprovalCodes: "Cargando notas…",
     applyApprovalCodes: "Cargar notas",
     approvalCodesPlaceholder: "Pegá los mensajes con códigos legajo.XX.respuestas.VV",
-    approvalCodesHint: "Cuatro partes: legajo (5 dígitos), nota (2 dígitos), respuestas (base 32) y verificación (2 dígitos). La nota se extrae de la segunda parte: (XX módulo 20) / 2; si da 0, es 10. Pegá hasta 500 códigos. Solo se cargan notas de 1 a 10 superiores a la registrada, para el trabajo seleccionado y los legajos del texto, aunque estén ocultos por filtros.",
+    approvalCodesHint:
+      "Cuatro partes: legajo (5 dígitos), nota (2 dígitos), respuestas (base 32) y verificación (2 dígitos). La nota se extrae de la segunda parte: (XX módulo 20) / 2; si da 0, es 10. Pegá hasta 500 códigos. Solo se cargan notas de 1 a 10 superiores a la registrada, para el trabajo seleccionado y los legajos del texto, aunque estén ocultos por filtros.",
     approvalCodesPreview: "{{detected}} alumnos detectados · {{count}} notas para cargar.",
     approvalCodesDuplicates: "{{count}} códigos repetidos: se toma la nota más alta por alumno.",
-    approvalCodesLoaded: "{{updated}} notas cargadas · {{unchanged}} conservadas · {{unknown}} legajos fuera del padrón · {{invalid}} códigos inválidos · {{failed}} errores.",
-    invalidApprovalCode: "Formato inválido; usar legajo.XX.respuestas.VV: 5 dígitos, 2 dígitos, base 32 (0–9, a–v) y 2 dígitos.",
+    approvalCodesLoaded:
+      "{{updated}} notas cargadas · {{unchanged}} conservadas · {{unknown}} legajos fuera del padrón · {{invalid}} códigos inválidos · {{failed}} errores.",
+    invalidApprovalCode:
+      "Formato inválido; usar legajo.XX.respuestas.VV: 5 dígitos, 2 dígitos, base 32 (0–9, a–v) y 2 dígitos.",
     approvalCodesPreviewCaption: "Vista previa y resultados de los códigos de aprobación",
     approvalCodesCurrentScore: "Nota registrada",
     approvalCodesDecodedScore: "Nota calculada",
@@ -219,8 +227,10 @@ const messages = {
     publishWorkStatement: "Publicar enunciado",
     downloadTp: "Bajar TP",
     downloadingTp: "Revisando, incorporando y descargando TP…",
-    downloadTpHint: "Revisa todos los PR abiertos. Normaliza el título e incorpora automáticamente las entregas de un único alumno y TP cuando el autor coincide con su GitHub en el padrón y todos los archivos están en su propia carpeta. Luego descarga las entregas fusionadas en la copia local que usa el control de presentados.",
-    tpDownloaded: "PR revisados: {{total}} · {{merged}} incorporados · {{renamed}} renombrados · {{skipped}} omitidos · {{failed}} con error.",
+    downloadTpHint:
+      "Revisa todos los PR abiertos. Normaliza el título e incorpora automáticamente las entregas de un único alumno y TP cuando el autor coincide con su GitHub en el padrón y todos los archivos están en su propia carpeta. Luego descarga las entregas fusionadas en la copia local que usa el control de presentados.",
+    tpDownloaded:
+      "PR revisados: {{total}} · {{merged}} incorporados · {{renamed}} renombrados · {{skipped}} omitidos · {{failed}} con error.",
     tpDownloadDetails: "Detalle de Bajar TP",
     prStatus_merged: "Incorporado mediante merge",
     prStatus_skipped: "Omitido",

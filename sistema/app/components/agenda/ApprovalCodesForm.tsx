@@ -4,6 +4,7 @@ import { IconX } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { WhatsAppTextImport } from "./WhatsAppTextImport";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { parseApprovalCodes, previewApprovalCodes } from "../../../shared/approval-codes";
@@ -21,6 +22,7 @@ export function ApprovalCodesForm({
   onClose: () => void;
 }) {
   const t = useT();
+  const [importing, setImporting] = useState(false);
   const [text, setText] = useState("");
   const [result, setResult] = useState<LoadApprovalCodesResult | null>(null);
   const [error, setError] = useState("");
@@ -32,7 +34,6 @@ export function ApprovalCodesForm({
   );
   const results = result?.results ?? preview;
   const invalid = result?.invalid ?? parsed.invalid;
-  const plannedCount = preview.filter((row) => row.status === "planned").length;
 
   function resultMessage(loaded: LoadApprovalCodesResult) {
     return t("agenda.approvalCodesLoaded", {
@@ -46,7 +47,7 @@ export function ApprovalCodesForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (loadCodes.isPending) return;
+    if (loadCodes.isPending || importing) return;
     setError("");
     setResult(null);
     loadCodes.mutate(
@@ -58,6 +59,7 @@ export function ApprovalCodesForm({
           if (loaded.failed || loaded.unknown || loaded.invalid.length)
             toast.warning(resultMessage(loaded));
           else toast.success(resultMessage(loaded));
+          if (!loaded.failed) onClose();
         },
         onError: (failure) => setError(failure.message),
       },
@@ -73,39 +75,38 @@ export function ApprovalCodesForm({
         <Label htmlFor="approval-codes-text">
           {t("agenda.loadApprovalCodes")}: {title}
         </Label>
-        <textarea
-          id="approval-codes-text"
-          name="text"
-          rows={5}
-          required
-          maxLength={100_000}
-          value={text}
-          disabled={loadCodes.isPending}
-          onChange={(event) => {
-            setText(event.target.value);
-            setResult(null);
-            setError("");
-          }}
-          placeholder={t("agenda.approvalCodesPlaceholder")}
-          aria-describedby="approval-codes-hint"
-          autoFocus
-          className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-        />
-        <p id="approval-codes-hint" className="text-xs text-muted-foreground">
-          {t("agenda.approvalCodesHint")}
-        </p>
+        <div className="flex items-start gap-2">
+          <textarea
+            id="approval-codes-text"
+            name="text"
+            rows={5}
+            required
+            maxLength={100_000}
+            value={text}
+            disabled={loadCodes.isPending || importing}
+            onChange={(event) => {
+              setText(event.target.value);
+              setResult(null);
+              setError("");
+            }}
+            placeholder={t("agenda.approvalCodesPlaceholder")}
+            autoFocus
+            className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+          />
+          <WhatsAppTextImport
+            targetId="approval-codes-text"
+            disabled={loadCodes.isPending}
+            onText={(value) => {
+              setText((current) =>
+                current ? `${current}${current.endsWith("\n") ? "" : "\n"}${value}` : value,
+              );
+              setResult(null);
+              setError("");
+            }}
+            onBusy={setImporting}
+          />
+        </div>
       </div>
-      <p role="status" className="text-sm text-muted-foreground">
-        {result
-          ? resultMessage(result)
-          : t("agenda.approvalCodesPreview", {
-              detected: parsed.entries.length,
-              count: plannedCount,
-            })}
-        {parsed.duplicates > 0
-          ? ` ${t("agenda.approvalCodesDuplicates", { count: parsed.duplicates })}`
-          : ""}
-      </p>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -165,7 +166,7 @@ export function ApprovalCodesForm({
         </div>
       ) : null}
       <div className="flex items-center justify-end gap-2">
-        <Button type="submit" disabled={loadCodes.isPending}>
+        <Button type="submit" disabled={loadCodes.isPending || importing}>
           {t(loadCodes.isPending ? "agenda.loadingApprovalCodes" : "agenda.applyApprovalCodes")}
         </Button>
         <Button

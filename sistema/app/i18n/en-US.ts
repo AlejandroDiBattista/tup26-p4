@@ -1,5 +1,8 @@
 const messages = {
   agenda: {
+    whatsappFetch: "Fetch from WApp",
+    whatsappFailed: "Error fetching from WApp",
+
     coursesTitle: "Courses",
     coursesDescription: "Configure commissions, classrooms and weekly schedules.",
     newCourse: "New course",
@@ -98,11 +101,13 @@ const messages = {
     checkTp1: "Check TP1 ({{count}})",
     checkTp2: "Check TP2 ({{count}})",
     checkingTp2: "Checking TP2…",
-    checkTp2Hint: "Checks filtered students: tp2/edit.jsx with at least 100 lines and successful JSX compilation. Does not test runtime behavior.",
+    checkTp2Hint:
+      "Checks filtered students: tp2/edit.jsx with at least 100 lines and successful JSX compilation. Does not test runtime behavior.",
     tp2Checked: "TP2: {{count}} statuses updated.",
     checkTp3: "Check TP3 ({{count}})",
     checkingTp3: "Checking TP3…",
-    checkTp3Hint: "Checks filtered students: tp3/agenda.html must contain at least 100 added lines compared to the original assignment template. Details show the added line count.",
+    checkTp3Hint:
+      "Checks filtered students: tp3/agenda.html must contain at least 100 added lines compared to the original assignment template. Details show the added line count.",
     tp3Checked: "TP3: {{count}} statuses updated.",
     checkFailures: "{{count}} checks failed; see the details.",
     checkDetails: "Check details",
@@ -197,11 +202,14 @@ const messages = {
     loadingApprovalCodes: "Loading grades…",
     applyApprovalCodes: "Load grades",
     approvalCodesPlaceholder: "Paste messages with studentID.XX.answers.VV codes",
-    approvalCodesHint: "Four parts: student ID (5 digits), grade (2 digits), answers (base 32) and verification (2 digits). The grade comes from the second part: (XX modulo 20) / 2; zero becomes 10. Paste up to 500 codes. Only grades from 1 to 10 higher than the recorded grade are saved, for the selected work and student IDs in the text, even when hidden by filters.",
+    approvalCodesHint:
+      "Four parts: student ID (5 digits), grade (2 digits), answers (base 32) and verification (2 digits). The grade comes from the second part: (XX modulo 20) / 2; zero becomes 10. Paste up to 500 codes. Only grades from 1 to 10 higher than the recorded grade are saved, for the selected work and student IDs in the text, even when hidden by filters.",
     approvalCodesPreview: "{{detected}} students detected · {{count}} grades to load.",
     approvalCodesDuplicates: "{{count}} repeated codes: the highest grade per student is used.",
-    approvalCodesLoaded: "{{updated}} grades loaded · {{unchanged}} preserved · {{unknown}} student IDs outside the roster · {{invalid}} invalid codes · {{failed}} errors.",
-    invalidApprovalCode: "Invalid format; use studentID.XX.answers.VV: 5 digits, 2 digits, base 32 (0–9, a–v) and 2 digits.",
+    approvalCodesLoaded:
+      "{{updated}} grades loaded · {{unchanged}} preserved · {{unknown}} student IDs outside the roster · {{invalid}} invalid codes · {{failed}} errors.",
+    invalidApprovalCode:
+      "Invalid format; use studentID.XX.answers.VV: 5 digits, 2 digits, base 32 (0–9, a–v) and 2 digits.",
     approvalCodesPreviewCaption: "Approval code preview and results",
     approvalCodesCurrentScore: "Recorded grade",
     approvalCodesDecodedScore: "Decoded grade",
@@ -219,8 +227,10 @@ const messages = {
     publishWorkStatement: "Publish instructions",
     downloadTp: "Download assignments",
     downloadingTp: "Reviewing, merging and downloading assignments…",
-    downloadTpHint: "Reviews all open PRs. Normalizes the title and automatically merges submissions for one student and assignment when the author matches their GitHub account in the roster and all files belong to their own folder. Then downloads merged submissions to the local copy used by submission checks.",
-    tpDownloaded: "PRs reviewed: {{total}} · {{merged}} merged · {{renamed}} renamed · {{skipped}} skipped · {{failed}} failed.",
+    downloadTpHint:
+      "Reviews all open PRs. Normalizes the title and automatically merges submissions for one student and assignment when the author matches their GitHub account in the roster and all files belong to their own folder. Then downloads merged submissions to the local copy used by submission checks.",
+    tpDownloaded:
+      "PRs reviewed: {{total}} · {{merged}} merged · {{renamed}} renamed · {{skipped}} skipped · {{failed}} failed.",
     tpDownloadDetails: "Assignment download details",
     prStatus_merged: "Merged",
     prStatus_skipped: "Skipped",

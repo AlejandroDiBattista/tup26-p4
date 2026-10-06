@@ -73,3 +73,36 @@ igual que los directorios usados por las acciones de publicación.
 
 Para revisar sin renombrar, hacer merge ni descargar, el agente puede ejecutar `bajar-tp` con
 `dryRun=true`.
+
+## Lectura puntual de WhatsApp (Mac)
+
+Las entradas de **Cargar códigos de aprobación** y **Cargar asistencia** incluyen
+un botón **Traer de WApp** a la derecha del texto. Al pulsarlo, consulta en segundo
+plano los últimos **14 días** de los grupos llamados exactamente
+`TUP26-P4-C1👨🏻‍💻` y `TUP26-P4-C3👨🏻‍💻`. El botón muestra un indicador de actividad;
+al finalizar agrega el texto leído al contenido existente de la caja. Si falla,
+agrega la descripción del error a esa misma caja. No hay selector de días ni
+mensajes de ayuda o estado. Solo abre una ventana si la cuenta requiere
+vinculación por QR; informa faltantes o nombres duplicados como errores.
+
+La lectura no envía mensajes ni guarda notas o asistencias: hay que confirmar
+la carga. Cada línea conserva la fecha del mensaje en la zona horaria de Tucumán.
+WhatsApp puede tener una transferencia de historial pendiente. La lectura carga
+páginas hasta alcanzar la fecha inicial del período o hasta que WhatsApp confirme
+que no queda más historial. Si lo anterior solo está en el teléfono, solicita
+sincronización y espera hasta un minuto sin avances por grupo. Si la sesión
+dejó respuestas del teléfono trabadas detrás de la sincronización inicial,
+procesa las respuestas de C1/C3 con el manejador de WhatsApp cuando la cola
+normal está inactiva; no modifica las marcas globales de sincronización. Una lectura incompleta se devuelve como error en la caja,
+incluyendo el grupo, la cantidad disponible y su fecha inicial; no se presenta
+como una lectura completa de 14 días. Hay un límite de 2000 mensajes por grupo
+y 100000 caracteres por lectura; alcanzar un límite antes de cubrir el período
+también se informa como error.
+
+Chrome se cierra al completar la consulta, ante errores o al cerrar el formulario.
+Cada operación tiene un límite de unos tres minutos. Solo se conserva la sesión
+local de cada docente en `.cache/whatsapp`, fuera de Git. El intervalo es fijo.
+No se almacenan mensajes ni códigos QR en SQL.
+La integración requiere Google Chrome instalado en `/Applications` y usa
+`whatsapp-web.js`, un cliente no oficial. Las comprobaciones de archivos TP1/TP2/TP3
+siguen usando las entregas locales.
