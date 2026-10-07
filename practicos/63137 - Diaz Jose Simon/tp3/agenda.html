@@ -79,6 +79,12 @@
         > article {
           position: relative;
           cursor: pointer;
+
+          &:focus-visible {
+            outline: 2px solid #2d3b30;
+            outline-offset: 2px;
+          }
+
           display: flex;
           flex-direction: column;
           gap: 24px;
@@ -259,6 +265,8 @@
     const CLAVE_ALMACENAMIENTO = 'agenda-alumnos'
     const CONFIGURACION_REGIONAL = 'es-AR'
     const CAMPOS_BUSCABLES = ['apellido', 'nombre', 'telefono', 'github', 'comision', 'legajo']
+    const TECLA_ENTER = 'Enter'
+    const TECLA_ESPACIO = ' '
     const ALUMNO_NUEVO = { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
     const TEXTOS_DE_ALTA = { titulo: 'Agregar alumno', descripcion: 'Ingresá los datos del alumno.' }
     const TEXTOS_DE_EDICION = { titulo: 'Editar alumno', descripcion: 'Actualizá los datos del alumno.' }
@@ -391,11 +399,35 @@
       alternarFavorito(idAlumno)
     }
 
+    function alternarFavoritoConservandoFoco(idAlumno, tarjeta) {
+      alternarFavorito(idAlumno)
+      queueMicrotask(() => tarjeta.focus())
+    }
+
+    const ACCIONES_DE_TECLADO = {
+      [TECLA_ENTER]: alumno => abrirFormularioDeEdicion(alumno),
+      [TECLA_ESPACIO]: (alumno, tarjeta) => alternarFavoritoConservandoFoco(alumno.id, tarjeta),
+    }
+
+    function manejarTeclaEnTarjeta(evento, alumno) {
+      const accion = ACCIONES_DE_TECLADO[evento.key]
+      if (!accion || evento.target !== evento.currentTarget) {
+        return
+      }
+      evento.preventDefault()
+      accion(alumno, evento.currentTarget)
+    }
+
     const Tarjeta = alumno => html`
-      <article @click="${() => abrirFormularioDeEdicion(alumno)}">
+      <article
+        tabindex="0"
+        @click="${() => abrirFormularioDeEdicion(alumno)}"
+        @keydown="${evento => manejarTeclaEnTarjeta(evento, alumno)}"
+      >
         <h2><strong>${alumno.apellido}</strong> ${alumno.nombre}</h2>
         <button
           type="button"
+          tabindex="-1"
           aria-label="Favorito"
           aria-pressed="${() => alumno.favorito}"
           @click="${evento => alternarFavoritoDesdeTarjeta(evento, alumno.id)}"
