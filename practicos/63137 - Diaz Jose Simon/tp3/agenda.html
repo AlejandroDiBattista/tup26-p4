@@ -179,6 +179,11 @@
       return estado.alumnos.toSorted(compararAlumnos)
     }
 
+    function alternarFavorito(idAlumno) {
+      const alumno = estado.alumnos.find(alumnoBuscado => alumnoBuscado.id === idAlumno)
+      alumno.favorito = !alumno.favorito
+    }
+
     const Cabecera = () => html`
       <header>
         <h1>Agenda</h1>
@@ -191,7 +196,12 @@
     const Tarjeta = alumno => html`
       <article>
         <h2><strong>${alumno.apellido}</strong> ${alumno.nombre}</h2>
-        <button type="button" aria-label="Favorito" aria-pressed="${() => alumno.favorito}">
+        <button
+          type="button"
+          aria-label="Favorito"
+          aria-pressed="${() => alumno.favorito}"
+          @click="${() => alternarFavorito(alumno.id)}"
+        >
           ${() => alumno.favorito ? '★' : '☆'}
         </button>
         <address>
