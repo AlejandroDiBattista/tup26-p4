@@ -5,13 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px sans-serif;
+      color: #2d3b30;
+      background: #f5f6f4;
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+
+      > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+
+        h1 {
+          margin: 0;
+          font-size: 28px;
+        }
+
+        input[type="search"] {
+          width: 300px;
+          max-width: 100%;
+          padding: 12px 20px;
+          border: 1px solid #d9ded9;
+          border-radius: 999px;
+          font: inherit;
+          font-size: 14px;
+          background: #fffffc;
+        }
+
+        button {
+          padding: 12px 20px;
+          border: 0;
+          border-radius: 999px;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 700;
+          color: white;
+          background: #2d3b30;
+          cursor: pointer;
+        }
+      }
+
+      > section {
+        display: grid;
+        grid-template-columns: repeat(3, 360px);
+        justify-content: center;
+        gap: 12px;
+
+        @media (max-width: 1120px) {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        @media (max-width: 700px) {
+          grid-template-columns: 1fr;
+        }
+
+        > article {
+          min-width: 0;
+          padding: 20px;
+          border: 1px solid #d9ded9;
+          border-radius: 16px;
+          background: #fffffc;
+        }
+      }
+    }
   </style>
 </head>
 <body>
@@ -40,13 +106,25 @@
 
     watch(() => JSON.stringify(estado.alumnos), guardarAlumnos)
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${() => estado.alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`.key(a.id))}
-      </ul>
-    `(app)
+    const Cabecera = () => html`
+      <header>
+        <h1>Agenda</h1>
+        <div>
+          <input type="search" placeholder="Buscar alumno...">
+          <button type="button">+ Agregar</button>
+        </div>
+      </header>
+    `
+    const Tarjeta = alumno => html`
+      <article>${alumno.apellido} ${alumno.nombre}</article>
+    `.key(alumno.id)
+    const Agenda = () => html`
+      <section>
+        ${() => estado.alumnos.map(Tarjeta)}
+      </section>
+    `
+
+    html`${Cabecera()}${Agenda()}`(document.getElementById('app'))
   </script>
 </body>
 </html>
