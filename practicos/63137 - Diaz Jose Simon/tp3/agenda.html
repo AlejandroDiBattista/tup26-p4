@@ -69,6 +69,13 @@
           grid-template-columns: 1fr;
         }
 
+        > p {
+          grid-column: 1 / -1;
+          margin: 40px 0;
+          text-align: center;
+          color: #5c675f;
+        }
+
         > article {
           position: relative;
           display: flex;
@@ -147,9 +154,11 @@
 
     const CLAVE_ALMACENAMIENTO = 'agenda-alumnos'
     const CONFIGURACION_REGIONAL = 'es-AR'
+    const CAMPOS_BUSCABLES = ['apellido', 'nombre', 'telefono', 'github', 'comision', 'legajo']
 
     const estado = reactive({
       alumnos: cargarAlumnos(),
+      busqueda: '',
     })
     function cargarAlumnos() {
       const alumnosGuardados = localStorage.getItem(CLAVE_ALMACENAMIENTO)
@@ -179,6 +188,27 @@
       return estado.alumnos.toSorted(compararAlumnos)
     }
 
+    function normalizarTexto(texto) {
+      return texto
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .trim()
+    }
+
+    function coincideConBusqueda(alumno) {
+      const textoBuscado = normalizarTexto(estado.busqueda)
+      return CAMPOS_BUSCABLES.some(campo => normalizarTexto(alumno[campo]).includes(textoBuscado))
+    }
+
+    function obtenerAlumnosVisibles() {
+      return obtenerAlumnosOrdenados().filter(coincideConBusqueda)
+    }
+
+    function actualizarBusqueda(textoBuscado) {
+      estado.busqueda = textoBuscado
+    }
+
     function alternarFavorito(idAlumno) {
       const alumno = estado.alumnos.find(alumnoBuscado => alumnoBuscado.id === idAlumno)
       alumno.favorito = !alumno.favorito
@@ -188,7 +218,11 @@
       <header>
         <h1>Agenda</h1>
         <div>
-          <input type="search" placeholder="Buscar alumno...">
+          <input
+            type="search"
+            placeholder="Buscar alumno..."
+            @input="${evento => actualizarBusqueda(evento.target.value)}"
+          >
           <button type="button">+ Agregar</button>
         </div>
       </header>
@@ -211,9 +245,13 @@
         <footer>${alumno.comision} · ${alumno.legajo}</footer>
       </article>
     `.key(alumno.id)
+    const SinResultados = () => html`<p>No hay alumnos para mostrar.</p>`
     const Agenda = () => html`
       <section>
-        ${() => obtenerAlumnosOrdenados().map(Tarjeta)}
+        ${() => {
+          const alumnosVisibles = obtenerAlumnosVisibles()
+          return alumnosVisibles.length > 0 ? alumnosVisibles.map(Tarjeta) : [SinResultados()]
+        }}
       </section>
     `
 
