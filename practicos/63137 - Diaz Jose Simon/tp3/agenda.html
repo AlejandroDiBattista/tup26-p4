@@ -142,6 +142,104 @@
           }
         }
       }
+
+      > dialog {
+        width: 620px;
+        max-width: 92vw;
+        padding: 0;
+        border: 8px solid #cdd9d0;
+        border-radius: 28px;
+        color: #2d3b30;
+        background: #fffffc;
+
+        &::backdrop {
+          background: rgb(45 59 48 / 40%);
+          backdrop-filter: blur(6px);
+        }
+
+        form {
+          > header {
+            display: block;
+            margin: 0;
+            padding: 20px 18px;
+            border-bottom: 1px solid #d9ded9;
+            background: #f5f6f4;
+
+            h2 {
+              margin: 0 0 4px;
+              font-size: 22px;
+            }
+
+            p {
+              margin: 0;
+              font-size: 14px;
+              color: #5c675f;
+            }
+          }
+
+          > div {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 16px;
+            padding: 20px 18px;
+
+            @media (max-width: 700px) {
+              grid-template-columns: 1fr;
+            }
+
+            label {
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              font-size: 12px;
+              font-weight: 700;
+              color: #5c675f;
+            }
+
+            input {
+              padding: 12px;
+              border: 1px solid #d9ded9;
+              border-radius: 10px;
+              font: inherit;
+              font-size: 15px;
+              font-weight: 400;
+              color: #2d3b30;
+              background: #f1f2ef;
+
+              &:focus {
+                outline: 2px solid #2d3b30;
+                background: #fffffc;
+              }
+            }
+          }
+
+          > footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 14px 18px;
+            border-top: 1px solid #d9ded9;
+
+            button {
+              padding: 10px 16px;
+              border: 1px solid #d9ded9;
+              border-radius: 10px;
+              font: inherit;
+              font-size: 14px;
+              font-weight: 700;
+              color: #2d3b30;
+              background: #fffffc;
+              cursor: pointer;
+
+              &[type="submit"] {
+                border-color: #2d3b30;
+                color: white;
+                background: #2d3b30;
+              }
+            }
+          }
+        }
+      }
     }
   </style>
 </head>
@@ -155,10 +253,19 @@
     const CLAVE_ALMACENAMIENTO = 'agenda-alumnos'
     const CONFIGURACION_REGIONAL = 'es-AR'
     const CAMPOS_BUSCABLES = ['apellido', 'nombre', 'telefono', 'github', 'comision', 'legajo']
+    const CAMPOS_DEL_FORMULARIO = [
+      { nombre: 'apellido', etiqueta: 'Apellido' },
+      { nombre: 'nombre', etiqueta: 'Nombre' },
+      { nombre: 'legajo', etiqueta: 'Legajo' },
+      { nombre: 'comision', etiqueta: 'Comisión' },
+      { nombre: 'telefono', etiqueta: 'Teléfono' },
+      { nombre: 'github', etiqueta: 'GitHub' },
+    ]
 
     const estado = reactive({
       alumnos: cargarAlumnos(),
       busqueda: '',
+      formularioAbierto: false,
     })
     function cargarAlumnos() {
       const alumnosGuardados = localStorage.getItem(CLAVE_ALMACENAMIENTO)
@@ -209,6 +316,22 @@
       estado.busqueda = textoBuscado
     }
 
+    function generarIdentificador() {
+      return Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1
+    }
+
+    function agregarAlumno(datosDelAlumno) {
+      estado.alumnos.push({ id: generarIdentificador(), ...datosDelAlumno, favorito: false })
+    }
+
+    function abrirFormulario() {
+      estado.formularioAbierto = true
+    }
+
+    function cerrarFormulario() {
+      estado.formularioAbierto = false
+    }
+
     function alternarFavorito(idAlumno) {
       const alumno = estado.alumnos.find(alumnoBuscado => alumnoBuscado.id === idAlumno)
       alumno.favorito = !alumno.favorito
@@ -223,7 +346,7 @@
             placeholder="Buscar alumno..."
             @input="${evento => actualizarBusqueda(evento.target.value)}"
           >
-          <button type="button">+ Agregar</button>
+          <button type="button" @click="${abrirFormulario}">+ Agregar</button>
         </div>
       </header>
     `
@@ -255,7 +378,55 @@
       </section>
     `
 
-    html`${Cabecera()}${Agenda()}`(document.getElementById('app'))
+    function leerDatosDelFormulario(formulario) {
+      const campos = [...new FormData(formulario)]
+      return Object.fromEntries(campos.map(([nombreCampo, valor]) => [nombreCampo, valor.trim()]))
+    }
+
+    function enviarFormulario(evento) {
+      evento.preventDefault()
+      agregarAlumno(leerDatosDelFormulario(evento.target))
+      cerrarFormulario()
+    }
+
+    const CampoDelFormulario = campo => html`
+      <label>
+        ${campo.etiqueta}
+        <input name="${campo.nombre}" required pattern=".*[^ ].*" title="Este campo no puede estar vacío">
+      </label>
+    `.key(campo.nombre)
+    const FormularioDeAlumno = () => html`
+      <form @submit="${enviarFormulario}">
+        <header>
+          <h2>Agregar alumno</h2>
+          <p>Ingresá los datos del alumno.</p>
+        </header>
+        <div>${CAMPOS_DEL_FORMULARIO.map(CampoDelFormulario)}</div>
+        <footer>
+          <button type="submit">Guardar</button>
+          <button type="button" @click="${cerrarFormulario}">Cancelar</button>
+        </footer>
+      </form>
+    `
+    const DialogoDeAlumno = () => html`
+      <dialog @close="${cerrarFormulario}">
+        ${() => estado.formularioAbierto ? [FormularioDeAlumno()] : []}
+      </dialog>
+    `
+
+    html`${Cabecera()}${Agenda()}${DialogoDeAlumno()}`(document.getElementById('app'))
+
+    const dialogo = document.querySelector('main > dialog')
+
+    function sincronizarDialogo(formularioAbierto) {
+      if (formularioAbierto) {
+        dialogo.showModal()
+        return
+      }
+      dialogo.close()
+    }
+
+    watch(() => estado.formularioAbierto, sincronizarDialogo)
   </script>
 </body>
 </html>
