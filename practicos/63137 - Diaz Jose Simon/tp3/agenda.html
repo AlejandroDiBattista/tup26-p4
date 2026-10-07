@@ -146,6 +146,7 @@
     import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
     const CLAVE_ALMACENAMIENTO = 'agenda-alumnos'
+    const CONFIGURACION_REGIONAL = 'es-AR'
 
     const estado = reactive({
       alumnos: cargarAlumnos(),
@@ -163,6 +164,20 @@
     }
 
     watch(() => JSON.stringify(estado.alumnos), guardarAlumnos)
+
+    function compararTexto(textoA, textoB) {
+      return textoA.localeCompare(textoB, CONFIGURACION_REGIONAL, { sensitivity: 'base' })
+    }
+
+    function compararAlumnos(alumnoA, alumnoB) {
+      return Number(alumnoB.favorito) - Number(alumnoA.favorito)
+        || compararTexto(alumnoA.apellido, alumnoB.apellido)
+        || compararTexto(alumnoA.nombre, alumnoB.nombre)
+    }
+
+    function obtenerAlumnosOrdenados() {
+      return estado.alumnos.toSorted(compararAlumnos)
+    }
 
     const Cabecera = () => html`
       <header>
@@ -188,7 +203,7 @@
     `.key(alumno.id)
     const Agenda = () => html`
       <section>
-        ${() => estado.alumnos.map(Tarjeta)}
+        ${() => obtenerAlumnosOrdenados().map(Tarjeta)}
       </section>
     `
 
