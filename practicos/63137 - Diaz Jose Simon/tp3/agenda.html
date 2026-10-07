@@ -70,11 +70,69 @@
         }
 
         > article {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
           min-width: 0;
           padding: 20px;
           border: 1px solid #d9ded9;
           border-radius: 16px;
           background: #fffffc;
+          box-shadow: 0 2px 8px rgb(45 59 48 / 8%);
+
+          h2 {
+            margin: 0;
+            padding-right: 36px;
+            font-weight: 400;
+            font-size: 16px;
+            color: #5c675f;
+
+            strong {
+              font: 700 24px Georgia, serif;
+              color: #2d3b30;
+            }
+          }
+
+          button {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            padding: 0;
+            border: 0;
+            font-size: 24px;
+            line-height: 1;
+            color: #8a7a4a;
+            background: none;
+            cursor: pointer;
+          }
+
+          address {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-style: normal;
+
+            > :first-child {
+              font-weight: 600;
+              font-size: 14px;
+            }
+
+            > :last-child {
+              font-size: 13px;
+              color: #5c675f;
+            }
+          }
+
+          footer {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #d9ded9;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            color: #5c675f;
+          }
         }
       }
     }
@@ -116,7 +174,17 @@
       </header>
     `
     const Tarjeta = alumno => html`
-      <article>${alumno.apellido} ${alumno.nombre}</article>
+      <article>
+        <h2><strong>${alumno.apellido}</strong> ${alumno.nombre}</h2>
+        <button type="button" aria-label="Favorito" aria-pressed="${() => alumno.favorito}">
+          ${() => alumno.favorito ? '★' : '☆'}
+        </button>
+        <address>
+          <span>${alumno.telefono}</span>
+          <span>@${alumno.github}</span>
+        </address>
+        <footer>${alumno.comision} · ${alumno.legajo}</footer>
+      </article>
     `.key(alumno.id)
     const Agenda = () => html`
       <section>
