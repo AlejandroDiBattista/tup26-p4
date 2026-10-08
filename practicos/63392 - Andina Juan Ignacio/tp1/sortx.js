@@ -53,9 +53,11 @@ function main() {
         const text = readInput(config.inputFile);
         const table = parseDelimited(text, config.delimiter, config.noHeader);
         const sortedRows = sortRows(table.header, table.rows, config.sortFields, config.noHeader);
-
+        const outputText = serialize(table.header, sortedRows, config.delimiter, config.noHeader);
+        writeOutput(config.outputFile, outputText);
     } catch (error) {
-        
+        console.error("Error: " + error.message);
+	    process.exit(1);       
     }
 }
 
@@ -249,5 +251,30 @@ function parseSortFields(sortFields) {
         descendig: orden === 'desc',
     }
 }
+
+function serialize(header, rows, delimiter, noHeader) {
+    const lines = [];
+
+    if (!noHeader) {
+        lines.push(header.join(delimiter));
+    }
+    
+    for (const row of rows) {
+        lines.push(row.join(delimiter));
+    }
+
+    return lines.join('\n');
+}
+
+function writeOutput(path, content) {
+    try {
+        writeFileSync(path, content, 'utf8');
+    } catch(error) {
+        throw new Error(
+			'no se pudo crear el archivo: "' + path + '" "' + error.message + '"',
+		); 
+    }
+}
+
 
 main();
