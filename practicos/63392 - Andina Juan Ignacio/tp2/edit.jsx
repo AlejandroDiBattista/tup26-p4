@@ -17,6 +17,33 @@ const COLORES = {
     acento:    '#edbb64',
 };
 
+const VISIBLE_ROWS = Math.max(1, FILAS - 9);
+const COLUMN_GAP = 2;
+const LABELS = {
+    open: 'Abrir',
+    save: 'Guardar',
+    edit: 'Editar',
+};
+const DELIMITER = ',';
+
+function parseDelimited(content) {
+    const normalized = content.split('\r\n').join('\n');
+    // ["nombre,apellido,edad,salario,departamento", "Paula,Acosta1,48,86200,Ingeniería", "Ignacio,Aguirre,53,109700,Finanzas", ""]
+    const allLines = normalized.split('\n');
+    
+    let lineCount = allLines.length;
+    if (lineCount > 0 && allLines[lineCount - 1] === '') {
+        lineCount--;
+    }
+
+    if (lineCount === 0) {
+        throw new Error('El archivo está vacio');
+    }
+
+    const lines = [];
+    for (const line of allLines.slice(0, lineCount))
+}
+
 function App() {
     const {exit} = useApp();
     
