@@ -5,29 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --fondo: #f5f6f4; --tarjeta: #fffdfb; --borde: #d9ded9;
+      --texto: #1f2520; --suave: #5f6763; --dorado: #c89d2f;
+      --dorado-suave: #f0d98d; --verde: #1b5e20; --rojo: #b42318;
+      --sombra: rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0; padding: 32px 20px;
+      font: 16px sans-serif;
+      background: var(--fondo); color: var(--texto);
+    }
+
+    main { max-width: 1100px; margin: auto; }
+
+    .cabecera { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+    .cabecera h1 { margin: 0; font-size: clamp(2rem, 3vw, 2.5rem); }
+    .toolbar { display: flex; gap: 12px; }
+    
+    .buscador { padding: 10px 14px; border: 1px solid var(--borde); border-radius: 999px; width: 250px; outline: none;}
+    
+    .btn { border: none; border-radius: 999px; padding: 10px 18px; font-weight: bold; cursor: pointer; }
+    .btn-primary { background: var(--verde); color: white; }
+    .btn-cancelar { background: #edf1ef; color: var(--texto); }
+    .btn-danger { background: var(--rojo); color: white; }
+
+    .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
+    
+    .tarjeta {
+      padding: 20px; border: 1px solid var(--borde); border-radius: 16px; 
+      background: var(--tarjeta); box-shadow: 0 1px 2px var(--sombra); cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--sombra); }
+    
+    .tarjeta header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .tarjeta h2 { margin: 0; font-size: 1.1rem; font-weight: 400; color: var(--suave); }
+    .tarjeta h2 strong { color: var(--texto); }
+    
+    .estrella { border: none; background: transparent; font-size: 1.65rem; color: var(--dorado-suave); cursor: pointer; }
+    .estrella.activa { color: var(--dorado); }
+
+    .info { margin-top: 15px; line-height: 1.6; color: var(--suave); font-style: normal; }
+    .info span { color: var(--texto); font-weight: bold; }
+    .meta { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--borde); font-size: 0.8rem; color: var(--suave); }
+    .vacio { text-align: center; color: var(--suave); grid-column: 1 / -1; padding: 40px; }
+
+    dialog { width: 100%; max-width: 500px; border: none; border-radius: 18px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+    
+    form { display: flex; flex-direction: column; gap: 15px; }
+    .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .campos label { display: flex; flex-direction: column; font-size: 0.85rem; font-weight: bold; color: var(--suave); gap: 5px;}
+    .campos input { padding: 10px; border: 1px solid var(--borde); border-radius: 8px; }
+    
+    .acciones { display: flex; justify-content: space-between; margin-top: 10px; }
+    .acciones .right { display: flex; gap: 10px; }
+    
+    @media (max-width: 600px) { .campos { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  
+  <main>
+    <header class="cabecera">
+      <h1>Agenda</h1>
+      <div class="toolbar">
+        <input id="buscador" class="buscador" type="search" placeholder="Buscar alumnos...">
+        <button id="btn-agregar" class="btn btn-primary">+ Agregar</button>
+      </div>
+    </header>
+    <section id="lista-alumnos" class="grilla"></section>
+  </main>
 
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+  <dialog id="modal">
+    <form id="form-alumno">
+      <h2 id="modal-titulo">Agregar alumno</h2>
+      <div class="campos">
+        <label>Apellido <input name="apellido" required></label>
+        <label>Nombre <input name="nombre" required></label>
+        <label>Legajo <input name="legajo" required></label>
+        <label>Comisión <input name="comision" required></label>
+        <label>Teléfono <input name="telefono" type="tel" required></label>
+        <label>GitHub <input name="github" required></label>
+      </div>
+      <div class="acciones">
+        <button type="button" id="btn-eliminar" class="btn btn-danger" style="display: none;">Eliminar</button>
+        <div class="right">
+          <button type="button" id="btn-cancelar" class="btn btn-cancelar">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
-  </script>
+  
 </body>
 </html>
