@@ -69,39 +69,19 @@
   </style>
 </head>
 <body>
-  
-  <main>
-    <header class="cabecera">
-      <h1>Agenda</h1>
-      <div class="toolbar">
-        <input id="buscador" class="buscador" type="search" placeholder="Buscar alumnos...">
-        <button id="btn-agregar" class="btn btn-primary">+ Agregar</button>
-      </div>
-    </header>
-    <section id="lista-alumnos" class="grilla"></section>
-  </main>
+  <main id="app"></main>
 
-  <dialog id="modal">
-    <form id="form-alumno">
-      <h2 id="modal-titulo">Agregar alumno</h2>
-      <div class="campos">
-        <label>Apellido <input name="apellido" required></label>
-        <label>Nombre <input name="nombre" required></label>
-        <label>Legajo <input name="legajo" required></label>
-        <label>Comisión <input name="comision" required></label>
-        <label>Teléfono <input name="telefono" type="tel" required></label>
-        <label>GitHub <input name="github" required></label>
-      </div>
-      <div class="acciones">
-        <button type="button" id="btn-eliminar" class="btn btn-danger" style="display: none;">Eliminar</button>
-        <div class="right">
-          <button type="button" id="btn-cancelar" class="btn btn-cancelar">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar</button>
-        </div>
-      </div>
-    </form>
-  </dialog>
+  <script type="module">
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
+    import alumnos from './alumnos.json' with { type: 'json' }
 
-  
+    const app = document.getElementById('app')
+    html`
+      <h1>Alumnos</h1>
+      <ul>
+        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+      </ul>
+    `(app)
+  </script>
 </body>
 </html>
