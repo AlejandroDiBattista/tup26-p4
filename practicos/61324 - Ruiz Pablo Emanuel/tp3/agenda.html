@@ -9,7 +9,44 @@
     main { width: 1104px; max-width: 100%; margin: auto; }
     h1 { margin: 0 0 24px; }
     ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
+    
+    li {
+      min-width: 0;
+      padding: 20px; 
+      border: 1px solid #d9ded9;
+      border-radius: 16px; 
+      background: white; 
+      text-align: left;
+
+      h2 {
+        font-size: 18px;
+        margin: 0 0 16px;
+      }
+      p{
+        font-size: 14px;
+        margin: 8px 0; 
+        color: #444;
+      }
+      address {
+        font-style: normal;
+      }
+      .favorito {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        border: none;
+        background: transparent;
+        color: #d4a017;
+        cursor: pointer;
+
+        svg {
+          width: 26px;
+          height: 26px;
+        }
+      }
+    }
+
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
   </style>
@@ -19,14 +56,119 @@
 
   <script type="module">
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import datosIniciales from './alumnos.json' with { type: 'json' }
+
+    const datosGuardados = localStorage.getItem('agenda-alumnos')
+    const alumnos = reactive(
+      datosGuardados ? JSON.parse(datosGuardados) : datosIniciales.map(alumno => ({
+        ...alumno,
+        id: alumno.legajo,
+        favorito: false
+      }))
+    )
+    if (!datosGuardados) {
+      localStorage.setItem('agenda-alumnos', JSON.stringify(alumnos))
+    }
 
     const app = document.getElementById('app')
+    const estado = reactive({
+      busqueda: ''
+    })
+    function normalizarTexto(texto) {
+      return texto 
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+    }
+    function filtrarAlumnos() {
+      const texto = normalizarTexto(estado.busqueda.trim())
+
+      return alumnos 
+        .filter(alumno => {
+          const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`
+          return normalizarTexto(nombreCompleto).includes(texto)
+        })
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) {
+            return a.favorito ? -1 : 1
+          }
+          const apellidoA = normalizarTexto(a.apellido)
+          const apellidoB = normalizarTexto(b.apellido)
+          const comparacion = apellidoA.localeCompare(apellidoB)
+
+          if (comparacion !==0) {
+            return comparacion
+          }
+          return normalizarTexto(a.nombre).localeCompare(normalizarTexto(b.nombre)          )
+        })
+    }
+
+    function guardarAlumnos() {
+      localStorage.setItem('agenda-alumnos', JSON.stringify(alumnos))
+    }
+    function alterarFavorito(alumno) {
+      alumno.favorito = !alumno.favorito
+      guardarAlumnos()
+    }
+
     html`
       <h1>Alumnos</h1>
+
+      <input 
+        type="search" 
+        placeholder="Buscar alumno..." 
+        aria-label="Buscar alumno" 
+        @input="${(evento) => {
+          estado.busqueda = evento.target.value
+          console.log('Buscando:', estado.busqueda)
+        }}"
+        >
+
       <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
+        ${() => filtrarAlumnos().map(a => html`
+        <li>
+         <article>
+          <header>
+            <h2>${a.nombre} ${a.apellido}</h2>
+
+            <button 
+            type="button"
+            class="favorito"
+            aria-label="Marcar como favorito"
+            @click="${() => alterarFavorito(a)}"
+            >
+            <svg 
+             xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="26"
+            height="26"
+            fill="${() => a.favorito ? '#d4a017' : 'none'}"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+            >
+            <polygon points="12,2 15.1,8.3 22,9.3 17,14.2 18.2,21 12,17.8 5.8,21 7,14.2 2,9.3 8.9,8.3"/>
+            </svg>
+            </button>
+
+          </header>
+
+            <section>
+              <p>Legajo: ${a.legajo}</p>
+              <p>Comisión: ${a.comision}</p>
+            </section>
+
+              <address>
+                <p>Teléfono: ${a.telefono}</p>
+                <p>GitHub: ${a.github}</p>
+              </address>
+          </article>
+          </li>
+        `)}
       </ul>
+      <p class="sin-resultados">
+        ${() => filtrarAlumnos().length === 0 ? 'No se encontraron alumnos para mostrar.' : ''}  
+      </p>
     `(app)
   </script>
 </body>
