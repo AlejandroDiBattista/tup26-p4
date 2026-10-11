@@ -22,6 +22,7 @@
 
     main { max-width: 1100px; margin: auto; }
 
+
     .cabecera { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
     .cabecera h1 { margin: 0; font-size: clamp(2rem, 3vw, 2.5rem); }
     .toolbar { display: flex; gap: 12px; }
@@ -54,6 +55,7 @@
     .meta { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--borde); font-size: 0.8rem; color: var(--suave); }
     .vacio { text-align: center; color: var(--suave); grid-column: 1 / -1; padding: 40px; }
 
+
     dialog { width: 100%; max-width: 500px; border: none; border-radius: 18px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
     
@@ -69,19 +71,74 @@
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  
+  <main>
+    <header class="cabecera">
+      <h1>Agenda</h1>
+      <div class="toolbar">
+        <input id="buscador" class="buscador" type="search" placeholder="Buscar alumnos...">
+        <button id="btn-agregar" class="btn btn-primary">+ Agregar</button>
+      </div>
+    </header>
+    <section id="lista-alumnos" class="grilla"></section>
+  </main>
+
+  <dialog id="modal">
+    <form id="form-alumno">
+      <h2 id="modal-titulo">Agregar alumno</h2>
+      <div class="campos">
+        <label>Apellido <input name="apellido" required></label>
+        <label>Nombre <input name="nombre" required></label>
+        <label>Legajo <input name="legajo" required></label>
+        <label>Comisión <input name="comision" required></label>
+        <label>Teléfono <input name="telefono" type="tel" required></label>
+        <label>GitHub <input name="github" required></label>
+      </div>
+      <div class="acciones">
+        <button type="button" id="btn-eliminar" class="btn btn-danger" style="display: none;">Eliminar</button>
+        <div class="right">
+          <button type="button" id="btn-cancelar" class="btn btn-cancelar">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import alumnosBase from './alumnos.json' with { type: 'json' };
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    const STORAGE_KEY = 'agenda-simplificada';
+    let lista = JSON.parse(localStorage.getItem(STORAGE_KEY)) || alumnosBase;
+    let idEditando = null;
+
+
+    const DOM = {
+      grilla: document.getElementById('lista-alumnos'),
+      buscador: document.getElementById('buscador'),
+      modal: document.getElementById('modal'),
+      form: document.getElementById('form-alumno'),
+      titulo: document.getElementById('modal-titulo'),
+      btnEliminar: document.getElementById('btn-eliminar')
+    };
+
+    const guardar = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+    const normalizar = (txt) => String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+
+    const renderizar = () => {
+      const filtro = normalizar(DOM.buscador.value);
+      
+      let filtrados = lista.filter(a => 
+        normalizar(`${a.apellido} ${a.nombre} ${a.legajo} ${a.comision} ${a.telefono} ${a.github}`).includes(filtro)
+      );
+
+      if (filtrados.length === 0) {
+        DOM.grilla.innerHTML = '<div class="vacio">No se encontraron alumnos.</div>';
+        return;
+      }
+    };
+
+    renderizar();
   </script>
 </body>
 </html>
