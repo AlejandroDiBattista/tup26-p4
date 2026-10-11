@@ -49,6 +49,31 @@
 
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+  
+    dialog {
+      width: min(90%, 420px);
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      
+          input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+          }
+          button {
+            margin-top: 12px;
+            padding: 10px;
+            cursor: pointer;
+          }
+      }
+    }
   </style>
 </head>
 <body>
@@ -110,9 +135,75 @@
       alumno.favorito = !alumno.favorito
       guardarAlumnos()
     }
+    let alumnoEnEdicion = null
+
+    function editarAlumno(alumno) {
+      alumnoEnEdicion = alumno
+      console.log('Editar alumno:', alumno.nombre)
+
+      const formulario = document.getElementById('formulario-alumno')
+        formulario.elements['nombre'].value = alumno.nombre
+        formulario.elements['apellido'].value = alumno.apellido
+        formulario.elements['legajo'].value = alumno.legajo
+        formulario.elements['comision'].value = alumno.comision
+        formulario.elements['telefono'].value = alumno.telefono
+        formulario.elements['github'].value = alumno.github
+
+        document.getElementById('dialogo-alumno').showModal()
+    }
+    function eliminarAlumno(alumno) {
+      const confirmado = confirm(
+        `¿Estás seguro de que querés eliminar a ${alumno.nombre} ${alumno.apellido}?`
+      )
+      if (!confirmado) {
+        return
+      }
+     const indice = alumnos.findIndex(a => a === alumno)
+
+     if (indice !== -1) {
+      alumnos.splice(indice, 1)
+      guardarAlumnos()
+     }
+    }
 
     html`
       <h1>Alumnos</h1>
+
+      <button type="button" id="btn-agregar">
+        Agregar alumno
+      </button>
+      <dialog id="dialogo-alumno"> 
+        <h2>Agregar alumno</h2>
+        <form id="formulario-alumno">
+
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required>
+          
+          <label for="apellido">Apellido:</label>
+          <input type="text" id="apellido" name="apellido" required>  
+
+          <label for="legajo">Legajo:</label>
+          <input type="number" id="legajo" name="legajo" required>  
+
+          <label for="comision">Comisión:</label>
+          <input type="text" id="comision" name="comision" required>  
+        
+          <label for="telefono">Teléfono:</label>
+          <input type="text" id="telefono" name="telefono" required>  
+
+          <label for="github">GitHub:</label>
+          <input type="text" id="github" name="github" required>
+
+          <button type="submit">
+            Guardar alumno
+          </button>
+
+        </form>
+        
+        <button type="button" id="btn-cerrar">
+          Cerrar
+        </button>
+      </dialog>
 
       <input 
         type="search" 
@@ -162,6 +253,14 @@
                 <p>Teléfono: ${a.telefono}</p>
                 <p>GitHub: ${a.github}</p>
               </address>
+
+              <button type="button" class="btn-editar" @click="${() => editarAlumno(a)}">
+                Editar
+              </button>
+              <button type="button" class="btn-eliminar" @click="${() => eliminarAlumno(a)}">
+                Eliminar
+              </button>
+
           </article>
           </li>
         `)}
@@ -170,6 +269,61 @@
         ${() => filtrarAlumnos().length === 0 ? 'No se encontraron alumnos para mostrar.' : ''}  
       </p>
     `(app)
+
+    const dialogoAlumno = document.getElementById('dialogo-alumno')
+    const botonAgregar = document.getElementById('btn-agregar')
+    const botonCerrar = document.getElementById('btn-cerrar')
+
+    botonAgregar.addEventListener('click', () => {
+      alumnoEnEdicion = null
+      formularioAlumno.reset()
+      dialogoAlumno.showModal()
+    })
+    botonCerrar.addEventListener('click', () => {
+      dialogoAlumno.close()
+    })
+
+    const formularioAlumno = document.getElementById('formulario-alumno')
+      formularioAlumno.addEventListener('submit', (evento) => {
+        evento.preventDefault()
+
+        const datosFormulario = new FormData(formularioAlumno)
+        
+        const nuevoAlumno = {
+          nombre: datosFormulario.get('nombre').trim(),
+          apellido: datosFormulario.get('apellido').trim(),
+          legajo: Number(datosFormulario.get('legajo')),
+          comision: datosFormulario.get('comision').trim(),
+          telefono: datosFormulario.get('telefono').trim(),
+          github: datosFormulario.get('github').trim(),
+          favorito: alumnoEnEdicion ? alumnoEnEdicion.favorito : false
+        }
+        nuevoAlumno.id = nuevoAlumno.legajo
+
+        const legajoExistente = alumnos.some(
+          alumno => Number(alumno.legajo) === nuevoAlumno.legajo &&
+           Number(alumno.id) !== Number(alumnoEnEdicion?.id)
+          )
+
+        if (legajoExistente) {
+          alert('Ya existe un alumno con ese legajo.')
+          return
+        }
+        if (alumnoEnEdicion) {
+          Object.assign(alumnoEnEdicion, nuevoAlumno)
+        } else {
+          alumnos.push(nuevoAlumno)
+        }
+        guardarAlumnos()
+        formularioAlumno.reset()
+        dialogoAlumno.close()
+
+        console.log('Nuevo alumno:', nuevoAlumno)
+        console.log('Nombre:', datosFormulario.get('nombre'))
+        console.log('Apellido:', datosFormulario.get('apellido'))
+        console.log('Legajo:', datosFormulario.get('legajo'))
+      })
+
   </script>
 </body>
 </html>
