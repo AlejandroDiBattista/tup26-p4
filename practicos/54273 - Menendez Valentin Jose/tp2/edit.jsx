@@ -38,6 +38,12 @@ function App({ archivoInicial }) {
                 setModoEdicion(true);
                 return;
             }
+            if (tecla === '<') {
+                setFilas([...filas].sort((a, b) => a[columnaActiva].localeCompare(b[columnaActiva], 'es', { numeric: true })));
+            }
+            if (tecla === '>') {
+                setFilas([...filas].sort((a, b) => b[columnaActiva].localeCompare(a[columnaActiva], 'es', { numeric: true })));
+            }
             if (key.upArrow) setFilaActiva(f => Math.max(0, f - 1));
             if (key.downArrow) setFilaActiva(f => Math.min(filas.length - 1, f + 1));
             if (key.leftArrow) setColumnaActiva(c => Math.max(0, c - 1));
@@ -142,7 +148,7 @@ function App({ archivoInicial }) {
                         </Text>
                     )}
                     <Text color={COLORES.secundario}>
-                        {modoEdicion ? <Text><Text bold color={COLORES.acento}>Enter</Text> guardar | <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text> : <Text><Text bold color={COLORES.acento}>Enter</Text> editar | <Text bold color={COLORES.acento}>Esc</Text> salir</Text>}
+                        {modoEdicion ? <Text><Text bold color={COLORES.acento}>Enter</Text> guardar | <Text bold color={COLORES.acento}>Esc</Text> cancelar</Text> : <Text><Text bold color={COLORES.acento}>Enter</Text> editar | <Text bold color={COLORES.acento}>&lt; &gt;</Text> ordenar | <Text bold color={COLORES.acento}>Esc</Text> salir</Text>}
                     </Text>
                 </Box>
             </Box>
