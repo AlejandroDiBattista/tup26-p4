@@ -3,31 +3,430 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <title>Agenda de alumnos</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      color: #20251f;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f5f1;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 48px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 28px;
+
+      h1 { margin: 0 0 6px; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+      p { margin: 0; color: #687064; }
+    }
+
+    .boton-agregar {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 20px;
+      color: white;
+      background: #4a704d;
+      font-weight: 700;
+    }
+
+    .boton-agregar:hover, .boton-agregar:focus-visible { background: #345638; }
+
+    .barra-busqueda {
+      position: relative;
+      margin-bottom: 24px;
+
+      input {
+        width: 100%;
+        border: 1px solid #d3dbd0;
+        border-radius: 12px;
+        padding: 14px 18px 14px 46px;
+        color: inherit;
+        background: white;
+        outline: none;
+      }
+
+      input:focus { border-color: #6c9470; box-shadow: 0 0 0 3px #dce9dc; }
+      span { position: absolute; top: 13px; left: 17px; color: #687064; font-size: 1.1rem; }
+    }
+
+    .lista-alumnos {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tarjeta {
+      position: relative;
+      display: flex;
+      min-height: 242px;
+      flex-direction: column;
+      border: 1px solid #d8dfd6;
+      border-radius: 16px;
+      padding: 22px;
+      background: white;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s, transform .15s;
+
+      &:hover, &:focus-visible {
+        border-color: #8caf8e;
+        box-shadow: 0 8px 20px #385a3c18;
+        transform: translateY(-2px);
+      }
+
+      h2 { margin: 0 34px 4px 0; font-size: 1.2rem; }
+      .nombre { margin: 0 0 18px; color: #687064; }
+      dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: auto 0 0; }
+      dt { color: #687064; font-size: .82rem; font-weight: 700; text-transform: uppercase; }
+      dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      address { margin-top: 15px; font-style: normal; }
+      a { color: #386b9b; }
+    }
+
+    .boton-favorito {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      border: 0;
+      border-radius: 50%;
+      padding: 5px;
+      color: #9ca69b;
+      background: transparent;
+      font-size: 1.45rem;
+      line-height: 1;
+    }
+
+    .boton-favorito.activo { color: #d29024; }
+    .boton-favorito:hover, .boton-favorito:focus-visible { background: #f4f0e5; }
+    .sin-resultados { grid-column: 1 / -1; padding: 44px 20px; color: #687064; text-align: center; }
+
+    dialog {
+      width: min(480px, calc(100% - 32px));
+      border: 0;
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 20px 60px #18251a40;
+
+      &::backdrop { background: #18251a66; }
+      form { padding: 28px; }
+      h2 { margin: 0 0 22px; }
+    }
+
+    .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .campo { display: grid; gap: 6px; }
+    .campo-completo { grid-column: 1 / -1; }
+    label { color: #4f594d; font-size: .9rem; font-weight: 700; }
+    .campo input {
+      width: 100%;
+      border: 1px solid #ccd6ca;
+      border-radius: 8px;
+      padding: 10px 11px;
+      outline: none;
+    }
+    .campo input:focus { border-color: #6c9470; box-shadow: 0 0 0 3px #dce9dc; }
+    .acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 26px; }
+    .acciones button { border: 0; border-radius: 8px; padding: 10px 15px; font-weight: 700; }
+    .cancelar { color: #4f594d; background: #edf0eb; }
+    .guardar { color: white; background: #4a704d; }
+    .eliminar { margin-right: auto; color: #a23f36; background: #fbeceb; }
+    .mensaje-error { min-height: 20px; margin: 16px 0 0; color: #a23f36; font-size: .9rem; }
+
+    @media (max-width: 850px) {
+      .lista-alumnos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 590px) {
+      main { width: min(100% - 24px, 480px); padding-top: 24px; }
+      header { align-items: start; flex-direction: column; }
+      .boton-agregar { width: 100%; }
+      .lista-alumnos, .campos { grid-template-columns: 1fr; }
+      .campo-completo { grid-column: auto; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
+  <dialog id="dialogo"></dialog>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    const claveAlmacenamiento = 'agenda-alumnos'
+    const app = document.querySelector('#app')
+    const dialogo = document.querySelector('#dialogo')
+
+    const estado = {
+      alumnos: [],
+      busqueda: '',
+      editando: false,
+      alumnoEditado: null,
+      formulario: {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
+      },
+      error: ''
+    }
+
+    const escapeHtml = valor => String(valor ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+
+    const textoNormalizado = texto => texto
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+
+    const guardarAlumnos = () => {
+      localStorage.setItem(claveAlmacenamiento, JSON.stringify(estado.alumnos))
+    }
+
+    const cargarAlumnos = () => {
+      const alumnosGuardados = localStorage.getItem(claveAlmacenamiento)
+      estado.alumnos = alumnosGuardados ? JSON.parse(alumnosGuardados) : alumnosIniciales
+      if (!alumnosGuardados) guardarAlumnos()
+    }
+
+    const alumnosVisibles = () => {
+      const busqueda = textoNormalizado(estado.busqueda.trim())
+      return [...estado.alumnos]
+        .filter(alumno => !busqueda || textoNormalizado([
+          alumno.apellido, alumno.nombre, alumno.legajo, alumno.comision,
+          alumno.telefono, alumno.github
+        ].join(' ')).includes(busqueda))
+        .sort((primero, segundo) => {
+          if (primero.favorito !== segundo.favorito) return primero.favorito ? -1 : 1
+          const apellido = textoNormalizado(primero.apellido).localeCompare(textoNormalizado(segundo.apellido))
+          return apellido || textoNormalizado(primero.nombre).localeCompare(textoNormalizado(segundo.nombre))
+        })
+    }
+
+    const abrirFormulario = alumno => {
+      estado.editando = Boolean(alumno)
+      estado.alumnoEditado = alumno
+      estado.error = ''
+      estado.formulario = alumno
+        ? { ...alumno }
+        : { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
+      renderDialogo()
+      dialogo.showModal()
+    }
+
+    const cerrarFormulario = () => {
+      dialogo.close()
+      estado.alumnoEditado = null
+      estado.editando = false
+      estado.error = ''
+      dialogo.innerHTML = ''
+    }
+
+    const alternarFavorito = (evento, alumno) => {
+      evento.stopPropagation()
+      estado.alumnos = estado.alumnos.map(actual =>
+        actual.id === alumno.id ? { ...actual, favorito: !actual.favorito } : actual
+      )
+      guardarAlumnos()
+      renderApp()
+    }
+
+    const actualizarCampo = (evento, campo) => {
+      estado.formulario[campo] = evento.target.value
+    }
+
+    const validarFormulario = () => {
+      const campos = ['apellido', 'nombre', 'legajo', 'comision', 'telefono', 'github']
+      const faltaCampo = campos.some(campo => !String(estado.formulario[campo] ?? '').trim())
+      if (faltaCampo) {
+        estado.error = 'Completá todos los campos para guardar el alumno.'
+        return false
+      }
+      return true
+    }
+
+    const guardarFormulario = evento => {
+      evento.preventDefault()
+      if (!validarFormulario()) {
+        renderDialogo()
+        return
+      }
+
+      const datos = {
+        apellido: estado.formulario.apellido.trim(),
+        nombre: estado.formulario.nombre.trim(),
+        legajo: estado.formulario.legajo.trim(),
+        comision: estado.formulario.comision.trim(),
+        telefono: estado.formulario.telefono.trim(),
+        github: estado.formulario.github.trim()
+      }
+
+      estado.alumnos = estado.editando
+        ? estado.alumnos.map(alumno => alumno.id === estado.alumnoEditado.id
+          ? { ...alumno, ...datos }
+          : alumno)
+        : [...estado.alumnos, { id: Date.now(), ...datos, favorito: false }]
+
+      guardarAlumnos()
+      cerrarFormulario()
+      renderApp()
+    }
+
+    const eliminarAlumno = () => {
+      if (!estado.editando || !estado.alumnoEditado) return
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== estado.alumnoEditado.id)
+      guardarAlumnos()
+      cerrarFormulario()
+      renderApp()
+    }
+
+    const manejarTeclado = (evento, alumno) => {
+      if (evento.key === 'Enter') abrirFormulario(alumno)
+      if (evento.key === ' ') {
+        evento.preventDefault()
+        alternarFavorito(evento, alumno)
+      }
+    }
+
+    const renderApp = () => {
+      const alumnos = alumnosVisibles()
+      app.innerHTML = `
+        <header>
+          <div><h1>Agenda de alumnos</h1><p>Consultá y administrá los datos de la comisión.</p></div>
+          <button type="button" class="boton-agregar">Agregar</button>
+        </header>
+        <section aria-label="Búsqueda de alumnos">
+          <div class="barra-busqueda">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" placeholder="Buscar por nombre, apellido, legajo o GitHub"
+              aria-label="Buscar alumnos" value="${escapeHtml(estado.busqueda)}">
+          </div>
+        </section>
+        <section aria-label="Lista de alumnos">
+          <ul class="lista-alumnos">
+            ${alumnos.length
+              ? alumnos.map(alumno => `
+                <li>
+                  <article class="tarjeta" tabindex="0" role="button" data-id="${alumno.id}">
+                    <button type="button" class="boton-favorito ${alumno.favorito ? 'activo' : ''}"
+                      aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+                      data-id="${alumno.id}">
+                      ${alumno.favorito ? '★' : '☆'}
+                    </button>
+                    <h2>${escapeHtml(alumno.apellido)}</h2>
+                    <p class="nombre">${escapeHtml(alumno.nombre)}</p>
+                    <dl>
+                      <dt>Comisión</dt><dd>${escapeHtml(alumno.comision)}</dd>
+                      <dt>Legajo</dt><dd>${escapeHtml(alumno.legajo)}</dd>
+                    </dl>
+                    <footer>
+                      <address>
+                        <div>Tel: ${escapeHtml(alumno.telefono)}</div>
+                        <div>GitHub: <a href="https://github.com/${escapeHtml(alumno.github)}" target="_blank" rel="noreferrer">${escapeHtml(alumno.github)}</a></div>
+                      </address>
+                    </footer>
+                  </article>
+                </li>
+              `).join('')
+              : '<li class="sin-resultados">No hay alumnos para mostrar.</li>'}
+          </ul>
+        </section>
+      `
+
+      app.querySelector('.boton-agregar').addEventListener('click', () => abrirFormulario())
+      app.querySelector('input[type="search"]').addEventListener('input', evento => {
+        estado.busqueda = evento.target.value
+        renderApp()
+      })
+
+      app.querySelectorAll('.tarjeta').forEach(tarjeta => {
+        tarjeta.addEventListener('click', evento => {
+          if (evento.target.closest('a')) return
+          if (evento.target.closest('.boton-favorito')) return
+          const alumno = estado.alumnos.find(item => String(item.id) === tarjeta.dataset.id)
+          if (alumno) abrirFormulario(alumno)
+        })
+
+        tarjeta.addEventListener('keydown', evento => {
+          if (evento.key === 'Enter') {
+            const alumno = estado.alumnos.find(item => String(item.id) === tarjeta.dataset.id)
+            if (alumno) abrirFormulario(alumno)
+          }
+          if (evento.key === ' ') {
+            evento.preventDefault()
+            const alumno = estado.alumnos.find(item => String(item.id) === tarjeta.dataset.id)
+            if (alumno) alternarFavorito(evento, alumno)
+          }
+        })
+      })
+
+      app.querySelectorAll('.boton-favorito').forEach(boton => {
+        boton.addEventListener('click', evento => {
+          const alumno = estado.alumnos.find(item => String(item.id) === boton.dataset.id)
+          if (alumno) alternarFavorito(evento, alumno)
+        })
+      })
+    }
+
+    const renderDialogo = () => {
+      dialogo.innerHTML = `
+        <form>
+          <h2>${estado.editando ? 'Editar alumno' : 'Agregar alumno'}</h2>
+          <div class="campos">
+            <div class="campo"><label for="apellido">Apellido</label><input id="apellido" required value="${escapeHtml(estado.formulario.apellido)}"></div>
+            <div class="campo"><label for="nombre">Nombre</label><input id="nombre" required value="${escapeHtml(estado.formulario.nombre)}"></div>
+            <div class="campo"><label for="legajo">Legajo</label><input id="legajo" required value="${escapeHtml(estado.formulario.legajo)}"></div>
+            <div class="campo"><label for="comision">Comisión</label><input id="comision" required value="${escapeHtml(estado.formulario.comision)}"></div>
+            <div class="campo"><label for="telefono">Teléfono</label><input id="telefono" required value="${escapeHtml(estado.formulario.telefono)}"></div>
+            <div class="campo"><label for="github">Usuario de GitHub</label><input id="github" required value="${escapeHtml(estado.formulario.github)}"></div>
+          </div>
+          <p class="mensaje-error" role="alert">${escapeHtml(estado.error)}</p>
+          <div class="acciones">
+            <button class="eliminar" type="button" ${estado.editando ? '' : 'hidden'}>Eliminar</button>
+            <button class="cancelar" type="button">Cancelar</button>
+            <button class="guardar" type="submit">Guardar</button>
+          </div>
+        </form>
+      `
+
+      const formulario = dialogo.querySelector('form')
+      formulario.addEventListener('submit', guardarFormulario)
+
+      formulario.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', evento => {
+          actualizarCampo(evento, input.id)
+        })
+      })
+
+      formulario.querySelector('.cancelar').addEventListener('click', cerrarFormulario)
+      const botonEliminar = formulario.querySelector('.eliminar')
+      if (botonEliminar) botonEliminar.addEventListener('click', eliminarAlumno)
+    }
+
+    dialogo.addEventListener('click', evento => {
+      if (evento.target === dialogo) cerrarFormulario()
+    })
+
+    cargarAlumnos()
+    renderApp()
   </script>
 </body>
 </html>
