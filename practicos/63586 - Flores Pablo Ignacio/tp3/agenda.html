@@ -3,31 +3,489 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <title>Agenda Alumnos</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    /* --- Variables --- */
+    :root {
+      --fondo: #f4f5f3;
+      --tarjeta: #fdfdfb;
+      --borde: #dfe3dd;
+      --texto: #2a2f2b;
+      --suave: #6b726c;
+      --acento: #2f3d33;
+      --acento-hover: #435547;
+      --estrella: #8a7d55;
+      --peligro: #b5443b;
+      --radio: 14px;
+      --sombra: 0 1px 2px rgb(0 0 0 / .04), 0 2px 8px rgb(0 0 0 / .04);
+    }
+
+    /* --- Base --- */
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--fondo);
+      color: var(--texto);
+    }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    button { font: inherit; cursor: pointer; }
+
+    /* --- Encabezado --- */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+
+      h1 { margin: 0 auto 0 0; font-size: 26px; font-weight: 600; letter-spacing: -.01em; }
+    }
+
+    .search {
+      width: 260px;
+      box-sizing: border-box;
+      padding: 10px 18px;
+      border: 1px solid var(--borde);
+      border-radius: 999px;
+      background: var(--tarjeta);
+      color: var(--texto);
+      font: inherit;
+      font-size: 14px;
+
+      &:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
+    }
+
+    .add-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 999px;
+      background: var(--acento);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background .15s;
+
+      &:hover { background: var(--acento-hover); }
+    }
+
+    /* --- Grilla y tarjetas --- */
+    ul {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 20px 20px 16px;
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      background: var(--tarjeta);
+      box-shadow: var(--sombra);
+      cursor: pointer;
+      transition: box-shadow .15s, border-color .15s;
+
+      &:hover { border-color: #c9cfc7; box-shadow: 0 4px 14px rgb(0 0 0 / .07); }
+      &:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+    }
+
+    .fav-star {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 2px 4px;
+      border: none;
+      border-radius: 6px;
+      background: none;
+      color: var(--estrella);
+      font-size: 22px;
+      line-height: 1;
+      transition: transform .15s;
+
+      &:hover { transform: scale(1.12); }
+      &:focus-visible { outline: 2px solid var(--acento); }
+    }
+
+    .student-info { display: flex; flex-direction: column; flex: 1; }
+
+    .student-name {
+      margin: 0 32px 18px 0;
+      color: var(--acento);
+
+      strong { font: 700 22px/1.2 Georgia, "Times New Roman", serif; }
+      span { color: var(--suave); font-size: 15px; }
+    }
+
+    .student-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: auto;
+      font-size: 13px;
+
+      > :first-child { font-weight: 600; letter-spacing: .02em; }
+    }
+
+    .github-link {
+      color: var(--suave);
+      text-decoration: none;
+
+      &:hover { color: var(--acento); text-decoration: underline; }
+    }
+
+    .student-id {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--borde);
+      color: var(--suave);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+    }
+
+    .empty-message { padding: 48px; color: var(--suave); text-align: center; }
+    .error-message { padding: 16px; color: var(--peligro); text-align: center; }
+
+    /* --- Diálogo --- */
+    dialog {
+      width: 560px;
+      max-width: calc(100% - 32px);
+      padding: 0;
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      background: var(--tarjeta);
+      color: var(--texto);
+      box-shadow: 0 20px 50px rgb(0 0 0 / .18);
+
+      &::backdrop { background: rgb(40 50 42 / .35); backdrop-filter: blur(3px); }
+
+      header {
+        display: block;
+        margin: 0;
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid var(--borde);
+        background: var(--fondo);
+
+        h2 { margin: 0; font-size: 19px; }
+        p { margin: 2px 0 0; color: var(--suave); font-size: 13px; }
+      }
+    }
+
+    .form-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 14px;
+      padding: 18px 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      label { color: var(--suave); font-size: 12px; font-weight: 600; }
+
+      input {
+        padding: 10px 12px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        background: #f1f2ef;
+        color: var(--texto);
+        font: inherit;
+        font-size: 14px;
+        transition: background .15s;
+
+        &:focus { outline: 2px solid var(--acento); outline-offset: 0; background: white; }
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      border-top: 1px solid var(--borde);
+
+      button {
+        padding: 9px 18px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .save-btn {
+        margin-left: auto;
+        border-color: var(--acento);
+        background: var(--acento);
+        color: white;
+
+        &:hover { background: var(--acento-hover); }
+      }
+
+      .delete-btn { color: var(--peligro); &:hover { background: #fbefee; } }
+      .cancel-btn:hover { background: var(--fondo); }
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 900px) { ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    @media (max-width: 600px) {
+      body { padding: 24px 16px; }
+      ul { grid-template-columns: 1fr; }
+      header { flex-wrap: wrap; }
+      .search { order: 3; width: 100%; }
+      .form-fields { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core@1.0.6'
 
-    const app = document.getElementById('app')
+    /**
+     * --- LÓGICA DE ESTADO Y PERSISTENCIA ---
+     */
+    const STORAGE_KEY = 'alumnos';
+
+    const leerGuardados = () => {
+      try {
+        const guardados = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return Array.isArray(guardados) ? guardados : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const leerIniciales = async () => {
+      try {
+        const response = await fetch('./alumnos.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (e) {
+        console.error('Error loading alumnos.json:', e);
+        return null;
+      }
+    };
+
+    const guardados = leerGuardados();
+    const iniciales = guardados ? null : await leerIniciales();
+    const errorCarga = !guardados && !iniciales;
+
+    const state = reactive({
+      alumnos: guardados ?? iniciales ?? [],
+      searchText: '',
+      editandoId: null // null = agregando un alumno nuevo
+    });
+
+    // Datos del formulario: una copia, así Cancelar no modifica al alumno.
+    const form = reactive({
+      apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: ''
+    });
+
+    // Persistencia automática: JSON.stringify recorre todo el array, así el
+    // watch se suscribe a cada alumno y a cada propiedad (altas, ediciones,
+    // bajas y favoritos). Se ejecuta también al iniciar y crea el almacenamiento.
+    watch(() => JSON.stringify(state.alumnos), (json) => {
+      if (!errorCarga || state.alumnos.length) localStorage.setItem(STORAGE_KEY, json);
+    });
+
+    /**
+     * --- UTILIDADES ---
+     */
+    const normalize = (text) => {
+      if (!text) return '';
+      return text.toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\p{P}/gu, '');
+    };
+
+    const getFilteredAndSorted = () => {
+      const search = normalize(state.searchText);
+      const filtered = state.alumnos.filter(a =>
+        normalize(a.apellido).includes(search) ||
+        normalize(a.nombre).includes(search) ||
+        normalize(a.legajo).includes(search) ||
+        normalize(a.github).includes(search) ||
+        normalize(a.telefono).includes(search) ||
+        normalize(a.comision).includes(search)
+      );
+
+      return [...filtered].sort((a, b) => {
+        // 1. Favoritos primero
+        if (a.favorito && !b.favorito) return -1;
+        if (!a.favorito && b.favorito) return 1;
+        // 2. Alfabético Apellido
+        const apA = normalize(a.apellido), apB = normalize(b.apellido);
+        if (apA !== apB) return apA < apB ? -1 : 1;
+        // 3. Alfabético Nombre
+        const nA = normalize(a.nombre), nB = normalize(b.nombre);
+        return nA < nB ? -1 : (nA > nB ? 1 : 0);
+      });
+    };
+
+    const CAMPOS = ['apellido', 'nombre', 'legajo', 'comision', 'telefono', 'github'];
+
+    const datosDelFormulario = () =>
+      Object.fromEntries(CAMPOS.map(c => [c, form[c].trim()]));
+
+    const validar = (formEl) => {
+      const datos = datosDelFormulario();
+      for (const campo of CAMPOS) {
+        const input = formEl.elements[campo];
+        let mensaje = datos[campo] ? '' : 'Completá este campo.';
+        if (!mensaje && campo === 'legajo' && state.alumnos.some(a => a.legajo === datos.legajo && a.id !== state.editandoId)) {
+          mensaje = 'Ya existe un alumno con ese legajo.';
+        }
+        input.setCustomValidity(mensaje);
+      }
+      return formEl.reportValidity();
+    };
+
+    /**
+     * --- ACCIONES ---
+     */
+    const dialogo = () => document.querySelector('dialog');
+
+    const abrirDialogo = (id, datos) => {
+      state.editandoId = id;
+      for (const campo of CAMPOS) form[campo] = String(datos[campo] ?? '');
+      const formEl = dialogo().querySelector('form');
+      for (const input of formEl.elements) input.setCustomValidity?.('');
+      dialogo().showModal();
+    };
+
+    const openAdd = () => abrirDialogo(null, {});
+
+    const openEdit = (alumno) => abrirDialogo(alumno.id, alumno);
+
+    const closeDialog = () => dialogo().close();
+
+    const save = (e) => {
+      e.preventDefault();
+      if (!validar(e.target)) return;
+
+      const datos = datosDelFormulario();
+      datos.github = datos.github.replace(/^@/, '');
+
+      if (state.editandoId === null) {
+        const id = state.alumnos.reduce((max, a) => Math.max(max, Number(a.id) || 0), 0) + 1;
+        state.alumnos.push({ id, ...datos, favorito: false });
+      } else {
+        const alumno = state.alumnos.find(a => a.id === state.editandoId);
+        if (alumno) Object.assign(alumno, datos);
+      }
+      closeDialog();
+    };
+
+    const remove = () => {
+      state.alumnos = state.alumnos.filter(a => a.id !== state.editandoId);
+      closeDialog();
+    };
+
+    const toggleFav = (alumno) => {
+      alumno.favorito = !alumno.favorito;
+    };
+
+    /**
+     * --- RENDERIZADO ---
+     * Arrow solo admite expresiones que ocupen el valor completo de un
+     * atributo (por ejemplo href="${() => ...}"), nunca concatenadas con texto.
+     */
+    const app = document.getElementById('app');
+
+    // Componente de Tarjeta. El <li> debe ser el único nodo de la plantilla
+    // (sin espacios antes ni después): con varios nodos raíz Arrow pierde
+    // tarjetas al actualizar la lista.
+    const StudentCard = (a) => html`<li class="${() => a.favorito ? 'favorito' : ''}"
+          tabindex="0"
+          @click="${() => openEdit(a)}"
+          @keydown="${(e) => {
+            if (e.target !== e.currentTarget) return;
+            if (e.key === 'Enter') { e.preventDefault(); openEdit(a); }
+            if (e.key === ' ') { e.preventDefault(); toggleFav(a); }
+          }}"
+      >
+        <button type="button" class="fav-star"
+                aria-pressed="${() => a.favorito ? 'true' : 'false'}"
+                aria-label="${() => a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+                @click="${(e) => { e.stopPropagation(); toggleFav(a); }}">${() => a.favorito ? '★' : '☆'}</button>
+        <div class="student-info">
+          <div class="student-name"><strong>${() => a.apellido}</strong> <span>${() => a.nombre}</span></div>
+          <div class="student-details">
+            <span>${() => a.telefono}</span>
+            <a href="${() => 'https://github.com/' + a.github}" target="_blank" rel="noopener" class="github-link" @click="${(e) => e.stopPropagation()}">@${() => a.github}</a>
+          </div>
+          <div class="student-id">${() => a.comision} · ${() => a.legajo}</div>
+        </div>
+      </li>`;
+
+    const campo = (nombre, etiqueta, tipo = 'text', extra = {}) => html`
+      <div class="form-group">
+        <label for="${'campo-' + nombre}">${etiqueta}</label>
+        <input id="${'campo-' + nombre}" name="${nombre}" type="${tipo}" required
+               inputmode="${extra.inputmode ?? false}"
+               value="${() => form[nombre]}"
+               @input="${(e) => { form[nombre] = e.target.value; e.target.setCustomValidity(''); }}" />
+      </div>
+    `;
+
+    // Plantilla Principal
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header>
+        <h1>Agenda</h1>
+        <input type="search" class="search" placeholder="Buscar alumno…" aria-label="Buscar alumno"
+               value="${() => state.searchText}"
+               @input="${(e) => state.searchText = e.target.value}" />
+        <button type="button" class="add-btn" @click="${() => openAdd()}">+ Agregar</button>
+      </header>
+
+      ${() => errorCarga
+        ? html`<p class="error-message">No se pudo cargar alumnos.json. Abrí la página desde un servidor HTTP (por ejemplo <code>npx serve</code>).</p>`
+        : ''}
+
+      ${() => getFilteredAndSorted().length === 0
+        ? html`<p class="empty-message">No hay alumnos para mostrar</p>`
+        : ''}
+
+      <ul>${() => getFilteredAndSorted().map(a => StudentCard(a).key(a.id))}</ul>
+
+      <dialog aria-labelledby="titulo-dialogo">
+        <form novalidate @submit="${(e) => save(e)}">
+          <header>
+            <h2 id="titulo-dialogo">${() => state.editandoId === null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+            <p>${() => state.editandoId === null ? 'Completá los datos del nuevo alumno.' : 'Actualizá los datos del alumno.'}</p>
+          </header>
+          <div class="form-fields">
+            ${campo('apellido', 'Apellido')}
+            ${campo('nombre', 'Nombre')}
+            ${campo('legajo', 'Legajo', 'text', { inputmode: 'numeric' })}
+            ${campo('comision', 'Comisión')}
+            ${campo('telefono', 'Teléfono', 'tel')}
+            ${campo('github', 'GitHub')}
+          </div>
+          <div class="form-actions">
+            ${() => state.editandoId !== null
+              ? html`<button type="button" class="delete-btn" @click="${() => remove()}">Eliminar</button>`
+              : ''}
+            <button type="submit" class="save-btn">Guardar</button>
+            <button type="button" class="cancel-btn" @click="${() => closeDialog()}">Cancelar</button>
+          </div>
+        </form>
+      </dialog>
+    `(app);
   </script>
 </body>
 </html>
