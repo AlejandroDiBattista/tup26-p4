@@ -235,7 +235,7 @@ function serialize(header, rows, delimiter) {
         lines.push(row.join(delimiter));
     }
 
-    return lines.join("\n") + "\n";
+    return lines.join("\n");
 }
 
 function writeOutput(outputFile, content) {
