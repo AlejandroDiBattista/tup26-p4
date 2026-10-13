@@ -36,15 +36,14 @@ EJEMPLOS:
 import fs from "fs";
 
 // Escribir aqui la solución al enunciado.
-    function parseArgs(lista){
+function parseArgs(lista){
         if (lista[2] === "-h" || lista[2] === "--help") {
             console.log(HELP);
             process.exit(0);
         }
 
         if (!lista[2] || !lista[3] ) {
-            console.error("Es necesario ingresar origen o destino");
-            process.exit(1);
+            throw new Error("Es necesario ingresar origen o destino");
         } 
 
         let origen = lista[2];
@@ -62,24 +61,39 @@ import fs from "fs";
 
         if (lista[i] === "-b" || lista[i] === "--by") {
 
-            if (!lista[i + 1]) {
-                console.error("La opcion -b necesita un criterio");
-                process.exit(1);
-            }
-
-            let criterio = lista[i + 1];
-            let partes = criterio.split(":"); 
-
-            let campo = partes[0];
-            let numerico = partes[1] === "num";
-            let descendente = partes[2] === "desc";
-
-            objeto.sortFields.push({
-            name: campo,
-            numeric: numerico,
-            descending: descendente
-            });
+        if (!lista[i + 1] || lista[i + 1].startsWith("-")) {
+        throw new Error("La opción -b necesita un criterio");
         }
+
+        const criterio = lista[i + 1];
+        const partes = criterio.split(":");
+
+        if (partes.length > 3 || partes[0] === "") {
+            throw new Error("El criterio de ordenamiento no es válido");
+        }
+
+        const campo = partes[0];
+        const tipo = partes[1] || "alpha";
+        const orden = partes[2] || "asc";
+
+        if (tipo !== "alpha" && tipo !== "num") {
+            throw new Error("El tipo de ordenamiento debe ser alpha o num");
+        }
+
+        if (orden !== "asc" && orden !== "desc") {
+            throw new Error("El orden debe ser asc o desc");
+        }
+
+        objeto.sortFields.push({
+            name: campo,
+            numeric: tipo === "num",
+            descending: orden === "desc"
+        });
+
+        i++;
+        }
+
+
 
         if (lista[i] === "-nh" || lista[i] === "--no-header") {
             objeto.noHeader = true;
@@ -87,12 +101,16 @@ import fs from "fs";
 
 
         if (lista[i] === "-d" || lista[i] === "--delimiter") {
-            if (!lista[i + 1]) {
-                console.error("La opcion -d necesita un delimitador");
-                process.exit(1);
+            if (!lista[i + 1] || lista[i + 1].startsWith("-")) {
+                throw new Error("La opcion -d necesita un delimitador");
             }
             let delimitador = lista[i + 1];
+
+            if(delimitador === "\\t"){
+                delimitador = "\t";
+            }
             objeto.delimiter = delimitador;
+            i++;
         }
 
         if (lista[i].startsWith("-")) {
@@ -106,26 +124,25 @@ import fs from "fs";
             )
                 
             {
-                console.error("Opción desconocida: " + lista[i]);
-                process.exit(1);
+                throw new Error("Opción desconocida: " + lista[i]);
             }
         }
         
     }
 
         if (objeto.sortFields.length === 0 ) {
-            console.error("tiene que indicar al menos un criterio con -b o --by.");
-            process.exit(1);
+            throw new Error("tiene que indicar al menos un criterio con -b o --by.");
         }
 
         if (objeto.delimiter.length !==1) {
-            console.error("El delimitador tiene que ser un único caracter.");
-            process.exit(1);
+            throw new Error("El delimitador tiene que ser un único caracter.");
         }
 
     return objeto;
 
 }
+
+
 function readInput(configuracion){
     return fs.readFileSync(configuracion.inputFile, "utf8");
 }
@@ -149,66 +166,77 @@ function parseDelimited(texto, delimitador){
 
     return resultado;
 }
-function sortRows(filas, configuracion){
-    // separamos el encabezado de los datos 
-    let encabezado = configuracion.noHeader ? null : filas[0];
-    let datos = configuracion.noHeader ? filas : filas.slice(1);
 
-    datos.sort((a,b) => {
 
-    for(let criterio of configuracion.sortFields){
-        let indice;
-    if (configuracion.noHeader) {
-        indice = Number(criterio.name);
-    } else{
-        indice =encabezado.indexOf(criterio.name);
-    }
+function sortRows(filas, configuracion) {
+    const encabezado = configuracion.noHeader ? null : filas[0];
+    const datos = configuracion.noHeader ? filas : filas.slice(1);
 
-    if (
-        !Number.isInteger(indice) ||
-        indice < 0 || 
-        indice >= a.length
-    ){
-        throw new Error("El campo solicitado no existe")
-    }
+    const criteriosPreparados = configuracion.sortFields.map(criterio => {
+    let indice;
 
-    let valorA=a[indice];
-    let valorB=b[indice];
-
-    if(criterio.numeric){
-        valorA = Number(valorA);
-        valorB = Number(valorB);
-
-        if(Number.isNaN(valorA) || Number.isNaN(valorB)){
-            throw new Error("El criterio numerico tiene un valor no numerico");
+        if (configuracion.noHeader) {
+            indice = Number(criterio.name);
+        } else {
+            indice = encabezado.indexOf(criterio.name);
         }
-    }
 
-    let comparacion;
-    if (criterio.numeric) {
-        comparacion = valorA - valorB;
-    }else{
-        comparacion =valorA.localeCompare(valorB)
-    }
+        if (
+            !Number.isInteger(indice) ||
+            indice < 0 ||
+            indice >= filas[0].length
+        ) {
+            throw new Error("El campo solicitado no existe");
+        }
 
-    if (criterio.descending) {
-        comparacion = -comparacion;
-    }
+        if (criterio.numeric) {
+            for (const fila of datos) {
+                if (Number.isNaN(Number(fila[indice]))) {
+                    throw new Error(
+                        "El criterio numérico tiene un valor no numérico"
+                    );
+                }
+            }
+        }
 
-    //si son diferentes, este criterio decide el orden
-    if (comparacion !== 0) {
-        return comparacion;
-    }
-    }
-    return 0;
-
+        return {
+            ...criterio,
+            indice
+        };
     });
 
-    if (!configuracion.noHeader) {
-        datos.unshift(encabezado)
+    datos.sort((a, b) => {
+        for (const criterio of criteriosPreparados) {
+            let valorA = a[criterio.indice];
+            let valorB = b[criterio.indice];
+
+            let comparacion;
+
+            if (criterio.numeric) {
+                comparacion = Number(valorA) - Number(valorB);
+            } else {
+                comparacion = valorA.localeCompare(valorB);
+            }
+
+            if (criterio.descending) {
+                comparacion = -comparacion;
+            }
+
+            if (comparacion !== 0) {
+                return comparacion;
+            }
+        }
+
+        return 0;
+    });
+
+    if (encabezado !== null) {
+        datos.unshift(encabezado);
     }
+
     return datos;
 }
+
 function serialize(filas, delimitador){
     let lineas = filas.map(fila =>fila.join(delimitador));
     //unir las filas usando saltos de linea
@@ -218,6 +246,7 @@ function serialize(filas, delimitador){
 function writeOutput(texto,archivo){
     fs.writeFileSync(archivo, texto, "utf-8");
 }
+
 try{
     let valor = parseArgs(process.argv);
     let texto = readInput(valor)
