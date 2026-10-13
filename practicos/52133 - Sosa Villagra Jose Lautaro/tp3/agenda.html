@@ -12,6 +12,190 @@
     li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
     @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px system-ui, sans-serif;
+      color: #2b2f2b;
+      background: #f5f5f3;
+    }
+
+    button, input { font: inherit; }
+
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: auto;
+
+      > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 24px;
+
+        h1 { flex: 1; margin: 0; font-size: 28px; }
+
+        input {
+          width: 300px;
+          max-width: 100%;
+          padding: 12px 20px;
+          border: 1px solid #d9ded9;
+          border-radius: 999px;
+          background: white;
+        }
+
+        button {
+          padding: 12px 20px;
+          border: 0;
+          border-radius: 999px;
+          background: #2f3e33;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+        }
+      }
+
+      > section {
+        display: grid;
+        grid-template-columns: repeat(3, 360px);
+        justify-content: center;
+        gap: 12px;
+
+        @media (max-width: 1120px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        @media (max-width: 700px) { grid-template-columns: 1fr; }
+      }
+
+      > p { text-align: center; color: #6b716b; }
+    }
+
+    article {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 16px;
+      background: #fdfdfa;
+      box-shadow: 0 2px 6px #0000000f;
+      cursor: pointer;
+
+      &:focus-visible { outline: 3px solid #2f3e33; }
+
+      > header {
+        display: flex;
+        align-items: start;
+        gap: 8px;
+        min-height: 64px;
+
+        h2 { flex: 1; margin: 0; font-size: 16px; font-weight: normal; color: #5c665e; }
+
+        strong { font: bold 24px Georgia, serif; color: #2f3e33; }
+
+        button {
+          padding: 0;
+          border: 0;
+          background: none;
+          color: #7d7550;
+          font-size: 26px;
+          line-height: 1;
+          cursor: pointer;
+        }
+      }
+
+      > address {
+        display: grid;
+        gap: 8px;
+        font-style: normal;
+        font-size: 14px;
+
+        span:last-child { color: #6b716b; }
+      }
+
+      > footer {
+        padding-top: 12px;
+        border-top: 1px solid #e3e6e3;
+        font-size: 12px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: #6b716b;
+      }
+    }
+
+    dialog {
+      width: min(92vw, 620px);
+      padding: 0;
+      border: 8px solid #dfe5df;
+      border-radius: 24px;
+      background: #fdfdfa;
+
+      &::backdrop { background: #7d8a7d99; backdrop-filter: blur(3px); }
+
+      form > header {
+        padding: 16px;
+        border-bottom: 1px solid #e3e6e3;
+        background: #f3f4f2;
+
+        h2 { margin: 0; font-size: 20px; }
+        p { margin: 4px 0 0; font-size: 14px; color: #5c665e; }
+      }
+
+      form > section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 16px;
+
+        @media (max-width: 500px) { grid-template-columns: 1fr; }
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: bold;
+        color: #5c665e;
+      }
+
+      input {
+        padding: 10px 12px;
+        border: 1px solid #e3e6e3;
+        border-radius: 10px;
+        background: #f3f4f2;
+        color: #2b2f2b;
+        font-weight: normal;
+
+        &:focus { outline: 2px solid #2f3e33; background: #fdfdfa; }
+      }
+
+      form > footer {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-top: 1px solid #e3e6e3;
+
+        button {
+          padding: 10px 18px;
+          border: 1px solid #d9ded9;
+          border-radius: 10px;
+          background: white;
+          font-weight: bold;
+          cursor: pointer;
+        }
+
+        button:first-child:not([type="submit"]) { color: #c0392b; }
+
+        button[type="submit"] {
+          margin-left: auto;
+          border-color: #2f3e33;
+          background: #2f3e33;
+          color: white;
+        }
+      }
+    }
   </style>
 </head>
 <body>
@@ -21,13 +205,176 @@
     import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
     import alumnos from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+    const app = document.getElementById('app');
+
+    const CLAVE = "agenda";
+    const estado = reactive({
+      alumnos: JSON.parse(localStorage.getItem(CLAVE)) ?? alumnos,
+      busqueda: "",
+    });
+
+    watch(() => localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos)));
+
+    // `apellido`, `nombre`, `legajo`, `comision`, `telefono`, `github`
+    const CAMPOS = ["apellido", "nombre", "legajo", "comision", "telefono", "github"];
+
+    const borrador = reactive({
+      id: null,
+      apellido: '',
+      nombre: '',
+      legajo: '',
+      comision: '',
+      telefono: '',
+      github: '',
+    });
+
+    function normalizar(texto) {
+      return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+    }
+
+    function comparar(a, b) {
+      if (a.favorito !== b.favorito) return a.favorito ? -1 : 1
+      const opciones = { sensitivity: 'base' }
+      return a.apellido.localeCompare(b.apellido, 'es', opciones)
+          || a.nombre.localeCompare(b.nombre, 'es', opciones)
+    }
+
+    function alumnosVisibles() {
+      const busqueda = normalizar(estado.busqueda.trim());
+      return estado.alumnos.filter(
+        alumno => {
+          const datosAlumno = CAMPOS.map(campo => alumno[campo]).join(" ");
+          return normalizar(datosAlumno).includes(busqueda);
+        }
+      ).sort(comparar);
+    }
+
+    const visibles = reactive(() => alumnosVisibles());
+
+    function alternarFavorito(alumno) {
+      alumno.favorito = !alumno.favorito;
+    }
+
+    function abrirEdicion(alumno) {
+      borrador.id = alumno.id;
+      for (const campo of CAMPOS) {
+        borrador[campo] = alumno[campo];
+      }
+      dialogo.showModal();
+
+    }
+
+    function teclaEnTarjeta(evento, alumno) {
+      if (evento.target !== evento.currentTarget) return;
+      if (evento.key === 'Enter') {
+        evento.preventDefault();
+        abrirEdicion(alumno);
+      }
+      if (evento.key === ' ') {
+        evento.preventDefault();
+        alternarFavorito(alumno);
+      }
+    }
+
+    function abrirAlta() {
+      borrador.id = null;
+      for (const campo of CAMPOS) borrador[campo] = ''
+      dialogo.showModal();
+    }
+
+    function guardarAlumno(evento) {
+      evento.preventDefault();
+      const datos = {};
+      for (const campo of CAMPOS) {
+        if (campo != "favorito") {
+          datos[campo] = borrador[campo].trim();
+        }
+      }
+      
+      if (borrador.id === null) {
+        // crear nuevo alumno
+        const id = Math.max(0, ...estado.alumnos.map(alumno => alumno.id)) + 1;
+        estado.alumnos.push({ 
+          //id`, `apellido`, `nombre`, `legajo`, `comision`, `telefono`, `github` y `favorito`
+          id,
+          ...datos,
+          favorito: false,
+        });
+      } else {
+        // editar alumno existente
+        const alumno = estado.alumnos.find(alumno => borrador.id === alumno.id);
+        Object.assign(alumno, datos);
+      }
+      dialogo.close();
+    }
+
+    function eliminarAlumno() {
+      estado.alumnos = estado.alumnos.filter(alumno => alumno.id !== borrador.id);
+      dialogo.close();
+    }
+
+    const Campo = (campo, etiqueta) => html`
+      <label>
+        ${etiqueta}
+        <input required
+          .value="${() => borrador[campo]}"
+          @input="${evento => borrador[campo] = evento.target.value}">
+      </label>
+    `
+
+    const Tarjeta = alumno => html`<article tabindex="0"
+      @click="${() => abrirEdicion(alumno)}"
+      @keydown="${evento => teclaEnTarjeta(evento, alumno)}">
+      <header>
+        <h2><strong>${() => alumno.apellido}</strong> ${() => alumno.nombre}</h2>
+        <button type="button" aria-label="Favorito"
+          @click="${evento => { evento.stopPropagation(); alternarFavorito(alumno) }}">
+          ${() => alumno.favorito ? '★' : '☆'}
+        </button>
+      </header>
+      <address>
+        <span>${() => alumno.telefono}</span>
+        <span>@${() => alumno.github}</span>
+      </address>
+      <footer>${() => alumno.comision} · ${() => alumno.legajo}</footer>
+    </article>`.key(alumno.id)
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header>
+        <h1>Agenda</h1>
+        <input type="search" placeholder="Buscar alumno..."
+          .value="${() => estado.busqueda}"
+          @input="${evento => estado.busqueda = evento.target.value}">
+        <button type="button" @click="${abrirAlta}">+ Agregar</button>
+      </header>
+      <section>
+        ${() => visibles.value.map(Tarjeta)}
+      </section>
+      <p>${() => visibles.value.length ? '' : 'No hay alumnos para mostrar.'}</p>
+      <dialog>
+        <form @submit="${guardarAlumno}">
+          <header>
+            <h2>${() => borrador.id === null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+            <p>${() => borrador.id === null ? 'Completá los datos del alumno.' : 'Actualizá los datos del alumno.'}</p>
+          </header>
+          <section>
+            ${Campo('apellido', 'Apellido')}
+            ${Campo('nombre', 'Nombre')}
+            ${Campo('legajo', 'Legajo')}
+            ${Campo('comision', 'Comisión')}
+            ${Campo('telefono', 'Teléfono')}
+            ${Campo('github', 'GitHub')}
+          </section>
+          <footer>
+            ${() => borrador.id === null ? '' : html`<button type="button" @click="${eliminarAlumno}">Eliminar</button>`}
+            <button type="submit">Guardar</button>
+            <button type="button" @click="${() => dialogo.close()}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
+    `(document.getElementById('app'))
+
+    const dialogo = document.querySelector('dialog')
   </script>
 </body>
 </html>
