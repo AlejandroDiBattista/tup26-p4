@@ -39,7 +39,6 @@ const guardarCSV = (nombre, {cabecera, filas}) =>
 
 const razon = (e, nombre) => (e.code === 'ENOENT' ? `no existe "${nombre}"` : e.message);
 
-// Recorta con "…" y rellena hasta el ancho indicado.
 function ajustar(texto, ancho, derecha) {
     const s = texto.length > ancho ? texto.slice(0, ancho - 1) + '…' : texto;
     return derecha ? s.padStart(ancho) : s.padEnd(ancho);
@@ -72,7 +71,6 @@ function App({archivo0, datos0, error0}) {
 
     const {cabecera, filas} = datos;
 
-    // Columnas numéricas: se alinean a la derecha y se ordenan como números.
     const numericas = React.useMemo(
         () => cabecera.map((_, c) => filas.length > 0 && filas.every((f) => f[c] !== '' && !isNaN(f[c]))),
         [datos]
@@ -93,7 +91,6 @@ function App({archivo0, datos0, error0}) {
         setDatos({cabecera, filas: [...filas].sort((a, b) => (ascendente ? 1 : -1) * cmp(a, b))});
     }
 
-    // Enter dentro del campo de texto (abrir, guardar o editar).
     async function confirmar(v) {
         const nombre = v.trim();
         try {
@@ -132,7 +129,7 @@ function App({archivo0, datos0, error0}) {
             setModo('ver');
             return setMensaje(null);
         }
-        if (modo !== 'ver') return; // el campo de texto lo maneja TextInput
+        if (modo !== 'ver') return; 
 
         setMensaje(null);
         const letra = tecla.toLowerCase();
@@ -156,8 +153,6 @@ function App({archivo0, datos0, error0}) {
     const visibles = Math.max(3, (process.stdout.rows || 24) - 11);
     const anchoNum = String(filas.length).length + 2;
 
-    // Ventana vertical (centrada en la fila seleccionada) y horizontal
-    // (desde la primera columna que permita ver la seleccionada).
     const inicio = Math.max(0, Math.min(sel.fila - Math.floor(visibles / 2), filas.length - visibles));
     const costo = (a, b) => anchos.slice(a, b + 1).reduce((suma, w) => suma + w + GAP, 0);
     const disponible = columnas - 4 - anchoNum;
@@ -166,7 +161,6 @@ function App({archivo0, datos0, error0}) {
     const cols = [];
     for (let c = desde; c < cabecera.length && (c === desde || costo(desde, c) <= disponible); c++) cols.push(c);
 
-    // Una línea de la tabla: la cabecera (fila = -1) o un registro.
     function renglon(fila, etiqueta, textoDe) {
         const cab = fila < 0;
         const filaSel = fila === sel.fila;
