@@ -1,10 +1,10 @@
 #!/usr/bin/env -S node --import tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
-import {basename} from 'node:path';
+import {basename, delimiter} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -41,11 +41,45 @@ function parseDelimited(content) {
     }
 
     const lines = [];
-    for (const line of allLines.slice(0, lineCount))
+    for (const line of allLines.slice(0, lineCount)) {
+        lines.push(line);
+    }
+
+    // ["nombre,apellido,edad,salario,departamento",  "Paula,Acosta1,48,86200,Ingeniería", "Ignacio,Aguirre,53,109700,Finanzas"]
+    // ["nombre", "apellido", "edad", "salario", "departamento"]
+    const header = lines[0].split(DEMILITER);
+
+    // [["Paula", "Acosta", 48, 86200, "Ingeniería"],  ["Ignacio", "Aguirre", 53, 109700, "Finanzas"]]
+    const rows = [];
+    for (const line of lines.slice(1)) {
+        rows.push(line.split(DELIMITER));
+    }
+    
+    for (const [index, row] of rows.entries()) {
+        if (row.length !== header.length) {
+            throw new Error('La fila ' + (index + 1) + ' tiene una cantidad de campos distintas a header');
+        }      
+    }
+
+    return { header, rows }; 
+}   
+
+async function loadCsv(path) {
+    let text; 
+    
+    try {
+        text = await readFile(path, 'utf8');
+    } catch (error) {
+        
+    }
 }
 
-function App() {
+function App({ initialTable, initialMessage }) {
     const {exit} = useApp();
+    const [table, setTable] = useState(initialTable);
+    const [mode, setMode] = useState(initialTable ? 'view' : 'open');
+    const [message, setMessage] = useState(initialMessage);
+    const [cursor, setCursor] = useState({ row: 0, column: 0, firstRow: 0 });
     
     useInput((tecla, key) => {
         if (key.escape) {
@@ -54,17 +88,63 @@ function App() {
     })
 
     return (
-        <Box width={COLUMNAS} height={FILAS} justifyContent="center" alignItems="center">
-            <Box width={40} height={10} flexDirection="column" borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
-                <Box flexGrow={1} justifyContent="center" alignItems="center">
-                    <Text bold color={COLORES.titulo}>Editor CSV</Text>
+        <Box width={COLUMNAS} height={FILAS} flexDirection="column" paddingX={1} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
+            <Box justifyContent="space-between">
+                <Text bold color={COLORES.titulo}>{table ? basename(table.fileName) : 'Editor CSV'}</Text>
+                {table && (
+                    <Text color={COLORES.secundario}>{table.rows.length} filas · {table.header.length} columnas</Text>
+                )}
+            </Box>
+            <Text> </Text>
+            <Box>
+                {mode === 'view' ? (
+                    <Text color={COLORES.secundario} wrap="truncate-end">Valor › <Text color={COLORES.titulo}>{currentValue}</Text></Text>
+                ) : (
+                    <>
+                        <Text bold color={COLORES.acento}>{PROMPT_LABELS[mode]} › </Text>
+                        <TextInput key={mode} defaultValue={defaultValue} onSubmit={handleSubmit} />
+                    </>
+                )}
+            </Box>
+            <Text color={COLORES.acento} wrap="truncate-end">{message || ' '}</Text>
+            {table && (
+                <Table table={table} columns={columns} cursor={cursor} />
+            )}
+            <Box flexGrow={1} />
+            <Box justifyContent="space-between">
+                <Box flexShrink={1}>
+                    <Text color={COLORES.secundario} wrap="truncate-end">
+                        {hints.map((item, index) => (
+                            <Text key={item.key}>
+                                {index > 0 ? ' · ' : ''}
+                                <Text bold color={COLORES.acento}>{item.key}</Text> {item.label}
+                            </Text>
+                        ))}
+                    </Text>
                 </Box>
-                <Text color={COLORES.secundario}><Text bold color={COLORES.acento}> Esc</Text> salir</Text>
+                {hasRows && (
+                    <Box flexShrink={0} marginLeft={2}>
+                        <Text color={COLORES.secundario}>Fila {cursor.row + 1} · Columna {cursor.column + 1}</Text>
+                    </Box>
+                )}
             </Box>
         </Box>
     );
 }
 
-const app = render(<App />);
+const initialFile = process.argv[2];
+let initialTable = null;
+let initialMessage = null;
+
+if (initialFile) {
+    try {
+        initialTable = await loadCsv(initialFile);
+    } catch (error) {
+        initialMessage = 'Error: ' + error.message;    
+    }
+}
+
+
+const app = render(<App initialTable={initialTable} initialMessage={initialMessage} />);
 await app.waitUntilExit();
 console.clear();
