@@ -172,19 +172,32 @@
 
 
 <script type="module">
-  import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+  import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
   import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
   const app = document.getElementById('app')
 
+  const datosGuardados = localStorage.getItem('alumnos')
+
+  const alumnosInicialesGuardados = datosGuardados
+    ? JSON.parse(datosGuardados)
+    : alumnosIniciales
+
   const estado = reactive({
-    alumnos: alumnosIniciales,
+    alumnos: alumnosInicialesGuardados,
     busqueda: '',
     editando: false,
     alumnoActual: crearAlumnoVacio(),
     errores: {}
   })
 
+  if (!datosGuardados) {
+    localStorage.setItem('alumnos', JSON.stringify(alumnosIniciales))
+  }
+
+  watch(() => {
+    localStorage.setItem('alumnos', JSON.stringify(estado.alumnos))
+  })
   function crearAlumnoVacio() {
     return {
       id: 0,
@@ -286,6 +299,16 @@
 
     cerrarFormulario()
   }
+
+  function eliminarAlumno() {
+    if (!estado.editando) return
+
+    estado.alumnos = estado.alumnos.filter(
+      alumno => alumno.id !== estado.alumnoActual.id
+    )
+
+    cerrarFormulario()
+}
 
   function mostrarError(campo) {
     return estado.errores[campo]
@@ -397,11 +420,30 @@
         </div>
 
         <div class="acciones">
-          <button class="cancelar" type="button" @click="${cerrarFormulario}">
+          ${() => estado.editando
+           ? html`
+                <button
+                 type="button"
+                  class="cancelar"
+                  @click="${eliminarAlumno}"
+                >
+                  Eliminar
+                </button>
+              `
+           : ''}
+
+          <button
+           class="cancelar"
+            type="button"
+           @click="${cerrarFormulario}"
+         >
             Cancelar
           </button>
-          <button class="guardar" type="submit">Guardar</button>
-        </div>
+
+         <button class="guardar" type="submit">
+           Guardar
+         </button>
+       </div>
       </form>
     </dialog>
   `(app)
