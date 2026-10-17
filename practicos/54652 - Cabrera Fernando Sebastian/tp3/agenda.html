@@ -287,7 +287,20 @@
             )
           })
           .map(alumno => html`
-            <li @click="${() => abrirEdicion(alumno.id)}">
+            <li
+            tabindex="0"
+              @click="${() => abrirEdicion(alumno.id)}"
+              @keydown="${evento => {
+              if (evento.key === 'Enter') {
+               abrirEdicion(alumno.id)}
+              if (evento.key === ' ') {
+              evento.preventDefault()
+              alternarFavorito(alumno.id)
+            }
+          }}"
+          > 
+
+
               <h2>
                 ${alumno.apellido}, ${alumno.nombre}
               </h2>
@@ -298,10 +311,11 @@
               <p>GitHub: ${alumno.github}</p>
 
               <button
-                type="button"
-                @click="${() =>
-                  alternarFavorito(alumno.id)}"
-              >
+               type="button"
+              @click="${evento => {
+              evento.stopPropagation()
+              alternarFavorito(alumno.id)}}">
+
                 ${() =>
                   alumno.favorito ? '🌟' : '☆'}
               </button>
