@@ -59,20 +59,44 @@
 <body>
   <main id="app"></main>
 
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnosIniciales from './alumnos.json' with { type: 'json' }
+  
+<script type="module">
+  import { html, reactive } from 'https://esm.sh/@arrow-js/core'
+  import alumnosIniciales from './alumnos.json' with { type: 'json' }
 
-    const app = document.getElementById('app')
+  const app = document.getElementById('app')
 
-    const estado = reactive({
-      alumnos: alumnosIniciales
+  const estado = reactive({
+    alumnos: alumnosIniciales
+  })
+
+  function ordenarAlumnos(alumnos) {
+    return [...alumnos].sort((a, b) => {
+      return a.apellido.localeCompare(b.apellido, 'es', {
+        sensitivity: 'base'
+      }) || a.nombre.localeCompare(b.nombre, 'es', {
+        sensitivity: 'base'
+      })
     })
+  }
 
-    html`
-      <h1>Agenda de alumnos</h1>
-      <p>Alumnos cargados: ${() => estado.alumnos.length}</p>
-    `(app)
-  </script>
+  html`
+    <h1>Alumnos</h1>
+
+    <ul>
+      ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
+        <li>
+          <b>${alumno.apellido}</b>
+          ${alumno.nombre}
+
+          <p>${alumno.telefono}</p>
+          <p>@${alumno.github}</p>
+          <p>${alumno.comision} · Legajo ${alumno.legajo}</p>
+        </li>
+      `)}
+    </ul>
+  `(app)
+</script>
+
 </body>
 </html>
