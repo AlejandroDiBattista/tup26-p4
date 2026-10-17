@@ -42,6 +42,29 @@
       text-align: center;
     }
 
+    .agenda-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+   .agenda-header input {
+     padding: 10px 14px;
+     border: 1px solid #d9ded9;
+     border-radius: 20px;
+     font: inherit;
+   }
+
+   .favorito {
+     border: 0;
+     background: transparent;
+     color: #8a7b4e;
+     font-size: 24px;
+     cursor: pointer;
+   }
+
     @media (max-width: 1120px) {
       ul {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -60,6 +83,7 @@
   <main id="app"></main>
 
   
+
 <script type="module">
   import { html, reactive } from 'https://esm.sh/@arrow-js/core'
   import alumnosIniciales from './alumnos.json' with { type: 'json' }
@@ -67,36 +91,83 @@
   const app = document.getElementById('app')
 
   const estado = reactive({
-    alumnos: alumnosIniciales
+    alumnos: alumnosIniciales,
+    busqueda: ''
   })
 
-  function ordenarAlumnos(alumnos) {
-    return [...alumnos].sort((a, b) => {
-      return a.apellido.localeCompare(b.apellido, 'es', {
-        sensitivity: 'base'
-      }) || a.nombre.localeCompare(b.nombre, 'es', {
-        sensitivity: 'base'
+  function normalizar(texto) {
+    return String(texto ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+  }
+
+  function obtenerAlumnos() {
+    const busqueda = normalizar(estado.busqueda)
+
+    return estado.alumnos
+      .filter(alumno => {
+        const datos = `${alumno.apellido} ${alumno.nombre} ${alumno.legajo}`
+        return normalizar(datos).includes(busqueda)
       })
-    })
+      .sort((a, b) => {
+        return Number(b.favorito) - Number(a.favorito) ||
+          a.apellido.localeCompare(b.apellido, 'es', {
+            sensitivity: 'base'
+          }) ||
+          a.nombre.localeCompare(b.nombre, 'es', {
+            sensitivity: 'base'
+          })
+      })
+  }
+
+  function alternarFavorito(alumno) {
+    alumno.favorito = !alumno.favorito
   }
 
   html`
-    <h1>Alumnos</h1>
+    <header class="agenda-header">
+      <h1>Alumnos</h1>
+
+      <input
+        type="search"
+        placeholder="Buscar alumno..."
+        aria-label="Buscar alumnos"
+        @input="${e => estado.busqueda = e.target.value}"
+      />
+    </header>
 
     <ul>
-      ${() => ordenarAlumnos(estado.alumnos).map(alumno => html`
+      ${() => obtenerAlumnos().map(alumno => html`
         <li>
-          <b>${alumno.apellido}</b>
-          ${alumno.nombre}
+          <div>
+            <b>${alumno.apellido}</b>
+            ${alumno.nombre}
+
+            <button
+              class="favorito"
+              type="button"
+              aria-label="${() => alumno.favorito
+                ? 'Quitar de favoritos'
+                : 'Marcar como favorito'}"
+              aria-pressed="${() => String(alumno.favorito)}"
+              @click="${() => alternarFavorito(alumno)}"
+            >${() => alumno.favorito ? '★' : '☆'}</button>
+          </div>
 
           <p>${alumno.telefono}</p>
           <p>@${alumno.github}</p>
           <p>${alumno.comision} · Legajo ${alumno.legajo}</p>
         </li>
       `)}
+
+      ${() => obtenerAlumnos().length === 0
+        ? html`<li>No se encontraron alumnos.</li>`
+        : ''}
     </ul>
   `(app)
 </script>
+
 
 </body>
 </html>
