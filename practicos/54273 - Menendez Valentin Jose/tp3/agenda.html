@@ -51,20 +51,106 @@
     }
 
    .agenda-header input {
-     padding: 10px 14px;
-     border: 1px solid #d9ded9;
-     border-radius: 20px;
-     font: inherit;
+      padding: 10px 14px;
+      border: 1px solid #d9ded9;
+      border-radius: 20px;
+      font: inherit;
    }
 
    .favorito {
-     border: 0;
-     background: transparent;
-     color: #8a7b4e;
-     font-size: 24px;
-     cursor: pointer;
+      border: 0;
+      background: transparent;
+      color: #8a7b4e;
+      font-size: 24px;
+      cursor: pointer;
    }
 
+   button {
+      font: inherit;
+   }  
+
+   .agregar {
+      padding: 10px 18px;
+     border: 0;
+      border-radius: 20px;
+      background: #304035;
+      color: white;
+      cursor: pointer;
+   }
+
+   dialog {
+      width: 500px;
+      max-width: calc(100% - 40px);
+      border: 0;
+      border-radius: 16px;
+      padding: 24px;
+      background: #f5f6f4;
+   }
+
+   dialog::backdrop {
+      background: #0006;
+   }
+
+   .campos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+   }
+
+   .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+   }
+
+   .campo input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d9ded9;
+      border-radius: 8px;
+      font: inherit;
+   }
+
+   .error {
+      color: #b42318;
+      font-size: 13px;
+   }
+
+   .acciones {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+   }
+
+  .acciones button {
+      padding: 10px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+  }
+
+  .guardar {
+      border: 0;
+      background: #304035;
+      color: white;
+  }
+
+  .cancelar {
+      border: 1px solid #d9ded9;
+      background: white;
+  }
+
+ @media (max-width: 700px) {
+  .agenda-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .campos {
+    grid-template-columns: 1fr;
+  }
+}
     @media (max-width: 1120px) {
       ul {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -84,6 +170,7 @@
 
   
 
+
 <script type="module">
   import { html, reactive } from 'https://esm.sh/@arrow-js/core'
   import alumnosIniciales from './alumnos.json' with { type: 'json' }
@@ -92,8 +179,24 @@
 
   const estado = reactive({
     alumnos: alumnosIniciales,
-    busqueda: ''
+    busqueda: '',
+    editando: false,
+    alumnoActual: crearAlumnoVacio(),
+    errores: {}
   })
+
+  function crearAlumnoVacio() {
+    return {
+      id: 0,
+      apellido: '',
+      nombre: '',
+      legajo: '',
+      comision: '',
+      telefono: '',
+      github: '',
+      favorito: false
+    }
+  }
 
   function normalizar(texto) {
     return String(texto ?? '')
@@ -110,31 +213,102 @@
         const datos = `${alumno.apellido} ${alumno.nombre} ${alumno.legajo}`
         return normalizar(datos).includes(busqueda)
       })
-      .sort((a, b) => {
-        return Number(b.favorito) - Number(a.favorito) ||
-          a.apellido.localeCompare(b.apellido, 'es', {
-            sensitivity: 'base'
-          }) ||
-          a.nombre.localeCompare(b.nombre, 'es', {
-            sensitivity: 'base'
-          })
-      })
+      .sort((a, b) =>
+        Number(b.favorito) - Number(a.favorito) ||
+        a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' }) ||
+        a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      )
   }
 
   function alternarFavorito(alumno) {
     alumno.favorito = !alumno.favorito
   }
 
+  function agregarAlumno() {
+    estado.editando = false
+    estado.alumnoActual = crearAlumnoVacio()
+    estado.errores = {}
+    document.getElementById('dialog_alumno').showModal()
+  }
+
+  function editarAlumno(alumno) {
+    estado.editando = true
+    estado.alumnoActual = { ...alumno }
+    estado.errores = {}
+    document.getElementById('dialog_alumno').showModal()
+  }
+
+  function cerrarFormulario() {
+    document.getElementById('dialog_alumno').close()
+  }
+
+  function validarAlumno() {
+    const alumno = estado.alumnoActual
+    const errores = {}
+
+    if (!alumno.apellido.trim()) {
+      errores.apellido = 'Ingresá el apellido.'
+    }
+
+    if (!alumno.nombre.trim()) {
+      errores.nombre = 'Ingresá el nombre.'
+    }
+
+    if (!alumno.legajo.trim()) {
+      errores.legajo = 'Ingresá el legajo.'
+    } else if (!/^\d+$/.test(alumno.legajo)) {
+      errores.legajo = 'El legajo debe tener solo números.'
+    } else if (estado.alumnos.some(otro =>
+      otro.id !== alumno.id && otro.legajo === alumno.legajo
+    )) {
+      errores.legajo = 'Ese legajo ya existe.'
+    }
+
+    estado.errores = errores
+    return Object.keys(errores).length === 0
+  }
+
+  function guardarAlumno() {
+    if (!validarAlumno()) return
+
+    const alumno = { ...estado.alumnoActual }
+
+    if (estado.editando) {
+      const posicion = estado.alumnos.findIndex(a => a.id === alumno.id)
+
+      if (posicion !== -1) {
+        estado.alumnos[posicion] = alumno
+      }
+    } else {
+      alumno.id = Math.max(0, ...estado.alumnos.map(a => Number(a.id) || 0)) + 1
+      estado.alumnos.push(alumno)
+    }
+
+    cerrarFormulario()
+  }
+
+  function mostrarError(campo) {
+    return estado.errores[campo]
+      ? html`<small class="error">${estado.errores[campo]}</small>`
+      : ''
+  }
+
   html`
     <header class="agenda-header">
       <h1>Alumnos</h1>
 
-      <input
-        type="search"
-        placeholder="Buscar alumno..."
-        aria-label="Buscar alumnos"
-        @input="${e => estado.busqueda = e.target.value}"
-      />
+      <div>
+        <input
+          type="search"
+          placeholder="Buscar alumno..."
+          aria-label="Buscar alumnos"
+          @input="${e => estado.busqueda = e.target.value}"
+        />
+
+        <button class="agregar" type="button" @click="${agregarAlumno}">
+          + Agregar
+        </button>
+      </div>
     </header>
 
     <ul>
@@ -151,13 +325,20 @@
                 ? 'Quitar de favoritos'
                 : 'Marcar como favorito'}"
               aria-pressed="${() => String(alumno.favorito)}"
-              @click="${() => alternarFavorito(alumno)}"
+              @click="${e => {
+                e.stopPropagation()
+                alternarFavorito(alumno)
+              }}"
             >${() => alumno.favorito ? '★' : '☆'}</button>
           </div>
 
           <p>${alumno.telefono}</p>
           <p>@${alumno.github}</p>
           <p>${alumno.comision} · Legajo ${alumno.legajo}</p>
+
+          <button type="button" @click="${() => editarAlumno(alumno)}">
+            Editar
+          </button>
         </li>
       `)}
 
@@ -165,8 +346,67 @@
         ? html`<li>No se encontraron alumnos.</li>`
         : ''}
     </ul>
+
+    <dialog id="dialog_alumno">
+      <form @submit="${e => {
+        e.preventDefault()
+        guardarAlumno()
+      }}">
+        <h2>${() => estado.editando ? 'Editar alumno' : 'Agregar alumno'}</h2>
+
+        <div class="campos">
+          <div class="campo">
+            <label for="apellido">Apellido</label>
+            <input id="apellido" .value="${() => estado.alumnoActual.apellido}"
+              @input="${e => estado.alumnoActual.apellido = e.target.value}" />
+            ${() => mostrarError('apellido')}
+          </div>
+
+          <div class="campo">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" .value="${() => estado.alumnoActual.nombre}"
+              @input="${e => estado.alumnoActual.nombre = e.target.value}" />
+            ${() => mostrarError('nombre')}
+          </div>
+
+          <div class="campo">
+            <label for="legajo">Legajo</label>
+            <input id="legajo" inputmode="numeric"
+              .value="${() => estado.alumnoActual.legajo}"
+              @input="${e => estado.alumnoActual.legajo = e.target.value}" />
+            ${() => mostrarError('legajo')}
+          </div>
+
+          <div class="campo">
+            <label for="comision">Comisión</label>
+            <input id="comision" .value="${() => estado.alumnoActual.comision}"
+              @input="${e => estado.alumnoActual.comision = e.target.value}" />
+          </div>
+
+          <div class="campo">
+            <label for="telefono">Teléfono</label>
+            <input id="telefono" .value="${() => estado.alumnoActual.telefono}"
+              @input="${e => estado.alumnoActual.telefono = e.target.value}" />
+          </div>
+
+          <div class="campo">
+            <label for="github">GitHub</label>
+            <input id="github" .value="${() => estado.alumnoActual.github}"
+              @input="${e => estado.alumnoActual.github = e.target.value}" />
+          </div>
+        </div>
+
+        <div class="acciones">
+          <button class="cancelar" type="button" @click="${cerrarFormulario}">
+            Cancelar
+          </button>
+          <button class="guardar" type="submit">Guardar</button>
+        </div>
+      </form>
+    </dialog>
   `(app)
 </script>
+
 
 
 </body>
