@@ -55,7 +55,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `assessments`        | A subject-wide practical; `graded` marks those used as exams.  |
 | `assessment_results` | Per-student state and optional grade for one practical.        |
 | `class_sessions`     | A generated class date, time, status and cancellation details. |
-| `attendance`         | Present, absent or justified for one student in one class.     |
+| `attendance`         | Present, late, absent or justified for one student in one class. |
 
 ### Actions
 
@@ -65,7 +65,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `create-course`              | `name`, `commission`, `classroom?`, `term?`, `schedule?` |                                                                                                                 |
 | `update-course`              | `course`, editable course fields and `schedule?`         | Omitted fields untouched.                                                                                       |
 | `delete-course`              | `course`                                                 | Only an empty commission; confirm first.                                                                        |
-| `list-students`              | `course?`                                                | GET. Without course, the complete roster. Includes each student's count of present attendance records.          |
+| `list-students`              | `course?`                                                | GET. Without course, the complete roster. Includes weighted attendance: present=1, late=0.5. |
 | `exportar-alumnos-md`        | —                                                        | GET. Builds the complete student export.                                                                        |
 | `exportar-alumnos-vcard`     | —                                                        | GET. Builds one vCard per student.                                                                              |
 | `genera-carpetas-alumnos`    | —                                                        | Creates one folder per student under `practicos`; a matching legajo is renamed when the student's name changes. |
@@ -89,7 +89,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `create-class`               | `course`, `date`, `topic?`                               | Creates one date matching the schedule.                                                                         |
 | `update-class`               | `classId`, `status?`, `reason?`, `note?`, `topic?`       | Cancel or confirm a class.                                                                                      |
 | `delete-class`               | `classId`                                                | Deletes attendance too; confirm first.                                                                          |
-| `set-attendance`             | `classId`, `entries: [{legajo, status}]`                 | Status is present/absent/justified; batch when possible.                                                        |
+| `set-attendance`             | `classId`, `entries: [{legajo, status}]`                 | Status is presente/tarde/ausente/justificada; tarde counts as half attendance. Batch when possible. |
 | `course-grid`                | `course`, `kind`                                         | GET compatibility grid for work or attendance.                                                                  |
 | `course-summary`             | `course`                                                 | GET. Class-wide work, grades and attendance.                                                                    |
 | `student-summary`            | `legajo`                                                 | GET. Contact data, one commission, shared work and class attendance.                                            |
@@ -115,6 +115,7 @@ call over one call per student.
 - A parcial is a practical with `graded=true`. Its optional grade is 1–10.
   State and grade are independent; never infer an approval threshold.
 - Justified attendance does not count against the attendance percentage.
+- Late attendance (`tarde`) counts as half attendance: `(presentes + tardes / 2) / (presentes + tardes + ausentes)`. Imported messages use each student's earliest message time per date and the start time of their commission's class: at least 20 minutes after the start means `tarde`. Without a message or class start time, use `presente`; manual status selection remains explicit.
 - Attendance can only be recorded for scheduled classes and students belonging
   to that class's commission.
 - Classes may be cancelled for `feriado`, `asueto`, `examen`, `paro` or `otro`.

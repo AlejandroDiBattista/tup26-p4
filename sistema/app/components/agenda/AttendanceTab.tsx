@@ -24,6 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { attendanceStatusForArrival, parseAttendanceLegajos } from "@shared/attendance";
+
+export { parseAttendanceLegajos } from "@shared/attendance";
 
 type AttendanceFilter = AttendanceStatus | "todos";
 type ClassStatus = "programada" | "cancelada" | "a_confirmar";
@@ -100,61 +103,6 @@ function initialDate(sessions: ClassSession[]) {
 }
 
 const ALL_COURSES = "todas";
-
-const attendanceDatePattern = /\[(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:,|\s)/;
-
-function parseAttendanceDate(text: string) {
-  const match = text.match(attendanceDatePattern);
-  if (!match) return null;
-
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = Number(match[3]) + (match[3].length === 2 ? 2000 : 0);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return null;
-  }
-
-  return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day
-    .toString()
-    .padStart(2, "0")}`;
-}
-
-export function parseAttendanceLegajos(text: string, fallbackDate = "") {
-  const valid = new Set<string>();
-  const invalid = new Set<string>();
-  const dates = new Set<string>();
-  const entries = new Map<string, { legajo: string; date: string }>();
-  const textDate = parseAttendanceDate(text);
-
-  for (const line of text.split(/\r?\n/)) {
-    const lineDate = parseAttendanceDate(line);
-    const date = lineDate ?? textDate ?? fallbackDate;
-    if (lineDate) dates.add(lineDate);
-
-    for (const token of line.match(/\b\d{5}\b/g) ?? []) {
-      const value = Number(token);
-      if (value < 50000 || value > 65000) {
-        invalid.add(token);
-        continue;
-      }
-
-      valid.add(token);
-      if (date) entries.set(`${date}:${token}`, { legajo: token, date });
-    }
-  }
-
-  return {
-    valid: Array.from(valid),
-    invalid: Array.from(invalid),
-    dates: Array.from(dates),
-    entries: Array.from(entries.values()),
-  };
-}
 
 export function AttendanceTab() {
   const t = useT();
@@ -294,6 +242,7 @@ export function AttendanceTab() {
   const attendanceSummary = useMemo(() => {
     const counts: Record<AttendanceStatus, number> = {
       presente: 0,
+      tarde: 0,
       ausente: 0,
       justificada: 0,
     };
@@ -313,7 +262,7 @@ export function AttendanceTab() {
     const rowsByLegajo = new Map(displayedRows.map((row) => [row.legajo, row]));
     const groups = new Map<
       string,
-      { classId: string; entries: Array<{ legajo: string; status: "presente" }> }
+      { classId: string; entries: Array<{ legajo: string; status: AttendanceStatus }> }
     >();
 
     for (const entry of parsedAttendance.entries) {
@@ -330,7 +279,10 @@ export function AttendanceTab() {
       if (!row || !session) continue;
 
       const group = groups.get(session.id) ?? { classId: session.id, entries: [] };
-      group.entries.push({ legajo: entry.legajo, status: "presente" });
+      group.entries.push({
+        legajo: entry.legajo,
+        status: attendanceStatusForArrival(entry.arrivalMinutes, session.startTime),
+      });
       groups.set(session.id, group);
     }
 
@@ -753,7 +705,7 @@ export function AttendanceTab() {
                         onChange={(status) => mark(row.legajo, status)}
                         ariaLabel={t("agenda.attendanceOf", { name: fullName })}
                         size="sm"
-                        className="grid grid-cols-3 gap-1"
+                        className="grid grid-cols-2 gap-1"
                       />
                     </article>
                   );

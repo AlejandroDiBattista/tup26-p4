@@ -268,12 +268,7 @@ export const WORK_STATUSES = [
 ] as const;
 export type WorkStatus = (typeof WORK_STATUSES)[number];
 
-export const ATTENDANCE_STATUSES = [
-  "presente",
-  "ausente",
-  "justificada",
-] as const;
-export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+export { ATTENDANCE_STATUSES, type AttendanceStatus } from "../../shared/attendance.js";
 
 export const CLASS_STATUSES = [
   "programada",

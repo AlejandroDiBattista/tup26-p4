@@ -65,6 +65,7 @@ interface StudentSummary {
     practicosTotales: number;
     promedio: number | null;
     clasesPresentes: number;
+    clasesTarde: number;
     clasesAusentes: number;
     clasesJustificadas: number;
     clasesMarcadas: number;

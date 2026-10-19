@@ -3,7 +3,8 @@ import { IconX } from "@tabler/icons-react";
 
 import { cn } from "@/lib/utils";
 
-export type AttendanceStatus = "presente" | "ausente" | "justificada";
+import type { AttendanceStatus } from "@shared/attendance";
+export type { AttendanceStatus } from "@shared/attendance";
 
 export const ATTENDANCE_STATUS_OPTIONS: Array<{
   value: AttendanceStatus;
@@ -15,6 +16,12 @@ export const ATTENDANCE_STATUS_OPTIONS: Array<{
     labelKey: "agenda.present",
     activeClass:
       "border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200",
+  },
+  {
+    value: "tarde",
+    labelKey: "agenda.late",
+    activeClass:
+      "border-orange-600 bg-orange-50 text-orange-900 dark:border-orange-500 dark:bg-orange-950/50 dark:text-orange-200",
   },
   {
     value: "ausente",

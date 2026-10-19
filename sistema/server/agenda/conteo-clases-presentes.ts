@@ -4,7 +4,7 @@ export interface ConteoClasesPresentes {
 }
 
 /**
- * Agrega al padrón el conteo de asistencias presentes. Los alumnos sin
+ * Agrega al padrón las asistencias computadas (presente=1, tarde=0,5). Los alumnos sin
  * registros agregados reciben cero para que la respuesta sea total.
  */
 export function agregarConteoClasesPresentes<T extends { id: string }>(

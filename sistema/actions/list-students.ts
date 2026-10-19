@@ -9,7 +9,7 @@ import {
 
 export default defineAction({
   description:
-    "Listar alumnos con legajo, apellido, nombre, teléfono, usuario de GitHub y cantidad de clases presentes. Con `course` devuelve sólo los de esa comisión; sin él, toda la agenda.",
+    "Listar alumnos con legajo, apellido, nombre, teléfono, usuario de GitHub y asistencias computadas (presente=1, tarde=0,5). Con `course` devuelve sólo los de esa comisión; sin él, toda la agenda.",
   schema: z.object({
     course: z
       .string()

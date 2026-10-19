@@ -12,7 +12,7 @@ import {
 
 export default defineAction({
   description:
-    "Devolver una grilla de comisión. Para asistencia incluye clases y estados presente/ausente/justificada; para prácticos devuelve los trabajos compartidos con estado y nota opcional.",
+    "Devolver una grilla de comisión. Para asistencia incluye clases y estados presente/tarde/ausente/justificada; tarde vale media asistencia. Para prácticos devuelve los trabajos compartidos con estado y nota opcional.",
   schema: z.object({
     course: z
       .string()

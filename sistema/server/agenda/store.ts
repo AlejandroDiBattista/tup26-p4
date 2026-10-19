@@ -31,6 +31,7 @@ import {
 } from "../db/schema.js";
 import { AuthError, NotFoundError, UserInputError } from "../errors.js";
 import { agregarConteoClasesPresentes } from "./conteo-clases-presentes.js";
+import { summarizeAttendance } from "../../shared/attendance.js";
 
 export type {
   Assessment,
@@ -408,8 +409,8 @@ export async function requireStudent(ownerEmail: string, legajo: string) {
 }
 
 /**
- * Padrón principal. Cada alumno incluye su única comisión activa y la
- * cantidad de registros de asistencia con estado presente.
+ * Padrón principal. Cada alumno incluye su única comisión activa y sus
+ * asistencias computadas: un presente vale 1 y una llegada tarde vale 0,5.
  */
 export async function listStudents(ownerEmail: string, courseId?: string) {
   const db = getDb();
@@ -433,10 +434,15 @@ export async function listStudents(ownerEmail: string, courseId?: string) {
     db
       .select({
         studentId: attendance.studentId,
-        clasesPresentes: sql<number>`count(*)`,
+        clasesPresentes: sql<number>`sum(case when ${attendance.status} = 'tarde' then 0.5 else 1 end)`,
       })
       .from(attendance)
-      .where(and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.status, "presente")))
+      .where(
+        and(
+          eq(attendance.ownerEmail, ownerEmail),
+          inArray(attendance.status, ["presente", "tarde"]),
+        ),
+      )
       .groupBy(attendance.studentId),
   ]);
 
@@ -1105,6 +1111,19 @@ export async function setAttendance(
         updatedAt: stamp(),
       });
     }
+    const [saved] = await db
+      .select({ status: attendance.status })
+      .from(attendance)
+      .where(
+        and(
+          eq(attendance.ownerEmail, ownerEmail),
+          eq(attendance.sessionId, input.sessionId),
+          eq(attendance.studentId, student.id),
+        ),
+      );
+    if ((saved?.status ?? null) !== status) {
+      throw new Error(`No se pudo verificar la asistencia del alumno ${entry.legajo}.`);
+    }
     updated.push({ legajo: entry.legajo, status });
   }
   return { sessionId: input.sessionId, updated };
@@ -1130,18 +1149,17 @@ export async function attendanceGrid(ownerEmail: string, courseId?: string) {
   return {
     sessions,
     rows: roster.map((student) => {
-      const cells = sessions.map((session) => ({
-        sessionId: session.id,
-        status: effectiveAttendanceStatus(
-          session,
-          byKey.get(`${session.id}:${student.id}`)?.status,
-          today,
-        ),
-      }));
-      const presentes = cells.filter((cell) => cell.status === "presente").length;
-      const ausentes = cells.filter((cell) => cell.status === "ausente").length;
-      const justificadas = cells.filter((cell) => cell.status === "justificada").length;
-      const computables = presentes + ausentes;
+      const cells = sessions
+        .filter((session) => session.courseId === student.course.id)
+        .map((session) => ({
+          sessionId: session.id,
+          status: effectiveAttendanceStatus(
+            session,
+            byKey.get(`${session.id}:${student.id}`)?.status,
+            today,
+          ),
+        }));
+      const summary = summarizeAttendance(cells.map((cell) => cell.status));
       return {
         id: student.id,
         legajo: student.legajo,
@@ -1149,10 +1167,7 @@ export async function attendanceGrid(ownerEmail: string, courseId?: string) {
         nombre: student.nombre,
         course: student.course,
         cells,
-        presentes,
-        ausentes,
-        justificadas,
-        porcentaje: computables === 0 ? null : Math.round((presentes / computables) * 100),
+        ...summary,
       };
     }),
   };
@@ -1226,11 +1241,7 @@ export async function studentSummary(ownerEmail: string, legajo: string) {
   const scores = practicos
     .map((work) => work.score)
     .filter((score): score is number => typeof score === "number");
-  const presentes = clases.filter((session) => session.attendanceStatus === "presente").length;
-  const ausentes = clases.filter((session) => session.attendanceStatus === "ausente").length;
-  const justificadas = clases.filter(
-    (session) => session.attendanceStatus === "justificada",
-  ).length;
+  const summary = summarizeAttendance(clases.map((session) => session.attendanceStatus));
   return {
     student,
     course,
@@ -1245,12 +1256,13 @@ export async function studentSummary(ownerEmail: string, legajo: string) {
         scores.length === 0
           ? null
           : Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length) * 100) / 100,
-      clasesPresentes: presentes,
-      clasesAusentes: ausentes,
-      clasesJustificadas: justificadas,
-      clasesMarcadas: presentes + ausentes + justificadas,
-      asistenciaPorcentaje:
-        presentes + ausentes === 0 ? null : Math.round((presentes / (presentes + ausentes)) * 100),
+      clasesPresentes: summary.presentes,
+      clasesTarde: summary.tardes,
+      clasesAusentes: summary.ausentes,
+      clasesJustificadas: summary.justificadas,
+      clasesMarcadas: summary.marcadas,
+      asistencias: summary.asistencias,
+      asistenciaPorcentaje: summary.porcentaje,
     },
   };
 }
@@ -1286,7 +1298,9 @@ export async function courseSummary(ownerEmail: string, courseId: string) {
             : Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length) * 100) /
               100,
         clasesPresentes: mark?.presentes ?? 0,
+        clasesTarde: mark?.tardes ?? 0,
         clasesJustificadas: mark?.justificadas ?? 0,
+        asistencias: mark?.asistencias ?? 0,
         asistenciaPorcentaje: mark?.porcentaje ?? null,
       };
     }),

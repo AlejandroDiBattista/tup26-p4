@@ -27,24 +27,25 @@ export default defineAction({
           attendanceGrid(ownerEmail, course.id),
         ]);
         const attendanceByLegajo = new Map(
-          attendance.rows.map((row) => [row.legajo, row.presentes]),
+          attendance.rows.map((row) => [row.legajo, row.asistencias]),
         );
         const workByLegajo = new Map(works.rows.map((row) => [row.legajo, row]));
         const parcial = works.assessments.find((assessment) => assessment.graded);
 
         return {
           name: course.name,
-          assessments: works.assessments.map(({ id, title }) => ({
-            id,
-            title,
-          })),
+          assessments: works.assessments
+            .filter((assessment) => !assessment.graded)
+            .map(({ id, title }) => ({ id, title })),
           students: students.map((student) => ({
             legajo: student.legajo,
             apellido: student.apellido,
             nombre: student.nombre,
             telefono: student.telefono,
             github: student.github,
-            asistencia: String(attendanceByLegajo.get(student.legajo) ?? student.clasesPresentes),
+            asistencia: String(Math.ceil(
+              attendanceByLegajo.get(student.legajo) ?? student.clasesPresentes,
+            )),
             parcial: parcial
               ? (workByLegajo
                   .get(student.legajo)

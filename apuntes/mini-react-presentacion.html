@@ -1,0 +1,1888 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un React en miniatura</title>
+<style>
+:root {
+  --fondo: #f8f6ef;
+  --texto: #183431;
+  --suave: #46645d;
+  --borde: #bdccc4;
+  --acento: #125c55;
+  --acento-suave: #deebe2;
+  --aviso: #a94427;
+  --aviso-suave: #f8e8d6;
+  --codigo-fondo: #ecf0e9;
+  --marca: #f3dfa0;
+  --motos: #f5dfc1;
+  --autos: #d9ead6;
+  --camionetas: #e5e1f1;
+  --oscuro: #183e39;
+  --lima: #e6f2c5;
+  --pie-alto: clamp(38px, 6vh, 56px);
+  --fuente-titulo: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
+  --fuente-texto: "Avenir Next", "Segoe UI", Arial, sans-serif;
+  --fuente-codigo: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+  --tipo-titulo: clamp(22px, 5.6vh, 60px);
+  --tipo-cuerpo: clamp(22px, 4.8vh, 44px);
+  --tipo-codigo: clamp(17px, 3.333333vh, 32px);
+  --tipo-formula: clamp(28px, 6.6vh, 60px);
+  --tipo-demo: clamp(22px, 4.5vh, 40px);
+  --codigo-interlineado: 1.25;
+  --codigo-numero: #536b60;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuente-texto);
+  font-weight: 500;
+}
+code, pre, .mono { font-family: var(--fuente-codigo); }
+b, strong { font-weight: 700; }
+
+/* ---------- Diapositivas ---------- */
+.diapo {
+  position: absolute; inset: 0 0 var(--pie-alto) 0;
+  display: none; flex-direction: column;
+  padding: 3vh 4vw 2vh;
+}
+.diapo.activa { display: flex; animation: entrada 170ms ease-out; }
+.diapo > h2 {
+  margin: 0 0 1.7vh;
+  font-size: var(--tipo-titulo);
+  line-height: 1.12;
+  font-weight: 700; letter-spacing: -.035em;
+  padding-bottom: 1.4vh;
+  border-bottom: 1px solid var(--borde);
+}
+.cuerpo {
+  flex: 1; min-height: 0;
+  font-size: var(--tipo-cuerpo);
+  display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden;
+}
+.ajuste { flex: none; display: flex; flex-direction: column; gap: .6em; }
+.ajuste > * { margin: 0; }
+p { line-height: 1.32; }
+
+/* Portada y separadores: un cambio de ritmo entre niveles. */
+.portada { background: var(--oscuro); color: var(--fondo); padding: 5vh 5vw; }
+.portada .ajuste, .divisor .ajuste { align-items: flex-start; gap: .45em; }
+.portada .cuerpo, .divisor .cuerpo { font-size: 10vh; }
+.portada .cuerpo { justify-content: center; }
+.diapo:has(.demo) .cuerpo { font-size: var(--tipo-demo); }
+.volanta {
+  color: var(--lima); font-weight: 700; font-size: .32em;
+  letter-spacing: .12em; text-transform: uppercase;
+  border-top: 3px solid var(--lima); padding-top: .75em;
+}
+.portada h1, .divisor h1 { margin: 0; font-size: 1.35em; line-height: 1.02; letter-spacing: -.035em; font-weight: 700; }
+.portada h1 span { display: block; color: var(--lima); }
+.bajada, .pregunta { color: var(--suave); font-size: .6em; line-height: 1.35; }
+.portada .bajada { color: #e2e9d8; max-width: 21em; }
+.ruta-portada { display: flex; flex-wrap: wrap; column-gap: 1.1em; row-gap: .5em; font-size: .29em; margin-top: 1.2em; color: #e2e9d8; }
+.ruta-portada span { border-top: 1px solid #6d9082; padding-top: .6em; }
+.ruta-portada b { color: var(--lima); margin-right: .35em; }
+.divisor { background: #e4ede2; padding: 5vh 5vw; }
+.divisor .cuerpo { border-left: 4px solid var(--acento); padding-left: 4vw; }
+.divisor h1 { max-width: 14ch; }
+.nivel { color: var(--acento); font-weight: 700; font-size: .4em; letter-spacing: .09em; text-transform: uppercase; margin-bottom: .4em !important; }
+.divisor .pregunta { margin-top: .6em; padding-top: .7em; border-top: 1px solid #a7beb0; width: 100%; }
+
+/* Texto */
+ul.lista, ol.pasos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .45em; }
+ul.lista li { position: relative; padding-left: 1.1em; line-height: 1.3; }
+ul.lista li::before {
+  content: ""; position: absolute; left: .15em; top: .45em;
+  width: .28em; height: .28em; border-radius: 1px; background: var(--acento);
+}
+ol.pasos { counter-reset: paso; font-size: .95em; }
+ol.pasos li { counter-increment: paso; position: relative; padding-left: 1.8em; line-height: 1.3; }
+ol.pasos li::before {
+  content: counter(paso);
+  position: absolute; left: 0; top: .02em;
+  width: 1.3em; height: 1.3em; border-radius: 50%;
+  background: var(--acento); color: #fff;
+  font-size: .85em; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.grande { font-size: 1.35em; font-weight: 700; line-height: 1.2; }
+.formula {
+  font-size: var(--tipo-formula); font-weight: 700; text-align: center; white-space: nowrap;
+  background: var(--acento-suave); border-radius: .15em; padding: .4em .5em;
+  color: var(--acento); letter-spacing: -.035em;
+}
+.nota {
+  border-left: .15em solid var(--aviso);
+  background: var(--aviso-suave);
+  padding: .4em .65em; border-radius: 0 .15em .15em 0;
+  font-size: .92em; line-height: 1.3;
+}
+.centro { text-align: center; }
+.suave { color: var(--suave); }
+:not(pre) > code {
+  background: var(--codigo-fondo); color: var(--acento);
+  border-radius: .12em; padding: 0 .14em; font-size: .9em;
+}
+
+/* Código: misma escala y numeración en todos los ejemplos. */
+pre.codigo {
+  margin: 0;
+  background: var(--codigo-fondo);
+  border: 1px solid var(--borde); border-left: 4px solid var(--acento);
+  border-radius: .2em;
+  padding: .5em .5em .5em .3em;
+  font: 500 var(--tipo-codigo)/var(--codigo-interlineado) var(--fuente-codigo);
+  letter-spacing: 0; tab-size: 2;
+  white-space: pre; overflow: hidden; color: var(--texto);
+}
+pre.codigo .linea {
+  display: block; position: relative;
+  min-height: 1.25em; width: max-content; min-width: 100%;
+  padding-left: 2.5em;
+}
+pre.codigo .numero-linea {
+  position: absolute; left: 0; top: 0; width: 1.95em;
+  padding-right: .45em; border-right: 1px solid var(--borde);
+  color: var(--codigo-numero); text-align: right;
+  font: inherit; font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+pre.codigo .numero-linea::before { content: attr(data-numero); }
+pre.codigo .texto-linea { font: inherit; }
+pre.codigo .marcada { background: var(--marca); }
+pre.codigo .marcada .numero-linea { color: var(--texto); font-weight: 700; }
+.k { color: #7e315b; font-weight: 700; }
+.s { color: #326333; }
+.n { color: #9e401f; }
+.f { color: #125c55; font-weight: 700; }
+.c { color: #52645c; font-style: normal; }
+
+/* Tablas */
+table.tabla { border-collapse: collapse; width: 100%; font-size: .9em; line-height: 1.3; }
+.tabla th, .tabla td { text-align: left; padding: .3em .5em; border-bottom: 1px solid var(--borde); vertical-align: top; }
+.tabla th { background: var(--acento); color: #fff; font-weight: 700; }
+.tabla tr:nth-child(odd) td { background: #f0f2ea; }
+.tabla td:first-child { font-weight: 600; }
+.tabla td code { background: transparent; padding: 0; }
+/* Primera columna con código: letra más chica y sin cortes de línea */
+.tabla.col-codigo td:first-child { font-size: .8em; white-space: nowrap; vertical-align: middle; }
+.tabla.col-ejemplo td:last-child { font-size: .8em; white-space: nowrap; vertical-align: middle; }
+
+/* Dos columnas */
+.dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .8em; align-items: stretch; }
+.caja { border: 1px solid var(--borde); border-top: 4px solid var(--acento); border-radius: .2em; padding: .45em .6em; display: flex; flex-direction: column; gap: .35em; }
+.caja h3 { margin: 0; font-size: 1em; color: var(--acento); }
+.caja p { margin: 0; }
+
+/* Árbol de componentes */
+.arbol-svg { display: block; width: min(100%, 24em); aspect-ratio: 900 / 430; height: auto; margin: 0 auto; }
+.arbol { display: flex; flex-direction: column; align-items: center; gap: .9em; }
+.nodo {
+  border: 2px solid var(--borde); border-radius: .3em;
+  padding: .3em .55em; background: #fff; text-align: center;
+  display: flex; flex-direction: column; gap: .1em;
+}
+.nodo strong { font-size: 1em; }
+.nodo span { font-size: .7em; color: var(--suave); white-space: nowrap; }
+.nodo.app { background: var(--acento-suave); border-color: var(--acento); }
+.nodo.motos { background: var(--motos); }
+.nodo.autos { background: var(--autos); }
+.nodo.camionetas { background: var(--camionetas); }
+.arbol { flex-direction: row; align-items: center; justify-content: flex-start; gap: 0; padding-right: .3em; }
+.arbol > .nodo.app { margin-right: 1.4em; position: relative; }
+.arbol > .nodo.app::after { content: ""; position: absolute; right: -1.4em; top: 50%; width: 1.4em; border-top: 2px solid var(--suave); }
+.hijos { display: flex; flex-direction: column; gap: .3em; position: relative; padding-left: 1.2em; }
+.hijos::before { content: ""; position: absolute; left: 0; top: 1.1em; bottom: 1.1em; border-left: 2px solid var(--suave); }
+.hijos .nodo { position: relative; flex-direction: row; align-items: baseline; gap: .5em; text-align: left; padding: .2em .55em; }
+.hijos .nodo::before { content: ""; position: absolute; left: -1.2em; top: 50%; width: 1.2em; border-top: 2px solid var(--suave); }
+
+/* Ranuras de hooks */
+.ranuras { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .3em; }
+.r {
+  border: 2px solid var(--borde); border-radius: .25em;
+  padding: .2em .25em; text-align: center; line-height: 1.15;
+  font-size: .64em; background: var(--acento-suave);
+}
+.r b { display: block; font: 700 1.6em/1.2 var(--fuente-codigo); margin-bottom: .15em; color: var(--acento); }
+.r.efecto { border-style: dashed; }
+.r.motos { background: var(--motos); }
+.r.autos { background: var(--autos); }
+.r.camionetas { background: var(--camionetas); }
+.leyenda { display: flex; gap: .8em; flex-wrap: wrap; font-size: .7em; }
+.leyenda span::before { content: ""; display: inline-block; width: .8em; height: .8em; margin-right: .3em; border-radius: .15em; vertical-align: -.05em; background: var(--c); border: 1px solid var(--borde); }
+
+/* Etapas en el tiempo */
+.etapas { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3em .6em; align-items: stretch; }
+.etapas .quien { font-weight: 700; padding: .3em .5em; border-radius: .25em; background: var(--acento-suave); display: flex; align-items: center; }
+.etapas .que { padding: .3em .5em; border: 2px solid var(--borde); border-radius: .25em; line-height: 1.3; }
+.etapas .quien.micro { background: var(--aviso-suave); }
+.etapas .quien.nav { background: var(--autos); }
+
+/* Datos bajan, avisos suben */
+.comunicacion { display: flex; flex-direction: column; align-items: center; gap: .3em; }
+.comunicacion .nodo { min-width: 7em; font-size: 1.1em; }
+.flechas { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+.flechas div { text-align: center; line-height: 1.3; }
+.flechas code { white-space: nowrap; }
+.flechas .icono { font-size: 1.8em; display: block; line-height: 1; }
+.baja .icono { color: var(--acento); }
+.sube .icono { color: var(--aviso); }
+
+/* ---------- Demo en vivo ---------- */
+.demo { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: .7em; align-items: start; }
+.demo .app { border: 2px solid var(--borde); border-radius: .35em; padding: .4em; display: flex; flex-direction: column; gap: .35em; }
+.demo .app > h1 { display: none; }
+.demo .cronometro { display: flex; align-items: center; gap: .7em; flex-wrap: wrap; }
+.demo .duracion { font: 700 1.65em/1 var(--fuente-codigo); }
+.demo .cronometro .estado { color: var(--suave); font-size: .8em; }
+.demo .acciones { display: flex; gap: .3em; flex-wrap: wrap; font-size: .8em; }
+.demo button { font: inherit; font-weight: 700; cursor: pointer; }
+.demo button:disabled { background: #d6ded6; color: #53615a; cursor: not-allowed; }
+.demo .acciones button { padding: .25em .7em; border-radius: .25em; border: 2px solid var(--borde); background: #fff; }
+.demo .acciones button.principal { background: var(--acento); border-color: var(--acento); color: #fff; }
+.demo .contadores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45em; }
+.demo .contador { border: 2px solid var(--borde); border-radius: .3em; padding: .35em; text-align: center; display: flex; flex-direction: column; gap: .2em; background: #fff; }
+.demo .contador header { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.demo .contador h2 { margin: 0; font-size: .65em; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
+.demo .cantidad { margin: 0; font-size: 1.85em; font-weight: 700; line-height: 1; }
+.demo .detalle { margin: 0; color: var(--suave); font-size: .72em; }
+.demo .registrar { margin-top: auto; padding: .2em; border: none; border-radius: .25em; background: var(--acento); color: #fff; font-size: 1.3em; }
+.demo .resumen { display: grid; grid-template-columns: 1fr 1fr; gap: .4em; background: var(--acento-suave); border-radius: .3em; padding: .3em; }
+.demo .dato { text-align: center; }
+.demo .dato .titulo { margin: 0; font-size: .72em; color: var(--suave); }
+.demo .dato .valor { margin: 0; font-size: 1.4em; font-weight: 700; }
+.demo .panel { border: 2px solid var(--borde); border-radius: .35em; padding: .4em; display: flex; flex-direction: column; gap: .3em; }
+.demo .panel h3 { margin: 0; font-size: .85em; }
+.demo .panel label { font-size: .65em; color: var(--suave); }
+.demo table { border-collapse: collapse; width: 100%; font: 500 .68em/1.3 var(--fuente-codigo); }
+.demo td { white-space: nowrap; }
+.demo th, .demo td { text-align: left; padding: .1em .3em; border-bottom: 1px solid var(--borde); }
+.demo tr.efecto td { color: #7e315b; font-style: normal; }
+.demo tr.cambio td { background: var(--marca); }
+@keyframes destello {
+  from { box-shadow: inset 0 0 0 2px #b87933; background-color: var(--aviso-suave); }
+  to   { box-shadow: inset 0 0 0 2px transparent; }
+}
+.demo.resaltar .componente { animation: destello .6s ease-out; }
+
+/* ---------- Demo y navegación ---------- */
+.demo .app, .demo .panel { background: #fffdf7; }
+.demo .contador:nth-child(1) { background: var(--motos); }
+.demo .contador:nth-child(2) { background: var(--autos); }
+.demo .contador:nth-child(3) { background: var(--camionetas); }
+.demo .contador h2 { font-weight: 700; }
+.demo .panel { border-top: 4px solid var(--acento); }
+.demo .panel label { display: flex; align-items: center; gap: .3em; }
+.demo input { accent-color: var(--acento); width: 1em; height: 1em; }
+.demo th { color: var(--acento); }
+.demo .resumen { border-top: 2px solid var(--acento); }
+button { transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--aviso); outline-offset: 3px; }
+.demo button:hover:not(:disabled) { background: var(--oscuro); color: #fff; }
+#pie {
+  position: fixed; left: 0; right: 0; bottom: 0; height: var(--pie-alto);
+  display: flex; align-items: center; gap: 1.2vw; padding: 0 4vw;
+  font-size: clamp(13px, 2.3vh, 20px); color: var(--fondo);
+  background: var(--oscuro);
+}
+#barra { position: absolute; left: 0; top: 0; height: 3px; background: var(--lima); transition: width 180ms ease; }
+#seccion { flex: 1; font-weight: 600; }
+#numero { min-width: 4.7em; text-align: center; font-variant-numeric: tabular-nums; }
+#pie button {
+  display: inline-flex; justify-content: center; align-items: center;
+  font: inherit; font-size: 1.25em; border: 1px solid #739185;
+  background: transparent; color: var(--fondo); border-radius: 4px;
+  width: 2.1em; height: 1.75em; padding: 0; cursor: pointer;
+}
+#pie button:hover { background: var(--lima); color: var(--oscuro); border-color: var(--lima); }
+#pie button:focus-visible { outline-color: var(--lima); }
+#pie button:disabled { opacity: .4; cursor: default; }
+.atajo { color: #c4d6cb; font-size: .9em; margin-right: .5vw; }
+@keyframes entrada { from { opacity: .65; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+@media (max-width: 700px) {
+  .atajo { display: none; }
+  #pie { gap: 1.5vw; }
+}
+
+/* ---------- Estética: libro técnico, papel cálido ----------
+   Papel crema, tinta verde oscura, un terracota que solo marca lo importante.
+   Títulos serif, lectura sans y ejemplos monoespaciados con escala uniforme. */
+:root {
+  --fondo: oklch(0.965 0.016 85);
+  --texto: oklch(0.27 0.045 175);
+  --suave: oklch(0.43 0.035 175);
+  --borde: oklch(0.82 0.03 150);
+  --acento: oklch(0.42 0.085 180);
+  --acento-suave: oklch(0.93 0.03 150);
+  --aviso: oklch(0.5 0.14 40);
+  --aviso-suave: oklch(0.94 0.04 70);
+  --codigo-fondo: oklch(0.94 0.018 120);
+  --marca: oklch(0.90 0.09 95);
+  --oscuro: oklch(0.29 0.06 178);
+  --lima: oklch(0.93 0.09 118);
+  --papel: oklch(0.985 0.01 90);
+}
+.diapo > h2, .portada h1, .divisor h1, .grande {
+  font-family: var(--fuente-titulo);
+  letter-spacing: -.015em;
+  font-weight: 700;
+}
+.diapo > h2 { border-bottom: 2px solid var(--texto); }
+.formula { font-family: var(--fuente-codigo); background: var(--acento-suave); border: 1px solid var(--borde); }
+
+/* Portada: tinta sobre verde profundo, volanta como sello */
+.portada h1 { letter-spacing: -.025em; }
+.portada h1 span { font-style: italic; font-weight: 400; }
+
+/* Separadores de nivel: el color se compromete, el ritmo cambia */
+.divisor { background: var(--acento); color: var(--fondo); }
+.divisor .cuerpo { border-left: 0; padding-left: 0; }
+.divisor .nivel { color: var(--lima); }
+.divisor .pregunta { color: oklch(0.93 0.025 150); border-top-color: oklch(0.93 0.025 150 / .55); }
+.divisor h1 { font-weight: 700; }
+
+/* Sin franjas laterales: bordes completos y fondos tintados */
+.nota { border: 1px solid var(--aviso); border-radius: .15em; }
+pre.codigo { border: 1px solid var(--borde); background: var(--codigo-fondo); }
+pre.codigo .numero-linea { border-right-color: var(--borde); }
+
+/* Superficies sin blanco puro */
+.nodo, .demo .acciones button, .demo .contador { background: var(--papel); }
+.demo .app, .demo .panel { background: var(--papel); }
+ol.pasos li::before { color: var(--papel); }
+.tabla th { color: var(--papel); }
+.tabla tr:nth-child(odd) td { background: oklch(0.955 0.014 100); }
+#pie { background: var(--oscuro); }
+</style>
+</head>
+<body>
+
+<main id="mazo">
+
+<!-- =========================================================== INICIO -->
+<section class="diapo portada" data-seccion="Inicio" data-max=".1">
+  <p class="volanta">Programación IV · Desarrollo Web</p>
+  <h1>Un React <span>en miniatura.</span></h1>
+  <p class="bajada">useState y useEffect desde cero,<br>en cien líneas.</p>
+  <div class="ruta-portada" aria-label="Las cuatro piezas del framework">
+    <span><b>01</b> createElement</span><span><b>02</b> render</span>
+    <span><b>03</b> useState</span><span><b>04</b> useEffect</span>
+  </div>
+</section>
+
+<section class="diapo">
+  <h2>La idea que hay detrás de React</h2>
+  <p class="formula mono">pantalla = f(estado)</p>
+  <ul class="lista">
+    <li>Escribimos funciones que <b>describen</b> la pantalla.</li>
+    <li>Cuando el estado cambia, React las vuelve a llamar.</li>
+    <li>Nunca tocamos el DOM a mano.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Vamos a construir cuatro piezas</h2>
+  <table class="tabla">
+    <tr><th>Pieza</th><th>Para qué sirve</th></tr>
+    <tr><td><code>createElement</code></td><td>Describir la interfaz sin JSX</td></tr>
+    <tr><td><code>render</code></td><td>Dibujar la app en la página</td></tr>
+    <tr><td><code>useState</code></td><td>Darle memoria a un componente</td></tr>
+    <tr><td><code>useEffect</code></td><td>Hacer cosas después de dibujar</td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>La regla del juego</h2>
+  <p class="grande">Cada cambio: tirar la pantalla entera y construirla de nuevo.</p>
+  <ul class="lista">
+    <li>Sin DOM virtual.</li>
+    <li>Sin comparar lo viejo con lo nuevo.</li>
+    <li>Así el mecanismo queda a la vista.</li>
+  </ul>
+</section>
+
+<section class="diapo" data-seccion="La aplicación">
+  <h2>La app: conteo de tránsito</h2>
+  <ul class="lista">
+    <li>Una persona en la esquina toca un botón por cada vehículo que pasa: 🏍️ 🚗 🛻</li>
+    <li>La app mide el tiempo desde el inicio.</li>
+    <li>Muestra la cantidad de cada tipo, el total y el <b>flujo total</b>.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>El flujo se calcula, no se cuenta</h2>
+  <p class="formula">flujo = total × 3600 / segundos</p>
+  <p class="centro">50 vehículos en 10 minutos (600 s)</p>
+  <p class="centro grande">50 × 3600 / 600 = 300 vehículos por hora</p>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué se guarda y qué se calcula?</h2>
+  <table class="tabla">
+    <tr><th>Dato</th><th>Dónde vive</th></tr>
+    <tr><td>Hora de inicio (<code>null</code>: detenido)</td><td>estado de <code>App</code></td></tr>
+    <tr><td>Hora actual</td><td>estado de <code>App</code></td></tr>
+    <tr><td>Total de vehículos</td><td>estado de <code>App</code></td></tr>
+    <tr><td>Cantidad de cada tipo</td><td>estado de cada <code>Contador</code></td></tr>
+    <tr><td>¿Está contando?</td><td>se calcula</td></tr>
+    <tr><td>Segundos transcurridos</td><td>se calcula</td></tr>
+    <tr><td>Flujo total</td><td>se calcula</td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>Los componentes</h2>
+  <svg class="arbol-svg" viewBox="0 0 900 430" role="img" aria-label="App con cinco hijos: Cronometro, tres Contador y Resumen">
+    <g stroke="var(--suave)" stroke-width="3" fill="none">
+      <line x1="280" y1="215" x2="315" y2="215"/>
+      <line x1="315" y1="35" x2="315" y2="395"/>
+      <line x1="315" y1="35" x2="350" y2="35"/>
+      <line x1="315" y1="125" x2="350" y2="125"/>
+      <line x1="315" y1="215" x2="350" y2="215"/>
+      <line x1="315" y1="305" x2="350" y2="305"/>
+      <line x1="315" y1="395" x2="350" y2="395"/>
+    </g>
+    <rect x="10" y="160" width="270" height="110" rx="12" fill="var(--acento-suave)" stroke="var(--acento)" stroke-width="3"/>
+    <text x="145" y="208" text-anchor="middle" font-size="36" font-weight="700" fill="var(--texto)">App</text>
+    <text x="145" y="245" text-anchor="middle" font-size="21" fill="var(--suave)">inicio · ahora · total</text>
+    <g stroke="var(--borde)" stroke-width="2">
+      <rect x="350" y="5" width="540" height="60" rx="10" fill="#fff"/>
+      <rect x="350" y="95" width="540" height="60" rx="10" fill="var(--motos)"/>
+      <rect x="350" y="185" width="540" height="60" rx="10" fill="var(--autos)"/>
+      <rect x="350" y="275" width="540" height="60" rx="10" fill="var(--camionetas)"/>
+      <rect x="350" y="365" width="540" height="60" rx="10" fill="#fff"/>
+    </g>
+    <g font-size="30" font-weight="700" fill="var(--texto)">
+      <text x="370" y="46">Cronometro<tspan dx="14" font-size="22" font-weight="500" fill="var(--suave)">muestra el tiempo</tspan></text>
+      <text x="370" y="136">Contador<tspan dx="14" font-size="22" font-weight="500" fill="var(--suave)">Motos · cantidad propia</tspan></text>
+      <text x="370" y="226">Contador<tspan dx="14" font-size="22" font-weight="500" fill="var(--suave)">Autos · cantidad propia</tspan></text>
+      <text x="370" y="316">Contador<tspan dx="14" font-size="22" font-weight="500" fill="var(--suave)">Camionetas · cantidad propia</tspan></text>
+      <text x="370" y="406">Resumen<tspan dx="14" font-size="22" font-weight="500" fill="var(--suave)">total y flujo</tspan></text>
+    </g>
+  </svg>
+  <p class="nota">Cada <code>Contador</code> es autocontenido. <code>App</code> lleva el contador global.</p>
+</section>
+
+<section class="diapo">
+  <h2>Lo que queremos ver</h2>
+  <ol class="pasos">
+    <li>Tocás <b>+1</b> en Autos.</li>
+    <li>El contador de autos suma uno a <b>su</b> cuenta.</li>
+    <li>Le avisa a su padre.</li>
+    <li>El padre suma uno al total.</li>
+  </ol>
+  <p class="nota">Un clic, dos componentes con estado, un solo dibujo.</p>
+</section>
+
+<!-- =========================================================== NIVEL 1 -->
+<section class="diapo divisor" data-seccion="Nivel 1 · createElement" data-max=".1">
+  <p class="nivel">Nivel 1</p>
+  <h1>Describir la interfaz con funciones</h1>
+  <p class="pregunta">¿Qué hay detrás de JSX?</p>
+</section>
+
+<section class="diapo">
+  <h2>JSX es azúcar</h2>
+  <pre class="codigo">
+&lt;button className="registrar" onClick={registrar}&gt;
+  +1
+&lt;/button&gt;
+</pre>
+  <p class="centro suave">antes de ejecutarse se transforma en</p>
+  <pre class="codigo">
+createElement("button",
+  { className: "registrar", onClick: registrar },
+  "+1");
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Tres argumentos</h2>
+  <table class="tabla col-ejemplo">
+    <tr><th>Argumento</th><th>Qué es</th><th>Ejemplo</th></tr>
+    <tr><td>tipo</td><td>la etiqueta</td><td><code>"button"</code></td></tr>
+    <tr><td>props</td><td>atributos y eventos</td><td><code>{ onClick: f }</code></td></tr>
+    <tr><td>hijos</td><td>lo que va adentro</td><td><code>"+1"</code></td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>createElement, versión 1</h2>
+  <pre class="codigo">
+function createElement(tipo, props, ...hijos) {
+  props = props ?? {};
+  const elemento = document.createElement(tipo);
+
+  for (const [nombre, valor] of Object.entries(props)) {
+    asignarPropiedad(elemento, nombre, valor);
+  }
+
+  for (const hijo of hijos.flat(Infinity)) {
+    if (hijo === null || hijo === undefined
+        || typeof hijo === "boolean") continue;
+    elemento.append(hijo instanceof Node
+      ? hijo
+      : String(hijo));
+  }
+  return elemento;
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué aceptamos como hijo?</h2>
+  <table class="tabla">
+    <tr><th>Hijo</th><th>Qué hacemos</th></tr>
+    <tr><td><code>"Autos"</code>, <code>12</code></td><td>Se convierte en texto</td></tr>
+    <tr><td>un elemento</td><td>Se agrega tal cual</td></tr>
+    <tr><td>un arreglo (de <code>map</code>)</td><td>Se aplana</td></tr>
+    <tr><td><code>null</code>, <code>false</code></td><td>Se ignora</td></tr>
+  </table>
+  <p class="nota" style="white-space: nowrap">Ignorar <code>false</code> permite escribir <code>condicion &amp;&amp; h(...)</code></p>
+</section>
+
+<section class="diapo">
+  <h2>Las props</h2>
+  <pre class="codigo">
+function asignarPropiedad(elemento, nombre, valor) {
+  if (nombre.startsWith("on")) {
+    const evento = nombre.slice(2).toLowerCase();
+    elemento.addEventListener(evento, valor);
+  } else if (nombre === "className") {
+    elemento.className = valor;
+  } else if (nombre === "style") {
+    Object.assign(elemento.style, valor);
+  } else if (typeof valor === "boolean") {
+    elemento.toggleAttribute(nombre, valor);
+  } else if (valor !== null
+             && valor !== undefined) {
+    elemento.setAttribute(nombre, valor);
+  }
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Un nombre corto: <code>h</code></h2>
+  <pre class="codigo">
+const h = createElement;
+const avisar = () => alert("¡Pasó un auto!");
+
+const tarjeta = h("section",
+  { className: "contador" },
+  h("h2", null, "Autos"),
+  h("p", { className: "cantidad" }, 0),
+  h("button", { onClick: avisar }, "+1"),
+);
+
+document.body.append(tarjeta);
+</pre>
+  <p class="suave">La <code>h</code> viene de <i>hyperscript</i>.</p>
+</section>
+
+<section class="diapo">
+  <h2>Diferencia con React</h2>
+  <div class="dos">
+    <div class="caja">
+      <h3>React</h3>
+      <p>Devuelve un objeto que <b>describe</b> el nodo.</p>
+      <p>Ese objeto es el «DOM virtual».</p>
+      <p>Sirve para comparar antes y después.</p>
+    </div>
+    <div class="caja">
+      <h3>Nuestro mini React</h3>
+      <p>Devuelve el nodo <b>real</b> del DOM.</p>
+      <p>No hay nada que comparar.</p>
+      <p>Por eso nos salteamos ese paso.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== NIVEL 2 -->
+<section class="diapo divisor" data-seccion="Nivel 2 · Componentes" data-max=".1">
+  <p class="nivel">Nivel 2</p>
+  <h1>Componentes</h1>
+  <p class="pregunta">¿Cómo reutilizamos partes de la interfaz?</p>
+</section>
+
+<section class="diapo">
+  <h2>Un componente es una función</h2>
+  <p class="formula mono">props → elemento</p>
+  <pre class="codigo">
+function Dato({ titulo, valor }) {
+  return h("div", { className: "dato" },
+    h("p", { className: "titulo" }, titulo),
+    h("p", { className: "valor" }, valor),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>createElement reconoce funciones</h2>
+  <pre class="codigo">
+function createElement(tipo, props, ...hijos) {
+  props = props ?? {};
+
+!  if (typeof tipo === "function") {
+!    return tipo({ ...props, children: hijos });
+!  }
+
+  // las etiquetas HTML, igual que antes
+}
+</pre>
+  <p>Si el tipo es una función, la llamamos con las props y devolvemos lo que dibuja.</p>
+</section>
+
+<section class="diapo">
+  <h2>Componer componentes</h2>
+  <pre class="codigo">
+function Resumen({ total, flujo }) {
+  return h("section", { className: "resumen" },
+    h(Dato, {
+      titulo: "Total de vehículos", valor: total,
+    }),
+    h(Dato, {
+      titulo: "Flujo total", valor: flujo,
+    }),
+  );
+}
+
+h(Resumen, { total: 12, flujo: "300 veh/h" });
+</pre>
+  <p class="nota">Las props son de solo lectura: las decide el padre.</p>
+</section>
+
+<section class="diapo">
+  <h2>El orden de ejecución</h2>
+  <pre class="codigo">
+h("section", null,
+  h(Dato, a),  // 1.º se ejecuta este Dato
+  h(Dato, b),  // 2.º este otro
+);  // 3.º se crea la section
+</pre>
+  <ul class="lista">
+    <li>Los argumentos se evalúan antes de llamar, de izquierda a derecha.</li>
+    <li><b>Mismo árbol, mismo orden. Siempre.</b></li>
+  </ul>
+</section>
+
+<!-- =========================================================== NIVEL 3 -->
+<section class="diapo divisor" data-seccion="Nivel 3 · render" data-max=".1">
+  <p class="nivel">Nivel 3</p>
+  <h1>Dibujar y volver a dibujar</h1>
+  <p class="pregunta">¿Cómo cambia la pantalla?</p>
+</section>
+
+<section class="diapo">
+  <h2>render</h2>
+  <pre class="codigo">
+function render(componente, contenedor) {
+  contenedor.replaceChildren(h(componente));
+}
+</pre>
+  <ul class="lista">
+    <li><code>replaceChildren</code> borra todo y pone el árbol nuevo.</li>
+    <li>Volver a dibujar es llamar a <code>render</code> otra vez.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Un contador con una variable global</h2>
+  <pre class="codigo">
+let clics = 0;
+
+function App() {
+  return h("button", {
+    onClick: () => {
+      clics++;
+      render(App, raiz);  // ¡hay que acordarse!
+    },
+  }, `Clics: ${clics}`);
+}
+
+const raiz = document.getElementById("raiz");
+render(App, raiz);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Funciona, pero tiene dos problemas</h2>
+  <ol class="pasos">
+    <li>El dato vive <b>afuera</b> del componente: tres contadores necesitan tres variables globales.</li>
+    <li>Hay que acordarse de redibujar después de cada cambio.</li>
+  </ol>
+  <p class="nota"><code>useState</code> resuelve las dos cosas.</p>
+</section>
+
+<!-- =========================================================== NIVEL 4 -->
+<section class="diapo divisor" data-seccion="Nivel 4 · useState" data-max=".1">
+  <p class="nivel">Nivel 4</p>
+  <h1>useState</h1>
+  <p class="pregunta">¿Dónde guarda un componente sus datos?</p>
+</section>
+
+<section class="diapo">
+  <h2>El problema</h2>
+  <ul class="lista">
+    <li>Un componente es una función.</li>
+    <li>Sus variables locales mueren cuando termina.</li>
+    <li>Los tres contadores son <b>la misma función</b>.</li>
+  </ul>
+  <p class="grande">¿Cómo sabe el framework qué cuenta es de quién?</p>
+</section>
+
+<section class="diapo">
+  <h2>La respuesta: por la posición</h2>
+  <ul class="lista">
+    <li>En cada dibujo, los componentes se ejecutan siempre en el mismo orden.</li>
+    <li>Dentro de cada uno, los <code>useState</code> también.</li>
+    <li>El framework guarda los valores en un arreglo y los reparte en orden, como números en una fila.</li>
+  </ul>
+  <p class="formula mono">useState → hooks[0], hooks[1]…</p>
+</section>
+
+<section class="diapo">
+  <h2>useState, versión 1</h2>
+  <pre class="codigo">
+// la memoria: sobrevive entre dibujos
+const hooks = [];
+let indice = 0;  // la próxima ranura a entregar
+
+function useState(valorInicial) {
+  const i = indice++;
+  if (hooks[i] === undefined) {
+    // primera vez
+    hooks[i] = { valor: valorInicial };
+  }
+  const ranura = hooks[i];
+
+  function setValor(nuevoValor) {
+    ranura.valor = nuevoValor;
+    renderizar();  // se redibuja solo
+  }
+  return [ranura.valor, setValor];
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>renderizar, versión 1</h2>
+  <pre class="codigo">
+function renderizar() {
+  indice = 0;  // cada dibujo reparte desde cero
+  contenedor.replaceChildren(h(componenteRaiz));
+}
+</pre>
+  <p class="nota">Si no volvemos <code>indice</code> a cero, el segundo dibujo pediría ranuras nuevas y todo arrancaría vacío.</p>
+</section>
+
+<section class="diapo">
+  <h2>Usarlo</h2>
+  <pre class="codigo">
+function Contador({ nombre }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  // En JSX sería:
+  // &lt;section&gt;
+  //   &lt;h2&gt;{nombre}&lt;/h2&gt;
+  //   &lt;p&gt;{cantidad}&lt;/p&gt;
+  //   &lt;button onClick={() =&gt; setCantidad(cantidad + 1)}&gt;
+  //     +1
+  //   &lt;/button&gt;
+  // &lt;/section&gt;
+  return h("section", null,
+    h("h2", null, nombre),
+    h("p", null, cantidad),
+    h("button", {
+      onClick: () => setCantidad(cantidad + 1),
+    }, "+1"),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Dos detalles</h2>
+  <ul class="lista">
+    <li>El valor inicial se usa <b>una sola vez</b>, cuando la ranura no existe. Después, <code>useState(0)</code> ignora el <code>0</code>.</li>
+    <li><code>setValor</code> es una clausura: recuerda <b>su</b> ranura. Por eso cada botón cambia la cuenta correcta.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>La memoria de nuestra app</h2>
+  <div class="ranuras" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
+    <div class="r"><b>0</b>inicio</div>
+    <div class="r"><b>1</b>ahora</div>
+    <div class="r"><b>2</b>total</div>
+    <div class="r efecto"><b>3</b>efecto reloj</div>
+    <div class="r motos"><b>4</b>cantidad</div>
+    <div class="r motos efecto"><b>5</b>efecto reinicio</div>
+    <div class="r autos"><b>6</b>cantidad</div>
+    <div class="r autos efecto"><b>7</b>efecto reinicio</div>
+    <div class="r camionetas"><b>8</b>cantidad</div>
+    <div class="r camionetas efecto"><b>9</b>efecto reinicio</div>
+  </div>
+  <div class="leyenda">
+    <span style="--c: var(--acento-suave)">App</span>
+    <span style="--c: var(--motos)">Motos</span>
+    <span style="--c: var(--autos)">Autos</span>
+    <span style="--c: var(--camionetas)">Camionetas</span>
+  </div>
+  <p class="nota">La ranura 6 es «la cuenta de autos» solo porque Autos es el segundo contador.</p>
+</section>
+
+<section class="diapo">
+  <h2>La regla de los hooks</h2>
+  <p class="grande">Siempre, en el mismo orden, en el nivel superior del componente.</p>
+  <ul class="lista">
+    <li>Nunca dentro de un <code>if</code>.</li>
+    <li>Nunca dentro de un bucle.</li>
+    <li>Nunca después de un <code>return</code> temprano.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué pasa si la rompemos?</h2>
+  <pre class="codigo">
+function Contador({ conHistorial }) {
+  // 4
+  const [cantidad, setCantidad] = useState(0);
+  if (conHistorial) {
+    // 5… a veces
+    const [lista, setLista] = useState([]);
+  }
+  useEffect(/* … */);  // ¿6 o 5?
+}
+</pre>
+  <p class="nota">Si <code>conHistorial</code> cambia, todo lo que sigue queda corrido: el contador de autos lee las ranuras del de motos.</p>
+</section>
+
+<!-- =========================================================== NIVEL 5 -->
+<section class="diapo divisor" data-seccion="Nivel 5 · Agrupar cambios" data-max=".1">
+  <p class="nivel">Nivel 5</p>
+  <h1>Muchos cambios, un solo dibujo</h1>
+  <p class="pregunta">¿Qué pasa si cambian dos estados a la vez?</p>
+</section>
+
+<section class="diapo">
+  <h2>Un clic, dos cambios</h2>
+  <pre class="codigo">
+function registrar() {
+  // el contador interno
+  setCantidad((c) => c + 1);
+  alRegistrar();  // el padre hace setTotal
+}
+</pre>
+  <ul class="lista">
+    <li>Con la versión 1, la pantalla se dibuja <b>dos</b> veces.</li>
+    <li>El primer dibujo muestra el contador nuevo con el total viejo.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Agendar en lugar de dibujar</h2>
+  <pre class="codigo">
+let renderPendiente = false;
+
+function programarRender() {
+  // ya hay uno agendado
+  if (renderPendiente) return;
+  renderPendiente = true;
+  queueMicrotask(renderizar);
+}
+</pre>
+  <p><code>queueMicrotask</code> ejecuta apenas termina el código actual y <b>antes</b> de que el navegador pinte.</p>
+</section>
+
+<section class="diapo">
+  <h2>La línea de tiempo de un clic</h2>
+  <div class="etapas">
+    <div class="quien">Manejador</div>
+    <div class="que"><code>setCantidad</code> → agenda un dibujo</div>
+    <div class="quien">Manejador</div>
+    <div class="que"><code>alRegistrar()</code> → <code>setTotal</code> → ya estaba agendado</div>
+    <div class="quien micro">Microtarea</div>
+    <div class="que"><code>renderizar()</code>: un solo dibujo con todo nuevo</div>
+    <div class="quien nav">Navegador</div>
+    <div class="que">Pinta la pantalla</div>
+  </div>
+  <p class="nota">El usuario nunca ve un estado a medias. React lo llama <i>batching</i>.</p>
+</section>
+
+<section class="diapo">
+  <h2>El problema del valor viejo</h2>
+  <div class="dos">
+    <div class="caja">
+      <h3>Sube 1</h3>
+      <pre class="codigo">
+setTotal(
+  total + 1
+);
+setTotal(
+  total + 1
+);
+</pre>
+      <p><code>total</code> se leyó al dibujar: las dos líneas calculan lo mismo.</p>
+    </div>
+    <div class="caja">
+      <h3>Sube 2</h3>
+      <pre class="codigo">
+setTotal(
+  (t) => t + 1
+);
+setTotal(
+  (t) => t + 1
+);
+</pre>
+      <p>La función recibe el valor más reciente de la ranura.</p>
+    </div>
+  </div>
+</section>
+
+<section class="diapo">
+  <h2>useState, versión final</h2>
+  <pre class="codigo">
+function useState(valorInicial) {
+  const i = indice++;
+  if (hooks[i] === undefined) {
+    hooks[i] = { tipo: "estado", valor: valorInicial };
+  }
+  const ranura = hooks[i];
+
+  function setValor(nuevoValor) {
+!    const valor = typeof nuevoValor === "function"
+!      ? nuevoValor(ranura.valor)
+!      : nuevoValor;
+!    // no cambió
+!    if (Object.is(valor, ranura.valor)) return;
+    ranura.valor = valor;
+!    programarRender();
+  }
+  return [ranura.valor, setValor];
+}
+</pre>
+</section>
+
+<!-- =========================================================== NIVEL 6 -->
+<section class="diapo divisor" data-seccion="Nivel 6 · useEffect" data-max=".1">
+  <p class="nivel">Nivel 6</p>
+  <h1>useEffect</h1>
+  <p class="pregunta">¿Dónde arrancamos el reloj?</p>
+</section>
+
+<section class="diapo">
+  <h2>Dibujar no es lo único</h2>
+  <ul class="lista">
+    <li>Un componente debería limitarse a calcular la pantalla.</li>
+    <li>Si arranca un reloj adentro, lo arranca <b>en cada dibujo</b>: uno por segundo.</li>
+    <li>Relojes, pedir datos, reaccionar a un cambio: son <b>efectos secundarios</b>.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Las tres partes de un efecto</h2>
+  <pre class="codigo">
+useEffect(() => {
+  // 1. el efecto: corre DESPUÉS de dibujar
+
+  return () => {
+    // 3. la limpieza: deshace el efecto
+  };
+// 2. cuándo volver a correrlo
+}, [dependencias]);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Las dependencias</h2>
+  <table class="tabla col-codigo">
+    <tr><th>Llamada</th><th>Cuándo corre</th></tr>
+    <tr><td><code>useEffect(f)</code></td><td>Después de cada dibujo</td></tr>
+    <tr><td><code>useEffect(f, [])</code></td><td>Solo después del primero</td></tr>
+    <tr><td><code>useEffect(f, [a, b])</code></td><td>En el primero y cuando cambia <code>a</code> o <code>b</code></td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>Un efecto también ocupa una ranura</h2>
+  <ul class="lista">
+    <li>Guarda las <b>dependencias</b> del dibujo anterior, para saber si cambiaron.</li>
+    <li>Guarda la <b>limpieza</b> que devolvió, para ejecutarla antes de la próxima vez.</li>
+  </ul>
+  <pre class="codigo">
+// la ranura del reloj, mientras se cuenta
+{
+  tipo: "efecto",
+  dependencias: [true],
+  limpieza: () => clearInterval(id),
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>useEffect por dentro</h2>
+  <pre class="codigo">
+function useEffect(efecto, dependencias) {
+  const i = indice++;
+  const primeraVez = hooks[i] === undefined;
+  if (primeraVez) hooks[i] = { tipo: "efecto" };
+  const ranura = hooks[i];
+
+  const cambiaron = primeraVez
+    || dependencias === undefined
+    || dependencias.some((d, k) =>
+         !Object.is(d, ranura.dependencias[k]));
+
+  if (cambiaron) {
+    ranura.dependencias = dependencias;
+    // se anota para después: ¡no se ejecuta acá!
+    efectosPendientes.push({ ranura, efecto });
+  }
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>renderizar, versión final</h2>
+  <pre class="codigo">
+function renderizar() {
+  renderPendiente = false;
+  indice = 0;
+
+  // 1. componentes
+  const arbol = h(componenteRaiz);
+  // 2. pantalla nueva
+  contenedor.replaceChildren(arbol);
+
+  for (const { ranura, efecto }
+       of efectosPendientes) {
+    if (typeof ranura.limpieza === "function") {
+      ranura.limpieza();
+    }
+    ranura.limpieza = efecto();  // 3. efectos
+  }
+  efectosPendientes = [];
+}
+</pre>
+</section>
+
+
+
+<section class="diapo">
+  <h2>Ejemplo: el reloj</h2>
+  <pre class="codigo">
+useEffect(() => {
+  if (!corriendo) return;
+
+  const id = setInterval(() => {
+    setAhora(Date.now());
+  }, 1000);
+
+  return () => clearInterval(id);
+}, [corriendo]);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>El reloj, paso a paso</h2>
+  <ol class="pasos">
+    <li><code>corriendo</code> es <code>false</code>: corre y sale sin hacer nada.</li>
+    <li><b>Iniciar</b>: pasa a <code>true</code>, cambió, arranca el intervalo.</li>
+    <li>Cada segundo: <code>setAhora</code>, dibujo, <code>corriendo</code> sigue igual, el intervalo sigue.</li>
+    <li><b>Detener</b>: vuelve a <code>false</code>, primero <code>clearInterval</code>, después el efecto.</li>
+  </ol>
+  <p class="nota">Sin limpieza, cada inicio sumaría otro intervalo.</p>
+</section>
+
+<section class="diapo">
+  <h2>¿Hace falta guardar la hora actual?</h2>
+  <ul class="lista">
+    <li>Los segundos se podrían calcular con <code>Date.now()</code> al dibujar.</li>
+    <li>Pero el framework solo dibuja cuando <b>cambia un estado</b>.</li>
+    <li>Sin un estado que cambie, el reloj queda congelado.</li>
+  </ul>
+  <p class="nota"><code>ahora</code> es el único dato que cambia solo. Y con el mismo estado, siempre la misma pantalla.</p>
+</section>
+
+<section class="diapo">
+  <h2>Ejemplo: volver a cero</h2>
+  <pre class="codigo">
+useEffect(() => {
+  if (habilitado) setCantidad(0);
+}, [habilitado]);
+</pre>
+  <ul class="lista">
+    <li>El padre no puede tocar el estado del hijo.</li>
+    <li>El hijo reacciona a una prop: al pasar a habilitado, vuelve a cero.</li>
+    <li>Si ya estaba en cero, <code>Object.is(0, 0)</code> evita un dibujo inútil.</li>
+  </ul>
+</section>
+
+<!-- =========================================================== NIVEL 7 -->
+<section class="diapo divisor" data-seccion="Nivel 7 · La aplicación" data-max=".1">
+  <p class="nivel">Nivel 7</p>
+  <h1>La aplicación completa</h1>
+  <p class="pregunta">Como en React, cambiando JSX por <code>h</code></p>
+</section>
+
+<section class="diapo">
+  <h2>El cálculo del flujo</h2>
+  <pre class="codigo">
+// Cuántos vehículos pasarían en una hora
+// a este ritmo.
+function calcularFlujo(cantidad, segundos) {
+  if (segundos === 0) return "—";
+  return `${Math.round(
+    (cantidad * 3600) / segundos
+  )} veh/h`;
+}
+</pre>
+  <p class="nota">Solo se muestra el flujo total, y nadie lo guarda: <code>Resumen</code> lo calcula en cada dibujo.</p>
+</section>
+
+<section class="diapo">
+  <h2>Cronometro: solo muestra</h2>
+  <pre class="codigo">
+function Cronometro({ inicio, segundos }) {
+  const estado = inicio === null
+    ? "Detenido"
+    : `Desde las ${formatearHora(inicio)}`;
+
+  return h("div",
+    { className: "componente cronometro" },
+    h("span", { className: "duracion" },
+      formatearDuracion(segundos)),
+    h("span", { className: "estado" }, estado),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Resumen: solo muestra</h2>
+  <pre class="codigo">
+function Resumen({ total, segundos }) {
+  const flujo = calcularFlujo(total, segundos);
+  return h("section",
+    { className: "componente resumen" },
+    h(Dato, {
+      titulo: "Total de vehículos", valor: total,
+    }),
+    h(Dato, {
+      titulo: "Flujo total", valor: flujo,
+    }),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Contador: su propio estado</h2>
+  <pre class="codigo">
+function Contador({
+  nombre, habilitado, alRegistrar,
+}) {
+  const [cantidad, setCantidad] = useState(0);
+
+  // al empezar una medición, arranca de cero
+  useEffect(() => {
+    if (habilitado) setCantidad(0);
+  }, [habilitado]);
+
+  function registrar() {
+    // el contador interno
+    setCantidad((c) => c + 1);
+!    alRegistrar();  // el aviso al padre
+  }
+  // sigue…
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Contador: lo que dibuja</h2>
+  <pre class="codigo">
+  return h("section",
+  { className: "componente contador" },
+    h("h2", null, nombre),
+    h("p", { className: "cantidad" }, cantidad),
+    h("button", {
+      className: "registrar",
+      disabled: !habilitado,
+      onClick: registrar,
+    }, "+1"),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: el reloj y el contador global</h2>
+  <pre class="codigo">
+function App() {
+  // null: detenido
+  const [inicio, setInicio] = useState(null);
+  const [ahora, setAhora] = useState(Date.now());
+!  // el contador global
+!  const [total, setTotal] = useState(0);
+
+  // se calculan
+  const corriendo = inicio !== null;
+  const segundos = corriendo
+    ? Math.floor((ahora - inicio) / 1000)
+    : 0;
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: el efecto del reloj</h2>
+  <pre class="codigo">
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => {
+      setAhora(Date.now());
+    }, 1000);
+    return () => clearInterval(id);
+  }, [corriendo]);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: los manejadores</h2>
+  <pre class="codigo">
+  function iniciar() {
+    const instante = Date.now();
+    setInicio(instante);
+    setAhora(instante);
+    setTotal(0);
+  }
+
+  function detener() {
+    setInicio(null);
+  }
+
+!  function registrarVehiculo() {
+!    setTotal((t) => t + 1);
+!  }
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: reloj y controles</h2>
+  <pre class="codigo">
+  const comunes = {
+    habilitado: corriendo,
+    alRegistrar: registrarVehiculo,
+  };
+
+  return h("main", { className: "componente app" },
+    h(Cronometro, { inicio, segundos }),
+    h("div", { className: "acciones" },
+      h("button", {
+        onClick: corriendo ? detener : iniciar,
+      }, corriendo ? "Detener" : "Iniciar"),
+    ),
+    // Continúa con los contadores y el resumen…
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: contadores y resumen</h2>
+  <pre class="codigo">
+  // Dentro de h("main", …),
+  // después de los controles:
+    h("div", { className: "contadores" },
+      h(Contador, {
+        nombre: "🏍️ Motos", ...comunes,
+      }),
+      h(Contador, {
+        nombre: "🚗 Autos", ...comunes,
+      }),
+      h(Contador, {
+        nombre: "🛻 Camionetas", ...comunes,
+      }),
+    ),
+    h(Resumen, { total, segundos }),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Los datos bajan, los avisos suben</h2>
+  <div class="comunicacion">
+    <div class="nodo app"><strong>App</strong></div>
+    <div class="flechas">
+      <div class="baja"><span class="icono">⬇</span>datos por props<br><code>habilitado</code></div>
+      <div class="sube"><span class="icono">⬆</span>avisos por funciones<br><code>alRegistrar()</code></div>
+    </div>
+    <div class="nodo autos"><strong>Contador</strong></div>
+  </div>
+  <p class="nota">El hijo nunca cambia el estado del padre: llama a una función y el padre decide.</p>
+</section>
+
+<section class="diapo">
+  <h2>Anatomía de un clic en «+1 Autos»</h2>
+  <ol class="pasos">
+    <li><code>setCantidad</code>: ranura 6 de 0 a 1, se agenda un dibujo.</li>
+    <li><code>alRegistrar()</code> → <code>setTotal</code>: ranura 2, ya agendado.</li>
+    <li>Microtarea: se ejecutan todos los componentes con los valores nuevos.</li>
+    <li><code>replaceChildren</code>: pantalla nueva.</li>
+    <li>Efectos: ninguna dependencia cambió, no corre ninguno.</li>
+  </ol>
+  <p class="nota">Dos cambios de estado en dos componentes, un solo dibujo.</p>
+</section>
+
+<section class="diapo" data-seccion="Demo en vivo" data-max=".06">
+  <h2>En vivo</h2>
+  <div class="demo resaltar" id="demo">
+    <div id="demo-raiz"></div>
+    <div class="panel">
+      <h3>Renders: <span id="demo-renders">0</span></h3>
+      <label><input type="checkbox" id="demo-resaltar" checked> resaltar cada render</label>
+      <table>
+        <thead><tr><th>#</th><th>Componente</th><th>Valor</th></tr></thead>
+        <tbody id="demo-hooks"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== CIERRE -->
+<section class="diapo divisor" data-seccion="Límites" data-max=".1">
+  <p class="nivel">Para pensar</p>
+  <h1>Hasta dónde llega reconstruir todo</h1>
+  <p class="pregunta">¿Qué problema resuelve el DOM virtual?</p>
+</section>
+
+<section class="diapo">
+  <h2>El costo</h2>
+  <ul class="lista">
+    <li>Con el reloj andando, se crean unos cincuenta nodos por segundo.</li>
+    <li>Para cincuenta nodos, no se nota.</li>
+    <li>Para una tabla de cinco mil filas, sí.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Se pierde lo que el DOM recuerda</h2>
+  <ul class="lista">
+    <li>Un nodo recuerda cosas que no están en el estado: el foco, el cursor, el desplazamiento, una animación.</li>
+    <li>Un <code>&lt;input&gt;</code> perdería el foco con cada tecla… y con cada segundo del reloj.</li>
+  </ul>
+  <p class="nota">React <b>reconcilia</b>: compara y cambia solo los nodos que cambiaron.</p>
+</section>
+
+<section class="diapo">
+  <h2>El estado atado a la posición</h2>
+  <ul class="lista">
+    <li>Si los contadores se reordenan, las cuentas quedan cruzadas.</li>
+    <li>React identifica cada componente por tipo, lugar y <code>key</code>.</li>
+    <li>Acá nunca se desmonta nada: si algo desapareciera, su limpieza no correría.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Otra forma: levantar el estado</h2>
+  <pre class="codigo">
+function App() {
+  const [conteos, setConteos] = useState({
+    Motos: 0, Autos: 0, Camionetas: 0,
+  });
+
+  function registrarVehiculo(nombre) {
+    setConteos((c) => ({
+      ...c, [nombre]: c[nombre] + 1,
+    }));
+  }
+
+// el total se calcula: no puede desincronizarse
+
+  const total = Object.values(conteos)
+    .reduce((a, b) => a + b, 0);
+  // …
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué cambia?</h2>
+  <ul class="lista">
+    <li>El total ya no se guarda dos veces: se calcula.</li>
+    <li>Reiniciar es asignar ceros: no hace falta el efecto en los hijos.</li>
+    <li>A cambio, los contadores pierden autonomía: reciben su cantidad por props.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>¿Quién necesita el dato?</h2>
+  <ul class="lista">
+    <li>Si lo usa un solo componente, que lo guarde él.</li>
+    <li>Si lo usan varios, se guarda en el ancestro común más cercano y se reparte por props.</li>
+  </ul>
+  <p class="nota">Acá duplicamos a propósito, para ver cómo un hijo le avisa al padre.</p>
+</section>
+
+<section class="diapo" data-seccion="Cierre">
+  <h2>En resumen</h2>
+  <table class="tabla">
+    <tr><td><code>createElement</code></td><td>Una función describe un pedazo de pantalla.</td></tr>
+    <tr><td><code>render</code></td><td>Dibujar de nuevo es llamar de nuevo.</td></tr>
+    <tr><td><code>useState</code></td><td>Memoria en un arreglo, repartida por posición.</td></tr>
+    <tr><td><code>useEffect</code></td><td>Lo que no es dibujar, después de dibujar.</td></tr>
+  </table>
+</section>
+
+</main>
+
+<footer id="pie" aria-label="Navegación de diapositivas">
+  <div id="barra"></div>
+  <span id="seccion"></span>
+  <span class="atajo" aria-hidden="true">F · pantalla completa</span>
+  <button id="anterior" type="button" aria-label="Anterior" title="Anterior (←)">←</button>
+  <span id="numero" aria-live="polite" aria-atomic="true"></span>
+  <button id="siguiente" type="button" aria-label="Siguiente" title="Siguiente (→)">→</button>
+</footer>
+
+<!-- =========================================================== FRAMEWORK (demo) -->
+<script>
+const MiniReact = (() => {
+  let componenteRaiz = null;
+  let contenedor = null;
+  const hooks = [];
+  let indice = 0;
+  let componenteActual = null;
+  let efectosPendientes = [];
+  let renderPendiente = false;
+  let cantidadRenders = 0;
+  const oyentes = [];
+
+  function createElement(tipo, props, ...hijos) {
+    props = props ?? {};
+    if (typeof tipo === "function") {
+      const anterior = componenteActual;
+      componenteActual = tipo.name;
+      const resultado = tipo({ ...props, children: hijos });
+      componenteActual = anterior;
+      return resultado;
+    }
+    const elemento = document.createElement(tipo);
+    for (const [nombre, valor] of Object.entries(props)) {
+      asignarPropiedad(elemento, nombre, valor);
+    }
+    for (const hijo of hijos.flat(Infinity)) {
+      if (hijo === null || hijo === undefined || typeof hijo === "boolean") continue;
+      elemento.append(hijo instanceof Node ? hijo : String(hijo));
+    }
+    return elemento;
+  }
+
+  function asignarPropiedad(elemento, nombre, valor) {
+    if (nombre.startsWith("on") && typeof valor === "function") {
+      elemento.addEventListener(nombre.slice(2).toLowerCase(), valor);
+    } else if (nombre === "className") {
+      elemento.className = valor;
+    } else if (nombre === "style" && typeof valor === "object") {
+      Object.assign(elemento.style, valor);
+    } else if (typeof valor === "boolean") {
+      elemento.toggleAttribute(nombre, valor);
+    } else if (valor !== null && valor !== undefined) {
+      elemento.setAttribute(nombre, valor);
+    }
+  }
+
+  function useState(valorInicial) {
+    const i = indice++;
+    if (hooks[i] === undefined) {
+      hooks[i] = { tipo: "estado", componente: componenteActual, valor: valorInicial };
+    }
+    const ranura = hooks[i];
+    function setValor(nuevoValor) {
+      const valor = typeof nuevoValor === "function" ? nuevoValor(ranura.valor) : nuevoValor;
+      if (Object.is(valor, ranura.valor)) return;
+      ranura.valor = valor;
+      programarRender();
+    }
+    return [ranura.valor, setValor];
+  }
+
+  function useEffect(efecto, dependencias) {
+    const i = indice++;
+    const primeraVez = hooks[i] === undefined;
+    if (primeraVez) {
+      hooks[i] = { tipo: "efecto", componente: componenteActual, dependencias: undefined, limpieza: undefined };
+    }
+    const ranura = hooks[i];
+    const cambiaron = primeraVez
+      || dependencias === undefined
+      || dependencias.some((dep, k) => !Object.is(dep, ranura.dependencias[k]));
+    if (cambiaron) {
+      ranura.dependencias = dependencias;
+      efectosPendientes.push({ ranura, efecto });
+    }
+  }
+
+  function render(componente, elemento) {
+    componenteRaiz = componente;
+    contenedor = elemento;
+    renderizar();
+  }
+
+  function programarRender() {
+    if (renderPendiente) return;
+    renderPendiente = true;
+    queueMicrotask(renderizar);
+  }
+
+  function renderizar() {
+    renderPendiente = false;
+    indice = 0;
+    const arbol = createElement(componenteRaiz);
+    contenedor.replaceChildren(arbol);
+    cantidadRenders++;
+    for (const { ranura, efecto } of efectosPendientes) {
+      if (typeof ranura.limpieza === "function") ranura.limpieza();
+      ranura.limpieza = efecto();
+    }
+    efectosPendientes = [];
+    for (const oyente of oyentes) oyente({ renders: cantidadRenders, hooks });
+  }
+
+  function alRenderizar(oyente) {
+    oyentes.push(oyente);
+  }
+
+  return { createElement, useState, useEffect, render, alRenderizar };
+})();
+</script>
+
+<!-- =========================================================== APP (demo) -->
+<script>
+(() => {
+const h = MiniReact.createElement;
+const { useState, useEffect } = MiniReact;
+
+function formatearDuracion(segundos) {
+  const horas = String(Math.floor(segundos / 3600)).padStart(2, "0");
+  const minutos = String(Math.floor((segundos % 3600) / 60)).padStart(2, "0");
+  const resto = String(segundos % 60).padStart(2, "0");
+  return `${horas}:${minutos}:${resto}`;
+}
+
+function formatearHora(instante) {
+  return new Date(instante).toLocaleTimeString("es-AR");
+}
+
+// Flujo: cuántos vehículos pasarían en una hora al ritmo observado.
+function calcularFlujo(cantidad, segundos) {
+  if (segundos === 0) return "—";
+  return `${Math.round((cantidad * 3600) / segundos)} veh/h`;
+}
+
+// ---------- Componentes de presentación: no tienen estado ----------
+function Dato({ titulo, valor }) {
+  return h("div", { className: "componente dato" },
+    h("p", { className: "titulo" }, titulo),
+    h("p", { className: "valor" }, valor),
+  );
+}
+
+function Cronometro({ inicio, segundos }) {
+  const estado = inicio === null ? "Detenido" : `Desde las ${formatearHora(inicio)}`;
+  return h("div", { className: "componente cronometro" },
+    h("span", { className: "duracion" }, formatearDuracion(segundos)),
+    h("span", { className: "estado" }, estado),
+  );
+}
+
+function Resumen({ total, segundos }) {
+  const flujo = calcularFlujo(total, segundos);
+  return h("section", { className: "componente resumen" },
+    h(Dato, { titulo: "Total de vehículos", valor: total }),
+    h(Dato, { titulo: "Flujo total", valor: flujo }),
+  );
+}
+
+// ---------- El contador: cuenta por su cuenta y avisa al padre ----------
+function Contador({ nombre, habilitado, alRegistrar }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  // Al empezar una medición, el contador arranca de cero.
+  useEffect(() => {
+    if (habilitado) setCantidad(0);
+  }, [habilitado]);
+
+  function registrar() {
+    setCantidad((c) => c + 1);   // el contador interno
+    alRegistrar();               // el aviso al padre
+  }
+
+  return h("section", { className: "componente contador" },
+    h("h2", null, nombre),
+    h("p", { className: "cantidad" }, cantidad),
+    h("button", { className: "registrar", disabled: !habilitado, onClick: registrar }, "+1"),
+  );
+}
+
+// ---------- La aplicación: lleva el reloj y el contador global ----------
+function App() {
+  const [inicio, setInicio] = useState(null);       // null: detenido
+  const [ahora, setAhora] = useState(Date.now());
+  const [total, setTotal] = useState(0);            // el contador global
+
+  const corriendo = inicio !== null;
+  const segundos = corriendo ? Math.floor((ahora - inicio) / 1000) : 0;
+
+  // Mientras se cuenta, el reloj avanza una vez por segundo.
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [corriendo]);
+
+  function iniciar() {
+    const instante = Date.now();
+    setInicio(instante);
+    setAhora(instante);
+    setTotal(0);
+  }
+
+  function detener() {
+    setInicio(null);
+  }
+
+  function registrarVehiculo() {
+    setTotal((t) => t + 1);
+  }
+
+  // Las props que reciben los tres contadores.
+  const comunes = { habilitado: corriendo, alRegistrar: registrarVehiculo };
+
+  return h("main", { className: "componente app" },
+    h("h1", null, "Conteo de tránsito"),
+    h(Cronometro, { inicio, segundos }),
+    h("div", { className: "acciones" },
+      h("button", { className: "principal", onClick: corriendo ? detener : iniciar },
+        corriendo ? "Detener" : "Iniciar"),
+    ),
+    h("div", { className: "contadores" },
+      h(Contador, { nombre: "🏍️ Motos", ...comunes }),
+      h(Contador, { nombre: "🚗 Autos", ...comunes }),
+      h(Contador, { nombre: "🛻 Camionetas", ...comunes }),
+    ),
+    h(Resumen, { total, segundos }),
+  );
+}
+
+
+// Panel de ranuras: observa el framework desde afuera.
+const tablaHooks = document.getElementById("demo-hooks");
+const contadorRenders = document.getElementById("demo-renders");
+let anteriores = [];
+
+function describir(ranura) {
+  if (ranura.tipo === "estado") return JSON.stringify(ranura.valor);
+  return `deps ${JSON.stringify(ranura.dependencias)}`;
+}
+
+MiniReact.alRenderizar(({ renders, hooks }) => {
+  contadorRenders.textContent = renders;
+  const descripciones = hooks.map(describir);
+  tablaHooks.innerHTML = hooks.map((ranura, i) => {
+    const cambio = renders > 1 && descripciones[i] !== anteriores[i];
+    return `
+      <tr class="${ranura.tipo}${cambio ? " cambio" : ""}">
+        <td>${i}</td>
+        <td>${ranura.componente}</td>
+        <td>${descripciones[i]}</td>
+      </tr>`;
+  }).join("");
+  anteriores = descripciones;
+  window.reajustarSiDesborda?.();
+});
+
+document.getElementById("demo-resaltar").addEventListener("change", (evento) => {
+  document.getElementById("demo").classList.toggle("resaltar", evento.target.checked);
+});
+
+MiniReact.render(App, document.getElementById("demo-raiz"));
+})();
+</script>
+
+<!-- =========================================================== PRESENTACIÓN -->
+<script>
+(() => {
+  const diapos = [...document.querySelectorAll(".diapo")];
+  const pie = {
+    barra: document.getElementById("barra"),
+    seccion: document.getElementById("seccion"),
+    numero: document.getElementById("numero"),
+  };
+
+  // ---------- Estructura: título + cuerpo ajustable ----------
+  let seccionActual = "";
+  for (const diapo of diapos) {
+    seccionActual = diapo.dataset.seccion ?? seccionActual;
+    diapo.dataset.seccionVisible = seccionActual;
+    const cuerpo = document.createElement("div");
+    cuerpo.className = "cuerpo";
+    const ajuste = document.createElement("div");
+    ajuste.className = "ajuste";
+    for (const hijo of [...diapo.children]) {
+      if (hijo.tagName !== "H2") ajuste.append(hijo);
+    }
+    cuerpo.append(ajuste);
+    diapo.append(cuerpo);
+  }
+
+  // ---------- Resaltado de código ----------
+  const PALABRAS = new Set(["const", "let", "var", "function", "return", "if", "else", "for", "of", "in",
+    "new", "typeof", "instanceof", "null", "undefined", "true", "false", "while", "break", "continue"]);
+  const TOKEN = /(\/\/.*$)|(`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/g;
+
+  function escapar(texto) {
+    return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function colorear(linea) {
+    let html = "";
+    let ultimo = 0;
+    linea.replace(TOKEN, (todo, comentario, cadena, numero, nombre, pos) => {
+      html += escapar(linea.slice(ultimo, pos));
+      if (comentario) html += `<span class="c">${escapar(comentario)}</span>`;
+      else if (cadena) html += `<span class="s">${escapar(cadena)}</span>`;
+      else if (numero) html += `<span class="n">${numero}</span>`;
+      else if (PALABRAS.has(nombre)) html += `<span class="k">${nombre}</span>`;
+      else if (/^\s*\(/.test(linea.slice(pos + nombre.length))) html += `<span class="f">${nombre}</span>`;
+      else html += nombre;
+      ultimo = pos + todo.length;
+      return todo;
+    });
+    return html + escapar(linea.slice(ultimo));
+  }
+
+  for (const pre of document.querySelectorAll("pre.codigo")) {
+    const lineas = pre.textContent.replace(/^\s*\n/, "").replace(/\s+$/, "").split("\n").map((texto) => ({
+      marcada: texto.startsWith("!"),
+      texto: texto.startsWith("!") ? texto.slice(1) : texto,
+    }));
+    const sangria = Math.min(...lineas
+      .filter((l) => l.texto.trim())
+      .map((l) => l.texto.match(/^ */)[0].length));
+    pre.innerHTML = lineas.map((l, indiceLinea) => {
+      const clase = l.marcada ? "linea marcada" : "linea";
+      return `<span class="${clase}"><span class="numero-linea" aria-hidden="true" data-numero="${indiceLinea + 1}"></span><span class="texto-linea">${colorear(l.texto.slice(sangria))}</span></span>`;
+    }).join("");
+  }
+
+  // ---------- Ajuste automático: el contenido ocupa toda la pantalla ----------
+  function cabe(cuerpo, ajuste) {
+    if (ajuste.scrollHeight > cuerpo.clientHeight) return false;
+    if (ajuste.scrollWidth > cuerpo.clientWidth + 1) return false;
+    // ninguna línea de código puede pisar el borde de su recuadro
+    const codigoCabe = [...ajuste.querySelectorAll("pre")]
+      .every((pre) => pre.scrollWidth <= pre.clientWidth + 1);
+    // y el texto de fórmulas y notas tiene que quedar dentro de su margen
+    const textoCabe = [...ajuste.querySelectorAll(".formula, .nota")]
+      .every(textoDentroDelMargen);
+    const demoCabe = [...ajuste.querySelectorAll(".demo .panel, .demo .contador, .demo .resumen")]
+      .every((panel) => panel.scrollWidth <= panel.clientWidth + 1);
+    return codigoCabe && textoCabe && demoCabe;
+  }
+
+  function textoDentroDelMargen(elemento) {
+    const rango = document.createRange();
+    rango.selectNodeContents(elemento);
+    const estilo = getComputedStyle(elemento);
+    const disponible = elemento.clientWidth
+      - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+    return rango.getBoundingClientRect().width <= disponible + 1;
+  }
+
+  function ajustar(diapo) {
+    const cuerpo = diapo.querySelector(".cuerpo");
+    const ajuste = cuerpo.firstElementChild;
+    // La escala depende del tipo de contenido, no de cuánto texto tiene.
+    cuerpo.style.fontSize = "";
+    const maximo = parseFloat(getComputedStyle(cuerpo).fontSize);
+    const esSeparador = diapo.matches(".portada, .divisor");
+    const escalas = esSeparador ? [1, .95, .9, .85, .8] : [1, .95, .9];
+    for (const escala of escalas) {
+      cuerpo.style.fontSize = `${maximo * escala}px`;
+      if (cabe(cuerpo, ajuste)) break;
+    }
+  }
+
+  // ---------- Navegación ----------
+  let actual = 0;
+
+  function mostrar(numero) {
+    actual = Math.max(0, Math.min(diapos.length - 1, numero));
+    diapos.forEach((diapo, i) => diapo.classList.toggle("activa", i === actual));
+    ajustar(diapos[actual]);
+    pie.barra.style.width = `${((actual + 1) / diapos.length) * 100}%`;
+    pie.seccion.textContent = diapos[actual].dataset.seccionVisible;
+    pie.numero.textContent = `${actual + 1} / ${diapos.length}`;
+    document.getElementById("anterior").disabled = actual === 0;
+    document.getElementById("siguiente").disabled = actual === diapos.length - 1;
+    // Guardar la diapositiva en la dirección (#12). En algunos visores,
+    // como una vista previa dentro de un marco, no está permitido.
+    try {
+      history.replaceState(null, "", `#${actual + 1}`);
+    } catch {
+      // sin dirección: la presentación funciona igual
+    }
+  }
+
+  document.addEventListener("keydown", (evento) => {
+    const enControl = ["BUTTON", "INPUT"].includes(evento.target.tagName);
+    switch (evento.key) {
+      case "ArrowRight": case "PageDown": mostrar(actual + 1); break;
+      case "ArrowLeft": case "PageUp": mostrar(actual - 1); break;
+      case " ": if (!enControl) { evento.preventDefault(); mostrar(actual + 1); } break;
+      case "Home": mostrar(0); break;
+      case "End": mostrar(diapos.length - 1); break;
+      case "f": case "F":
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        else document.documentElement.requestFullscreen?.().catch(() => {});
+        break;
+    }
+  });
+
+  document.getElementById("anterior").addEventListener("click", () => mostrar(actual - 1));
+  document.getElementById("siguiente").addEventListener("click", () => mostrar(actual + 1));
+
+  let toqueInicial = null;
+  document.addEventListener("touchstart", (e) => { toqueInicial = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (toqueInicial === null) return;
+    const delta = e.changedTouches[0].clientX - toqueInicial;
+    if (Math.abs(delta) > 60) mostrar(actual + (delta < 0 ? 1 : -1));
+    toqueInicial = null;
+  });
+
+  // La demo cambia de tamaño al usarla: si se desborda, se vuelve a ajustar.
+  window.reajustarSiDesborda = () => {
+    const cuerpo = diapos[actual].querySelector(".cuerpo");
+    if (!cabe(cuerpo, cuerpo.firstElementChild)) ajustar(diapos[actual]);
+  };
+
+  addEventListener("resize", () => ajustar(diapos[actual]));
+  document.fonts?.ready.then(() => ajustar(diapos[actual]));
+
+  mostrar((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>

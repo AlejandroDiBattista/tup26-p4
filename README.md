@@ -1,100 +1,35 @@
-<h1 align="center">Programación IV</h1>
+# TP4: MiniCRM.
 
-<p align="center">
-  <strong>Desarrollo Web · TUP26</strong><br>
-  Ing. Alejandro Di Battista
-</p>
+> Fecha de entrega: *24-Oct-2026 23:59 hs*
 
----
+## Objetivo: Desarrollar un mini CRM con Node.js, TypeScript, Drizzle y SQLite, implementando una API REST y una interfaz web básica usando React.
 
-## C1
-```text
-Legajo  Nombre y Apellido                          Asistencia  Parcial  Practicos
-------  -----------------------------------------  ----------  -------  ----------
-63409   Acosta, Ulices Mateo                       24              8.0  🟢🟢⚫️🟢
-63428   Albornoz, Tomás Emilio                     20              7.5  ⚫️⚫️⚫️🟢
-63392   Andina, Juan Ignacio                       22              8.0  ⚫️⚫️⚫️🟢
-61543   Andrada, María José                        25             10.0  🟢🟢🟢🟢
-63633   Barroca, Nahu                              19             10.0  ⚫️⚫️⚫️🟢
-54652   Cabrera, Fernando Sebastián                22              7.0  🟡⚫️⚫️🟢
-63310   Carobbio Bestani, Leonidas Tiziano         24             10.0  ⚫️🟢⚫️🟢
-54865   Cequi, Sofía                               18             10.0  🟡🟢🟢🟢
-63407   Chirieleison Bonkosky, Rocco               7                 -  ⚫️⚫️⚫️⚫️
-63243   Civili de la Vega, Lisandro                22             10.0  🟢🟢🟢🟢
-63143   Collante, Pablo Augusto                    20              9.5  🟡🟢🟢🟢
-58755   Cuéllar, Elías Eduardo                     23              9.5  🟡🟢🟢🟢
-61673   Delgado, Augusto Emanuel                   18              8.0  🟡🟢🟢🟢
-63259   Delgado Ojeda, Francisco Agustín           21             10.0  🟢🟢🟢🟢
-63137   Díaz, José Simón                           25              9.5  🟢⚫️⚫️🟢
-63404   Echavarría Pacios, Facundo                 21             10.0  🟢🟢🟢🟢
-61851   Gaiser, Lorenzo                            26              8.0  🟡🟢🟢🟢
-63142   Galarze Albornoz, Alejandro Gabriel        26              9.5  🟢🟢🟢🟢
-61540   García Mc Guiness, Gonzalo                 16             10.0  🟢🟢🟢🟢
-63630   González, Pablo Hernán                     20             10.0  🟢🟢🟢🟢
-63660   Gordillo, Oriana Daniela                   23              6.0  🟡⚫️⚫️🟢
-61343   Gómez Asat, Tomás                          26             10.0  🔴🟢🟢🟢
-63146   Ibañez, Lucas Gabriel                      26              8.0  🟢🟢🟢🟢
-63357   Konevky, David                             25             10.0  🟢🟢🟢🟢
-62523   Ledesma, Cristian Germán                   23             10.0  🟡🟢🟢🟢
-55656   Lombardo Ríos, Benjamín                    26              9.0  🟢🟢🟢🟢
-63448   López Avila, Eduardo Benjamín              22             10.0  🟢🟢🟢🟢
-63408   Medina Oliva, Hernán Matías                22             10.0  🔴🟢🟢🟢
-61124   Medina Rodríguez, José Agustín             24              8.0  🟡🟢🟢🟢
-54273   Menéndez, Valentín José                    20              8.0  🟡⚫️⚫️🟢
-63284   Molina Basso, Matías Francisco             20              9.0  🟢🟢🟢🟢
-63286   Murillo, Facundo Maximiliano               19              8.0  🟢🟢🟢🟢
-63426   Osores, Matías                             15             10.0  🟢🟢⚫️🟢
-61024   Palacios, Francisco Miguel                 22              7.5  🟢🟢🟢🟢
-63361   Pastrana, Lucila Hainen                    21              9.0  🟡🟢🟢🟢
-61732   Paz, Mikael                                19              9.0  🟡🟢🟢🟢
-63292   Peralta, María Victoria                    24             10.0  🟢🟢🟢🟢
-61087   Pérez, Joaquín                             24             10.0  🟡⚫️⚫️🟢
-61175   Risso, Aaron Ezequiel                      18              8.0  🟢🟢🟢🟢
-62088   Rojas Sosa, Álvaro Tomás                   22              8.0  🟡🟢🟢🟢
-63232   Roldán, Enzo Joaquín                       13              2.0  ⚫️⚫️⚫️🟢
-64052   Romano, Máximo Isaías                      22              3.5  ⚫️⚫️⚫️🟢
-63307   Román, Santiago Francisco                  23             10.0  🟡🟢🟢🟢
-63403   Ruiz, Marcos Benjamín                      24              8.0  🟡🟢🟢🟢
-61324   Ruiz, Pablo Emanuel                        16              9.5  ⚫️⚫️⚫️🟢
-63581   Ríos, Tomás Enrique                        16                -  ⚫️⚫️⚫️⚫️
-52133   Sosa Villagra, José Lautaro                20              6.0  🟢🟢⚫️🟢
-55546   Thomás, Santiago                           20              8.0  ⚫️🟢🟢🟢
-63209   Valdez del Pino, Valentín                  24              3.0  ⚫️⚫️⚫️🟢
-63355   Vargas Mopty, Jazmín                       14              3.0  🟡⚫️⚫️🟢
-61077   Vittar, Jazmín                             26             10.0  🟢🟢🟢🟢
-```
+## Requisitos:
 
-## C3
-```text
-Legajo  Nombre y Apellido                          Asistencia  Parcial  Practicos
-------  -----------------------------------------  ----------  -------  ----------
-63624   Andrada Romero, Lourdes Micaela            21              8.0  ⚫️⚫️⚫️🟢
-63358   Argañaráz, Leonardo                        21              8.0  🟢⚫️⚫️🟢
-63455   Aráoz, Marianela                           22              9.0  ⚫️⚫️⚫️🟢
-55956   Blanca, Leandro Ezequiel                   20              8.5  ⚫️⚫️⚫️🟢
-63627   Caro, Marcos Daniel                        26              9.5  🟡🟢⚫️🟢
-61441   Carrizo, Gonzalo                           15              9.0  ⚫️⚫️⚫️🟢
-63326   Carrizo Silva, Yaqueline Ailen             27             10.0  🟡🟢🟢🟢
-63324   Cedrón, Agustina Julieta                   28             10.0  🟢🟢🟢🟢
-63171   Chocobar, Morena Agustina                  24              9.5  ⚫️⚫️⚫️🟢
-63352   Cordero, Leonel Rodrigo                    25              9.0  🟢🟢🟢🟢
-61744   Díaz Rossini, Juan José                    27              2.0  ⚫️⚫️⚫️🟢
-63586   Flores, Pablo Ignacio                      24              9.0  🟡🟢⚫️🟢
-63204   García Núñez, Germán Ariel                 27              9.0  🟢🟢⚫️🟢
-63717   González, Octavio                          24             10.0  🟢🟢🟢🟢
-61595   González Patti, Valentín                   21             10.0  🟡⚫️🟢🟢
-63140   Manca, Mariano                             17              9.5  🟡🟢🟢🟢
-63434   Martín, Francisco Augusto                  18                -  🟢🟢⚫️⚫️
-63119   Montes, Luis Esteban                       24             10.0  ⚫️⚫️⚫️🟢
-63459   Méndez, Carlos Samuel                      18              8.0  ⚫️⚫️⚫️🟢
-61246   Palacios, Mateo                            25              8.0  🟢⚫️⚫️🟢
-63198   Parras, Mateo                              27              9.5  🟢🟢🟢🟢
-50793   Peralta, Lucas                             8                 -  ⚫️⚫️⚫️⚫️
-63200   Rojas, Gael Mauricio                   b   25              9.0  ⚫️⚫️🟢🟢
-63195   Sustaita Fuentes, Federico                 26              9.5  🟢🟢🟢🟢
-63139   Torres, Axel                               23              9.5  🟢⚫️🟢🟢
-63197   Uehara Martorell, Ramiro                   25              9.0  🟢🟢🟢🟢
-63322   Veliz Herrera, Mayra Candela               18                -  🟡🟢⚫️⚫️
-63321   Zottola Caram, Ignacio                     23              8.5  🟡🟢⚫️🟢
-61984   Álvarez, Martín                            26              8.5  ⚫️⚫️⚫️🟢
-```
+Debe hacer un MiniCRM (Customer Relationship Management) que permita gestionar clientes y sus actividades. El proyecto debe ser modular, minimalista y legible.
+
+Debe usar como base de datos SQLite mediante Drizzle.
+
+La funcionalidad debe implementarse en un módulo de servicio con una clase Clientes y métodos estáticos para CRUD, incluyendo búsqueda flexible por cualquier campo.
+
+La misma debe exponerse mediante una API REST usando Express, separando controladores y routers, dejando las reglas de negocio en el servicio.
+
+Debe implementarse una interfaz web básica en public/MiniCRM.html usando React, JSX embebido y CSS, cargando las bibliotecas desde CDN con versiones fijas. La debe implementar toda la funcionalidad usando el API REST.
+
+La página debe organizarse como maestro y detalle, con búsqueda en vivo por cualquier campo; seleccionar un cliente muestra su ficha y sus actividades de solo lectura. El layout debe ser minimalista cuidando que se comporte como una app sin desplazamiento de página. El maestro debe tener desplazamiento vertical interno asi como las actividades del cliente. 
+
+Debe poder agregar clientes y actividades, completar actividades y eliminar clientes. Las actividades completadas no se pueden editar ni borrar individualmente.
+
+La edicion del formulario debe ser en el detalle. La alta y edicion de las actividades se deben hacer en un subformulario dentro del detalle del cliente.
+
+## Referencia visual
+
+Ejemplo ilustrativo de la interfaz. El diseño puede variar siempre que cumpla los requisitos.
+
+![MiniCRM con listado de clientes, ficha del cliente seleccionado, subformulario de actividades y listas de compromisos y actividades completadas.](minicrm.jpg)
+
+## Ayudas...
+
+> En [Prompts Demo](./clase/prompts-demo.md) se encuentra un ejemplo usado en clase para generar una app parecida a la solicitada. Se puede usar como referencia para la implementación de la API REST y la interfaz web.
+
+> En [Alumnos](./alumnos.md) se encuentran los datos con notas, practicos y asistencia.

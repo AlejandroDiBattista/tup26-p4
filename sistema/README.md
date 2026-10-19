@@ -8,7 +8,7 @@ comisiones C1 y C3.
 - padrón único de alumnos con una comisión por alumno;
 - horarios y aulas por comisión;
 - calendario de clases generado desde el horario semanal;
-- asistencia presente, ausente o justificada;
+- asistencia presente, tarde, ausente o justificada;
 - trabajos prácticos compartidos por ambas comisiones;
 - estado pendiente, error, falla o presentado por alumno;
 - nota opcional de 1 a 10 para los trabajos usados como parciales.
@@ -31,6 +31,10 @@ El conector OpenAI usa `gpt-6.1-sol` como modelo predeterminado. Se configura en
 **Ajustes → Overview → Default model** y reutiliza la credencial de OpenAI
 existente. El catálogo de esta app incluye el modelo tanto en el selector como
 en el motor que ejecuta el agente, mediante `server/agent/openai-model.ts`.
+La opción **GPT-6 Luna** (`gpt-6-luna`) reemplaza a **GPT-5.6 Luna**: las selecciones
+guardadas de la versión anterior se resuelven automáticamente a la nueva.
+GPT-5.6 Terra y GPT-5.6 Sol se excluyen del selector; sus selecciones guardadas
+se resuelven a GPT-6.1 Sol.
 
 Seleccionando TP3, **Acciones → Comprobar TP3** cuenta las líneas agregadas por
 diff contra el archivo original del enunciado. Marca presentado al alcanzar
@@ -86,7 +90,13 @@ mensajes de ayuda o estado. Solo abre una ventana si la cuenta requiere
 vinculación por QR; informa faltantes o nombres duplicados como errores.
 
 La lectura no envía mensajes ni guarda notas o asistencias: hay que confirmar
-la carga. Cada línea conserva la fecha del mensaje en la zona horaria de Tucumán.
+la carga. Cada línea conserva la fecha y hora del mensaje en la zona horaria de Tucumán.
+Al cargar asistencia se compara el primer registro de cada alumno por fecha con
+el horario de inicio de su comisión. Desde los 20 minutos posteriores al inicio
+(inclusive) se marca **Tarde**. Si no hay hora de mensaje o de inicio, se marca
+**Presente** y se puede corregir manualmente. **Tarde** cuenta como **media
+asistencia** en el padrón, los porcentajes, los resúmenes y la exportación; las
+justificadas siguen excluidas del denominador del porcentaje.
 WhatsApp puede tener una transferencia de historial pendiente. La lectura carga
 páginas hasta alcanzar la fecha inicial del período o hasta que WhatsApp confirme
 que no queda más historial. Si lo anterior solo está en el teléfono, solicita
