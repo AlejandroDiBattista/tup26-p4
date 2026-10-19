@@ -29,12 +29,13 @@ Los colores de motos, autos y camionetas se repiten en diagramas, ranuras y demo
 ## Tipografía y distribución
 
 - Títulos: Iowan Old Style, Charter, Palatino y Georgia. Lectura: Avenir Next, Segoe UI, Arial y sans-serif. Código: ui-monospace, Menlo y Consolas. Las tres funciones tienen variables propias y compartidas por todas las diapositivas.
-- A 800 × 600, títulos de 33,6 px, cuerpo de 28,8 px y código de 20 px. Los ejemplos cortos y largos usan exactamente la misma letra; las comparaciones en dos columnas también.
+- A 800 × 600, títulos de 33,6 px, cuerpo de 28,8 px y código de 26 px. Los ejemplos cortos y largos usan exactamente la misma letra; las comparaciones en dos columnas también. El código es un 30 % más grande que en la versión anterior.
 - Código con interlineado de 1,25, relleno uniforme y una columna de numeración de ancho fijo. Las palabras reservadas y llamadas destacan con color y peso.
 - Una diapositiva mantiene el título fuera del área ajustable. La navegación ocupa una franja inferior estable.
 - La escala se adapta al tamaño de la pantalla. La portada y los separadores usan una escala mayor; los textos y ejemplos mantienen sus tamaños comunes entre diapositivas.
 - Los comentarios y expresiones largos se distribuyen en varias líneas. Todas las líneas de código, incluidas las vacías, conservan el mismo alto.
-- Cada bloque se numera desde 1. Los números se generan en una columna independiente, se excluyen de la selección y están ocultos para los lectores de pantalla.
+- Cada ejemplo independiente se numera desde 1. Cuando continúa en otra diapositiva, la numeración sigue desde la última línea. Los números se generan en una columna independiente, se excluyen de la selección y están ocultos para los lectores de pantalla.
+- Los ejemplos largos se distribuyen por operación: reservar una ranura, calcular el nuevo valor, guardarlo; comparar dependencias y agendar efectos; reconstruir el DOM y ejecutar las limpiezas. Los fragmentos conservan el orden del código.
 - El ejemplo de la interfaz de `App` se divide en dos diapositivas, conservando su orden y código.
 - Tablas con cabecera verde, separadores discretos y filas alternadas. Notas con un borde lateral cálido.
 
@@ -48,4 +49,4 @@ Los colores de motos, autos y camionetas se repiten en diagramas, ranuras y demo
 
 ## Comprobación
 
-Se recorrieron las 75 diapositivas a 800 × 600. Todos los bloques de código tienen la misma fuente de 20 px, numeración consecutiva desde 1 y contenido sin recortes. Los textos normales comparten una base de 28,8 px. El framework y la lógica de la demo permanecen idénticos al archivo de entrada. No se agregaron recursos externos.
+Se recorrieron las 96 diapositivas a 800 × 600 y se corrigieron las líneas que excedían el ancho disponible al aumentar la letra. Todos los bloques de código tienen la misma fuente de 26 px y numeración consecutiva dentro de cada ejemplo, incluidas sus continuaciones. Los textos normales comparten una base de 28,8 px. El framework y la lógica de la demo permanecen idénticos al archivo de entrada. No se agregaron recursos externos.

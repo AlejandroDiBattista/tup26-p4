@@ -27,7 +27,7 @@
   --fuente-codigo: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   --tipo-titulo: clamp(22px, 5.6vh, 60px);
   --tipo-cuerpo: clamp(22px, 4.8vh, 44px);
-  --tipo-codigo: clamp(17px, 3.333333vh, 32px);
+  --tipo-codigo: clamp(1.3125rem, 4.333333vh, 2.5rem);
   --tipo-formula: clamp(28px, 6.6vh, 60px);
   --tipo-demo: clamp(22px, 4.5vh, 40px);
   --codigo-interlineado: 1.25;
@@ -143,11 +143,11 @@ pre.codigo {
 pre.codigo .linea {
   display: block; position: relative;
   min-height: 1.25em; width: max-content; min-width: 100%;
-  padding-left: 2.5em;
+  padding-left: 2.2em;
 }
 pre.codigo .numero-linea {
-  position: absolute; left: 0; top: 0; width: 1.95em;
-  padding-right: .45em; border-right: 1px solid var(--borde);
+  position: absolute; left: 0; top: 0; width: 1.7em;
+  padding-right: .3em; border-right: 1px solid var(--borde);
   color: var(--codigo-numero); text-align: right;
   font: inherit; font-variant-numeric: tabular-nums;
   user-select: none;
@@ -362,6 +362,39 @@ ol.pasos li::before { color: var(--papel); }
 .tabla th { color: var(--papel); }
 .tabla tr:nth-child(odd) td { background: oklch(0.955 0.014 100); }
 #pie { background: var(--oscuro); }
+/* ---------- App en vivo: tarjeta limpia, filas tocables ---------- */
+.demo .app { background: var(--papel); border: 1px solid var(--borde); border-radius: .4em; padding: .45em; gap: .4em; }
+.demo .app .acciones { display: flex; align-items: center; gap: .5em; font-size: 1em; flex-wrap: nowrap; }
+.demo .app .acciones button.principal {
+  width: 2.1em; height: 2.1em; padding: 0; flex: none;
+  font-size: 1em; line-height: 1; color: var(--texto);
+  background: var(--papel); border: 1px solid var(--borde); border-radius: .3em;
+  box-shadow: 0 1px 2px oklch(0.27 0.045 175 / .12);
+}
+.demo .app .acciones button.principal:hover { background: var(--acento-suave); color: var(--texto); }
+.demo .app .cronometro { flex: 1; display: flex; justify-content: center; }
+.demo .app .duracion { font: 700 1.9em/1 var(--fuente-codigo); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.demo .app .contadores { display: flex; flex-direction: column; gap: .3em; }
+.demo .app .contador {
+  display: flex; flex-direction: row; justify-content: space-between; align-items: center;
+  width: 100%; padding: .3em .6em; text-align: left;
+  background: var(--papel); border: 1px solid var(--borde); border-radius: .3em;
+  box-shadow: 0 1px 2px oklch(0.27 0.045 175 / .1);
+  font: inherit; color: var(--texto);
+}
+.demo .app .contador .nombre { font-size: .8em; font-weight: 700; }
+.demo .app .contador .cantidad { font: 500 .8em/1 var(--fuente-codigo); }
+.demo .app .contador:hover:not(:disabled) { background: var(--acento-suave); color: var(--texto); }
+.demo .app .contador:disabled { background: var(--papel); color: var(--suave); opacity: .75; }
+.demo .app .resumen {
+  display: flex; flex-direction: column; gap: .15em;
+  background: transparent; border: 0; border-top: 1px solid var(--borde); border-radius: 0; padding: .35em 0 0;
+}
+.demo .app .dato { display: flex; justify-content: space-between; align-items: baseline; text-align: left; font-size: .72em; color: var(--suave); }
+.demo .app .dato .valor { font-size: 1em; color: var(--suave); }
+.demo .app .dato.total .valor { font: 700 1.9em/1 var(--fuente-codigo); color: var(--texto); }
+.demo .app .dato.flujo { background: var(--codigo-fondo); border-radius: .25em; padding: .3em .5em; color: var(--texto); font-weight: 700; }
+.demo .app .dato.flujo .valor { font: 700 1em/1 var(--fuente-codigo); color: var(--texto); }
 </style>
 </head>
 <body>
@@ -494,14 +527,16 @@ ol.pasos li::before { color: var(--papel); }
 <section class="diapo">
   <h2>JSX es azúcar</h2>
   <pre class="codigo">
-&lt;button className="registrar" onClick={registrar}&gt;
+&lt;button className="registrar"
+        onClick={registrar}&gt;
   +1
 &lt;/button&gt;
 </pre>
   <p class="centro suave">antes de ejecutarse se transforma en</p>
   <pre class="codigo">
 createElement("button",
-  { className: "registrar", onClick: registrar },
+  { className: "registrar",
+    onClick: registrar },
   "+1");
 </pre>
 </section>
@@ -517,19 +552,33 @@ createElement("button",
 </section>
 
 <section class="diapo">
-  <h2>createElement, versión 1</h2>
-  <pre class="codigo">
-function createElement(tipo, props, ...hijos) {
+  <h2>createElement: crear y asignar</h2>
+  <pre class="codigo" data-inicio="1">
+function createElement(
+  tipo, props, ...hijos
+) {
   props = props ?? {};
-  const elemento = document.createElement(tipo);
+  const elemento =
+    document.createElement(tipo);
 
-  for (const [nombre, valor] of Object.entries(props)) {
-    asignarPropiedad(elemento, nombre, valor);
+  for (const [nombre, valor]
+       of Object.entries(props)) {
+    asignarPropiedad(
+      elemento, nombre, valor
+    );
   }
+</pre>
+</section>
 
-  for (const hijo of hijos.flat(Infinity)) {
-    if (hijo === null || hijo === undefined
-        || typeof hijo === "boolean") continue;
+<section class="diapo">
+  <h2>createElement: agregar hijos</h2>
+  <pre class="codigo" data-inicio="14">
+  for (const hijo of
+       hijos.flat(Infinity)) {
+    if (hijo === null
+        || hijo === undefined
+        || typeof hijo === "boolean")
+      continue;
     elemento.append(hijo instanceof Node
       ? hijo
       : String(hijo));
@@ -552,20 +601,33 @@ function createElement(tipo, props, ...hijos) {
 </section>
 
 <section class="diapo">
-  <h2>Las props</h2>
-  <pre class="codigo">
-function asignarPropiedad(elemento, nombre, valor) {
+  <h2>Props: eventos y clases</h2>
+  <pre class="codigo" data-inicio="1">
+function asignarPropiedad(
+  elemento, nombre, valor
+) {
   if (nombre.startsWith("on")) {
-    const evento = nombre.slice(2).toLowerCase();
-    elemento.addEventListener(evento, valor);
+    const evento = nombre.slice(2)
+      .toLowerCase();
+    elemento.addEventListener(
+      evento, valor
+    );
   } else if (nombre === "className") {
     elemento.className = valor;
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Props: estilos y atributos</h2>
+  <pre class="codigo" data-inicio="12">
   } else if (nombre === "style") {
     Object.assign(elemento.style, valor);
   } else if (typeof valor === "boolean") {
-    elemento.toggleAttribute(nombre, valor);
+    elemento.toggleAttribute(
+      nombre, valor
+    );
   } else if (valor !== null
-             && valor !== undefined) {
+             &amp;&amp; valor !== undefined) {
     elemento.setAttribute(nombre, valor);
   }
 }
@@ -574,10 +636,17 @@ function asignarPropiedad(elemento, nombre, valor) {
 
 <section class="diapo">
   <h2>Un nombre corto: <code>h</code></h2>
-  <pre class="codigo">
+  <pre class="codigo" data-inicio="1">
 const h = createElement;
-const avisar = () => alert("¡Pasó un auto!");
+const avisar = () =&gt;
+  alert("¡Pasó un auto!");
+</pre>
+  <p class="suave">La <code>h</code> viene de <i>hyperscript</i>.</p>
+</section>
 
+<section class="diapo">
+  <h2>Crear una tarjeta con <code>h</code></h2>
+  <pre class="codigo" data-inicio="4">
 const tarjeta = h("section",
   { className: "contador" },
   h("h2", null, "Autos"),
@@ -587,7 +656,6 @@ const tarjeta = h("section",
 
 document.body.append(tarjeta);
 </pre>
-  <p class="suave">La <code>h</code> viene de <i>hyperscript</i>.</p>
 </section>
 
 <section class="diapo">
@@ -621,7 +689,8 @@ document.body.append(tarjeta);
   <pre class="codigo">
 function Dato({ titulo, valor }) {
   return h("div", { className: "dato" },
-    h("p", { className: "titulo" }, titulo),
+    h("p", { className: "titulo" },
+      titulo),
     h("p", { className: "valor" }, valor),
   );
 }
@@ -631,13 +700,15 @@ function Dato({ titulo, valor }) {
 <section class="diapo">
   <h2>createElement reconoce funciones</h2>
   <pre class="codigo">
-function createElement(tipo, props, ...hijos) {
+function createElement(
+  tipo, props, ...hijos
+) {
   props = props ?? {};
-
 !  if (typeof tipo === "function") {
-!    return tipo({ ...props, children: hijos });
+!    return tipo({
+!      ...props, children: hijos,
+!    });
 !  }
-
   // las etiquetas HTML, igual que antes
 }
 </pre>
@@ -645,20 +716,30 @@ function createElement(tipo, props, ...hijos) {
 </section>
 
 <section class="diapo">
-  <h2>Componer componentes</h2>
-  <pre class="codigo">
+  <h2>Componer componentes · 1/2</h2>
+  <pre class="codigo" data-inicio="1">
 function Resumen({ total, flujo }) {
-  return h("section", { className: "resumen" },
+  return h("section",
+    { className: "resumen" },
     h(Dato, {
-      titulo: "Total de vehículos", valor: total,
+      titulo: "Total de vehículos",
+      valor: total,
     }),
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Componer componentes · 2/2</h2>
+  <pre class="codigo" data-inicio="8">
     h(Dato, {
       titulo: "Flujo total", valor: flujo,
     }),
   );
 }
 
-h(Resumen, { total: 12, flujo: "300 veh/h" });
+h(Resumen, {
+  total: 12, flujo: "300 veh/h",
+});
 </pre>
   <p class="nota">Las props son de solo lectura: las decide el padre.</p>
 </section>
@@ -688,7 +769,9 @@ h("section", null,
   <h2>render</h2>
   <pre class="codigo">
 function render(componente, contenedor) {
-  contenedor.replaceChildren(h(componente));
+  contenedor.replaceChildren(
+    h(componente)
+  );
 }
 </pre>
   <ul class="lista">
@@ -699,19 +782,26 @@ function render(componente, contenedor) {
 
 <section class="diapo">
   <h2>Un contador con una variable global</h2>
-  <pre class="codigo">
+  <pre class="codigo" data-inicio="1">
 let clics = 0;
 
 function App() {
   return h("button", {
-    onClick: () => {
+    onClick: () =&gt; {
       clics++;
-      render(App, raiz);  // ¡hay que acordarse!
+      render(App, raiz);
+      // ¡hay que acordarse!
     },
   }, `Clics: ${clics}`);
 }
+</pre>
+</section>
 
-const raiz = document.getElementById("raiz");
+<section class="diapo">
+  <h2>Montar el contador</h2>
+  <pre class="codigo" data-inicio="12">
+const raiz =
+  document.getElementById("raiz");
 render(App, raiz);
 </pre>
 </section>
@@ -753,12 +843,18 @@ render(App, raiz);
 </section>
 
 <section class="diapo">
-  <h2>useState, versión 1</h2>
-  <pre class="codigo">
+  <h2>useState: la memoria global</h2>
+  <pre class="codigo" data-inicio="1">
 // la memoria: sobrevive entre dibujos
 const hooks = [];
-let indice = 0;  // la próxima ranura a entregar
+let indice = 0;
+// la próxima ranura a entregar
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>useState: elegir una ranura</h2>
+  <pre class="codigo" data-inicio="5">
 function useState(valorInicial) {
   const i = indice++;
   if (hooks[i] === undefined) {
@@ -766,7 +862,12 @@ function useState(valorInicial) {
     hooks[i] = { valor: valorInicial };
   }
   const ranura = hooks[i];
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>useState: cambiar y devolver</h2>
+  <pre class="codigo" data-inicio="12">
   function setValor(nuevoValor) {
     ranura.valor = nuevoValor;
     renderizar();  // se redibuja solo
@@ -780,32 +881,45 @@ function useState(valorInicial) {
   <h2>renderizar, versión 1</h2>
   <pre class="codigo">
 function renderizar() {
-  indice = 0;  // cada dibujo reparte desde cero
-  contenedor.replaceChildren(h(componenteRaiz));
+  indice = 0;
+  // cada dibujo reparte desde cero
+  contenedor.replaceChildren(
+    h(componenteRaiz)
+  );
 }
 </pre>
   <p class="nota">Si no volvemos <code>indice</code> a cero, el segundo dibujo pediría ranuras nuevas y todo arrancaría vacío.</p>
 </section>
 
 <section class="diapo">
-  <h2>Usarlo</h2>
-  <pre class="codigo">
-function Contador({ nombre }) {
-  const [cantidad, setCantidad] = useState(0);
+  <h2>Contador: equivalente en JSX</h2>
+  <pre class="codigo" data-inicio="1">
+&lt;section&gt;
+  &lt;h2&gt;{nombre}&lt;/h2&gt;
+  &lt;p&gt;{cantidad}&lt;/p&gt;
+  &lt;button
+    onClick={() =&gt;
+      setCantidad(cantidad + 1)}
+  &gt;
+    +1
+  &lt;/button&gt;
+&lt;/section&gt;
+</pre>
+</section>
 
-  // En JSX sería:
-  // &lt;section&gt;
-  //   &lt;h2&gt;{nombre}&lt;/h2&gt;
-  //   &lt;p&gt;{cantidad}&lt;/p&gt;
-  //   &lt;button onClick={() =&gt; setCantidad(cantidad + 1)}&gt;
-  //     +1
-  //   &lt;/button&gt;
-  // &lt;/section&gt;
+<section class="diapo">
+  <h2>Usar useState en Contador</h2>
+  <pre class="codigo" data-inicio="1">
+function Contador({ nombre }) {
+  const [cantidad, setCantidad] =
+    useState(0);
+
   return h("section", null,
     h("h2", null, nombre),
     h("p", null, cantidad),
     h("button", {
-      onClick: () => setCantidad(cantidad + 1),
+      onClick: () =&gt;
+        setCantidad(cantidad + 1),
     }, "+1"),
   );
 }
@@ -857,11 +971,11 @@ function Contador({ nombre }) {
   <h2>¿Qué pasa si la rompemos?</h2>
   <pre class="codigo">
 function Contador({ conHistorial }) {
-  // 4
-  const [cantidad, setCantidad] = useState(0);
+  const [cantidad, setCantidad] =
+    useState(0);  // 4
   if (conHistorial) {
-    // 5… a veces
-    const [lista, setLista] = useState([]);
+    const [lista, setLista] =
+      useState([]);  // 5… a veces
   }
   useEffect(/* … */);  // ¿6 o 5?
 }
@@ -881,8 +995,9 @@ function Contador({ conHistorial }) {
   <pre class="codigo">
 function registrar() {
   // el contador interno
-  setCantidad((c) => c + 1);
-  alRegistrar();  // el padre hace setTotal
+  setCantidad((c) =&gt; c + 1);
+  alRegistrar();
+  // el padre hace setTotal
 }
 </pre>
   <ul class="lista">
@@ -940,10 +1055,10 @@ setTotal(
       <h3>Sube 2</h3>
       <pre class="codigo">
 setTotal(
-  (t) => t + 1
+  (t) =&gt; t + 1
 );
 setTotal(
-  (t) => t + 1
+  (t) =&gt; t + 1
 );
 </pre>
       <p>La función recibe el valor más reciente de la ranura.</p>
@@ -952,21 +1067,36 @@ setTotal(
 </section>
 
 <section class="diapo">
-  <h2>useState, versión final</h2>
-  <pre class="codigo">
+  <h2>useState final: leer</h2>
+  <pre class="codigo" data-inicio="1">
 function useState(valorInicial) {
   const i = indice++;
   if (hooks[i] === undefined) {
-    hooks[i] = { tipo: "estado", valor: valorInicial };
+    hooks[i] = {
+      tipo: "estado", valor: valorInicial,
+    };
   }
   const ranura = hooks[i];
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>useState final: calcular</h2>
+  <pre class="codigo" data-inicio="9">
   function setValor(nuevoValor) {
-!    const valor = typeof nuevoValor === "function"
+!    const valor =
+!      typeof nuevoValor === "function"
 !      ? nuevoValor(ranura.valor)
 !      : nuevoValor;
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>useState final: guardar</h2>
+  <pre class="codigo" data-inicio="14">
 !    // no cambió
-!    if (Object.is(valor, ranura.valor)) return;
+!    if (Object.is(valor, ranura.valor))
+!      return;
     ranura.valor = valor;
 !    programarRender();
   }
@@ -994,10 +1124,11 @@ function useState(valorInicial) {
 <section class="diapo">
   <h2>Las tres partes de un efecto</h2>
   <pre class="codigo">
-useEffect(() => {
-  // 1. el efecto: corre DESPUÉS de dibujar
+useEffect(() =&gt; {
+  // 1. el efecto: corre DESPUÉS de
+  // dibujar
 
-  return () => {
+  return () =&gt; {
     // 3. la limpieza: deshace el efecto
   };
 // 2. cuándo volver a correrlo
@@ -1026,37 +1157,55 @@ useEffect(() => {
 {
   tipo: "efecto",
   dependencias: [true],
-  limpieza: () => clearInterval(id),
+  limpieza: () =&gt; clearInterval(id),
 }
 </pre>
 </section>
 
 <section class="diapo">
-  <h2>useEffect por dentro</h2>
-  <pre class="codigo">
+  <h2>useEffect: reservar una ranura</h2>
+  <pre class="codigo" data-inicio="1">
 function useEffect(efecto, dependencias) {
   const i = indice++;
-  const primeraVez = hooks[i] === undefined;
-  if (primeraVez) hooks[i] = { tipo: "efecto" };
+  const primeraVez =
+    hooks[i] === undefined;
+  if (primeraVez) {
+    hooks[i] = { tipo: "efecto" };
+  }
   const ranura = hooks[i];
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>useEffect: comparar dependencias</h2>
+  <pre class="codigo" data-inicio="9">
   const cambiaron = primeraVez
     || dependencias === undefined
-    || dependencias.some((d, k) =>
-         !Object.is(d, ranura.dependencias[k]));
+    || dependencias.some((d, k) =&gt;
+         !Object.is(
+           d, ranura.dependencias[k]
+         ));
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>useEffect: agendar el efecto</h2>
+  <pre class="codigo" data-inicio="15">
   if (cambiaron) {
     ranura.dependencias = dependencias;
-    // se anota para después: ¡no se ejecuta acá!
-    efectosPendientes.push({ ranura, efecto });
+    // se anota para después: ¡no se
+    // ejecuta acá!
+    efectosPendientes.push({
+      ranura, efecto,
+    });
   }
 }
 </pre>
 </section>
 
 <section class="diapo">
-  <h2>renderizar, versión final</h2>
-  <pre class="codigo">
+  <h2>renderizar: reconstruir el DOM</h2>
+  <pre class="codigo" data-inicio="1">
 function renderizar() {
   renderPendiente = false;
   indice = 0;
@@ -1065,13 +1214,20 @@ function renderizar() {
   const arbol = h(componenteRaiz);
   // 2. pantalla nueva
   contenedor.replaceChildren(arbol);
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>renderizar: ejecutar los efectos</h2>
+  <pre class="codigo" data-inicio="9">
   for (const { ranura, efecto }
        of efectosPendientes) {
-    if (typeof ranura.limpieza === "function") {
+    if (typeof ranura.limpieza
+        === "function") {
       ranura.limpieza();
     }
-    ranura.limpieza = efecto();  // 3. efectos
+    ranura.limpieza = efecto();
+    // 3. efectos
   }
   efectosPendientes = [];
 }
@@ -1083,14 +1239,14 @@ function renderizar() {
 <section class="diapo">
   <h2>Ejemplo: el reloj</h2>
   <pre class="codigo">
-useEffect(() => {
+useEffect(() =&gt; {
   if (!corriendo) return;
 
-  const id = setInterval(() => {
+  const id = setInterval(() =&gt; {
     setAhora(Date.now());
   }, 1000);
 
-  return () => clearInterval(id);
+  return () =&gt; clearInterval(id);
 }, [corriendo]);
 </pre>
 </section>
@@ -1119,7 +1275,7 @@ useEffect(() => {
 <section class="diapo">
   <h2>Ejemplo: volver a cero</h2>
   <pre class="codigo">
-useEffect(() => {
+useEffect(() =&gt; {
   if (habilitado) setCantidad(0);
 }, [habilitado]);
 </pre>
@@ -1142,7 +1298,9 @@ useEffect(() => {
   <pre class="codigo">
 // Cuántos vehículos pasarían en una hora
 // a este ritmo.
-function calcularFlujo(cantidad, segundos) {
+function calcularFlujo(
+  cantidad, segundos
+) {
   if (segundos === 0) return "—";
   return `${Math.round(
     (cantidad * 3600) / segundos
@@ -1153,33 +1311,51 @@ function calcularFlujo(cantidad, segundos) {
 </section>
 
 <section class="diapo">
-  <h2>Cronometro: solo muestra</h2>
-  <pre class="codigo">
-function Cronometro({ inicio, segundos }) {
+  <h2>Cronometro: preparar los datos</h2>
+  <pre class="codigo" data-inicio="1">
+function Cronometro({
+  inicio, segundos,
+}) {
   const estado = inicio === null
     ? "Detenido"
-    : `Desde las ${formatearHora(inicio)}`;
+    : "Desde las " +
+      formatearHora(inicio);
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>Cronometro: mostrar los datos</h2>
+  <pre class="codigo" data-inicio="8">
   return h("div",
-    { className: "componente cronometro" },
+    { className:
+        "componente cronometro" },
     h("span", { className: "duracion" },
       formatearDuracion(segundos)),
-    h("span", { className: "estado" }, estado),
+    h("span", { className: "estado" },
+      estado),
   );
 }
 </pre>
 </section>
 
 <section class="diapo">
-  <h2>Resumen: solo muestra</h2>
-  <pre class="codigo">
+  <h2>Resumen: mostrar el total</h2>
+  <pre class="codigo" data-inicio="1">
 function Resumen({ total, segundos }) {
-  const flujo = calcularFlujo(total, segundos);
+  const flujo =
+    calcularFlujo(total, segundos);
   return h("section",
     { className: "componente resumen" },
     h(Dato, {
-      titulo: "Total de vehículos", valor: total,
+      titulo: "Total de vehículos",
+      valor: total,
     }),
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Resumen: mostrar el flujo</h2>
+  <pre class="codigo" data-inicio="10">
     h(Dato, {
       titulo: "Flujo total", valor: flujo,
     }),
@@ -1189,21 +1365,28 @@ function Resumen({ total, segundos }) {
 </section>
 
 <section class="diapo">
-  <h2>Contador: su propio estado</h2>
-  <pre class="codigo">
+  <h2>Contador: estado y reinicio</h2>
+  <pre class="codigo" data-inicio="1">
 function Contador({
   nombre, habilitado, alRegistrar,
 }) {
-  const [cantidad, setCantidad] = useState(0);
+  const [cantidad, setCantidad] =
+    useState(0);
 
-  // al empezar una medición, arranca de cero
-  useEffect(() => {
+  // al empezar una medición, arranca de
+  // cero
+  useEffect(() =&gt; {
     if (habilitado) setCantidad(0);
   }, [habilitado]);
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>Contador: sumar y avisar</h2>
+  <pre class="codigo" data-inicio="12">
   function registrar() {
     // el contador interno
-    setCantidad((c) => c + 1);
+    setCantidad((c) =&gt; c + 1);
 !    alRegistrar();  // el aviso al padre
   }
   // sigue…
@@ -1216,7 +1399,8 @@ function Contador({
   return h("section",
   { className: "componente contador" },
     h("h2", null, nombre),
-    h("p", { className: "cantidad" }, cantidad),
+    h("p", { className: "cantidad" },
+      cantidad),
     h("button", {
       className: "registrar",
       disabled: !habilitado,
@@ -1228,15 +1412,22 @@ function Contador({
 </section>
 
 <section class="diapo">
-  <h2>App: el reloj y el contador global</h2>
-  <pre class="codigo">
+  <h2>App: el estado</h2>
+  <pre class="codigo" data-inicio="1">
 function App() {
   // null: detenido
-  const [inicio, setInicio] = useState(null);
-  const [ahora, setAhora] = useState(Date.now());
+  const [inicio, setInicio] =
+    useState(null);
+  const [ahora, setAhora] =
+    useState(Date.now());
 !  // el contador global
 !  const [total, setTotal] = useState(0);
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>App: los datos calculados</h2>
+  <pre class="codigo" data-inicio="9">
   // se calculan
   const corriendo = inicio !== null;
   const segundos = corriendo
@@ -1248,69 +1439,92 @@ function App() {
 <section class="diapo">
   <h2>App: el efecto del reloj</h2>
   <pre class="codigo">
-  useEffect(() => {
+  useEffect(() =&gt; {
     if (!corriendo) return;
-    const id = setInterval(() => {
+    const id = setInterval(() =&gt; {
       setAhora(Date.now());
     }, 1000);
-    return () => clearInterval(id);
+    return () =&gt; clearInterval(id);
   }, [corriendo]);
 </pre>
 </section>
 
 <section class="diapo">
-  <h2>App: los manejadores</h2>
-  <pre class="codigo">
+  <h2>App: iniciar una medición</h2>
+  <pre class="codigo" data-inicio="1">
   function iniciar() {
     const instante = Date.now();
     setInicio(instante);
     setAhora(instante);
     setTotal(0);
   }
+</pre>
+</section>
 
+<section class="diapo">
+  <h2>App: detener y registrar</h2>
+  <pre class="codigo" data-inicio="7">
   function detener() {
     setInicio(null);
   }
 
 !  function registrarVehiculo() {
-!    setTotal((t) => t + 1);
+!    setTotal((t) =&gt; t + 1);
 !  }
 </pre>
 </section>
 
 <section class="diapo">
-  <h2>App: reloj y controles</h2>
-  <pre class="codigo">
+  <h2>App: las props compartidas</h2>
+  <pre class="codigo" data-inicio="1">
   const comunes = {
     habilitado: corriendo,
     alRegistrar: registrarVehiculo,
   };
-
-  return h("main", { className: "componente app" },
-    h(Cronometro, { inicio, segundos }),
-    h("div", { className: "acciones" },
-      h("button", {
-        onClick: corriendo ? detener : iniciar,
-      }, corriendo ? "Detener" : "Iniciar"),
-    ),
-    // Continúa con los contadores y el resumen…
 </pre>
 </section>
 
 <section class="diapo">
-  <h2>App: contadores y resumen</h2>
-  <pre class="codigo">
+  <h2>App: reloj y controles</h2>
+  <pre class="codigo" data-inicio="5">
+  return h("main",
+    { className: "componente app" },
+    h(Cronometro, { inicio, segundos }),
+    h("div", { className: "acciones" },
+      h("button", {
+        onClick: corriendo
+          ? detener : iniciar,
+      }, corriendo
+        ? "Detener" : "Iniciar"),
+    ),
+    // Continúa con los contadores y el
+    // resumen…
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: motos y autos</h2>
+  <pre class="codigo" data-inicio="1">
   // Dentro de h("main", …),
   // después de los controles:
     h("div", { className: "contadores" },
       h(Contador, {
-        nombre: "🏍️ Motos", ...comunes,
+        nombre: "🏍️ Motos",
+        ...comunes,
       }),
       h(Contador, {
-        nombre: "🚗 Autos", ...comunes,
+        nombre: "🚗 Autos",
+        ...comunes,
       }),
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: camionetas y resumen</h2>
+  <pre class="codigo" data-inicio="12">
       h(Contador, {
-        nombre: "🛻 Camionetas", ...comunes,
+        nombre: "🛻 Camionetas",
+        ...comunes,
       }),
     ),
     h(Resumen, { total, segundos }),
@@ -1394,23 +1608,29 @@ function App() {
 </section>
 
 <section class="diapo">
-  <h2>Otra forma: levantar el estado</h2>
-  <pre class="codigo">
+  <h2>Levantar el estado: actualizar</h2>
+  <pre class="codigo" data-inicio="1">
 function App() {
   const [conteos, setConteos] = useState({
     Motos: 0, Autos: 0, Camionetas: 0,
   });
 
   function registrarVehiculo(nombre) {
-    setConteos((c) => ({
+    setConteos((c) =&gt; ({
       ...c, [nombre]: c[nombre] + 1,
     }));
   }
+</pre>
+</section>
 
-// el total se calcula: no puede desincronizarse
+<section class="diapo">
+  <h2>Levantar el estado: calcular</h2>
+  <pre class="codigo" data-inicio="11">
+// el total se calcula: no puede
+// desincronizarse
 
   const total = Object.values(conteos)
-    .reduce((a, b) => a + b, 0);
+    .reduce((a, b) =&gt; a + b, 0);
   // …
 }
 </pre>
@@ -1574,43 +1794,37 @@ const h = MiniReact.createElement;
 const { useState, useEffect } = MiniReact;
 
 function formatearDuracion(segundos) {
-  const horas = String(Math.floor(segundos / 3600)).padStart(2, "0");
-  const minutos = String(Math.floor((segundos % 3600) / 60)).padStart(2, "0");
+  const minutos = String(Math.floor(segundos / 60)).padStart(2, "0");
   const resto = String(segundos % 60).padStart(2, "0");
-  return `${horas}:${minutos}:${resto}`;
-}
-
-function formatearHora(instante) {
-  return new Date(instante).toLocaleTimeString("es-AR");
+  return `${minutos}:${resto}`;
 }
 
 // Flujo: cuántos vehículos pasarían en una hora al ritmo observado.
 function calcularFlujo(cantidad, segundos) {
-  if (segundos === 0) return "—";
-  return `${Math.round((cantidad * 3600) / segundos)} veh/h`;
+  if (segundos === 0) return "0 v/h";
+  return `${Math.round((cantidad * 3600) / segundos)} v/h`;
 }
 
 // ---------- Componentes de presentación: no tienen estado ----------
-function Dato({ titulo, valor }) {
-  return h("div", { className: "componente dato" },
-    h("p", { className: "titulo" }, titulo),
-    h("p", { className: "valor" }, valor),
+function Dato({ titulo, valor, clase }) {
+  return h("div", { className: `componente dato ${clase}` },
+    h("span", { className: "titulo" }, titulo),
+    h("span", { className: "valor" }, valor),
   );
 }
 
-function Cronometro({ inicio, segundos }) {
-  const estado = inicio === null ? "Detenido" : `Desde las ${formatearHora(inicio)}`;
+function Cronometro({ segundos }) {
   return h("div", { className: "componente cronometro" },
     h("span", { className: "duracion" }, formatearDuracion(segundos)),
-    h("span", { className: "estado" }, estado),
   );
 }
 
 function Resumen({ total, segundos }) {
   const flujo = calcularFlujo(total, segundos);
   return h("section", { className: "componente resumen" },
-    h(Dato, { titulo: "Total de vehículos", valor: total }),
-    h(Dato, { titulo: "Flujo total", valor: flujo }),
+    h(Dato, { titulo: "Total de vehículos", valor: total, clase: "total" }),
+    h(Dato, { titulo: "Tiempo transcurrido", valor: `${segundos} s`, clase: "tiempo" }),
+    h(Dato, { titulo: "Flujo", valor: flujo, clase: "flujo" }),
   );
 }
 
@@ -1628,10 +1842,9 @@ function Contador({ nombre, habilitado, alRegistrar }) {
     alRegistrar();               // el aviso al padre
   }
 
-  return h("section", { className: "componente contador" },
-    h("h2", null, nombre),
-    h("p", { className: "cantidad" }, cantidad),
-    h("button", { className: "registrar", disabled: !habilitado, onClick: registrar }, "+1"),
+  return h("button", { className: "componente contador", disabled: !habilitado, onClick: registrar },
+    h("span", { className: "nombre" }, `${nombre}:`),
+    h("span", { className: "cantidad" }, cantidad),
   );
 }
 
@@ -1671,10 +1884,13 @@ function App() {
 
   return h("main", { className: "componente app" },
     h("h1", null, "Conteo de tránsito"),
-    h(Cronometro, { inicio, segundos }),
     h("div", { className: "acciones" },
-      h("button", { className: "principal", onClick: corriendo ? detener : iniciar },
-        corriendo ? "Detener" : "Iniciar"),
+      h("button", {
+        className: "principal",
+        "aria-label": corriendo ? "Detener" : "Iniciar",
+        onClick: corriendo ? detener : iniciar,
+      }, corriendo ? "■" : "▶"),
+      h(Cronometro, { segundos }),
     ),
     h("div", { className: "contadores" },
       h(Contador, { nombre: "🏍️ Motos", ...comunes }),
@@ -1780,9 +1996,10 @@ MiniReact.render(App, document.getElementById("demo-raiz"));
     const sangria = Math.min(...lineas
       .filter((l) => l.texto.trim())
       .map((l) => l.texto.match(/^ */)[0].length));
+    const inicioLinea = Number(pre.dataset.inicio) || 1;
     pre.innerHTML = lineas.map((l, indiceLinea) => {
       const clase = l.marcada ? "linea marcada" : "linea";
-      return `<span class="${clase}"><span class="numero-linea" aria-hidden="true" data-numero="${indiceLinea + 1}"></span><span class="texto-linea">${colorear(l.texto.slice(sangria))}</span></span>`;
+      return `<span class="${clase}"><span class="numero-linea" aria-hidden="true" data-numero="${inicioLinea + indiceLinea}"></span><span class="texto-linea">${colorear(l.texto.slice(sangria))}</span></span>`;
     }).join("");
   }
 

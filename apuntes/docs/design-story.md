@@ -14,4 +14,6 @@ El ejemplo más largo de `App` se reparte en dos pasos: reloj y controles; conta
 
 Los ejemplos conservan el mismo tamaño de letra durante toda la explicación. La numeración de líneas permite señalar con precisión una instrucción durante la clase. Los comentarios y las llamadas más largas se distribuyen en varias líneas para reservar lugar a los números sin reducir la tipografía.
 
+Para proyectar a baja resolución, el código aumenta a 26 px en una pantalla de 800 × 600. La presentación pasa de 75 a 96 diapositivas: las implementaciones largas se explican en fragmentos con una operación principal por pantalla. Los números de línea continúan entre fragmentos para mantener la referencia al ejemplo completo.
+
 El cierre vuelve a las cuatro piezas iniciales. La identidad visual acompaña el recorrido sin depender de imágenes, fuentes descargadas, animaciones largas ni acceso a Internet.
