@@ -23,7 +23,7 @@
       margin: 0 0 24px;
     }
 
-    ul {
+    .lista-alumnos {
       display: grid;
       grid-template-columns: repeat(3, 360px);
       justify-content: center;
@@ -32,14 +32,25 @@
       list-style: none;
     }
 
-    li {
-      min-width: 0;
-      padding: 20px;
-      border: 1px solid #d9ded9;
-      border-radius: 16px;
-      background: white;
-      text-align: center;
+    .tarjeta {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #d9ded9;
+  border-radius: 16px;
+  background: white;
+  text-align: center;
+  & header {
+    & h2 {
+      margin-top: 0;
     }
+  }
+  & address {
+    font-style: normal;
+  }
+& footer p {
+    margin-bottom: 0;
+  }
+}
 
     button {
       margin: 4px;
@@ -57,20 +68,22 @@
       margin-top: 4px;
     }
 
-    dialog form {
-      display: grid;
-      min-width: 300px;
-      gap: 8px;
-    }
+    dialog {
+    & form {
+    display: grid;
+    min-width: 300px;
+    gap: 8px;
+  }
+}
 
     @media (max-width: 1120px) {
-      ul {
+      .lista-alumnos {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 700px) {
-      ul {
+      .lista-alumnos {
         grid-template-columns: 1fr;
       }
     }
@@ -250,7 +263,7 @@
           estado.busqueda = evento.target.value}"
       >
 
-      <ul>
+      <section class="lista-alumnos">
         ${() => [...estado.alumnos]
           .filter(alumno => {
             const texto =
@@ -287,21 +300,41 @@
             )
           })
           .map(alumno => html`
-            <li>
+            <article
+              tabindex="0"
+              class="tarjeta"
+              @click="${() => abrirEdicion(alumno.id)}"
+              @keydown="${evento => {
+              if (evento.key === 'Enter') {
+               abrirEdicion(alumno.id)}
+              if (evento.key === ' ') {
+              evento.preventDefault()
+              alternarFavorito(alumno.id)
+            }
+          }}"
+          > 
+
+              <header>
               <h2>
                 ${alumno.apellido}, ${alumno.nombre}
               </h2>
-
+              </header>
+              
+              <fotter>
               <p>Legajo: ${alumno.legajo}</p>
               <p>Comisión: ${alumno.comision}</p>
+              </fotter>
+              <address>
               <p>Teléfono: ${alumno.telefono}</p>
               <p>GitHub: ${alumno.github}</p>
+              </address>
 
               <button
-                type="button"
-                @click="${() =>
-                  alternarFavorito(alumno.id)}"
-              >
+               type="button"
+              @click="${evento => {
+              evento.stopPropagation()
+              alternarFavorito(alumno.id)}}">
+
                 ${() =>
                   alumno.favorito ? '🌟' : '☆'}
               </button>
@@ -313,9 +346,9 @@
               >
                 Editar
               </button>
-            </li>
+            </article>
           `)}
-      </ul>
+      </section>
 
       ${() =>
         estado.busqueda.trim() &&
