@@ -6,274 +6,333 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 32px 20px;
-      font: 16px sans-serif;
-      background: #f5f6f4;
-    }
+  
+<style>
+  * {
+    box-sizing: border-box;
+  }
 
-    main {
-      width: 1104px;
-      max-width: 100%;
-      margin: auto;
-    }
+  body {
+    margin: 0;
+    padding: 32px 20px;
+    font: 16px Arial, sans-serif;
+    color: #27332b;
+    background: #f5f6f4;
+  }
+
+  main {
+    width: 1104px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .agenda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
 
     h1 {
-      margin: 0 0 24px;
-    }
-
-    ul {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      padding: 0;
-      margin: 0;
-      list-style: none;
-    }
-
-    li {
-      position: relative;
-      min-width: 0;
-      padding: 20px;
-      border: 1px solid #d9ded9;
-      border-radius: 14px;
-      background: white;
-      text-align: left;
-    }
-
-    li > div:first-child {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding-right: 30px;
-      margin-bottom: 18px;
-    }
-
-    li b {
-      font-family: Georgia, serif;
-      font-size: 21px;
-      font-weight: normal;
-    }
-
-    li p {
-      margin: 10px 0;
-      color: #525b53;
-      overflow-wrap: anywhere;
-    }
-
-    li p:last-of-type {
-      padding-top: 12px;
-      margin-bottom: 0;
-      border-top: 1px solid #e5e8e4;
-      font-size: 13px;
-      color: #737b73;
-    }
-
-    li .favorito {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-    }
-
-    li > button:not(.favorito) {
-      margin-top: 14px;
-      padding: 7px 12px;
-      border: 1px solid #d9ded9;
-      border-radius: 18px;
-      background: white;
-      cursor: pointer;
-    }
-
-
-    .agenda-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 24px;
-    }
-
-    .agenda-header h1 {
       margin: 0;
       font-family: Georgia, serif;
       font-size: 32px;
       font-weight: normal;
+      color: #26352b;
     }
 
-    .agenda-header > div {
+    & > div {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-   .agenda-header input {
-      box-sizing: border-box;
+    input {
       width: 240px;
       max-width: 100%;
       padding: 10px 14px;
       border: 1px solid #d9ded9;
-      border-radius: 20px;
-      background: white;
-      font: inherit;
-   }
-
-   .favorito {
-      border: 0;
-      background: transparent;
-      color: #8a7b4e;
-      font-size: 24px;
-      cursor: pointer;
-   }
-
-   button {
-      font: inherit;
-   }  
-
-   .agregar {
-      padding: 10px 18px;
-      border: 0;
-      border-radius: 20px;
-      background: #304035;
-      color: white;
-      cursor: pointer;
-      white-space: nowrap;
-   }
-
-   dialog {
-      box-sizing: border-box;
-      width: 560px;
-      max-width: calc(100% - 32px);
-      max-height: calc(100% - 32px);
-      overflow-y: auto;
-      border: 1px solid #e1e4df;
-      border-radius: 16px;
-      padding: 28px;
+      border-radius: 24px;
       background: #fff;
-      color: #26352b;
-      box-shadow: 0 18px 60px #0002;
-   }
+      font: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
 
-   dialog::backdrop {
+      &:focus {
+        border-color: #879889;
+        box-shadow: 0 0 0 3px #87988925;
+      }
+    }
+  }
+
+  button {
+    font: inherit;
+  }
+
+  .agregar {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 24px;
+    background: #304035;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.2s;
+
+    &:hover {
+      background: #405747;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  li {
+    min-width: 0;
+    padding: 20px 24px;
+    border: 1px solid #dce1dc;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 2px 8px #26352b08;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      border-color: #c5cec5;
+      box-shadow: 0 5px 16px #26352b12;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #879889;
+      outline-offset: 3px;
+    }
+
+    article {
+      position: relative;
+    }
+
+    article > header {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding-right: 32px;
+      margin-bottom: 18px;
+    }
+
+    b {
+      font-family: Georgia, serif;
+      font-size: 22px;
+      font-weight: normal;
+      color: #171d18;
+    }
+
+    article > header span {
+      font-size: 18px;
+      color: #202620;
+    }
+
+    address {
+      font-style: normal;
+
+      p {
+        margin: 0;
+        padding: 10px 0;
+        color: #59635b;
+        overflow-wrap: anywhere;
+      }
+
+      p + p {
+        border-top: 1px solid #e5e8e4;
+        color: #7b847c;
+        font-style: italic;
+      }
+    }
+
+    article > footer > p {
+      margin: 0;
+      padding-top: 14px;
+      border-top: 1px solid #e5e8e4;
+      color: #737b73;
+      font-size: 14px;
+    }
+
+    .favorito {
+      position: absolute;
+      top: -5px;
+      right: -8px;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: #a18d55;
+      font-size: 27px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+
+      &:hover {
+        background: #a18d5518;
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  dialog {
+    width: 560px;
+    max-width: calc(100% - 32px);
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    padding: 28px;
+    border: 1px solid #e1e4df;
+    border-radius: 18px;
+    background: #fff;
+    color: #26352b;
+    box-shadow: 0 18px 60px #0002;
+
+    &::backdrop {
       background: #17201980;
-      backdrop-filter: blur(3px);
-   }
+      backdrop-filter: blur(4px);
+    }
 
-   dialog h2 {
+    h2 {
       margin: 0 0 8px;
       font-family: Georgia, serif;
       font-size: 26px;
       font-weight: normal;
     }
+  }
 
-   .campos {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-      margin: 24px 0;
-   }
+  .campos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
 
-   .campo {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-   }
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
 
-   .campo label {
+    label {
       font-size: 14px;
       font-weight: 600;
+      color: #465348;
     }
-    
-   .campo input {
-      box-sizing: border-box;
+
+    input {
       width: 100%;
+      min-width: 0;
       padding: 11px 12px;
       border: 1px solid #d9ded9;
       border-radius: 8px;
       background: #fbfcfa;
       font: inherit;
-   }
+      outline: none;
 
-    .campo input:focus,
-    .agenda-header input:focus {
-      outline: 2px solid #8b9e8d;
-      outline-offset: 2px;
+      &:focus {
+        border-color: #879889;
+        box-shadow: 0 0 0 3px #87988925;
+      }
     }
+  }
 
-   .error {
-      color: #b42318;
-      font-size: 13px;
-   }
+  .error {
+    color: #b42318;
+    font-size: 13px;
+  }
 
-   .acciones {
-      display: flex;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 24px;
-   }
+  .acciones {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
 
-  .acciones button {
+    button {
       padding: 10px 16px;
-      border-radius: 20px;
+      border: 1px solid #d9ded9;
+      border-radius: 24px;
       font: inherit;
       cursor: pointer;
+      transition: background 0.2s;
+    }
   }
 
   .guardar {
-      border: 0;
-      background: #304035;
-      color: white;
+    border-color: #304035 !important;
+    background: #304035;
+    color: #fff;
+
+    &:hover {
+      background: #405747;
+    }
   }
 
   .cancelar {
-      border: 1px solid #d9ded9;
-      background: white;
-      color: #304035;
+    background: #fff;
+    color: #304035;
+
+    &:hover {
+      background: #f3f5f2;
+    }
   }
 
   @media (max-width: 800px) {
-      ul {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+    ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
 
   @media (max-width: 700px) {
-      .agenda-header {
-        align-items: stretch;
-        flex-direction: column;
-    }
+    .agenda-header {
+      align-items: stretch;
+      flex-direction: column;
 
-     .agenda-header > div {
+      & > div {
         flex-wrap: wrap;
       }
 
-      .agenda-header input {
+      input {
         flex: 1;
         width: auto;
       }
+    }
+  }
 
-     .campos {
-       grid-template-columns: 1fr;
-     }
+  @media (max-width: 540px) {
+    body {
+      padding: 24px 14px;
     }
 
-    @media (max-width: 540px) {
-      ul {
-        grid-template-columns: 1fr;
-      }
-
-      dialog {
-        padding: 20px;
-      }
-
-       .campos {
-        grid-template-columns: 1fr;
-      }
+    ul {
+      grid-template-columns: 1fr;
     }
 
-  </style>
+    .campos {
+      grid-template-columns: 1fr;
+    }
+
+    dialog {
+      padding: 20px;
+    }
+  }
+</style>
+
 </head>
 
 <body>
@@ -447,33 +506,49 @@
 
     <ul>
       ${() => obtenerAlumnos().map(alumno => html`
-        <li>
-          <div>
-            <b>${alumno.apellido}</b>
-            ${alumno.nombre}
+               
+<li
+  tabindex="0"
+  @click="${() => editarAlumno(alumno)}"
+  @keydown="${e => {
+    if (e.target !== e.currentTarget) return
 
-            <button
-              class="favorito"
-              type="button"
-              aria-label="${() => alumno.favorito
-                ? 'Quitar de favoritos'
-                : 'Marcar como favorito'}"
-              aria-pressed="${() => String(alumno.favorito)}"
-              @click="${e => {
-                e.stopPropagation()
-                alternarFavorito(alumno)
-              }}"
-            >${() => alumno.favorito ? '★' : '☆'}</button>
-          </div>
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      editarAlumno(alumno)
+    }
+  }}"
+>
+  <article>
+    <header>
+      <b>${alumno.apellido}</b>
+      <span>${alumno.nombre}</span>
 
-          <p>${alumno.telefono}</p>
-          <p>@${alumno.github}</p>
-          <p>${alumno.comision} · Legajo ${alumno.legajo}</p>
+      <button
+        class="favorito"
+        type="button"
+        aria-label="${() => alumno.favorito
+          ? 'Quitar de favoritos'
+          : 'Marcar como favorito'}"
+        aria-pressed="${() => String(alumno.favorito)}"
+        @click="${e => {
+          e.stopPropagation()
+          alternarFavorito(alumno)
+        }}"
+      >${() => alumno.favorito ? '★' : '☆'}</button>
+    </header>
 
-          <button type="button" @click="${() => editarAlumno(alumno)}">
-            Editar
-          </button>
-        </li>
+    <address>
+      <p>${alumno.telefono}</p>
+      <p>@${alumno.github}</p>
+    </address>
+
+    <footer>
+      <p>${alumno.comision} · Legajo ${alumno.legajo}</p>
+    </footer>
+  </article>
+</li>
+
       `)}
 
       ${() => obtenerAlumnos().length === 0
