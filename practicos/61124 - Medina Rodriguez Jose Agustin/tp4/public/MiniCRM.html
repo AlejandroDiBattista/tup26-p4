@@ -340,6 +340,93 @@
       margin-bottom: 12px;
     }
 
+        /* ---------- Subformulario de actividades ---------- */
+
+    .subformulario {
+      padding: 16px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      background: #f8fafc;
+    }
+
+    .subformulario-titulo {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .subformulario-campos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .subformulario-campos input[type="text"] {
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+
+    .subformulario-campos input {
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .subformulario-campos input:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: -1px;
+    }
+
+    /* ---------- Acciones de cada actividad ---------- */
+
+    .seccion-fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 10px;
+    }
+
+    .seccion-fila .seccion { margin: 0; }
+
+    .actividad-cuerpo {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .boton-icono {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      flex: none;
+      padding: 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .boton-icono:hover { background: #f1f5f9; }
+
+    .boton-icono.peligro:hover { background: #fef2f2; }
+
+    .marca-boton {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 2px solid #cbd5e1;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .marca-boton:hover { border-color: #16a34a; }
+
   </style>
 </head>
 <body>
@@ -448,7 +535,41 @@
       );
     }
 
-    function Actividad({ actividad }) {
+        function FormularioActividad({ inicial, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(inicial.descripcion);
+      const [fecha, setFecha] = useState(inicial.fecha ?? '');
+
+      function enviar(evento) {
+        evento.preventDefault();
+        onGuardar({ descripcion, fecha: fecha || null });
+      }
+
+      return (
+        <form className="subformulario" onSubmit={enviar}>
+          <h4 className="subformulario-titulo">
+            {inicial.id ? 'Editar actividad' : 'Agregar actividad'}
+          </h4>
+
+          <div className="subformulario-campos">
+            <input
+              type="text"
+              placeholder="Descripción de la actividad"
+              value={descripcion}
+              onChange={e => setDescripcion(e.target.value)}
+            />
+            <input
+              type="date"
+              value={fecha}
+              onChange={e => setFecha(e.target.value)}
+            />
+            <button type="submit" className="boton boton-primario">💾 Guardar</button>
+            <button type="button" className="boton" onClick={onCancelar}>✕ Cancelar</button>
+          </div>
+        </form>
+      );
+    }
+
+      function Actividad({ actividad, onEditar, onCompletar, onEliminar }) {
       const vencida = !actividad.completada
         && actividad.fecha
         && actividad.fecha < hoyISO();
@@ -459,18 +580,40 @@
 
       return (
         <div className={actividad.completada ? 'actividad hecha' : 'actividad'}>
-          <span className="marca">{actividad.completada ? '✓' : ''}</span>
-          <span>
+          {actividad.completada
+            ? <span className="marca">✓</span>
+            : <button
+                className="marca-boton"
+                title="Marcar como completada"
+                onClick={() => onCompletar(actividad.id)}
+              />}
+
+          <span className="actividad-cuerpo">
             <div className="actividad-texto">{actividad.descripcion}</div>
             <div className={vencida ? 'actividad-fecha vencido' : 'actividad-fecha'}>
               {fecha}{vencida ? ' · Vencido' : ''}
             </div>
           </span>
+
+          {!actividad.completada && (
+            <span className="acciones">
+              <button
+                className="boton-icono"
+                title="Editar"
+                onClick={() => onEditar(actividad)}
+              >✏️</button>
+              <button
+                className="boton-icono peligro"
+                title="Eliminar"
+                onClick={() => onEliminar(actividad.id)}
+              >🗑️</button>
+            </span>
+          )}
         </div>
       );
     }
 
-    function Detalle({ cliente, modo, error, onEditar, onEliminar, onGuardar, onCancelar }) {
+        function Detalle({ cliente, modo, error, onEditar, onEliminar, onGuardar, onCancelar, acts }) {
       if (modo === 'nuevo') {
         return (
           <div className="detalle-contenido">
@@ -535,12 +678,35 @@
             <div>🏙️ {cliente.ciudad || '—'}</div>
           </div>
 
-          <h3 className="seccion">Compromisos</h3>
+          {acts.editando && (
+            <FormularioActividad
+              key={acts.editando.id ?? 'nueva'}
+              inicial={acts.editando}
+              onGuardar={acts.onGuardar}
+              onCancelar={acts.onCancelar}
+            />
+          )}
+
+          <div className="seccion-fila">
+            <h3 className="seccion">Compromisos</h3>
+            {!acts.editando && (
+              <button className="boton" onClick={acts.onNueva}>+ Actividad</button>
+            )}
+          </div>
+
           {pendientes.length === 0
             ? <p className="actividad-fecha">Sin compromisos pendientes.</p>
-            : pendientes.map(a => <Actividad key={a.id} actividad={a} />)}
+            : pendientes.map(a => (
+                <Actividad
+                  key={a.id}
+                  actividad={a}
+                  onEditar={acts.onEditar}
+                  onCompletar={acts.onCompletar}
+                  onEliminar={acts.onEliminar}
+                />
+              ))}
 
-          <h3 className="seccion">Actividades completadas</h3>
+          <h3 className="seccion" style={{ marginTop: 20 }}>Actividades completadas</h3>
           {hechas.length === 0
             ? <p className="actividad-fecha">Todavía no completó ninguna.</p>
             : hechas.map(a => <Actividad key={a.id} actividad={a} />)}
@@ -548,7 +714,7 @@
       );
     }
 
-    function App() {
+        function App() {
       const [clientes, setClientes] = useState([]);
       const [busqueda, setBusqueda] = useState('');
       const [seleccionadoId, setSeleccionadoId] = useState(null);
@@ -556,6 +722,7 @@
       const [modo, setModo] = useState('ver');
       const [error, setError] = useState(null);
       const [version, setVersion] = useState(0);
+      const [actEditando, setActEditando] = useState(null);
 
       useEffect(() => {
         const temporizador = setTimeout(async () => {
@@ -585,12 +752,14 @@
         setSeleccionadoId(id);
         setModo('ver');
         setError(null);
+        setActEditando(null);
       }
 
       function nuevoCliente() {
         setSeleccionadoId(null);
         setModo('nuevo');
         setError(null);
+        setActEditando(null);
       }
 
       async function guardarCliente(datos) {
@@ -621,6 +790,56 @@
           setError(e.message);
         }
       }
+
+      // ---------- Actividades ----------
+
+      async function guardarActividad(datos) {
+        try {
+          if (actEditando.id) {
+            await pedirAPI('PUT', `/actividades/${actEditando.id}`, datos);
+          } else {
+            await pedirAPI('POST', `/clientes/${seleccionadoId}/actividades`, datos);
+          }
+          setActEditando(null);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function completarActividad(id) {
+        try {
+          await pedirAPI('POST', `/actividades/${id}/completar`);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function eliminarActividad(id) {
+        if (!confirm('¿Eliminar esta actividad?')) return;
+
+        try {
+          await pedirAPI('DELETE', `/actividades/${id}`);
+          setActEditando(null);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      const acts = {
+        editando: actEditando,
+        onNueva: () => { setActEditando({ id: null, descripcion: '', fecha: '' }); setError(null); },
+        onEditar: a => { setActEditando({ id: a.id, descripcion: a.descripcion, fecha: a.fecha ?? '' }); setError(null); },
+        onGuardar: guardarActividad,
+        onCancelar: () => { setActEditando(null); setError(null); },
+        onCompletar: completarActividad,
+        onEliminar: eliminarActividad,
+      };
 
       return (
         <div className="app">
@@ -662,6 +881,7 @@
                 onEliminar={eliminarCliente}
                 onGuardar={guardarCliente}
                 onCancelar={() => { setModo('ver'); setError(null); }}
+                acts={acts}
               />
             </section>
           </div>
