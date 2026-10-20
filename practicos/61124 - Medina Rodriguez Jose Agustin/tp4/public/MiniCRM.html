@@ -4,8 +4,403 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MiniCRM</title>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    #app { height: 100vh; }
+
+    /* ---------- Estructura general ---------- */
+
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .barra {
+      flex: none;
+      padding: 14px 24px;
+      background: #1e293b;
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .cuerpo {
+      flex: 1;
+      min-height: 0;              /* clave: permite que los paneles se achiquen */
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;               /* clave */
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .maestro { flex: 0 0 clamp(240px, 30%, 340px); }
+    .detalle { flex: 1; }
+
+    /* ---------- Maestro ---------- */
+
+    .maestro-cabecera {
+      flex: none;
+      padding: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .maestro-titulo {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .buscador {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .buscador:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: -1px;
+    }
+
+    .lista {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;           /* el scroll vive acá */
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-bottom: 1px solid #f1f5f9;
+      background: none;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .item:hover { background: #f8fafc; }
+
+    .item.activo {
+      background: #eff6ff;
+      box-shadow: inset 3px 0 0 #2563eb;
+    }
+
+    .inicial {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .item-datos { min-width: 0; }
+
+    .item-nombre {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .item-email {
+      overflow: hidden;
+      color: #64748b;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---------- Detalle ---------- */
+
+    .detalle-contenido {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;           /* el otro scroll interno */
+      padding: 24px;
+    }
+
+    .detalle-nombre {
+      margin: 0 0 16px;
+      font-size: 28px;
+    }
+
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      gap: 8px 24px;
+      margin-bottom: 24px;
+      color: #334155;
+      font-size: 15px;
+    }
+
+    .seccion {
+      margin: 0 0 10px;
+      font-size: 17px;
+    }
+
+    .actividad {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .actividad.hecha {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .marca {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #cbd5e1;
+      border-radius: 4px;
+      color: white;
+      font-size: 13px;
+    }
+
+    .actividad.hecha .marca {
+      border-color: #16a34a;
+      background: #16a34a;
+    }
+
+    .actividad-texto { font-size: 15px; }
+
+    .actividad-fecha {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .vencido {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .vacio {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      color: #94a3b8;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-  <h1>MiniCRM — en construcción</h1>
+  <div id="app"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const API = '/api';
+
+    // ---------- Ayudantes ----------
+
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    function formatearFecha(iso) {
+      if (!iso) return null;
+      const [anio, mes, dia] = iso.split('-').map(Number);
+      return `${dia} ${MESES[mes - 1]} ${anio}`;
+    }
+
+    function hoyISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function iniciales(nombre) {
+      return nombre
+        .split(' ')
+        .filter(p => p.length > 0)
+        .slice(0, 2)
+        .map(p => p[0].toUpperCase())
+        .join('');
+    }
+
+    // ---------- Componentes ----------
+
+    function ItemCliente({ cliente, activo, onSeleccionar }) {
+      return (
+        <li>
+          <button
+            className={activo ? 'item activo' : 'item'}
+            onClick={() => onSeleccionar(cliente.id)}
+          >
+            <span className="inicial">{iniciales(cliente.nombre)}</span>
+            <span className="item-datos">
+              <div className="item-nombre">{cliente.nombre}</div>
+              <div className="item-email">{cliente.email}</div>
+            </span>
+          </button>
+        </li>
+      );
+    }
+
+    function Actividad({ actividad }) {
+      const vencida = !actividad.completada
+        && actividad.fecha
+        && actividad.fecha < hoyISO();
+
+      const fecha = actividad.completada
+        ? `Completada el ${formatearFecha(actividad.completadaEl)}`
+        : (formatearFecha(actividad.fecha) ?? 'Sin fecha');
+
+      return (
+        <div className={actividad.completada ? 'actividad hecha' : 'actividad'}>
+          <span className="marca">{actividad.completada ? '✓' : ''}</span>
+          <span>
+            <div className="actividad-texto">{actividad.descripcion}</div>
+            <div className={vencida ? 'actividad-fecha vencido' : 'actividad-fecha'}>
+              {fecha}{vencida ? ' · Vencido' : ''}
+            </div>
+          </span>
+        </div>
+      );
+    }
+
+    function Detalle({ cliente }) {
+      if (!cliente) {
+        return <div className="vacio">Seleccioná un cliente de la lista</div>;
+      }
+
+      const pendientes = cliente.actividades.filter(a => !a.completada);
+      const hechas = cliente.actividades.filter(a => a.completada);
+
+      return (
+        <div className="detalle-contenido">
+          <h2 className="detalle-nombre">{cliente.nombre}</h2>
+
+          <div className="datos">
+            <div>✉️ {cliente.email}</div>
+            <div>📍 {cliente.direccion || '—'}</div>
+            <div>📞 {cliente.telefono || '—'}</div>
+            <div>🏙️ {cliente.ciudad || '—'}</div>
+          </div>
+
+          <h3 className="seccion">Compromisos</h3>
+          {pendientes.length === 0
+            ? <p className="actividad-fecha">Sin compromisos pendientes.</p>
+            : pendientes.map(a => <Actividad key={a.id} actividad={a} />)}
+
+          <h3 className="seccion">Actividades completadas</h3>
+          {hechas.length === 0
+            ? <p className="actividad-fecha">Todavía no completó ninguna.</p>
+            : hechas.map(a => <Actividad key={a.id} actividad={a} />)}
+        </div>
+      );
+    }
+
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [busqueda, setBusqueda] = useState('');
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [detalle, setDetalle] = useState(null);
+
+      // Carga la lista cada vez que cambia la búsqueda (con una pausa)
+      useEffect(() => {
+        const temporizador = setTimeout(async () => {
+          const respuesta = await fetch(`${API}/clientes?q=${encodeURIComponent(busqueda)}`);
+          setClientes(await respuesta.json());
+        }, 250);
+
+        return () => clearTimeout(temporizador);
+      }, [busqueda]);
+
+      // Carga el detalle cada vez que cambia el cliente seleccionado
+      useEffect(() => {
+        if (seleccionadoId === null) {
+          setDetalle(null);
+          return;
+        }
+
+        (async () => {
+          const respuesta = await fetch(`${API}/clientes/${seleccionadoId}`);
+          setDetalle(respuesta.ok ? await respuesta.json() : null);
+        })();
+      }, [seleccionadoId]);
+
+      return (
+        <div className="app">
+          <header className="barra">MiniCRM</header>
+
+          <div className="cuerpo">
+            <section className="panel maestro">
+              <div className="maestro-cabecera">
+                <h2 className="maestro-titulo">Clientes</h2>
+                <input
+                  className="buscador"
+                  placeholder="Buscar por cualquier campo..."
+                  value={busqueda}
+                  onChange={e => setBusqueda(e.target.value)}
+                />
+              </div>
+
+              <ul className="lista">
+                {clientes.map(c => (
+                  <ItemCliente
+                    key={c.id}
+                    cliente={c}
+                    activo={c.id === seleccionadoId}
+                    onSeleccionar={setSeleccionadoId}
+                  />
+                ))}
+              </ul>
+            </section>
+
+            <section className="panel detalle">
+              <Detalle cliente={detalle} />
+            </section>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+  </script>
 </body>
 </html>
