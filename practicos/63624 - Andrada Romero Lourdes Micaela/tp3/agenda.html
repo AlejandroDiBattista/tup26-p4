@@ -4,30 +4,530 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
+  <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda de alumnos</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    /* ============ Base ============ */
+    :root {
+      --bg: #f5f6f4;
+      --surface: #ffffff;
+      --border: #d9ded9;
+      --text: #1f2a24;
+      --muted: #5f6b64;
+      --accent: #2f7d5b;
+      --danger: #b3382c;
+      --star: #e6a700;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 20px;
+      font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    button, input { font: inherit; }
+
+    /* ============ Layout principal ============ */
+    main {
+      width: 1104px;
+      max-width: 100%;
+      margin: 0 auto;
+
+      > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+
+        > h1 {
+          flex: 1 1 100%;
+          margin: 0 0 4px;
+          font-size: 2rem;
+        }
+
+        > input[type="search"] {
+          flex: 1 1 240px;
+          padding: 12px 16px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          background: var(--surface);
+
+          &:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+        }
+
+        > button {
+          padding: 12px 24px;
+          border: 0;
+          border-radius: 999px;
+          background: var(--accent);
+          color: white;
+          font-weight: 600;
+          cursor: pointer;
+
+          &:hover { filter: brightness(0.92); }
+          &:focus-visible { outline: 3px solid #9ad3b8; outline-offset: 2px; }
+        }
+      }
+
+      > footer {
+        margin-top: 24px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    }
+
+    /* ============ Grilla de tarjetas ============ */
+    main > section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+
+      > p {
+        grid-column: 1 / -1;
+        padding: 40px 0;
+        text-align: center;
+        color: var(--muted);
+      }
+    }
+
+    /* ============ Tarjeta de alumno ============ */
+    article {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      text-align: center;
+      cursor: pointer;
+
+      &:hover { border-color: var(--accent); }
+      &:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+      > h2 {
+        margin: 0;
+        padding: 0 32px;
+        font-size: 1.15rem;
+        overflow-wrap: anywhere;
+
+        > small {
+          display: block;
+          font-size: 1rem;
+          font-weight: 400;
+        }
+      }
+
+      > address {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-style: normal;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      > p {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin: 4px 0 0;
+        font-size: 0.85rem;
+
+        > span {
+          padding: 2px 10px;
+          border-radius: 999px;
+          background: #eaf3ee;
+          color: var(--accent);
+        }
+      }
+
+      > button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #b5bcb7;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover { background: #f1f3f1; }
+        &:focus-visible { outline: 2px solid var(--accent); }
+        &[aria-pressed="true"] { color: var(--star); }
+      }
+    }
+
+    /* ============ Diálogo y formulario ============ */
+    dialog {
+      width: 440px;
+      max-width: calc(100% - 32px);
+      padding: 0;
+      border: 0;
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgb(0 0 0 / 0.25);
+
+      &::backdrop { background: rgb(20 30 25 / 0.5); }
+
+      > form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 24px;
+
+        > h2 { margin: 0 0 4px; }
+
+        > label {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 0.9rem;
+          font-weight: 600;
+
+          > input {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: 400;
+
+            &:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+          }
+        }
+
+        > p[role="alert"] {
+          margin: 0;
+          color: var(--danger);
+          font-size: 0.9rem;
+        }
+
+        > menu {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 8px;
+          margin: 8px 0 0;
+          padding: 0;
+
+          > button {
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface);
+            cursor: pointer;
+
+            &:hover { background: #f1f3f1; }
+
+            &[type="submit"] {
+              border-color: var(--accent);
+              background: var(--accent);
+              color: white;
+              font-weight: 600;
+            }
+
+            &.eliminar {
+              margin-right: auto;
+              border-color: var(--danger);
+              color: var(--danger);
+
+              &:hover { background: var(--danger); color: white; }
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 700px) {
+      body { padding: 20px 12px; }
+      main > section { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core'
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    /* =====================================================
+       1) ESTADO
+       ===================================================== */
+    const STORAGE_KEY = 'agenda-alumnos'
+    const FORM_VACIO = { apellido: '', nombre: '', legajo: '', comision: '', telefono: '', github: '' }
+
+    function leerGuardados() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        return raw ? JSON.parse(raw) : null
+      } catch {
+        return null
+      }
+    }
+
+    async function cargarInicial() {
+      const guardados = leerGuardados()
+      if (Array.isArray(guardados)) return guardados
+      try {
+        const res = await fetch('./alumnos.json')
+        const datos = await res.json()
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(datos))
+        return datos
+      } catch (e) {
+        console.error('No se pudo cargar alumnos.json (¿se está sirviendo por HTTP?)', e)
+        return []
+      }
+    }
+
+    const state = reactive({
+      alumnos: await cargarInicial(),
+      busqueda: '',
+      editandoId: null,           // null => alta; id => edición
+      form: { ...FORM_VACIO },
+      error: ''
+    })
+
+    /* =====================================================
+       2) FUNCIONES DE ACTUALIZACIÓN
+       ===================================================== */
+    const normalizar = (s) =>
+      String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+    function persistir() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.alumnos))
+    }
+
+    function alumnosVisibles() {
+      const q = normalizar(state.busqueda)
+      return state.alumnos
+        .filter(a => !q || normalizar(
+          [a.apellido, a.nombre, a.legajo, a.comision, a.telefono, a.github].join(' ')
+        ).includes(q))
+        .sort((a, b) =>
+          (b.favorito ? 1 : 0) - (a.favorito ? 1 : 0) ||
+          normalizar(a.apellido).localeCompare(normalizar(b.apellido)) ||
+          normalizar(a.nombre).localeCompare(normalizar(b.nombre))
+        )
+    }
+
+    function nuevoId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
+    }
+
+    const dialogo = () => document.getElementById('dialogo-alumno')
+
+    function buscar(texto) {
+      state.busqueda = texto
+    }
+
+    function alternarFavorito(id) {
+      const alumno = state.alumnos.find(a => a.id === id)
+      if (!alumno) return
+      alumno.favorito = !alumno.favorito
+      persistir()
+    }
+
+    function abrirAlta() {
+      state.editandoId = null
+      state.form = { ...FORM_VACIO }
+      state.error = ''
+      dialogo().showModal()
+    }
+
+    function abrirEdicion(id) {
+      const alumno = state.alumnos.find(a => a.id === id)
+      if (!alumno) return
+      state.editandoId = id
+      state.form = {
+        apellido: alumno.apellido ?? '',
+        nombre: alumno.nombre ?? '',
+        legajo: alumno.legajo ?? '',
+        comision: alumno.comision ?? '',
+        telefono: alumno.telefono ?? '',
+        github: alumno.github ?? ''
+      }
+      state.error = ''
+      dialogo().showModal()
+    }
+
+    function cerrarDialogo() {
+      dialogo().close()
+    }
+
+    function validar(f) {
+      if (!f.apellido.trim() || !f.nombre.trim()) return 'Apellido y nombre son obligatorios.'
+      if (!f.legajo.trim()) return 'El legajo es obligatorio.'
+      if (!f.comision.trim()) return 'La comisión es obligatoria.'
+      if (f.telefono.trim() && !/^[\d\s+()-]{6,}$/.test(f.telefono.trim())) {
+        return 'El teléfono solo puede contener números, espacios, +, - y paréntesis (mínimo 6 caracteres).'
+      }
+      if (f.github.trim() && !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(f.github.trim().replace(/^@/, ''))) {
+        return 'El usuario de GitHub no es válido.'
+      }
+      return ''
+    }
+
+    function guardar() {
+      const f = state.form
+      const error = validar(f)
+      state.error = error
+      if (error) return
+
+      const datos = {
+        apellido: f.apellido.trim(),
+        nombre: f.nombre.trim(),
+        legajo: f.legajo.trim(),
+        comision: f.comision.trim(),
+        telefono: f.telefono.trim(),
+        github: f.github.trim().replace(/^@/, '')
+      }
+
+      if (state.editandoId === null) {
+        state.alumnos.push({ id: nuevoId(), ...datos, favorito: false })
+      } else {
+        const alumno = state.alumnos.find(a => a.id === state.editandoId)
+        if (alumno) Object.assign(alumno, datos)   // conserva id y favorito
+      }
+      persistir()
+      cerrarDialogo()
+    }
+
+    function eliminar() {
+      if (state.editandoId === null) return
+      const alumno = state.alumnos.find(a => a.id === state.editandoId)
+      const nombre = alumno ? `${alumno.nombre} ${alumno.apellido}` : 'este alumno'
+      if (!confirm(`¿Eliminar a ${nombre}?`)) return
+      state.alumnos = state.alumnos.filter(a => a.id !== state.editandoId)
+      persistir()
+      cerrarDialogo()
+    }
+
+    function campo(nombre) {
+      return (e) => { state.form[nombre] = e.target.value }
+    }
+
+    /* =====================================================
+        3) REPRESENTACIÓN (plantillas Arrow.js)
+       ===================================================== */
+    const tarjeta = (a) => html`
+      <article
+        tabindex="0"
+        aria-label="${`${a.nombre} ${a.apellido}`}"
+        @click="${() => abrirEdicion(a.id)}"
+        @keydown="${(e) => {
+          if (e.target !== e.currentTarget) return
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            abrirEdicion(a.id)
+          } else if (e.key === ' ') {
+            e.preventDefault()
+            alternarFavorito(a.id)
+          }
+        }}"
+      >
+        <h2>${a.apellido}<small>${a.nombre}</small></h2>
+        <button
+          type="button"
+          aria-pressed="${a.favorito ? 'true' : 'false'}"
+          aria-label="${a.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+          @click="${(e) => { e.stopPropagation(); alternarFavorito(a.id) }}"
+          @keydown="${(e) => e.stopPropagation()}"
+        >${a.favorito ? '★' : '☆'}</button>
+        <address>
+          <span>${a.telefono || 'Sin teléfono'}</span>
+          <span>${a.github ? '@' + a.github : 'Sin GitHub'}</span>
+        </address>
+        <p>
+          <span>Comisión ${a.comision}</span>
+          <span>Legajo ${a.legajo}</span>
+        </p>
+      </article>
+    `.key(a.id)
+
+    const entrada = (etiqueta, nombre, extra = {}) => html`
+      <label>
+        ${etiqueta}
+        <input
+          name="${nombre}"
+          type="${extra.type || 'text'}"
+          inputmode="${extra.inputmode || 'text'}"
+          autocomplete="off"
+          .value="${() => state.form[nombre]}"
+          @input="${campo(nombre)}"
+        >
+      </label>
+    `
+
+    const formulario = html`
+      <dialog id="dialogo-alumno" aria-labelledby="titulo-dialogo">
+        <form novalidate @submit="${(e) => { e.preventDefault(); guardar() }}">
+          <h2 id="titulo-dialogo">${() => state.editandoId === null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+          ${entrada('Apellido', 'apellido')}
+          ${entrada('Nombre', 'nombre')}
+          ${entrada('Legajo', 'legajo', { inputmode: 'numeric' })}
+          ${entrada('Comisión', 'comision')}
+          ${entrada('Teléfono', 'telefono', { type: 'tel', inputmode: 'tel' })}
+          ${entrada('Usuario de GitHub', 'github')}
+          ${() => state.error ? html`<p role="alert">${state.error}</p>` : ''}
+          <menu>
+            ${() => state.editandoId !== null
+              ? html`<button type="button" class="eliminar" @click="${eliminar}">Eliminar</button>`
+              : ''}
+            <button type="button" @click="${cerrarDialogo}">Cancelar</button>
+            <button type="submit">Guardar</button>
+          </menu>
+        </form>
+      </dialog>
+    `
+
+    const vista = html`
+      <header>
+        <h1>Alumnos</h1>
+        <input
+          type="search"
+          placeholder="Buscar por apellido, nombre, legajo, comisión…"
+          aria-label="Buscar alumnos"
+          @input="${(e) => buscar(e.target.value)}"
+        >
+        <button type="button" @click="${abrirAlta}">Agregar</button>
+      </header>
+
+      <section aria-live="polite">
+        ${() => {
+          const lista = alumnosVisibles()
+          return lista.length
+            ? lista.map(tarjeta)
+            : html`<p>No hay alumnos para mostrar.</p>`
+        }}
+      </section>
+
+      <footer>
+        ${() => {
+          const total = state.alumnos.length
+          const favs = state.alumnos.filter(a => a.favorito).length
+          return `${total} alumno${total === 1 ? '' : 's'} · ${favs} favorito${favs === 1 ? '' : 's'}`
+        }}
+      </footer>
+
+      ${formulario}
+    `
+
+    vista(document.getElementById('app'))
   </script>
 </body>
 </html>
