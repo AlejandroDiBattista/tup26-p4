@@ -229,15 +229,143 @@
       color: #94a3b8;
       font-size: 16px;
     }
+
+        /* ---------- Botones ---------- */
+
+    .boton {
+      padding: 8px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      color: #0f172a;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .boton:hover { background: #f8fafc; }
+
+    .boton-primario {
+      border-color: #2563eb;
+      background: #2563eb;
+      color: white;
+    }
+
+    .boton-primario:hover { background: #1d4ed8; }
+
+    .boton-peligro {
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .boton-peligro:hover { background: #fef2f2; }
+
+    .acciones {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ---------- Cabecera del detalle ---------- */
+
+    .detalle-cabecera {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .detalle-cabecera .detalle-nombre { margin: 0; }
+
+    .id-cliente {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    /* ---------- Formularios ---------- */
+
+    .formulario {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .campo label {
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .campo input {
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .campo input:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: -1px;
+    }
+
+    .formulario-acciones {
+      display: flex;
+      gap: 8px;
+      grid-column: 1 / -1;
+    }
+
+    .error {
+      padding: 10px 14px;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      background: #fef2f2;
+      color: #b91c1c;
+      font-size: 14px;
+    }
+
+    .maestro-fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
   </style>
 </head>
 <body>
   <div id="app"></div>
 
-  <script type="text/babel">
+    <script type="text/babel">
     const { useState, useEffect } = React;
 
     const API = '/api';
+
+    // ---------- Comunicación con la API ----------
+
+    async function pedirAPI(metodo, ruta, datos) {
+      const respuesta = await fetch(API + ruta, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: datos === undefined ? undefined : JSON.stringify(datos),
+      });
+
+      if (!respuesta.ok) {
+        const cuerpo = await respuesta.json().catch(() => ({}));
+        throw new Error(cuerpo.error ?? `Error ${respuesta.status}`);
+      }
+
+      return respuesta.status === 204 ? null : await respuesta.json();
+    }
 
     // ---------- Ayudantes ----------
 
@@ -262,6 +390,8 @@
         .join('');
     }
 
+    const CLIENTE_VACIO = { nombre: '', email: '', telefono: '', direccion: '', ciudad: '' };
+
     // ---------- Componentes ----------
 
     function ItemCliente({ cliente, activo, onSeleccionar }) {
@@ -278,6 +408,43 @@
             </span>
           </button>
         </li>
+      );
+    }
+
+    function Campo({ etiqueta, valor, onCambiar, tipo = 'text' }) {
+      return (
+        <div className="campo">
+          <label>{etiqueta}</label>
+          <input type={tipo} value={valor} onChange={e => onCambiar(e.target.value)} />
+        </div>
+      );
+    }
+
+    function FormularioCliente({ inicial, onGuardar, onCancelar }) {
+      const [datos, setDatos] = useState(inicial);
+
+      function cambiar(campo) {
+        return valor => setDatos({ ...datos, [campo]: valor });
+      }
+
+      function enviar(evento) {
+        evento.preventDefault();
+        onGuardar(datos);
+      }
+
+      return (
+        <form className="formulario" onSubmit={enviar}>
+          <Campo etiqueta="Nombre"    valor={datos.nombre}    onCambiar={cambiar('nombre')} />
+          <Campo etiqueta="Email"     valor={datos.email}     onCambiar={cambiar('email')} />
+          <Campo etiqueta="Teléfono"  valor={datos.telefono}  onCambiar={cambiar('telefono')} />
+          <Campo etiqueta="Dirección" valor={datos.direccion} onCambiar={cambiar('direccion')} />
+          <Campo etiqueta="Ciudad"    valor={datos.ciudad}    onCambiar={cambiar('ciudad')} />
+
+          <div className="formulario-acciones">
+            <button type="submit" className="boton boton-primario">Guardar</button>
+            <button type="button" className="boton" onClick={onCancelar}>Cancelar</button>
+          </div>
+        </form>
       );
     }
 
@@ -303,9 +470,44 @@
       );
     }
 
-    function Detalle({ cliente }) {
+    function Detalle({ cliente, modo, error, onEditar, onEliminar, onGuardar, onCancelar }) {
+      if (modo === 'nuevo') {
+        return (
+          <div className="detalle-contenido">
+            <h2 className="detalle-nombre">Nuevo cliente</h2>
+            {error && <div className="error">{error}</div>}
+            <FormularioCliente
+              inicial={CLIENTE_VACIO}
+              onGuardar={onGuardar}
+              onCancelar={onCancelar}
+            />
+          </div>
+        );
+      }
+
       if (!cliente) {
         return <div className="vacio">Seleccioná un cliente de la lista</div>;
+      }
+
+      if (modo === 'editar') {
+        return (
+          <div className="detalle-contenido">
+            <h2 className="detalle-nombre">Editar cliente</h2>
+            {error && <div className="error">{error}</div>}
+            <FormularioCliente
+              key={cliente.id}
+              inicial={{
+                nombre: cliente.nombre,
+                email: cliente.email,
+                telefono: cliente.telefono ?? '',
+                direccion: cliente.direccion ?? '',
+                ciudad: cliente.ciudad ?? '',
+              }}
+              onGuardar={onGuardar}
+              onCancelar={onCancelar}
+            />
+          </div>
+        );
       }
 
       const pendientes = cliente.actividades.filter(a => !a.completada);
@@ -313,7 +515,18 @@
 
       return (
         <div className="detalle-contenido">
-          <h2 className="detalle-nombre">{cliente.nombre}</h2>
+          {error && <div className="error">{error}</div>}
+
+          <div className="detalle-cabecera">
+            <div>
+              <h2 className="detalle-nombre">{cliente.nombre}</h2>
+              <span className="id-cliente">#{cliente.id}</span>
+            </div>
+            <div className="acciones">
+              <button className="boton" onClick={onEditar}>✏️ Editar</button>
+              <button className="boton boton-peligro" onClick={onEliminar}>🗑️ Eliminar</button>
+            </div>
+          </div>
 
           <div className="datos">
             <div>✉️ {cliente.email}</div>
@@ -340,18 +553,19 @@
       const [busqueda, setBusqueda] = useState('');
       const [seleccionadoId, setSeleccionadoId] = useState(null);
       const [detalle, setDetalle] = useState(null);
+      const [modo, setModo] = useState('ver');
+      const [error, setError] = useState(null);
+      const [version, setVersion] = useState(0);
 
-      // Carga la lista cada vez que cambia la búsqueda (con una pausa)
       useEffect(() => {
         const temporizador = setTimeout(async () => {
-          const respuesta = await fetch(`${API}/clientes?q=${encodeURIComponent(busqueda)}`);
-          setClientes(await respuesta.json());
+          const lista = await pedirAPI('GET', `/clientes?q=${encodeURIComponent(busqueda)}`);
+          setClientes(lista);
         }, 250);
 
         return () => clearTimeout(temporizador);
-      }, [busqueda]);
+      }, [busqueda, version]);
 
-      // Carga el detalle cada vez que cambia el cliente seleccionado
       useEffect(() => {
         if (seleccionadoId === null) {
           setDetalle(null);
@@ -359,10 +573,54 @@
         }
 
         (async () => {
-          const respuesta = await fetch(`${API}/clientes/${seleccionadoId}`);
-          setDetalle(respuesta.ok ? await respuesta.json() : null);
+          try {
+            setDetalle(await pedirAPI('GET', `/clientes/${seleccionadoId}`));
+          } catch {
+            setDetalle(null);
+          }
         })();
-      }, [seleccionadoId]);
+      }, [seleccionadoId, version]);
+
+      function seleccionar(id) {
+        setSeleccionadoId(id);
+        setModo('ver');
+        setError(null);
+      }
+
+      function nuevoCliente() {
+        setSeleccionadoId(null);
+        setModo('nuevo');
+        setError(null);
+      }
+
+      async function guardarCliente(datos) {
+        try {
+          if (modo === 'nuevo') {
+            const creado = await pedirAPI('POST', '/clientes', datos);
+            setSeleccionadoId(creado.id);
+          } else {
+            await pedirAPI('PUT', `/clientes/${seleccionadoId}`, datos);
+          }
+          setModo('ver');
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (!confirm(`¿Eliminar a ${detalle.nombre} y todas sus actividades?`)) return;
+
+        try {
+          await pedirAPI('DELETE', `/clientes/${seleccionadoId}`);
+          setSeleccionadoId(null);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
 
       return (
         <div className="app">
@@ -371,7 +629,10 @@
           <div className="cuerpo">
             <section className="panel maestro">
               <div className="maestro-cabecera">
-                <h2 className="maestro-titulo">Clientes</h2>
+                <div className="maestro-fila">
+                  <h2 className="maestro-titulo" style={{ margin: 0 }}>Clientes</h2>
+                  <button className="boton boton-primario" onClick={nuevoCliente}>+ Agregar</button>
+                </div>
                 <input
                   className="buscador"
                   placeholder="Buscar por cualquier campo..."
@@ -386,14 +647,22 @@
                     key={c.id}
                     cliente={c}
                     activo={c.id === seleccionadoId}
-                    onSeleccionar={setSeleccionadoId}
+                    onSeleccionar={seleccionar}
                   />
                 ))}
               </ul>
             </section>
 
             <section className="panel detalle">
-              <Detalle cliente={detalle} />
+              <Detalle
+                cliente={detalle}
+                modo={modo}
+                error={error}
+                onEditar={() => { setModo('editar'); setError(null); }}
+                onEliminar={eliminarCliente}
+                onGuardar={guardarCliente}
+                onCancelar={() => { setModo('ver'); setError(null); }}
+              />
             </section>
           </div>
         </div>
