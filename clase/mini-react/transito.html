@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de tránsito</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --papel: oklch(0.955 0.012 90);
+    --tinta: oklch(0.22 0.03 265);
+    --tinta-suave: oklch(0.34 0.03 265);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  }
+  button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:active { transform: scale(0.97); }
+  button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+
+  .app {
+    max-width: 430px;
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: 24px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .cabecera { display: flex; justify-content: space-between; align-items: center; }
+  .cabecera h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .estado { font-size: 14px; font-weight: 700; }
+  .estado.midiendo { color: oklch(0.5 0.17 30); }
+  .tiempo {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(60px, 19vw, 80px);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -.04em;
+    margin: 4px 0 8px -3px;
+  }
+  .controles { display: flex; gap: 10px; }
+  .btn-principal, .btn-secundario { height: 56px; border-radius: 28px; font-size: 17px; font-weight: 700; }
+  .btn-principal { flex: 1; border: 0; background: var(--tinta); color: var(--papel); font-size: 18px; }
+  .btn-secundario { width: 120px; border: 2px solid var(--tinta); background: transparent; color: var(--tinta); }
+
+  .contadores { display: flex; flex-direction: column; gap: 10px; }
+  .fila { display: flex; gap: 8px; }
+  .sumar {
+    flex: 1; height: 84px; border: 0; border-radius: 22px;
+    display: flex; align-items: center; gap: 14px; padding: 0 20px;
+    color: var(--tinta); text-align: left;
+  }
+  .sumar .nombre { flex: 1; font-size: 20px; font-weight: 700; }
+  .sumar .cantidad { font-family: 'DM Mono', ui-monospace, monospace; font-size: 48px; font-weight: 500; line-height: 1; letter-spacing: -.03em; }
+  .restar { width: 56px; height: 84px; border-width: 2px; border-style: solid; border-radius: 22px; background: transparent; color: var(--tinta); font-size: 26px; font-weight: 700; }
+
+  .resumen {
+    margin-top: auto;
+    background: var(--tinta); color: var(--papel);
+    border-radius: 28px; padding: 22px 22px 20px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .resumen-datos { display: flex; align-items: flex-end; justify-content: space-between; }
+  .rotulo { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+  .flujo { font-family: 'DM Mono', ui-monospace, monospace; font-size: 60px; font-weight: 500; line-height: .9; letter-spacing: -.04em; display: block; margin: 6px 0; }
+  .detalle { font-size: 15px; font-weight: 500; opacity: .85; }
+  .total { text-align: right; }
+  .total strong { display: block; font-family: 'DM Mono', ui-monospace, monospace; font-size: 32px; font-weight: 500; line-height: 1; margin-bottom: 2px; }
+  .total span { font-size: 14px; font-weight: 500; opacity: .85; }
+  .barra { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--tinta-suave); }
+  .barra div { transition: width .25s cubic-bezier(.25, 1, .5, 1); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const TIPOS = [
+  { id: 'moto', nombre: 'Motos', fondo: 'oklch(0.86 0.09 55)', barra: 'oklch(0.72 0.17 50)', icono: 'moto' },
+  { id: 'auto', nombre: 'Autos', fondo: 'oklch(0.86 0.07 240)', barra: 'oklch(0.7 0.13 245)', icono: 'auto' },
+  { id: 'camioneta', nombre: 'Camionetas', fondo: 'oklch(0.86 0.08 155)', barra: 'oklch(0.72 0.14 155)', icono: 'camioneta' },
+];
+
+const pad = (n) => String(n).padStart(2, '0');
+
+function formatear(ms) {
+  const seg = Math.floor(ms / 1000);
+  const h = Math.floor(seg / 3600);
+  const m = Math.floor((seg % 3600) / 60);
+  const s = seg % 60;
+  const dec = Math.floor((ms % 1000) / 100);
+  return (h > 0 ? `${h}:${pad(m)}` : pad(m)) + `:${pad(s)}.${dec}`;
+}
+
+function Icono({ tipo }) {
+  const props = { width: 34, height: 34, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  if (tipo === 'moto') return (
+    <svg {...props}><circle cx="5.5" cy="16.5" r="3" /><circle cx="18.5" cy="16.5" r="3" /><path d="M5.5 16.5 9 9h4l3 7.5M13 9l-1.5-3H9M15 12h3.5" /></svg>
+  );
+  if (tipo === 'auto') return (
+    <svg {...props}><path d="M3 15v-3l2-5h14l2 5v3zM3 15v2.5M21 15v2.5M6 12h12" /><circle cx="7.5" cy="15" r="0.6" /><circle cx="16.5" cy="15" r="0.6" /></svg>
+  );
+  return (
+    <svg {...props}><path d="M2 16v-5l3-4h6l1.5 4H22v5zM12.5 11H5" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /></svg>
+  );
+}
+
+function Cronometro({ ms, corriendo, onAlternar, onReiniciar }) {
+  const estado = corriendo ? 'Midiendo' : ms > 0 ? 'En pausa' : 'Listo';
+  const texto = corriendo ? 'Pausar' : ms > 0 ? 'Continuar' : 'Iniciar';
+  return (
+    <section>
+      <div className="cabecera">
+        <h1>Registro de tránsito</h1>
+        <span className={'estado' + (corriendo ? ' midiendo' : '')}>{estado}</span>
+      </div>
+      <div className="tiempo">{formatear(ms)}</div>
+      <div className="controles">
+        <button className="btn-principal" onClick={onAlternar}>{texto}</button>
+        <button className="btn-secundario" onClick={onReiniciar}>Reiniciar</button>
+      </div>
+    </section>
+  );
+}
+
+function Contador({ tipo, cantidad, onSumar, onRestar }) {
+  return (
+    <div className="fila">
+      <button className="sumar" style={{ background: tipo.fondo }} onClick={onSumar}
+        aria-label={`Sumar ${tipo.nombre.toLowerCase()}, van ${cantidad}`}>
+        <Icono tipo={tipo.icono} />
+        <span className="nombre">{tipo.nombre}</span>
+        <span className="cantidad">{cantidad}</span>
+      </button>
+      <button className="restar" style={{ borderColor: tipo.fondo }} onClick={onRestar}
+        aria-label={`Restar ${tipo.nombre.toLowerCase()}`}>−</button>
+    </div>
+  );
+}
+
+function Resumen({ cuentas, ms }) {
+  const total = Object.values(cuentas).reduce((a, b) => a + b, 0);
+  const hayFlujo = ms >= 5000;
+  const porMin = hayFlujo ? total / (ms / 60000) : 0;
+  return (
+    <section className="resumen">
+      <div className="resumen-datos">
+        <div>
+          <span className="rotulo">Flujo</span>
+          <span className="flujo">{porMin.toFixed(1)}</span>
+          <span className="detalle">veh/min, {Math.round(porMin * 60)} veh/h</span>
+        </div>
+        <div className="total">
+          <strong>{total}</strong>
+          <span>en total</span>
+        </div>
+      </div>
+      <div className="barra" role="img" aria-label="Proporción de motos, autos y camionetas">
+        {TIPOS.map((t) => (
+          <div key={t.id} style={{ width: total ? `${(cuentas[t.id] / total) * 100}%` : 0, background: t.barra }} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function App() {
+  const [corriendo, setCorriendo] = useState(false);
+  const [acumulado, setAcumulado] = useState(0);
+  const [ahora, setAhora] = useState(0);
+  const inicio = useRef(0);
+  const [cuentas, setCuentas] = useState({ moto: 0, auto: 0, camioneta: 0 });
+
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => setAhora(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [corriendo]);
+
+  const ms = acumulado + (corriendo ? Math.max(0, ahora - inicio.current) : 0);
+
+  const alternar = () => {
+    const t = Date.now();
+    if (corriendo) {
+      setAcumulado(acumulado + (t - inicio.current));
+      setCorriendo(false);
+    } else {
+      inicio.current = t;
+      setAhora(t);
+      setCorriendo(true);
+    }
+  };
+  const reiniciar = () => {
+    setCorriendo(false);
+    setAcumulado(0);
+    setAhora(0);
+    setCuentas({ moto: 0, auto: 0, camioneta: 0 });
+  };
+  const cambiar = (id, delta) =>
+    setCuentas((c) => ({ ...c, [id]: Math.max(0, c[id] + delta) }));
+
+  return (
+    <main className="app">
+      <Cronometro ms={ms} corriendo={corriendo} onAlternar={alternar} onReiniciar={reiniciar} />
+      <section className="contadores">
+        {TIPOS.map((t) => (
+          <Contador key={t.id} tipo={t} cantidad={cuentas[t.id]}
+            onSumar={() => cambiar(t.id, 1)} onRestar={() => cambiar(t.id, -1)} />
+        ))}
+      </section>
+      <Resumen cuentas={cuentas} ms={ms} />
+    </main>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

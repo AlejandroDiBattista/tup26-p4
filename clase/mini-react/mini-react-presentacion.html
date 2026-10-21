@@ -1,0 +1,1976 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un React en miniatura</title>
+<style>
+:root {
+  --fondo: #fbfaf7;
+  --texto: #192536;
+  --suave: #536174;
+  --borde: #d5dbe4;
+  --acento: #315da8;
+  --acento-suave: #e8eef8;
+  --aviso: #a65b13;
+  --aviso-suave: #fff2df;
+  --codigo-fondo: #edf1f6;
+  --codigo-panel: #f3f6fb;
+  --codigo-borde: #d4dce8;
+  --marca: #fff3b0;
+  --motos: #ffe3c2;
+  --autos: #d4f2dc;
+  --camionetas: #ebdcff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  font-weight: 450;
+  letter-spacing: -.012em;
+}
+code, pre, .mono {
+  font-family: "SFMono-Regular", Menlo, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  tab-size: 2;
+}
+
+/* ---------- Diapositivas ---------- */
+.diapo {
+  position: absolute; inset: 0 0 4.2vh 0;
+  display: none; flex-direction: column;
+  padding: 2.2vh 3vw 1.2vh;
+}
+.diapo.activa { display: flex; }
+.diapo > h2 {
+  margin: 0 0 1.2vh;
+  font-size: clamp(22px, 5.4vh, 60px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  font-weight: 760;
+  padding-bottom: .75vh;
+  border-bottom: 3px solid var(--acento);
+}
+.cuerpo {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden;
+}
+.ajuste { flex: none; display: flex; flex-direction: column; gap: .65em; }
+.ajuste > * { margin: 0; }
+p { line-height: 1.35; }
+
+/* Portada y separadores */
+.portada .ajuste, .divisor .ajuste { align-items: flex-start; gap: .35em; }
+.volanta { color: var(--acento); font-weight: 700; font-size: .55em; letter-spacing: .04em; text-transform: uppercase; }
+.portada h1, .divisor h1 { margin: 0; font-size: 1.35em; line-height: 1.05; }
+.bajada, .pregunta { color: var(--suave); font-size: .7em; }
+.divisor .cuerpo { border-left: 1.4vw solid var(--acento); padding-left: 3vw; }
+.nivel { color: var(--acento); font-weight: 800; font-size: .6em; }
+
+/* Texto */
+ul.lista, ol.pasos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .45em; }
+ul.lista li { position: relative; padding-left: 1.1em; line-height: 1.3; }
+ul.lista li::before {
+  content: ""; position: absolute; left: .15em; top: .45em;
+  width: .45em; height: .45em; border-radius: 50%; background: var(--acento);
+}
+ol.pasos { counter-reset: paso; }
+ol.pasos li { counter-increment: paso; position: relative; padding-left: 1.8em; line-height: 1.3; }
+ol.pasos li::before {
+  content: counter(paso);
+  position: absolute; left: 0; top: .02em;
+  width: 1.3em; height: 1.3em; border-radius: 50%;
+  background: var(--acento); color: #fff;
+  font-size: .85em; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.grande { font-size: 1.35em; font-weight: 750; line-height: 1.2; }
+.formula {
+  font-size: 1.5em; font-weight: 800; text-align: center; white-space: nowrap;
+  background: var(--acento-suave); border-radius: .3em; padding: .35em .5em;
+}
+.nota {
+  border-left: .3em solid var(--aviso);
+  background: var(--aviso-suave);
+  padding: .4em .7em; border-radius: 0 .25em .25em 0;
+  line-height: 1.3;
+}
+.centro { text-align: center; }
+.suave { color: var(--suave); }
+:not(pre) > code {
+  background: var(--codigo-fondo); border: 1px solid var(--borde);
+  border-radius: .25em; padding: .04em .28em; font-size: .9em;
+  color: #263e61; white-space: nowrap;
+}
+
+/* Código */
+pre.codigo {
+  margin: 0;
+  background: var(--codigo-panel);
+  border: 1px solid var(--codigo-borde);
+  border-left: .28em solid #6f91c9;
+  border-radius: .42em;
+  padding: .58em .8em;
+  font-size: .84em; line-height: 1.48;
+  white-space: pre; overflow: hidden;
+  color: #263449;
+  box-shadow: 0 6px 18px rgb(35 54 82 / 7%);
+}
+pre.codigo .linea {
+  display: block; position: relative; min-height: 1.48em;
+  width: max-content; min-width: 100%; padding-left: 3.4ch;
+  counter-increment: linea;
+}
+pre.codigo { counter-reset: linea; }
+pre.codigo .linea::before {
+  content: counter(linea);
+  position: absolute; left: 0; width: 2.4ch;
+  color: #8592a5; text-align: right; user-select: none;
+  font-size: .82em;
+}
+pre.codigo .marcada {
+  background: #fff0c2;
+  box-shadow: inset 2px 0 #d28a24;
+}
+.k { color: #7c3aed; font-weight: 700; }
+.s { color: #16723b; }
+.n { color: #a95308; }
+.f { color: #2458b2; font-weight: 650; }
+.c { color: #69778a; font-style: italic; }
+
+/* Tablas */
+table.tabla { border-collapse: collapse; width: 100%; line-height: 1.3; }
+.tabla th, .tabla td { text-align: left; padding: .3em .5em; border-bottom: 2px solid var(--borde); vertical-align: top; }
+.tabla th { background: var(--acento-suave); }
+/* Primera columna con código: letra más chica y sin cortes de línea */
+.tabla.col-codigo td:first-child { font-size: .8em; white-space: nowrap; vertical-align: middle; }
+.tabla.col-ejemplo td:last-child { font-size: .8em; white-space: nowrap; vertical-align: middle; }
+
+/* Dos columnas */
+.dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .8em; align-items: start; }
+.caja { border: 2px solid var(--borde); border-radius: .3em; padding: .45em .6em; display: flex; flex-direction: column; gap: .35em; }
+.caja h3 { margin: 0; font-size: 1em; color: var(--acento); }
+.caja p { margin: 0; }
+
+/* Árbol de componentes */
+.arbol-svg { display: block; width: min(100%, 24em); aspect-ratio: 900 / 430; height: auto; margin: 0 auto; }
+.arbol { display: flex; flex-direction: column; align-items: center; gap: .9em; }
+.nodo {
+  border: 2px solid var(--borde); border-radius: .3em;
+  padding: .3em .55em; background: #fff; text-align: center;
+  display: flex; flex-direction: column; gap: .1em;
+}
+.nodo strong { font-size: 1em; }
+.nodo span { font-size: .7em; color: var(--suave); white-space: nowrap; }
+.nodo.app { background: var(--acento-suave); border-color: var(--acento); }
+.nodo.motos { background: var(--motos); }
+.nodo.autos { background: var(--autos); }
+.nodo.camionetas { background: var(--camionetas); }
+.arbol { flex-direction: row; align-items: center; justify-content: flex-start; gap: 0; padding-right: .3em; }
+.arbol > .nodo.app { margin-right: 1.4em; position: relative; }
+.arbol > .nodo.app::after { content: ""; position: absolute; right: -1.4em; top: 50%; width: 1.4em; border-top: 2px solid var(--suave); }
+.hijos { display: flex; flex-direction: column; gap: .3em; position: relative; padding-left: 1.2em; }
+.hijos::before { content: ""; position: absolute; left: 0; top: 1.1em; bottom: 1.1em; border-left: 2px solid var(--suave); }
+.hijos .nodo { position: relative; flex-direction: row; align-items: baseline; gap: .5em; text-align: left; padding: .2em .55em; }
+.hijos .nodo::before { content: ""; position: absolute; left: -1.2em; top: 50%; width: 1.2em; border-top: 2px solid var(--suave); }
+
+/* Ranuras de hooks */
+.ranuras { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .3em; }
+.r {
+  border: 2px solid var(--borde); border-radius: .25em;
+  padding: .2em .25em; text-align: center; line-height: 1.15;
+  font-size: .56em; background: var(--acento-suave);
+}
+.r b { display: block; font-size: 1.5em; }
+.r.efecto { font-style: italic; }
+.r.motos { background: var(--motos); }
+.r.autos { background: var(--autos); }
+.r.camionetas { background: var(--camionetas); }
+.leyenda { display: flex; gap: .8em; flex-wrap: wrap; font-size: .7em; }
+.leyenda span::before { content: ""; display: inline-block; width: .8em; height: .8em; margin-right: .3em; border-radius: .15em; vertical-align: -.05em; background: var(--c); border: 1px solid var(--borde); }
+
+/* Etapas en el tiempo */
+.etapas { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3em .6em; align-items: stretch; }
+.etapas .quien { font-weight: 800; padding: .3em .5em; border-radius: .25em; background: var(--acento-suave); display: flex; align-items: center; }
+.etapas .que { padding: .3em .5em; border: 2px solid var(--borde); border-radius: .25em; line-height: 1.3; }
+.etapas .quien.micro { background: var(--aviso-suave); }
+.etapas .quien.nav { background: var(--autos); }
+
+/* Datos bajan, avisos suben */
+.comunicacion { display: flex; flex-direction: column; align-items: center; gap: .3em; }
+.comunicacion .nodo { min-width: 7em; font-size: 1.1em; }
+.flechas { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+.flechas div { text-align: center; line-height: 1.3; }
+.flechas code { white-space: nowrap; }
+.flechas .icono { font-size: 1.8em; display: block; line-height: 1; }
+.baja .icono { color: var(--acento); }
+.sube .icono { color: var(--aviso); }
+
+/* ---------- Demo en vivo ---------- */
+.demo { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: .7em; align-items: start; }
+.demo .app { border: 2px solid var(--borde); border-radius: .35em; padding: .55em; display: flex; flex-direction: column; gap: .5em; }
+.demo .app > h1 { display: none; }
+.demo .control { display: flex; align-items: center; gap: .5em; }
+.demo .control .principal { width: 1.9em; height: 1.9em; flex: none; padding: 0; border: none; border-radius: 50%; background: var(--acento); color: #fff; font-size: 1.1em; line-height: 1; }
+.demo .cronometro { flex: 1; text-align: center; font: 800 1.5em/1 ui-monospace, Consolas, monospace; }
+.demo button { font: inherit; font-weight: 700; cursor: pointer; }
+.demo button:disabled { opacity: .35; cursor: not-allowed; }
+.demo .contadores { display: flex; flex-direction: column; gap: .35em; }
+.demo .contador { display: flex; align-items: center; justify-content: space-between; gap: .5em; width: 100%; padding: .2em .6em; border: 2px solid var(--acento); border-radius: .3em; background: #fff; color: var(--texto); text-align: left; }
+.demo .contador .nombre { font-size: .9em; }
+.demo .contador .cantidad { font-size: 1.6em; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.demo .resumen { display: grid; grid-template-columns: 1fr 1fr; gap: .4em; background: var(--acento-suave); border-radius: .3em; padding: .3em; }
+.demo .dato { text-align: center; }
+.demo .dato .titulo { margin: 0; font-size: .72em; color: var(--suave); }
+.demo .dato .valor { margin: 0; font-size: 1.4em; font-weight: 800; white-space: nowrap; }
+.demo .panel { border: 2px solid var(--borde); border-radius: .35em; padding: .4em; display: flex; flex-direction: column; gap: .3em; }
+.demo .panel h3 { margin: 0; font-size: .85em; }
+.demo .panel label { font-size: .65em; color: var(--suave); }
+.demo table { border-collapse: collapse; width: 100%; font: .54em/1.3 ui-monospace, Consolas, monospace; }
+.demo td { white-space: nowrap; }
+.demo th, .demo td { text-align: left; padding: .1em .3em; border-bottom: 1px solid var(--borde); }
+.demo tr.efecto td { color: #6b21a8; font-style: italic; }
+.demo tr.cambio td { background: var(--marca); }
+@keyframes destello {
+  from { box-shadow: 0 0 0 .15em #f59e0b; background-color: var(--aviso-suave); }
+  to   { box-shadow: 0 0 0 .15em transparent; }
+}
+.demo.resaltar .componente { animation: destello .7s ease-out; }
+
+/* ---------- Pie ---------- */
+#pie {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 4.2vh;
+  display: flex; align-items: center; gap: 1.2vw;
+  padding: 0 1.5vw;
+  font-size: clamp(11px, 2vh, 20px); color: var(--suave);
+  border-top: 1px solid var(--borde);
+  background: #fff;
+}
+#barra { position: absolute; left: 0; top: -1px; height: 3px; background: var(--acento); transition: width .2s; }
+#seccion { flex: 1; font-weight: 700; color: var(--texto); }
+#pie button {
+  font: inherit; border: 1px solid var(--borde); background: #fff; color: var(--texto);
+  border-radius: 4px; padding: 0 .7em; cursor: pointer; line-height: 1.5;
+}
+#numero {
+  flex: none; width: 5.5em; padding: 0 .15em;
+  border: 1px solid transparent; border-radius: 4px;
+  background: transparent; color: inherit; font: inherit;
+  font-variant-numeric: tabular-nums; text-align: center;
+}
+#numero[readonly] { cursor: pointer; }
+#numero:not([readonly]) { border-color: var(--acento); background: #fff; color: var(--texto); }
+#numero:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+</style>
+</head>
+<body>
+
+<main id="mazo">
+
+<!-- =========================================================== INICIO -->
+<section class="diapo portada" data-seccion="Inicio" data-max=".1">
+  <p class="volanta">Programación IV · Desarrollo Web</p>
+  <h1>Un React en miniatura</h1>
+  <p class="bajada">useState y useEffect desde cero, en cien líneas</p>
+</section>
+
+<section class="diapo">
+  <h2>La idea que hay detrás de React</h2>
+  <p class="formula mono">pantalla = f(estado)</p>
+  <ul class="lista">
+    <li>Escribimos funciones que <b>describen</b> la pantalla.</li>
+    <li>Cuando el estado cambia, React las vuelve a llamar.</li>
+    <li>Nunca tocamos el DOM a mano.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Vamos a construir cuatro piezas</h2>
+  <table class="tabla">
+    <tr><th>Pieza</th><th>Para qué sirve</th></tr>
+    <tr><td><code>createElement</code></td><td>Describir la interfaz sin JSX</td></tr>
+    <tr><td><code>render</code></td><td>Dibujar la app en la página</td></tr>
+    <tr><td><code>useState</code></td><td>Darle memoria a un componente</td></tr>
+    <tr><td><code>useEffect</code></td><td>Hacer cosas después de dibujar</td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>La regla del juego</h2>
+  <p class="grande">Cada cambio: tirar la pantalla entera y construirla de nuevo.</p>
+  <ul class="lista">
+    <li>Sin DOM virtual.</li>
+    <li>Sin comparar lo viejo con lo nuevo.</li>
+    <li>Así el mecanismo queda a la vista.</li>
+  </ul>
+</section>
+
+<section class="diapo divisor" data-seccion="Nivel 1 · createElement" data-max=".1">
+  <p class="nivel">Nivel 1</p>
+  <h1>Describir la interfaz con funciones</h1>
+  <p class="pregunta">¿Qué hay detrás de JSX?</p>
+</section>
+
+<section class="diapo">
+  <h2>JSX es azúcar</h2>
+  <pre class="codigo">
+&lt;button className="registrar" onClick={registrar}&gt;
+  +1
+&lt;/button&gt;
+</pre>
+  <p class="centro suave">antes de ejecutarse se transforma en</p>
+  <pre class="codigo">
+createElement("button",
+  { className: "registrar", onClick: registrar },
+  "+1");
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Tres argumentos</h2>
+  <table class="tabla col-ejemplo">
+    <tr><th>Argumento</th><th>Qué es</th><th>Ejemplo</th></tr>
+    <tr><td>tipo</td><td>la etiqueta</td><td><code>"button"</code></td></tr>
+    <tr><td>props</td><td>atributos y eventos</td><td><code>{ onClick: f }</code></td></tr>
+    <tr><td>hijos</td><td>lo que va adentro</td><td><code>"+1"</code></td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>createElement, versión 1</h2>
+  <pre class="codigo">
+function createElement(tipo, props, ...hijos) {
+  props = props ?? {};
+  const elemento = document.createElement(tipo);
+
+  for (const [nombre, valor] of Object.entries(props)) {
+    asignarPropiedad(elemento, nombre, valor);
+  }
+
+  for (const hijo of hijos.flat(Infinity)) {
+    if (hijo === null || hijo === undefined
+        || typeof hijo === "boolean") continue;
+    elemento.append(hijo instanceof Node
+      ? hijo
+      : String(hijo));
+  }
+  return elemento;
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué aceptamos como hijo?</h2>
+  <table class="tabla">
+    <tr><th>Hijo</th><th>Qué hacemos</th></tr>
+    <tr><td><code>"Autos"</code>, <code>12</code></td><td>Se convierte en texto</td></tr>
+    <tr><td>un elemento</td><td>Se agrega tal cual</td></tr>
+    <tr><td>un arreglo (de <code>map</code>)</td><td>Se aplana</td></tr>
+    <tr><td><code>null</code>, <code>false</code></td><td>Se ignora</td></tr>
+  </table>
+  <p class="nota" style="white-space: nowrap">Ignorar <code>false</code> permite escribir <code>condicion &amp;&amp; h(...)</code></p>
+</section>
+
+<section class="diapo">
+  <h2>Las props</h2>
+  <pre class="codigo">
+function asignarPropiedad(elemento, nombre, valor) {
+  if (nombre.startsWith("on")) {
+    const evento = nombre.slice(2).toLowerCase();
+    elemento.addEventListener(evento, valor);
+  } else if (nombre === "className") {
+    elemento.className = valor;
+  } else if (nombre === "style") {
+    Object.assign(elemento.style, valor);
+  } else if (typeof valor === "boolean") {
+    elemento.toggleAttribute(nombre, valor);
+  } else if (valor !== null && valor !== undefined) {
+    elemento.setAttribute(nombre, valor);
+  }
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Un nombre corto: <code>h</code></h2>
+  <pre class="codigo">
+const h = createElement;
+const avisar = () => alert("¡Pasó un auto!");
+
+const tarjeta = h("section", { className: "contador" },
+  h("h2", null, "Autos"),
+  h("p", { className: "cantidad" }, 0),
+  h("button", { onClick: avisar }, "+1"),
+);
+
+document.body.append(tarjeta);
+</pre>
+  <p class="suave">La <code>h</code> viene de <i>hyperscript</i>.</p>
+</section>
+
+<section class="diapo">
+  <h2>Diferencia con React</h2>
+  <div class="dos">
+    <div class="caja">
+      <h3>React</h3>
+      <p>Devuelve un objeto que <b>describe</b> el nodo.</p>
+      <p>Ese objeto es el «DOM virtual».</p>
+      <p>Sirve para comparar antes y después.</p>
+    </div>
+    <div class="caja">
+      <h3>Nuestro mini React</h3>
+      <p>Devuelve el nodo <b>real</b> del DOM.</p>
+      <p>No hay nada que comparar.</p>
+      <p>Por eso nos salteamos ese paso.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== NIVEL 2 -->
+<section class="diapo divisor" data-seccion="Nivel 2 · Componentes" data-max=".1">
+  <p class="nivel">Nivel 2</p>
+  <h1>Componentes</h1>
+  <p class="pregunta">¿Cómo reutilizamos partes de la interfaz?</p>
+</section>
+
+<section class="diapo">
+  <h2>Un componente es una función</h2>
+  <p class="formula mono">props → elemento</p>
+  <pre class="codigo">
+function Dato({ titulo, valor }) {
+  return h("div", { className: "dato" },
+    h("p", { className: "titulo" }, titulo),
+    h("p", { className: "valor" }, valor),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>createElement reconoce funciones</h2>
+  <pre class="codigo">
+function createElement(tipo, props, ...hijos) {
+  props = props ?? {};
+
+!  if (typeof tipo === "function") {
+!    return tipo({ ...props, children: hijos });
+!  }
+
+  // las etiquetas HTML, igual que antes
+}
+</pre>
+  <p>Si el tipo es una función, la llamamos con las props y devolvemos lo que dibuja.</p>
+</section>
+
+<section class="diapo">
+  <h2>Componer componentes</h2>
+  <pre class="codigo">
+function Resumen({ total, flujo }) {
+  return h("section", { className: "resumen" },
+    h(Dato, { titulo: "Total de vehículos", valor: total }),
+    h(Dato, { titulo: "Flujo total", valor: flujo }),
+  );
+}
+
+h(Resumen, { total: 12, flujo: "300 v/h" });
+</pre>
+  <p class="nota">Las props son de solo lectura: las decide el padre.</p>
+</section>
+
+<section class="diapo">
+  <h2>El orden de ejecución</h2>
+  <pre class="codigo">
+h("section", null,
+  h(Dato, a),      // 1.º se ejecuta este Dato
+  h(Dato, b),      // 2.º este otro
+);                 // 3.º se crea la section
+</pre>
+  <ul class="lista">
+    <li>Los argumentos se evalúan antes de llamar, de izquierda a derecha.</li>
+    <li><b>Mismo árbol, mismo orden. Siempre.</b></li>
+  </ul>
+</section>
+
+<!-- =========================================================== NIVEL 3 -->
+<section class="diapo divisor" data-seccion="Nivel 3 · render" data-max=".1">
+  <p class="nivel">Nivel 3</p>
+  <h1>Dibujar y volver a dibujar</h1>
+  <p class="pregunta">¿Cómo cambia la pantalla?</p>
+</section>
+
+<section class="diapo">
+  <h2>render</h2>
+  <pre class="codigo">
+function render(componente, contenedor) {
+  contenedor.replaceChildren(h(componente));
+}
+</pre>
+  <ul class="lista">
+    <li><code>replaceChildren</code> borra todo y pone el árbol nuevo.</li>
+    <li>Volver a dibujar es llamar a <code>render</code> otra vez.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Un contador con una variable global</h2>
+  <pre class="codigo">
+let clics = 0;
+
+function App() {
+  return h("button", {
+    onClick: () => {
+      clics++;
+      render(App, raiz);    // ¡hay que acordarse!
+    },
+  }, `Clics: ${clics}`);
+}
+
+const raiz = document.getElementById("raiz");
+render(App, raiz);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Funciona, pero tiene dos problemas</h2>
+  <ol class="pasos">
+    <li>El dato vive <b>afuera</b> del componente: tres contadores necesitan tres variables globales.</li>
+    <li>Hay que acordarse de redibujar después de cada cambio.</li>
+  </ol>
+  <p class="nota"><code>useState</code> resuelve las dos cosas.</p>
+</section>
+
+<!-- =========================================================== NIVEL 4 -->
+<section class="diapo divisor" data-seccion="Nivel 4 · useState" data-max=".1">
+  <p class="nivel">Nivel 4</p>
+  <h1>useState</h1>
+  <p class="pregunta">¿Dónde guarda un componente sus datos?</p>
+</section>
+
+<section class="diapo">
+  <h2>El problema</h2>
+  <ul class="lista">
+    <li>Un componente es una función.</li>
+    <li>Sus variables locales mueren cuando termina.</li>
+    <li>Los tres contadores son <b>la misma función</b>.</li>
+  </ul>
+  <p class="grande">¿Cómo sabe el framework qué cuenta es de quién?</p>
+</section>
+
+<section class="diapo">
+  <h2>La respuesta: por la posición</h2>
+  <ul class="lista">
+    <li>En cada dibujo, los componentes se ejecutan siempre en el mismo orden.</li>
+    <li>Dentro de cada uno, los <code>useState</code> también.</li>
+    <li>El framework guarda los valores en un arreglo y los reparte en orden, como números en una fila.</li>
+  </ul>
+  <p class="formula mono">useState → hooks[0], hooks[1]…</p>
+</section>
+
+<section class="diapo">
+  <h2>useState, versión 1</h2>
+  <pre class="codigo">
+const hooks = [];   // la memoria: sobrevive entre dibujos
+let indice = 0;     // la próxima ranura a entregar
+
+function useState(valorInicial) {
+  const i = indice++;
+  if (hooks[i] === undefined) {
+    hooks[i] = { valor: valorInicial };  // primera vez
+  }
+  const ranura = hooks[i];
+
+  function setValor(nuevoValor) {
+    ranura.valor = nuevoValor;
+    renderizar();                        // se redibuja solo
+  }
+  return [ranura.valor, setValor];
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>renderizar, versión 1</h2>
+  <pre class="codigo">
+function renderizar() {
+  indice = 0;   // cada dibujo reparte desde cero
+  contenedor.replaceChildren(h(componenteRaiz));
+}
+</pre>
+  <p class="nota">Si no volvemos <code>indice</code> a cero, el segundo dibujo pediría ranuras nuevas y todo arrancaría vacío.</p>
+</section>
+
+<section class="diapo">
+  <h2>Usarlo</h2>
+  <pre class="codigo">
+function Contador({ nombre }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  return h("section", null,
+    h("h2", null, nombre),
+    h("p", null, cantidad),
+    h("button", {
+      onClick: () => setCantidad(cantidad + 1),
+    }, "+1"),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Dos detalles</h2>
+  <ul class="lista">
+    <li>El valor inicial se usa <b>una sola vez</b>, cuando la ranura no existe. Después, <code>useState(0)</code> ignora el <code>0</code>.</li>
+    <li><code>setValor</code> es una clausura: recuerda <b>su</b> ranura. Por eso cada botón cambia la cuenta correcta.</li>
+  </ul>
+</section>
+
+
+<section class="diapo">
+  <h2>La regla de los hooks</h2>
+  <p class="grande">Siempre, en el mismo orden, en el nivel superior del componente.</p>
+  <ul class="lista">
+    <li>Nunca dentro de un <code>if</code>.</li>
+    <li>Nunca dentro de un bucle.</li>
+    <li>Nunca después de un <code>return</code> temprano.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué pasa si la rompemos?</h2>
+  <pre class="codigo">
+function Contador({ conHistorial }) {
+  const [cantidad, setCantidad] = useState(0);  // 1.º
+  if (conHistorial) {
+    const [lista, setLista] = useState([]);     // 2.º… a veces
+  }
+  useEffect(/* … */);                           // ¿3.º o 2.º?
+}
+</pre>
+  <p class="nota">Si <code>conHistorial</code> cambia, todo lo que sigue queda corrido: cada hook lee la ranura de otro.</p>
+</section>
+
+<!-- =========================================================== NIVEL 5 -->
+<section class="diapo divisor" data-seccion="Nivel 5 · Agrupar cambios" data-max=".1">
+  <p class="nivel">Nivel 5</p>
+  <h1>Muchos cambios, un solo dibujo</h1>
+  <p class="pregunta">¿Qué pasa si cambian dos estados a la vez?</p>
+</section>
+
+<section class="diapo">
+  <h2>Un clic, dos cambios</h2>
+  <pre class="codigo">
+function registrar() {
+  setCantidad((c) => c + 1);   // el contador interno
+  alRegistrar();               // el padre hace setTotal
+}
+</pre>
+  <ul class="lista">
+    <li>Con la versión 1, la pantalla se dibuja <b>dos</b> veces.</li>
+    <li>El primer dibujo muestra el contador nuevo con el total viejo.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Agendar en lugar de dibujar</h2>
+  <pre class="codigo">
+let renderPendiente = false;
+
+function programarRender() {
+  if (renderPendiente) return;   // ya hay uno agendado
+  renderPendiente = true;
+  queueMicrotask(renderizar);
+}
+</pre>
+  <p><code>queueMicrotask</code> ejecuta apenas termina el código actual y <b>antes</b> de que el navegador pinte.</p>
+</section>
+
+<section class="diapo">
+  <h2>La línea de tiempo de un clic</h2>
+  <div class="etapas">
+    <div class="quien">Manejador</div>
+    <div class="que"><code>setCantidad</code> → agenda un dibujo</div>
+    <div class="quien">Manejador</div>
+    <div class="que"><code>alRegistrar()</code> → <code>setTotal</code> → ya estaba agendado</div>
+    <div class="quien micro">Microtarea</div>
+    <div class="que"><code>renderizar()</code>: un solo dibujo con todo nuevo</div>
+    <div class="quien nav">Navegador</div>
+    <div class="que">Pinta la pantalla</div>
+  </div>
+  <p class="nota">El usuario nunca ve un estado a medias. React lo llama <i>batching</i>.</p>
+</section>
+
+<section class="diapo">
+  <h2>El problema del valor viejo</h2>
+  <div class="dos">
+    <div class="caja">
+      <h3>Sube 1</h3>
+      <pre class="codigo">
+setTotal(total + 1);
+setTotal(total + 1);
+</pre>
+      <p><code>total</code> se leyó al dibujar: las dos líneas calculan lo mismo.</p>
+    </div>
+    <div class="caja">
+      <h3>Sube 2</h3>
+      <pre class="codigo">
+setTotal((t) => t + 1);
+setTotal((t) => t + 1);
+</pre>
+      <p>La función recibe el valor más reciente de la ranura.</p>
+    </div>
+  </div>
+</section>
+
+<section class="diapo">
+  <h2>useState, versión final</h2>
+  <pre class="codigo">
+function useState(valorInicial) {
+  const i = indice++;
+  if (hooks[i] === undefined) {
+    hooks[i] = { tipo: "estado", valor: valorInicial };
+  }
+  const ranura = hooks[i];
+
+  function setValor(nuevoValor) {
+!    const valor = typeof nuevoValor === "function"
+!      ? nuevoValor(ranura.valor)
+!      : nuevoValor;
+!    if (Object.is(valor, ranura.valor)) return;  // no cambió
+    ranura.valor = valor;
+!    programarRender();
+  }
+  return [ranura.valor, setValor];
+}
+</pre>
+</section>
+
+<!-- =========================================================== NIVEL 6 -->
+<section class="diapo divisor" data-seccion="Nivel 6 · useEffect" data-max=".1">
+  <p class="nivel">Nivel 6</p>
+  <h1>useEffect</h1>
+  <p class="pregunta">¿Dónde arrancamos el reloj?</p>
+</section>
+
+<section class="diapo">
+  <h2>Dibujar no es lo único</h2>
+  <ul class="lista">
+    <li>Un componente debería limitarse a calcular la pantalla.</li>
+    <li>Si arranca un reloj adentro, lo arranca <b>en cada dibujo</b>: uno por segundo.</li>
+    <li>Relojes, pedir datos, reaccionar a un cambio: son <b>efectos secundarios</b>.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Las tres partes de un efecto</h2>
+  <pre class="codigo">
+useEffect(() => {
+  // 1. el efecto: corre DESPUÉS de dibujar
+
+  return () => {
+    // 3. la limpieza: deshace el efecto
+  };
+}, [dependencias]);   // 2. cuándo volver a correrlo
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Las dependencias</h2>
+  <table class="tabla col-codigo">
+    <tr><th>Llamada</th><th>Cuándo corre</th></tr>
+    <tr><td><code>useEffect(f)</code></td><td>Después de cada dibujo</td></tr>
+    <tr><td><code>useEffect(f, [])</code></td><td>Solo después del primero</td></tr>
+    <tr><td><code>useEffect(f, [a, b])</code></td><td>En el primero y cuando cambia <code>a</code> o <code>b</code></td></tr>
+  </table>
+</section>
+
+<section class="diapo">
+  <h2>Un efecto también ocupa una ranura</h2>
+  <ul class="lista">
+    <li>Guarda las <b>dependencias</b> del dibujo anterior, para saber si cambiaron.</li>
+    <li>Guarda la <b>limpieza</b> que devolvió, para ejecutarla antes de la próxima vez.</li>
+  </ul>
+  <pre class="codigo">
+// la ranura del reloj, mientras se cuenta
+{
+  tipo: "efecto",
+  dependencias: [true],
+  limpieza: () => clearInterval(id),
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>useEffect por dentro</h2>
+  <pre class="codigo">
+function useEffect(efecto, dependencias) {
+  const i = indice++;
+  const primeraVez = hooks[i] === undefined;
+  if (primeraVez) hooks[i] = { tipo: "efecto" };
+  const ranura = hooks[i];
+
+  const cambiaron = primeraVez
+    || dependencias === undefined
+    || dependencias.some((d, k) =>
+         !Object.is(d, ranura.dependencias[k]));
+
+  if (cambiaron) {
+    ranura.dependencias = dependencias;
+    // se anota para después: ¡no se ejecuta acá!
+    efectosPendientes.push({ ranura, efecto });
+  }
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>renderizar, versión final</h2>
+  <pre class="codigo">
+function renderizar() {
+  renderPendiente = false;
+  indice = 0;
+
+  const arbol = h(componenteRaiz);       // 1. componentes
+  contenedor.replaceChildren(arbol);     // 2. pantalla nueva
+
+  for (const { ranura, efecto } of efectosPendientes) {
+    if (typeof ranura.limpieza === "function") {
+      ranura.limpieza();
+    }
+    ranura.limpieza = efecto();          // 3. efectos
+  }
+  efectosPendientes = [];
+}
+</pre>
+</section>
+
+
+
+<section class="diapo">
+  <h2>Ejemplo: el reloj</h2>
+  <pre class="codigo">
+useEffect(() => {
+  if (!corriendo) return;
+
+  const id = setInterval(() => {
+    setAhora(Date.now());
+  }, 1000);
+
+  return () => clearInterval(id);
+}, [corriendo]);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>El reloj, paso a paso</h2>
+  <ol class="pasos">
+    <li><code>corriendo</code> es <code>false</code>: corre y sale sin hacer nada.</li>
+    <li><b>▶</b>: pasa a <code>true</code>, cambió, arranca el intervalo.</li>
+    <li>Cada segundo: <code>setAhora</code>, dibujo, <code>corriendo</code> sigue igual, el intervalo sigue.</li>
+    <li><b>⏹</b>: vuelve a <code>false</code>, primero <code>clearInterval</code>, después el efecto.</li>
+  </ol>
+  <p class="nota">Sin limpieza, cada inicio sumaría otro intervalo.</p>
+</section>
+
+<section class="diapo">
+  <h2>¿Hace falta guardar la hora actual?</h2>
+  <ul class="lista">
+    <li>Los segundos se podrían calcular con <code>Date.now()</code> al dibujar.</li>
+    <li>Pero el framework solo dibuja cuando <b>cambia un estado</b>.</li>
+    <li>Sin un estado que cambie, el reloj queda congelado.</li>
+  </ul>
+  <p class="nota"><code>ahora</code> es el único dato que cambia solo. Y con el mismo estado, siempre la misma pantalla.</p>
+</section>
+
+<section class="diapo">
+  <h2>Ejemplo: volver a cero</h2>
+  <pre class="codigo">
+useEffect(() => {
+  if (habilitado) setCantidad(0);
+}, [habilitado]);
+</pre>
+  <ul class="lista">
+    <li>El padre no puede tocar el estado del hijo.</li>
+    <li>El hijo reacciona a una prop: al pasar a habilitado, vuelve a cero.</li>
+    <li>Si ya estaba en cero, <code>Object.is(0, 0)</code> evita un dibujo inútil.</li>
+  </ul>
+</section>
+
+<!-- =========================================================== NIVEL 7 -->
+<section class="diapo divisor" data-seccion="Nivel 7 · La aplicación" data-max=".1">
+  <p class="nivel">Nivel 7</p>
+  <h1>La aplicación completa</h1>
+  <p class="pregunta">Como en React, cambiando JSX por <code>h</code></p>
+</section>
+
+<section class="diapo">
+  <h2>El cálculo del flujo</h2>
+  <pre class="codigo">
+// Cuántos vehículos pasarían en una hora a este ritmo.
+function calcularFlujo(cantidad, segundos) {
+  if (segundos === 0) return "—";
+  return `${Math.round((cantidad * 3600) / segundos)} v/h`;
+}
+</pre>
+  <p class="nota">Solo se muestra el flujo total, y nadie lo guarda: <code>Resumen</code> lo calcula en cada dibujo.</p>
+</section>
+
+<section class="diapo">
+  <h2>Cronometro: solo muestra</h2>
+  <pre class="codigo">
+function Cronometro({ segundos }) {
+  return h("div", { className: "componente cronometro" },
+    formatearDuracion(segundos));
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Resumen: solo muestra</h2>
+  <pre class="codigo">
+function Resumen({ total, segundos }) {
+  const flujo = calcularFlujo(total, segundos);
+  return h("section", { className: "componente resumen" },
+    h(Dato, { titulo: "Total de vehículos", valor: total }),
+    h(Dato, { titulo: "Flujo total", valor: flujo }),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Contador: su propio estado</h2>
+  <pre class="codigo">
+function Contador({ nombre, habilitado, alRegistrar }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  // al empezar una medición, arranca de cero
+  useEffect(() => {
+    if (habilitado) setCantidad(0);
+  }, [habilitado]);
+
+  function registrar() {
+    setCantidad((c) => c + 1);   // el contador interno
+!    alRegistrar();               // el aviso al padre
+  }
+  // sigue…
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Contador: lo que dibuja</h2>
+  <pre class="codigo">
+  // todo el contador es el botón
+  return h("button", {
+    className: "componente contador",
+    disabled: !habilitado,
+    onClick: registrar,
+  },
+    h("span", { className: "nombre" }, nombre),
+    h("span", { className: "cantidad" }, cantidad),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: el reloj y el contador global</h2>
+  <pre class="codigo">
+function App() {
+  const [inicio, setInicio] = useState(null);  // null: detenido
+  const [ahora, setAhora] = useState(Date.now());
+!  const [total, setTotal] = useState(0);       // el contador global
+
+  // se calculan
+  const corriendo = inicio !== null;
+  const segundos = corriendo
+    ? Math.floor((ahora - inicio) / 1000)
+    : 0;
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: el efecto del reloj</h2>
+  <pre class="codigo">
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => {
+      setAhora(Date.now());
+    }, 1000);
+    return () => clearInterval(id);
+  }, [corriendo]);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: los manejadores</h2>
+  <pre class="codigo">
+  function iniciar() {
+    const instante = Date.now();
+    setInicio(instante);
+    setAhora(instante);
+    setTotal(0);
+  }
+
+  function detener() {
+    setInicio(null);
+  }
+
+!  function registrarVehiculo() {
+!    setTotal((t) => t + 1);
+!  }
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App: lo que dibuja</h2>
+  <pre class="codigo">
+  const comunes = {
+    habilitado: corriendo,
+    alRegistrar: registrarVehiculo,
+  };
+
+  return h("main", { className: "componente app" },
+    h("div", { className: "control" },
+      h("button", {
+        onClick: corriendo ? detener : iniciar,
+      }, corriendo ? "⏹" : "▶"),
+      h(Cronometro, { segundos }),
+    ),
+    h("div", { className: "contadores" },
+      h(Contador, { nombre: "🏍️ Motos", ...comunes }),
+      h(Contador, { nombre: "🚗 Autos", ...comunes }),
+      h(Contador, { nombre: "🛻 Camionetas", ...comunes }),
+    ),
+    h(Resumen, { total, segundos }),
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Los datos bajan, los avisos suben</h2>
+  <div class="comunicacion">
+    <div class="nodo app"><strong>App</strong></div>
+    <div class="flechas">
+      <div class="baja"><span class="icono">⬇</span>datos por props<br><code>habilitado</code></div>
+      <div class="sube"><span class="icono">⬆</span>avisos por funciones<br><code>alRegistrar()</code></div>
+    </div>
+    <div class="nodo autos"><strong>Contador</strong></div>
+  </div>
+  <p class="nota">El hijo nunca cambia el estado del padre: llama a una función y el padre decide.</p>
+</section>
+
+<section class="diapo">
+  <h2>La memoria de nuestra app</h2>
+  <div class="ranuras" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
+    <div class="r"><b>0</b>inicio</div>
+    <div class="r"><b>1</b>ahora</div>
+    <div class="r"><b>2</b>total</div>
+    <div class="r efecto"><b>3</b>efecto reloj</div>
+    <div class="r motos"><b>4</b>cantidad</div>
+    <div class="r motos efecto"><b>5</b>efecto reinicio</div>
+    <div class="r autos"><b>6</b>cantidad</div>
+    <div class="r autos efecto"><b>7</b>efecto reinicio</div>
+    <div class="r camionetas"><b>8</b>cantidad</div>
+    <div class="r camionetas efecto"><b>9</b>efecto reinicio</div>
+  </div>
+  <div class="leyenda">
+    <span style="--c: var(--acento-suave)">App</span>
+    <span style="--c: var(--motos)">Motos</span>
+    <span style="--c: var(--autos)">Autos</span>
+    <span style="--c: var(--camionetas)">Camionetas</span>
+  </div>
+  <p class="nota">La ranura 6 es «la cuenta de autos» solo porque Autos es el segundo contador.</p>
+</section>
+
+<section class="diapo">
+  <h2>Anatomía de un clic en «🚗 Autos»</h2>
+  <ol class="pasos">
+    <li><code>setCantidad</code>: ranura 6 de 0 a 1, se agenda un dibujo.</li>
+    <li><code>alRegistrar()</code> → <code>setTotal</code>: ranura 2, ya agendado.</li>
+    <li>Microtarea: se ejecutan todos los componentes con los valores nuevos.</li>
+    <li><code>replaceChildren</code>: pantalla nueva.</li>
+    <li>Efectos: ninguna dependencia cambió, no corre ninguno.</li>
+  </ol>
+  <p class="nota">Dos cambios de estado en dos componentes, un solo dibujo.</p>
+</section>
+
+<section class="diapo" data-seccion="Demo en vivo" data-max=".06">
+  <h2>En vivo</h2>
+  <div class="demo resaltar" id="demo">
+    <div id="demo-raiz"></div>
+    <div class="panel">
+      <h3>Renders: <span id="demo-renders">0</span></h3>
+      <label><input type="checkbox" id="demo-resaltar" checked> resaltar cada render</label>
+      <table>
+        <thead><tr><th>#</th><th>Componente</th><th>Valor</th></tr></thead>
+        <tbody id="demo-hooks"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== CIERRE -->
+<section class="diapo divisor" data-seccion="Límites" data-max=".1">
+  <p class="nivel">Para pensar</p>
+  <h1>Hasta dónde llega reconstruir todo</h1>
+  <p class="pregunta">¿Qué problema resuelve el DOM virtual?</p>
+</section>
+
+<section class="diapo">
+  <h2>El costo</h2>
+  <ul class="lista">
+    <li>Con el reloj andando, se crean unos cincuenta nodos por segundo.</li>
+    <li>Para cincuenta nodos, no se nota.</li>
+    <li>Para una tabla de cinco mil filas, sí.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Se pierde lo que el DOM recuerda</h2>
+  <ul class="lista">
+    <li>Un nodo recuerda cosas que no están en el estado: el foco, el cursor, el desplazamiento, una animación.</li>
+    <li>Un <code>&lt;input&gt;</code> perdería el foco con cada tecla… y con cada segundo del reloj.</li>
+  </ul>
+  <p class="nota">React <b>reconcilia</b>: compara y cambia solo los nodos que cambiaron.</p>
+</section>
+
+<section class="diapo">
+  <h2>El estado atado a la posición</h2>
+  <ul class="lista">
+    <li>Si los contadores se reordenan, las cuentas quedan cruzadas.</li>
+    <li>React identifica cada componente por tipo, lugar y <code>key</code>.</li>
+    <li>Acá nunca se desmonta nada: si algo desapareciera, su limpieza no correría.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>Otra forma: levantar el estado</h2>
+  <pre class="codigo">
+function App() {
+  const [conteos, setConteos] = useState({
+    Motos: 0, Autos: 0, Camionetas: 0,
+  });
+
+  function registrarVehiculo(nombre) {
+    setConteos((c) => ({ ...c, [nombre]: c[nombre] + 1 }));
+  }
+
+  // el total se calcula: no puede desincronizarse
+  const total = Object.values(conteos)
+    .reduce((a, b) => a + b, 0);
+  // …
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>¿Qué cambia?</h2>
+  <ul class="lista">
+    <li>El total ya no se guarda dos veces: se calcula.</li>
+    <li>Reiniciar es asignar ceros: no hace falta el efecto en los hijos.</li>
+    <li>A cambio, los contadores pierden autonomía: reciben su cantidad por props.</li>
+  </ul>
+</section>
+
+<section class="diapo">
+  <h2>¿Quién necesita el dato?</h2>
+  <ul class="lista">
+    <li>Si lo usa un solo componente, que lo guarde él.</li>
+    <li>Si lo usan varios, se guarda en el ancestro común más cercano y se reparte por props.</li>
+  </ul>
+  <p class="nota">Acá duplicamos a propósito, para ver cómo un hijo le avisa al padre.</p>
+</section>
+
+<section class="diapo" data-seccion="Cierre">
+  <h2>En resumen</h2>
+  <table class="tabla">
+    <tr><td><code>createElement</code></td><td>Una función describe un pedazo de pantalla.</td></tr>
+    <tr><td><code>render</code></td><td>Dibujar de nuevo es llamar de nuevo.</td></tr>
+    <tr><td><code>useState</code></td><td>Memoria en un arreglo, repartida por posición.</td></tr>
+    <tr><td><code>useEffect</code></td><td>Lo que no es dibujar, después de dibujar.</td></tr>
+  </table>
+</section>
+
+<!-- =========================================================== APÉNDICE VANILLA -->
+<section class="diapo" data-seccion="Apéndice 1 · HTML + JS puro (Vanilla)">
+  <h2>Apéndice 1: Implementación HTML + JS puro (Vanilla)</h2>
+  <pre class="codigo">
+&lt;main class="app"&gt;
+  &lt;h1&gt;Conteo de tránsito&lt;/h1&gt;
+
+  &lt;div class="control"&gt;
+    &lt;button id="boton" class="principal" title="Iniciar"&gt;▶&lt;/button&gt;
+    &lt;div id="cronometro" class="cronometro"&gt;00:00:00&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="contadores"&gt;
+    &lt;button class="contador" disabled&gt;
+      &lt;span class="nombre"&gt;🏍️ Motos&lt;/span&gt;
+      &lt;span class="cantidad"&gt;0&lt;/span&gt;
+    &lt;/button&gt;
+    &lt;button class="contador" disabled&gt;
+      &lt;span class="nombre"&gt;🚗 Autos&lt;/span&gt;
+      &lt;span class="cantidad"&gt;0&lt;/span&gt;
+    &lt;/button&gt;
+  </pre>
+</section>
+
+<section class="diapo">
+  <h2>HTML (2/2): último contador y resumen</h2>
+  <pre class="codigo">
+    &lt;button class="contador" disabled&gt;
+      &lt;span class="nombre"&gt;🛻 Camionetas&lt;/span&gt;
+      &lt;span class="cantidad"&gt;0&lt;/span&gt;
+    &lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;section class="resumen"&gt;
+    &lt;div class="dato"&gt;
+      &lt;p class="titulo"&gt;Total de vehículos&lt;/p&gt;
+      &lt;p id="total" class="valor"&gt;0&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div class="dato"&gt;
+      &lt;p class="titulo"&gt;Flujo total&lt;/p&gt;
+      &lt;p id="flujo" class="valor"&gt;—&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+&lt;/main&gt;
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>JavaScript: estado y referencias al DOM</h2>
+  <pre class="codigo">
+// Estado compartido por la aplicación.
+let inicio = null;
+let total = 0;
+let reloj = null;
+
+// Buscamos los nodos que vamos a actualizar.
+const boton = document.getElementById("boton");
+const cronometro = document.getElementById("cronometro");
+const textoTotal = document.getElementById("total");
+const textoFlujo = document.getElementById("flujo");
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Funciones para mostrar el tiempo y el flujo</h2>
+  <pre class="codigo">
+function formatearDuracion(segundos) {
+  const horas = String(Math.floor(segundos / 3600)).padStart(2, "0");
+  const minutos = String(Math.floor((segundos % 3600) / 60)).padStart(2, "0");
+  const resto = String(segundos % 60).padStart(2, "0");
+  return `${horas}:${minutos}:${resto}`;
+}
+
+function calcularFlujo(cantidad, segundos) {
+  if (segundos === 0) return "—";
+  return `${Math.round((cantidad * 3600) / segundos)} v/h`;
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Cada contador guarda y cambia su número</h2>
+  <pre class="codigo">
+function crearContador(elemento, alRegistrar) {
+  const textoCantidad = elemento.querySelector(".cantidad");
+  let cantidad = 0;
+
+  elemento.addEventListener("click", () => {
+    cantidad++;
+    textoCantidad.textContent = cantidad;
+    alRegistrar();
+  });
+
+  return {
+    habilitar(habilitado) { elemento.disabled = !habilitado; },
+    reiniciar() { cantidad = 0; textoCantidad.textContent = 0; },
+  };
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>La aplicación actualiza los nodos directamente</h2>
+  <pre class="codigo">
+const contadores = [...document.querySelectorAll(".contador")]
+  .map((elemento) => crearContador(elemento, registrarVehiculo));
+
+function segundosTranscurridos() {
+  return inicio === null ? 0 : Math.floor((Date.now() - inicio) / 1000);
+}
+
+function actualizarTiempo() {
+  const segundos = segundosTranscurridos();
+  cronometro.textContent = formatearDuracion(segundos);
+  textoFlujo.textContent = calcularFlujo(total, segundos);
+}
+
+function registrarVehiculo() {
+  total++;
+  textoTotal.textContent = total;
+  textoFlujo.textContent = calcularFlujo(total, segundosTranscurridos());
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Iniciar reinicia y habilita los contadores</h2>
+  <pre class="codigo">
+function iniciar() {
+  inicio = Date.now();
+  total = 0;
+  textoTotal.textContent = 0;
+
+  for (const contador of contadores) {
+    contador.reiniciar();
+    contador.habilitar(true);
+  }
+
+  boton.textContent = "⏹";
+  boton.title = "Detener";
+  reloj = setInterval(actualizarTiempo, 1000);
+  actualizarTiempo();
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>Detener limpia el reloj y escucha el clic</h2>
+  <pre class="codigo">
+function detener() {
+  clearInterval(reloj);
+  inicio = null;
+
+  for (const contador of contadores) contador.habilitar(false);
+
+  boton.textContent = "▶";
+  boton.title = "Iniciar";
+  actualizarTiempo();
+}
+
+boton.addEventListener("click", () =>
+  (inicio === null ? iniciar() : detener())
+);
+</pre>
+</section>
+
+<!-- =========================================================== APÉNDICE REACT + JSX -->
+<section class="diapo" data-seccion="Apéndice 2 · React + JSX">
+  <h2>Apéndice 2: Implementación con React + JSX</h2>
+  <pre class="codigo">
+function Dato({ titulo, valor }) {
+  return (
+    &lt;div className="dato"&gt;
+      &lt;p className="titulo"&gt;{titulo}&lt;/p&gt;
+      &lt;p className="valor"&gt;{valor}&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}
+
+function Cronometro({ segundos }) {
+  return &lt;div className="cronometro"&gt;{formatearDuracion(segundos)}&lt;/div&gt;;
+}
+
+function Resumen({ total, segundos }) {
+  const flujo = calcularFlujo(total, segundos);
+  return (
+    &lt;section className="resumen"&gt;
+      &lt;Dato titulo="Total de vehículos" valor={total} /&gt;
+      &lt;Dato titulo="Flujo total" valor={flujo} /&gt;
+    &lt;/section&gt;
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>El contador declara su estado con useState</h2>
+  <pre class="codigo">
+function Contador({ nombre, habilitado, alRegistrar }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  useEffect(() =&gt; {
+    if (habilitado) setCantidad(0);
+  }, [habilitado]);
+
+  function registrar() {
+    setCantidad((c) =&gt; c + 1);
+    alRegistrar();
+  }
+
+  return (
+    &lt;button disabled={!habilitado} onClick={registrar}&gt;
+      &lt;span&gt;{nombre}&lt;/span&gt;
+      &lt;span&gt;{cantidad}&lt;/span&gt;
+    &lt;/button&gt;
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App (1/3): estado y efecto</h2>
+  <pre class="codigo">
+function App() {
+  const [inicio, setInicio] = useState(null);
+  const [ahora, setAhora] = useState(Date.now());
+  const [total, setTotal] = useState(0);
+
+  const corriendo = inicio !== null;
+  const segundos = corriendo
+    ? Math.floor((ahora - inicio) / 1000)
+    : 0;
+
+  useEffect(() =&gt; {
+    if (!corriendo) return;
+    const id = setInterval(() =&gt; setAhora(Date.now()), 1000);
+    return () =&gt; clearInterval(id);
+  }, [corriendo]);
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App (2/3): eventos y props</h2>
+  <pre class="codigo">
+  function iniciar() {
+    const instante = Date.now();
+    setInicio(instante);
+    setAhora(instante);
+    setTotal(0);
+  }
+
+  function detener() {
+    setInicio(null);
+  }
+
+  function registrarVehiculo() {
+    setTotal((t) =&gt; t + 1);
+  }
+
+  const comunes = {
+    habilitado: corriendo,
+    alRegistrar: registrarVehiculo,
+  };
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>App (3/3): JSX compone componentes</h2>
+  <pre class="codigo">
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;Conteo de tránsito&lt;/h1&gt;
+      &lt;button onClick={corriendo ? detener : iniciar}&gt;
+        {corriendo ? "⏹" : "▶"}
+      &lt;/button&gt;
+      &lt;Cronometro segundos={segundos} /&gt;
+
+      &lt;div&gt;
+        &lt;Contador nombre="🏍️ Motos" {...comunes} /&gt;
+        &lt;Contador nombre="🚗 Autos" {...comunes} /&gt;
+        &lt;Contador nombre="🛻 Camionetas" {...comunes} /&gt;
+      &lt;/div&gt;
+
+      &lt;Resumen total={total} segundos={segundos} /&gt;
+    &lt;/main&gt;
+  );
+}
+</pre>
+</section>
+
+<section class="diapo">
+  <h2>La diferencia: cambiar el DOM o cambiar el estado</h2>
+  <div class="dos">
+    <div class="caja">
+      <h3>Vanilla</h3>
+      <pre class="codigo">
+total++;
+textoTotal.textContent = total;
+</pre>
+    </div>
+    <div class="caja">
+      <h3>React + JSX</h3>
+      <pre class="codigo">
+setTotal((t) =&gt; t + 1);
+&lt;p&gt;{total}&lt;/p&gt;
+</pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer id="pie">
+  <div id="barra"></div>
+  <span id="seccion"></span>
+  <button id="anterior" title="Anterior (←)">◀</button>
+  <input id="numero" type="text" value="1 / 1" readonly inputmode="numeric"
+    aria-label="Ir a la diapositiva" title="Hacé clic para editar el número">
+  <button id="siguiente" title="Siguiente (→)">▶</button>
+</footer>
+
+<!-- =========================================================== FRAMEWORK (demo) -->
+<script>
+const MiniReact = (() => {
+  let componenteRaiz = null;
+  let contenedor = null;
+  const hooks = [];
+  let indice = 0;
+  let componenteActual = null;
+  let efectosPendientes = [];
+  let renderPendiente = false;
+  let cantidadRenders = 0;
+  const oyentes = [];
+
+  function createElement(tipo, props, ...hijos) {
+    props = props ?? {};
+    if (typeof tipo === "function") {
+      const anterior = componenteActual;
+      componenteActual = tipo.name;
+      const resultado = tipo({ ...props, children: hijos });
+      componenteActual = anterior;
+      return resultado;
+    }
+    const elemento = document.createElement(tipo);
+    for (const [nombre, valor] of Object.entries(props)) {
+      asignarPropiedad(elemento, nombre, valor);
+    }
+    for (const hijo of hijos.flat(Infinity)) {
+      if (hijo === null || hijo === undefined || typeof hijo === "boolean") continue;
+      elemento.append(hijo instanceof Node ? hijo : String(hijo));
+    }
+    return elemento;
+  }
+
+  function asignarPropiedad(elemento, nombre, valor) {
+    if (nombre.startsWith("on") && typeof valor === "function") {
+      elemento.addEventListener(nombre.slice(2).toLowerCase(), valor);
+    } else if (nombre === "className") {
+      elemento.className = valor;
+    } else if (nombre === "style" && typeof valor === "object") {
+      Object.assign(elemento.style, valor);
+    } else if (typeof valor === "boolean") {
+      elemento.toggleAttribute(nombre, valor);
+    } else if (valor !== null && valor !== undefined) {
+      elemento.setAttribute(nombre, valor);
+    }
+  }
+
+  function useState(valorInicial) {
+    const i = indice++;
+    if (hooks[i] === undefined) {
+      hooks[i] = { tipo: "estado", componente: componenteActual, valor: valorInicial };
+    }
+    const ranura = hooks[i];
+    function setValor(nuevoValor) {
+      const valor = typeof nuevoValor === "function" ? nuevoValor(ranura.valor) : nuevoValor;
+      if (Object.is(valor, ranura.valor)) return;
+      ranura.valor = valor;
+      programarRender();
+    }
+    return [ranura.valor, setValor];
+  }
+
+  function useEffect(efecto, dependencias) {
+    const i = indice++;
+    const primeraVez = hooks[i] === undefined;
+    if (primeraVez) {
+      hooks[i] = { tipo: "efecto", componente: componenteActual, dependencias: undefined, limpieza: undefined };
+    }
+    const ranura = hooks[i];
+    const cambiaron = primeraVez
+      || dependencias === undefined
+      || dependencias.some((dep, k) => !Object.is(dep, ranura.dependencias[k]));
+    if (cambiaron) {
+      ranura.dependencias = dependencias;
+      efectosPendientes.push({ ranura, efecto });
+    }
+  }
+
+  function render(componente, elemento) {
+    componenteRaiz = componente;
+    contenedor = elemento;
+    renderizar();
+  }
+
+  function programarRender() {
+    if (renderPendiente) return;
+    renderPendiente = true;
+    queueMicrotask(renderizar);
+  }
+
+  function renderizar() {
+    renderPendiente = false;
+    indice = 0;
+    const arbol = createElement(componenteRaiz);
+    contenedor.replaceChildren(arbol);
+    cantidadRenders++;
+    for (const { ranura, efecto } of efectosPendientes) {
+      if (typeof ranura.limpieza === "function") ranura.limpieza();
+      ranura.limpieza = efecto();
+    }
+    efectosPendientes = [];
+    for (const oyente of oyentes) oyente({ renders: cantidadRenders, hooks });
+  }
+
+  function alRenderizar(oyente) {
+    oyentes.push(oyente);
+  }
+
+  return { createElement, useState, useEffect, render, alRenderizar };
+})();
+</script>
+
+<!-- =========================================================== APP (demo) -->
+<script>
+(() => {
+const h = MiniReact.createElement;
+const { useState, useEffect } = MiniReact;
+
+function formatearDuracion(segundos) {
+  const horas = String(Math.floor(segundos / 3600)).padStart(2, "0");
+  const minutos = String(Math.floor((segundos % 3600) / 60)).padStart(2, "0");
+  const resto = String(segundos % 60).padStart(2, "0");
+  return `${horas}:${minutos}:${resto}`;
+}
+
+// Flujo: cuántos vehículos pasarían en una hora al ritmo observado.
+function calcularFlujo(cantidad, segundos) {
+  if (segundos === 0) return "—";
+  return `${Math.round((cantidad * 3600) / segundos)} v/h`;
+}
+
+// ---------- Componentes de presentación: no tienen estado ----------
+function Dato({ titulo, valor }) {
+  return h("div", { className: "componente dato" },
+    h("p", { className: "titulo" }, titulo),
+    h("p", { className: "valor" }, valor),
+  );
+}
+
+function Cronometro({ segundos }) {
+  return h("div", { className: "componente cronometro" }, formatearDuracion(segundos));
+}
+
+function Resumen({ total, segundos }) {
+  const flujo = calcularFlujo(total, segundos);
+  return h("section", { className: "componente resumen" },
+    h(Dato, { titulo: "Total de vehículos", valor: total }),
+    h(Dato, { titulo: "Flujo total", valor: flujo }),
+  );
+}
+
+// ---------- El contador: cuenta por su cuenta y avisa al padre ----------
+function Contador({ nombre, habilitado, alRegistrar }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  // Al empezar una medición, el contador arranca de cero.
+  useEffect(() => {
+    if (habilitado) setCantidad(0);
+  }, [habilitado]);
+
+  function registrar() {
+    setCantidad((c) => c + 1);   // el contador interno
+    alRegistrar();               // el aviso al padre
+  }
+
+  // Todo el contador es el botón.
+  return h("button", { className: "componente contador", disabled: !habilitado, onClick: registrar },
+    h("span", { className: "nombre" }, nombre),
+    h("span", { className: "cantidad" }, cantidad),
+  );
+}
+
+// ---------- La aplicación: lleva el reloj y el contador global ----------
+function App() {
+  const [inicio, setInicio] = useState(null);       // null: detenido
+  const [ahora, setAhora] = useState(Date.now());
+  const [total, setTotal] = useState(0);            // el contador global
+
+  const corriendo = inicio !== null;
+  const segundos = corriendo ? Math.floor((ahora - inicio) / 1000) : 0;
+
+  // Mientras se cuenta, el reloj avanza una vez por segundo.
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [corriendo]);
+
+  function iniciar() {
+    const instante = Date.now();
+    setInicio(instante);
+    setAhora(instante);
+    setTotal(0);
+  }
+
+  function detener() {
+    setInicio(null);
+  }
+
+  function registrarVehiculo() {
+    setTotal((t) => t + 1);
+  }
+
+  // Las props que reciben los tres contadores.
+  const comunes = { habilitado: corriendo, alRegistrar: registrarVehiculo };
+
+  return h("main", { className: "componente app" },
+    h("h1", null, "Conteo de tránsito"),
+    h("div", { className: "control" },
+      h("button", {
+        className: "principal",
+        title: corriendo ? "Detener" : "Iniciar",
+        onClick: corriendo ? detener : iniciar,
+      }, corriendo ? "⏹" : "▶"),
+      h(Cronometro, { segundos }),
+    ),
+    h("div", { className: "contadores" },
+      h(Contador, { nombre: "🏍️ Motos", ...comunes }),
+      h(Contador, { nombre: "🚗 Autos", ...comunes }),
+      h(Contador, { nombre: "🛻 Camionetas", ...comunes }),
+    ),
+    h(Resumen, { total, segundos }),
+  );
+}
+
+
+// Panel de ranuras: observa el framework desde afuera.
+const tablaHooks = document.getElementById("demo-hooks");
+const contadorRenders = document.getElementById("demo-renders");
+let anteriores = [];
+
+function describir(ranura) {
+  if (ranura.tipo === "estado") return JSON.stringify(ranura.valor);
+  return `deps ${JSON.stringify(ranura.dependencias)}`;
+}
+
+MiniReact.alRenderizar(({ renders, hooks }) => {
+  contadorRenders.textContent = renders;
+  const descripciones = hooks.map(describir);
+  tablaHooks.innerHTML = hooks.map((ranura, i) => {
+    const cambio = renders > 1 && descripciones[i] !== anteriores[i];
+    return `
+      <tr class="${ranura.tipo}${cambio ? " cambio" : ""}">
+        <td>${i}</td>
+        <td>${ranura.componente}</td>
+        <td>${descripciones[i]}</td>
+      </tr>`;
+  }).join("");
+  anteriores = descripciones;
+  window.reajustarSiDesborda?.();
+});
+
+document.getElementById("demo-resaltar").addEventListener("change", (evento) => {
+  document.getElementById("demo").classList.toggle("resaltar", evento.target.checked);
+});
+
+MiniReact.render(App, document.getElementById("demo-raiz"));
+})();
+</script>
+
+<!-- =========================================================== PRESENTACIÓN -->
+<script>
+(() => {
+  const diapos = [...document.querySelectorAll(".diapo")];
+  const pie = {
+    barra: document.getElementById("barra"),
+    seccion: document.getElementById("seccion"),
+    numero: document.getElementById("numero"),
+  };
+
+  // ---------- Estructura: título + cuerpo ajustable ----------
+  let seccionActual = "";
+  for (const diapo of diapos) {
+    seccionActual = diapo.dataset.seccion ?? seccionActual;
+    diapo.dataset.seccionVisible = seccionActual;
+    const cuerpo = document.createElement("div");
+    cuerpo.className = "cuerpo";
+    const ajuste = document.createElement("div");
+    ajuste.className = "ajuste";
+    for (const hijo of [...diapo.children]) {
+      if (hijo.tagName !== "H2") ajuste.append(hijo);
+    }
+    cuerpo.append(ajuste);
+    diapo.append(cuerpo);
+  }
+
+  // ---------- Resaltado de código ----------
+  const PALABRAS = new Set(["const", "let", "var", "function", "return", "if", "else", "for", "of", "in",
+    "new", "typeof", "instanceof", "null", "undefined", "true", "false", "while", "break", "continue"]);
+  const TOKEN = /(\/\/.*$)|(`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/g;
+
+  function escapar(texto) {
+    return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function colorear(linea) {
+    let html = "";
+    let ultimo = 0;
+    linea.replace(TOKEN, (todo, comentario, cadena, numero, nombre, pos) => {
+      html += escapar(linea.slice(ultimo, pos));
+      if (comentario) html += `<span class="c">${escapar(comentario)}</span>`;
+      else if (cadena) html += `<span class="s">${escapar(cadena)}</span>`;
+      else if (numero) html += `<span class="n">${numero}</span>`;
+      else if (PALABRAS.has(nombre)) html += `<span class="k">${nombre}</span>`;
+      else if (/^\s*\(/.test(linea.slice(pos + nombre.length))) html += `<span class="f">${nombre}</span>`;
+      else html += nombre;
+      ultimo = pos + todo.length;
+      return todo;
+    });
+    return html + escapar(linea.slice(ultimo));
+  }
+
+  for (const pre of document.querySelectorAll("pre.codigo")) {
+    const lineas = pre.textContent.replace(/\s+$/, "").split("\n").map((texto) => ({
+      marcada: texto.startsWith("!"),
+      texto: texto.startsWith("!") ? texto.slice(1) : texto,
+    }));
+    const sangria = Math.min(...lineas
+      .filter((l) => l.texto.trim())
+      .map((l) => l.texto.match(/^ */)[0].length));
+    pre.innerHTML = lineas.map((l) => {
+      const clase = l.marcada ? "linea marcada" : "linea";
+      return `<span class="${clase}">${colorear(l.texto.slice(sangria))}</span>`;
+    }).join("");
+  }
+
+  // ---------- Ajuste automático: el contenido ocupa toda la pantalla ----------
+  function cabe(cuerpo, ajuste) {
+    if (ajuste.scrollHeight > cuerpo.clientHeight * 0.98) return false;
+    if (ajuste.scrollWidth > cuerpo.clientWidth + 1) return false;
+    // ninguna línea de código puede pisar el borde de su recuadro
+    const codigoCabe = [...ajuste.querySelectorAll("pre")]
+      .every((pre) => pre.scrollWidth <= pre.clientWidth + 1);
+    // y el texto de fórmulas y notas tiene que quedar dentro de su margen
+    const textoCabe = [...ajuste.querySelectorAll(".formula, .nota")]
+      .every(textoDentroDelMargen);
+    return codigoCabe && textoCabe;
+  }
+
+  function textoDentroDelMargen(elemento) {
+    const rango = document.createRange();
+    rango.selectNodeContents(elemento);
+    const estilo = getComputedStyle(elemento);
+    const disponible = elemento.clientWidth
+      - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+    return rango.getBoundingClientRect().width <= disponible + 1;
+  }
+
+  function ajustar(diapo) {
+    const cuerpo = diapo.querySelector(".cuerpo");
+    const ajuste = cuerpo.firstElementChild;
+    const maximo = innerHeight * (Number(diapo.dataset.max) || 0.068);
+    let bajo = 6;
+    let alto = maximo;
+    for (let vuelta = 0; vuelta < 14; vuelta++) {
+      const medio = (bajo + alto) / 2;
+      cuerpo.style.fontSize = `${medio}px`;
+      if (cabe(cuerpo, ajuste)) bajo = medio;
+      else alto = medio;
+    }
+    cuerpo.style.fontSize = `${bajo}px`;
+  }
+
+  // ---------- Navegación ----------
+  let actual = 0;
+
+  function actualizarNumero() {
+    pie.numero.value = `${actual + 1} / ${diapos.length}`;
+  }
+
+  function mostrar(numero) {
+    actual = Math.max(0, Math.min(diapos.length - 1, numero));
+    diapos.forEach((diapo, i) => diapo.classList.toggle("activa", i === actual));
+    ajustar(diapos[actual]);
+    pie.barra.style.width = `${((actual + 1) / diapos.length) * 100}%`;
+    pie.seccion.textContent = diapos[actual].dataset.seccionVisible;
+    actualizarNumero();
+    // Guardar la diapositiva en la dirección (#12). En algunos visores,
+    // como una vista previa dentro de un marco, no está permitido.
+    try {
+      history.replaceState(null, "", `#${actual + 1}`);
+    } catch {
+      // sin dirección: la presentación funciona igual
+    }
+  }
+
+  pie.numero.addEventListener("click", () => {
+    if (!pie.numero.readOnly) return;
+    pie.numero.readOnly = false;
+    pie.numero.value = String(actual + 1);
+    pie.numero.select();
+  });
+
+  pie.numero.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter") {
+      evento.preventDefault();
+      const destino = Number(pie.numero.value.trim());
+      pie.numero.readOnly = true;
+      if (Number.isInteger(destino) && destino >= 1) mostrar(destino - 1);
+      else actualizarNumero();
+      pie.numero.blur();
+    } else if (evento.key === "Escape") {
+      evento.preventDefault();
+      pie.numero.readOnly = true;
+      actualizarNumero();
+      pie.numero.blur();
+    }
+  });
+
+  pie.numero.addEventListener("blur", () => {
+    if (pie.numero.readOnly) return;
+    pie.numero.readOnly = true;
+    actualizarNumero();
+  });
+
+  document.addEventListener("keydown", (evento) => {
+    if (evento.target === pie.numero && !pie.numero.readOnly) return;
+    const enControl = ["BUTTON", "INPUT"].includes(evento.target.tagName);
+    switch (evento.key) {
+      case "ArrowRight": case "PageDown": mostrar(actual + 1); break;
+      case "ArrowLeft": case "PageUp": mostrar(actual - 1); break;
+      case " ": if (!enControl) { evento.preventDefault(); mostrar(actual + 1); } break;
+      case "Home": mostrar(0); break;
+      case "End": mostrar(diapos.length - 1); break;
+      case "f": case "F":
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        else document.documentElement.requestFullscreen?.().catch(() => {});
+        break;
+    }
+  });
+
+  document.getElementById("anterior").addEventListener("click", () => mostrar(actual - 1));
+  document.getElementById("siguiente").addEventListener("click", () => mostrar(actual + 1));
+
+  let toqueInicial = null;
+  document.addEventListener("touchstart", (e) => { toqueInicial = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (toqueInicial === null) return;
+    const delta = e.changedTouches[0].clientX - toqueInicial;
+    if (Math.abs(delta) > 60) mostrar(actual + (delta < 0 ? 1 : -1));
+    toqueInicial = null;
+  });
+
+  // La demo cambia de tamaño al usarla: si se desborda, se vuelve a ajustar.
+  window.reajustarSiDesborda = () => {
+    const cuerpo = diapos[actual].querySelector(".cuerpo");
+    if (!cabe(cuerpo, cuerpo.firstElementChild)) ajustar(diapos[actual]);
+  };
+
+  addEventListener("resize", () => ajustar(diapos[actual]));
+  document.fonts?.ready.then(() => ajustar(diapos[actual]));
+
+  mostrar((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>
