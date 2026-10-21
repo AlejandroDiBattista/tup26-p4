@@ -152,11 +152,13 @@
 
     /* ---------- Detalle ---------- */
 
-    .detalle-contenido {
+      .detalle-contenido {
       flex: 1;
       min-height: 0;
-      overflow-y: auto;           /* el otro scroll interno */
+      display: flex;
+      flex-direction: column;
       padding: 24px;
+      overflow: hidden;
     }
 
     .detalle-nombre {
@@ -427,6 +429,31 @@
 
     .marca-boton:hover { border-color: #16a34a; }
 
+        /* ---------- Zonas del detalle ---------- */
+
+    .detalle-scroll {
+      display: block;
+      overflow-y: auto;
+    }
+
+    .detalle-fijo {
+      flex: none;
+    }
+
+    .detalle-listas {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .lista-actividades {
+      flex: 0 1 auto;
+      min-height: 64px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
   </style>
 </head>
 <body>
@@ -613,10 +640,10 @@
       );
     }
 
-        function Detalle({ cliente, modo, error, onEditar, onEliminar, onGuardar, onCancelar, acts }) {
+          function Detalle({ cliente, modo, error, onEditar, onEliminar, onGuardar, onCancelar, acts }) {
       if (modo === 'nuevo') {
         return (
-          <div className="detalle-contenido">
+          <div className="detalle-contenido detalle-scroll">
             <h2 className="detalle-nombre">Nuevo cliente</h2>
             {error && <div className="error">{error}</div>}
             <FormularioCliente
@@ -634,7 +661,7 @@
 
       if (modo === 'editar') {
         return (
-          <div className="detalle-contenido">
+          <div className="detalle-contenido detalle-scroll">
             <h2 className="detalle-nombre">Editar cliente</h2>
             {error && <div className="error">{error}</div>}
             <FormularioCliente
@@ -658,63 +685,77 @@
 
       return (
         <div className="detalle-contenido">
-          {error && <div className="error">{error}</div>}
 
-          <div className="detalle-cabecera">
-            <div>
-              <h2 className="detalle-nombre">{cliente.nombre}</h2>
-              <span className="id-cliente">#{cliente.id}</span>
+          <div className="detalle-fijo">
+            {error && <div className="error">{error}</div>}
+
+            <div className="detalle-cabecera">
+              <div>
+                <h2 className="detalle-nombre">{cliente.nombre}</h2>
+                <span className="id-cliente">#{cliente.id}</span>
+              </div>
+              <div className="acciones">
+                <button className="boton" onClick={onEditar}>✏️ Editar</button>
+                <button className="boton boton-peligro" onClick={onEliminar}>🗑️ Eliminar</button>
+              </div>
             </div>
-            <div className="acciones">
-              <button className="boton" onClick={onEditar}>✏️ Editar</button>
-              <button className="boton boton-peligro" onClick={onEliminar}>🗑️ Eliminar</button>
+
+            <div className="datos">
+              <div>✉️ {cliente.email}</div>
+              <div>📍 {cliente.direccion || '—'}</div>
+              <div>📞 {cliente.telefono || '—'}</div>
+              <div>🏙️ {cliente.ciudad || '—'}</div>
             </div>
-          </div>
 
-          <div className="datos">
-            <div>✉️ {cliente.email}</div>
-            <div>📍 {cliente.direccion || '—'}</div>
-            <div>📞 {cliente.telefono || '—'}</div>
-            <div>🏙️ {cliente.ciudad || '—'}</div>
-          </div>
-
-          {acts.editando && (
-            <FormularioActividad
-              key={acts.editando.id ?? 'nueva'}
-              inicial={acts.editando}
-              onGuardar={acts.onGuardar}
-              onCancelar={acts.onCancelar}
-            />
-          )}
-
-          <div className="seccion-fila">
-            <h3 className="seccion">Compromisos</h3>
-            {!acts.editando && (
-              <button className="boton" onClick={acts.onNueva}>+ Actividad</button>
+            {acts.editando && (
+              <FormularioActividad
+                key={acts.editando.id ?? 'nueva'}
+                inicial={acts.editando}
+                onGuardar={acts.onGuardar}
+                onCancelar={acts.onCancelar}
+              />
             )}
           </div>
 
-          {pendientes.length === 0
-            ? <p className="actividad-fecha">Sin compromisos pendientes.</p>
-            : pendientes.map(a => (
-                <Actividad
-                  key={a.id}
-                  actividad={a}
-                  onEditar={acts.onEditar}
-                  onCompletar={acts.onCompletar}
-                  onEliminar={acts.onEliminar}
-                />
-              ))}
+          <div className="detalle-listas">
 
-          <h3 className="seccion" style={{ marginTop: 20 }}>Actividades completadas</h3>
-          {hechas.length === 0
-            ? <p className="actividad-fecha">Todavía no completó ninguna.</p>
-            : hechas.map(a => <Actividad key={a.id} actividad={a} />)}
+            <div className="seccion-fila">
+              <h3 className="seccion">Compromisos</h3>
+              {!acts.editando && (
+                <button className="boton" onClick={acts.onNueva}>+ Actividad</button>
+              )}
+            </div>
+
+            <div className="lista-actividades">
+              {pendientes.length === 0
+                ? <p className="actividad-fecha">Sin compromisos pendientes.</p>
+                : pendientes.map(a => (
+                    <Actividad
+                      key={a.id}
+                      actividad={a}
+                      onEditar={acts.onEditar}
+                      onCompletar={acts.onCompletar}
+                      onEliminar={acts.onEliminar}
+                    />
+                  ))}
+            </div>
+
+            <div className="seccion-fila" style={{ marginTop: 16 }}>
+              <h3 className="seccion">Actividades completadas</h3>
+            </div>
+
+            <div className="lista-actividades">
+              {hechas.length === 0
+                ? <p className="actividad-fecha">Todavía no completó ninguna.</p>
+                : hechas.map(a => <Actividad key={a.id} actividad={a} />)}
+            </div>
+
+          </div>
         </div>
       );
     }
 
-        function App() {
+      function App() {
       const [clientes, setClientes] = useState([]);
       const [busqueda, setBusqueda] = useState('');
       const [seleccionadoId, setSeleccionadoId] = useState(null);
