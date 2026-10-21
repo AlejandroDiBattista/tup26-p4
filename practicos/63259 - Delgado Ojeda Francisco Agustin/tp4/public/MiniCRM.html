@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM</title>
+  
+  <!-- Bibliotecas CDN con versiones fijas -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.2/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-app: #f8fafc;
+      --bg-surface: #ffffff;
+      --border-color: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --card-selected: #eff6ff;
+      --card-selected-border: #93c5fd;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Layout principal app sin scroll de página */
+    .app-contenedor {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* Barra superior */
+    header.app-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .brand .logo-badge {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Contenido dividido en Maestro y Detalle */
+    .app-cuerpo {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      flex: 1;
+      overflow: hidden;
+      background: var(--bg-app);
+    }
+
+    @media (max-width: 900px) {
+      .app-cuerpo {
+        grid-template-columns: 300px 1fr;
+      }
+    }
+
+    /* --- PANEL IZQUIERDO: MAESTRO --- */
+    .panel-maestro {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .maestro-cabecera {
+      padding: 16px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .maestro-cabecera h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .btn-nuevo {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-nuevo:hover {
+      background: var(--primary-hover);
+    }
+
+    .maestro-buscador {
+      padding: 0 20px 14px;
+      flex-shrink: 0;
+    }
+
+    .input-busqueda-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-busqueda-wrap svg {
+      position: absolute;
+      left: 12px;
+      color: var(--text-light);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .input-busqueda {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: #f8fafc;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .input-busqueda:focus {
+      background: #fff;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Lista desplazable con scroll vertical interno */
+    .maestro-lista {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cliente-tarjeta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .cliente-tarjeta:hover {
+      background: #f1f5f9;
+    }
+
+    .cliente-tarjeta.activa {
+      background: var(--card-selected);
+      border-color: var(--card-selected-border);
+    }
+
+    .avatar-circulo {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: 700;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: 0.03em;
+    }
+
+    .cliente-tarjeta.activa .avatar-circulo {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .cliente-info-corta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cliente-nombre-fila {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .cliente-email-fila {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-metricas {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .cliente-tarjeta.activa .badge-metricas {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .sin-resultados-maestro {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    /* --- PANEL DERECHO: DETALLE --- */
+    .panel-detalle {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-app);
+    }
+
+    .detalle-vacio {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text-muted);
+      padding: 40px;
+      text-align: center;
+    }
+
+    .detalle-vacio svg {
+      width: 56px;
+      height: 56px;
+      color: var(--text-light);
+    }
+
+    /* Ficha del cliente y contenido con scroll */
+    .detalle-scrollable {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Tarjeta Ficha de Cliente */
+    .ficha-cliente-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .ficha-cabecera {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    .ficha-titulos {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ficha-titulos h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .ficha-id-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+    }
+
+    .ficha-acciones {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-secundario {
+      background: #fff;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-secundario:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-peligro {
+      background: #fff;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-peligro:hover {
+      background: #fef2f2;
+      border-color: var(--danger);
+    }
+
+    .ficha-datos-grilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .dato-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .dato-icono {
+      color: var(--text-light);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .dato-texto-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dato-etiqueta {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-light);
+      margin-bottom: 2px;
+    }
+
+    .dato-valor {
+      font-size: 0.95rem;
+      color: var(--text-main);
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    /* Subformulario de Actividades en el Detalle */
+    .subformulario-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .subformulario-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subform-campos {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .subform-fila {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .subform-fila .campo-desc {
+      flex: 2;
+      min-width: 250px;
+    }
+
+    .subform-fila .campo-fecha {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .input-control {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: #fff;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .input-control:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .subform-botones {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    /* Secciones de Actividades */
+    .seccion-actividades {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .seccion-titulo-fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .seccion-titulo {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .contador-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+    }
+
+    .lista-actividades-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .actividad-fila {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .actividad-fila:hover {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      border-color: #cbd5e1;
+    }
+
+    .actividad-cuerpo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Botón completar */
+    .btn-completar-check {
+      background: none;
+      border: 2px solid #cbd5e1;
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    .btn-completar-check:hover {
+      border-color: var(--success);
+      color: var(--success);
+      background: #ecfdf5;
+    }
+
+    .icono-check-completa {
+      color: var(--success);
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .actividad-textos {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .actividad-desc {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .actividad-desc.completada-texto {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .actividad-fecha-tag {
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+    }
+
+    .actividad-fecha-tag.vencida {
+      color: var(--danger);
+      background: #fef2f2;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .actividad-acciones {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-icono {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 5px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icono:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .btn-icono.icono-peligro:hover {
+      background: #fef2f2;
+      color: var(--danger);
+    }
+
+    .sin-actividades-aviso {
+      padding: 16px;
+      text-align: center;
+      background: #f8fafc;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Formulario de Alta y Edición de Cliente en el Detalle */
+    .formulario-cliente-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      max-width: 680px;
+    }
+
+    .formulario-cliente-card h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text-main);
+    }
+
+    .form-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-grupo label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-grupo label .requerido {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    .form-acciones-pie {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .alerta-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: var(--danger);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+    }
+
+    /* Scrollbars elegantes */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: var(--radius-full);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- Helpers de Fecha y Formato ---
+    const MESES = [
+      "ene", "feb", "mar", "abr", "may", "jun",
+      "jul", "ago", "sep", "oct", "nov", "dic"
+    ];
+
+    function formatearFecha(cadenaFecha) {
+      if (!cadenaFecha) return "Sin fecha";
+      // Si viene en formato YYYY-MM-DD
+      const partes = cadenaFecha.split("-");
+      if (partes.length === 3) {
+        const dia = parseInt(partes[2], 10);
+        const mesIdx = parseInt(partes[1], 10) - 1;
+        const anio = partes[0];
+        if (mesIdx >= 0 && mesIdx < 12) {
+          return `${dia} ${MESES[mesIdx]} ${anio}`;
+        }
+      }
+      return cadenaFecha;
+    }
+
+    function esFechaVencida(cadenaFecha) {
+      if (!cadenaFecha) return false;
+      const partes = cadenaFecha.split("-");
+      if (partes.length !== 3) return false;
+      
+      const hoy = new Date();
+      const anioHoy = hoy.getFullYear();
+      const mesHoy = String(hoy.getMonth() + 1).padStart(2, "0");
+      const diaHoy = String(hoy.getDate()).padStart(2, "0");
+      const hoyIso = `${anioHoy}-${mesHoy}-${diaHoy}`;
+
+      return cadenaFecha < hoyIso;
+    }
+
+    function obtenerIniciales(nombre) {
+      if (!nombre) return "??";
+      const palabras = nombre.trim().split(/\s+/);
+      if (palabras.length === 1) {
+        return palabras[0].substring(0, 2).toUpperCase();
+      }
+      return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+    }
+
+    // --- Componente Principal MiniCRM ---
+    function MiniCRMApp() {
+      // Estado de clientes y navegación
+      const [clientes, setClientes] = useState([]);
+      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+      const [clienteDetalle, setClienteDetalle] = useState(null);
+      const [terminoBusqueda, setTerminoBusqueda] = useState("");
+      const [cargandoLista, setCargandoLista] = useState(false);
+      const [cargandoDetalle, setCargandoDetalle] = useState(false);
+
+      // Estado de vista del detalle: 'ver' | 'crear' | 'editar'
+      const [modoDetalle, setModoDetalle] = useState("ver");
+
+      // Formulario de Cliente
+      const [formCliente, setFormCliente] = useState({
+        nombre: "",
+        email: "",
+        telefono: "",
+        domicilio: "",
+      });
+      const [errorCliente, setErrorCliente] = useState("");
+
+      // Subformulario de Actividades en el Detalle
+      const [formActividad, setFormActividad] = useState({
+        descripcion: "",
+        fecha: "",
+      });
+      const [actividadEnEdicionId, setActividadEnEdicionId] = useState(null);
+      const [errorActividad, setErrorActividad] = useState("");
+
+      // Cargar clientes desde la API REST
+      async function cargarClientes(termino = terminoBusqueda) {
+        setCargandoLista(true);
+        try {
+          const url = termino.trim()
+            ? `/api/clientes?buscar=${encodeURIComponent(termino.trim())}`
+            : "/api/clientes";
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("Error al consultar clientes");
+          const datos = await res.json();
+          setClientes(datos);
+
+          // Si hay clientes y no hay ninguno seleccionado, seleccionar el primero
+          if (datos.length > 0 && !clienteSeleccionadoId && modoDetalle === "ver") {
+            setClienteSeleccionadoId(datos[0].id);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setCargandoLista(false);
+        }
+      }
+
+      // Cargar la ficha y actividades del cliente seleccionado
+      async function cargarDetalleCliente(id) {
+        if (!id) {
+          setClienteDetalle(null);
+          return;
+        }
+        setCargandoDetalle(true);
+        try {
+          const res = await fetch(`/api/clientes/${id}`);
+          if (!res.ok) throw new Error("Error al obtener detalle del cliente");
+          const datos = await res.json();
+          setClienteDetalle(datos);
+        } catch (err) {
+          console.error(err);
+          setClienteDetalle(null);
+        } finally {
+          setCargandoDetalle(false);
+        }
+      }
+
+      // Inicialización y búsqueda reactiva
+      useEffect(() => {
+        cargarClientes();
+      }, []);
+
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          cargarClientes(terminoBusqueda);
+        }, 200);
+        return () => clearTimeout(timer);
+      }, [terminoBusqueda]);
+
+      useEffect(() => {
+        if (clienteSeleccionadoId) {
+          cargarDetalleCliente(clienteSeleccionadoId);
+        }
+      }, [clienteSeleccionadoId]);
+
+      // --- Acciones de Cliente ---
+
+      function iniciarCrearCliente() {
+        setModoDetalle("crear");
+        setFormCliente({
+          nombre: "",
+          email: "",
+          telefono: "",
+          domicilio: "",
+        });
+        setErrorCliente("");
+      }
+
+      function iniciarEditarCliente() {
+        if (!clienteDetalle) return;
+        setModoDetalle("editar");
+        setFormCliente({
+          nombre: clienteDetalle.nombre || "",
+          email: clienteDetalle.email || "",
+          telefono: clienteDetalle.telefono || "",
+          domicilio: clienteDetalle.domicilio || "",
+        });
+        setErrorCliente("");
+      }
+
+      function cancelarEdicionCliente() {
+        setModoDetalle("ver");
+        setErrorCliente("");
+      }
+
+      async function guardarCliente(e) {
+        e.preventDefault();
+        setErrorCliente("");
+
+        if (!formCliente.nombre.trim()) {
+          setErrorCliente("El nombre del cliente es obligatorio.");
+          return;
+        }
+        if (!formCliente.email.trim()) {
+          setErrorCliente("El correo electrónico es obligatorio.");
+          return;
+        }
+
+        try {
+          if (modoDetalle === "crear") {
+            const res = await fetch("/api/clientes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formCliente),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "No se pudo crear el cliente.");
+
+            await cargarClientes();
+            setClienteSeleccionadoId(data.id);
+            setModoDetalle("ver");
+          } else if (modoDetalle === "editar") {
+            const res = await fetch(`/api/clientes/${clienteSeleccionadoId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formCliente),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "No se pudo actualizar el cliente.");
+
+            await cargarClientes();
+            await cargarDetalleCliente(clienteSeleccionadoId);
+            setModoDetalle("ver");
+          }
+        } catch (err) {
+          setErrorCliente(err.message);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (!clienteDetalle) return;
+        const confirmacion = window.confirm(
+          `¿Estás seguro de eliminar al cliente "${clienteDetalle.nombre}"? Se borrarán también todas sus actividades.`
+        );
+        if (!confirmacion) return;
+
+        try {
+          const res = await fetch(`/api/clientes/${clienteDetalle.id}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "No se pudo eliminar el cliente.");
+          }
+
+          setClienteSeleccionadoId(null);
+          setClienteDetalle(null);
+          setModoDetalle("ver");
+          await cargarClientes();
+        } catch (err) {
+          alert(`Error: ${err.message}`);
+        }
+      }
+
+      // --- Acciones de Actividades (Subformulario) ---
+
+      function iniciarEditarActividad(act) {
+        if (act.completada) return; // Las completadas no se editan
+        setActividadEnEdicionId(act.id);
+        setFormActividad({
+          descripcion: act.descripcion || "",
+          fecha: act.fecha || "",
+        });
+        setErrorActividad("");
+      }
+
+      function cancelarEdicionActividad() {
+        setActividadEnEdicionId(null);
+        setFormActividad({ descripcion: "", fecha: "" });
+        setErrorActividad("");
+      }
+
+      async function guardarActividad(e) {
+        e.preventDefault();
+        setErrorActividad("");
+
+        if (!formActividad.descripcion.trim()) {
+          setErrorActividad("La descripción de la actividad es requerida.");
+          return;
+        }
+
+        try {
+          if (actividadEnEdicionId) {
+            // Edición
+            const res = await fetch(
+              `/api/clientes/${clienteSeleccionadoId}/actividades/${actividadEnEdicionId}`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  descripcion: formActividad.descripcion.trim(),
+                  fecha: formActividad.fecha || null,
+                }),
+              }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "No se pudo actualizar la actividad.");
+          } else {
+            // Alta
+            const res = await fetch(
+              `/api/clientes/${clienteSeleccionadoId}/actividades`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  descripcion: formActividad.descripcion.trim(),
+                  fecha: formActividad.fecha || null,
+                }),
+              }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "No se pudo agregar la actividad.");
+          }
+
+          cancelarEdicionActividad();
+          await cargarDetalleCliente(clienteSeleccionadoId);
+          await cargarClientes();
+        } catch (err) {
+          setErrorActividad(err.message);
+        }
+      }
+
+      async function completarActividad(actividadId) {
+        try {
+          const res = await fetch(
+            `/api/clientes/${clienteSeleccionadoId}/actividades/${actividadId}/completar`,
+            { method: "PATCH" }
+          );
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "No se pudo completar la actividad.");
+          }
+
+          if (actividadEnEdicionId === actividadId) {
+            cancelarEdicionActividad();
+          }
+
+          await cargarDetalleCliente(clienteSeleccionadoId);
+          await cargarClientes();
+        } catch (err) {
+          alert(`Error: ${err.message}`);
+        }
+      }
+
+      async function eliminarActividad(actividadId) {
+        const confirmacion = window.confirm("¿Deseas eliminar este compromiso pendiente?");
+        if (!confirmacion) return;
+
+        try {
+          const res = await fetch(
+            `/api/clientes/${clienteSeleccionadoId}/actividades/${actividadId}`,
+            { method: "DELETE" }
+          );
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "No se pudo eliminar la actividad.");
+          }
+
+          if (actividadEnEdicionId === actividadId) {
+            cancelarEdicionActividad();
+          }
+
+          await cargarDetalleCliente(clienteSeleccionadoId);
+          await cargarClientes();
+        } catch (err) {
+          alert(`Error: ${err.message}`);
+        }
+      }
+
+      return (
+        <div className="app-contenedor">
+          {/* Barra superior */}
+          <header className="app-header">
+            <div className="brand">
+              <span className="logo-badge">CRM</span>
+              <span>MiniCRM</span>
+            </div>
+            <div className="header-info">
+              Gestión modular de clientes y actividades · SQLite & Express REST
+            </div>
+          </header>
+
+          {/* Cuerpo Maestro y Detalle */}
+          <div className="app-cuerpo">
+            {/* Panel Izquierdo: Maestro */}
+            <aside className="panel-maestro">
+              <div className="maestro-cabecera">
+                <h2>Clientes</h2>
+                <button
+                  type="button"
+                  className="btn-nuevo"
+                  onClick={iniciarCrearCliente}
+                  title="Dar de alta un nuevo cliente"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Nuevo</span>
+                </button>
+              </div>
+
+              <div className="maestro-buscador">
+                <div className="input-busqueda-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input
+                    type="text"
+                    className="input-busqueda"
+                    placeholder="Buscar por cualquier campo..."
+                    value={terminoBusqueda}
+                    onChange={(e) => setTerminoBusqueda(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Lista interna con scroll independiente */}
+              <div className="maestro-lista">
+                {clientes.length === 0 && !cargandoLista && (
+                  <div className="sin-resultados-maestro">
+                    No se encontraron clientes coincidentes.
+                  </div>
+                )}
+                {clientes.map((c) => {
+                  const estaSeleccionado = c.id === clienteSeleccionadoId && modoDetalle === "ver";
+                  return (
+                    <div
+                      key={c.id}
+                      className={`cliente-tarjeta ${estaSeleccionado ? "activa" : ""}`}
+                      onClick={() => {
+                        setClienteSeleccionadoId(c.id);
+                        setModoDetalle("ver");
+                        cancelarEdicionActividad();
+                      }}
+                    >
+                      <div className="avatar-circulo">{obtenerIniciales(c.nombre)}</div>
+                      <div className="cliente-info-corta">
+                        <div className="cliente-nombre-fila">{c.nombre}</div>
+                        <div className="cliente-email-fila">{c.email}</div>
+                      </div>
+                      <div className="badge-metricas" title="Compromisos pendientes | Completadas">
+                        {c.pendientes} | {c.completadas}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
+
+            {/* Panel Derecho: Detalle */}
+            <main className="panel-detalle">
+              {modoDetalle === "crear" || modoDetalle === "editar" ? (
+                /* Formulario de Alta y Edición en el Detalle */
+                <div className="detalle-scrollable">
+                  <div className="formulario-cliente-card">
+                    <h2>{modoDetalle === "crear" ? "Nuevo Cliente" : "Editar Ficha de Cliente"}</h2>
+
+                    {errorCliente && <div className="alerta-error">{errorCliente}</div>}
+
+                    <form onSubmit={guardarCliente}>
+                      <div className="form-grupo">
+                        <label>
+                          Nombre y Apellido <span className="requerido">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Ej: Ana Garcia"
+                          value={formCliente.nombre}
+                          onChange={(e) =>
+                            setFormCliente({ ...formCliente, nombre: e.target.value })
+                          }
+                          autoFocus
+                          required
+                        />
+                      </div>
+
+                      <div className="form-grupo">
+                        <label>
+                          Correo electrónico <span className="requerido">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          className="input-control"
+                          placeholder="Ej: ana.garcia@example.com"
+                          value={formCliente.email}
+                          onChange={(e) =>
+                            setFormCliente({ ...formCliente, email: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="form-grupo">
+                        <label>Teléfono</label>
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Ej: 381 555 0123"
+                          value={formCliente.telefono}
+                          onChange={(e) =>
+                            setFormCliente({ ...formCliente, telefono: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div className="form-grupo">
+                        <label>Domicilio / Dirección</label>
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Ej: San Martin 450, Yerba Buena"
+                          value={formCliente.domicilio}
+                          onChange={(e) =>
+                            setFormCliente({ ...formCliente, domicilio: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div className="form-acciones-pie">
+                        <button
+                          type="button"
+                          className="btn-secundario"
+                          onClick={cancelarEdicionCliente}
+                        >
+                          Cancelar
+                        </button>
+                        <button type="submit" className="btn-nuevo">
+                          {modoDetalle === "crear" ? "Guardar Cliente" : "Actualizar Cliente"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              ) : clienteDetalle ? (
+                /* Vista de Detalle y Actividades de solo lectura / gestión */
+                <div className="detalle-scrollable">
+                  {/* Ficha del Cliente */}
+                  <article className="ficha-cliente-card">
+                    <header className="ficha-cabecera">
+                      <div className="ficha-titulos">
+                        <h2>{clienteDetalle.nombre}</h2>
+                        <span className="ficha-id-badge">#{clienteDetalle.id}</span>
+                      </div>
+                      <div className="ficha-acciones">
+                        <button
+                          type="button"
+                          className="btn-secundario"
+                          onClick={iniciarEditarCliente}
+                          title="Editar datos del cliente"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-peligro"
+                          onClick={eliminarCliente}
+                          title="Eliminar este cliente"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
+                    </header>
+
+                    <div className="ficha-datos-grilla">
+                      <div className="dato-item">
+                        <div className="dato-icono">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                          </svg>
+                        </div>
+                        <div className="dato-texto-wrap">
+                          <span className="dato-etiqueta">Email</span>
+                          <span className="dato-valor">{clienteDetalle.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="dato-item">
+                        <div className="dato-icono">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                          </svg>
+                        </div>
+                        <div className="dato-texto-wrap">
+                          <span className="dato-etiqueta">Teléfono</span>
+                          <span className="dato-valor">{clienteDetalle.telefono || "—"}</span>
+                        </div>
+                      </div>
+
+                      <div className="dato-item">
+                        <div className="dato-icono">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                          </svg>
+                        </div>
+                        <div className="dato-texto-wrap">
+                          <span className="dato-etiqueta">Domicilio</span>
+                          <span className="dato-valor">{clienteDetalle.domicilio || "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  {/* Subformulario de Actividades en el Detalle */}
+                  <div className="subformulario-card">
+                    <h3>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      <span>{actividadEnEdicionId ? "Editar actividad" : "Agregar actividad"}</span>
+                    </h3>
+
+                    {errorActividad && <div className="alerta-error">{errorActividad}</div>}
+
+                    <form onSubmit={guardarActividad} className="subform-campos">
+                      <div className="subform-fila">
+                        <div className="campo-desc">
+                          <input
+                            type="text"
+                            className="input-control"
+                            placeholder="Descripción de la actividad..."
+                            value={formActividad.descripcion}
+                            onChange={(e) =>
+                              setFormActividad({ ...formActividad, descripcion: e.target.value })
+                            }
+                            required
+                          />
+                        </div>
+                        <div className="campo-fecha">
+                          <input
+                            type="date"
+                            className="input-control"
+                            value={formActividad.fecha}
+                            onChange={(e) =>
+                              setFormActividad({ ...formActividad, fecha: e.target.value })
+                            }
+                            title="Fecha límite opcional"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="subform-botones">
+                        {actividadEnEdicionId && (
+                          <button
+                            type="button"
+                            className="btn-secundario"
+                            onClick={cancelarEdicionActividad}
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                        <button type="submit" className="btn-nuevo">
+                          {actividadEnEdicionId ? "Guardar cambios" : "Agregar"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Sección: Compromisos (Pendientes) */}
+                  <section className="seccion-actividades">
+                    <div className="seccion-titulo-fila">
+                      <h3 className="seccion-titulo">
+                        <span>Compromisos</span>
+                        <span className="contador-pill">
+                          {clienteDetalle.compromisos?.length || 0}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="lista-actividades-grupo">
+                      {(!clienteDetalle.compromisos || clienteDetalle.compromisos.length === 0) && (
+                        <div className="sin-actividades-aviso">
+                          No hay compromisos pendientes para este cliente.
+                        </div>
+                      )}
+                      {clienteDetalle.compromisos?.map((act) => {
+                        const vencida = esFechaVencida(act.fecha);
+                        return (
+                          <div key={act.id} className="actividad-fila">
+                            <div className="actividad-cuerpo">
+                              <button
+                                type="button"
+                                className="btn-completar-check"
+                                onClick={() => completarActividad(act.id)}
+                                title="Marcar como completada"
+                              >
+                                ✓
+                              </button>
+                              <div className="actividad-textos">
+                                <span className="actividad-desc">{act.descripcion}</span>
+                                <span
+                                  className={`actividad-fecha-tag ${vencida ? "vencida" : ""}`}
+                                >
+                                  {act.fecha ? (
+                                    <>
+                                      {formatearFecha(act.fecha)}
+                                      {vencida && " · Vencido"}
+                                    </>
+                                  ) : (
+                                    "Sin fecha"
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="actividad-acciones">
+                              <button
+                                type="button"
+                                className="btn-icono"
+                                onClick={() => iniciarEditarActividad(act)}
+                                title="Editar compromiso"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-icono icono-peligro"
+                                onClick={() => eliminarActividad(act.id)}
+                                title="Eliminar compromiso"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* Sección: Actividades Completadas (Solo Lectura) */}
+                  <section className="seccion-actividades">
+                    <div className="seccion-titulo-fila">
+                      <h3 className="seccion-titulo">
+                        <span>Actividades completadas</span>
+                        <span className="contador-pill">
+                          {clienteDetalle.completadas?.length || 0}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="lista-actividades-grupo">
+                      {(!clienteDetalle.completadas || clienteDetalle.completadas.length === 0) && (
+                        <div className="sin-actividades-aviso">
+                          No hay actividades completadas registradas.
+                        </div>
+                      )}
+                      {clienteDetalle.completadas?.map((act) => (
+                        <div key={act.id} className="actividad-fila">
+                          <div className="actividad-cuerpo">
+                            <svg className="icono-check-completa" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <div className="actividad-textos">
+                              <span className="actividad-desc completada-texto">
+                                {act.descripcion}
+                              </span>
+                              <span className="actividad-fecha-tag">
+                                {act.fechaCompletada
+                                  ? `Completada el ${formatearFecha(act.fechaCompletada)}`
+                                  : "Completada"}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Las actividades completadas no llevan botones de edición ni borrado */}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              ) : (
+                <div className="detalle-vacio">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <h3>Ningún cliente seleccionado</h3>
+                  <p>Selecciona un cliente de la lista de la izquierda o crea uno nuevo.</p>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    const raiz = ReactDOM.createRoot(document.getElementById("root"));
+    raiz.render(<MiniCRMApp />);
+  </script>
+</body>
+</html>
