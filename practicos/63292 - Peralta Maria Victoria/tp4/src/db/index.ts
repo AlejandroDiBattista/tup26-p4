@@ -12,19 +12,17 @@ export async function inicializar(): Promise<void> {
       `CREATE TABLE IF NOT EXISTS clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
-        email TEXT NOT NULL,
+        email TEXT NOT NULL DEFAULT '',
         telefono TEXT NOT NULL DEFAULT '',
-        empresa TEXT NOT NULL DEFAULT '',
-        notas TEXT NOT NULL DEFAULT '',
-        creado_en TEXT NOT NULL DEFAULT ''
+        direccion TEXT NOT NULL DEFAULT ''
       )`,
       `CREATE TABLE IF NOT EXISTS actividades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cliente_id INTEGER NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
         descripcion TEXT NOT NULL,
-        vencimiento TEXT NOT NULL DEFAULT '',
+        fecha TEXT,
         completada INTEGER NOT NULL DEFAULT 0,
-        creado_en TEXT NOT NULL DEFAULT ''
+        completada_en TEXT
       )`,
     ],
     "write"

@@ -3,11 +3,9 @@ import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 export const clientes = sqliteTable("clientes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   nombre: text("nombre").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().default(""),
   telefono: text("telefono").notNull().default(""),
-  empresa: text("empresa").notNull().default(""),
-  notas: text("notas").notNull().default(""),
-  creadoEn: text("creado_en").notNull().default(""),
+  direccion: text("direccion").notNull().default(""),
 });
 
 export const actividades = sqliteTable("actividades", {
@@ -16,9 +14,9 @@ export const actividades = sqliteTable("actividades", {
     .notNull()
     .references(() => clientes.id, { onDelete: "cascade" }),
   descripcion: text("descripcion").notNull(),
-  vencimiento: text("vencimiento").notNull().default(""),
+  fecha: text("fecha"),
   completada: integer("completada", { mode: "boolean" }).notNull().default(false),
-  creadoEn: text("creado_en").notNull().default(""),
+  completadaEn: text("completada_en"),
 });
 
 export type Cliente = typeof clientes.$inferSelect;

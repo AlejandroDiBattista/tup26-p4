@@ -1,92 +1,83 @@
-import type { Request, Response } from "express";
-import { Clientes } from "../services/Clientes.js";
+import type { NextFunction, Request, Response } from "express";
+import { Clientes, ErrorServicio } from "../services/Clientes.js";
+
+type Handler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<unknown>;
+
+function rutear(fn: Handler) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    fn(req, res, next).catch(next);
+  };
+}
 
 function idDe(req: Request): number {
   return Number(req.params.id);
 }
 
 export const clientesController = {
-  async listar(req: Request, res: Response): Promise<void> {
-    const busqueda = typeof req.query.q === "string" ? req.query.q : undefined;
-    res.json(await Clientes.listar(busqueda));
-  },
+  listar: rutear(async (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q : undefined;
+    const campo =
+      typeof req.query.campo === "string" ? req.query.campo : undefined;
+    res.json(await Clientes.buscar(q, campo));
+  }),
 
-  async obtener(req: Request, res: Response): Promise<void> {
-    const cliente = await Clientes.obtener(idDe(req));
-    if (!cliente) {
-      res.status(404).json({ error: "Cliente no encontrado" });
-      return;
-    }
-    res.json(cliente);
-  },
+  obtener: rutear(async (req, res) => {
+    res.json(await Clientes.obtener(idDe(req)));
+  }),
 
-  async crear(req: Request, res: Response): Promise<void> {
-    const { nombre, email } = req.body ?? {};
-    if (!nombre || !email) {
-      res.status(400).json({ error: "nombre y email son obligatorios" });
-      return;
-    }
-    res.status(201).json(await Clientes.crear(req.body));
-  },
+  crear: rutear(async (req, res) => {
+    res.status(201).json(await Clientes.crear(req.body ?? {}));
+  }),
 
-  async editar(req: Request, res: Response): Promise<void> {
-    const cliente = await Clientes.editar(idDe(req), req.body ?? {});
-    if (!cliente) {
-      res.status(404).json({ error: "Cliente no encontrado" });
-      return;
-    }
-    res.json(cliente);
-  },
+  actualizar: rutear(async (req, res) => {
+    res.json(await Clientes.actualizar(idDe(req), req.body ?? {}));
+  }),
 
-  async eliminar(req: Request, res: Response): Promise<void> {
-    if (!(await Clientes.eliminar(idDe(req)))) {
-      res.status(404).json({ error: "Cliente no encontrado" });
-      return;
-    }
+  eliminar: rutear(async (req, res) => {
+    await Clientes.eliminar(idDe(req));
     res.status(204).end();
-  },
+  }),
 
-  async actividades(req: Request, res: Response): Promise<void> {
-    res.json(await Clientes.actividades(idDe(req)));
-  },
+  agregarActividad: rutear(async (req, res) => {
+    res.status(201).json(await Clientes.agregarActividad(idDe(req), req.body ?? {}));
+  }),
 
-  async crearActividad(req: Request, res: Response): Promise<void> {
-    const { descripcion } = req.body ?? {};
-    if (!descripcion) {
-      res.status(400).json({ error: "descripcion es obligatoria" });
-      return;
-    }
-    const actividad = await Clientes.agregarActividad(idDe(req), req.body);
-    if (!actividad) {
-      res.status(404).json({ error: "Cliente no encontrado" });
-      return;
-    }
-    res.status(201).json(actividad);
-  },
+  actualizarActividad: rutear(async (req, res) => {
+    res.json(
+      await Clientes.actualizarActividad(
+        idDe(req),
+        Number(req.params.actividadId),
+        req.body ?? {}
+      )
+    );
+  }),
 
-  async editarActividad(req: Request, res: Response): Promise<void> {
-    const actividad = await Clientes.editarActividad(idDe(req), req.body ?? {});
-    if (!actividad) {
-      res.status(404).json({ error: "Actividad no encontrada o completada" });
-      return;
-    }
-    res.json(actividad);
-  },
+  completarActividad: rutear(async (req, res) => {
+    res.json(
+      await Clientes.completarActividad(idDe(req), Number(req.params.actividadId))
+    );
+  }),
 
-  async completarActividad(req: Request, res: Response): Promise<void> {
-    const actividad = await Clientes.completarActividad(idDe(req));
-    if (!actividad) {
-      res.status(404).json({ error: "Actividad no encontrada" });
-      return;
-    }
-    res.json(actividad);
-  },
-
-  async eliminarActividad(req: Request, res: Response): Promise<void> {
-    if (!(await Clientes.eliminarActividad(idDe(req)))) {
-      res.status(404).json({ error: "Actividad no encontrada o completada" });
-      return;
-    }
+  eliminarActividad: rutear(async (req, res) => {
+    await Clientes.eliminarActividad(idDe(req), Number(req.params.actividadId));
     res.status(204).end();
-  },
+  }),
 };
+
+export function manejadorErrores(
+  err: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+): void {
+  if (err instanceof ErrorServicio) {
+    res.status(err.estado).json({ error: err.message });
+    return;
+  }
+  console.error(err);
+  res.status(500).json({ error: "Error interno del servidor" });
+}

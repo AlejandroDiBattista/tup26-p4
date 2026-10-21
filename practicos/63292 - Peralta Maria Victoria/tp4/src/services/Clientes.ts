@@ -1,146 +1,167 @@
-import { eq, like, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, like, or, type SQL } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { db } from "../db/index.js";
-import {
-  actividades,
-  clientes,
-  type Cliente,
-  type NuevaActividad,
-  type NuevoCliente,
-  type Actividad,
-} from "../db/schema.js";
+import { actividades, clientes } from "../db/schema.js";
 
-function ahora(): string {
-  return new Date().toISOString();
+export class ErrorServicio extends Error {
+  constructor(
+    readonly estado: number,
+    mensaje: string
+  ) {
+    super(mensaje);
+  }
+}
+
+const CAMPOS: Record<string, SQLiteColumn> = {
+  id: clientes.id,
+  nombre: clientes.nombre,
+  email: clientes.email,
+  telefono: clientes.telefono,
+  direccion: clientes.direccion,
+};
+
+type Entrada = Record<string, unknown>;
+
+function texto(valor: unknown): string {
+  return typeof valor === "string" ? valor.trim() : "";
+}
+
+function validarCliente(datos: Entrada) {
+  const cliente = {
+    nombre: texto(datos.nombre),
+    email: texto(datos.email),
+    telefono: texto(datos.telefono),
+    direccion: texto(datos.direccion),
+  };
+  if (!cliente.nombre) throw new ErrorServicio(400, "El nombre es obligatorio");
+  if (cliente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email)) {
+    throw new ErrorServicio(400, "El email no es válido");
+  }
+  return cliente;
+}
+
+function validarActividad(datos: Entrada) {
+  const descripcion = texto(datos.descripcion);
+  const fecha = texto(datos.fecha);
+  if (!descripcion) throw new ErrorServicio(400, "La descripción es obligatoria");
+  if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    throw new ErrorServicio(400, "La fecha debe tener formato AAAA-MM-DD");
+  }
+  return { descripcion, fecha: fecha || null };
 }
 
 export class Clientes {
-  static async listar(busqueda?: string): Promise<Cliente[]> {
-    if (!busqueda || busqueda.trim() === "") {
-      return db.select().from(clientes).orderBy(clientes.nombre).all();
+  /** Lista clientes. Con `q` busca en todos los campos, o solo en `campo` si se indica. */
+  static async buscar(q?: string, campo?: string) {
+    const buscado = q?.trim();
+    let where: SQL | undefined;
+    if (buscado) {
+      const patron = `%${buscado}%`;
+      if (campo) {
+        const columna = CAMPOS[campo];
+        if (!columna) throw new ErrorServicio(400, `Campo inválido: ${campo}`);
+        where = like(columna, patron);
+      } else {
+        where = or(...Object.values(CAMPOS).map((c) => like(c, patron)));
+      }
     }
-    return this.buscar(busqueda);
+    return db.select().from(clientes).where(where).orderBy(clientes.nombre).all();
   }
 
-  static async buscar(texto: string): Promise<Cliente[]> {
-    const patron = `%${texto.trim()}%`;
-    const condiciones: SQL[] = [
-      like(clientes.nombre, patron),
-      like(clientes.email, patron),
-      like(clientes.telefono, patron),
-      like(clientes.empresa, patron),
-      like(clientes.notas, patron),
-    ];
-    return db
+  static async obtener(id: number) {
+    const cliente = await db
       .select()
       .from(clientes)
-      .where(or(...condiciones))
-      .orderBy(clientes.nombre)
+      .where(eq(clientes.id, id))
+      .get();
+    if (!cliente) throw new ErrorServicio(404, "Cliente no encontrado");
+    const acts = await db
+      .select()
+      .from(actividades)
+      .where(eq(actividades.clienteId, id))
+      .orderBy(desc(actividades.fecha), desc(actividades.id))
       .all();
+    return { ...cliente, actividades: acts };
   }
 
-  static async obtener(id: number): Promise<Cliente | undefined> {
-    return db.select().from(clientes).where(eq(clientes.id, id)).get();
+  static async crear(datos: Entrada) {
+    const cliente = validarCliente(datos);
+    return db.insert(clientes).values(cliente).returning().get();
   }
 
-  static async crear(datos: NuevoCliente): Promise<Cliente> {
-    const fila = {
-      nombre: datos.nombre,
-      email: datos.email,
-      telefono: datos.telefono ?? "",
-      empresa: datos.empresa ?? "",
-      notas: datos.notas ?? "",
-      creadoEn: ahora(),
-    };
-    return db.insert(clientes).values(fila).returning().get();
-  }
-
-  static async editar(
-    id: number,
-    datos: Partial<NuevoCliente>
-  ): Promise<Cliente | undefined> {
-    if (!(await this.obtener(id))) return undefined;
-    return db
+  static async actualizar(id: number, datos: Entrada) {
+    const cliente = validarCliente(datos);
+    const actualizado = await db
       .update(clientes)
-      .set(datos)
+      .set(cliente)
       .where(eq(clientes.id, id))
       .returning()
       .get();
+    if (!actualizado) throw new ErrorServicio(404, "Cliente no encontrado");
+    return actualizado;
   }
 
-  static async eliminar(id: number): Promise<boolean> {
+  static async eliminar(id: number) {
     const resultado = await db.delete(clientes).where(eq(clientes.id, id));
-    return resultado.rowsAffected > 0;
+    if (resultado.rowsAffected === 0)
+      throw new ErrorServicio(404, "Cliente no encontrado");
   }
 
-  static async actividades(clienteId: number): Promise<Actividad[]> {
-    return db
+  // ---- Actividades ----
+
+  private static async actividad(clienteId: number, id: number) {
+    const actividad = await db
       .select()
       .from(actividades)
-      .where(eq(actividades.clienteId, clienteId))
-      .orderBy(actividades.completada, actividades.vencimiento)
-      .all();
+      .where(and(eq(actividades.id, id), eq(actividades.clienteId, clienteId)))
+      .get();
+    if (!actividad) throw new ErrorServicio(404, "Actividad no encontrada");
+    return actividad;
   }
 
-  static async agregarActividad(
+  static async agregarActividad(clienteId: number, datos: Entrada) {
+    await Clientes.obtener(clienteId); // valida que el cliente exista
+    const actividad = validarActividad(datos);
+    return db
+      .insert(actividades)
+      .values({ ...actividad, clienteId })
+      .returning()
+      .get();
+  }
+
+  static async actualizarActividad(
     clienteId: number,
-    datos: Omit<NuevaActividad, "clienteId" | "creadoEn">
-  ): Promise<Actividad | undefined> {
-    if (!(await this.obtener(clienteId))) return undefined;
-    const fila = {
-      clienteId,
-      descripcion: datos.descripcion,
-      vencimiento: datos.vencimiento ?? "",
-      completada: datos.completada ?? false,
-      creadoEn: ahora(),
-    };
-    return db.insert(actividades).values(fila).returning().get();
-  }
-
-  static async editarActividad(
     id: number,
-    datos: Partial<NuevaActividad>
-  ): Promise<Actividad | undefined> {
-    const actual = await db
-      .select()
-      .from(actividades)
-      .where(eq(actividades.id, id))
-      .get();
-    if (!actual || actual.completada) return undefined;
+    datos: Entrada
+  ) {
+    const existente = await Clientes.actividad(clienteId, id);
+    if (existente.completada)
+      throw new ErrorServicio(409, "Una actividad completada no se puede editar");
     return db
       .update(actividades)
-      .set(datos)
+      .set(validarActividad(datos))
       .where(eq(actividades.id, id))
       .returning()
       .get();
   }
 
-  static async completarActividad(id: number): Promise<Actividad | undefined> {
-    const actual = await db
-      .select()
-      .from(actividades)
-      .where(eq(actividades.id, id))
-      .get();
-    if (!actual) return undefined;
+  static async completarActividad(clienteId: number, id: number) {
+    await Clientes.actividad(clienteId, id);
     return db
       .update(actividades)
-      .set({ completada: true })
+      .set({
+        completada: true,
+        completadaEn: new Date().toLocaleDateString("en-CA"),
+      })
       .where(eq(actividades.id, id))
       .returning()
       .get();
   }
 
-  static async eliminarActividad(id: number): Promise<boolean> {
-    const actual = await db
-      .select()
-      .from(actividades)
-      .where(eq(actividades.id, id))
-      .get();
-    if (!actual || actual.completada) return false;
-    const resultado = await db
-      .delete(actividades)
-      .where(eq(actividades.id, id));
-    return resultado.rowsAffected > 0;
+  static async eliminarActividad(clienteId: number, id: number) {
+    const existente = await Clientes.actividad(clienteId, id);
+    if (existente.completada)
+      throw new ErrorServicio(409, "Una actividad completada no se puede eliminar");
+    await db.delete(actividades).where(eq(actividades.id, id));
   }
 }
-
-export type { Cliente, Actividad };
