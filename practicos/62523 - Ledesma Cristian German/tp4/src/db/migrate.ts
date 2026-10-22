@@ -26,4 +26,4 @@ db.run(sql`
   )
 `);
 
-console.log('Base de datos lista.');
+console.log('Base de datos lista');
