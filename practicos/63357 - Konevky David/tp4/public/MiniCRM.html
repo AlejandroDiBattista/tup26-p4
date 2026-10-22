@@ -71,7 +71,7 @@
     .item-sub { color: var(--muted); font-size: 14px; }
 
     /* Detalle */
-    .detail { padding: 20px 24px; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+    .detail { flex: 1; padding: 20px 24px; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
     .detail-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
     .detail-top h1 { margin: 0; font-size: 30px; }
     .detail-id { color: var(--muted); font-size: 14px; text-align: right; margin-bottom: 8px; }
@@ -82,12 +82,17 @@
     .ficha-row.vacio { color: var(--muted); }
 
     /* Formulario */
-    .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 560px) { .form { grid-template-columns: 1fr; } }
     .form-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
 
     /* Actividades */
     .section-title { margin: 0 0 8px; font-size: 20px; }
-    .acts { border: 1px solid var(--line); border-radius: var(--radius); max-height: 230px; overflow-y: auto; }
+    .detail > * { flex: none; }
+    /* Las actividades se reparten el alto restante y cada lista tiene su scroll; búsqueda y ficha quedan fijas. */
+    .act-sections { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+    .act-section { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+    .acts { flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow-y: auto; }
     .acts.done { background: #f2faf5; border-color: #d3eadb; }
     .act { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
     .act:last-child { border-bottom: 0; }
@@ -297,7 +302,7 @@
 
     function ActividadesLista({ titulo, actividades, completadas }) {
       return (
-        <div>
+        <div className="act-section">
           <h3 className="section-title">{titulo}</h3>
           <div className={'acts' + (completadas ? ' done' : '')}>
             {actividades.length
@@ -324,8 +329,10 @@
             </div>
           </div>
           <ClienteFicha cliente={cliente} />
-          <ActividadesLista titulo="Compromisos" actividades={pendientes} />
-          <ActividadesLista titulo="Actividades completadas" actividades={completadas} completadas />
+          <div className="act-sections">
+            <ActividadesLista titulo="Compromisos" actividades={pendientes} />
+            <ActividadesLista titulo="Actividades completadas" actividades={completadas} completadas />
+          </div>
         </>
       );
     }
@@ -359,7 +366,8 @@
 
       const seleccionar = (id) => { setSelId(id); setModo('ver'); };
 
-      const guardar = (datos) => intentar(async () => {
+      const guardar = (valores) => intentar(async () => {
+        const datos = Object.fromEntries(CAMPOS_CLIENTE.map((f) => [f.name, valores[f.name] ?? '']));
         const guardado = modo === 'nuevo'
           ? await ClientesService.crear(datos)
           : await ClientesService.actualizar(selId, datos);
