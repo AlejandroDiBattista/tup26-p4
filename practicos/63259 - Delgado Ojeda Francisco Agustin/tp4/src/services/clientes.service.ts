@@ -33,13 +33,19 @@ export class Clientes {
     let whereCondition = undefined;
 
     if (buscar && buscar.trim()) {
-      const termino = `%${buscar.trim().toLowerCase()}%`;
-      whereCondition = or(
-        like(sql`lower(${clientes.nombre})`, termino),
-        like(sql`lower(${clientes.email})`, termino),
-        like(sql`lower(${clientes.telefono})`, termino),
-        like(sql`lower(${clientes.domicilio})`, termino)
-      );
+      const palabras = buscar.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      if (palabras.length > 0) {
+        const condiciones = palabras.map((p) => {
+          const termino = `%${p}%`;
+          return or(
+            like(sql`lower(${clientes.nombre})`, termino),
+            like(sql`lower(${clientes.email})`, termino),
+            like(sql`lower(${clientes.telefono})`, termino),
+            like(sql`lower(${clientes.domicilio})`, termino)
+          );
+        });
+        whereCondition = and(...condiciones);
+      }
     }
 
     const todosLosClientes = await db
