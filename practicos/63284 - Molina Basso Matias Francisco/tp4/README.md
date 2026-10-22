@@ -41,6 +41,7 @@ La interfaz separa `ClientesService` y `ActividadesService` del renderizado. Los
 - Buscar en vivo por nombre, apellido, email, teléfono, domicilio, localidad o identificador. Ignora mayúsculas y acentos; permite combinar palabras de distintos campos (por ejemplo `garcia yerba`). Los símbolos `%` y `_` se buscan literalmente. El filtrado se hace en el servicio sobre la agenda, adecuado para este MiniCRM sin paginación.
 - Seleccionar un cliente para consultar su ficha y actividades.
 - Agregar o editar clientes dentro del panel de detalle.
+- **Agregar** y **Editar** comparten un formulario de tres filas: nombre/apellido, email/teléfono y domicilio/localidad, con **Guardar** y **Cancelar** debajo. Guardar usa la API y recarga el maestro y la ficha; Cancelar descarta los cambios sin enviarlos.
 - Agregar y editar actividades pendientes mediante el subformulario del cliente. La descripción es obligatoria; dejar la fecha de compromiso vacía crea una actividad sin fecha.
 - Completar una actividad registra su fecha de ejecución en `fechaFinalizacion` y la vuelve de solo lectura. Las pendientes pueden eliminarse individualmente; las completadas no pueden editarse ni borrarse individualmente.
 - Eliminar un cliente elimina también todas sus actividades, previa confirmación.
