@@ -47,6 +47,7 @@
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 500; }
     .btn:hover { background: #f5f7fa; }
     .btn svg { width: 16px; height: 16px; }
+    .btn-icon { padding: 8px; }
     .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-danger { color: var(--danger); border-color: #f0c4c4; background: #fff7f7; }
@@ -101,7 +102,15 @@
     .act-title { font-weight: 500; }
     .act-sub { color: var(--muted); font-size: 14px; }
     .act-sub.vencida { color: var(--danger); }
-    .check { flex: none; width: 20px; height: 20px; border: 2px solid #8993a4; border-radius: 4px; display: grid; place-items: center; }
+    .check { flex: none; width: 20px; height: 20px; padding: 0; background: #fff; border: 2px solid #8993a4; border-radius: 4px; display: grid; place-items: center; }
+    button.check { cursor: pointer; }
+    button.check:hover { border-color: var(--ok); background: #eaf6ef; }
+    .act-texto { flex: 1; min-width: 0; }
+    .act-acciones { display: flex; gap: 6px; }
+    .act-form { padding: 12px 16px 16px; border: 2px dashed #c4cddb; border-radius: 12px; }
+    .act-form-fila { display: flex; gap: 8px; align-items: center; }
+    .act-form-fila .input-wrap:first-child { flex: 1; min-width: 0; }
+    .act-form input[type=date] { width: 170px; }
     .check.on { background: var(--ok); border-color: var(--ok); color: #fff; }
     .check svg { width: 14px; height: 14px; }
 
@@ -137,6 +146,13 @@
       eliminar: (id) => pedir(`/api/clientes/${id}`, { method: 'DELETE' }),
     };
 
+    const ActividadesService = {
+      crear: (clienteId, datos) => pedir(`/api/clientes/${clienteId}/actividades`, { method: 'POST', body: datos }),
+      actualizar: (clienteId, id, datos) => pedir(`/api/clientes/${clienteId}/actividades/${id}`, { method: 'PUT', body: datos }),
+      completar: (clienteId, id) => pedir(`/api/clientes/${clienteId}/actividades/${id}/completar`, { method: 'POST', body: {} }),
+      eliminar: (clienteId, id) => pedir(`/api/clientes/${clienteId}/actividades/${id}`, { method: 'DELETE' }),
+    };
+
     // ---------- Utilidades ----------
     const nombreCompleto = (c) => `${c.nombre} ${c.apellido}`;
     const iniciales = (c) => (c.nombre[0] + c.apellido[0]).toUpperCase();
@@ -170,7 +186,7 @@
 
     function Button({ variant, icon, children, ...props }) {
       return (
-        <button className={'btn' + (variant ? ` btn-${variant}` : '')} {...props}>
+        <button className={'btn' + (variant ? ` btn-${variant}` : '') + (children ? '' : ' btn-icon')} {...props}>
           {icon && <Icon name={icon} />}{children}
         </button>
       );
@@ -283,39 +299,86 @@
       );
     }
 
-    function ActividadItem({ actividad }) {
-      const { estado, fechaCompromiso, fechaFinalizacion } = actividad;
+    // Las completadas son de solo lectura: sin acciones.
+    function ActividadItem({ actividad, onCompletar, onEditar, onEliminar }) {
+      const { estado, fechaCompromiso, fechaFinalizacion, descripcion } = actividad;
       const completada = estado === 'completada';
       const detalle = completada
         ? `Completada el ${formatoFecha(fechaFinalizacion)}`
         : fechaCompromiso ? formatoFecha(fechaCompromiso) : 'Sin fecha';
       return (
         <div className="act">
-          <span className={'check' + (completada ? ' on' : '')}>{completada && <Icon name="check" />}</span>
-          <div>
-            <div className="act-title">{actividad.descripcion}</div>
+          {completada
+            ? <span className="check on" role="img" aria-label="Completada"><Icon name="check" /></span>
+            : <button type="button" className="check" aria-label={`Completar actividad: ${descripcion}`}
+                title="Completar" onClick={() => onCompletar(actividad)} />}
+          <div className="act-texto">
+            <div className="act-title">{descripcion}</div>
             <div className={'act-sub' + (estado === 'vencida' ? ' vencida' : '')}>
               {detalle}{estado === 'vencida' && ' · Vencido'}
             </div>
           </div>
+          {!completada && (
+            <div className="act-acciones">
+              <Button icon="edit" aria-label={`Editar actividad: ${descripcion}`} title="Editar" onClick={() => onEditar(actividad)} />
+              <Button variant="danger" icon="trash" aria-label={`Borrar actividad: ${descripcion}`} title="Borrar" onClick={() => onEliminar(actividad)} />
+            </div>
+          )}
         </div>
       );
     }
 
-    function ActividadesLista({ titulo, actividades, completadas }) {
+    // Subformulario en una línea, sin etiquetas visibles. Alta, o edición si recibe una actividad.
+    function ActividadForm({ actividad, onSubmit, onCancel }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? '');
+      const [fecha, setFecha] = useState(actividad?.fechaCompromiso ?? '');
+      return (
+        <form className="act-form" onSubmit={(e) => { e.preventDefault(); onSubmit({ descripcion, fechaCompromiso: fecha || null }); }}>
+          <h3 className="section-title">{actividad ? 'Editar actividad' : 'Agregar actividad'}</h3>
+          <div className="act-form-fila">
+            <Input aria-label="Descripción de la actividad" placeholder="Descripción de la actividad" required
+              value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+            <Input type="date" aria-label="Fecha de compromiso (opcional)" title="Fecha de compromiso (opcional)"
+              value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            <Button variant="primary" icon="save" type="submit" aria-label="Guardar actividad" title="Guardar" />
+            <Button icon="x" type="button" aria-label="Cancelar" title="Cancelar" onClick={onCancel} />
+          </div>
+        </form>
+      );
+    }
+
+    function ActividadesLista({ titulo, actividades, completadas, ...acciones }) {
       return (
         <div className={'act-section' + (actividades.length ? '' : ' vacia')}>
           <h3 className="section-title">{titulo}</h3>
           <div className={'acts' + (completadas ? ' done' : '')}>
             {actividades.length
-              ? actividades.map((a) => <ActividadItem key={a.id} actividad={a} />)
+              ? actividades.map((a) => <ActividadItem key={a.id} actividad={a} {...acciones} />)
               : <div className="acts-vacio">{completadas ? 'Sin actividades completadas' : 'Sin compromisos'}</div>}
           </div>
         </div>
       );
     }
 
-    function ClienteDetalle({ cliente, onEditar, onEliminar }) {
+    // onAccion(fn): ejecuta una llamada a la API y refresca el detalle.
+    function ClienteDetalle({ cliente, onEditar, onEliminar, onAccion }) {
+      const [editando, setEditando] = useState(null);
+      const [version, setVersion] = useState(0); // cambia la key del subformulario para limpiarlo
+      const limpiar = () => { setEditando(null); setVersion((v) => v + 1); };
+
+      const guardar = (datos) => {
+        onAccion(() => editando
+          ? ActividadesService.actualizar(cliente.id, editando.id, datos)
+          : ActividadesService.crear(cliente.id, datos));
+        limpiar();
+      };
+      const completar = (a) => onAccion(() => ActividadesService.completar(cliente.id, a.id));
+      const eliminar = (a) => {
+        if (!confirm(`¿Borrar la actividad "${a.descripcion}"?`)) return;
+        if (editando?.id === a.id) limpiar();
+        onAccion(() => ActividadesService.eliminar(cliente.id, a.id));
+      };
+
       // Compromisos: sin fecha, luego vencidos, luego vigentes; con fecha, de la más antigua a la más próxima.
       const grupo = (a) => (!a.fechaCompromiso ? 0 : a.estado === 'vencida' ? 1 : 2);
       const pendientes = cliente.actividades
@@ -337,8 +400,11 @@
             </div>
           </div>
           <ClienteFicha cliente={cliente} />
+          <ActividadForm key={`${editando?.id ?? 'nueva'}-${version}`} actividad={editando}
+            onSubmit={guardar} onCancel={limpiar} />
           <div className="act-sections">
-            <ActividadesLista titulo="Compromisos" actividades={pendientes} />
+            <ActividadesLista titulo="Compromisos" actividades={pendientes}
+              onCompletar={completar} onEditar={setEditando} onEliminar={eliminar} />
             <ActividadesLista titulo="Actividades completadas" actividades={completadas} completadas />
           </div>
         </>
@@ -386,6 +452,11 @@
         await cargarLista();
       });
 
+      const accionActividad = (fn) => intentar(async () => {
+        try { await fn(); setError(''); }
+        finally { setDetalle(await ClientesService.obtener(selId)); }
+      });
+
       const eliminar = () => {
         if (!confirm(`¿Eliminar a ${nombreCompleto(detalle)} y sus actividades?`)) return;
         intentar(async () => {
@@ -422,7 +493,8 @@
           </>
         );
       } else if (detalle) {
-        contenido = <ClienteDetalle cliente={detalle} onEditar={() => setModo('editar')} onEliminar={eliminar} />;
+        contenido = <ClienteDetalle key={detalle.id} cliente={detalle} onEditar={() => setModo('editar')}
+          onEliminar={eliminar} onAccion={accionActividad} />;
       } else {
         contenido = <div className="empty">Seleccioná un cliente para ver su ficha</div>;
       }
