@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MicroCRM · Clientes y actividades</title>
+    <title>MiniCRM · Clientes y actividades</title>
     <script
       crossorigin
       src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"
@@ -23,16 +23,16 @@
         font:
           14px system-ui,
           sans-serif;
-        color: #24364a;
-        background: #f3f5f7;
-        --line: #d8dfe6;
-        --muted: #58697b;
-        --accent: #245d99;
+        color: #0f172a;
+        background: #f5f7fa;
+        --line: #e2e8f0;
+        --muted: #64748b;
+        --accent: #2563eb;
       }
       * {
         box-sizing: border-box;
         scrollbar-width: thin;
-        scrollbar-color: #aab9c7 #f3f5f7;
+        scrollbar-color: #cbd5e1 transparent;
       }
       body {
         margin: 0;
@@ -75,12 +75,17 @@
         min-height: 40px;
         padding: 9px 12px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition:
+          background 160ms ease,
+          border-color 160ms ease,
+          box-shadow 160ms ease;
         background: white;
         color: inherit;
       }
       .button:hover {
-        background: #edf2f7;
+        background: #f1f5f9;
       }
       .button:disabled {
         opacity: 0.55;
@@ -92,10 +97,10 @@
         color: white;
       }
       .primary:hover {
-        background: #194b80;
+        background: #1d4ed8;
       }
       .danger {
-        color: #a42b31;
+        color: #dc2626;
       }
       .icon {
         width: 17px;
@@ -107,8 +112,9 @@
         width: 100%;
         min-width: 0;
         padding: 10px;
-        border: 1px solid #bac6d2;
-        border-radius: 5px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        caret-color: var(--accent);
         background: white;
         color: inherit;
       }
@@ -120,39 +126,42 @@
         color: var(--muted);
       }
       :focus-visible {
-        outline: 3px solid #3483cf;
+        outline: 3px solid #2563eb;
         outline-offset: 2px;
       }
       ::selection {
-        background: #cee3f7;
+        background: #dbeafe;
       }
       .topbar {
-        height: 66px;
+        height: 88px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0 28px;
-        background: #29425e;
-        color: white;
+        background: white;
+        border-bottom: 1px solid var(--line);
       }
       .topbar p {
-        color: #d4e1ed;
+        color: var(--muted);
+        margin-top: 3px;
+        font-size: 13px;
       }
       .workspace {
         flex: 1;
         min-height: 0;
         display: grid;
-        grid-template-columns: 320px minmax(0, 1fr);
-        gap: 16px;
-        padding: 16px;
+        grid-template-columns: 340px minmax(0, 1fr);
+        gap: 24px;
+        padding: 24px;
       }
       .panel {
         min-width: 0;
         min-height: 0;
-        border: 1px solid var(--line);
-        border-radius: 10px;
+        border: 0;
+        border-radius: 16px;
         background: white;
+        box-shadow: 0 4px 24px rgba(15, 23, 42, 0.05);
         overflow: hidden;
       }
       .master {
@@ -201,20 +210,29 @@
       .client {
         width: 100%;
         text-align: left;
-        padding: 17px 20px;
-        min-height: 78px;
+        padding: 12px;
+        min-height: 72px;
         border: 0;
-        border-bottom: 1px solid #edf0f3;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 6px;
+        transition:
+          background 160ms ease,
+          border-color 160ms ease;
         background: white;
         color: inherit;
         overflow-wrap: anywhere;
       }
       .client:hover {
-        background: #f3f6f9;
+        background: #f8fafc;
       }
       .client[aria-current="true"] {
-        background: #e7f0fa;
-        color: #174f84;
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
       }
       .client strong,
       .client small {
@@ -233,7 +251,7 @@
       .detail {
         display: flex;
         flex-direction: column;
-        padding: 26px;
+        padding: 28px;
         gap: 22px;
         overflow: hidden;
       }
@@ -281,8 +299,10 @@
       .facts {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin: 24px 0 0;
+        gap: 18px 24px;
+        margin: 20px 0 0;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
       }
       .facts div {
         min-width: 0;
@@ -329,7 +349,7 @@
       .activity-form {
         background: white;
         padding: 10px;
-        border: 2px dotted #aab9c7;
+        border: 2px dotted #cbd5e1;
         border-radius: 12px;
         flex-shrink: 0;
       }
@@ -365,8 +385,11 @@
         grid-template-columns: 22px minmax(0, 1fr) auto;
         align-items: center;
         gap: 14px;
-        padding: 15px 0;
-        border-bottom: 1px solid #e6ebf0;
+        padding: 14px;
+        margin-bottom: 8px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: white;
       }
       .activity-check {
         width: 18px;
@@ -380,7 +403,7 @@
         cursor: default;
       }
       .activity-check:checked {
-        accent-color: #31664d;
+        accent-color: #16a34a;
       }
       .activity-text {
         flex: 1 1 180px;
@@ -395,8 +418,8 @@
         margin-top: 5px;
       }
       .badge {
-        color: #31664d;
-        background: #edf6f0;
+        color: #15803d;
+        background: #f0fdf4;
         padding: 5px 8px;
         border-radius: 4px;
         font-size: 12px;
@@ -417,13 +440,147 @@
       .back {
         display: none;
       }
-      @media (max-width: 760px) {
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: var(--accent);
+        color: white;
+      }
+      .brand-mark .icon {
+        width: 22px;
+        height: 22px;
+      }
+      .client-list {
+        padding: 10px;
+        overscroll-behavior: contain;
+      }
+      .client-copy {
+        min-width: 0;
+      }
+      .client small {
+        font-size: 12px;
+      }
+      .avatar {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 13px;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .tone-1 {
+        background: #ede9fe;
+        color: #6d28d9;
+      }
+      .tone-2 {
+        background: #ccfbf1;
+        color: #115e59;
+      }
+      .tone-3 {
+        background: #ffedd5;
+        color: #9a3412;
+      }
+      .profile-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+      .profile-title .avatar {
+        width: 48px;
+        height: 48px;
+        font-size: 16px;
+      }
+      .identity {
+        background: #f1f5f9;
+        border-radius: 6px;
+        padding: 5px 9px;
+        font-size: 12px;
+      }
+      .activity-list {
+        padding-right: 5px;
+      }
+      .activity-list h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 20px 0 12px;
+      }
+      .activity-list section:first-child h3 {
+        margin-top: 0;
+      }
+      .activity-list h3 small {
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .completed-group h3 {
+        color: #15803d;
+      }
+      .is-complete {
+        background: #f8fcf9;
+        border-color: #dcfce7;
+      }
+      .is-overdue {
+        background: #fffafa;
+        border-color: #fecaca;
+      }
+      .is-scheduled small {
+        color: #1d4ed8;
+      }
+      .activity small::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      .is-complete small {
+        color: #15803d;
+      }
+      .activity .actions {
+        gap: 5px;
+      }
+      .activity .button {
+        padding: 8px;
+        min-height: 36px;
+      }
+      .button.danger:hover {
+        background: #fef2f2;
+        border-color: #fecaca;
+      }
+      .client:disabled {
+        cursor: wait;
+        opacity: 0.6;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition: none !important;
+        }
+      }
+      @media (max-width: 960px) {
         .topbar {
-          height: 56px;
+          height: 76px;
           padding: 0 18px;
         }
         .topbar p {
-          display: none;
+          font-size: 11px;
         }
         .workspace {
           grid-template-columns: 1fr;
@@ -435,8 +592,8 @@
           display: none;
         }
         .detail {
-          padding: 18px;
-          gap: 18px;
+          padding: 14px;
+          gap: 14px;
         }
         .back {
           display: inline-flex;
@@ -449,11 +606,10 @@
           grid-column: 1;
         }
         .activity .actions {
-          width: 100%;
-          grid-column: 2 / -1;
+          gap: 4px;
         }
         .activity-form-row {
-          grid-template-columns: minmax(0, 1fr) 124px 36px 36px;
+          grid-template-columns: minmax(0, 1fr) 116px 32px 32px;
           gap: 5px;
         }
         .activity-form-row input {
@@ -608,8 +764,15 @@
         return (
           <>
             <header className="topbar">
-              <h1>MicroCRM</h1>
-              <p>Clientes y actividades, en un solo lugar.</p>
+              <div className="brand">
+                <span className="brand-mark" aria-hidden="true">
+                  <Icon name="edit" />
+                </span>
+                <div>
+                  <h1>MiniCRM</h1>
+                  <p>Clientes y actividades, en un solo lugar.</p>
+                </div>
+              </div>
             </header>
             {error && (
               <div className="notice" role="alert">
@@ -642,6 +805,14 @@
         { name: "localidad", label: "Localidad" },
       ];
       const fullName = (client) => `${client.nombre} ${client.apellido}`;
+      function Avatar({ client }) {
+        return (
+          <span className={`avatar tone-${client.id % 4}`} aria-hidden="true">
+            {client.nombre.charAt(0)}
+            {client.apellido.charAt(0)}
+          </span>
+        );
+      }
       const formatDate = (date) =>
         date
           ? new Date(date + "T12:00:00").toLocaleDateString("es-AR")
@@ -691,8 +862,8 @@
               event.preventDefault();
               onSave({
                 descripcion: description,
-                  fechaCompromiso:
-                    event.currentTarget.elements.fechaCompromiso.value || null,
+                fechaCompromiso:
+                  event.currentTarget.elements.fechaCompromiso.value || null,
               });
             }}
           >
@@ -788,8 +959,11 @@
                     disabled={busy}
                     onClick={() => onSelect(client.id)}
                   >
-                    <strong>{fullName(client)}</strong>
-                    <small>{client.email}</small>
+                    <Avatar client={client} />
+                    <span className="client-copy">
+                      <strong>{fullName(client)}</strong>
+                      <small>{client.email}</small>
+                    </span>
                   </button>
                 ))
               ) : (
@@ -814,7 +988,10 @@
         return (
           <div className="profile">
             <div className="profile-header">
-              <h2>{fullName(client)}</h2>
+              <div className="profile-title">
+                <Avatar client={client} />
+                <h2>{fullName(client)}</h2>
+              </div>
               <span
                 className="identity muted"
                 aria-label={`Identificador del cliente ${client.id}`}
@@ -850,7 +1027,9 @@
       }
       function ActivityItem({ activity, onEdit, onComplete, onDelete, busy }) {
         return (
-          <article className="activity">
+          <article
+            className={`activity ${activity.completada ? "is-complete" : activity.vencida ? "is-overdue" : activity.fechaCompromiso ? "is-scheduled" : "is-undated"}`}
+          >
             <input
               className="activity-check"
               type="checkbox"
@@ -866,6 +1045,10 @@
                   ? `Finalizada el ${new Date(activity.fechaFinalizacion).toLocaleString("es-AR")}`
                   : formatDate(activity.fechaCompromiso)}
                 {!activity.completada && activity.vencida && " · Vencida"}
+                {!activity.completada &&
+                  !activity.vencida &&
+                  activity.fechaCompromiso &&
+                  " · Programada"}
               </small>
             </div>
             {activity.completada ? (
@@ -900,7 +1083,10 @@
                 (activity) => activity.completada === done,
               );
               return (
-                <section key={String(done)}>
+                <section
+                  key={String(done)}
+                  className={done ? "completed-group" : "pending-group"}
+                >
                   <h3>
                     {done ? "Actividades completadas" : "Compromisos"}{" "}
                     <small>({items.length})</small>
