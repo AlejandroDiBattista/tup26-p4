@@ -41,7 +41,7 @@ const telefono = z
   .default(null)
   .transform((valor) => valor || null);
 
-const clienteSchema = z
+export const clienteSchema = z
   .object({
     nombre,
     apellido: nombre,
@@ -52,7 +52,7 @@ const clienteSchema = z
   })
   .strict();
 
-const actividadSchema = z
+export const actividadSchema = z
   .object({
     descripcion: z.string().trim().min(1).max(2000),
     fechaCompromiso: z.iso.date().nullable().default(null),

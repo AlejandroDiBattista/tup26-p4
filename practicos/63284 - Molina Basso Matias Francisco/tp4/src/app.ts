@@ -2,11 +2,13 @@ import express, { type ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 import { clientesRouter } from "./routes/clientes.js";
 import { ErrorHttp } from "./services/clientes.js";
+import { mcpRouter } from "./mcp/router.js";
 
 export const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "32kb" }));
 app.use("/api/clientes", clientesRouter);
+app.use("/mcp", mcpRouter);
 app.get("/", (_req, res) => res.redirect("/microcrm.html"));
 app.use(express.static("public"));
 app.use((_req, res) => {

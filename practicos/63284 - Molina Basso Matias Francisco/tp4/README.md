@@ -143,3 +143,74 @@ Todos los cuerpos son JSON. Los errores devuelven `{ "error": "mensaje" }`, con 
 - `PATCH /api/clientes/:clienteId/actividades/:actividadId/completar`: completar, sin cuerpo.
 
 Cliente: `nombre`, `apellido` y `email` obligatorios; `domicilio`, `localidad` y `telefono` opcionales (por defecto `null`). Actividad: `descripcion` obligatoria y `fechaCompromiso` (`AAAA-MM-DD` o `null`) opcional. `fechaFinalizacion` es de solo lectura y se registra al completar. Una actualización de actividad completada devuelve `409`; datos inválidos `400`; recursos inexistentes `404`.
+
+## Servidor MCP — Streamable HTTP
+
+El SDK oficial `@modelcontextprotocol/sdk` expone **http://localhost:3000/mcp** dentro del mismo Express. Se inicia con `npm run dev`, o con `npm run build` y `npm start`. Requiere la misma configuración y migraciones indicadas al inicio: no hay otro proceso ni otra base de datos.
+
+En un cliente compatible, elegí transporte **Streamable HTTP** y URL `http://localhost:3000/mcp` (ajustar puerto si corresponde). No es un transporte stdio ni el antiguo HTTP+SSE. El cliente realiza `initialize`, envía `notifications/initialized`, descubre con `tools/list` y ejecuta con `tools/call`.
+
+Se utiliza el modo **stateless** oficial: no se emite `Mcp-Session-Id` ni se almacenan sesiones. Cada POST crea un servidor y transporte que se cierran al terminar la respuesta. Las respuestas son JSON; GET y DELETE devuelven 405 porque no hay canal SSE persistente ni sesiones que terminar. Los clientes deben enviar `Content-Type: application/json` y `Accept: application/json, text/event-stream`, y negociar la versión mediante el SDK.
+
+Herramientas disponibles:
+
+El endpoint rechaza con 403 las peticiones que incluyen un `Origin` diferente del origen del servidor. Los clientes SDK sin cabecera `Origin` funcionan normalmente. Si se despliega detrás de un proxy HTTPS, su configuración debe conservar correctamente el protocolo y host de la petición.
+
+- `listar_clientes`: `{ "busqueda": "garcia yerba" }`; búsqueda opcional por cualquier campo.
+- `obtener_cliente` y `eliminar_cliente`: `{ "clienteId": 1 }`. Eliminar un cliente elimina también sus actividades.
+- `agregar_cliente`: `{ "datos": { "nombre": "Ana", "apellido": "García", "email": "ana@example.com" } }`.
+- `editar_cliente`: `{ "clienteId": 1, "datos": { "nombre": "Ana", "apellido": "García", "email": "nuevo@example.com" } }`.
+- `listar_actividades`: `{ "clienteId": 1 }`.
+- `obtener_actividad`, `eliminar_actividad` y `completar_actividad`: `{ "clienteId": 1, "actividadId": 2 }`.
+- `agregar_actividad`: `{ "clienteId": 1, "datos": { "descripcion": "Llamar", "fechaCompromiso": null } }`.
+- `editar_actividad`: `{ "clienteId": 1, "actividadId": 2, "datos": { "descripcion": "Enviar propuesta", "fechaCompromiso": "2026-12-01" } }`.
+
+Los identificadores deben ser enteros positivos. `datos` utiliza los mismos esquemas Zod que el servicio REST, incluidos campos opcionales, fechas válidas y normalización. Las ediciones reemplazan los campos editables: los opcionales omitidos quedan en `null`. `fechaFinalizacion` no se acepta como entrada; se asigna al completar. Cada actividad debe pertenecer al cliente indicado y las completadas no pueden editarse ni eliminarse individualmente.
+
+Ejemplo con el cliente del SDK instalado (guardar como `ejemplo-mcp.mjs` en la raíz y ejecutar `node ejemplo-mcp.mjs` con el servidor iniciado):
+
+```js
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const client = new Client({ name: "ejemplo", version: "1.0.0" });
+try {
+  await client.connect(new StreamableHTTPClientTransport(new URL("http://localhost:3000/mcp")));
+  console.log(await client.listTools());
+  const result = await client.callTool({
+    name: "listar_clientes",
+    arguments: { busqueda: "garcia" },
+  });
+  console.log(result);
+} finally {
+  await client.close();
+}
+```
+
+Las herramientas devuelven `content` de tipo `text` con JSON serializado; una eliminación exitosa devuelve `{"ok":true}`. Los fallos de herramientas usan `isError: true` y un mensaje: por ejemplo «Cliente no encontrado» o «La actividad completada es de solo lectura». Los parámetros inválidos son rechazados por el SDK con detalles del campo. Los errores de protocolo se devuelven como errores JSON-RPC. No hay autenticación incorporada; al igual que REST, el endpoint debe utilizarse en un entorno de confianza o detrás del control de acceso del despliegue.
+
+`src/mcp/server.ts` registra las herramientas y delega exclusivamente en `Clientes`; `src/mcp/router.ts` gestiona el transporte HTTP.
+
+### Elegir REST o MCP desde la página
+
+Iniciá con `npm run dev` y abrí `http://localhost:3000/microcrm.html`. El selector **Conexión** del encabezado comienza en **API REST**. Elegí **MCP** para utilizar las mismas operaciones de clientes y actividades mediante las herramientas de `/mcp`. Ambos modos comparten datos, componentes y diseño Modern Light.
+
+El módulo independiente `mcp-module`, embebido en el HTML, carga bajo demanda el cliente oficial SDK 1.32.1 desde esm.sh. El SDK realiza la inicialización MCP, notifica `initialized`, negocia la versión, gestiona encabezados y respuestas JSON/SSE. El adaptador transforma los resultados de las herramientas al formato que ya utilizan los componentes React, sin recurrir a REST cuando MCP falla.
+
+Al cambiar de modo se recargan los datos conservando la búsqueda y el cliente seleccionado si aún existe. El selector se deshabilita durante operaciones y mientras hay un formulario en edición o datos sin guardar: primero hay que guardar o cancelar. Si falla la conexión al destino, se muestra el error y permanece el modo anterior. La búsqueda cancela peticiones anteriores y descarta resultados obsoletos.
+
+Se requiere acceso a los CDN y servir la página desde Express, en el mismo origen que `/mcp`; no abrir el HTML con `file://`. No hace falta otro proceso ni configurar otra base.
+
+**Compatibilidad Zod:** las dos importaciones del SDK fijan `deps=zod@4.1.12`. Sin ese parámetro, esm.sh resolvía el rango del SDK a Zod 4.6.7 y su módulo `v4.mjs` exportaba únicamente `default` y `z`, sin el export nombrado `custom`. El SDK importa `* as z` y ejecuta `z.custom` al construir `AssertObjectSchema`, por lo que fallaba antes de inicializar MCP con `a.custom is not a function` (la letra cambia con la minificación). Esta fijación afecta solamente al cliente del navegador; no cambia los esquemas, datos ni dependencias del servidor.
+
+### Verificación MCP y REST
+
+```powershell
+npm run check
+npm run build
+npm test
+```
+
+`tests/mcp.test.ts` inicia Express en un puerto aleatorio y conecta un cliente MCP real del SDK. Verifica inicialización, descubrimiento de las 11 herramientas, CRUD, búsqueda, pertenencia, finalización, errores y lectura cruzada REST/MCP. También verifica que ambas páginas HTML se sirven y que Modern Light conserva REST y Babel classic. Junto a `tests/api.test.ts`, utiliza SQLite en memoria con migraciones, sin modificar `local.db` ni Turso.
+
+Referencia: [documentación oficial del SDK TypeScript — servidor y Streamable HTTP](https://ts.sdk.modelcontextprotocol.io/server).

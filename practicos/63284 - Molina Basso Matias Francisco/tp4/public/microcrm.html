@@ -440,6 +440,38 @@
       .back {
         display: none;
       }
+      .transport-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .transport-control select {
+        font: inherit;
+        font-size: 13px;
+        color: #0f172a;
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 9px;
+        cursor: pointer;
+      }
+      .transport-control select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      @media (max-width: 540px) {
+        .transport-control > span {
+          display: none;
+        }
+        .topbar .brand p {
+          display: none;
+        }
+        .topbar .brand {
+          gap: 8px;
+        }
+      }
       .brand {
         display: flex;
         align-items: center;
@@ -625,6 +657,109 @@
       </p>
     </div>
     <noscript>Activá JavaScript para utilizar MicroCRM.</noscript>
+    <script id="mcp-module">
+      // Adaptador independiente de React. El SDK implementa la negociación,
+      // los encabezados MCP, JSON/SSE y la correlación de respuestas JSON-RPC.
+      window.crearClienteMcp = function ({ cargarSdk, url = "/mcp" } = {}) {
+        let conexion;
+        const cargar =
+          cargarSdk ||
+          (() =>
+            Promise.all([
+              import(
+                "https://esm.sh/@modelcontextprotocol/sdk@1.32.1/client/index.js?bundle&deps=zod@4.1.12"
+              ),
+              import(
+                "https://esm.sh/@modelcontextprotocol/sdk@1.32.1/client/streamableHttp.js?bundle&deps=zod@4.1.12"
+              ),
+            ]));
+        async function conectar() {
+          if (!conexion) {
+            conexion = (async () => {
+              const [{ Client }, { StreamableHTTPClientTransport }] =
+                await cargar();
+              const client = new Client({
+                name: "minicrm-web",
+                version: "1.0.0",
+              });
+              try {
+                await client.connect(
+                  new StreamableHTTPClientTransport(
+                    new URL(url, location.href),
+                  ),
+                );
+                await client.listTools();
+                return client;
+              } catch (error) {
+                await client.close();
+                throw error;
+              }
+            })().catch((error) => {
+              conexion = null;
+              throw error;
+            });
+          }
+          return conexion;
+        }
+        async function llamar(name, args, signal) {
+          const client = await conectar();
+          signal?.throwIfAborted();
+          const result = await client.callTool(
+            { name, arguments: args },
+            undefined,
+            { signal },
+          );
+          const text = result.content
+            .filter((item) => item.type === "text")
+            .map((item) => item.text)
+            .join("\n");
+          if (result.isError)
+            throw new Error(text || "No se pudo ejecutar la herramienta MCP.");
+          try {
+            return JSON.parse(text);
+          } catch {
+            throw new Error(
+              "El servidor MCP devolvió una respuesta no válida.",
+            );
+          }
+        }
+        return {
+          conectar,
+          clientes: {
+            listar: (busqueda, signal) =>
+              llamar("listar_clientes", { busqueda }, signal),
+            obtener: (clienteId) => llamar("obtener_cliente", { clienteId }),
+            guardar: (clienteId, datos) =>
+              llamar(
+                clienteId ? "editar_cliente" : "agregar_cliente",
+                clienteId ? { clienteId, datos } : { datos },
+              ),
+            eliminar: (clienteId) => llamar("eliminar_cliente", { clienteId }),
+          },
+          actividades: {
+            listar: (clienteId) => llamar("listar_actividades", { clienteId }),
+            obtener: (clienteId, actividadId) =>
+              llamar("obtener_actividad", { clienteId, actividadId }),
+            guardar: (clienteId, actividadId, datos) =>
+              llamar(
+                actividadId ? "editar_actividad" : "agregar_actividad",
+                actividadId
+                  ? { clienteId, actividadId, datos }
+                  : { clienteId, datos },
+              ),
+            eliminar: (clienteId, actividadId) =>
+              llamar("eliminar_actividad", { clienteId, actividadId }),
+            completar: (clienteId, actividadId) =>
+              llamar("completar_actividad", { clienteId, actividadId }),
+          },
+          async cerrar() {
+            const actual = conexion;
+            conexion = null;
+            if (actual) await (await actual).close();
+          },
+        };
+      };
+    </script>
     <script type="text/babel" data-presets="microcrm">
       const { useState, useEffect, useRef, useId } = React;
 
@@ -641,7 +776,7 @@
           throw new Error([data.error, ...(data.detalles || [])].join(" "));
         return data;
       }
-      const ClientesService = {
+      const ClientesRest = {
         listar: (query, signal) =>
           request("?q=" + encodeURIComponent(query), { signal }),
         obtener: (id) => request("/" + id),
@@ -649,7 +784,7 @@
           request(id ? "/" + id : "", { method: id ? "PUT" : "POST", body }),
         eliminar: (id) => request("/" + id, { method: "DELETE" }),
       };
-      const ActividadesService = {
+      const ActividadesRest = {
         guardar: (clienteId, id, body) =>
           request(`/${clienteId}/actividades${id ? "/" + id : ""}`, {
             method: id ? "PUT" : "POST",
@@ -661,6 +796,12 @@
           }),
         eliminar: (clienteId, id) =>
           request(`/${clienteId}/actividades/${id}`, { method: "DELETE" }),
+      };
+
+      const mcp = window.crearClienteMcp();
+      const servicios = {
+        rest: { clientes: ClientesRest, actividades: ActividadesRest },
+        mcp,
       };
 
       // Controles y estructura reutilizables.
@@ -760,7 +901,17 @@
           </div>
         );
       }
-      function Layout({ master, children, open, error, onCloseError }) {
+      function Layout({
+        master,
+        children,
+        open,
+        error,
+        onCloseError,
+        transport,
+        onTransport,
+        transportDisabled,
+        onDraft,
+      }) {
         return (
           <>
             <header className="topbar">
@@ -773,6 +924,23 @@
                   <p>Clientes y actividades, en un solo lugar.</p>
                 </div>
               </div>
+              <label className="transport-control">
+                <span>Conexión</span>
+                <select
+                  aria-label="Conexión de datos"
+                  value={transport}
+                  onChange={(event) => onTransport(event.target.value)}
+                  disabled={transportDisabled}
+                  title={
+                    transportDisabled
+                      ? "Guardá o cancelá el formulario y esperá a que termine la operación."
+                      : "Elegir API REST o MCP"
+                  }
+                >
+                  <option value="rest">API REST</option>
+                  <option value="mcp">MCP</option>
+                </select>
+              </label>
             </header>
             {error && (
               <div className="notice" role="alert">
@@ -787,6 +955,7 @@
               <section
                 className="panel detail"
                 aria-label="Detalle del cliente"
+                onInput={onDraft}
               >
                 {children}
               </section>
@@ -883,6 +1052,7 @@
                 title="Fecha de compromiso (opcional)"
                 type="date"
                 value={date}
+                onInput={(event) => setDate(event.currentTarget.value)}
                 onChange={(event) => setDate(event.target.value)}
               />
               <Button
@@ -1154,6 +1324,10 @@
 
       // Coordinación de estado y servicios. Las reglas de negocio viven en la API.
       function App() {
+        const [transport, setTransport] = useState("rest");
+        const [draftDirty, setDraftDirty] = useState(false);
+        const { clientes: ClientesService, actividades: ActividadesService } =
+          servicios[transport];
         const [clients, setClients] = useState([]),
           [query, setQuery] = useState("");
         const [selected, setSelected] = useState(null),
@@ -1174,9 +1348,14 @@
           const timer = setTimeout(
             () =>
               ClientesService.listar(query, controller.signal)
-                .then(setClients)
+                .then((data) => {
+                  if (!controller.signal.aborted) setClients(data);
+                })
                 .catch((error) => {
-                  if (error.name !== "AbortError") {
+                  if (
+                    !controller.signal.aborted &&
+                    error.name !== "AbortError"
+                  ) {
                     setError(error.message);
                     setListFailed(true);
                   }
@@ -1190,9 +1369,9 @@
             clearTimeout(timer);
             controller.abort();
           };
-        }, [query, revision]);
+        }, [query, revision, transport]);
         const canLeave = () =>
-          (mode === "view" && !activity) ||
+          (mode === "view" && !activity && !draftDirty) ||
           confirm("¿Descartar los cambios del formulario?");
         async function loadClient(id) {
           const token = ++selectionRequest.current;
@@ -1203,6 +1382,7 @@
               setSelected(client);
               setMode("view");
               setActivity(null);
+              setDraftDirty(false);
             }
           } finally {
             if (token === selectionRequest.current) setDetailLoading(false);
@@ -1222,6 +1402,7 @@
           setDetailLoading(false);
           setSelected(null);
           setActivity(null);
+          setDraftDirty(false);
           setMode(mode);
         }
         function createClient() {
@@ -1277,8 +1458,43 @@
           if (confirm("¿Eliminar esta actividad pendiente?"))
             changeActivity(() => ActividadesService.eliminar(selected.id, id));
         }
+        function changeTransport(next) {
+          if (
+            busy ||
+            detailLoading ||
+            mode !== "view" ||
+            activity ||
+            draftDirty
+          )
+            return;
+          perform(async () => {
+            const service = servicios[next];
+            // No cambiar la conexión activa hasta que el destino responda.
+            await service.clientes.listar(query);
+            let detail = null;
+            if (selected) {
+              const all = await service.clientes.listar("");
+              if (all.some((client) => client.id === selected.id)) {
+                detail = await service.clientes.obtener(selected.id);
+              }
+            }
+            selectionRequest.current++;
+            setSelected(detail);
+            setTransport(next);
+          });
+        }
         return (
           <Layout
+            transport={transport}
+            onTransport={changeTransport}
+            transportDisabled={
+              busy ||
+              detailLoading ||
+              mode !== "view" ||
+              Boolean(activity) ||
+              draftDirty
+            }
+            onDraft={() => setDraftDirty(true)}
             open={Boolean(selected || mode === "new" || detailLoading)}
             error={error}
             onCloseError={() => setError("")}
@@ -1317,7 +1533,10 @@
                 client={mode === "edit" ? selected : null}
                 busy={busy}
                 onSave={saveClient}
-                onCancel={() => setMode("view")}
+                onCancel={() => {
+                  setMode("view");
+                  setDraftDirty(false);
+                }}
               />
             ) : selected ? (
               <ClientDetail
