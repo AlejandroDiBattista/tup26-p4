@@ -327,12 +327,20 @@
         padding-top: 20px;
       }
       .activity-form {
-        background: #f3f6f9;
-        padding: 16px;
-        border-radius: 6px;
-        flex-shrink: 1;
-        max-height: 65%;
-        overflow-y: auto;
+        background: white;
+        padding: 10px;
+        border: 2px dotted #aab9c7;
+        border-radius: 12px;
+        flex-shrink: 0;
+      }
+      .activity-form-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 140px 40px 40px;
+        gap: 8px;
+        align-items: center;
+      }
+      .activity-form-row .button {
+        padding: 8px;
       }
       .activity-area > .row {
         flex-shrink: 0;
@@ -444,6 +452,13 @@
           width: 100%;
           grid-column: 2 / -1;
         }
+        .activity-form-row {
+          grid-template-columns: minmax(0, 1fr) 124px 36px 36px;
+          gap: 5px;
+        }
+        .activity-form-row input {
+          padding: 8px 4px;
+        }
       }
     </style>
   </head>
@@ -501,6 +516,7 @@
           check: "m5 12 4 4L19 6",
           back: "m12 5-7 7 7 7M5 12h15",
           save: "M5 3h12l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8",
+          cancel: "m6 6 12 12M18 6 6 18",
         };
         return (
           <svg
@@ -662,39 +678,57 @@
           </Form>
         );
       }
-      function ActivityForm({ activity, onSave, ...props }) {
+      function ActivityForm({ activity, onSave, onCancel, busy }) {
         const [description, setDescription] = useState(
           activity.descripcion || "",
         );
         const [date, setDate] = useState(activity.fechaCompromiso || "");
         return (
-          <Form
-            title={activity.id ? "Editar actividad" : "Nueva actividad"}
+          <form
+            aria-label={activity.id ? "Editar actividad" : "Nueva actividad"}
             className="activity-form"
-            onSubmit={() =>
+            onSubmit={(event) => {
+              event.preventDefault();
               onSave({
                 descripcion: description,
-                fechaCompromiso: date || null,
-              })
-            }
-            submitLabel="Guardar actividad"
-            {...props}
+                  fechaCompromiso:
+                    event.currentTarget.elements.fechaCompromiso.value || null,
+              });
+            }}
           >
-            <Field
-              label="Descripción"
-              value={description}
-              required
-              autoFocus
-              maxLength={2000}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-            <Field
-              label="Fecha de compromiso (opcional)"
-              type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
-          </Form>
+            <fieldset className="activity-form-row" disabled={busy}>
+              <input
+                aria-label="Descripción de la actividad"
+                placeholder="Descripción de la actividad"
+                value={description}
+                required
+                autoFocus={Boolean(activity.id)}
+                maxLength={2000}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+              <input
+                aria-label="Fecha de compromiso (opcional)"
+                name="fechaCompromiso"
+                title="Fecha de compromiso (opcional)"
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                icon="save"
+                aria-label="Guardar actividad"
+                title="Guardar actividad"
+              />
+              <Button
+                icon="cancel"
+                onClick={onCancel}
+                aria-label="Cancelar actividad"
+                title="Cancelar actividad"
+              />
+            </fieldset>
+          </form>
         );
       }
       function ClientList({
@@ -781,7 +815,12 @@
           <div className="profile">
             <div className="profile-header">
               <h2>{fullName(client)}</h2>
-              <span className="identity muted" aria-label={`Identificador del cliente ${client.id}`}>#{client.id}</span>
+              <span
+                className="identity muted"
+                aria-label={`Identificador del cliente ${client.id}`}
+              >
+                #{client.id}
+              </span>
               <div className="actions">
                 <Button icon="edit" disabled={busy} onClick={onEdit}>
                   Editar
@@ -817,7 +856,7 @@
               type="checkbox"
               checked={activity.completada}
               disabled={busy || activity.completada}
-              aria-label={`${activity.completada ? 'Completada' : 'Completar'}: ${activity.descripcion}`}
+              aria-label={`${activity.completada ? "Completada" : "Completar"}: ${activity.descripcion}`}
               onChange={() => onComplete(activity.id)}
             />
             <div className="activity-text">
@@ -835,19 +874,19 @@
               <div className="actions">
                 <Button
                   icon="edit"
+                  aria-label={`Editar actividad: ${activity.descripcion}`}
+                  title="Editar actividad"
                   disabled={busy}
                   onClick={() => onEdit(activity)}
-                >
-                  Editar
-                </Button>
+                />
                 <Button
                   icon="trash"
                   variant="danger"
+                  aria-label={`Borrar actividad: ${activity.descripcion}`}
+                  title="Borrar actividad"
                   disabled={busy}
                   onClick={() => onDelete(activity.id)}
-                >
-                  Eliminar
-                </Button>
+                />
               </div>
             )}
           </article>
@@ -895,6 +934,7 @@
         onEdit,
         onDelete,
         onSaveActivity,
+        onCancelActivity,
         onComplete,
         onDeleteActivity,
       }) {
@@ -907,25 +947,13 @@
               onDelete={onDelete}
             />
             <div className="activity-area">
-              <div className="row">
-                <h3>Actividades</h3>
-                <Button
-                  icon="add"
-                  disabled={busy}
-                  onClick={() => setActivity({})}
-                >
-                  Agregar actividad
-                </Button>
-              </div>
-              {activity && (
-                <ActivityForm
-                  key={activity.id || "new"}
-                  activity={activity}
-                  busy={busy}
-                  onSave={onSaveActivity}
-                  onCancel={() => setActivity(null)}
-                />
-              )}
+              <ActivityForm
+                key={activity?.id || "new"}
+                activity={activity || {}}
+                busy={busy}
+                onSave={onSaveActivity}
+                onCancel={onCancelActivity}
+              />
               <ActivityList
                 activities={client.actividades}
                 busy={busy}
@@ -1124,7 +1152,7 @@
                   changeActivity(() =>
                     ActividadesService.guardar(
                       selected.id,
-                      activity.id,
+                      activity?.id,
                       values,
                     ),
                   )
@@ -1133,6 +1161,12 @@
                   changeActivity(() =>
                     ActividadesService.completar(selected.id, id),
                   )
+                }
+                onCancelActivity={() =>
+                  perform(async () => {
+                    setActivity(null);
+                    await loadClient(selected.id);
+                  })
                 }
                 onDeleteActivity={deleteActivity}
               />
