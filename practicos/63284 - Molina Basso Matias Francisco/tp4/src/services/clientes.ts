@@ -94,6 +94,8 @@ export class Clientes {
       .select()
       .from(actividades)
       .where(eq(actividades.clienteId, clienteId))
+      // SQLite ordena NULL primero. Entre pendientes, la fecha ascendente deja
+      // primero las vencidas y luego las de hoy/futuras, sin grupos persistidos.
       .orderBy(
         sql`${actividades.fechaFinalizacion} is not null`,
         asc(actividades.fechaCompromiso),

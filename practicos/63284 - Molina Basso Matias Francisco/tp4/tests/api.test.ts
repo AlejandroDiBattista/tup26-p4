@@ -445,6 +445,22 @@ test("CRUD de actividades: listar, obtener y borrar pendientes, respetando perte
   );
 });
 
+test("compromisos: sin fecha, vencidos ascendentes y actuales/futuros ascendentes", async () => {
+  const cliente = await Clientes.crear({ nombre: "Orden", apellido: "Actividades", email: "orden@test.example" });
+  const hoy = fechaHoy();
+  const fechas = ["2999-12-31", "2001-01-01", null, hoy, "2000-01-01", "2999-01-01", null];
+  for (const [indice, fechaCompromiso] of fechas.entries()) {
+    await Clientes.agregarActividad(cliente.id, { descripcion: `Actividad ${indice}`, fechaCompromiso });
+  }
+  const completa = await Clientes.agregarActividad(cliente.id, { descripcion: "Completada", fechaCompromiso: null });
+  await Clientes.completarActividad(cliente.id, completa.id);
+  const lista = (await request(`/${cliente.id}/actividades`)).data;
+  assert.deepEqual(lista.filter((a: { completada: boolean }) => !a.completada).map((a: { fechaCompromiso: string | null }) => a.fechaCompromiso),
+    [null, null, "2000-01-01", "2001-01-01", hoy, "2999-01-01", "2999-12-31"]);
+  assert.deepEqual(lista.map((a: { vencida: boolean }) => a.vencida), [false, false, true, true, false, false, false, false]);
+  assert.equal(lista.at(-1).id, completa.id);
+});
+
 test("vencimiento: ayer, hoy, mañana, sin fecha y medianoche de Argentina", () => {
   assert.equal(fechaHoy(new Date("2026-10-21T02:59:59Z")), "2026-10-20");
   assert.equal(fechaHoy(new Date("2026-10-21T03:00:00Z")), "2026-10-21");

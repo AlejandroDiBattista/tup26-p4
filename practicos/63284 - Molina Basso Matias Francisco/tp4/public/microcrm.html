@@ -346,13 +346,33 @@
       .activity-list h3 {
         margin: 14px 0 8px;
       }
+      .activity-empty {
+        margin: 0;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--muted);
+      }
       .activity {
-        display: flex;
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
         align-items: center;
         gap: 14px;
         padding: 15px 0;
         border-bottom: 1px solid #e6ebf0;
-        flex-wrap: wrap;
+      }
+      .activity-check {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        padding: 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+      .activity-check:disabled {
+        cursor: default;
+      }
+      .activity-check:checked {
+        accent-color: #31664d;
       }
       .activity-text {
         flex: 1 1 180px;
@@ -422,6 +442,7 @@
         }
         .activity .actions {
           width: 100%;
+          grid-column: 2 / -1;
         }
       }
     </style>
@@ -791,18 +812,22 @@
       function ActivityItem({ activity, onEdit, onComplete, onDelete, busy }) {
         return (
           <article className="activity">
+            <input
+              className="activity-check"
+              type="checkbox"
+              checked={activity.completada}
+              disabled={busy || activity.completada}
+              aria-label={`${activity.completada ? 'Completada' : 'Completar'}: ${activity.descripcion}`}
+              onChange={() => onComplete(activity.id)}
+            />
             <div className="activity-text">
               <p>{activity.descripcion}</p>
               <small className={activity.vencida ? "danger" : ""}>
-                {formatDate(activity.fechaCompromiso)}
-                {activity.vencida && " · Vencida"}
+                {activity.completada
+                  ? `Finalizada el ${new Date(activity.fechaFinalizacion).toLocaleString("es-AR")}`
+                  : formatDate(activity.fechaCompromiso)}
+                {!activity.completada && activity.vencida && " · Vencida"}
               </small>
-              {activity.completada && (
-                <small>
-                  Finalizada el{" "}
-                  {new Date(activity.fechaFinalizacion).toLocaleString("es-AR")}
-                </small>
-              )}
             </div>
             {activity.completada ? (
               <span className="badge">Completada</span>
@@ -814,13 +839,6 @@
                   onClick={() => onEdit(activity)}
                 >
                   Editar
-                </Button>
-                <Button
-                  icon="check"
-                  disabled={busy}
-                  onClick={() => onComplete(activity.id)}
-                >
-                  Completar
                 </Button>
                 <Button
                   icon="trash"
@@ -845,7 +863,7 @@
               return (
                 <section key={String(done)}>
                   <h3>
-                    {done ? "Completadas" : "Compromisos"}{" "}
+                    {done ? "Actividades completadas" : "Compromisos"}{" "}
                     <small>({items.length})</small>
                   </h3>
                   {items.length ? (
@@ -857,9 +875,9 @@
                       />
                     ))
                   ) : (
-                    <p className="muted">
+                    <p className="activity-empty">
                       {done
-                        ? "Todavía no hay actividades completadas."
+                        ? "Sin actividades completadas."
                         : "No hay compromisos pendientes."}
                     </p>
                   )}
