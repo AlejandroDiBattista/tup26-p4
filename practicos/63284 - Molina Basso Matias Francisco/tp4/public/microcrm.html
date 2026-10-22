@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MicroCRM · Clientes y actividades</title>
+    <script
+      crossorigin
+      src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script>
+      Babel.registerPreset("microcrm", {
+        presets: [[Babel.availablePresets.react, { runtime: "classic" }]],
+      });
+    </script>
+    <style>
+      :root {
+        font:
+          14px system-ui,
+          sans-serif;
+        color: #24364a;
+        background: #f3f5f7;
+        --line: #d8dfe6;
+        --muted: #58697b;
+        --accent: #245d99;
+      }
+      * {
+        box-sizing: border-box;
+        scrollbar-width: thin;
+        scrollbar-color: #aab9c7 #f3f5f7;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      #root {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1 {
+        font-size: 23px;
+      }
+      h2 {
+        font-size: 24px;
+        letter-spacing: -0.025em;
+      }
+      h3 {
+        font-size: 16px;
+      }
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 40px;
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: white;
+        color: inherit;
+      }
+      .button:hover {
+        background: #edf2f7;
+      }
+      .button:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+      .primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+      .primary:hover {
+        background: #194b80;
+      }
+      .danger {
+        color: #a42b31;
+      }
+      .icon {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
+      }
+      input,
+      textarea {
+        width: 100%;
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid #bac6d2;
+        border-radius: 5px;
+        background: white;
+        color: inherit;
+      }
+      textarea {
+        min-height: 75px;
+        resize: vertical;
+      }
+      input::placeholder {
+        color: var(--muted);
+      }
+      :focus-visible {
+        outline: 3px solid #3483cf;
+        outline-offset: 2px;
+      }
+      ::selection {
+        background: #cee3f7;
+      }
+      .topbar {
+        height: 66px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        background: #29425e;
+        color: white;
+      }
+      .topbar p {
+        color: #d4e1ed;
+      }
+      .workspace {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+      }
+      .panel {
+        min-width: 0;
+        min-height: 0;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: white;
+        overflow: hidden;
+      }
+      .master {
+        display: flex;
+        flex-direction: column;
+      }
+      .master-head {
+        flex-shrink: 0;
+        padding: 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .master h2 {
+        font-size: 19px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 13px;
+        min-width: 0;
+      }
+      .search {
+        margin-top: 18px;
+      }
+      .muted,
+      small {
+        color: var(--muted);
+      }
+      .client-list {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+      }
+      .client {
+        width: 100%;
+        text-align: left;
+        padding: 17px 20px;
+        min-height: 78px;
+        border: 0;
+        border-bottom: 1px solid #edf0f3;
+        background: white;
+        color: inherit;
+        overflow-wrap: anywhere;
+      }
+      .client:hover {
+        background: #f3f6f9;
+      }
+      .client[aria-current="true"] {
+        background: #e7f0fa;
+        color: #174f84;
+      }
+      .client strong,
+      .client small {
+        display: block;
+      }
+      .client small {
+        margin-top: 4px;
+      }
+      .count {
+        flex-shrink: 0;
+        padding: 12px 20px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .detail {
+        display: flex;
+        flex-direction: column;
+        padding: 26px;
+        gap: 22px;
+        overflow: hidden;
+      }
+      .detail > form {
+        min-height: 0;
+        overflow-y: auto;
+      }
+      .detail > .back {
+        flex-shrink: 0;
+      }
+      .empty {
+        margin: auto;
+        padding: 35px 22px;
+        text-align: center;
+        max-width: 440px;
+      }
+      .empty p {
+        margin: 12px 0 20px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .profile {
+        flex-shrink: 0;
+        max-height: 50%;
+        overflow-y: auto;
+      }
+      .profile-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 12px;
+      }
+      .profile-header .actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+      .profile h2 {
+        overflow-wrap: anywhere;
+      }
+      .identity {
+        justify-self: end;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 24px 0 0;
+      }
+      .facts div {
+        min-width: 0;
+      }
+      .facts dt {
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+      .facts dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      .form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .wide {
+        grid-column: 1/-1;
+      }
+      fieldset {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        min-width: 0;
+      }
+      .activity-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+        overflow: hidden;
+        border-top: 1px solid var(--line);
+        padding-top: 20px;
+      }
+      .activity-form {
+        background: #f3f6f9;
+        padding: 16px;
+        border-radius: 6px;
+        flex-shrink: 1;
+        max-height: 65%;
+        overflow-y: auto;
+      }
+      .activity-area > .row {
+        flex-shrink: 0;
+      }
+      .activity-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      .activity-list h3 {
+        margin: 14px 0 8px;
+      }
+      .activity {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 0;
+        border-bottom: 1px solid #e6ebf0;
+        flex-wrap: wrap;
+      }
+      .activity-text {
+        flex: 1 1 180px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .activity-text p {
+        white-space: pre-wrap;
+      }
+      .activity small {
+        display: block;
+        margin-top: 5px;
+      }
+      .badge {
+        color: #31664d;
+        background: #edf6f0;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      .notice {
+        padding: 10px 24px;
+        background: #fff0ee;
+        color: #8c272b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .loading {
+        padding: 24px;
+        color: var(--muted);
+      }
+      .back {
+        display: none;
+      }
+      @media (max-width: 760px) {
+        .topbar {
+          height: 56px;
+          padding: 0 18px;
+        }
+        .topbar p {
+          display: none;
+        }
+        .workspace {
+          grid-template-columns: 1fr;
+          padding: 8px;
+          gap: 0;
+        }
+        .workspace.open .master,
+        .workspace:not(.open) .detail {
+          display: none;
+        }
+        .detail {
+          padding: 18px;
+          gap: 18px;
+        }
+        .back {
+          display: inline-flex;
+          align-self: flex-start;
+        }
+        .form {
+          grid-template-columns: 1fr;
+        }
+        .form > * {
+          grid-column: 1;
+        }
+        .activity .actions {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <p class="loading">
+        Cargando MicroCRM… Si el mensaje persiste, revisá la conexión a los CDN.
+      </p>
+    </div>
+    <noscript>Activá JavaScript para utilizar MicroCRM.</noscript>
+    <script type="text/babel" data-presets="microcrm">
+      const { useState, useEffect, useRef, useId } = React;
+
+      // Servicios HTTP: los componentes no conocen fetch ni construyen las rutas.
+      async function request(path, { body, ...options } = {}) {
+        const response = await fetch("/api/clientes" + path, {
+          ...options,
+          headers: { "Content-Type": "application/json" },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        if (response.status === 204) return null;
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error([data.error, ...(data.detalles || [])].join(" "));
+        return data;
+      }
+      const ClientesService = {
+        listar: (query, signal) =>
+          request("?q=" + encodeURIComponent(query), { signal }),
+        obtener: (id) => request("/" + id),
+        guardar: (id, body) =>
+          request(id ? "/" + id : "", { method: id ? "PUT" : "POST", body }),
+        eliminar: (id) => request("/" + id, { method: "DELETE" }),
+      };
+      const ActividadesService = {
+        guardar: (clienteId, id, body) =>
+          request(`/${clienteId}/actividades${id ? "/" + id : ""}`, {
+            method: id ? "PUT" : "POST",
+            body,
+          }),
+        completar: (clienteId, id) =>
+          request(`/${clienteId}/actividades/${id}/completar`, {
+            method: "PATCH",
+          }),
+        eliminar: (clienteId, id) =>
+          request(`/${clienteId}/actividades/${id}`, { method: "DELETE" }),
+      };
+
+      // Controles y estructura reutilizables.
+      function Icon({ name }) {
+        const paths = {
+          add: "M12 5v14M5 12h14",
+          edit: "m15 5 4 4M4 20l4-1L20 7l-4-4L4 15z",
+          trash: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
+          check: "m5 12 4 4L19 6",
+          back: "m12 5-7 7 7 7M5 12h15",
+          save: "M5 3h12l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8",
+        };
+        return (
+          <svg
+            className="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d={paths[name]} />
+          </svg>
+        );
+      }
+      function Button({
+        children,
+        icon,
+        variant = "",
+        className = "",
+        type = "button",
+        ...props
+      }) {
+        return (
+          <button
+            type={type}
+            className={`button ${variant} ${className}`}
+            {...props}
+          >
+            {icon && <Icon name={icon} />}
+            {children}
+          </button>
+        );
+      }
+      function Field({ label, multiline = false, ...props }) {
+        const id = useId();
+        const Control = multiline ? "textarea" : "input";
+        return (
+          <label className="field" htmlFor={id}>
+            <span>
+              {label}
+              {props.required && " *"}
+            </span>
+            <Control id={id} {...props} />
+          </label>
+        );
+      }
+      function Form({
+        title,
+        children,
+        onSubmit,
+        onCancel,
+        busy,
+        submitLabel = "Guardar",
+        className = "",
+      }) {
+        return (
+          <form
+            className={className}
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSubmit();
+            }}
+          >
+            <fieldset className="form" disabled={busy}>
+              <h2 className="wide">{title}</h2>
+              {children}
+              <div className="actions wide">
+                <Button type="submit" variant="primary" icon="save">
+                  {busy ? "Guardando…" : submitLabel}
+                </Button>
+                <Button onClick={onCancel}>Cancelar</Button>
+              </div>
+            </fieldset>
+          </form>
+        );
+      }
+      function EmptyState({ title, children, action }) {
+        return (
+          <div className="empty">
+            <h2>{title}</h2>
+            <p>{children}</p>
+            {action}
+          </div>
+        );
+      }
+      function Layout({ master, children, open, error, onCloseError }) {
+        return (
+          <>
+            <header className="topbar">
+              <h1>MicroCRM</h1>
+              <p>Clientes y actividades, en un solo lugar.</p>
+            </header>
+            {error && (
+              <div className="notice" role="alert">
+                <span>{error}</span>
+                <Button onClick={onCloseError}>Cerrar</Button>
+              </div>
+            )}
+            <main className={`workspace ${open ? "open" : ""}`}>
+              <aside className="panel master" aria-label="Clientes">
+                {master}
+              </aside>
+              <section
+                className="panel detail"
+                aria-label="Detalle del cliente"
+              >
+                {children}
+              </section>
+            </main>
+          </>
+        );
+      }
+
+      // Entidades: formularios, listado y ficha.
+      const clientFields = [
+        { name: "nombre", label: "Nombre", required: true },
+        { name: "apellido", label: "Apellido", required: true },
+        { name: "email", label: "Email", type: "email", required: true },
+        { name: "telefono", label: "Teléfono", type: "tel" },
+        { name: "domicilio", label: "Domicilio" },
+        { name: "localidad", label: "Localidad" },
+      ];
+      const fullName = (client) => `${client.nombre} ${client.apellido}`;
+      const formatDate = (date) =>
+        date
+          ? new Date(date + "T12:00:00").toLocaleDateString("es-AR")
+          : "Sin fecha de compromiso";
+      function ClientForm({ client, onSave, ...props }) {
+        const [values, setValues] = useState(() =>
+          Object.fromEntries(
+            clientFields.map((field) => [
+              field.name,
+              client?.[field.name] || "",
+            ]),
+          ),
+        );
+        return (
+          <Form
+            title={client ? "Editar cliente" : "Nuevo cliente"}
+            onSubmit={() => onSave(values)}
+            submitLabel="Guardar cliente"
+            {...props}
+          >
+            {clientFields.map(({ name, ...field }) => (
+              <Field
+                key={name}
+                {...field}
+                maxLength={300}
+                autoFocus={name === "nombre"}
+                value={values[name]}
+                onChange={(event) =>
+                  setValues({ ...values, [name]: event.target.value })
+                }
+              />
+            ))}
+          </Form>
+        );
+      }
+      function ActivityForm({ activity, onSave, ...props }) {
+        const [description, setDescription] = useState(
+          activity.descripcion || "",
+        );
+        const [date, setDate] = useState(activity.fechaCompromiso || "");
+        return (
+          <Form
+            title={activity.id ? "Editar actividad" : "Nueva actividad"}
+            className="activity-form"
+            onSubmit={() =>
+              onSave({
+                descripcion: description,
+                fechaCompromiso: date || null,
+              })
+            }
+            submitLabel="Guardar actividad"
+            {...props}
+          >
+            <Field
+              label="Descripción"
+              value={description}
+              required
+              autoFocus
+              maxLength={2000}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+            <Field
+              label="Fecha de compromiso (opcional)"
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
+          </Form>
+        );
+      }
+      function ClientList({
+        clients,
+        selectedId,
+        query,
+        onQuery,
+        onSelect,
+        onCreate,
+        busy,
+        loading,
+        failed,
+        onRetry,
+      }) {
+        return (
+          <>
+            <div className="master-head">
+              <div className="row">
+                <h2>Clientes</h2>
+                <Button
+                  variant="primary"
+                  icon="add"
+                  onClick={onCreate}
+                  disabled={busy}
+                >
+                  Agregar
+                </Button>
+              </div>
+              <div className="search">
+                <Field
+                  label="Buscar por cualquier campo"
+                  type="search"
+                  placeholder="Nombre, apellido, email…"
+                  value={query}
+                  onChange={(event) => onQuery(event.target.value)}
+                />
+              </div>
+            </div>
+            <div className="client-list" aria-busy={loading}>
+              {loading ? (
+                <p className="loading" role="status">
+                  Buscando clientes…
+                </p>
+              ) : failed ? (
+                <EmptyState
+                  title="No se pudo cargar la lista"
+                  action={<Button onClick={onRetry}>Reintentar</Button>}
+                >
+                  Revisá la conexión y volvé a intentar.
+                </EmptyState>
+              ) : clients.length ? (
+                clients.map((client) => (
+                  <button
+                    className="client"
+                    key={client.id}
+                    aria-current={selectedId === client.id}
+                    disabled={busy}
+                    onClick={() => onSelect(client.id)}
+                  >
+                    <strong>{fullName(client)}</strong>
+                    <small>{client.email}</small>
+                  </button>
+                ))
+              ) : (
+                <EmptyState
+                  title={query ? "Sin coincidencias" : "Tu agenda empieza acá"}
+                >
+                  {query
+                    ? "Probá con otro dato del cliente."
+                    : "Agregá tu primer cliente para organizar sus próximos pasos."}
+                </EmptyState>
+              )}
+            </div>
+            <div className="count">
+              {loading
+                ? "Consultando…"
+                : `${clients.length} clientes${query ? " en esta búsqueda" : ""}`}
+            </div>
+          </>
+        );
+      }
+      function ClientCard({ client, onEdit, onDelete, busy }) {
+        return (
+          <div className="profile">
+            <div className="profile-header">
+              <h2>{fullName(client)}</h2>
+              <span className="identity muted" aria-label={`Identificador del cliente ${client.id}`}>#{client.id}</span>
+              <div className="actions">
+                <Button icon="edit" disabled={busy} onClick={onEdit}>
+                  Editar
+                </Button>
+                <Button
+                  icon="trash"
+                  variant="danger"
+                  disabled={busy}
+                  onClick={onDelete}
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+            <dl className="facts">
+              {clientFields
+                .filter((field) => !["nombre", "apellido"].includes(field.name))
+                .map((field) => (
+                  <div key={field.name}>
+                    <dt>{field.label}</dt>
+                    <dd>{client[field.name] || "Sin registrar"}</dd>
+                  </div>
+                ))}
+            </dl>
+          </div>
+        );
+      }
+      function ActivityItem({ activity, onEdit, onComplete, onDelete, busy }) {
+        return (
+          <article className="activity">
+            <div className="activity-text">
+              <p>{activity.descripcion}</p>
+              <small className={activity.vencida ? "danger" : ""}>
+                {formatDate(activity.fechaCompromiso)}
+                {activity.vencida && " · Vencida"}
+              </small>
+              {activity.completada && (
+                <small>
+                  Finalizada el{" "}
+                  {new Date(activity.fechaFinalizacion).toLocaleString("es-AR")}
+                </small>
+              )}
+            </div>
+            {activity.completada ? (
+              <span className="badge">Completada</span>
+            ) : (
+              <div className="actions">
+                <Button
+                  icon="edit"
+                  disabled={busy}
+                  onClick={() => onEdit(activity)}
+                >
+                  Editar
+                </Button>
+                <Button
+                  icon="check"
+                  disabled={busy}
+                  onClick={() => onComplete(activity.id)}
+                >
+                  Completar
+                </Button>
+                <Button
+                  icon="trash"
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => onDelete(activity.id)}
+                >
+                  Eliminar
+                </Button>
+              </div>
+            )}
+          </article>
+        );
+      }
+      function ActivityList({ activities, ...props }) {
+        return (
+          <div className="activity-list">
+            {[false, true].map((done) => {
+              const items = activities.filter(
+                (activity) => activity.completada === done,
+              );
+              return (
+                <section key={String(done)}>
+                  <h3>
+                    {done ? "Completadas" : "Compromisos"}{" "}
+                    <small>({items.length})</small>
+                  </h3>
+                  {items.length ? (
+                    items.map((activity) => (
+                      <ActivityItem
+                        key={activity.id}
+                        activity={activity}
+                        {...props}
+                      />
+                    ))
+                  ) : (
+                    <p className="muted">
+                      {done
+                        ? "Todavía no hay actividades completadas."
+                        : "No hay compromisos pendientes."}
+                    </p>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        );
+      }
+      function ClientDetail({
+        client,
+        activity,
+        setActivity,
+        busy,
+        onEdit,
+        onDelete,
+        onSaveActivity,
+        onComplete,
+        onDeleteActivity,
+      }) {
+        return (
+          <>
+            <ClientCard
+              client={client}
+              busy={busy}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+            <div className="activity-area">
+              <div className="row">
+                <h3>Actividades</h3>
+                <Button
+                  icon="add"
+                  disabled={busy}
+                  onClick={() => setActivity({})}
+                >
+                  Agregar actividad
+                </Button>
+              </div>
+              {activity && (
+                <ActivityForm
+                  key={activity.id || "new"}
+                  activity={activity}
+                  busy={busy}
+                  onSave={onSaveActivity}
+                  onCancel={() => setActivity(null)}
+                />
+              )}
+              <ActivityList
+                activities={client.actividades}
+                busy={busy}
+                onEdit={setActivity}
+                onComplete={onComplete}
+                onDelete={onDeleteActivity}
+              />
+            </div>
+          </>
+        );
+      }
+
+      // Coordinación de estado y servicios. Las reglas de negocio viven en la API.
+      function App() {
+        const [clients, setClients] = useState([]),
+          [query, setQuery] = useState("");
+        const [selected, setSelected] = useState(null),
+          [mode, setMode] = useState("view");
+        const [activity, setActivity] = useState(null),
+          [busy, setBusy] = useState(false);
+        const [loading, setLoading] = useState(true),
+          [detailLoading, setDetailLoading] = useState(false);
+        const [error, setError] = useState(""),
+          [listFailed, setListFailed] = useState(false),
+          [revision, setRevision] = useState(0);
+        const selectionRequest = useRef(0);
+        const refreshList = () => setRevision((value) => value + 1);
+        useEffect(() => {
+          const controller = new AbortController();
+          setLoading(true);
+          setListFailed(false);
+          const timer = setTimeout(
+            () =>
+              ClientesService.listar(query, controller.signal)
+                .then(setClients)
+                .catch((error) => {
+                  if (error.name !== "AbortError") {
+                    setError(error.message);
+                    setListFailed(true);
+                  }
+                })
+                .finally(() => {
+                  if (!controller.signal.aborted) setLoading(false);
+                }),
+            200,
+          );
+          return () => {
+            clearTimeout(timer);
+            controller.abort();
+          };
+        }, [query, revision]);
+        const canLeave = () =>
+          (mode === "view" && !activity) ||
+          confirm("¿Descartar los cambios del formulario?");
+        async function loadClient(id) {
+          const token = ++selectionRequest.current;
+          setDetailLoading(true);
+          try {
+            const client = await ClientesService.obtener(id);
+            if (token === selectionRequest.current) {
+              setSelected(client);
+              setMode("view");
+              setActivity(null);
+            }
+          } finally {
+            if (token === selectionRequest.current) setDetailLoading(false);
+          }
+        }
+        async function selectClient(id) {
+          if (!canLeave()) return;
+          setError("");
+          try {
+            await loadClient(id);
+          } catch (error) {
+            setError(error.message);
+          }
+        }
+        function reset(mode = "view") {
+          selectionRequest.current++;
+          setDetailLoading(false);
+          setSelected(null);
+          setActivity(null);
+          setMode(mode);
+        }
+        function createClient() {
+          if (canLeave()) {
+            reset("new");
+            setError("");
+          }
+        }
+        async function perform(action) {
+          setBusy(true);
+          setError("");
+          try {
+            await action();
+          } catch (error) {
+            setError(error.message);
+          } finally {
+            setBusy(false);
+          }
+        }
+        function saveClient(values) {
+          perform(async () => {
+            const saved = await ClientesService.guardar(
+              mode === "new" ? null : selected.id,
+              values,
+            );
+            // Cambia de modo antes de recargar para evitar repetir un alta si falla el GET.
+            setSelected({ ...saved, actividades: selected?.actividades || [] });
+            setMode("view");
+            refreshList();
+            await loadClient(saved.id);
+          });
+        }
+        function changeActivity(action) {
+          perform(async () => {
+            await action();
+            setActivity(null);
+            await loadClient(selected.id);
+          });
+        }
+        function deleteClient() {
+          if (
+            confirm(
+              `¿Eliminar a ${fullName(selected)} y todas sus actividades?`,
+            )
+          )
+            perform(async () => {
+              await ClientesService.eliminar(selected.id);
+              reset();
+              refreshList();
+            });
+        }
+        function deleteActivity(id) {
+          if (confirm("¿Eliminar esta actividad pendiente?"))
+            changeActivity(() => ActividadesService.eliminar(selected.id, id));
+        }
+        return (
+          <Layout
+            open={Boolean(selected || mode === "new" || detailLoading)}
+            error={error}
+            onCloseError={() => setError("")}
+            master={
+              <ClientList
+                clients={clients}
+                selectedId={selected?.id}
+                query={query}
+                onQuery={setQuery}
+                onSelect={selectClient}
+                onCreate={createClient}
+                busy={busy}
+                loading={loading}
+                failed={listFailed}
+                onRetry={refreshList}
+              />
+            }
+          >
+            <Button
+              className="back"
+              icon="back"
+              disabled={busy}
+              onClick={() => {
+                if (canLeave()) reset();
+              }}
+            >
+              Volver a clientes
+            </Button>
+            {detailLoading ? (
+              <p className="loading" role="status">
+                Cargando ficha…
+              </p>
+            ) : mode !== "view" ? (
+              <ClientForm
+                key={mode + selected?.id}
+                client={mode === "edit" ? selected : null}
+                busy={busy}
+                onSave={saveClient}
+                onCancel={() => setMode("view")}
+              />
+            ) : selected ? (
+              <ClientDetail
+                client={selected}
+                activity={activity}
+                setActivity={(next) => {
+                  if (!activity || canLeave()) setActivity(next);
+                }}
+                busy={busy}
+                onEdit={() => {
+                  if (canLeave()) {
+                    setActivity(null);
+                    setMode("edit");
+                  }
+                }}
+                onDelete={deleteClient}
+                onSaveActivity={(values) =>
+                  changeActivity(() =>
+                    ActividadesService.guardar(
+                      selected.id,
+                      activity.id,
+                      values,
+                    ),
+                  )
+                }
+                onComplete={(id) =>
+                  changeActivity(() =>
+                    ActividadesService.completar(selected.id, id),
+                  )
+                }
+                onDeleteActivity={deleteActivity}
+              />
+            ) : (
+              <EmptyState
+                title="Cada cliente, su historia."
+                action={
+                  <Button variant="primary" icon="add" onClick={createClient}>
+                    Agregar cliente
+                  </Button>
+                }
+              >
+                Seleccioná un cliente para ver su ficha y organizar el próximo
+                contacto.
+              </EmptyState>
+            )}
+          </Layout>
+        );
+      }
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

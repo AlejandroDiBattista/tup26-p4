@@ -1,6 +1,6 @@
 # MiniCRM
 
-Trabajo práctico 4: clientes y actividades con Node.js, TypeScript, Express, Drizzle y SQLite. En desarrollo utiliza un archivo SQLite local; en producción se conecta a Turso mediante libSQL. La interfaz usa React y JSX embebido en `public/MiniCRM.html`, con versiones fijas desde CDN.
+Trabajo práctico 4: clientes y actividades con Node.js, TypeScript, Express, Drizzle y SQLite. En desarrollo utiliza un archivo SQLite local; en producción se conecta a Turso mediante libSQL. La interfaz usa React y JSX embebido en `public/microcrm.html`, con versiones fijas desde CDN.
 
 ## Instalación y ejecución
 
@@ -34,6 +34,10 @@ La migración desde el modelo anterior conserva identificadores, actividades, em
 
 ## Uso
 
+La página principal es `http://localhost:3000/microcrm.html` (también accesible desde `/`). Todo su JSX y CSS está embebido en ese archivo. Usa React 18.3.1, ReactDOM 18.3.1 y Babel Standalone 7.26.4 por CDN; el preset `microcrm` fija explícitamente `runtime: "classic"` para compilar JSX usando el objeto global `React`.
+
+La interfaz separa `ClientesService` y `ActividadesService` del renderizado. Los componentes `Layout`, `Form`, `Field`, `Button`, `Icon` y `EmptyState` se reutilizan en `ClientList`, `ClientCard`, `ClientForm`, `ClientDetail`, `ActivityList`, `ActivityItem` y `ActivityForm`. No usa componentes externos ni frameworks CSS. La página anterior `/MiniCRM.html` sigue disponible por compatibilidad.
+
 - Buscar en vivo por nombre, apellido, email, teléfono, domicilio, localidad o identificador. Ignora mayúsculas y acentos; permite combinar palabras de distintos campos (por ejemplo `garcia yerba`). Los símbolos `%` y `_` se buscan literalmente. El filtrado se hace en el servicio sobre la agenda, adecuado para este MiniCRM sin paginación.
 - Seleccionar un cliente para consultar su ficha y actividades.
 - Agregar o editar clientes dentro del panel de detalle.
@@ -41,7 +45,7 @@ La migración desde el modelo anterior conserva identificadores, actividades, em
 - Completar una actividad registra su fecha de ejecución en `fechaFinalizacion` y la vuelve de solo lectura. Las pendientes pueden eliminarse individualmente; las completadas no pueden editarse ni borrarse individualmente.
 - Eliminar un cliente elimina también todas sus actividades, previa confirmación.
 
-El maestro y las actividades tienen desplazamiento interno. En pantallas pequeñas, la lista y el detalle se alternan mediante **Volver a clientes**. Si una ficha o formulario supera la altura disponible, su panel permite desplazarse sin mover la página.
+La página ocupa la altura de la ventana: el listado maestro y las actividades tienen desplazamiento interno independiente, manteniendo visibles la búsqueda y la ficha. El identificador aparece como `#123` arriba a la derecha del detalle. En pantallas pequeñas, la lista y el detalle se alternan mediante **Volver a clientes**. Los formularios y las fichas excepcionalmente largas tienen su propio desplazamiento interno para no desplazar la página ni ocultar las actividades.
 
 ## Servicio y normalización
 
@@ -114,7 +118,7 @@ src/
   app.ts                    Express, estáticos y errores
   server.ts                 Arranque y cierre
 drizzle/                    Migraciones versionadas
-public/MiniCRM.html          React, JSX y CSS
+public/microcrm.html          React, JSX y CSS
 tests/api.test.ts            Pruebas de integración
 ```
 

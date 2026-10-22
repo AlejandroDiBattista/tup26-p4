@@ -195,6 +195,12 @@ test("validación y errores HTTP", async () => {
   });
   assert.equal(malformed.status, 400);
   assert.equal((await fetch(base + "/MiniCRM.html")).status, 200);
+  const inicio = await fetch(base + "/", { redirect: "manual" });
+  assert.equal(inicio.status, 302);
+  assert.equal(inicio.headers.get("location"), "/microcrm.html");
+  const pagina = await fetch(base + "/microcrm.html");
+  assert.equal(pagina.status, 200);
+  assert.match(pagina.headers.get("content-type") || "", /text\/html/);
 });
 
 test("campos obligatorios, compromiso opcional y finalización controlada por el servidor", async () => {
