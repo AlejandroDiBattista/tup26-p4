@@ -13,9 +13,6 @@ export const client = createClient({
 
 export const db = drizzle(client, { schema });
 
-/**
- * Inicializa las tablas necesarias en SQLite mediante libSQL si no existen aún.
- */
 export async function inicializarBaseDeDatos() {
   await client.executeMultiple(`
     PRAGMA foreign_keys = ON;

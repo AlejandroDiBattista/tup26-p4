@@ -16,7 +16,7 @@ export const actividades = sqliteTable("actividades", {
     .notNull()
     .references(() => clientes.id, { onDelete: "cascade" }),
   descripcion: text("descripcion").notNull(),
-  fecha: text("fecha"), // Fecha límite opcional (formato YYYY-MM-DD o texto libre)
+  fecha: text("fecha"),
   completada: integer("completada", { mode: "boolean" }).notNull().default(false),
   fechaCompletada: text("fecha_completada"),
   creadoEn: text("creado_en").notNull().default(sql`(CURRENT_TIMESTAMP)`),

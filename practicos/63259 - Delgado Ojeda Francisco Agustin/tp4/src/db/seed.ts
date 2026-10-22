@@ -6,12 +6,9 @@ export async function sembrarDatosIniciales() {
   await inicializarBaseDeDatos();
   const [totalClientes] = await db.select({ total: count() }).from(clientes);
   if (totalClientes && totalClientes.total > 0) {
-    return; // Ya hay datos sembrados
+    return;
   }
 
-  console.log("Sembrando datos iniciales para el MiniCRM...");
-
-  // Insertar clientes iniciales basados en la maqueta
   const [c1, c2, c3, c4, c5, c6, c7] = await db
     .insert(clientes)
     .values([
@@ -60,7 +57,6 @@ export async function sembrarDatosIniciales() {
     ])
     .returning();
 
-  // Actividades para Ana García
   await db.insert(actividades).values([
     {
       clienteId: c1.id,
@@ -94,10 +90,6 @@ export async function sembrarDatosIniciales() {
       completada: true,
       fechaCompletada: "2026-10-12",
     },
-  ]);
-
-  // Actividades para Bruno López
-  await db.insert(actividades).values([
     {
       clienteId: c2.id,
       descripcion: "Coordinar demo técnica",
@@ -110,10 +102,6 @@ export async function sembrarDatosIniciales() {
       fecha: "2026-10-25",
       completada: false,
     },
-  ]);
-
-  // Actividades para Carla Pérez
-  await db.insert(actividades).values([
     {
       clienteId: c3.id,
       descripcion: "Revisar términos de servicio",
@@ -127,20 +115,12 @@ export async function sembrarDatosIniciales() {
       completada: true,
       fechaCompletada: "2026-10-10",
     },
-  ]);
-
-  // Actividades para Diego Ruiz
-  await db.insert(actividades).values([
     {
       clienteId: c4.id,
       descripcion: "Actualizar datos de facturación",
       fecha: "2026-10-28",
       completada: false,
     },
-  ]);
-
-  // Actividades para Elena Torres
-  await db.insert(actividades).values([
     {
       clienteId: c5.id,
       descripcion: "Reunión de inducción",
@@ -148,20 +128,12 @@ export async function sembrarDatosIniciales() {
       completada: true,
       fechaCompletada: "2026-10-18",
     },
-  ]);
-
-  // Actividades para Federico Diaz
-  await db.insert(actividades).values([
     {
       clienteId: c6.id,
       descripcion: "Llamada de prospección",
       fecha: "2026-10-26",
       completada: false,
     },
-  ]);
-
-  // Actividades para Gabriela Sosa
-  await db.insert(actividades).values([
     {
       clienteId: c7.id,
       descripcion: "Envío de catálogo 2026",
@@ -170,6 +142,4 @@ export async function sembrarDatosIniciales() {
       fechaCompletada: "2026-10-20",
     },
   ]);
-
-  console.log("Siembra de datos iniciales completada con éxito.");
 }
