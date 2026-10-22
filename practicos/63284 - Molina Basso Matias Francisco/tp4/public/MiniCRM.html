@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MiniCRM · Clientes y actividades</title>
+    <script
+      crossorigin
+      src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
+    <style>
+      :root {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: #23354a;
+        background: #f3f5f7;
+        font-size: 14px;
+        --line: #d8dfe6;
+        --blue: #245d99;
+        --muted: #58697b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 9px 13px;
+        background: white;
+        color: inherit;
+        min-height: 40px;
+      }
+      button:hover {
+        background: #edf2f7;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+      button.primary {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: white;
+      }
+      button.primary:hover {
+        background: #194b80;
+      }
+      .danger {
+        color: #a42b31;
+      }
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid #bac6d2;
+        border-radius: 5px;
+        padding: 10px;
+        color: inherit;
+        background: white;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 65px;
+      }
+      input::placeholder {
+        color: var(--muted);
+      }
+      :focus-visible {
+        outline: 3px solid #3483cf;
+        outline-offset: 2px;
+      }
+      ::selection {
+        background: #cee3f7;
+      }
+      * {
+        scrollbar-color: #aab9c7 #f3f5f7;
+        scrollbar-width: thin;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1 {
+        font-size: 23px;
+        letter-spacing: -0.025em;
+      }
+      h2 {
+        font-size: 24px;
+        letter-spacing: -0.025em;
+        overflow-wrap: anywhere;
+      }
+      h3 {
+        font-size: 16px;
+      }
+      small,
+      .muted {
+        color: var(--muted);
+      }
+      #root {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      .topbar {
+        height: 66px;
+        flex-shrink: 0;
+        background: #29425e;
+        color: white;
+        padding: 0 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .topbar span {
+        color: #d4e1ed;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: 310px minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+        min-height: 0;
+        flex: 1;
+      }
+      .panel {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        min-height: 0;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .master {
+        display: flex;
+        flex-direction: column;
+      }
+      .master-head {
+        padding: 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .master-head h2 {
+        font-size: 19px;
+      }
+      .search {
+        display: block;
+        margin-top: 18px;
+      }
+      .search span {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .client-list {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .client {
+        display: block;
+        text-align: left;
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid #edf0f3;
+        border-radius: 0;
+        padding: 17px 20px;
+        min-height: 78px;
+        overflow-wrap: anywhere;
+      }
+      .client[aria-current="true"] {
+        background: #e7f0fa;
+        color: #174f84;
+      }
+      .client strong,
+      .client small {
+        display: block;
+      }
+      .client small {
+        margin-top: 4px;
+      }
+      .count {
+        padding: 12px 20px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .detail {
+        display: flex;
+        flex-direction: column;
+        padding: 26px;
+        gap: 22px;
+        overflow-y: auto;
+      }
+      .empty {
+        margin: auto;
+        text-align: center;
+        padding: 35px;
+        max-width: 440px;
+      }
+      .empty p {
+        margin: 12px 0 20px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .profile {
+        flex-shrink: 0;
+      }
+      .profile .row {
+        align-items: flex-start;
+      }
+      .identity {
+        margin-top: 6px;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 30px;
+        margin: 24px 0 0;
+      }
+      .facts div {
+        min-width: 0;
+      }
+      .facts dt {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 5px;
+      }
+      .facts dd {
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .facts .wide {
+        grid-column: 1/-1;
+      }
+      .form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .form label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 13px;
+      }
+      .wide {
+        grid-column: 1/-1;
+      }
+      .form h2 {
+        margin-bottom: 8px;
+      }
+      .activity-area {
+        display: flex;
+        flex-direction: column;
+        min-height: 180px;
+        flex: 1;
+        border-top: 1px solid var(--line);
+        padding-top: 20px;
+        gap: 16px;
+      }
+      .activity-form {
+        background: #f3f6f9;
+        padding: 16px;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+      .activity-form h3 {
+        margin-bottom: 12px;
+      }
+      .activity-list {
+        overflow-y: auto;
+        min-height: 100px;
+        flex: 1;
+      }
+      .activity-list h3 {
+        padding: 14px 0 8px;
+      }
+      .activity {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 0;
+        border-bottom: 1px solid #e6ebf0;
+      }
+      .activity .text {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .activity p {
+        white-space: pre-wrap;
+      }
+      .activity small {
+        display: block;
+        margin-top: 5px;
+      }
+      .done p {
+        color: #536a61;
+      }
+      .badge {
+        font-size: 12px;
+        color: #31664d;
+        background: #edf6f0;
+        padding: 5px 8px;
+        border-radius: 4px;
+      }
+      .notice {
+        padding: 10px 24px;
+        background: #fff0ee;
+        color: #8c272b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .back {
+        display: none;
+      }
+      .loading {
+        padding: 24px;
+        color: var(--muted);
+      }
+      @media (max-width: 760px) {
+        .topbar {
+          height: 56px;
+          padding: 0 18px;
+        }
+        .topbar span {
+          display: none;
+        }
+        .workspace {
+          grid-template-columns: 1fr;
+          padding: 8px;
+          gap: 0;
+        }
+        .workspace.open .master {
+          display: none;
+        }
+        .workspace:not(.open) .detail {
+          display: none;
+        }
+        .detail {
+          padding: 18px;
+          gap: 18px;
+        }
+        .back {
+          display: inline-block;
+          align-self: flex-start;
+        }
+        .facts {
+          gap: 16px;
+        }
+        .profile > .row {
+          flex-wrap: wrap;
+        }
+        .activity {
+          flex-wrap: wrap;
+        }
+        .activity .actions {
+          width: 100%;
+        }
+        .form {
+          grid-template-columns: 1fr;
+        }
+        .form > * {
+          grid-column: 1;
+        }
+        .activity-area {
+          min-height: 250px;
+        }
+        .notice {
+          padding: 8px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <p style="padding: 24px">
+        Cargando MiniCRM… Si este mensaje persiste, revisá la conexión a los
+        CDN.
+      </p>
+    </div>
+    <noscript>Activá JavaScript para utilizar MiniCRM.</noscript>
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+      const emptyClient = {
+        nombre: "",
+        apellido: "",
+        email: "",
+        telefono: "",
+        domicilio: "",
+        localidad: "",
+      };
+      async function api(path = "", options = {}) {
+        const response = await fetch("/api/clientes" + path, {
+          ...options,
+          headers: { "Content-Type": "application/json" },
+        });
+        if (response.status === 204) return null;
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error([data.error, ...(data.detalles || [])].join(" "));
+        return data;
+      }
+      function ClientForm({ client, onSave, onCancel, busy }) {
+        const [form, setForm] = useState({
+          ...emptyClient,
+          ...Object.fromEntries(
+            Object.keys(emptyClient).map((key) => [key, client?.[key] || ""]),
+          ),
+        });
+        const labels = {
+          nombre: "Nombre",
+          apellido: "Apellido",
+          email: "Email",
+          telefono: "Teléfono",
+          domicilio: "Domicilio",
+          localidad: "Localidad",
+        };
+        return (
+          <form
+            className="form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSave(form);
+            }}
+          >
+            <h2 className="wide">
+              {client ? "Editar cliente" : "Nuevo cliente"}
+            </h2>
+            {Object.entries(labels).map(([key, label]) => (
+              <label key={key}>
+                {label}
+                {["nombre", "apellido", "email"].includes(key) ? " *" : ""}
+                <input
+                  autoFocus={key === "nombre"}
+                  required={["nombre", "apellido", "email"].includes(key)}
+                  type={
+                    key === "email"
+                      ? "email"
+                      : key === "telefono"
+                        ? "tel"
+                        : "text"
+                  }
+                  maxLength="300"
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                />
+              </label>
+            ))}
+            <div className="actions wide">
+              <button className="primary" disabled={busy}>
+                Guardar cliente
+              </button>
+              <button type="button" disabled={busy} onClick={onCancel}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        );
+      }
+      function ActivityForm({ activity, onSave, onCancel, busy }) {
+        const [form, setForm] = useState({
+          descripcion: activity?.descripcion || "",
+          fechaCompromiso: activity?.fechaCompromiso || "",
+        });
+        return (
+          <form
+            className="activity-form form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSave({
+                ...form,
+                fechaCompromiso: form.fechaCompromiso || null,
+              });
+            }}
+          >
+            <h3 className="wide">
+              {activity.id ? "Editar actividad" : "Nueva actividad"}
+            </h3>
+            <label>
+              Descripción *
+              <input
+                autoFocus
+                required
+                maxLength="2000"
+                value={form.descripcion}
+                onChange={(e) =>
+                  setForm({ ...form, descripcion: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Fecha de compromiso (opcional)
+              <input
+                type="date"
+                value={form.fechaCompromiso}
+                onChange={(e) =>
+                  setForm({ ...form, fechaCompromiso: e.target.value })
+                }
+              />
+            </label>
+            <div className="actions wide">
+              <button className="primary" disabled={busy}>
+                Guardar actividad
+              </button>
+              <button type="button" disabled={busy} onClick={onCancel}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        );
+      }
+      function App() {
+        const [clients, setClients] = useState([]),
+          [query, setQuery] = useState(""),
+          [selected, setSelected] = useState(null),
+          [mode, setMode] = useState("view");
+        const [activity, setActivity] = useState(null),
+          [error, setError] = useState(""),
+          [busy, setBusy] = useState(false),
+          [loading, setLoading] = useState(true),
+          [detailLoading, setDetailLoading] = useState(false),
+          [revision, setRevision] = useState(0);
+        const request = useRef(0);
+        useEffect(() => {
+          const controller = new AbortController();
+          setLoading(true);
+          const timer = setTimeout(
+            () =>
+              api("?q=" + encodeURIComponent(query), {
+                signal: controller.signal,
+              })
+                .then(setClients)
+                .catch((e) => {
+                  if (e.name !== "AbortError") setError(e.message);
+                })
+                .finally(() => {
+                  if (!controller.signal.aborted) setLoading(false);
+                }),
+            200,
+          );
+          return () => {
+            clearTimeout(timer);
+            controller.abort();
+          };
+        }, [query, revision]);
+        async function select(id) {
+          const token = ++request.current;
+          setDetailLoading(true);
+          setMode("view");
+          setActivity(null);
+          setError("");
+          try {
+            const data = await api("/" + id);
+            if (token === request.current) setSelected(data);
+          } catch (e) {
+            if (token === request.current) setError(e.message);
+          } finally {
+            if (token === request.current) setDetailLoading(false);
+          }
+        }
+        function leave() {
+          request.current++;
+          setDetailLoading(false);
+          setSelected(null);
+          setMode("view");
+          setActivity(null);
+        }
+        async function perform(action) {
+          setBusy(true);
+          setError("");
+          try {
+            await action();
+          } catch (e) {
+            setError(e.message);
+          } finally {
+            setBusy(false);
+          }
+        }
+        function newClient() {
+          request.current++;
+          setDetailLoading(false);
+          setSelected(null);
+          setActivity(null);
+          setMode("new");
+          setError("");
+        }
+        function saveClient(data) {
+          perform(async () => {
+            const saved = await api(mode === "new" ? "" : "/" + selected.id, {
+              method: mode === "new" ? "POST" : "PUT",
+              body: JSON.stringify(data),
+            });
+            await select(saved.id);
+            setRevision((n) => n + 1);
+          });
+        }
+        function saveActivity(data) {
+          perform(async () => {
+            await api(
+              "/" +
+                selected.id +
+                "/actividades" +
+                (activity.id ? "/" + activity.id : ""),
+              {
+                method: activity.id ? "PUT" : "POST",
+                body: JSON.stringify(data),
+              },
+            );
+            await select(selected.id);
+          });
+        }
+        function complete(id) {
+          perform(async () => {
+            await api("/" + selected.id + "/actividades/" + id + "/completar", {
+              method: "PATCH",
+            });
+            await select(selected.id);
+          });
+        }
+        function removeActivity(id) {
+          if (!confirm("¿Eliminar esta actividad pendiente?")) return;
+          perform(async () => {
+            await api("/" + selected.id + "/actividades/" + id, {
+              method: "DELETE",
+            });
+            await select(selected.id);
+          });
+        }
+        function remove() {
+          if (
+            confirm(
+              "¿Eliminar a " +
+                selected.nombre +
+                " " +
+                selected.apellido +
+                " y todas sus actividades? Esta acción no se puede deshacer.",
+            )
+          )
+            perform(async () => {
+              await api("/" + selected.id, { method: "DELETE" });
+              leave();
+              setRevision((n) => n + 1);
+            });
+        }
+        return (
+          <>
+            <header className="topbar">
+              <h1>MiniCRM</h1>
+              <span>Clientes y actividades, en un solo lugar.</span>
+            </header>
+            {error && (
+              <div className="notice" role="alert">
+                <span>{error}</span>
+                <button onClick={() => setError("")}>Cerrar</button>
+              </div>
+            )}
+            <main
+              className={
+                "workspace " +
+                (selected || mode === "new" || detailLoading ? "open" : "")
+              }
+            >
+              <aside className="panel master" aria-label="Clientes">
+                <div className="master-head">
+                  <div className="row">
+                    <h2>Clientes</h2>
+                    <button
+                      className="primary"
+                      disabled={busy}
+                      onClick={newClient}
+                    >
+                      Agregar cliente
+                    </button>
+                  </div>
+                  <label className="search">
+                    <span>Buscar por cualquier campo</span>
+                    <input
+                      type="search"
+                      placeholder="Nombre, apellido, email…"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="client-list" aria-busy={loading}>
+                  {loading ? (
+                    <p className="loading">Buscando clientes…</p>
+                  ) : clients.length ? (
+                    clients.map((c) => (
+                      <button
+                        className="client"
+                        key={c.id}
+                        disabled={busy}
+                        aria-current={selected?.id === c.id}
+                        onClick={() => select(c.id)}
+                      >
+                        <strong>
+                          {c.nombre} {c.apellido}
+                        </strong>
+                        <small>{c.email}</small>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="empty">
+                      <h3>
+                        {query ? "Sin coincidencias" : "Tu agenda empieza acá"}
+                      </h3>
+                      <p>
+                        {query
+                          ? "Probá con otro dato del cliente."
+                          : "Agregá tu primer cliente para organizar su información y sus próximos pasos."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="count">
+                  {clients.length}{" "}
+                  {clients.length === 1 ? "cliente" : "clientes"}
+                  {query ? " en esta búsqueda" : ""}
+                </div>
+              </aside>
+              <section
+                className="panel detail"
+                aria-label="Detalle del cliente"
+                aria-busy={busy || detailLoading}
+              >
+                <button className="back" disabled={busy} onClick={leave}>
+                  Volver a clientes
+                </button>
+                {detailLoading ? (
+                  <p className="loading">Cargando ficha…</p>
+                ) : mode !== "view" ? (
+                  <ClientForm
+                    key={mode + selected?.id}
+                    client={mode === "edit" ? selected : null}
+                    onSave={saveClient}
+                    busy={busy}
+                    onCancel={() => setMode("view")}
+                  />
+                ) : selected ? (
+                  <>
+                    <div className="profile">
+                      <div className="row">
+                        <div>
+                          <h2>
+                            {selected.nombre} {selected.apellido}
+                          </h2>
+                          <p className="identity muted">
+                            Cliente #{selected.id}
+                          </p>
+                        </div>
+                        <div className="actions">
+                          <button
+                            disabled={busy}
+                            onClick={() => {
+                              setActivity(null);
+                              setMode("edit");
+                            }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="danger"
+                            disabled={busy}
+                            onClick={remove}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                      <dl className="facts">
+                        {[
+                          ["email", "Email"],
+                          ["telefono", "Teléfono"],
+                          ["domicilio", "Domicilio"],
+                          ["localidad", "Localidad"],
+                        ].map(([key, label]) => (
+                          <div key={key}>
+                            <dt>{label}</dt>
+                            <dd>{selected[key] || "Sin registrar"}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                    <div className="activity-area">
+                      <div className="row">
+                        <h3>Actividades</h3>
+                        <button disabled={busy} onClick={() => setActivity({})}>
+                          Agregar actividad
+                        </button>
+                      </div>
+                      {activity && (
+                        <ActivityForm
+                          key={activity.id || "new"}
+                          activity={activity}
+                          onSave={saveActivity}
+                          onCancel={() => setActivity(null)}
+                          busy={busy}
+                        />
+                      )}
+                      <div className="activity-list">
+                        {[false, true].map((done) => (
+                          <section key={String(done)}>
+                            <h3>
+                              {done ? "Completadas" : "Compromisos"}{" "}
+                              <small>
+                                (
+                                {
+                                  selected.actividades.filter(
+                                    (a) =>
+                                      Boolean(a.fechaFinalizacion) === done,
+                                  ).length
+                                }
+                                )
+                              </small>
+                            </h3>
+                            {!selected.actividades.some(
+                              (a) => Boolean(a.fechaFinalizacion) === done,
+                            ) && (
+                              <p
+                                className="muted"
+                                style={{ padding: "12px 0" }}
+                              >
+                                {done
+                                  ? "Todavía no hay actividades completadas."
+                                  : "No hay compromisos pendientes."}
+                              </p>
+                            )}
+                            {selected.actividades
+                              .filter(
+                                (a) => Boolean(a.fechaFinalizacion) === done,
+                              )
+                              .map((a) => (
+                                <div
+                                  key={a.id}
+                                  className={"activity " + (done ? "done" : "")}
+                                >
+                                  <div className="text">
+                                    <p>{a.descripcion}</p>
+                                    <small>
+                                      {a.fechaCompromiso
+                                        ? new Date(
+                                            a.fechaCompromiso + "T12:00:00",
+                                          ).toLocaleDateString("es-AR", {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric",
+                                          })
+                                        : "Sin fecha de compromiso"}
+                                      {a.vencida ? " · Vencida" : ""}
+                                    </small>
+                                    {done && (
+                                      <small>
+                                        Finalizada el{" "}
+                                        {new Date(
+                                          a.fechaFinalizacion,
+                                        ).toLocaleString("es-AR")}
+                                      </small>
+                                    )}
+                                  </div>
+                                  {done ? (
+                                    <span className="badge">Completada</span>
+                                  ) : (
+                                    <div className="actions">
+                                      <button
+                                        disabled={busy}
+                                        onClick={() => setActivity(a)}
+                                      >
+                                        Editar
+                                      </button>
+                                      <button
+                                        disabled={busy}
+                                        onClick={() => complete(a.id)}
+                                      >
+                                        Completar
+                                      </button>
+                                      <button
+                                        className="danger"
+                                        disabled={busy}
+                                        onClick={() => removeActivity(a.id)}
+                                      >
+                                        Eliminar actividad
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                          </section>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty">
+                    <h2>Cada cliente, su historia.</h2>
+                    <p>
+                      Seleccioná un cliente para ver su ficha, consultar sus
+                      actividades y planificar el próximo contacto.
+                    </p>
+                    <button className="primary" onClick={newClient}>
+                      Agregar cliente
+                    </button>
+                  </div>
+                )}
+              </section>
+            </main>
+          </>
+        );
+      }
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
