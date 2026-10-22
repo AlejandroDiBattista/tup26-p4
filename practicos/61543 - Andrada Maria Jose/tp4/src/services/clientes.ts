@@ -1,4 +1,4 @@
-import { eq, like, or } from "drizzle-orm";
+import { and, eq, isNull, like, lt, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { actividades, clientes } from "../db/schema.js";
 
@@ -29,6 +29,114 @@ private static normalizarTelefono(telefono: string | null | undefined) {
     static listar() {
     return db.select().from(clientes);
   }
+
+  static listarActividades(clienteId: number) {
+    return db
+      .select()
+      .from(actividades)
+      .where(eq(actividades.clienteId, clienteId));
+  }
+
+  static crearActividad(datos: typeof actividades.$inferInsert) {
+    return db
+      .insert(actividades)
+      .values(datos)
+      .returning()
+      .get();
+  }
+
+
+  static actualizarActividad(
+    id: number,
+    datos: Partial<typeof actividades.$inferInsert>
+  ) {
+    const actividad = db
+      .select()
+      .from(actividades)
+      .where(eq(actividades.id, id))
+      .get();
+
+    if (!actividad) {
+      return undefined;
+    }
+
+    if (actividad.fechaFinalizacion) {
+      throw new Error("No se puede modificar una actividad finalizada");
+    }
+
+    return db
+      .update(actividades)
+      .set(datos)
+      .where(eq(actividades.id, id))
+      .returning()
+      .get();
+  }
+
+    static eliminarActividad(id: number) {
+    const actividad = db
+      .select()
+      .from(actividades)
+      .where(eq(actividades.id, id))
+      .get();
+
+    if (!actividad) {
+      return undefined;
+    }
+
+    if (actividad.fechaFinalizacion) {
+      throw new Error("No se puede eliminar una actividad finalizada");
+    }
+
+    return db
+      .delete(actividades)
+      .where(eq(actividades.id, id))
+      .returning()
+      .get();
+  }
+
+    static completarActividad(id: number) {
+    const actividad = db
+      .select()
+      .from(actividades)
+      .where(eq(actividades.id, id))
+      .get();
+
+    if (!actividad) {
+      return undefined;
+    }
+
+    if (actividad.fechaFinalizacion) {
+      throw new Error("La actividad ya está finalizada");
+    }
+
+    const hoy = new Date().toISOString().slice(0, 10);
+
+    return db
+      .update(actividades)
+      .set({
+        fechaFinalizacion: hoy,
+      })
+      .where(eq(actividades.id, id))
+      .returning()
+      .get();
+  }
+
+    static listarVencidas() {
+    const hoy = new Date().toISOString().slice(0, 10);
+
+    return db
+      .select()
+      .from(actividades)
+      .where(
+        and(
+          like(actividades.fechaCompromiso, "%"),
+          lt(actividades.fechaCompromiso, hoy),
+          isNull(actividades.fechaFinalizacion)
+        )
+      );
+  }
+
+
 static obtenerPorId(id: number) {
   return db
     .select()
