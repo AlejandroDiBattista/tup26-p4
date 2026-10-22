@@ -36,12 +36,13 @@ test('actividades: estados y restricciones de las completadas', async () => {
   assert.equal(vencida.estado, 'vencida');
   assert.equal(sinFecha.estado, 'pendiente');
 
-  const hecha = await Clientes.completarActividad(vencida.id, '2026-10-01');
+  const hecha = await Clientes.completarActividad(c.id, vencida.id, '2026-10-01');
   assert.equal(hecha.estado, 'completada');
-  await assert.rejects(Clientes.actualizarActividad(hecha.id, { descripcion: 'x' }), { codigo: 'conflicto' });
-  await assert.rejects(Clientes.eliminarActividad(hecha.id), { codigo: 'conflicto' });
+  await assert.rejects(Clientes.actualizarActividad(c.id, hecha.id, { descripcion: 'x' }), { codigo: 'conflicto' });
+  await assert.rejects(Clientes.eliminarActividad(c.id, hecha.id), { codigo: 'conflicto' });
 
-  await Clientes.eliminarActividad(sinFecha.id);
+  await assert.rejects(Clientes.eliminarActividad(c.id + 999, sinFecha.id), { codigo: 'no_encontrado' });
+  await Clientes.eliminarActividad(c.id, sinFecha.id);
   assert.equal((await Clientes.obtener(c.id)).actividades.length, 1);
 });
 

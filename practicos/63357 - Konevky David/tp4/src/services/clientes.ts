@@ -116,6 +116,10 @@ export class Clientes {
 
   // --- Actividades ---
 
+  static async listarActividades(clienteId: number): Promise<ActividadConEstado[]> {
+    return (await Clientes.obtener(clienteId)).actividades;
+  }
+
   static async agregarActividad(
     clienteId: number,
     datos: Pick<NuevaActividad, 'descripcion' | 'fechaCompromiso'>,
@@ -130,10 +134,11 @@ export class Clientes {
 
   /** Solo actividades no completadas. */
   static async actualizarActividad(
+    clienteId: number,
     id: number,
     datos: Partial<Pick<NuevaActividad, 'descripcion' | 'fechaCompromiso'>>,
   ): Promise<ActividadConEstado> {
-    const actual = await Clientes.actividadEditable(id);
+    const actual = await Clientes.actividadEditable(clienteId, id);
     const cambios: Partial<NuevaActividad> = {};
     if ('descripcion' in datos) {
       cambios.descripcion = limpiar(datos.descripcion)!;
@@ -146,23 +151,24 @@ export class Clientes {
   }
 
   /** Completa la actividad con la fecha de ejecución (por defecto hoy). */
-  static async completarActividad(id: number, fecha: string = hoy()): Promise<ActividadConEstado> {
-    await Clientes.actividadEditable(id);
+  static async completarActividad(clienteId: number, id: number, fecha: string = hoy()): Promise<ActividadConEstado> {
+    await Clientes.actividadEditable(clienteId, id);
     const [completa] = await db.update(actividades)
       .set({ fechaFinalizacion: fechaValida(fecha) }).where(eq(actividades.id, id)).returning();
     return conEstado(completa);
   }
 
   /** Solo actividades no completadas. */
-  static async eliminarActividad(id: number): Promise<void> {
-    await Clientes.actividadEditable(id);
+  static async eliminarActividad(clienteId: number, id: number): Promise<void> {
+    await Clientes.actividadEditable(clienteId, id);
     await db.delete(actividades).where(eq(actividades.id, id));
   }
 
   // --- Auxiliares ---
 
-  private static async actividadEditable(id: number): Promise<Actividad> {
-    const [a] = await db.select().from(actividades).where(eq(actividades.id, id));
+  private static async actividadEditable(clienteId: number, id: number): Promise<Actividad> {
+    const [a] = await db.select().from(actividades)
+      .where(and(eq(actividades.id, id), eq(actividades.clienteId, clienteId)));
     if (!a) throw new ErrorServicio('no_encontrado', 'Actividad no encontrada');
     if (a.fechaFinalizacion) throw new ErrorServicio('conflicto', 'Una actividad completada no se puede modificar');
     return a;

@@ -21,7 +21,7 @@ npm run dev      # con recarga automática
 npm start        # sin recarga
 ```
 
-Abrir http://localhost:3000/MiniCRM.html
+Abrir http://localhost:3005/MiniCRM.html
 
 ## Pruebas
 

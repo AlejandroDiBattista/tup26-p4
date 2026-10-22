@@ -1,9 +1,5 @@
-import express from 'express';
+import { app } from './app.js';
 
-const app = express();
-const PORT = 3000;
-
-app.use(express.json());
-app.use(express.static('public'));
+const PORT = Number(process.env.PORT ?? 3005);
 
 app.listen(PORT, () => console.log(`http://localhost:${PORT}/MiniCRM.html`));
