@@ -7,16 +7,418 @@
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <script>
+    // Babel con runtime "classic": el JSX usa React.createElement (React global).
+    Babel.registerPreset('react-classic', {
+      presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]],
+    });
+  </script>
   <style>
-    html, body, #root { height: 100%; margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+    :root {
+      --bg: #f3f5f9;
+      --panel: #ffffff;
+      --line: #e1e6ee;
+      --text: #1b2433;
+      --muted: #6b7587;
+      --brand: #2c4770;
+      --primary: #1f6feb;
+      --primary-dark: #1859c4;
+      --danger: #d33a3a;
+      --ok: #3b9a63;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; margin: 0; overflow: hidden; }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--text); background: var(--bg); }
+    button, input { font: inherit; color: inherit; }
+
+    /* Layout */
+    .app { height: 100%; display: flex; flex-direction: column; }
+    .app-header { background: var(--brand); color: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; font-size: 22px; font-weight: 700; flex: none; }
+    .app-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px 1fr; gap: 12px; padding: 12px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); min-height: 0; display: flex; flex-direction: column; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 12px; }
+    .panel-head h2 { margin: 0; font-size: 22px; }
+    .scroll { overflow-y: auto; min-height: 0; }
+    .empty { color: var(--muted); text-align: center; padding: 32px 16px; }
+    .error { color: var(--danger); padding: 8px 16px; font-size: 14px; }
+
+    /* Botones */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 500; }
+    .btn:hover { background: #f5f7fa; }
+    .btn svg { width: 16px; height: 16px; }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-danger { color: var(--danger); border-color: #f0c4c4; background: #fff7f7; }
+    .btn-danger:hover { background: #ffeded; }
+
+    /* Campos */
+    .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap > svg { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--muted); }
+    .input { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); outline: none; }
+    .input.with-icon { padding-left: 38px; }
+    .input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(31, 111, 235, .12); }
+
+    /* Lista de clientes */
+    .search { padding: 0 16px 12px; }
+    .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .list-item:hover { background: #f6f8fc; }
+    .list-item.selected { background: #e8f0fd; }
+    .avatar { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+    .item-title { font-weight: 600; }
+    .item-sub { color: var(--muted); font-size: 14px; }
+
+    /* Detalle */
+    .detail { padding: 20px 24px; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+    .detail-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .detail-top h1 { margin: 0; font-size: 30px; }
+    .detail-id { color: var(--muted); font-size: 14px; text-align: right; margin-bottom: 8px; }
+    .actions { display: flex; gap: 8px; }
+    .ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 24px; padding-bottom: 16px; border-bottom: 1px dashed var(--line); }
+    .ficha-row { display: flex; align-items: center; gap: 12px; color: var(--text); }
+    .ficha-row svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+    .ficha-row.vacio { color: var(--muted); }
+
+    /* Formulario */
+    .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .form-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+
+    /* Actividades */
+    .section-title { margin: 0 0 8px; font-size: 20px; }
+    .acts { border: 1px solid var(--line); border-radius: var(--radius); max-height: 230px; overflow-y: auto; }
+    .acts.done { background: #f2faf5; border-color: #d3eadb; }
+    .act { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .act:last-child { border-bottom: 0; }
+    .act-title { font-weight: 500; }
+    .act-sub { color: var(--muted); font-size: 14px; }
+    .act-sub.vencida { color: var(--danger); }
+    .check { flex: none; width: 20px; height: 20px; border: 2px solid #8993a4; border-radius: 4px; display: grid; place-items: center; }
+    .check.on { background: var(--ok); border-color: var(--ok); color: #fff; }
+    .check svg { width: 14px; height: 14px; }
+
+    @media (max-width: 800px) {
+      .app-body { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel">
-    function App() {
-      return <h1>MiniCRM</h1>;
+
+  <script type="text/babel" data-presets="react-classic">
+    const { useState, useEffect, useCallback } = React;
+
+    // ---------- Servicios (API REST) ----------
+    async function pedir(url, opciones = {}) {
+      const r = await fetch(url, {
+        ...opciones,
+        headers: { 'Content-Type': 'application/json' },
+        body: opciones.body && JSON.stringify(opciones.body),
+      });
+      if (r.status === 204) return null;
+      const datos = await r.json();
+      if (!r.ok) throw new Error(datos.error || 'Error de servidor');
+      return datos;
     }
+
+    const ClientesService = {
+      listar: (q = '') => pedir('/api/clientes?q=' + encodeURIComponent(q)),
+      obtener: (id) => pedir(`/api/clientes/${id}`),
+      crear: (datos) => pedir('/api/clientes', { method: 'POST', body: datos }),
+      actualizar: (id, datos) => pedir(`/api/clientes/${id}`, { method: 'PUT', body: datos }),
+      eliminar: (id) => pedir(`/api/clientes/${id}`, { method: 'DELETE' }),
+    };
+
+    // ---------- Utilidades ----------
+    const nombreCompleto = (c) => `${c.nombre} ${c.apellido}`;
+    const iniciales = (c) => (c.nombre[0] + c.apellido[0]).toUpperCase();
+
+    const formatoFecha = (iso) => {
+      const [a, m, d] = iso.split('-').map(Number);
+      return new Date(a, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    // ---------- Componentes base ----------
+    const ICONOS = {
+      plus: 'M12 5v14M5 12h14',
+      search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-4.5-4.5',
+      edit: 'M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4',
+      trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+      mail: 'M3 6h18v12H3zM3 7l9 7 9-7',
+      phone: 'M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z',
+      pin: 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+      save: 'M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-7h8v7',
+      x: 'M6 6l12 12M18 6L6 18',
+      check: 'M5 12.5l4.5 4.5L19 7.5',
+    };
+
+    function Icon({ name }) {
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d={ICONOS[name]} />
+        </svg>
+      );
+    }
+
+    function Button({ variant, icon, children, ...props }) {
+      return (
+        <button className={'btn' + (variant ? ` btn-${variant}` : '')} {...props}>
+          {icon && <Icon name={icon} />}{children}
+        </button>
+      );
+    }
+
+    function Input({ icon, ...props }) {
+      return (
+        <div className="input-wrap">
+          {icon && <Icon name={icon} />}
+          <input className={'input' + (icon ? ' with-icon' : '')} {...props} />
+        </div>
+      );
+    }
+
+    function Field({ label, ...props }) {
+      return (
+        <label className="field">
+          {label}
+          <Input {...props} />
+        </label>
+      );
+    }
+
+    function Layout({ sidebar, children }) {
+      return (
+        <div className="app">
+          <header className="app-header">MiniCRM</header>
+          <main className="app-body">
+            <section className="panel">{sidebar}</section>
+            <section className="panel">{children}</section>
+          </main>
+        </div>
+      );
+    }
+
+    function Avatar({ id, texto }) {
+      const h = (id * 47) % 360;
+      return <div className="avatar" style={{ background: `hsl(${h} 80% 90%)`, color: `hsl(${h} 55% 32%)` }}>{texto}</div>;
+    }
+
+    // ---------- Componentes de entidades ----------
+    function EntityList({ items, selectedId, onSelect, renderItem }) {
+      if (!items.length) return <div className="empty">Sin resultados</div>;
+      return (
+        <ul className="list">
+          {items.map((it) => (
+            <li key={it.id} className={'list-item' + (it.id === selectedId ? ' selected' : '')} onClick={() => onSelect(it.id)}>
+              {renderItem(it)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    // Formulario genérico: fields = [{ name, label, type?, required? }]
+    function EntityForm({ fields, initial, onSubmit, onCancel }) {
+      const [valores, setValores] = useState(initial);
+      const cambiar = (name) => (e) => setValores({ ...valores, [name]: e.target.value });
+      return (
+        <form className="form" onSubmit={(e) => { e.preventDefault(); onSubmit(valores); }}>
+          {fields.map((f) => (
+            <Field key={f.name} label={f.label} type={f.type || 'text'} required={f.required}
+              value={valores[f.name] ?? ''} onChange={cambiar(f.name)} />
+          ))}
+          <div className="form-actions">
+            <Button variant="primary" icon="save" type="submit">Guardar</Button>
+            <Button icon="x" type="button" onClick={onCancel}>Cancelar</Button>
+          </div>
+        </form>
+      );
+    }
+
+    const CAMPOS_CLIENTE = [
+      { name: 'nombre', label: 'Nombre', required: true },
+      { name: 'apellido', label: 'Apellido', required: true },
+      { name: 'email', label: 'Email', type: 'email', required: true },
+      { name: 'telefono', label: 'Teléfono' },
+      { name: 'domicilio', label: 'Domicilio' },
+      { name: 'localidad', label: 'Localidad' },
+    ];
+
+    function ClienteItem({ cliente }) {
+      return (
+        <>
+          <Avatar id={cliente.id} texto={iniciales(cliente)} />
+          <div>
+            <div className="item-title">{nombreCompleto(cliente)}</div>
+            <div className="item-sub">{cliente.email}</div>
+          </div>
+        </>
+      );
+    }
+
+    function FichaRow({ icon, texto }) {
+      return (
+        <div className={'ficha-row' + (texto ? '' : ' vacio')}>
+          <Icon name={icon} />{texto || 'Sin datos'}
+        </div>
+      );
+    }
+
+    function ClienteFicha({ cliente }) {
+      const direccion = [cliente.domicilio, cliente.localidad].filter(Boolean).join(', ');
+      return (
+        <div className="ficha">
+          <FichaRow icon="mail" texto={cliente.email} />
+          <FichaRow icon="pin" texto={direccion} />
+          <FichaRow icon="phone" texto={cliente.telefono} />
+        </div>
+      );
+    }
+
+    function ActividadItem({ actividad }) {
+      const { estado, fechaCompromiso, fechaFinalizacion } = actividad;
+      const completada = estado === 'completada';
+      const detalle = completada
+        ? `Completada el ${formatoFecha(fechaFinalizacion)}`
+        : fechaCompromiso ? formatoFecha(fechaCompromiso) : 'Sin fecha';
+      return (
+        <div className="act">
+          <span className={'check' + (completada ? ' on' : '')}>{completada && <Icon name="check" />}</span>
+          <div>
+            <div className="act-title">{actividad.descripcion}</div>
+            <div className={'act-sub' + (estado === 'vencida' ? ' vencida' : '')}>
+              {detalle}{estado === 'vencida' && ' · Vencido'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ActividadesLista({ titulo, actividades, completadas }) {
+      return (
+        <div>
+          <h3 className="section-title">{titulo}</h3>
+          <div className={'acts' + (completadas ? ' done' : '')}>
+            {actividades.length
+              ? actividades.map((a) => <ActividadItem key={a.id} actividad={a} />)
+              : <div className="empty">Sin actividades</div>}
+          </div>
+        </div>
+      );
+    }
+
+    function ClienteDetalle({ cliente, onEditar, onEliminar }) {
+      const pendientes = cliente.actividades.filter((a) => a.estado !== 'completada');
+      const completadas = cliente.actividades.filter((a) => a.estado === 'completada');
+      return (
+        <>
+          <div className="detail-top">
+            <h1>{nombreCompleto(cliente)}</h1>
+            <div>
+              <div className="detail-id">#{cliente.id}</div>
+              <div className="actions">
+                <Button icon="edit" onClick={onEditar}>Editar</Button>
+                <Button variant="danger" icon="trash" onClick={onEliminar}>Eliminar</Button>
+              </div>
+            </div>
+          </div>
+          <ClienteFicha cliente={cliente} />
+          <ActividadesLista titulo="Compromisos" actividades={pendientes} />
+          <ActividadesLista titulo="Actividades completadas" actividades={completadas} completadas />
+        </>
+      );
+    }
+
+    // ---------- Aplicación ----------
+    function App() {
+      const [q, setQ] = useState('');
+      const [clientes, setClientes] = useState([]);
+      const [selId, setSelId] = useState(null);
+      const [detalle, setDetalle] = useState(null);
+      const [modo, setModo] = useState('ver'); // ver | editar | nuevo
+      const [error, setError] = useState('');
+
+      const intentar = (fn) => fn().catch((e) => setError(e.message));
+
+      const cargarLista = useCallback(
+        () => intentar(async () => { setClientes(await ClientesService.listar(q)); setError(''); }),
+        [q],
+      );
+
+      // Búsqueda en vivo (con una pequeña espera mientras se escribe).
+      useEffect(() => {
+        const t = setTimeout(cargarLista, 200);
+        return () => clearTimeout(t);
+      }, [cargarLista]);
+
+      useEffect(() => {
+        if (selId == null) return setDetalle(null);
+        intentar(async () => setDetalle(await ClientesService.obtener(selId)));
+      }, [selId]);
+
+      const seleccionar = (id) => { setSelId(id); setModo('ver'); };
+
+      const guardar = (datos) => intentar(async () => {
+        const guardado = modo === 'nuevo'
+          ? await ClientesService.crear(datos)
+          : await ClientesService.actualizar(selId, datos);
+        setError('');
+        setModo('ver');
+        setSelId(guardado.id);
+        setDetalle(await ClientesService.obtener(guardado.id));
+        await cargarLista();
+      });
+
+      const eliminar = () => {
+        if (!confirm(`¿Eliminar a ${nombreCompleto(detalle)} y sus actividades?`)) return;
+        intentar(async () => {
+          await ClientesService.eliminar(selId);
+          setSelId(null);
+          await cargarLista();
+        });
+      };
+
+      const sidebar = (
+        <>
+          <div className="panel-head">
+            <h2>Clientes</h2>
+            <Button variant="primary" icon="plus" onClick={() => { setSelId(null); setModo('nuevo'); }}>Agregar</Button>
+          </div>
+          <div className="search">
+            <Input icon="search" placeholder="Buscar por cualquier campo..." value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="scroll">
+            <EntityList items={clientes} selectedId={selId} onSelect={seleccionar}
+              renderItem={(c) => <ClienteItem cliente={c} />} />
+          </div>
+        </>
+      );
+
+      let contenido;
+      if (modo === 'nuevo' || (modo === 'editar' && detalle)) {
+        contenido = (
+          <>
+            <h1>{modo === 'nuevo' ? 'Nuevo cliente' : 'Editar cliente'}</h1>
+            <EntityForm key={modo + selId} fields={CAMPOS_CLIENTE}
+              initial={modo === 'nuevo' ? {} : detalle}
+              onSubmit={guardar} onCancel={() => setModo('ver')} />
+          </>
+        );
+      } else if (detalle) {
+        contenido = <ClienteDetalle cliente={detalle} onEditar={() => setModo('editar')} onEliminar={eliminar} />;
+      } else {
+        contenido = <div className="empty">Seleccioná un cliente para ver su ficha</div>;
+      }
+
+      return (
+        <Layout sidebar={sidebar}>
+          {error && <div className="error">{error}</div>}
+          <div className="detail">{contenido}</div>
+        </Layout>
+      );
+    }
+
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
