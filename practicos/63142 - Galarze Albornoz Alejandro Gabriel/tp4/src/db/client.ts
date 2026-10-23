@@ -1,7 +1,8 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import path from "node:path";
 
-const sqlite = new Database("minicrm.sqlite");
+const sqlite = new Database(path.resolve(__dirname, "../../minicrm.sqlite"));
 sqlite.pragma("foreign_keys = ON");
 
 sqlite.exec(`
