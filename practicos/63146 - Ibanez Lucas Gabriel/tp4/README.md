@@ -48,6 +48,37 @@ Toda la lógica vive en la clase `Clientes` (`src/services/ClientesService.ts`),
 - **Normalización:** nombre y apellido quedan con mayúscula inicial, el email en minúsculas y sin espacios, el teléfono solo con dígitos, espacios, `+`, `-` y paréntesis, y los campos vacíos se guardan como `null`.
 - **Errores:** el servicio lanza `NoEncontrado` (404), `DatosInvalidos` (400) o `Conflicto` (409), definidos en `src/services/errores.ts`. Por ejemplo, un email repetido o editar una actividad completada da `Conflicto`.
 
+## API REST
+
+Todas las respuestas son JSON. Los errores tienen la forma `{ "error": "mensaje" }`.
+
+| Método   | Ruta                                     | Body                                                                | Respuesta                      |
+| -------- | ---------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
+| `GET`    | `/api/clientes?q=texto`                  | —                                                                   | 200, lista de clientes         |
+| `GET`    | `/api/clientes/:id`                      | —                                                                   | 200, cliente con `actividades` |
+| `POST`   | `/api/clientes`                          | `nombre`, `apellido`, `email`, `domicilio?`, `localidad?`, `telefono?` | 201, cliente creado         |
+| `PUT`    | `/api/clientes/:id`                      | Los campos a modificar                                              | 200, cliente actualizado       |
+| `DELETE` | `/api/clientes/:id`                      | —                                                                   | 204                            |
+| `POST`   | `/api/clientes/:clienteId/actividades`   | `descripcion`, `fechaCompromiso?` (AAAA-MM-DD)                      | 201, actividad creada          |
+| `PUT`    | `/api/actividades/:actividadId`          | `descripcion?`, `fechaCompromiso?`                                  | 200, actividad actualizada     |
+| `DELETE` | `/api/actividades/:actividadId`          | —                                                                   | 204                            |
+| `PATCH`  | `/api/actividades/:actividadId/completar`| —                                                                   | 200, actividad completada      |
+
+Códigos de error:
+
+- **400**: datos inválidos, JSON mal formado o id que no es un entero positivo.
+- **404**: el cliente, la actividad o la ruta no existen.
+- **409**: conflicto con el estado actual, como un email repetido o una actividad que ya está completada.
+- **500**: error inesperado. Se registra en la consola del servidor.
+
+Ejemplos con `curl`:
+
+```bash
+curl "http://localhost:3000/api/clientes?q=garcia"
+curl -X POST http://localhost:3000/api/clientes -H "Content-Type: application/json" -d "{\"nombre\":\"Lucas\",\"apellido\":\"Ibañez\",\"email\":\"lucas@example.com\"}"
+curl -X PATCH http://localhost:3000/api/actividades/2/completar
+```
+
 ## Datos de ejemplo
 
 `npm run db:seed` se puede ejecutar todas las veces que quieras: borra todo, reinicia los ids y vuelve a cargar los mismos datos, sin duplicar nada. Las fechas se calculan a partir del día de hoy, así siempre hay actividades completadas, pendientes futuras, pendientes vencidas y pendientes sin fecha.
@@ -133,8 +164,10 @@ npm run db:studio
 │   ├── services/
 │   │   ├── ClientesService.ts  Reglas de negocio (clase Clientes)
 │   │   └── errores.ts      Errores de negocio con su código HTTP
-│   ├── controllers/        Controladores HTTP
-│   ├── routes/             Routers de Express
+│   ├── controllers/        Controladores HTTP (clientes, actividades, parámetros)
+│   ├── routes/             Routers de Express (montados en /api)
+│   ├── middlewares/
+│   │   └── errores.ts      404 de la API y manejador global de errores
 │   ├── app.ts              Configuración de Express
 │   └── index.ts            Punto de entrada
 ├── drizzle.config.ts
