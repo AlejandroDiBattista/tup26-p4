@@ -1,0 +1,84 @@
+### 1. Comprobar que la API y la base de datos funcionen
+GET http://localhost:3000/api/estado
+
+### 2. Listar todos los clientes
+GET http://localhost:3000/api/clientes
+
+### 3. Crear un cliente de prueba
+POST http://localhost:3000/api/clientes
+Content-Type: application/json
+
+{
+  "nombre": "Ana",
+  "apellido": "Perez",
+  "email": "ana.perez@example.com",
+  "domicilio": "Calle 123",
+  "localidad": "Yerba Buena",
+  "telefono": "3815551234"
+}
+
+### 4. Buscar clientes por nombre
+GET http://localhost:3000/api/clientes?q=Ana
+
+### 5. Obtener un cliente por su ID
+GET http://localhost:3000/api/clientes/3
+
+### 6. Modificar un cliente
+PUT http://localhost:3000/api/clientes/3
+Content-Type: application/json
+
+{
+  "telefono": "3814445678"
+}
+
+### 7. Verificar la modificación
+GET http://localhost:3000/api/clientes/3
+
+### 8. Crear una actividad para el cliente 3
+POST http://localhost:3000/api/clientes/3/actividades
+Content-Type: application/json
+
+{
+  "descripcion": "Llamar para confirmar una reunión",
+  "fechaCompromiso": "2026-10-24"
+}
+
+### 9. Consultar las actividades del cliente 3
+GET http://localhost:3000/api/clientes/3/actividades
+
+### 10. Completar la actividad 1
+PATCH http://localhost:3000/api/actividades/1/completar
+
+### 11. Verificar que quedó completada
+GET http://localhost:3000/api/clientes/3/actividades
+
+### 12. Intentar modificar la actividad completada (debe rechazarse)
+PUT http://localhost:3000/api/actividades/1
+Content-Type: application/json
+
+{
+  "descripcion": "Intento de modificar una actividad completada"
+}
+
+### 13. Intentar eliminar la actividad completada (debe rechazarse)
+DELETE http://localhost:3000/api/actividades/1
+
+### 14. Intentar crear un cliente sin nombre (debe rechazarse)
+POST http://localhost:3000/api/clientes
+Content-Type: application/json
+
+{
+  "apellido": "Prueba",
+  "email": "prueba@example.com"
+}
+
+### 15. Intentar crear una actividad sin descripción (debe rechazarse)
+POST http://localhost:3000/api/clientes/3/actividades
+Content-Type: application/json
+
+{
+  "fechaCompromiso": "2026-10-24"
+}
+
+### 16. Consultar un cliente que no existe (debe devolver 404)
+GET http://localhost:3000/api/clientes/99999
