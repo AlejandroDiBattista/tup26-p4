@@ -53,6 +53,17 @@
     const [clientes, setClientes] = React.useState([]);
     const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
     const [actividades, setActividades] = React.useState([]);
+    const [modoFormulario, setModoFormulario] = React.useState(false); 
+    
+    const [formularioCliente, setFormularioCliente] = React.useState({
+  nombre: "",
+  apellido: "",
+  email: "",
+  domicilio: "",
+  localidad: "",
+  telefono: "",
+});
+
 
     React.useEffect(() => {
   if (!clienteSeleccionado) {
@@ -78,6 +89,14 @@
     <aside className="clientes">
   <h2>Clientes</h2>
 
+  <button
+  onClick={() => {
+    setClienteSeleccionado(null);
+    setModoFormulario(true);
+  }}
+>
+  Nuevo cliente
+</button>
   <input
     type="text"
     placeholder="Buscar cliente..."
@@ -108,58 +127,189 @@
 </div>
 </aside>
 
-    <main className="detalle">
-  <h2>Detalle del cliente</h2>
+  <main className="detalle">
+  <h2>{modoFormulario ? "Nuevo cliente" : "Detalle del cliente"}</h2>
 
- {clienteSeleccionado && (
-  <div>
-    <h3>
-      {clienteSeleccionado.nombre} {clienteSeleccionado.apellido}
-    </h3>
+  {modoFormulario ? (
+    <div>
+      <p>Formulario para agregar un nuevo cliente.</p>
 
-    <p><strong>ID:</strong> {clienteSeleccionado.id}</p>
-    <p><strong>Email:</strong> {clienteSeleccionado.email}</p>
-    <p><strong>Domicilio:</strong> {clienteSeleccionado.domicilio || "—"}</p>
-    <p><strong>Localidad:</strong> {clienteSeleccionado.localidad || "—"}</p>
-    <p><strong>Teléfono:</strong> {clienteSeleccionado.telefono || "—"}</p>
+      <label>
+        Nombre:
+        <input
+  type="text"
+  value={formularioCliente.nombre}
+  onChange={(e) =>
+    setFormularioCliente({
+      ...formularioCliente,
+      nombre: e.target.value,
+    })
+  }
+/>
+      </label>
 
-<h4>Compromisos</h4>
+      <br />
 
-{actividades.filter((actividad) => !actividad.fechaFinalizacion).length === 0 ? (
-  <p>No hay compromisos pendientes.</p>
-) : (
-  <ul>
-    {actividades
-      .filter((actividad) => !actividad.fechaFinalizacion)
-      .map((actividad) => (
-        <li key={actividad.id}>
-          <strong>{actividad.descripcion}</strong>
-          <br />
-          Fecha de compromiso: {actividad.fechaCompromiso || "Sin fecha"}
-        </li>
-      ))}
-  </ul>
-)}
+      <label>
+        Apellido:
+        <input
+  type="text"
+  value={formularioCliente.apellido}
+  onChange={(e) =>
+    setFormularioCliente({
+      ...formularioCliente,
+      apellido: e.target.value,
+    })
+  }
+/>
+      </label>
 
-<h4>Completadas</h4>
+      <br />
 
-{actividades.filter((actividad) => actividad.fechaFinalizacion).length === 0 ? (
-  <p>No hay actividades completadas.</p>
-) : (
-  <ul>
-    {actividades
-      .filter((actividad) => actividad.fechaFinalizacion)
-      .map((actividad) => (
-        <li key={actividad.id}>
-          <strong>{actividad.descripcion}</strong>
-          <br />
-          Fecha de finalización: {actividad.fechaFinalizacion}
-        </li>
-      ))}
-  </ul>
-)}
-  </div>
-)}
+      <label>
+        Email:
+        <input
+  type="email"
+  value={formularioCliente.email}
+  onChange={(e) =>
+    setFormularioCliente({
+      ...formularioCliente,
+      email: e.target.value,
+    })
+  }
+/>
+      </label>
+
+      <br />
+
+      <label>
+        Domicilio:
+        <input
+  type="text"
+  value={formularioCliente.domicilio}
+  onChange={(e) =>
+    setFormularioCliente({
+      ...formularioCliente,
+      domicilio: e.target.value,
+    })
+  }
+/>
+      </label>
+
+      <br />
+
+      <label>
+        Localidad:
+        <input
+  type="text"
+  value={formularioCliente.localidad}
+  onChange={(e) =>
+    setFormularioCliente({
+      ...formularioCliente,
+      localidad: e.target.value,
+    })
+  }
+/>
+      </label>
+
+      <br />
+
+      <label>
+        Teléfono:
+        <input
+  type="text"
+  value={formularioCliente.telefono}
+  onChange={(e) =>
+    setFormularioCliente({
+      ...formularioCliente,
+      telefono: e.target.value,
+    })
+  }
+/>
+      </label>
+
+      <button
+  onClick={async () => {
+    const respuesta = await fetch("/api/clientes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formularioCliente),
+    });
+
+    if (respuesta.ok) {
+      const nuevoCliente = await respuesta.json();
+
+      setClientes([...clientes, nuevoCliente]);
+      setClienteSeleccionado(nuevoCliente);
+      setModoFormulario(false);
+
+      setFormularioCliente({
+        nombre: "",
+        apellido: "",
+        email: "",
+        domicilio: "",
+        localidad: "",
+        telefono: "",
+      });
+    }
+  }}
+>
+  Guardar cliente
+</button>
+    </div>
+  ) : (
+    clienteSeleccionado && (
+      <div>
+        <h3>
+          {clienteSeleccionado.nombre} {clienteSeleccionado.apellido}
+        </h3>
+
+        <p><strong>ID:</strong> {clienteSeleccionado.id}</p>
+        <p><strong>Email:</strong> {clienteSeleccionado.email}</p>
+        <p><strong>Domicilio:</strong> {clienteSeleccionado.domicilio || "—"}</p>
+        <p><strong>Localidad:</strong> {clienteSeleccionado.localidad || "—"}</p>
+        <p><strong>Teléfono:</strong> {clienteSeleccionado.telefono || "—"}</p>
+
+        <h4>Compromisos</h4>
+
+        {actividades.filter((actividad) => !actividad.fechaFinalizacion).length === 0 ? (
+          <p>No hay compromisos pendientes.</p>
+        ) : (
+          <ul>
+            {actividades
+              .filter((actividad) => !actividad.fechaFinalizacion)
+              .map((actividad) => (
+                <li key={actividad.id}>
+                  <strong>{actividad.descripcion}</strong>
+                  <br />
+                  Fecha de compromiso: {actividad.fechaCompromiso || "Sin fecha"}
+                </li>
+              ))}
+          </ul>
+        )}
+
+        <h4>Completadas</h4>
+
+        {actividades.filter((actividad) => actividad.fechaFinalizacion).length === 0 ? (
+          <p>No hay actividades completadas.</p>
+        ) : (
+          <ul>
+            {actividades
+              .filter((actividad) => actividad.fechaFinalizacion)
+              .map((actividad) => (
+                <li key={actividad.id}>
+                  <strong>{actividad.descripcion}</strong>
+                  <br />
+                  Fecha de finalización: {actividad.fechaFinalizacion}
+                </li>
+              ))}
+          </ul>
+        )}
+      </div>
+    )
+  )}
 </main>
   </div>
 );
