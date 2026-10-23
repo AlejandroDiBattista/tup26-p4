@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {render, Box, Text, useInput, useApp} from 'ink';
 import {readFile, writeFile} from 'node:fs/promises';
 import {TextInput} from '@inkjs/ui';
-import {basename, delimiter} from 'node:path';
+import {basename, delimiter, format} from 'node:path';
 
 const COLUMNAS = process.stdout.columns || 80;
 const FILAS    = process.stdout.rows || 24;
@@ -70,8 +70,90 @@ async function loadCsv(path) {
     try {
         text = await readFile(path, 'utf8');
     } catch (error) {
-        
+        throw new Error('No se puede leer el archivo: "' + path + '"');
     }
+    
+    const { header, rows } = parseDelimited(text);
+
+    return { header, rows, fileName: path };
+}
+
+function isNumericColumn(rows, column) {
+    if (rows.length === 0) {
+        return false;
+    }
+
+    for (const row of rows) {
+        const value = row[column].trim();
+
+        if (value === "" || isNaN(Number(value))) {
+            return false; 
+        }
+    }
+
+    return true;
+}
+
+function formatCell(cell, numeric) {
+    if (numeric) {
+        return Number(cell).toLocaleString('es-AR');
+    }
+    
+    return cell;
+}
+
+function measureColumns(header, rows) {
+    const columns = [];
+
+    for (let column = 0; column < header.length; column++) {
+        const numeric = isNumericColumn(rows, column);
+
+        let width = header[column].length;
+        for (const row of rows) {
+            width = Math.max(width, formatCell(row[column], numeric).length);
+        }
+
+        columns.push({ width, numeric });
+    }
+
+    return columns;
+}
+
+function sortRows(rows, column, decending) {
+    const numeric = isNumericColumn(rows, column);
+
+    const compare = (firstRow, secondRow) => {
+        let comparison;
+
+        if (numeric) {
+            comparison = Number(firstRow[column]) - Number(secondRow[column]);    
+        } else {
+            comparison = firstRow[column].localeCompare(secondRow[column], "es");    
+        }
+        
+        if (decending) {
+            comparison = -comparison;
+        }
+
+        return comparison;
+    };
+
+    const rowsToSort = [];
+    for (const row of rows) {
+        rowsToSort.push(row);
+    }
+
+    return rowsToSort.sort(compare);
+}
+
+function adjustFirstRow(firstRow, selectedRow) {
+    if (selectedRow < firstRow) {
+        return selectedRow;
+    }
+    if (selectedRow >= firstRow + VISIBLE_ROWS) {
+        return selectedRow - VISIBLE_ROWS + 1;
+    }
+    return firstRow;
 }
 
 function App({ initialTable, initialMessage }) {
@@ -80,10 +162,72 @@ function App({ initialTable, initialMessage }) {
     const [mode, setMode] = useState(initialTable ? 'view' : 'open');
     const [message, setMessage] = useState(initialMessage);
     const [cursor, setCursor] = useState({ row: 0, column: 0, firstRow: 0 });
-    
+
+    const columns = table ? measureColumns(table.header, table.rows) : [];
+    const hasRows = table !== null && table.rows.length > 0;
+    const currentValue = hasRows ? table.rows[cursor.row][cursor.column] : '';
+
+    function moveTo(row, column) {
+        const newRow = Math.min(Math.max(row, 0), Math.max(table.rows.length - 1, 0));
+        const newColumn = Math.min(Math.max(column, 0), table.header.length - 1);
+        setCursor({ row: newRow, column: newColumn, firstRow: adjustFirstRow(cursor.firstRow, newRow) });
+    }
+
+    function sortBy(decending) {
+        setTable({
+            ...table,
+            rows: sortRows(table.rows, cursor.column, decending)
+        });
+    }
+
+    function cancel() {
+        if (table === null) {
+            exit();
+            return;
+        }
+        setMessage(null);
+        setMode('view');
+    }
+
+    async function openFile(path) {
+        try {
+            const table = await loadCsv(path);
+            
+            setTable(table);
+            setCursor({ row: 0, column: 0, firstRow: 0 });
+            setMessage(null);
+            setMode("view");
+        } catch (error) {
+            setMessage(error.message);
+        }
+    }
+
+    async function saveFile(path) {
+        try {
+            await saveCsv(path, table);
+            setMessage(null);
+            setTable({ ...table, fileName: path});
+            setMode('view');
+        } catch (error) {
+            setMessage(error.message); 
+        }
+    }
+
     useInput((tecla, key) => {
         if (key.escape) {
             exit();
+        }
+        else if (key.upArrow) {
+            moveTo(cursor.row - 1, cursor.column);
+        }
+        else if (key.downArrow) {
+            moveTo(cursor.row + 1, cursor.column);
+        }
+        else if (key.leftArrow) {
+            moveTo(cursor.row, cursor.column - 1);
+        }
+        else if (key.rightArrow) {
+            moveTo(cursor.row, cursor.column + 1);
         }
     })
 
