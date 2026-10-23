@@ -146,6 +146,7 @@ npm run db:studio
 | `npm run db:seed`   | Vacía la base y carga los datos de ejemplo       |
 | `npm run db:studio` | Abre Drizzle Studio                              |
 | `npm run setup`     | `db:init` + `db:push` + `db:seed`                |
+| `npm run loc`       | Cuenta las líneas de código netas del proyecto   |
 
 ## Estructura
 
@@ -170,8 +171,98 @@ npm run db:studio
 │   │   └── errores.ts      404 de la API y manejador global de errores
 │   ├── app.ts              Configuración de Express
 │   └── index.ts            Punto de entrada
+├── scripts/
+│   └── loc.mjs             Conteo de líneas de código
 ├── drizzle.config.ts
 ├── tsconfig.json
 ├── package.json
 └── .env.example
 ```
+
+## Resumen del proyecto
+
+### Líneas de código
+
+Se cuentan las líneas **netas**, es decir, sin líneas en blanco ni comentarios. No se cuentan `node_modules`, los archivos JSON, las configuraciones de build (`tsconfig.json`, `drizzle.config.ts`) ni el propio script de conteo. Para recalcularlas:
+
+```bash
+npm run loc
+```
+
+**Backend (TypeScript, `src/`)**
+
+| Capa                                              | Archivos                                              | Líneas |
+| ------------------------------------------------- | ----------------------------------------------------- | -----: |
+| Configuración y conexión                          | `config/env.ts`, `config/database.ts`                 |     32 |
+| Base de datos                                     | `db/schema.ts`, `db/init.ts`, `db/seed.ts`            |    147 |
+| Servicio (reglas de negocio)                      | `services/ClientesService.ts`, `services/errores.ts`  |    185 |
+| Controladores                                     | `controllers/*.ts`                                    |     55 |
+| Rutas                                             | `routes/*.ts`                                         |     24 |
+| Middleware de errores                             | `middlewares/errores.ts`                              |     21 |
+| Aplicación y arranque                             | `app.ts`, `index.ts`                                  |     17 |
+| **Subtotal backend**                              |                                                       | **481** |
+
+De esas líneas, 103 son los datos de ejemplo de `seed.ts`.
+
+**Frontend (`public/MiniCRM.html`)**
+
+| Parte                      | Líneas |
+| -------------------------- | -----: |
+| HTML (estructura y CDN)    |     18 |
+| CSS                        |    253 |
+| React (JSX)                |    478 |
+| **Subtotal frontend**      | **749** |
+
+**Total del proyecto: 1230 líneas netas.**
+
+### Tiempo estimado de desarrollo
+
+Es una estimación del esfuerzo que llevaría hacer el proyecto a mano, incluyendo las pruebas de cada etapa:
+
+| Etapa                                                         | Horas estimadas |
+| ------------------------------------------------------------- | --------------: |
+| Estructura del proyecto, TypeScript, Express y conexión Drizzle |           1,5 |
+| Esquema de la base y script de datos de ejemplo               |             1,5 |
+| Servicio `Clientes` (CRUD, búsqueda, normalización, reglas)   |               3 |
+| API REST (rutas, controladores, manejo de errores)            |               2 |
+| Interfaz: layout maestro-detalle y búsqueda en vivo           |               2 |
+| Interfaz: formularios, actividades y listas                   |               4 |
+| Pruebas manuales y documentación                              |               2 |
+| **Total**                                                     |      **≈ 16 h** |
+
+### Cómo validar las funcionalidades del enunciado
+
+Preparación: con los datos de ejemplo recién cargados, levantar el servidor y abrir <http://localhost:3000>.
+
+```bash
+npm install
+npm run setup
+npm run dev
+```
+
+1. **Layout tipo app:** al achicar la ventana, la página nunca muestra scroll. Solo scrollean la lista de clientes y las listas de actividades.
+2. **Búsqueda en vivo por cualquier campo:** escribir en el buscador y ver cómo se filtra la lista mientras escribís.
+   - `garcia` encuentra a Ana García, aunque no lleve acento.
+   - `yerba` filtra por localidad.
+   - `3814551020` busca por teléfono.
+   - `catalogo` encuentra al cliente por el texto de una de sus actividades.
+3. **Maestro y detalle:** al hacer clic en un cliente se ve su ficha (email, teléfono, domicilio y localidad, con `#id`) y sus actividades, que son de solo lectura.
+4. **Agregar cliente:** con "+ Agregar" se abre el formulario en el detalle. Si se usa un email que ya existe, aparece un error. Con datos válidos, el cliente se guarda y queda seleccionado.
+5. **Editar cliente:** con "Editar" se abre el formulario con los datos cargados. Al cambiar un campo y presionar "Guardar", la ficha y la lista se actualizan.
+6. **Agregar actividad:** desde el subformulario "Agregar actividad", cargar una sin fecha y otra con fecha pasada.
+   - En "Compromisos", la que no tiene fecha aparece primero.
+   - La de fecha pasada aparece en rojo con la etiqueta "Vencido".
+7. **Editar actividad:** con el lápiz de un compromiso, el subformulario cambia a "Editar actividad". Al guardar, la lista se actualiza.
+8. **Completar actividad:** al marcar el checkbox, la actividad pasa a "Actividades completadas" con "Completada el [fecha]".
+9. **Completadas inalterables:** las completadas no tienen botones de editar ni borrar. La API también las protege:
+
+   ```bash
+   curl -X DELETE http://localhost:3000/api/actividades/1
+   ```
+
+   La respuesta es 409, porque la actividad 1 del seed está completada.
+10. **Eliminar actividad pendiente:** con el tacho de un compromiso, después de confirmar, la actividad desaparece.
+11. **Eliminar cliente:** con "Eliminar", después de confirmar, se borran el cliente y todas sus actividades.
+12. **API REST y errores:** probar los ejemplos de `curl` de la sección [API REST](#api-rest). Un id inexistente devuelve 404, datos inválidos devuelven 400 y una ruta que no existe devuelve 404 en JSON.
+
+Al terminar, `npm run db:seed` vuelve a dejar los datos de ejemplo como al principio.
