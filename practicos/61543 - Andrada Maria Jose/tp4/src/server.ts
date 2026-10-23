@@ -4,6 +4,7 @@ import actividadesRouter from "./routes/actividades.routes.js";
 
 const app = express();
 app.use(express.json());
+app.use(express.static("public"));
 app.use("/api/clientes", clientesRouter);
 app.use("/api", actividadesRouter);
 const PORT = 3000;

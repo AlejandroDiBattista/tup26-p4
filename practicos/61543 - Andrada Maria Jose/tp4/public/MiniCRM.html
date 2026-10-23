@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+  }
+
+  #root {
+    height: 100vh;
+  }
+.app {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100vh;
+}
+
+.clientes {
+  padding: 20px;
+  border-right: 1px solid #ccc;
+  background: white;
+  overflow-y: auto;
+}
+
+.detalle {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+</style>
+
+</head>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.9/babel.min.js"></script>
+<body>
+
+  <div id="root"></div>
+
+<script type="text/babel">
+  function App() {
+    const [busqueda, setBusqueda] = React.useState("");
+    const [clientes, setClientes] = React.useState([]);
+    const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
+    const [actividades, setActividades] = React.useState([]);
+
+    React.useEffect(() => {
+  if (!clienteSeleccionado) {
+    setActividades([]);
+    return;
+  }
+
+  fetch(`/api/clientes/${clienteSeleccionado.id}/actividades`)
+    .then((respuesta) => respuesta.json())
+    .then((datos) => setActividades(datos));
+}, [clienteSeleccionado]);
+
+
+    React.useEffect(() => {
+  fetch("/api/clientes")
+    .then((respuesta) => respuesta.json())
+    .then((datos) => setClientes(datos));
+}, []);
+
+
+    return (
+  <div className="app">
+    <aside className="clientes">
+  <h2>Clientes</h2>
+
+  <input
+    type="text"
+    placeholder="Buscar cliente..."
+    value={busqueda}
+    onChange={(e) => setBusqueda(e.target.value)}
+  />
+
+  <div className="lista-clientes">
+  {clientes
+  .filter((cliente) =>
+    Object.values(cliente)
+      .join(" ")
+      .toLowerCase()
+      .includes(busqueda.toLowerCase())
+  )
+  .map((cliente) => (
+    <div
+  key={cliente.id}
+  className="cliente-item"
+  onClick={() => setClienteSeleccionado(cliente)}
+>
+      <strong>
+        {cliente.nombre} {cliente.apellido}
+      </strong>
+      <small>{cliente.email}</small>
+    </div>
+  ))}
+</div>
+</aside>
+
+    <main className="detalle">
+  <h2>Detalle del cliente</h2>
+
+ {clienteSeleccionado && (
+  <div>
+    <h3>
+      {clienteSeleccionado.nombre} {clienteSeleccionado.apellido}
+    </h3>
+
+    <p><strong>ID:</strong> {clienteSeleccionado.id}</p>
+    <p><strong>Email:</strong> {clienteSeleccionado.email}</p>
+    <p><strong>Domicilio:</strong> {clienteSeleccionado.domicilio || "—"}</p>
+    <p><strong>Localidad:</strong> {clienteSeleccionado.localidad || "—"}</p>
+    <p><strong>Teléfono:</strong> {clienteSeleccionado.telefono || "—"}</p>
+
+<h4>Compromisos</h4>
+
+{actividades.filter((actividad) => !actividad.fechaFinalizacion).length === 0 ? (
+  <p>No hay compromisos pendientes.</p>
+) : (
+  <ul>
+    {actividades
+      .filter((actividad) => !actividad.fechaFinalizacion)
+      .map((actividad) => (
+        <li key={actividad.id}>
+          <strong>{actividad.descripcion}</strong>
+          <br />
+          Fecha de compromiso: {actividad.fechaCompromiso || "Sin fecha"}
+        </li>
+      ))}
+  </ul>
+)}
+
+<h4>Completadas</h4>
+
+{actividades.filter((actividad) => actividad.fechaFinalizacion).length === 0 ? (
+  <p>No hay actividades completadas.</p>
+) : (
+  <ul>
+    {actividades
+      .filter((actividad) => actividad.fechaFinalizacion)
+      .map((actividad) => (
+        <li key={actividad.id}>
+          <strong>{actividad.descripcion}</strong>
+          <br />
+          Fecha de finalización: {actividad.fechaFinalizacion}
+        </li>
+      ))}
+  </ul>
+)}
+  </div>
+)}
+</main>
+  </div>
+);
+  }
+
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(<App />);
+</script>
+
+</body>
+</html>
