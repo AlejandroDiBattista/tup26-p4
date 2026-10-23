@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM</title>
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <style>
+    :root { font-family: Arial, sans-serif; color: #182235; background: #f2f5f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; height: 100vh; overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { height: 100vh; display: flex; flex-direction: column; }
+    .topbar { flex: 0 0 68px; display: flex; align-items: center; padding: 0 30px; color: white; background: #304d73; }
+    .topbar h1 { margin: 0; font-size: 36px; letter-spacing: -.7px; }
+    .workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: 32% 68%; gap: 12px; padding: 10px 12px; }
+    .panel { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #d7e0e9; border-radius: 9px; background: #fff; box-shadow: 0 1px 3px #18304712; }
+    .master { display: flex; flex-direction: column; }
+    .master-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 10px; }
+    h2, h3 { margin: 0; }
+    h2 { font-size: 31px; }
+    h3 { font-size: 22px; }
+    .search { margin: 8px 20px 12px; padding: 12px 14px; border: 1px solid #ccd5df; border-radius: 6px; font-size: 17px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 8px 15px; border: 1px solid #cfd6de; border-radius: 6px; background: #fff; color: #182235; }
+    .btn.primary { border-color: #1769d3; background: #1769d3; color: #fff; }
+    .btn.danger { border-color: #e3a7a7; color: #ad3434; }
+    .btn.small { min-height: 34px; padding: 5px 10px; }
+    .client-list { min-height: 0; flex: 1; overflow-y: auto; border-top: 1px solid #e4e9ef; }
+    .client { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 18px; border: 0; border-bottom: 1px solid #e5e9ee; background: #fff; text-align: left; }
+    .client:hover, .client.active { background: #e3f0ff; }
+    .avatar { display: grid; place-items: center; flex: 0 0 48px; width: 48px; height: 48px; border-radius: 50%; background: #dcecff; color: #2b69ad; font-weight: bold; font-size: 16px; }
+    .client-info { min-width: 0; }
+    .client-info strong, .client-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .client-info strong { font-size: 18px; }
+    .client-info span { margin-top: 4px; color: #697487; }
+    .detail { display: flex; flex-direction: column; padding: 28px 20px 20px; }
+    .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .detail-title { display: flex; align-items: center; gap: 12px; }
+    .detail-title h2 { font-size: 38px; }
+    .id { color: #667080; font-size: 18px; }
+    .actions { display: flex; gap: 10px; }
+    .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 40px; margin: 36px 0 24px; font-size: 18px; }
+    .contact div { display: flex; gap: 12px; align-items: flex-start; }
+    .contact .icon { color: #6a7484; width: 22px; text-align: center; }
+    .activity-form { padding: 18px; border: 1px dashed #ccd4de; border-radius: 8px; }
+    .activity-form h3 { margin-bottom: 13px; }
+    .form-row { display: flex; gap: 12px; }
+    .form-row input { min-width: 0; flex: 1; }
+    input { width: 100%; padding: 12px 14px; border: 1px solid #ccd5df; border-radius: 6px; outline-color: #287be3; }
+    .activity-area { min-height: 0; flex: 1; display: grid; grid-template-rows: 1fr 150px; gap: 18px; }
+    .activity-section { min-height: 0; display: flex; flex-direction: column; }
+    .activity-section h3 { margin: 0 0 10px; }
+    .activities { min-height: 0; overflow-y: auto; border: 1px solid #d9e0e7; border-radius: 7px; }
+    .activity { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #e0e5ea; }
+    .activity:last-child { border-bottom: 0; }
+    .activity.completed { background: #effaf5; }
+    .check { width: 24px; height: 24px; accent-color: #41a47a; }
+    .activity-main { min-width: 0; flex: 1; }
+    .activity-main strong, .activity-main small { display: block; }
+    .activity-main strong { font-size: 17px; }
+    .activity-main small { margin-top: 3px; color: #697487; }
+    .overdue { color: #c04b4b !important; }
+    .activity-actions { display: flex; gap: 8px; }
+    .empty { display: grid; place-items: center; height: 100%; padding: 30px; color: #718096; text-align: center; }
+    .empty-detail { display: grid; place-items: center; height: 100%; color: #718096; font-size: 20px; }
+    .modal-bg { position: fixed; inset: 0; display: grid; place-items: center; padding: 20px; background: #12223888; }
+    .modal { width: min(520px, 100%); padding: 24px; border-radius: 9px; background: white; box-shadow: 0 12px 35px #10233d55; }
+    .modal h2 { margin-bottom: 18px; font-size: 26px; }
+    .fields { display: grid; gap: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+    .error { margin: 0 20px 10px; color: #b33535; }
+    @media (max-width: 850px) { .workspace { grid-template-columns: 38% 62%; } .contact { grid-template-columns: 1fr; } .detail-title h2 { font-size: 29px; } .topbar h1 { font-size: 30px; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useEffect, useMemo, useState } = React;
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "No se pudo completar la operación");
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    const initials = (name) => name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase();
+    const displayDate = (date) => date ? new Date(`${date}T12:00:00`).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : "Sin fecha";
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    function ClientModal({ client, onClose, onSave }) {
+      const [form, setForm] = useState(client || { nombre: "", email: "", telefono: "", direccion: "" });
+      const update = (key) => (event) => setForm({ ...form, [key]: event.target.value });
+      return <div className="modal-bg"><form className="modal" onSubmit={(event) => { event.preventDefault(); onSave(form); }}>
+        <h2>{client ? "Editar cliente" : "Agregar cliente"}</h2>
+        <div className="fields">
+          <input required placeholder="Nombre completo" value={form.nombre} onChange={update("nombre")} />
+          <input required type="email" placeholder="Email" value={form.email} onChange={update("email")} />
+          <input placeholder="Teléfono" value={form.telefono} onChange={update("telefono")} />
+          <input placeholder="Dirección" value={form.direccion} onChange={update("direccion")} />
+        </div>
+        <div className="modal-actions"><button className="btn" type="button" onClick={onClose}>Cancelar</button><button className="btn primary" type="submit">Guardar</button></div>
+      </form></div>;
+    }
+
+    function Activity({ item, onComplete, onEdit, onDelete }) {
+      const vencida = !item.completada && item.fecha && item.fecha < today();
+      return <div className={`activity ${item.completada ? "completed" : ""}`}>
+        <input className="check" type="checkbox" checked={item.completada} disabled={item.completada} onChange={() => onComplete(item.id)} />
+        <div className="activity-main"><strong>{item.descripcion}</strong><small className={vencida ? "overdue" : ""}>{item.completada ? `Completada el ${displayDate(item.completadaEn?.slice(0, 10))}` : item.fecha ? `${displayDate(item.fecha)}${vencida ? " · Vencida" : ""}` : "Sin fecha"}</small></div>
+        {!item.completada && <div className="activity-actions"><button className="btn small" onClick={() => onEdit(item)} title="Editar">✎</button><button className="btn small danger" onClick={() => onDelete(item.id)} title="Eliminar">♧</button></div>}
+      </div>;
+    }
+
+    function App() {
+      const [clients, setClients] = useState([]);
+      const [selectedId, setSelectedId] = useState(null);
+      const [query, setQuery] = useState("");
+      const [modal, setModal] = useState(null);
+      const [editingActivity, setEditingActivity] = useState(null);
+      const [activity, setActivity] = useState({ descripcion: "", fecha: "" });
+      const [error, setError] = useState("");
+
+      const load = async (search = query) => {
+        try { const data = await api(`/api/clientes?q=${encodeURIComponent(search)}`); setClients(data); if (data.length && !data.some((c) => c.id === selectedId)) setSelectedId(data[0].id); if (!data.length) setSelectedId(null); } catch (e) { setError(e.message); }
+      };
+      useEffect(() => { load(""); }, []);
+      useEffect(() => { const timer = setTimeout(() => load(query), 250); return () => clearTimeout(timer); }, [query]);
+      const selected = useMemo(() => clients.find((c) => c.id === selectedId), [clients, selectedId]);
+      const pending = selected?.actividades.filter((item) => !item.completada) || [];
+      const completed = selected?.actividades.filter((item) => item.completada) || [];
+      const refreshSelected = async () => { const data = await api(`/api/clientes?q=${encodeURIComponent(query)}`); setClients(data); };
+      const saveClient = async (form) => { try { if (modal.id) await api(`/api/clientes/${modal.id}`, { method: "PUT", body: JSON.stringify(form) }); else { const created = await api("/api/clientes", { method: "POST", body: JSON.stringify(form) }); setSelectedId(created.id); } setModal(null); await load(); } catch (e) { setError(e.message); } };
+      const removeClient = async () => { if (!selected || !confirm(`¿Querés eliminar a ${selected.nombre}?`)) return; try { await api(`/api/clientes/${selected.id}`, { method: "DELETE" }); setSelectedId(null); await load(); } catch (e) { setError(e.message); } };
+      const saveActivity = async (event) => { event.preventDefault(); if (!selected) return; try { if (editingActivity) await api(`/api/actividades/${editingActivity.id}`, { method: "PUT", body: JSON.stringify(activity) }); else await api(`/api/clientes/${selected.id}/actividades`, { method: "POST", body: JSON.stringify(activity) }); setActivity({ descripcion: "", fecha: "" }); setEditingActivity(null); await refreshSelected(); } catch (e) { setError(e.message); } };
+      const complete = async (id) => { try { await api(`/api/actividades/${id}/completar`, { method: "PATCH" }); await refreshSelected(); } catch (e) { setError(e.message); } };
+      const deleteActivity = async (id) => { if (!confirm("¿Querés eliminar esta actividad?")) return; try { await api(`/api/actividades/${id}`, { method: "DELETE" }); await refreshSelected(); } catch (e) { setError(e.message); } };
+      const editActivity = (item) => { setEditingActivity(item); setActivity({ descripcion: item.descripcion, fecha: item.fecha || "" }); };
+
+      return <div className="app">
+        <header className="topbar"><h1>MiniCRM</h1></header>
+        <main className="workspace">
+          <section className="panel master"><div className="master-head"><h2>Clientes</h2><button className="btn primary" onClick={() => setModal({})}>＋ Agregar</button></div><input className="search" placeholder="⌕  Buscar por cualquier campo..." value={query} onChange={(event) => setQuery(event.target.value)} /><div className="client-list">{clients.length ? clients.map((client) => <button key={client.id} className={`client ${selectedId === client.id ? "active" : ""}`} onClick={() => setSelectedId(client.id)}><span className="avatar">{initials(client.nombre)}</span><span className="client-info"><strong>{client.nombre}</strong><span>{client.email}</span></span></button>) : <div className="empty">Todavía no hay clientes para mostrar.<br />Usá «Agregar» para empezar.</div>}</div></section>
+          <section className="panel detail">{selected ? <><div className="detail-head"><div className="detail-title"><h2>{selected.nombre}</h2><span className="id">#{selected.id}</span></div><div className="actions"><button className="btn" onClick={() => setModal(selected)}>✎ Editar</button><button className="btn danger" onClick={removeClient}>♧ Eliminar</button></div></div><div className="contact"><div><span className="icon">✉</span>{selected.email}</div><div><span className="icon">⌖</span>{selected.direccion || "Sin dirección"}</div><div><span className="icon">☎</span>{selected.telefono || "Sin teléfono"}</div></div><form className="activity-form" onSubmit={saveActivity}><h3>{editingActivity ? "Editar actividad" : "Agregar actividad"}</h3><div className="form-row"><input required placeholder="Descripción de la actividad" value={activity.descripcion} onChange={(e) => setActivity({ ...activity, descripcion: e.target.value })} /><input type="date" value={activity.fecha} onChange={(e) => setActivity({ ...activity, fecha: e.target.value })} /><button className="btn primary" type="submit">▣ Guardar</button>{editingActivity && <button className="btn" type="button" onClick={() => { setEditingActivity(null); setActivity({ descripcion: "", fecha: "" }); }}>Cancelar</button>}</div></form><div className="activity-area"><div className="activity-section"><h3>Compromisos</h3><div className="activities">{pending.length ? pending.map((item) => <Activity key={item.id} item={item} onComplete={complete} onEdit={editActivity} onDelete={deleteActivity} />) : <div className="empty">No hay compromisos pendientes.</div>}</div></div><div className="activity-section"><h3>Actividades completadas</h3><div className="activities">{completed.length ? completed.map((item) => <Activity key={item.id} item={item} onComplete={complete} onEdit={editActivity} onDelete={deleteActivity} />) : <div className="empty">Todavía no hay actividades completadas.</div>}</div></div></div></> : <div className="empty-detail">Seleccioná un cliente para ver su ficha.</div>}</section>
+        </main>
+        {error && <div className="error">{error} <button onClick={() => setError("")}>Cerrar</button></div>}
+        {modal && <ClientModal client={modal.id ? modal : null} onClose={() => setModal(null)} onSave={saveClient} />}
+      </div>;
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
