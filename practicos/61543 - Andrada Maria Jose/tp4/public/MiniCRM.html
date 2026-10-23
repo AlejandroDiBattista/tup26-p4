@@ -54,6 +54,7 @@
     const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
     const [actividades, setActividades] = React.useState([]);
     const [modoFormulario, setModoFormulario] = React.useState(false); 
+    const [editandoCliente, setEditandoCliente] = React.useState(false);
     
     const [formularioCliente, setFormularioCliente] = React.useState({
   nombre: "",
@@ -128,7 +129,13 @@
 </aside>
 
   <main className="detalle">
-  <h2>{modoFormulario ? "Nuevo cliente" : "Detalle del cliente"}</h2>
+  <h2>
+  {modoFormulario
+    ? editandoCliente
+      ? "Editar cliente"
+      : "Nuevo cliente"
+    : "Detalle del cliente"}
+</h2>
 
   {modoFormulario ? (
     <div>
@@ -228,10 +235,16 @@
 />
       </label>
 
-      <button
+  <button
   onClick={async () => {
-    const respuesta = await fetch("/api/clientes", {
-      method: "POST",
+    const url = editandoCliente
+      ? `/api/clientes/${clienteSeleccionado.id}`
+      : "/api/clientes";
+
+    const metodo = editandoCliente ? "PUT" : "POST";
+
+    const respuesta = await fetch(url, {
+      method: metodo,
       headers: {
         "Content-Type": "application/json",
       },
@@ -239,11 +252,24 @@
     });
 
     if (respuesta.ok) {
-      const nuevoCliente = await respuesta.json();
+      const clienteGuardado = await respuesta.json();
 
-      setClientes([...clientes, nuevoCliente]);
-      setClienteSeleccionado(nuevoCliente);
+      if (editandoCliente) {
+        setClientes(
+          clientes.map((cliente) =>
+            cliente.id === clienteGuardado.id
+              ? clienteGuardado
+              : cliente
+          )
+        );
+        setClienteSeleccionado(clienteGuardado);
+      } else {
+        setClientes([...clientes, clienteGuardado]);
+        setClienteSeleccionado(clienteGuardado);
+      }
+
       setModoFormulario(false);
+      setEditandoCliente(false);
 
       setFormularioCliente({
         nombre: "",
@@ -256,7 +282,7 @@
     }
   }}
 >
-  Guardar cliente
+  {editandoCliente ? "Guardar cambios" : "Guardar cliente"}
 </button>
     </div>
   ) : (
@@ -271,6 +297,24 @@
         <p><strong>Domicilio:</strong> {clienteSeleccionado.domicilio || "—"}</p>
         <p><strong>Localidad:</strong> {clienteSeleccionado.localidad || "—"}</p>
         <p><strong>Teléfono:</strong> {clienteSeleccionado.telefono || "—"}</p>
+
+        <button
+  onClick={() => {
+    setFormularioCliente({
+      nombre: clienteSeleccionado.nombre,
+      apellido: clienteSeleccionado.apellido,
+      email: clienteSeleccionado.email,
+      domicilio: clienteSeleccionado.domicilio || "",
+      localidad: clienteSeleccionado.localidad || "",
+      telefono: clienteSeleccionado.telefono || "",
+    });
+
+    setModoFormulario(true);
+    setEditandoCliente(true);
+  }}
+>
+  Editar cliente
+</button>
 
         <h4>Compromisos</h4>
 
