@@ -8,34 +8,382 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
   <style>
+    :root {
+      --header: #2c3e5c;
+      --fondo: #eef1f5;
+      --panel: #ffffff;
+      --borde: #e1e5eb;
+      --texto: #1f2733;
+      --suave: #5f6b7a;
+      --azul: #1f6fe0;
+      --azul-hover: #195dc0;
+      --seleccion: #e7f0fd;
+      --rojo: #d63c3c;
+      --rojo-fondo: #fdeeee;
+      --radio: 8px;
+    }
+
     * { box-sizing: border-box; }
     html, body, #root { height: 100%; margin: 0; }
-    body { font-family: system-ui, sans-serif; color: #222; background: #f6f7f9; overflow: hidden; }
-    .app { height: 100%; display: grid; place-items: center; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--texto);
+      background: var(--fondo);
+      overflow: hidden;
+    }
+    button, input { font: inherit; color: inherit; }
+    svg { flex-shrink: 0; }
+
+    /* --- Estructura general: alto fijo de la ventana, sin scroll de página --- */
+    .app { height: 100%; display: flex; flex-direction: column; }
+    .header {
+      background: var(--header);
+      color: #fff;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: .3px; }
+    .contenido {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) 1fr;
+      gap: 12px;
+      padding: 12px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* --- Botones --- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--borde);
+      background: #f7f8fa;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #eceff3; }
+    .btn-primario { background: var(--azul); border-color: var(--azul); color: #fff; }
+    .btn-primario:hover { background: var(--azul-hover); }
+    .btn-peligro { background: var(--rojo-fondo); border-color: #f2b8b8; color: var(--rojo); }
+    .btn-peligro:hover { background: #fbdcdc; }
+
+    /* --- Maestro --- */
+    .maestro-cabecera {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 12px;
+    }
+    .maestro-cabecera h2 { margin: 0; font-size: 26px; }
+    .buscador {
+      margin: 0 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      color: var(--suave);
+    }
+    .buscador:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px #1f6fe022; }
+    .buscador input { flex: 1; border: 0; outline: 0; padding: 10px 0; background: transparent; color: var(--texto); }
+    .lista { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--borde); }
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 12px 16px;
+      border: 0;
+      border-bottom: 1px solid var(--borde);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+    .item:hover { background: #f5f8fc; }
+    .item.activo { background: var(--seleccion); }
+    .item-texto { min-width: 0; }
+    .item-nombre { font-weight: 600; }
+    .item-email { color: var(--suave); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 600;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .vacio { padding: 24px 16px; color: var(--suave); text-align: center; }
+
+    /* --- Detalle --- */
+    .detalle { padding: 20px 24px; overflow-y: auto; }
+    .detalle-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .detalle-cabecera h2 { margin: 8px 0 0; font-size: 32px; }
+    .detalle-acciones { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .detalle-id { color: var(--suave); font-size: 15px; }
+    .botonera { display: flex; gap: 8px; }
+    .ficha {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+      padding: 16px 0 20px;
+      border-bottom: 1px solid var(--borde);
+    }
+    .ficha-columna { display: flex; flex-direction: column; gap: 12px; }
+    .dato { display: flex; gap: 12px; align-items: flex-start; }
+    .dato svg { color: var(--suave); margin-top: 2px; }
+    .dato > div { min-width: 0; overflow-wrap: anywhere; }
+    .dato .falta { color: var(--suave); font-style: italic; }
+    .centrado { flex: 1; display: grid; place-items: center; color: var(--suave); }
+    .error { color: var(--rojo); }
+
+    /* --- Pantallas angostas: maestro arriba, detalle abajo, cada uno con su scroll --- */
+    @media (max-width: 760px) {
+      .header { padding: 0 16px; }
+      .contenido { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; padding: 8px; gap: 8px; }
+      .maestro-cabecera h2 { font-size: 22px; }
+      .detalle { padding: 16px; }
+      .detalle-cabecera h2 { font-size: 24px; margin: 0; }
+      .ficha { grid-template-columns: 1fr; }
+      .detalle-cabecera { flex-direction: column-reverse; }
+      .detalle-acciones { width: 100%; flex-direction: row-reverse; justify-content: space-between; align-items: center; }
+      .botonera { flex-wrap: wrap; }
+      .btn { padding: 6px 12px; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
+    /** @jsxRuntime classic */
     const { useEffect, useState } = React;
 
-    function App() {
-      const [estado, setEstado] = useState("verificando API…");
+    // ------------------------------------------------------------------
+    // API
+    // ------------------------------------------------------------------
+    async function api(ruta, opciones) {
+      const res = await fetch(`/api${ruta}`, opciones);
+      const datos = res.status === 204 ? null : await res.json();
+      if (!res.ok) throw new Error(datos?.error ?? `Error ${res.status}`);
+      return datos;
+    }
 
+    // ------------------------------------------------------------------
+    // Iconos (SVG en línea, trazo heredado del color del texto)
+    // ------------------------------------------------------------------
+    function Icono({ children, size = 18 }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {children}
+        </svg>
+      );
+    }
+    const IconoMas = () => <Icono><path d="M12 5v14M5 12h14" /></Icono>;
+    const IconoLupa = () => <Icono><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></Icono>;
+    const IconoLapiz = () => <Icono><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></Icono>;
+    const IconoTacho = () => (
+      <Icono><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" /></Icono>
+    );
+    const IconoSobre = () => <Icono><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" /></Icono>;
+    const IconoTelefono = () => (
+      <Icono>
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z" />
+      </Icono>
+    );
+    const IconoUbicacion = () => <Icono><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></Icono>;
+
+    // ------------------------------------------------------------------
+    // Utilidades de presentación
+    // ------------------------------------------------------------------
+    const COLORES_AVATAR = [
+      ["#e1edfd", "#2f6fd1"], ["#e2f6ea", "#2e8a55"], ["#ece6fb", "#6b4fc4"], ["#fdeadb", "#c4621f"],
+      ["#fde4ea", "#c43a5c"], ["#dff5f5", "#23827f"], ["#f9f1d8", "#9a7712"],
+    ];
+
+    const iniciales = (c) => `${c.nombre[0] ?? ""}${c.apellido[0] ?? ""}`.toUpperCase();
+    const nombreCompleto = (c) => `${c.nombre} ${c.apellido}`;
+
+    function Avatar({ cliente }) {
+      const [fondo, color] = COLORES_AVATAR[cliente.id % COLORES_AVATAR.length];
+      return <div className="avatar" style={{ background: fondo, color }}>{iniciales(cliente)}</div>;
+    }
+
+    /** Devuelve `valor` con retardo: evita pedir a la API en cada tecla. */
+    function useDemorado(valor, ms) {
+      const [demorado, setDemorado] = useState(valor);
       useEffect(() => {
-        fetch("/api/health")
-          .then((r) => r.json())
-          .then((d) => setEstado(d.ok ? "API conectada" : "API con error"))
-          .catch(() => setEstado("API no disponible"));
-      }, []);
+        const t = setTimeout(() => setDemorado(valor), ms);
+        return () => clearTimeout(t);
+      }, [valor, ms]);
+      return demorado;
+    }
+
+    // ------------------------------------------------------------------
+    // Maestro: lista de clientes con búsqueda en vivo
+    // ------------------------------------------------------------------
+    function Maestro({ clientes, cargando, error, busqueda, onBuscar, seleccionado, onSeleccionar }) {
+      return (
+        <section className="panel">
+          <div className="maestro-cabecera">
+            <h2>Clientes</h2>
+            <button className="btn btn-primario" type="button"><IconoMas /> Agregar</button>
+          </div>
+
+          <label className="buscador">
+            <IconoLupa />
+            <input
+              type="search"
+              placeholder="Buscar por cualquier campo..."
+              value={busqueda}
+              onChange={(e) => onBuscar(e.target.value)}
+              aria-label="Buscar clientes"
+            />
+          </label>
+
+          <ul className="lista">
+            {error && <li className="vacio error">{error}</li>}
+            {!error && !cargando && clientes.length === 0 && (
+              <li className="vacio">{busqueda ? "Ningún cliente coincide con la búsqueda" : "No hay clientes"}</li>
+            )}
+            {clientes.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  className={`item ${c.id === seleccionado ? "activo" : ""}`}
+                  onClick={() => onSeleccionar(c.id)}
+                >
+                  <Avatar cliente={c} />
+                  <div className="item-texto">
+                    <div className="item-nombre">{nombreCompleto(c)}</div>
+                    <div className="item-email">{c.email}</div>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Detalle: ficha del cliente seleccionado
+    // ------------------------------------------------------------------
+    function Dato({ icono, children, falta }) {
+      return (
+        <div className="dato">
+          {icono}
+          <div>{children || <span className="falta">{falta}</span>}</div>
+        </div>
+      );
+    }
+
+    function Detalle({ cliente, cargando, error }) {
+      if (error) return <section className="panel centrado error">{error}</section>;
+      if (!cliente) {
+        return <section className="panel centrado">{cargando ? "Cargando…" : "Seleccioná un cliente de la lista"}</section>;
+      }
+
+      const ubicacion = [cliente.domicilio, cliente.localidad].filter(Boolean);
+
+      return (
+        <section className="panel detalle">
+          <div className="detalle-cabecera">
+            <h2>{nombreCompleto(cliente)}</h2>
+            <div className="detalle-acciones">
+              <span className="detalle-id">#{cliente.id}</span>
+              <div className="botonera">
+                <button className="btn" type="button"><IconoLapiz /> Editar</button>
+                <button className="btn btn-peligro" type="button"><IconoTacho /> Eliminar</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="ficha">
+            <div className="ficha-columna">
+              <Dato icono={<IconoSobre />}>{cliente.email}</Dato>
+              <Dato icono={<IconoTelefono />} falta="Sin teléfono">{cliente.telefono}</Dato>
+            </div>
+            <div className="ficha-columna">
+              <Dato icono={<IconoUbicacion />} falta="Sin domicilio">
+                {ubicacion.length > 0 && ubicacion.map((linea) => <div key={linea}>{linea}</div>)}
+              </Dato>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // App
+    // ------------------------------------------------------------------
+    function App() {
+      const [busqueda, setBusqueda] = useState("");
+      const filtro = useDemorado(busqueda, 200);
+      const [lista, setLista] = useState({ clientes: [], cargando: true, error: null });
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [detalle, setDetalle] = useState({ cliente: null, cargando: false, error: null });
+
+      // Lista: se vuelve a pedir cada vez que cambia el filtro. Se ignoran respuestas viejas.
+      useEffect(() => {
+        let vigente = true;
+        setLista((l) => ({ ...l, cargando: true }));
+        api(`/clientes?q=${encodeURIComponent(filtro.trim())}`)
+          .then((clientes) => {
+            if (!vigente) return;
+            setLista({ clientes, cargando: false, error: null });
+            // Al cargar por primera vez, se selecciona el primer cliente.
+            setSeleccionado((actual) => actual ?? clientes[0]?.id ?? null);
+          })
+          .catch((e) => vigente && setLista({ clientes: [], cargando: false, error: e.message }));
+        return () => { vigente = false; };
+      }, [filtro]);
+
+      // Detalle: ficha completa (con actividades) del cliente seleccionado.
+      useEffect(() => {
+        if (seleccionado === null) {
+          setDetalle({ cliente: null, cargando: false, error: null });
+          return;
+        }
+        let vigente = true;
+        setDetalle((d) => ({ ...d, cargando: true, error: null }));
+        api(`/clientes/${seleccionado}`)
+          .then((cliente) => vigente && setDetalle({ cliente, cargando: false, error: null }))
+          .catch((e) => vigente && setDetalle({ cliente: null, cargando: false, error: e.message }));
+        return () => { vigente = false; };
+      }, [seleccionado]);
 
       return (
         <div className="app">
-          <div>
-            <h1>MiniCRM</h1>
-            <p>{estado}</p>
-          </div>
+          <header className="header"><h1>MiniCRM</h1></header>
+          <main className="contenido">
+            <Maestro
+              {...lista}
+              busqueda={busqueda}
+              onBuscar={setBusqueda}
+              seleccionado={seleccionado}
+              onSeleccionar={setSeleccionado}
+            />
+            <Detalle {...detalle} />
+          </main>
         </div>
       );
     }
