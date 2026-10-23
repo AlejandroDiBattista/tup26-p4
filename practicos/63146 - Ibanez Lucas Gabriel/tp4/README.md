@@ -15,10 +15,23 @@ npm install
 npm run setup
 ```
 
-`npm run setup` ejecuta dos pasos:
+`npm run setup` ejecuta tres pasos:
 
 1. `npm run db:init`: crea `.env` a partir de `.env.example` (si no existe) y verifica la conexión a la base.
 2. `npm run db:push`: crea o actualiza las tablas según `src/db/schema.ts`.
+3. `npm run db:seed`: vacía las tablas y carga 10 clientes de ejemplo con sus actividades.
+
+## Modelo de datos
+
+**clientes**: `id`, `nombre`, `apellido`, `email` (único), `domicilio`, `localidad`, `telefono`.
+
+**actividades** (N por cliente): `id`, `cliente_id` (FK a `clientes`, se borran en cascada con el cliente), `descripcion`, `fecha_compromiso`, `fecha_finalizacion`.
+
+Las fechas se guardan como texto ISO 8601. Una actividad está **pendiente** mientras `fecha_finalizacion` sea nula, y **completada** cuando tiene valor.
+
+## Datos de ejemplo
+
+`npm run db:seed` se puede ejecutar todas las veces que quieras: borra todo, reinicia los ids y vuelve a cargar los mismos datos, sin duplicar nada. Las fechas se calculan a partir del día de hoy, así siempre hay actividades completadas, pendientes futuras, pendientes vencidas y pendientes sin fecha.
 
 ## Configuración (`.env`)
 
@@ -80,8 +93,9 @@ npm run db:studio
 | `npm run typecheck` | Chequea tipos sin generar archivos               |
 | `npm run db:init`   | Crea `.env` si falta y prueba la conexión        |
 | `npm run db:push`   | Sincroniza el esquema con la base                |
+| `npm run db:seed`   | Vacía la base y carga los datos de ejemplo       |
 | `npm run db:studio` | Abre Drizzle Studio                              |
-| `npm run setup`     | `db:init` + `db:push`                            |
+| `npm run setup`     | `db:init` + `db:push` + `db:seed`                |
 
 ## Estructura
 
@@ -95,7 +109,8 @@ npm run db:studio
 │   │   └── database.ts     Conexión Drizzle (SQLite local o Turso)
 │   ├── db/
 │   │   ├── schema.ts       Esquema de tablas
-│   │   └── init.ts         Script de inicialización
+│   │   ├── init.ts         Script de inicialización
+│   │   └── seed.ts         Carga de datos de ejemplo
 │   ├── services/           Reglas de negocio (clase Clientes)
 │   ├── controllers/        Controladores HTTP
 │   ├── routes/             Routers de Express
