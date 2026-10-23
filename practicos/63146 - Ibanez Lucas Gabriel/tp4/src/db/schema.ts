@@ -1,5 +1,5 @@
 // Esquema de Drizzle. Después de modificarlo, ejecutar `npm run db:push` para sincronizar la base.
-import { relations } from "drizzle-orm";
+import { relations, type InferInsertModel, type InferSelectModel } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const clientes = sqliteTable("clientes", {
@@ -35,7 +35,7 @@ export const actividadesRelations = relations(actividades, ({ one }) => ({
   cliente: one(clientes, { fields: [actividades.clienteId], references: [clientes.id] }),
 }));
 
-export type Cliente = typeof clientes.$inferSelect;
-export type NuevoCliente = typeof clientes.$inferInsert;
-export type Actividad = typeof actividades.$inferSelect;
-export type NuevaActividad = typeof actividades.$inferInsert;
+export type Cliente = InferSelectModel<typeof clientes>;
+export type NuevoCliente = InferInsertModel<typeof clientes>;
+export type Actividad = InferSelectModel<typeof actividades>;
+export type NuevaActividad = InferInsertModel<typeof actividades>;

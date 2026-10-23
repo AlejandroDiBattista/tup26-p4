@@ -29,6 +29,25 @@ npm run setup
 
 Las fechas se guardan como texto ISO 8601. Una actividad está **pendiente** mientras `fecha_finalizacion` sea nula, y **completada** cuando tiene valor.
 
+## Reglas de negocio
+
+Toda la lógica vive en la clase `Clientes` (`src/services/ClientesService.ts`), con métodos estáticos:
+
+| Método                                    | Qué hace                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `obtenerTodos(busqueda?)`                 | Lista los clientes; filtra por cualquier campo o por sus actividades     |
+| `obtenerPorId(id)`                        | Devuelve el cliente con sus actividades                                  |
+| `crear(data)` / `actualizar(id, data)`    | Normaliza y valida los datos; el email debe ser único                    |
+| `eliminar(id)`                            | Borra el cliente y todas sus actividades                                 |
+| `agregarActividad(clienteId, data)`       | Crea una actividad pendiente                                             |
+| `actualizarActividad(id, data)`           | Edita una actividad, solo si está pendiente                              |
+| `eliminarActividad(id)`                   | Borra una actividad, solo si está pendiente                              |
+| `completarActividad(id)`                  | Guarda la fecha y hora actual como `fecha_finalizacion`                  |
+
+- **Búsqueda:** cada palabra tiene que aparecer en algún campo del cliente o en una actividad. No distingue mayúsculas ni acentos (`garcia` encuentra a "García"), y el teléfono se puede buscar solo con dígitos.
+- **Normalización:** nombre y apellido quedan con mayúscula inicial, el email en minúsculas y sin espacios, el teléfono solo con dígitos, espacios, `+`, `-` y paréntesis, y los campos vacíos se guardan como `null`.
+- **Errores:** el servicio lanza `NoEncontrado` (404), `DatosInvalidos` (400) o `Conflicto` (409), definidos en `src/services/errores.ts`. Por ejemplo, un email repetido o editar una actividad completada da `Conflicto`.
+
 ## Datos de ejemplo
 
 `npm run db:seed` se puede ejecutar todas las veces que quieras: borra todo, reinicia los ids y vuelve a cargar los mismos datos, sin duplicar nada. Las fechas se calculan a partir del día de hoy, así siempre hay actividades completadas, pendientes futuras, pendientes vencidas y pendientes sin fecha.
@@ -111,7 +130,9 @@ npm run db:studio
 │   │   ├── schema.ts       Esquema de tablas
 │   │   ├── init.ts         Script de inicialización
 │   │   └── seed.ts         Carga de datos de ejemplo
-│   ├── services/           Reglas de negocio (clase Clientes)
+│   ├── services/
+│   │   ├── ClientesService.ts  Reglas de negocio (clase Clientes)
+│   │   └── errores.ts      Errores de negocio con su código HTTP
 │   ├── controllers/        Controladores HTTP
 │   ├── routes/             Routers de Express
 │   ├── app.ts              Configuración de Express
