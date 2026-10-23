@@ -42,16 +42,7 @@
     .header {
       background: var(--azul-oscuro); color: #fff;
       padding: 14px 24px; font-size: 1.6rem; font-weight: 700; letter-spacing: .3px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
-    /* Selector de capa de conexión (REST / MCP) */
-    .conexion { display: flex; padding: 3px; gap: 2px; border-radius: 8px; background: rgba(255, 255, 255, .14); }
-    .conexion button {
-      font: inherit; font-size: .85rem; font-weight: 500; letter-spacing: 0; padding: 6px 12px;
-      border: none; border-radius: 6px; background: transparent; color: #dbe4f0; cursor: pointer;
-    }
-    .conexion button:hover { color: #fff; }
-    .conexion button.activo { background: #fff; color: var(--azul-oscuro); font-weight: 600; }
     .main {
       display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
       gap: 12px; padding: 12px; min-height: 0;
@@ -134,7 +125,6 @@
     .act-sub.vencido { color: var(--rojo); }
     .act-botones { flex: none; display: flex; gap: 6px; }
     .btn-icono { padding: 7px; }
-    .btn-icono.peligro { color: var(--rojo); }
     .completadas { background: #f0fdf4; border-color: #bbf7d0; }
     .completadas .act { border-bottom-color: #dcfce7; }
     .tick { flex: none; width: 22px; height: 22px; border-radius: 5px; background: var(--verde); color: #fff; display: grid; place-items: center; }
@@ -172,7 +162,6 @@
     /* ───── Pantallas angostas: maestro arriba, detalle abajo (cada uno con su scroll) ───── */
     @media (max-width: 760px) {
       .header { padding: 10px 16px; font-size: 1.3rem; }
-      .conexion button { padding: 5px 8px; font-size: .78rem; }
       .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 40%) minmax(0, 1fr); padding: 8px; gap: 8px; }
       .detalle { padding: 16px; }
       .ficha-cab { flex-direction: column-reverse; }
@@ -207,115 +196,19 @@
       return datos;
     }
 
-    const Rest = {
-      buscarClientes: (q) => api("GET", `/clientes?q=${encodeURIComponent(q)}`),
-      obtenerCliente: (id) => api("GET", `/clientes/${id}`),
-      crearCliente: (datos) => api("POST", "/clientes", datos),
-      actualizarCliente: (id, datos) => api("PUT", `/clientes/${id}`, datos),
-      eliminarCliente: (id) => api("DELETE", `/clientes/${id}`),
-      crearActividad: (clienteId, datos) => api("POST", `/clientes/${clienteId}/actividades`, datos),
-      actualizarActividad: (clienteId, id, datos) => api("PUT", `/clientes/${clienteId}/actividades/${id}`, datos),
-      completarActividad: (clienteId, id) => api("PATCH", `/clientes/${clienteId}/actividades/${id}/completar`),
-      eliminarActividad: (clienteId, id) => api("DELETE", `/clientes/${clienteId}/actividades/${id}`),
-    };
-
-    // ───────────── Cliente MCP (JSON-RPC 2.0 sobre Streamable HTTP en /mcp) ─────────────
-    const McpCliente = (() => {
-      let siguienteId = 1;
-      let version = null; // versión del protocolo negociada en "initialize"
-      let inicio = null; // promesa de inicialización (se hace una sola vez)
-
-      // El servidor puede responder JSON o un stream SSE ("data: {...}"): se aceptan ambos.
-      async function leerMensaje(res) {
-        const tipo = res.headers.get("content-type") ?? "";
-        const texto = await res.text();
-        if (tipo.includes("text/event-stream")) {
-          const datos = texto.split(/\r?\n/).filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim());
-          return JSON.parse(datos[datos.length - 1]);
-        }
-        try { return JSON.parse(texto); } catch { throw new Error(`MCP: respuesta inválida (HTTP ${res.status})`); }
-      }
-
-      async function enviar(mensaje) {
-        const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream" };
-        if (version) headers["MCP-Protocol-Version"] = version;
-        return fetch("/mcp", { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", ...mensaje }) });
-      }
-
-      async function pedir(method, params) {
-        const respuesta = await leerMensaje(await enviar({ id: siguienteId++, method, params }));
-        if (respuesta.error) throw new Error(`MCP ${respuesta.error.code}: ${respuesta.error.message}`);
-        return respuesta.result;
-      }
-
-      function inicializar() {
-        inicio ??= (async () => {
-          const r = await pedir("initialize", {
-            protocolVersion: "2025-06-18",
-            capabilities: {},
-            clientInfo: { name: "MiniCRM web", version: "1.0.0" },
-          });
-          version = r.protocolVersion;
-          await enviar({ method: "notifications/initialized" }); // notificación: sin id ni respuesta
-          return r;
-        })().catch((e) => { inicio = null; throw e; });
-        return inicio;
-      }
-
-      /** Llama a una tool; el resultado viene como texto JSON. isError -> se lanza con el mensaje del servicio. */
-      async function llamar(name, args) {
-        await inicializar();
-        const r = await pedir("tools/call", { name, arguments: args });
-        const texto = r.content?.find((c) => c.type === "text")?.text ?? "";
-        if (r.isError) {
-          let mensaje = texto;
-          try { mensaje = JSON.parse(texto).error?.mensaje ?? texto; } catch {}
-          throw new Error(mensaje);
-        }
-        return texto ? JSON.parse(texto) : null;
-      }
-
-      return { llamar };
-    })();
-
-    const camposCliente = ({ nombre, apellido, email, telefono, domicilio, localidad }) =>
-      ({ nombre, apellido, email, telefono, domicilio, localidad });
-
-    const Mcp = {
-      buscarClientes: (q) => McpCliente.llamar("buscar_clientes", { q }),
-      obtenerCliente: (id) => McpCliente.llamar("obtener_cliente", { id }),
-      crearCliente: (datos) => McpCliente.llamar("crear_cliente", camposCliente(datos)),
-      actualizarCliente: (id, datos) => McpCliente.llamar("actualizar_cliente", { id, ...camposCliente(datos) }),
-      eliminarCliente: (id) => McpCliente.llamar("eliminar_cliente", { id }),
-      crearActividad: (clienteId, datos) => McpCliente.llamar("crear_actividad", { clienteId, ...datos }),
-      actualizarActividad: (clienteId, actividadId, datos) => McpCliente.llamar("actualizar_actividad", { clienteId, actividadId, ...datos }),
-      completarActividad: (clienteId, actividadId) => McpCliente.llamar("completar_actividad", { clienteId, actividadId }),
-      eliminarActividad: (clienteId, actividadId) => McpCliente.llamar("eliminar_actividad", { clienteId, actividadId }),
-    };
-
-    // ───────────── Capa de conexión activa (REST o MCP), misma interfaz para la UI ─────────────
-    const Conexiones = { rest: Rest, mcp: Mcp };
-    const conexionGuardada = (() => { try { return localStorage.getItem("minicrm.conexion"); } catch { return null; } })();
-    let capa = Conexiones[conexionGuardada] ?? Rest;
-
-    function usarConexion(nombre) {
-      capa = Conexiones[nombre];
-      try { localStorage.setItem("minicrm.conexion", nombre); } catch {}
-    }
-
     const ClientesApi = {
-      buscar: (q) => capa.buscarClientes(q),
-      obtener: (id) => capa.obtenerCliente(id),
-      crear: (datos) => capa.crearCliente(datos),
-      actualizar: (id, datos) => capa.actualizarCliente(id, datos),
-      eliminar: (id) => capa.eliminarCliente(id),
+      buscar: (q) => api("GET", `/clientes?q=${encodeURIComponent(q)}`),
+      obtener: (id) => api("GET", `/clientes/${id}`),
+      crear: (datos) => api("POST", "/clientes", datos),
+      actualizar: (id, datos) => api("PUT", `/clientes/${id}`, datos),
+      eliminar: (id) => api("DELETE", `/clientes/${id}`),
     };
 
     const ActividadesApi = {
-      crear: (clienteId, datos) => capa.crearActividad(clienteId, datos),
-      actualizar: (clienteId, id, datos) => capa.actualizarActividad(clienteId, id, datos),
-      completar: (clienteId, id) => capa.completarActividad(clienteId, id),
-      eliminar: (clienteId, id) => capa.eliminarActividad(clienteId, id),
+      crear: (clienteId, datos) => api("POST", `/clientes/${clienteId}/actividades`, datos),
+      actualizar: (clienteId, id, datos) => api("PUT", `/clientes/${clienteId}/actividades/${id}`, datos),
+      completar: (clienteId, id) => api("PATCH", `/clientes/${clienteId}/actividades/${id}/completar`),
+      eliminar: (clienteId, id) => api("DELETE", `/clientes/${clienteId}/actividades/${id}`),
     };
 
     // ───────────── Utilidades ─────────────
@@ -362,6 +255,26 @@
     const IcCerrar = () => <Icono d={<path d="M18 6 6 18M6 6l12 12" />} />;
     const IcTick = () => <Icono size={14} d={<path d="M5 12.5 10 17 19 7" />} />;
 
+    // ───────────── Layout y botones reutilizables ─────────────
+    function Layout({ titulo, children }) {
+      return (
+        <div className="app">
+          <header className="header">{titulo}</header>
+          <main className="main">{children}</main>
+        </div>
+      );
+    }
+
+    function Panel({ children }) {
+      return <section className="panel">{children}</section>;
+    }
+
+    /** Botón con ícono opcional. variante: "primario" | "peligro". Sin texto se muestra compacto (solo ícono). */
+    function Boton({ variante, icono, children, type = "button", ...props }) {
+      const clases = ["btn", variante && `btn-${variante}`, !children && "btn-icono"].filter(Boolean).join(" ");
+      return <button type={type} className={clases} {...props}>{icono}{children}</button>;
+    }
+
     // ───────────── Maestro ─────────────
     function Avatar({ cliente }) {
       const [fondo, color] = coloresAvatar[cliente.id % coloresAvatar.length];
@@ -370,11 +283,11 @@
 
     function Maestro({ clientes, cargando, busqueda, onBuscar, seleccionadoId, onSeleccionar, onAgregar }) {
       return (
-        <section className="panel">
+        <Panel>
           <div className="maestro-cab">
             <div className="maestro-titulo">
               <h2>Clientes</h2>
-              <button className="btn btn-primario" onClick={onAgregar}><IcMas /> Agregar</button>
+              <Boton variante="primario" icono={<IcMas />} onClick={onAgregar}>Agregar</Boton>
             </div>
             <label className="buscador">
               <IcBuscar />
@@ -396,7 +309,7 @@
               <li className="vacio">{busqueda ? "Ningún cliente coincide con la búsqueda." : "Todavía no hay clientes."}</li>
             )}
           </ul>
-        </section>
+        </Panel>
       );
     }
 
@@ -414,8 +327,8 @@
             <div className="ficha-acciones">
               <span className="ficha-id">#{cliente.id}</span>
               <div className="botones">
-                <button className="btn" onClick={onEditar}><IcEditar /> Editar</button>
-                <button className="btn btn-peligro" onClick={onEliminar}><IcBorrar /> Eliminar</button>
+                <Boton icono={<IcEditar />} onClick={onEditar}>Editar</Boton>
+                <Boton variante="peligro" icono={<IcBorrar />} onClick={onEliminar}>Eliminar</Boton>
               </div>
             </div>
           </div>
@@ -477,6 +390,12 @@
         }
       }
 
+      // Cancelar limpia el subformulario y vuelve a pedir la lista de compromisos.
+      function cancelar() {
+        limpiar();
+        ejecutar(async () => {});
+      }
+
       async function guardar(e) {
         e.preventDefault();
         const datos = { descripcion, fechaCompromiso: fecha || null };
@@ -498,15 +417,15 @@
       return (
         <>
           <form className={`subform ${editando ? "editando" : ""}`} onSubmit={guardar}
-            onKeyDown={(e) => e.key === "Escape" && limpiar()}>
+            onKeyDown={(e) => e.key === "Escape" && cancelar()}>
             <h3>{editando ? "Editar actividad" : "Agregar actividad"}</h3>
             <div className="subform-linea">
               <input ref={descripcionRef} className="descripcion" placeholder="Descripción de la actividad" required
                 value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Descripción de la actividad" />
               <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
                 aria-label="Fecha de compromiso (opcional)" title="Fecha de compromiso (opcional)" />
-              <button type="submit" className="btn btn-primario" disabled={ocupado}><IcGuardar /> Guardar</button>
-              <button type="button" className="btn" onClick={limpiar}><IcCerrar /> Cancelar</button>
+              <Boton type="submit" variante="primario" icono={<IcGuardar />} disabled={ocupado}>Guardar</Boton>
+              <Boton icono={<IcCerrar />} onClick={cancelar}>Cancelar</Boton>
             </div>
             {error && <div className="error" role="alert">{error}</div>}
           </form>
@@ -529,13 +448,14 @@
                           <div className={`act-sub ${vencido ? "vencido" : ""}`}>
                             {!a.fechaCompromiso ? "Sin fecha"
                               : vencido ? `${formatoFecha(a.fechaCompromiso)} · Vencido`
-                              : a.fechaCompromiso === hoy ? `${formatoFecha(a.fechaCompromiso)} · Hoy`
                               : formatoFecha(a.fechaCompromiso)}
                           </div>
                         </div>
                         <div className="act-botones">
-                          <button className="btn btn-icono" onClick={() => editar(a)} title="Editar" aria-label="Editar"><IcEditar /></button>
-                          <button className="btn btn-icono peligro" onClick={() => eliminar(a)} disabled={ocupado} title="Eliminar" aria-label="Eliminar"><IcBorrar /></button>
+                          <Boton icono={<IcEditar />} onClick={() => editar(a)}
+                            title="Editar" aria-label={`Editar "${a.descripcion}"`} />
+                          <Boton variante="peligro" icono={<IcBorrar />} onClick={() => eliminar(a)} disabled={ocupado}
+                            title="Eliminar" aria-label={`Eliminar "${a.descripcion}"`} />
                         </div>
                       </li>
                     );
@@ -615,8 +535,8 @@
             <Campo etiqueta="Localidad" name="localidad" value={datos.localidad} onChange={cambiar} />
           </div>
           <div className="botones">
-            <button type="submit" className="btn btn-primario" disabled={guardando}><IcGuardar /> {guardando ? "Guardando..." : "Guardar"}</button>
-            <button type="button" className="btn" onClick={onCancelar}><IcCerrar /> Cancelar</button>
+            <Boton type="submit" variante="primario" icono={<IcGuardar />} disabled={guardando}>{guardando ? "Guardando..." : "Guardar"}</Boton>
+            <Boton icono={<IcCerrar />} onClick={onCancelar}>Cancelar</Boton>
           </div>
         </form>
       );
@@ -633,13 +553,6 @@
       const [cliente, setCliente] = useState(null); // ficha del seleccionado (con actividades)
       const [modo, setModo] = useState("ver"); // "ver" | "nuevo" | "editar"
       const [error, setError] = useState("");
-      const [conexion, setConexion] = useState(conexionGuardada === "mcp" ? "mcp" : "rest");
-
-      function cambiarConexion(nombre) {
-        usarConexion(nombre);
-        setConexion(nombre); // los efectos de abajo recargan lista y ficha por la nueva capa
-        setError("");
-      }
 
       // Búsqueda en vivo contra la API (con pequeña espera y descartando respuestas viejas).
       const recargarLista = useCallback(async (q) => {
@@ -666,7 +579,7 @@
           setSeleccionadoId((actual) => actual ?? lista[0]?.id ?? null);
         }, 200);
         return () => { vigente = false; clearTimeout(t); };
-      }, [busqueda, conexion]);
+      }, [busqueda]);
 
       // Carga la ficha del cliente seleccionado.
       useEffect(() => {
@@ -676,7 +589,7 @@
           .then((c) => vigente && setCliente(c))
           .catch((e) => vigente && (setError(e.message), setCliente(null)));
         return () => { vigente = false; };
-      }, [seleccionadoId, conexion]);
+      }, [seleccionadoId]);
 
       // Tras cambiar actividades se vuelve a pedir la ficha (trae las actividades actualizadas).
       async function recargarCliente() {
@@ -727,34 +640,27 @@
       }
 
       return (
-        <div className="app">
-          <header className="header">
-            <span>MiniCRM</span>
-            <div className="conexion" role="group" aria-label="Capa de conexión">
-              {[["rest", "API REST"], ["mcp", "Servidor MCP"]].map(([valor, texto]) => (
-                <button key={valor} className={conexion === valor ? "activo" : ""} aria-pressed={conexion === valor}
-                  onClick={() => conexion !== valor && cambiarConexion(valor)}>{texto}</button>
-              ))}
+        <Layout titulo="MiniCRM">
+          <Maestro
+            clientes={clientes}
+            cargando={cargando}
+            busqueda={busqueda}
+            onBuscar={setBusqueda}
+            seleccionadoId={modo === "nuevo" ? null : seleccionadoId}
+            onSeleccionar={seleccionar}
+            onAgregar={() => setModo("nuevo")}
+          />
+          <Panel>
+            <div className="detalle">
+              {error && (
+                <div className="error" role="alert">
+                  {error} <Boton onClick={() => setError("")} aria-label="Cerrar mensaje" style={{ marginLeft: 8, padding: "2px 8px" }}>×</Boton>
+                </div>
+              )}
+              {contenido}
             </div>
-          </header>
-          <main className="main">
-            <Maestro
-              clientes={clientes}
-              cargando={cargando}
-              busqueda={busqueda}
-              onBuscar={setBusqueda}
-              seleccionadoId={modo === "nuevo" ? null : seleccionadoId}
-              onSeleccionar={seleccionar}
-              onAgregar={() => setModo("nuevo")}
-            />
-            <section className="panel">
-              <div className="detalle">
-                {error && <div className="error" role="alert">{error} <button className="btn" style={{ marginLeft: 8, padding: "2px 8px" }} onClick={() => setError("")}>×</button></div>}
-                {contenido}
-              </div>
-            </section>
-          </main>
-        </div>
+          </Panel>
+        </Layout>
       );
     }
 

@@ -203,13 +203,14 @@ export class Clientes {
     return { ...a, completada: !!a.fechaFinalizacion, vencida: Clientes.estaVencida(a) };
   }
 
-  /** Pendientes por fecha de compromiso (sin fecha al final); luego completadas, la más reciente primero. */
+  /**
+   * Pendientes primero: 1° sin fecha, 2° vencidas, 3° hoy y futuras (por fecha ascendente).
+   * Luego las completadas, la más reciente primero.
+   */
   static #ordenActividades(a: ActividadConEstado, b: ActividadConEstado): number {
     if (a.completada !== b.completada) return a.completada ? 1 : -1;
-    if (a.completada) return (b.fechaFinalizacion ?? "").localeCompare(a.fechaFinalizacion ?? "");
-    if (a.fechaCompromiso === b.fechaCompromiso) return a.id - b.id;
-    if (!a.fechaCompromiso) return 1;
-    if (!b.fechaCompromiso) return -1;
-    return a.fechaCompromiso.localeCompare(b.fechaCompromiso);
+    if (a.completada) return (b.fechaFinalizacion ?? "").localeCompare(a.fechaFinalizacion ?? "") || a.id - b.id;
+    const grupo = (x: ActividadConEstado) => (!x.fechaCompromiso ? 0 : x.vencida ? 1 : 2);
+    return grupo(a) - grupo(b) || (a.fechaCompromiso ?? "").localeCompare(b.fechaCompromiso ?? "") || a.id - b.id;
   }
 }
