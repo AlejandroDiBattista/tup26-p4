@@ -65,6 +65,17 @@
   telefono: "",
 });
 
+const [formularioActividad, setFormularioActividad] = React.useState({
+  descripcion: "",
+  fechaCompromiso: "",
+});
+
+const [mostrarFormularioActividad, setMostrarFormularioActividad] =
+  React.useState(false);
+
+const [editandoActividad, setEditandoActividad] = React.useState(false);
+const [actividadEditadaId, setActividadEditadaId] = React.useState(null);
+
 
     React.useEffect(() => {
   if (!clienteSeleccionado) {
@@ -316,6 +327,125 @@
   Editar cliente
 </button>
 
+<button
+  onClick={async () => {
+    if (!window.confirm("¿Seguro que querés eliminar este cliente?")) {
+  return;
+}
+
+
+    const respuesta = await fetch(
+      `/api/clientes/${clienteSeleccionado.id}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (respuesta.ok) {
+      setClientes(
+        clientes.filter(
+          (cliente) => cliente.id !== clienteSeleccionado.id
+        )
+      );
+
+      setClienteSeleccionado(null);
+    }
+  }}
+>
+  Eliminar cliente
+</button>
+
+<button
+  onClick={() => {
+    setMostrarFormularioActividad(true);
+  }}
+>
+  Agregar actividad
+</button>
+
+{mostrarFormularioActividad && (
+  <div>
+    <h4>Nueva actividad</h4>
+
+    <label>
+      Descripción:
+      <input
+        type="text"
+        value={formularioActividad.descripcion}
+        onChange={(e) =>
+          setFormularioActividad({
+            ...formularioActividad,
+            descripcion: e.target.value,
+          })
+        }
+      />
+    </label>
+
+    <br />
+
+    <label>
+      Fecha de compromiso:
+      <input
+        type="date"
+        value={formularioActividad.fechaCompromiso}
+        onChange={(e) =>
+          setFormularioActividad({
+            ...formularioActividad,
+            fechaCompromiso: e.target.value,
+          })
+        }
+      />
+    </label>
+
+    <br />
+
+    <button
+ onClick={async () => {
+  const url = editandoActividad
+    ? `/api/actividades/${actividadEditadaId}`
+    : `/api/clientes/${clienteSeleccionado.id}/actividades`;
+
+  const metodo = editandoActividad ? "PUT" : "POST";
+
+  const respuesta = await fetch(url, {
+    method: metodo,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(formularioActividad),
+  });
+
+  if (respuesta.ok) {
+    const actividadGuardada = await respuesta.json();
+
+    if (editandoActividad) {
+      setActividades(
+        actividades.map((actividad) =>
+          actividad.id === actividadGuardada.id
+            ? actividadGuardada
+            : actividad
+        )
+      );
+    } else {
+      setActividades([...actividades, actividadGuardada]);
+    }
+
+    setFormularioActividad({
+      descripcion: "",
+      fechaCompromiso: "",
+    });
+
+    setEditandoActividad(false);
+    setActividadEditadaId(null);
+    setMostrarFormularioActividad(false);
+  }
+}}
+>
+  {editandoActividad ? "Guardar cambios" : "Guardar actividad"}
+</button>
+  </div>
+)}
+
         <h4>Compromisos</h4>
 
         {actividades.filter((actividad) => !actividad.fechaFinalizacion).length === 0 ? (
@@ -326,31 +456,99 @@
               .filter((actividad) => !actividad.fechaFinalizacion)
               .map((actividad) => (
                 <li key={actividad.id}>
-                  <strong>{actividad.descripcion}</strong>
-                  <br />
-                  Fecha de compromiso: {actividad.fechaCompromiso || "Sin fecha"}
-                </li>
+  <strong>{actividad.descripcion}</strong>
+  <br />
+  Fecha de compromiso: {actividad.fechaCompromiso || "Sin fecha"}
+
+  <br />
+
+  <button
+    onClick={() => {
+      setFormularioActividad({
+        descripcion: actividad.descripcion,
+        fechaCompromiso: actividad.fechaCompromiso || "",
+      });
+
+      setActividadEditadaId(actividad.id);
+      setEditandoActividad(true);
+      setMostrarFormularioActividad(true);
+    }}
+  >
+    Editar
+  </button>
+
+  <button
+    onClick={async () => {
+      if (!window.confirm("¿Seguro que querés eliminar esta actividad?")) {
+        return;
+      }
+
+      const respuesta = await fetch(
+        `/api/actividades/${actividad.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (respuesta.ok) {
+        setActividades(
+          actividades.filter(
+            (item) => item.id !== actividad.id
+          )
+        );
+      }
+    }}
+  >
+    Eliminar
+  </button>
+
+  <button
+    onClick={async () => {
+      const respuesta = await fetch(
+        `/api/actividades/${actividad.id}/completar`,
+        {
+          method: "PATCH",
+        }
+      );
+
+      if (respuesta.ok) {
+        const actividadActualizada = await respuesta.json();
+
+        setActividades(
+          actividades.map((item) =>
+            item.id === actividadActualizada.id
+              ? actividadActualizada
+              : item
+          )
+        );
+      }
+    }}
+  >
+    Completar
+  </button>
+</li>
               ))}
           </ul>
         )}
 
-        <h4>Completadas</h4>
+       <h4>Completadas</h4>
 
-        {actividades.filter((actividad) => actividad.fechaFinalizacion).length === 0 ? (
-          <p>No hay actividades completadas.</p>
-        ) : (
-          <ul>
-            {actividades
-              .filter((actividad) => actividad.fechaFinalizacion)
-              .map((actividad) => (
-                <li key={actividad.id}>
-                  <strong>{actividad.descripcion}</strong>
-                  <br />
-                  Fecha de finalización: {actividad.fechaFinalizacion}
-                </li>
-              ))}
-          </ul>
-        )}
+{actividades.filter((actividad) => actividad.fechaFinalizacion).length === 0 ? (
+  <p>No hay actividades completadas.</p>
+) : (
+  <ul>
+    {actividades
+      .filter((actividad) => actividad.fechaFinalizacion)
+      .map((actividad) => (
+        <li key={actividad.id}>
+          <strong>{actividad.descripcion}</strong>
+          <br />
+          Fecha de finalización: {actividad.fechaFinalizacion}
+        </li>
+      ))}
+  </ul>
+)}
+        
       </div>
     )
   )}
