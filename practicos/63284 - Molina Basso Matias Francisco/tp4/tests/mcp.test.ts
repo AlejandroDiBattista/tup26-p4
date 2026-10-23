@@ -10,6 +10,7 @@ import { runInNewContext } from "node:vm";
 
 process.env.NODE_ENV = "test";
 process.env.DATABASE_URL = ":memory:";
+process.env.MCP_PUBLIC_ORIGIN = "https://crm.example";
 const { app } = await import("../src/app.js");
 const { db, client: database } = await import("../src/db/index.js");
 let http: Server;
@@ -123,6 +124,21 @@ test("MCP: inicialización real, descubrimiento de las 11 herramientas y transpo
     (await foreignOrigin.json()).error.message,
     /Origen no permitido/,
   );
+});
+
+test("MCP detrás de HTTPS: solo origen configurado, sin confiar en encabezados de proxy", async () => {
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {
+    protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "proxy-test", version: "1" },
+  } });
+  const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream", Host: "internal:3000", "X-Forwarded-Proto": "https", "X-Forwarded-Host": "evil.example" };
+  const allowed = await fetch(base + "/mcp", { method: "POST", headers: { ...headers, Origin: "https://crm.example" }, body });
+  assert.equal(allowed.status, 200);
+  assert.equal((await allowed.json()).result.serverInfo.name, "minicrm");
+  for (const origin of ["https://evil.example", "https://crm.example.evil", "http://crm.example"]) {
+    const denied = await fetch(base + "/mcp", { method: "POST", headers: { ...headers, Origin: origin }, body });
+    assert.equal(denied.status, 403);
+  }
+  assert.equal(app.get("trust proxy"), false);
 });
 
 test("MCP y REST: CRUD de clientes y búsqueda por todos los campos sobre los mismos datos", async () => {
@@ -314,16 +330,16 @@ test("MCP: errores de validación y registros inexistentes", async () => {
   );
 });
 
-test("Las dos páginas HTML se sirven sin cambios y Modern Light sigue usando REST", async () => {
-  for (const file of ["MiniCRM.html", "microcrm.html"]) {
-    const response = await fetch(base + "/" + file);
-    assert.equal(response.status, 200);
-    assert.equal(
-      await response.text(),
-      await readFile("public/" + file, "utf8"),
-    );
+test("Una única interfaz definitiva y redirección compatible, REST y Babel classic", async () => {
+  const response = await fetch(base + "/MiniCRM.html");
+  assert.equal(response.status, 200);
+  const html = await readFile("public/MiniCRM.html", "utf8");
+  assert.equal(await response.text(), html);
+  for (const path of ["/", "/microcrm.html"]) {
+    const redirect = await fetch(base + path, { redirect: "manual" });
+    assert.equal(redirect.status, 302);
+    assert.equal(redirect.headers.get("location"), "/MiniCRM.html");
   }
-  const html = await readFile("public/microcrm.html", "utf8");
   assert.match(html, /fetch\("\/api\/clientes"/);
   assert.match(html, /runtime: "classic"/);
   assert.match(html, /#2563eb/);
@@ -331,7 +347,7 @@ test("Las dos páginas HTML se sirven sin cambios y Modern Light sigue usando RE
 });
 
 test("Adaptador embebido: CRUD MCP, intercambio REST, errores y cancelación de búsqueda", async () => {
-  const html = await readFile("public/microcrm.html", "utf8");
+  const html = await readFile("public/MiniCRM.html", "utf8");
   const script = html.match(
     /<script id="mcp-module">([\s\S]*?)<\/script>/,
   )?.[1];

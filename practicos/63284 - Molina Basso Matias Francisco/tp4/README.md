@@ -1,6 +1,6 @@
 # MiniCRM
 
-Trabajo práctico 4: clientes y actividades con Node.js, TypeScript, Express, Drizzle y SQLite. En desarrollo utiliza un archivo SQLite local; en producción se conecta a Turso mediante libSQL. La interfaz usa React y JSX embebido en `public/microcrm.html`, con versiones fijas desde CDN.
+Trabajo práctico 4: clientes y actividades con Node.js, TypeScript, Express, Drizzle y SQLite. En desarrollo utiliza un archivo SQLite local; en producción se conecta a Turso mediante libSQL. La interfaz usa React y JSX embebido en `public/MiniCRM.html`, con versiones fijas desde CDN.
 
 ## Instalación y ejecución
 
@@ -34,9 +34,9 @@ La migración desde el modelo anterior conserva identificadores, actividades, em
 
 ## Uso
 
-La página principal es `http://localhost:3000/microcrm.html` (también accesible desde `/`). Todo su JSX y CSS está embebido en ese archivo. Usa React 18.3.1, ReactDOM 18.3.1 y Babel Standalone 7.26.4 por CDN; el preset `microcrm` fija explícitamente `runtime: "classic"` para compilar JSX usando el objeto global `React`.
+La página principal es `http://localhost:3000/MiniCRM.html` (también accesible desde `/`). Todo su JSX y CSS está embebido en ese archivo. Usa React 18.3.1, ReactDOM 18.3.1 y Babel Standalone 7.26.4 por CDN; el preset `microcrm` fija explícitamente `runtime: "classic"` para compilar JSX usando el objeto global `React`.
 
-La interfaz separa `ClientesService` y `ActividadesService` del renderizado. Los componentes `Layout`, `Form`, `Field`, `Button`, `Icon` y `EmptyState` se reutilizan en `ClientList`, `ClientCard`, `ClientForm`, `ClientDetail`, `ActivityList`, `ActivityItem` y `ActivityForm`. No usa componentes externos ni frameworks CSS. La página anterior `/MiniCRM.html` sigue disponible por compatibilidad.
+La interfaz separa `ClientesService` y `ActividadesService` del renderizado. Los componentes `Layout`, `Form`, `Field`, `Button`, `Icon` y `EmptyState` se reutilizan en `ClientList`, `ClientCard`, `ClientForm`, `ClientDetail`, `ActivityList`, `ActivityItem` y `ActivityForm`. No usa componentes externos ni frameworks CSS. La URL anterior `/microcrm.html` redirige a `/MiniCRM.html`; existe una sola implementación HTML.
 
 - Buscar en vivo por nombre, apellido, email, teléfono, domicilio, localidad o identificador. Ignora mayúsculas y acentos; permite combinar palabras de distintos campos (por ejemplo `garcia yerba`). Los símbolos `%` y `_` se buscan literalmente. El filtrado se hace en el servicio sobre la agenda, adecuado para este MiniCRM sin paginación.
 - Seleccionar un cliente para consultar su ficha y actividades.
@@ -117,11 +117,15 @@ src/
   services/estado-actividad.ts Estados y fecha de hoy en Argentina
   controllers/clientes.ts   Entrada y respuesta HTTP
   routes/clientes.ts        Rutas REST
+  mcp/server.ts             Herramientas MCP sobre Clientes
+  mcp/router.ts             Streamable HTTP y control de origen
   app.ts                    Express, estáticos y errores
   server.ts                 Arranque y cierre
 drizzle/                    Migraciones versionadas
-public/microcrm.html          React, JSX y CSS
-tests/api.test.ts            Pruebas de integración
+public/MiniCRM.html          React, JSX y CSS
+tests/api.test.ts            Integración REST
+tests/mcp.test.ts            MCP, adaptador web y datos compartidos
+tests/ui.test.ts             Protección de borradores en handlers del JSX
 ```
 
 Para modificar el modelo, editar `src/db/schema.ts`, ejecutar `npm run db:generate` y luego `npm run db:migrate`. Versionar los archivos generados de `drizzle/`. No editar migraciones ya aplicadas.
@@ -154,7 +158,7 @@ Se utiliza el modo **stateless** oficial: no se emite `Mcp-Session-Id` ni se alm
 
 Herramientas disponibles:
 
-El endpoint rechaza con 403 las peticiones que incluyen un `Origin` diferente del origen del servidor. Los clientes SDK sin cabecera `Origin` funcionan normalmente. Si se despliega detrás de un proxy HTTPS, su configuración debe conservar correctamente el protocolo y host de la petición.
+El endpoint rechaza con 403 las peticiones que incluyen un `Origin` diferente del origen del servidor. Los clientes SDK sin cabecera `Origin` funcionan normalmente. En un despliegue con proxy HTTPS, configurar `MCP_PUBLIC_ORIGIN` como se indica debajo.
 
 - `listar_clientes`: `{ "busqueda": "garcia yerba" }`; búsqueda opcional por cualquier campo.
 - `obtener_cliente` y `eliminar_cliente`: `{ "clienteId": 1 }`. Eliminar un cliente elimina también sus actividades.
@@ -193,7 +197,7 @@ Las herramientas devuelven `content` de tipo `text` con JSON serializado; una el
 
 ### Elegir REST o MCP desde la página
 
-Iniciá con `npm run dev` y abrí `http://localhost:3000/microcrm.html`. El selector **Conexión** del encabezado comienza en **API REST**. Elegí **MCP** para utilizar las mismas operaciones de clientes y actividades mediante las herramientas de `/mcp`. Ambos modos comparten datos, componentes y diseño Modern Light.
+Iniciá con `npm run dev` y abrí `http://localhost:3000/MiniCRM.html`. El selector **Conexión** del encabezado comienza en **API REST**. Elegí **MCP** para utilizar las mismas operaciones de clientes y actividades mediante las herramientas de `/mcp`. Ambos modos comparten datos, componentes y diseño Modern Light.
 
 El módulo independiente `mcp-module`, embebido en el HTML, carga bajo demanda el cliente oficial SDK 1.32.1 desde esm.sh. El SDK realiza la inicialización MCP, notifica `initialized`, negocia la versión, gestiona encabezados y respuestas JSON/SSE. El adaptador transforma los resultados de las herramientas al formato que ya utilizan los componentes React, sin recurrir a REST cuando MCP falla.
 
@@ -211,6 +215,24 @@ npm run build
 npm test
 ```
 
-`tests/mcp.test.ts` inicia Express en un puerto aleatorio y conecta un cliente MCP real del SDK. Verifica inicialización, descubrimiento de las 11 herramientas, CRUD, búsqueda, pertenencia, finalización, errores y lectura cruzada REST/MCP. También verifica que ambas páginas HTML se sirven y que Modern Light conserva REST y Babel classic. Junto a `tests/api.test.ts`, utiliza SQLite en memoria con migraciones, sin modificar `local.db` ni Turso.
+`tests/mcp.test.ts` inicia Express en un puerto aleatorio y conecta un cliente MCP real del SDK. Verifica inicialización, descubrimiento de las 11 herramientas, CRUD, búsqueda, pertenencia, finalización, errores y lectura cruzada REST/MCP. También verifica que la página definitiva se sirve, que las URLs antiguas redirigen a ella y que Modern Light conserva REST y Babel classic. Junto a `tests/api.test.ts`, utiliza SQLite en memoria con migraciones, sin modificar `local.db` ni Turso.
 
 Referencia: [documentación oficial del SDK TypeScript — servidor y Streamable HTTP](https://ts.sdk.modelcontextprotocol.io/server).
+
+### Borradores y pantallas pequeñas
+
+Al intentar cambiar de cliente o formulario, cancelar, completar o eliminar con cambios sin guardar, se solicita confirmación antes de descartarlos. Rechazar conserva el formulario y no envía la operación. Guardar no pide descartar; salir o recargar la página utiliza el aviso nativo del navegador. El selector REST/MCP permanece bloqueado mientras se edita. Las pruebas de handlers están en `tests/ui.test.ts`; se complementan con la prueba manual en navegador.
+
+En pantallas de hasta 380 px se reducen márgenes y columnas de fecha/botones para ampliar la descripción de actividad. El subformulario sigue en una línea y se mantienen los desplazamientos internos.
+
+### MCP con HTTPS detrás de un proxy
+
+Para la entrega local en `http://localhost:3000`, dejar `MCP_PUBLIC_ORIGIN` vacío. Si el alojamiento termina HTTPS en un proxy y reenvía HTTP a Node, establecer el origen público exacto:
+
+```dotenv
+MCP_PUBLIC_ORIGIN=https://minicrm.example.com
+```
+
+Debe incluir esquema y puerto cuando corresponda, sin ruta, barra final ni comodines. Se valida al iniciar. Solo se acepta ese `Origin`; no se habilita CORS abierto ni `trust proxy`, y no se utilizan `X-Forwarded-Host` o `X-Forwarded-Proto` para autorizar peticiones. Los clientes SDK sin cabecera Origin siguen admitidos. Esto no reemplaza la autenticación del alojamiento.
+
+Las pruebas simulan HTTPS externo con HTTP interno y verifican el rechazo de otros orígenes y de encabezados reenviados falsificados. El despliegue real y la conexión remota a Turso requieren las credenciales y el dominio del entorno de entrega.

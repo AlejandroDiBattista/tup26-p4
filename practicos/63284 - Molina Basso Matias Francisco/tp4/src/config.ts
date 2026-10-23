@@ -1,5 +1,16 @@
 import "dotenv/config";
 
+// Origen externo exacto para TLS en un proxy; no confiamos en X-Forwarded-*.
+export const mcpPublicOrigin = process.env.MCP_PUBLIC_ORIGIN || undefined;
+if (mcpPublicOrigin) {
+  let valid = false;
+  try {
+    const url = new URL(mcpPublicOrigin);
+    valid = ["https:", "http:"].includes(url.protocol) && url.origin === mcpPublicOrigin;
+  } catch { /* Rechazar la configuración inválida al iniciar. */ }
+  if (!valid) throw new Error("MCP_PUBLIC_ORIGIN debe ser un origen HTTP(S) exacto, sin ruta ni barra final.");
+}
+
 const production = process.env.NODE_ENV === "production";
 if (
   production &&

@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { crearServidorMcp } from "./server.js";
+import { mcpPublicOrigin } from "../config.js";
 
 export const mcpRouter = Router();
 
-mcpRouter.post("/", async (req, res, next) => {
+mcpRouter.use((req, res, next) => {
   const origin = req.get("origin");
-  if (origin && origin !== `${req.protocol}://${req.get("host")}`) {
+  const allowedOrigin = mcpPublicOrigin ?? `${req.protocol}://${req.get("host")}`;
+  if (origin && origin !== allowedOrigin) {
     res.status(403).json({
       jsonrpc: "2.0",
       id: null,
@@ -14,6 +16,10 @@ mcpRouter.post("/", async (req, res, next) => {
     });
     return;
   }
+  next();
+});
+
+mcpRouter.post("/", async (req, res, next) => {
   // Sin sesiones persistidas: cada petición tiene su transporte y servidor.
   // Los datos de negocio permanecen en la base compartida con REST.
   const server = crearServidorMcp();
