@@ -20,6 +20,8 @@
       --seleccion: #e7f0fd;
       --rojo: #d63c3c;
       --rojo-fondo: #fdeeee;
+      --verde: #3fa96b;
+      --verde-fondo: #f1f9f4;
       --radio: 8px;
     }
 
@@ -77,10 +79,25 @@
       white-space: nowrap;
     }
     .btn:hover { background: #eceff3; }
+    .btn:disabled { opacity: .55; cursor: default; }
     .btn-primario { background: var(--azul); border-color: var(--azul); color: #fff; }
     .btn-primario:hover { background: var(--azul-hover); }
+    .btn-primario:disabled:hover { background: var(--azul); }
     .btn-peligro { background: var(--rojo-fondo); border-color: #f2b8b8; color: var(--rojo); }
     .btn-peligro:hover { background: #fbdcdc; }
+    .btn-icono { padding: 7px; background: #fff; }
+    .btn-icono.peligro { color: var(--rojo); }
+
+    /* --- Inputs --- */
+    .input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cfd5dd;
+      border-radius: 6px;
+      background: #fff;
+      outline: 0;
+    }
+    .input:focus { border-color: var(--azul); box-shadow: 0 0 0 3px #1f6fe022; }
 
     /* --- Maestro --- */
     .maestro-cabecera {
@@ -132,8 +149,9 @@
     }
     .vacio { padding: 24px 16px; color: var(--suave); text-align: center; }
 
-    /* --- Detalle --- */
-    .detalle { padding: 20px 24px; overflow-y: auto; }
+    /* --- Detalle: cabecera y ficha fijas, listas de actividades con scroll propio --- */
+    .detalle { padding: 20px 24px; overflow-y: auto; gap: 16px; }
+    .detalle > * { flex-shrink: 0; }
     .detalle-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
     .detalle-cabecera h2 { margin: 8px 0 0; font-size: 32px; }
     .detalle-acciones { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
@@ -143,7 +161,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px 24px;
-      padding: 16px 0 20px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--borde);
     }
     .ficha-columna { display: flex; flex-direction: column; gap: 12px; }
@@ -153,6 +171,99 @@
     .dato .falta { color: var(--suave); font-style: italic; }
     .centrado { flex: 1; display: grid; place-items: center; color: var(--suave); }
     .error { color: var(--rojo); }
+    .aviso {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: var(--rojo-fondo);
+      color: var(--rojo);
+    }
+    .aviso button { border: 0; background: none; color: inherit; cursor: pointer; display: flex; }
+
+    /* --- Formulario de cliente --- */
+    .formulario h2 { margin: 0 0 4px; font-size: 26px; }
+    .form-grilla { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+    .campo { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--suave); }
+    .campo .requerido { color: var(--rojo); }
+    .form-botones { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* --- Subformulario de actividad --- */
+    .subform {
+      border: 1.5px dashed #c5ccd6;
+      border-radius: var(--radio);
+      padding: 14px 16px;
+    }
+    .subform h3 { margin: 0 0 10px; font-size: 18px; }
+    .subform-fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .subform-fila .descripcion { flex: 2 1 220px; width: auto; }
+    .subform-fila .fecha { flex: 1 1 150px; width: auto; }
+    .subform .error { margin: 8px 0 0; font-size: 14px; }
+
+    /* --- Listas de actividades --- */
+    .grupos { flex: 1 1 auto; min-height: 180px; display: flex; flex-direction: column; gap: 16px; }
+    .detalle > .grupos { flex-shrink: 1; }
+    .grupo { display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto; }
+    .grupo h3 { margin: 0 0 8px; font-size: 20px; flex-shrink: 0; }
+    .grupo-vacio { flex-shrink: 0; }
+    .actividades {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      min-height: 64px;
+      overflow-y: auto;
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+    }
+    .actividades.completadas { background: var(--verde-fondo); }
+    .actividad {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--borde);
+    }
+    .actividad:last-child { border-bottom: 0; }
+    .actividad.editando { background: var(--seleccion); }
+    .actividad-texto { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .actividad-fecha { color: var(--suave); font-size: 14px; }
+    .actividad-fecha.vencida { color: var(--rojo); }
+    .badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: var(--rojo-fondo);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .actividad .botonera { gap: 6px; }
+    .check {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #9aa4b1;
+      border-radius: 4px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .check:hover { border-color: var(--verde); }
+    .check:disabled { cursor: default; opacity: .5; }
+    .check.hecho { background: var(--verde); border-color: var(--verde); cursor: default; }
+    .lista-vacia {
+      margin: 0;
+      padding: 8px 14px;
+      border: 1px dashed var(--borde);
+      border-radius: var(--radio);
+      color: var(--suave);
+      font-size: 14px;
+    }
 
     /* --- Pantallas angostas: maestro arriba, detalle abajo, cada uno con su scroll --- */
     @media (max-width: 760px) {
@@ -161,11 +272,13 @@
       .maestro-cabecera h2 { font-size: 22px; }
       .detalle { padding: 16px; }
       .detalle-cabecera h2 { font-size: 24px; margin: 0; }
-      .ficha { grid-template-columns: 1fr; }
+      .ficha, .form-grilla { grid-template-columns: 1fr; }
       .detalle-cabecera { flex-direction: column-reverse; }
       .detalle-acciones { width: 100%; flex-direction: row-reverse; justify-content: space-between; align-items: center; }
       .botonera { flex-wrap: wrap; }
       .btn { padding: 6px 12px; }
+      .grupos { flex-shrink: 0; min-height: 0; }
+      .actividades { max-height: 260px; }
     }
   </style>
 </head>
@@ -179,8 +292,13 @@
     // ------------------------------------------------------------------
     // API
     // ------------------------------------------------------------------
-    async function api(ruta, opciones) {
-      const res = await fetch(`/api${ruta}`, opciones);
+    async function api(ruta, opciones = {}) {
+      const { body, ...resto } = opciones;
+      const res = await fetch(`/api${ruta}`, {
+        ...resto,
+        headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
       const datos = res.status === 204 ? null : await res.json();
       if (!res.ok) throw new Error(datos?.error ?? `Error ${res.status}`);
       return datos;
@@ -199,9 +317,9 @@
     }
     const IconoMas = () => <Icono><path d="M12 5v14M5 12h14" /></Icono>;
     const IconoLupa = () => <Icono><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></Icono>;
-    const IconoLapiz = () => <Icono><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></Icono>;
-    const IconoTacho = () => (
-      <Icono><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" /></Icono>
+    const IconoLapiz = ({ size }) => <Icono size={size}><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></Icono>;
+    const IconoTacho = ({ size }) => (
+      <Icono size={size}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" /></Icono>
     );
     const IconoSobre = () => <Icono><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" /></Icono>;
     const IconoTelefono = () => (
@@ -210,6 +328,11 @@
       </Icono>
     );
     const IconoUbicacion = () => <Icono><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></Icono>;
+    const IconoGuardar = () => (
+      <Icono><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" /><path d="M17 21v-8H7v8M7 3v5h8" /></Icono>
+    );
+    const IconoCerrar = () => <Icono><path d="M18 6 6 18M6 6l12 12" /></Icono>;
+    const IconoTilde = () => <Icono size={14}><path d="M20 6 9 17l-5-5" /></Icono>;
 
     // ------------------------------------------------------------------
     // Utilidades de presentación
@@ -227,6 +350,35 @@
       return <div className="avatar" style={{ background: fondo, color }}>{iniciales(cliente)}</div>;
     }
 
+    const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const dosDigitos = (n) => String(n).padStart(2, "0");
+
+    /** Fecha local de hoy como "AAAA-MM-DD", comparable con fechaCompromiso. */
+    function hoy() {
+      const d = new Date();
+      return `${d.getFullYear()}-${dosDigitos(d.getMonth() + 1)}-${dosDigitos(d.getDate())}`;
+    }
+
+    /** "2026-10-16" => "16 oct 2026" (sin pasar por Date, para no correr el día por la zona horaria). */
+    function formatearFecha(iso) {
+      const [a, m, d] = iso.slice(0, 10).split("-").map(Number);
+      return `${d} ${MESES[m - 1]} ${a}`;
+    }
+
+    /** Fecha-hora ISO (UTC) => día local formateado. */
+    function formatearFinalizacion(iso) {
+      const d = new Date(iso);
+      return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    /** Compromisos: primero sin fecha, luego vencidos y por último hoy/futuros; cada grupo por fecha ascendente. */
+    function ordenarCompromisos(pendientes) {
+      const hoyIso = hoy();
+      const grupo = (a) => (a.fechaCompromiso === null ? 0 : a.fechaCompromiso < hoyIso ? 1 : 2);
+      return [...pendientes].sort((a, b) =>
+        grupo(a) - grupo(b) || (a.fechaCompromiso ?? "").localeCompare(b.fechaCompromiso ?? "") || a.id - b.id);
+    }
+
     /** Devuelve `valor` con retardo: evita pedir a la API en cada tecla. */
     function useDemorado(valor, ms) {
       const [demorado, setDemorado] = useState(valor);
@@ -240,12 +392,12 @@
     // ------------------------------------------------------------------
     // Maestro: lista de clientes con búsqueda en vivo
     // ------------------------------------------------------------------
-    function Maestro({ clientes, cargando, error, busqueda, onBuscar, seleccionado, onSeleccionar }) {
+    function Maestro({ clientes, cargando, error, busqueda, onBuscar, seleccionado, onSeleccionar, onAgregar }) {
       return (
         <section className="panel">
           <div className="maestro-cabecera">
             <h2>Clientes</h2>
-            <button className="btn btn-primario" type="button"><IconoMas /> Agregar</button>
+            <button className="btn btn-primario" type="button" onClick={onAgregar}><IconoMas /> Agregar</button>
           </div>
 
           <label className="buscador">
@@ -285,7 +437,201 @@
     }
 
     // ------------------------------------------------------------------
-    // Detalle: ficha del cliente seleccionado
+    // Formulario de cliente (alta y edición)
+    // ------------------------------------------------------------------
+    const CAMPOS_CLIENTE = [
+      { nombre: "nombre", etiqueta: "Nombre", requerido: true },
+      { nombre: "apellido", etiqueta: "Apellido", requerido: true },
+      { nombre: "email", etiqueta: "Email", requerido: true, tipo: "email" },
+      { nombre: "telefono", etiqueta: "Teléfono", tipo: "tel" },
+      { nombre: "domicilio", etiqueta: "Domicilio" },
+      { nombre: "localidad", etiqueta: "Localidad" },
+    ];
+
+    function FormularioCliente({ cliente, onGuardar, onCancelar }) {
+      const [datos, setDatos] = useState(() =>
+        Object.fromEntries(CAMPOS_CLIENTE.map((c) => [c.nombre, cliente?.[c.nombre] ?? ""])));
+      const [error, setError] = useState(null);
+      const [guardando, setGuardando] = useState(false);
+
+      async function enviar(e) {
+        e.preventDefault();
+        setGuardando(true);
+        setError(null);
+        try {
+          await onGuardar(datos);
+        } catch (err) {
+          setError(err.message);
+          setGuardando(false);
+        }
+      }
+
+      return (
+        <form className="panel detalle formulario" onSubmit={enviar}>
+          <h2>{cliente ? `Editar ${nombreCompleto(cliente)}` : "Nuevo cliente"}</h2>
+          <div className="form-grilla">
+            {CAMPOS_CLIENTE.map((c, i) => (
+              <label key={c.nombre} className="campo">
+                <span>{c.etiqueta} {c.requerido && <span className="requerido">*</span>}</span>
+                <input
+                  className="input"
+                  type={c.tipo ?? "text"}
+                  required={c.requerido}
+                  autoFocus={i === 0}
+                  value={datos[c.nombre]}
+                  onChange={(e) => setDatos({ ...datos, [c.nombre]: e.target.value })}
+                />
+              </label>
+            ))}
+          </div>
+          {error && <div className="aviso">{error}</div>}
+          <div className="form-botones">
+            <button className="btn btn-primario" type="submit" disabled={guardando}><IconoGuardar /> Guardar</button>
+            <button className="btn" type="button" onClick={onCancelar}><IconoCerrar /> Cancelar</button>
+          </div>
+        </form>
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Subformulario de actividad (alta o edición de un compromiso)
+    // ------------------------------------------------------------------
+    function SubformActividad({ clienteId, actividad, onGuardada, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? "");
+      const [fecha, setFecha] = useState(actividad?.fechaCompromiso?.slice(0, 10) ?? "");
+      const [error, setError] = useState(null);
+      const [guardando, setGuardando] = useState(false);
+
+      async function enviar(e) {
+        e.preventDefault();
+        setGuardando(true);
+        setError(null);
+        try {
+          const body = { descripcion, fechaCompromiso: fecha || null };
+          if (actividad) await api(`/actividades/${actividad.id}`, { method: "PUT", body });
+          else await api(`/clientes/${clienteId}/actividades`, { method: "POST", body });
+          setDescripcion("");
+          setFecha("");
+          onGuardada();
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setGuardando(false);
+        }
+      }
+
+      function cancelar() {
+        setDescripcion("");
+        setFecha("");
+        setError(null);
+        onCancelar();
+      }
+
+      return (
+        <form className="subform" onSubmit={enviar}>
+          <h3>{actividad ? "Editar actividad" : "Agregar actividad"}</h3>
+          <div className="subform-fila">
+            <input
+              className="input descripcion"
+              placeholder="Descripción de la actividad"
+              aria-label="Descripción de la actividad"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              autoFocus={!!actividad}
+            />
+            <input
+              className="input fecha"
+              type="date"
+              aria-label="Fecha opcional"
+              title="Fecha opcional"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+            />
+            <button className="btn btn-primario" type="submit" disabled={guardando || !descripcion.trim()}>
+              <IconoGuardar /> Guardar
+            </button>
+            <button className="btn" type="button" onClick={cancelar}><IconoCerrar /> Cancelar</button>
+          </div>
+          {error && <p className="error">{error}</p>}
+        </form>
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Listas de actividades
+    // ------------------------------------------------------------------
+    function Compromisos({ actividades, editandoId, ocupado, onCompletar, onEditar, onEliminar }) {
+      const hoyIso = hoy();
+      return (
+        <div className={`grupo ${actividades.length === 0 ? "grupo-vacio" : ""}`}>
+          <h3>Compromisos</h3>
+          {actividades.length === 0 ? (
+            <p className="lista-vacia">No hay compromisos pendientes.</p>
+          ) : (
+            <ul className="actividades">
+              {actividades.map((a) => {
+                const vencida = a.fechaCompromiso !== null && a.fechaCompromiso < hoyIso;
+                return (
+                  <li key={a.id} className={`actividad ${a.id === editandoId ? "editando" : ""}`}>
+                    <button
+                      type="button"
+                      className="check"
+                      title="Marcar como completada"
+                      aria-label={`Completar "${a.descripcion}"`}
+                      disabled={ocupado}
+                      onClick={() => onCompletar(a)}
+                    />
+                    <div className="actividad-texto">
+                      <div>{a.descripcion}</div>
+                      <div className={`actividad-fecha ${vencida ? "vencida" : ""}`}>
+                        {a.fechaCompromiso === null ? "Sin fecha" : formatearFecha(a.fechaCompromiso)}
+                        {vencida && <span className="badge">Vencido</span>}
+                      </div>
+                    </div>
+                    <div className="botonera">
+                      <button type="button" className="btn btn-icono" title="Editar" aria-label="Editar actividad"
+                        disabled={ocupado} onClick={() => onEditar(a)}>
+                        <IconoLapiz size={16} />
+                      </button>
+                      <button type="button" className="btn btn-icono peligro" title="Eliminar" aria-label="Eliminar actividad"
+                        disabled={ocupado} onClick={() => onEliminar(a)}>
+                        <IconoTacho size={16} />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    function Completadas({ actividades }) {
+      return (
+        <div className={`grupo ${actividades.length === 0 ? "grupo-vacio" : ""}`}>
+          <h3>Actividades completadas</h3>
+          {actividades.length === 0 ? (
+            <p className="lista-vacia">Todavía no hay actividades completadas.</p>
+          ) : (
+            <ul className="actividades completadas">
+              {actividades.map((a) => (
+                <li key={a.id} className="actividad">
+                  <span className="check hecho" aria-label="Completada"><IconoTilde /></span>
+                  <div className="actividad-texto">
+                    <div>{a.descripcion}</div>
+                    <div className="actividad-fecha">Completada el {formatearFinalizacion(a.fechaFinalizacion)}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Detalle: ficha del cliente, subformulario y actividades
     // ------------------------------------------------------------------
     function Dato({ icono, children, falta }) {
       return (
@@ -296,13 +642,37 @@
       );
     }
 
-    function Detalle({ cliente, cargando, error }) {
-      if (error) return <section className="panel centrado error">{error}</section>;
-      if (!cliente) {
-        return <section className="panel centrado">{cargando ? "Cargando…" : "Seleccioná un cliente de la lista"}</section>;
-      }
+    function FichaCliente({ cliente, onEditar, onEliminar, onCambio }) {
+      const [editando, setEditando] = useState(null); // actividad pendiente en edición
+      const [ocupado, setOcupado] = useState(false);
+      const [aviso, setAviso] = useState(null);
 
       const ubicacion = [cliente.domicilio, cliente.localidad].filter(Boolean);
+      const compromisos = ordenarCompromisos(cliente.actividades.filter((a) => a.fechaFinalizacion === null));
+      const completadas = cliente.actividades
+        .filter((a) => a.fechaFinalizacion !== null)
+        .sort((a, b) => b.fechaFinalizacion.localeCompare(a.fechaFinalizacion));
+
+      /** Ejecuta una acción sobre una actividad y recarga el cliente. */
+      async function accion(actividad, peticion) {
+        setOcupado(true);
+        setAviso(null);
+        try {
+          await peticion();
+          if (editando?.id === actividad.id) setEditando(null);
+          await onCambio();
+        } catch (err) {
+          setAviso(err.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      const completar = (a) => accion(a, () => api(`/actividades/${a.id}/completar`, { method: "PATCH" }));
+      const eliminar = (a) => {
+        if (!confirm(`¿Eliminar la actividad "${a.descripcion}"?`)) return;
+        accion(a, () => api(`/actividades/${a.id}`, { method: "DELETE" }));
+      };
 
       return (
         <section className="panel detalle">
@@ -311,8 +681,8 @@
             <div className="detalle-acciones">
               <span className="detalle-id">#{cliente.id}</span>
               <div className="botonera">
-                <button className="btn" type="button"><IconoLapiz /> Editar</button>
-                <button className="btn btn-peligro" type="button"><IconoTacho /> Eliminar</button>
+                <button className="btn" type="button" onClick={onEditar}><IconoLapiz /> Editar</button>
+                <button className="btn btn-peligro" type="button" onClick={onEliminar}><IconoTacho /> Eliminar</button>
               </div>
             </div>
           </div>
@@ -328,6 +698,33 @@
               </Dato>
             </div>
           </div>
+
+          <SubformActividad
+            key={editando?.id ?? "nueva"}
+            clienteId={cliente.id}
+            actividad={editando}
+            onGuardada={() => { setEditando(null); onCambio(); }}
+            onCancelar={() => setEditando(null)}
+          />
+
+          {aviso && (
+            <div className="aviso">
+              {aviso}
+              <button type="button" aria-label="Cerrar aviso" onClick={() => setAviso(null)}><IconoCerrar /></button>
+            </div>
+          )}
+
+          <div className="grupos">
+            <Compromisos
+              actividades={compromisos}
+              editandoId={editando?.id}
+              ocupado={ocupado}
+              onCompletar={completar}
+              onEditar={setEditando}
+              onEliminar={eliminar}
+            />
+            <Completadas actividades={completadas} />
+          </div>
         </section>
       );
     }
@@ -341,8 +738,12 @@
       const [lista, setLista] = useState({ clientes: [], cargando: true, error: null });
       const [seleccionado, setSeleccionado] = useState(null);
       const [detalle, setDetalle] = useState({ cliente: null, cargando: false, error: null });
+      const [modo, setModo] = useState("ver"); // "ver" | "editar" | "nuevo"
+      const [version, setVersion] = useState(0); // se incrementa para recargar lista y detalle
 
-      // Lista: se vuelve a pedir cada vez que cambia el filtro. Se ignoran respuestas viejas.
+      const recargar = () => setVersion((v) => v + 1);
+
+      // Lista: se vuelve a pedir cuando cambia el filtro o hay cambios. Se ignoran respuestas viejas.
       useEffect(() => {
         let vigente = true;
         setLista((l) => ({ ...l, cargando: true }));
@@ -350,12 +751,12 @@
           .then((clientes) => {
             if (!vigente) return;
             setLista({ clientes, cargando: false, error: null });
-            // Al cargar por primera vez, se selecciona el primer cliente.
+            // Sin cliente seleccionado (inicio o tras eliminar), se toma el primero.
             setSeleccionado((actual) => actual ?? clientes[0]?.id ?? null);
           })
           .catch((e) => vigente && setLista({ clientes: [], cargando: false, error: e.message }));
         return () => { vigente = false; };
-      }, [filtro]);
+      }, [filtro, version]);
 
       // Detalle: ficha completa (con actividades) del cliente seleccionado.
       useEffect(() => {
@@ -364,12 +765,66 @@
           return;
         }
         let vigente = true;
-        setDetalle((d) => ({ ...d, cargando: true, error: null }));
+        setDetalle((d) => ({ cliente: d.cliente?.id === seleccionado ? d.cliente : null, cargando: true, error: null }));
         api(`/clientes/${seleccionado}`)
           .then((cliente) => vigente && setDetalle({ cliente, cargando: false, error: null }))
           .catch((e) => vigente && setDetalle({ cliente: null, cargando: false, error: e.message }));
         return () => { vigente = false; };
-      }, [seleccionado]);
+      }, [seleccionado, version]);
+
+      function seleccionar(id) {
+        setSeleccionado(id);
+        setModo("ver");
+      }
+
+      async function guardarCliente(datos) {
+        if (modo === "nuevo") {
+          const creado = await api("/clientes", { method: "POST", body: datos });
+          setSeleccionado(creado.id);
+        } else {
+          await api(`/clientes/${seleccionado}`, { method: "PUT", body: datos });
+        }
+        setModo("ver");
+        recargar();
+      }
+
+      async function eliminarCliente() {
+        const c = detalle.cliente;
+        if (!confirm(`¿Eliminar a ${nombreCompleto(c)} y todas sus actividades?`)) return;
+        try {
+          await api(`/clientes/${c.id}`, { method: "DELETE" });
+          setSeleccionado(null);
+          recargar();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      let panelDetalle;
+      if (modo === "nuevo") {
+        panelDetalle = <FormularioCliente key="nuevo" onGuardar={guardarCliente} onCancelar={() => setModo("ver")} />;
+      } else if (detalle.error) {
+        panelDetalle = <section className="panel centrado error">{detalle.error}</section>;
+      } else if (!detalle.cliente) {
+        panelDetalle = (
+          <section className="panel centrado">{detalle.cargando ? "Cargando…" : "Seleccioná un cliente de la lista"}</section>
+        );
+      } else if (modo === "editar") {
+        panelDetalle = (
+          <FormularioCliente key={detalle.cliente.id} cliente={detalle.cliente}
+            onGuardar={guardarCliente} onCancelar={() => setModo("ver")} />
+        );
+      } else {
+        panelDetalle = (
+          <FichaCliente
+            key={detalle.cliente.id}
+            cliente={detalle.cliente}
+            onEditar={() => setModo("editar")}
+            onEliminar={eliminarCliente}
+            onCambio={recargar}
+          />
+        );
+      }
 
       return (
         <div className="app">
@@ -380,9 +835,10 @@
               busqueda={busqueda}
               onBuscar={setBusqueda}
               seleccionado={seleccionado}
-              onSeleccionar={setSeleccionado}
+              onSeleccionar={seleccionar}
+              onAgregar={() => setModo("nuevo")}
             />
-            <Detalle {...detalle} />
+            {panelDetalle}
           </main>
         </div>
       );
