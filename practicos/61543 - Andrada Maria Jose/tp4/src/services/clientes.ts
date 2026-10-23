@@ -26,16 +26,19 @@ private static normalizarTelefono(telefono: string | null | undefined) {
   return telefono.replace(/\s+/g, "").trim();
 }
 
-    static listar() {
-    return db.select().from(clientes);
-  }
+   static listar() {
+  return db.select().from(clientes).all();
+}
 
-  static listarActividades(clienteId: number) {
-    return db
-      .select()
-      .from(actividades)
-      .where(eq(actividades.clienteId, clienteId));
-  }
+
+static listarActividades(clienteId: number) {
+  return db
+    .select()
+    .from(actividades)
+    .where(eq(actividades.clienteId, clienteId))
+    .all();
+}
+  
 
   static crearActividad(datos: typeof actividades.$inferInsert) {
     return db
@@ -228,7 +231,8 @@ static buscar(texto: string) {
         like(clientes.telefono, termino),
         !Number.isNaN(id) ? eq(clientes.id, id) : undefined
       )
-    );
+    )
+    .all();
 }
 }
 
