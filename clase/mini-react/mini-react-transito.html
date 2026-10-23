@@ -5,103 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mini React: conteo de tránsito</title>
 <style>
-:root {
-  --fondo: #f4f5f8;
-  --panel: #ffffff;
-  --texto: #1c2230;
-  --suave: #5a6375;
-  --borde: #d7dbe3;
-  --acento: #2254d1;
-  --acento-suave: #e7edfc;
-  --aviso: #f2a516;
-  --aviso-suave: #fff4d9;
-  --codigo: #fbfbf6;
-}
+:root { --fondo: #f4f5f8; --panel: #ffffff; --texto: #1c2230; --suave: #5a6375; --borde: #d7dbe3; --acento: #2254d1; --acento-suave: #e7edfc; --aviso: #f2a516; --aviso-suave: #fff4d9; --codigo: #fbfbf6; }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--fondo);
-  color: var(--texto);
-  font: 18px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
+body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: var(--fondo); color: var(--texto); font: 18px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 button { font: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .4; }
-
-.pagina {
-  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
-  padding: 14px 24px 10px;
-}
+.pagina { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 14px 24px 10px; }
 .pagina h1 { margin: 0; font-size: 1.4rem; }
 .pagina p { margin: 0; color: var(--suave); }
-
-.escenario {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 20px;
-  padding: 0 24px 20px;
-}
-
+.escenario { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; padding: 0 24px 20px; }
 /* ---------- La aplicación ---------- */
-.app {
-  background: var(--panel);
-  border: 1px solid var(--borde);
-  border-radius: 14px;
-  padding: 20px;
-  display: flex; flex-direction: column; gap: 18px;
-}
+.app { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
 .app > h1 { margin: 0; font-size: 1.8rem; }
 .control { display: flex; align-items: center; gap: 16px; }
-.control .principal {
-  width: 64px; height: 64px; flex: none; border-radius: 50%;
-  border: none; background: var(--acento); color: #fff; font-size: 1.6rem; line-height: 1;
-}
-.cronometro {
-  flex: 1; text-align: center;
-  font: 700 2rem/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
-  letter-spacing: .02em;
-}
-
+.control .principal { width: 64px; height: 64px; flex: none; border-radius: 50%; border: none; background: var(--acento); color: #fff; font-size: 1.6rem; line-height: 1; }
+.cronometro { flex: 1; text-align: center; font: 700 2rem/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .02em; }
 .contadores { display: flex; flex-direction: column; gap: 12px; }
-.contador {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  width: 100%; padding: 12px 20px;
-  border: 2px solid var(--acento); border-radius: 12px;
-  background: var(--panel); color: var(--texto); text-align: left;
-}
+.contador { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 12px 20px; border: 2px solid var(--acento); border-radius: 12px; background: var(--panel); color: var(--texto); text-align: left; }
 .contador:not(:disabled):hover { background: var(--acento-suave); }
 .contador:not(:disabled):active { transform: scale(.98); }
 .contador .nombre { font-size: 1.5rem; font-weight: 600; }
 .contador .cantidad { font-size: 2.6rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-
-.resumen {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;
-  background: var(--acento-suave); border-radius: 12px; padding: 14px;
-}
+.resumen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; background: var(--acento-suave); border-radius: 12px; padding: 14px; }
 .dato { text-align: center; }
 .dato .titulo { margin: 0; color: var(--suave); font-size: .95rem; }
 .dato .valor { margin: 0; font-size: 2.2rem; font-weight: 700; }
-
 /* Cada render crea nodos nuevos: la animación arranca de nuevo en todos. */
 @keyframes destello {
   from { box-shadow: 0 0 0 3px var(--aviso); background-color: var(--aviso-suave); }
-  to   { box-shadow: 0 0 0 3px transparent; }
+  to { box-shadow: 0 0 0 3px transparent; }
 }
 body.resaltar .componente { animation: destello .7s ease-out; }
-
 /* ---------- Panel del framework ---------- */
-.inspector {
-  background: var(--panel);
-  border: 1px solid var(--borde);
-  border-radius: 14px;
-  padding: 16px;
-  display: flex; flex-direction: column; gap: 10px;
-  min-height: 0;
-}
+.inspector { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .inspector h2 { margin: 0; font-size: 1.2rem; }
 .inspector .renders { margin: 0; font-size: 1.1rem; }
 .inspector .renders strong { font-size: 1.6rem; color: var(--acento); }
@@ -113,22 +50,12 @@ th { position: sticky; top: 0; background: var(--panel); }
 tr.efecto td { color: #6b3fa0; }
 tr.cambio td { background: var(--aviso-suave); }
 .nota { margin: 0; color: var(--suave); font-size: .85rem; }
-
 /* ---------- Código fuente ---------- */
 .codigo { padding: 0 24px 24px; }
 .pestanas { display: flex; gap: 6px; }
-.pestanas button {
-  padding: 8px 16px; border: 1px solid var(--borde); border-bottom: none;
-  border-radius: 8px 8px 0 0; background: var(--fondo);
-}
+.pestanas button { padding: 8px 16px; border: 1px solid var(--borde); border-bottom: none; border-radius: 8px 8px 0 0; background: var(--fondo); }
 .pestanas button.activa { background: var(--codigo); font-weight: 600; }
-pre {
-  margin: 0; padding: 16px; overflow: auto; max-height: 75vh;
-  background: var(--codigo); border: 1px solid var(--borde); border-radius: 0 10px 10px 10px;
-  font: 15px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
-  color: #1f2430;
-}
-
+pre { margin: 0; padding: 16px; overflow: auto; max-height: 75vh; background: var(--codigo); border: 1px solid var(--borde); border-radius: 0 10px 10px 10px; font: 15px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace; color: #1f2430; }
 @media (max-width: 1000px) {
   .escenario { grid-template-columns: 1fr; }
   .inspector { max-height: 520px; }

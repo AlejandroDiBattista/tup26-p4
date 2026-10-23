@@ -6,74 +6,38 @@
 <title>Registro de tránsito</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Mono:wght@500&display=swap">
 <style>
-  :root {
-    --papel: oklch(0.955 0.012 90);
-    --tinta: oklch(0.22 0.03 265);
-    --tinta-suave: oklch(0.34 0.03 265);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--papel);
-    color: var(--tinta);
-    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-  }
-  button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  button:active { transform: scale(0.97); }
-  button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
-
-  .app {
-    max-width: 430px;
-    min-height: 100dvh;
-    margin: 0 auto;
-    padding: 24px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .cabecera { display: flex; justify-content: space-between; align-items: center; }
-  .cabecera h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-  .estado { font-size: 14px; font-weight: 700; }
-  .estado.midiendo { color: oklch(0.5 0.17 30); }
-  .tiempo {
-    font-family: 'DM Mono', ui-monospace, monospace;
-    font-size: clamp(60px, 19vw, 80px);
-    font-weight: 500;
-    line-height: 1.05;
-    letter-spacing: -.04em;
-    margin: 4px 0 8px -3px;
-  }
-  .controles { display: flex; gap: 10px; }
-  .btn-principal, .btn-secundario { height: 56px; border-radius: 28px; font-size: 17px; font-weight: 700; }
-  .btn-principal { flex: 1; border: 0; background: var(--tinta); color: var(--papel); font-size: 18px; }
-  .btn-secundario { width: 120px; border: 2px solid var(--tinta); background: transparent; color: var(--tinta); }
-
-  .contadores { display: flex; flex-direction: column; gap: 10px; }
-  .fila { display: flex; gap: 8px; }
-  .sumar {
-    flex: 1; height: 84px; border: 0; border-radius: 22px;
-    display: flex; align-items: center; gap: 14px; padding: 0 20px;
-    color: var(--tinta); text-align: left;
-  }
-  .sumar .nombre { flex: 1; font-size: 20px; font-weight: 700; }
-  .sumar .cantidad { font-family: 'DM Mono', ui-monospace, monospace; font-size: 48px; font-weight: 500; line-height: 1; letter-spacing: -.03em; }
-  .restar { width: 56px; height: 84px; border-width: 2px; border-style: solid; border-radius: 22px; background: transparent; color: var(--tinta); font-size: 26px; font-weight: 700; }
-
-  .resumen {
-    margin-top: auto;
-    background: var(--tinta); color: var(--papel);
-    border-radius: 28px; padding: 22px 22px 20px;
-    display: flex; flex-direction: column; gap: 18px;
-  }
-  .resumen-datos { display: flex; align-items: flex-end; justify-content: space-between; }
-  .rotulo { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
-  .flujo { font-family: 'DM Mono', ui-monospace, monospace; font-size: 60px; font-weight: 500; line-height: .9; letter-spacing: -.04em; display: block; margin: 6px 0; }
-  .detalle { font-size: 15px; font-weight: 500; opacity: .85; }
-  .total { text-align: right; }
-  .total strong { display: block; font-family: 'DM Mono', ui-monospace, monospace; font-size: 32px; font-weight: 500; line-height: 1; margin-bottom: 2px; }
-  .total span { font-size: 14px; font-weight: 500; opacity: .85; }
-  .barra { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--tinta-suave); }
-  .barra div { transition: width .25s cubic-bezier(.25, 1, .5, 1); }
+:root { --papel: oklch(0.955 0.012 90); --tinta: oklch(0.22 0.03 265); --tinta-suave: oklch(0.34 0.03 265); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--papel); color: var(--tinta); font-family: 'Bricolage Grotesque', system-ui, sans-serif; }
+button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:active { transform: scale(0.97); }
+button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+.app { max-width: 430px; min-height: 100dvh; margin: 0 auto; padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 20px; }
+.cabecera { display: flex; justify-content: space-between; align-items: center; }
+.cabecera h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.estado { font-size: 14px; font-weight: 700; }
+.estado.midiendo { color: oklch(0.5 0.17 30); }
+.tiempo { font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(60px, 19vw, 80px); font-weight: 500; line-height: 1.05; letter-spacing: -.04em; margin: 4px 0 8px -3px; }
+.controles { display: flex; gap: 10px; }
+.btn-principal, .btn-secundario { height: 56px; border-radius: 28px; font-size: 17px; font-weight: 700; }
+.btn-principal { flex: 1; border: 0; background: var(--tinta); color: var(--papel); font-size: 18px; }
+.btn-secundario { width: 120px; border: 2px solid var(--tinta); background: transparent; color: var(--tinta); }
+.contadores { display: flex; flex-direction: column; gap: 10px; }
+.fila { display: flex; gap: 8px; }
+.sumar { flex: 1; height: 84px; border: 0; border-radius: 22px; display: flex; align-items: center; gap: 14px; padding: 0 20px; color: var(--tinta); text-align: left; }
+.sumar .nombre { flex: 1; font-size: 20px; font-weight: 700; }
+.sumar .cantidad { font-family: 'DM Mono', ui-monospace, monospace; font-size: 48px; font-weight: 500; line-height: 1; letter-spacing: -.03em; }
+.restar { width: 56px; height: 84px; border-width: 2px; border-style: solid; border-radius: 22px; background: transparent; color: var(--tinta); font-size: 26px; font-weight: 700; }
+.resumen { margin-top: auto; background: var(--tinta); color: var(--papel); border-radius: 28px; padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 18px; }
+.resumen-datos { display: flex; align-items: flex-end; justify-content: space-between; }
+.rotulo { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+.flujo { font-family: 'DM Mono', ui-monospace, monospace; font-size: 60px; font-weight: 500; line-height: .9; letter-spacing: -.04em; display: block; margin: 6px 0; }
+.detalle { font-size: 15px; font-weight: 500; opacity: .85; }
+.total { text-align: right; }
+.total strong { display: block; font-family: 'DM Mono', ui-monospace, monospace; font-size: 32px; font-weight: 500; line-height: 1; margin-bottom: 2px; }
+.total span { font-size: 14px; font-weight: 500; opacity: .85; }
+.barra { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--tinta-suave); }
+.barra div { transition: width .25s cubic-bezier(.25, 1, .5, 1); }
 </style>
 </head>
 <body>

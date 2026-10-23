@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <title>MicroCRM · Clientes</title>
+  <style>
+
+    :root {
+      color-scheme: light;
+      --fondo: #f5f4ef;
+      --papel: #fcfcf9;
+      --tinta: #293a33;
+      --muted: #647069;
+      --linea: #dcded6;
+      --verde: #315f48;
+      --suave: #e7ede3;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--tinta);
+      background: var(--fondo);
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; }
+    body { margin: 0; font-size: 15px; line-height: 1.5; overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .55; }
+    a { color: var(--verde); text-underline-offset: 3px; }
+    :focus-visible { outline: 2px solid var(--verde); outline-offset: -3px; }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; letter-spacing: -.035em; }
+    h1 { font-size: clamp(2rem, 3vw, 2.7rem); line-height: 1.15; }
+    h2 { font-size: clamp(1.5rem, 2.1vw, 2rem); line-height: 1.2; overflow-wrap: anywhere; }
+    h3 { font-size: .9rem; font-weight: 600; }
+    small, .secundario { color: var(--muted); }
+    .icono { width: 19px; height: 19px; flex: 0 0 auto; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .aplicacion { max-width: 1600px; margin: auto; height: 100dvh; min-height: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+    .lateral { padding: 28px 20px; border-right: 1px solid var(--linea); display: flex; flex-direction: column; align-items: flex-start; gap: 40px; min-height: 0; }
+    .marca { display: flex; align-items: center; gap: 10px; font-size: 19px; letter-spacing: -.04em; font-weight: bold; }
+    .marca-simbolo { width: 27px; height: 29px; display: grid; place-items: center; color: var(--papel); background: var(--verde); border-radius: 3px 10px 3px 3px; }
+    .marca-simbolo .icono { width: 17px; }
+    .etiqueta { text-transform: uppercase; letter-spacing: .14em; font-size: 10px; font-weight: bold; color: var(--muted); }
+    .navegacion { width: 100%; }
+    .nav-activa { display: flex; align-items: center; gap: 10px; padding: 12px; margin: 13px -9px 0; border-radius: 5px; background: var(--suave); color: var(--verde); text-decoration: none; }
+    .nota-lateral { margin-top: auto; font-size: 12px; color: var(--muted); border-top: 1px solid var(--linea); padding-top: 18px; }
+    .principal { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 24px clamp(18px, 3vw, 42px) 12px; }
+    .barra-superior { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 18px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .fecha { text-transform: capitalize; }
+    .cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; flex-shrink: 0; }
+    .cabecera p { margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; border: 1px solid var(--linea); border-radius: 5px; padding: 9px 13px; color: var(--tinta); background: var(--papel); font-size: 12px; font-weight: 600; }
+    .boton:hover:not(:disabled) { background: var(--suave); }
+    .boton.primario { background: var(--verde); border-color: var(--verde); color: var(--papel); }
+    .boton.primario:hover:not(:disabled) { background: #244b37; }
+    .acciones-cabecera { display: flex; gap: 8px; flex-shrink: 0; }
+    .detalle-cabecera h2 { flex: 1; }
+    .editor-cliente { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .editor-cabecera { flex-shrink: 0; margin-bottom: 20px; }
+    .editor-cabecera h2 { margin-top: 12px; }
+    .editor-cabecera p { margin-top: 6px; font-size: 12px; color: var(--muted); }
+    .formulario { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .formulario-campos { flex: 1; padding: 3px 3px 12px; }
+    .campos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; border: 0; padding: 0; margin: 0; }
+    .campo { display: block; min-width: 0; }
+    .campo span { display: block; font-size: 12px; margin-bottom: 6px; }
+    .campo input { display: block; width: 100%; min-height: 43px; padding: 9px 10px; border: 1px solid #aeb9ae; border-radius: 4px; background: var(--papel); color: var(--tinta); font-size: 16px; }
+    .formulario-pie { display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; padding: 16px 0; border-top: 1px solid var(--linea); }
+
+    .espacio-trabajo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(240px, .85fr) minmax(0, 1.55fr); grid-template-rows: minmax(0, 1fr); background: var(--papel); border: 1px solid var(--linea); border-radius: 9px; overflow: clip; }
+    .directorio { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-right: 1px solid var(--linea); }
+    .conexion { display: flex; align-items: center; gap: 10px; border: 0; padding: 0; margin: 0 0 12px; font-size: 12px; }
+    .conexion-titulo { margin-right: auto; color: var(--muted); font-size: 11px; }
+    .conexion label { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; cursor: pointer; }
+    .conexion input { margin: 0; accent-color: var(--verde); }
+    .conexion:disabled label { opacity: .55; cursor: wait; }
+    .directorio-cabecera { padding: 18px 18px 14px; border-bottom: 1px solid var(--linea); flex-shrink: 0; }
+    .fila { display: flex; align-items: center; gap: 10px; }
+    .entre { justify-content: space-between; }
+    .buscador { display: flex; align-items: center; gap: 8px; margin-bottom: 13px; padding: 0 10px; background: var(--fondo); border: 1px solid #b7c0b6; border-radius: 5px; }
+    .buscador input { min-width: 0; width: 100%; padding: 10px 0; border: 0; background: transparent; color: var(--tinta); font-size: 16px; }
+    .buscador .icono { color: var(--muted); width: 17px; }
+    .scroll-interno { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+    .maestro-lista { flex: 1; }
+    .lista-entidades { list-style: none; margin: 0; padding: 0; }
+    .cliente-boton { border: 0; border-bottom: 1px solid #eaebe5; width: 100%; display: flex; align-items: center; gap: 11px; padding: 16px 18px; background: transparent; color: inherit; text-align: left; }
+    .cliente-boton:hover { background: #f3f5ee; }
+    .cliente-boton[aria-current="true"] { background: var(--suave); box-shadow: inset 3px 0 var(--verde); }
+    .avatar { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 50%; background: #ecece4; color: #58674f; font-size: 12px; flex-shrink: 0; }
+    .cliente-boton[aria-current="true"] .avatar { background: #d6e1ce; color: #355339; }
+    .cliente-texto { flex: 1; min-width: 0; }
+    .cliente-texto strong { display: block; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+    .cliente-texto small { display: block; font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
+    .cliente-boton > .icono { width: 13px; color: var(--muted); }
+    .detalle { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 22px clamp(18px, 2.4vw, 32px) 0; }
+    .ficha { flex-shrink: 0; }
+    .cliente-id { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .detalle-cabecera { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+    .detalle-cabecera .avatar { width: 43px; height: 43px; font-size: 14px; background: var(--suave); }
+    .datos { margin: 0 0 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 20px; padding: 16px 0; border-block: 1px solid var(--linea); }
+    .datos div { min-width: 0; }
+    .datos dt { margin-bottom: 3px; font-size: 11px; color: var(--muted); }
+    .datos dd { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+    .actividades { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .seccion-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 7px; background: var(--papel); position: sticky; top: 0; }
+    .seccion-cabecera h3 span { color: var(--muted); font-weight: 400; margin-left: 7px; }
+    .solo-lectura { color: var(--muted); font-size: 10px; }
+    .actividades-lista { flex: 1; padding-bottom: 12px; }
+    .grupo-actividades + .grupo-actividades { margin-top: 14px; }
+    .vacio-grupo { margin: 0; padding: 3px 0; color: var(--muted); font-size: 12px; }
+    .subformulario { display: grid; grid-template-columns: minmax(0, 1fr) minmax(100px, 132px) 34px 34px; align-items: center; gap: 6px; flex-shrink: 0; margin-bottom: 12px; padding: 8px; border: 2px dotted #acbba9; border-radius: 10px; }
+    .subformulario input { min-width: 0; width: 100%; height: 36px; padding: 5px; border: 0; border-radius: 3px; background: transparent; color: var(--tinta); font-size: 13px; }
+    .subformulario[data-editando="true"] { border-color: var(--verde); background: #f0f4ec; }
+    .boton.icono-solo { width: 34px; min-height: 36px; padding: 6px; border-color: transparent; background: transparent; }
+    .boton.icono-solo:hover:not(:disabled) { background: var(--suave); }
+    .acciones-actividad { display: flex; flex-shrink: 0; gap: 2px; }
+    .check-compromiso { width: 21px; height: 21px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--verde); cursor: pointer; }
+    .check-compromiso:disabled { cursor: wait; }
+    .error-actividad { margin-bottom: 8px; }
+    @media (pointer: coarse) {
+      .subformulario { grid-template-columns: minmax(0, 1fr) 116px 40px 40px; gap: 3px; padding: 6px; }
+      .boton.icono-solo { width: 40px; min-height: 40px; }
+      .subformulario input { font-size: 16px; }
+    }
+    .actividad { padding: 16px 0; border-top: 1px solid var(--linea); display: flex; align-items: flex-start; gap: 11px; }
+    .actividad-check { margin-top: 1px; width: 22px; height: 22px; color: var(--verde); }
+    .actividad-contenido { flex: 1; min-width: 0; }
+    .actividad-titulo { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+    .actividad.completada .actividad-titulo { color: var(--muted); text-decoration: line-through; text-decoration-color: #9aa59a; }
+    .actividad-meta { display: flex; gap: 5px 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; font-size: 11px; color: var(--muted); }
+    .estado { font-size: 10px; line-height: 1.5; padding: 2px 7px; border-radius: 3px; color: #815d20; background: #f1ecde; }
+    .estado.completada { color: var(--verde); background: var(--suave); }
+    .estado.vencida { color: #a03d31; background: #f8eae3; }
+    .mensaje { flex-shrink: 0; border: 1px solid #dfb9aa; color: #842f26; background: #fbf0e9; padding: 10px 13px; margin-bottom: 12px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
+    .vacio { padding: 24px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+    .vacio strong { color: var(--tinta); display: block; font-weight: 600; margin-bottom: 6px; }
+    .pie { flex-shrink: 0; margin-top: 10px; font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; gap: 16px; }
+    @media (max-width: 1050px) {
+      .aplicacion { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+      .lateral { flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 24px; border-right: 0; border-bottom: 1px solid var(--linea); gap: 20px; }
+      .navegacion { width: auto; }
+      .nav-activa { margin: 0; padding: 6px 12px; }
+      .lateral .etiqueta, .nota-lateral { display: none; }
+      .principal { padding-top: 18px; }
+    }
+    @media (max-width: 680px) {
+      .principal { padding: 12px 12px 8px; }
+      .lateral { padding: 9px 14px; }
+      .marca { font-size: 17px; }
+      .barra-superior, .cabecera p { display: none; }
+      .cabecera { margin-bottom: 12px; }
+      h1 { font-size: 28px; }
+      .espacio-trabajo { grid-template-columns: 1fr; grid-template-rows: minmax(130px, .8fr) minmax(0, 2fr); }
+      .directorio { border-right: 0; border-bottom: 1px solid var(--linea); }
+      .directorio-cabecera { padding: 10px 14px 8px; }
+      .buscador { margin-bottom: 7px; }
+      .buscador input { padding-block: 8px; }
+      .cliente-boton { padding: 10px 14px; }
+      .detalle { padding: 12px 16px 0; }
+      .detalle-cabecera { margin: 10px 0; gap: 9px; }
+      h2 { font-size: 23px; }
+      .detalle-cabecera .avatar { width: 32px; height: 32px; font-size: 11px; }
+      .datos { gap: 7px 14px; padding: 10px 0; margin-bottom: 10px; }
+      .datos dt { font-size: 10px; }
+      .datos dd { font-size: 11px; }
+      .seccion-cabecera { margin-bottom: 7px; }
+      .pie { margin-top: 6px; }
+    }
+    @media (max-height: 560px) {
+      .barra-superior, .cabecera p, .pie { display: none; }
+      .principal { padding-top: 10px; }
+      .cabecera { margin-bottom: 10px; }
+      .detalle { padding-top: 12px; }
+      .detalle-cabecera { margin: 8px 0; }
+      .datos { padding: 8px 0; gap: 6px 16px; margin-bottom: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"><p role="status" style="padding:40px">Cargando MicroCRM…</p></div>
+  <noscript>Activá JavaScript para consultar y gestionar tus clientes.</noscript>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous" onerror="document.getElementById('root').textContent='No se pudo cargar React. Revisá tu conexión y recargá la página.'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous" onerror="document.getElementById('root').textContent='No se pudo cargar React DOM. Revisá tu conexión y recargá la página.'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js" crossorigin="anonymous" onerror="document.getElementById('root').textContent='No se pudo cargar Babel. Revisá tu conexión y recargá la página.'"></script>
+  <script>
+    // JSX → React.createElement: usa React global, sin imports ni runtime automático.
+    if (window.Babel) Babel.registerPreset('react-classic', {
+      presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+    });
+  </script>
+  <!-- Módulo MCP independiente para Streamable HTTP sin sesiones y respuestas JSON. -->
+  <script type="module" id="microcrm-mcp-client">
+    let conexion;
+    let version;
+    let siguienteId = 1;
+    async function rpc(method, params, signal, notificacion = false) {
+      const headers = { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' };
+      if (version) headers['MCP-Protocol-Version'] = version;
+      let respuesta;
+      try {
+        respuesta = await fetch('/mcp', {
+          method: 'POST', headers, signal,
+          body: JSON.stringify({ jsonrpc: '2.0', ...(notificacion ? {} : { id: siguienteId++ }), method, params })
+        });
+      } catch (error) {
+        if (signal?.aborted) throw signal.reason;
+        throw new Error('No pudimos conectar con MCP. Revisá la conexión y volvé a intentar con Actualizar.');
+      }
+      if (notificacion && respuesta.ok) return;
+      const mensaje = await respuesta.json().catch(() => {
+        throw new Error('MCP no devolvió una respuesta JSON válida. Intentá de nuevo con Actualizar.');
+      });
+      if (!respuesta.ok || mensaje.error) throw new Error(mensaje.error?.message || mensaje.error || `MCP respondió con un error (${respuesta.status}).`);
+      if (!Object.hasOwn(mensaje, 'result')) throw new Error('MCP no devolvió el resultado esperado.');
+      return mensaje.result;
+    }
+    async function conectar() {
+      if (!conexion) {
+        conexion = (async () => {
+          const resultado = await rpc('initialize', {
+            protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'microcrm-web', version: '1.0.0' }
+          });
+          version = resultado.protocolVersion;
+          if (!['2025-03-26', '2025-06-18', '2025-11-25'].includes(version)) throw new Error('El servidor MCP usa una versión no compatible con esta página.');
+          await rpc('notifications/initialized', {}, undefined, true);
+        })().catch((error) => { conexion = undefined; version = undefined; throw error; });
+      }
+      return conexion;
+    }
+    async function llamar(name, args = {}, signal) {
+      await conectar();
+      signal?.throwIfAborted();
+      const resultado = await rpc('tools/call', { name, arguments: args }, signal);
+      let contenido = resultado.structuredContent;
+      if (!contenido) {
+        const texto = resultado.content?.find((item) => item.type === 'text')?.text;
+        try { contenido = JSON.parse(texto); }
+        catch { throw new Error(texto || 'MCP devolvió una respuesta que no pudimos leer.'); }
+      }
+      if (resultado.isError) throw new Error(contenido.mensaje || 'MCP no pudo completar la operación.');
+      if (!Object.hasOwn(contenido, 'datos')) throw new Error('MCP no devolvió los datos esperados.');
+      return contenido.datos;
+    }
+    window.MicroCrmMcp = {
+      clientes: {
+        listar: (signal) => llamar('clientes_buscar', {}, signal),
+        obtener: (clienteId) => llamar('clientes_obtener', { clienteId }),
+        crear: (datos) => llamar('clientes_crear', { datos }),
+        actualizar: (clienteId, datos) => llamar('clientes_actualizar', { clienteId, datos })
+      },
+      actividades: {
+        crear: (clienteId, datos) => llamar('actividades_crear', { clienteId, datos }),
+        actualizar: (clienteId, actividadId, datos) => llamar('actividades_actualizar', { clienteId, actividadId, datos }),
+        eliminar: (clienteId, actividadId) => llamar('actividades_eliminar', { clienteId, actividadId }),
+        completar: (clienteId, actividadId) => llamar('actividades_completar', { clienteId, actividadId })
+      }
+    };
+  </script>
+  <script type="text/babel" data-presets="react-classic">
+
+    const { useState, useEffect, useRef, useId, useContext } = React;
+    const ServiciosContext = React.createContext(null);
+
+    // Servicios REST: centralizan las peticiones y sus errores.
+    async function peticion(ruta = '', { datos, ...opciones } = {}) {
+      let respuesta;
+      try {
+        respuesta = await fetch('/api/clientes' + ruta, {
+          ...opciones,
+          headers: datos === undefined ? {} : { 'Content-Type': 'application/json' },
+          body: datos === undefined ? undefined : JSON.stringify(datos)
+        });
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        throw new Error('No pudimos conectar con el servidor. Revisá la conexión e intentá de nuevo.');
+      }
+      if (respuesta.status === 204) return null;
+      const contenido = await respuesta.json().catch(() => {
+        throw new Error('El servidor no pudo responder. Intentá de nuevo.');
+      });
+      if (!respuesta.ok) throw new Error(contenido.error || 'No pudimos completar la operación. Intentá de nuevo.');
+      return contenido;
+    }
+    const ClientesREST = {
+      listar: (signal) => peticion('', { signal }),
+      obtener: (id) => peticion(`/${id}`),
+      crear: (datos) => peticion('', { method: 'POST', datos }),
+      actualizar: (id, datos) => peticion(`/${id}`, { method: 'PATCH', datos })
+    };
+    const ActividadesREST = {
+      crear: (clienteId, datos) => peticion(`/${clienteId}/actividades`, { method: 'POST', datos }),
+      actualizar: (clienteId, id, datos) => peticion(`/${clienteId}/actividades/${id}`, { method: 'PATCH', datos }),
+      eliminar: (clienteId, id) => peticion(`/${clienteId}/actividades/${id}`, { method: 'DELETE' }),
+      completar: (clienteId, id) => peticion(`/${clienteId}/actividades/${id}/completar`, { method: 'POST', datos: {} })
+    };
+    const normalizarBusqueda = (valor) => String(valor ?? '').normalize('NFD')
+      .replace(/\p{M}/gu, '').toLowerCase().replace(/#(?=\d)/g, '');
+    const nombreCliente  = (cliente) => `${cliente.nombre} ${cliente.apellido}`;
+    const iniciales      = (cliente) => `${cliente.nombre[0]}${cliente.apellido[0]}`;
+    const formatearFecha = (fecha)   => fecha ? new Intl.DateTimeFormat('es-AR', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    }).format(new Date(fecha + 'T12:00:00')) : 'Sin fecha';
+    
+    function ordenarCompromisos(actividades) {
+      const grupo = (actividad) => actividad.fechaCompromiso === null ? 0 : actividad.estado === 'vencida' ? 1 : 2;
+      return actividades.filter((actividad) => actividad.fechaFinalizacion === null).sort((a, b) =>
+        grupo(a) - grupo(b) || (a.fechaCompromiso ?? '').localeCompare(b.fechaCompromiso ?? '') || a.id - b.id
+      );
+    }
+
+    function buscarClientes(clientes, busqueda) {
+      const id = busqueda.trim().match(/^#(\d+)$/);
+      if (id) return clientes.filter((cliente) => cliente.id === Number(id[1]));
+      const palabras = normalizarBusqueda(busqueda).trim().split(/\s+/).filter(Boolean);
+      return clientes.filter((cliente) => {
+        const texto = normalizarBusqueda(Object.entries(cliente)
+          .filter(([campo]) => campo !== 'actividades').map(([, valor]) => valor ?? '').join(' '));
+        return palabras.every((palabra) => texto.includes(palabra));
+      });
+    }
+
+    // Componentes comunes.
+    function Icono({ nombre, className = '', ...props }) {
+      const trazos = {
+        clientes: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        guardar:  <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2Z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/></>,
+        cancelar: <><path d="m6 6 12 12M6 18 18 6"/></>,
+        borrar:   <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></>,
+        mas:      <><path d="M12 5v14M5 12h14"/></>,
+        editar:   <><path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"/><path d="m13 6 5 5"/></>,
+        buscar:   <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></>,
+        flecha:   <><path d="m9 5 7 7-7 7"/></>,
+        casilla:  <><rect x="3" y="3" width="18" height="18" rx="4"/></>,
+        completo: <><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m7 12 3 3 7-7"/></>,
+        recargar: <><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 13 3M18 18a8 8 0 0 1-13-3"/></>,
+        hoja:     <><path d="M5 20V4h6l8 8v8H5Z"/><path d="M11 4v8h8M8 16h8"/></>
+      };
+      return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={`icono ${className}`} aria-hidden="true" {...props}>{trazos[nombre] || trazos.hoja}</svg>;
+    }
+
+    function Boton({ children, icono, variante = '', ...props }) {
+      return <button type="button" className={`boton ${variante}`} {...props}>
+        {icono && <Icono nombre={icono}/>} {children}
+      </button>;
+    }
+    function Entrada({ etiqueta, ...props }) {
+      return <label className="buscador">
+        <Icono nombre="buscar"/><span className="sr-only">{etiqueta}</span>
+        <input {...props}/>
+      </label>;
+    }
+    const camposCliente = [
+      { nombre: 'nombre',    etiqueta: 'Nombre',    autocomplete: 'given-name',                   requerido: true, },
+      { nombre: 'apellido',  etiqueta: 'Apellido',  autocomplete: 'family-name',                  requerido: true, },
+      { nombre: 'email',     etiqueta: 'Email',     autocomplete: 'email' ,       tipo: 'email',  requerido: true, },
+      { nombre: 'telefono',  etiqueta: 'Teléfono',  autocomplete: 'tel',          tipo: 'tel',    },
+      { nombre: 'domicilio', etiqueta: 'Domicilio', autocomplete: 'street-address' },
+      { nombre: 'localidad', etiqueta: 'Localidad', autocomplete: 'address-level2' }
+    ];
+    function CampoEntrada({ campo, valor, onChange, autoFocus }) {
+      return <label className="campo">
+        <span>{campo.etiqueta}{campo.requerido ? ' *' : ''}</span>
+        <input name={campo.nombre} type={campo.tipo || 'text'} autoComplete={campo.autocomplete}
+          required={campo.requerido} autoFocus={autoFocus} value={valor} onChange={(evento) => onChange(evento.target.value)}/>
+      </label>;
+    }
+    function FormularioCliente({ cliente, onGuardar, onCancelar, guardando }) {
+      const [datos, setDatos] = useState(() => Object.fromEntries(camposCliente.map((campo) => [campo.nombre, cliente?.[campo.nombre] ?? ''])));
+      const [error, setError] = useState('');
+      const mensaje = useRef(null);
+      useEffect(() => { if (error) mensaje.current?.focus(); }, [error]);
+      async function guardar(evento) {
+        evento.preventDefault();
+        if (guardando) return;
+        setError('');
+        try {
+          const valores = Object.fromEntries(camposCliente.map((campo) => [
+            campo.nombre, campo.requerido ? datos[campo.nombre] : datos[campo.nombre].trim() || null
+          ]));
+          await onGuardar(valores);
+        } catch (error) { setError(error.message); }
+      }
+      return <div className="editor-cliente">
+        <header className="editor-cabecera">
+          <div className="fila entre"><span className="etiqueta">{cliente ? 'Editar cliente' : 'Agregar cliente'}</span>
+            {cliente && <span className="cliente-id">#{cliente.id}</span>}
+          </div>
+          <h2>{cliente ? nombreCliente(cliente) : 'Nuevo cliente'}</h2>
+          <p>Nombre, apellido y email son obligatorios (*).</p>
+        </header>
+        <form className="formulario" onSubmit={guardar} aria-label={cliente ? 'Editar cliente' : 'Agregar cliente'} aria-busy={guardando}>
+          <div className="formulario-campos scroll-interno">
+            {error && <div className="mensaje" role="alert" tabIndex="-1" ref={mensaje}>{error}</div>}
+            <fieldset className="campos" disabled={guardando}>
+              <legend className="sr-only">Datos del cliente</legend>
+              {camposCliente.map((campo, indice) => <CampoEntrada key={campo.nombre} campo={campo}
+                autoFocus={indice === 0} valor={datos[campo.nombre]} onChange={(valor) => {
+                  setDatos((actual) => ({ ...actual, [campo.nombre]: valor })); setError('');
+                }}/>) }
+            </fieldset>
+          </div>
+          <div className="formulario-pie">
+            <Boton type="submit" variante="primario" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Boton>
+            <Boton disabled={guardando} onClick={onCancelar}>Cancelar</Boton>
+          </div>
+        </form>
+      </div>;
+    }
+    function Vacio({ titulo, children }) {
+      return <div className="vacio"><strong>{titulo}</strong>{children}</div>;
+    }
+    function ListaEntidades({ entidades, render, vacio }) {
+      return entidades.length ? <ul className="lista-entidades">
+        {entidades.map((entidad) => <li key={entidad.id}>{render(entidad)}</li>)}
+      </ul> : <Vacio titulo={vacio}/>;
+    }
+    function DatosEntidad({ campos }) {
+      return <dl className="datos">{campos.map(([nombre, valor]) => <div key={nombre}>
+        <dt>{nombre}</dt><dd>{valor || <span className="secundario">Sin registrar</span>}</dd>
+      </div>)}</dl>;
+    }
+    function Layout({ children }) {
+      const fecha = new Intl.DateTimeFormat('es-AR', {
+        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Argentina/Tucuman'
+      }).format(new Date());
+      return <div className="aplicacion">
+        <aside className="lateral">
+          <div className="marca"><span className="marca-simbolo"><Icono nombre="hoja"/></span>microcrm</div>
+          <nav className="navegacion" aria-label="Principal">
+            <span className="etiqueta">Tu espacio de trabajo</span>
+            <a className="nav-activa" href="/microcrm.html" aria-current="page"><Icono nombre="clientes"/>Clientes</a>
+          </nav>
+          <p className="nota-lateral">Menos pendientes.<br/>Mejores relaciones.</p>
+        </aside>
+        <main className="principal">
+          <div className="barra-superior"><span>Espacio de trabajo / Clientes</span><time className="fecha">{fecha}</time></div>
+          {children}
+          <footer className="pie"><span>MicroCRM</span><span>Un lugar para cada conversación.</span></footer>
+        </main>
+      </div>;
+    }
+
+    // Maestro: su cabecera permanece fuera de la región que se desplaza.
+    function MaestroClientes({ clientes, activo, busqueda, onBuscar, onSeleccionar, cargando, bloqueado, modo, onModo, conexionBloqueada }) {
+      const lista = useRef(null);
+      useEffect(() => { lista.current.scrollTop = 0; }, [busqueda]);
+      useEffect(() => {
+        lista.current.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }, [activo]);
+      return <section className="directorio" aria-label="Directorio de clientes">
+        <header className="directorio-cabecera">
+          <fieldset className="conexion" disabled={conexionBloqueada}>
+            <legend className="sr-only">Conexión de datos</legend><span className="conexion-titulo" aria-hidden="true">Conexión</span>
+            {['rest', 'mcp'].map((valor) => <label key={valor} title={valor === 'mcp' ? 'Usar el servidor MCP de esta aplicación' : 'Usar la API REST de esta aplicación'}>
+              <input type="radio" name="conexion" value={valor} checked={modo === valor} onChange={() => onModo(valor)}/>
+              <span>{valor.toUpperCase()}</span>
+            </label>)}
+          </fieldset>
+          <form role="search" onSubmit={(evento) => evento.preventDefault()}>
+            <Entrada etiqueta="Buscar clientes por cualquier campo" type="search" name="busqueda"
+              placeholder="Buscar clientes…" title="Buscá por nombre, apellido, email, teléfono, domicilio, localidad o #ID." value={busqueda} disabled={bloqueado} autoComplete="off"
+              onChange={(evento) => onBuscar(evento.target.value)}/>
+          </form>
+          <div className="fila entre"><span className="etiqueta">Directorio</span>
+            <small aria-live="polite">{clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'}</small>
+          </div>
+        </header>
+        <div className="maestro-lista scroll-interno" ref={lista} role="region" aria-label="Lista de clientes" tabIndex="0">
+          {cargando ? <Vacio titulo="Cargando clientes…"/> : <ListaEntidades entidades={clientes}
+            vacio={busqueda ? 'Sin resultados' : 'Todavía no hay clientes'}
+            render={(cliente) => <button className="cliente-boton" aria-current={activo === cliente.id ? 'true' : undefined}
+              disabled={bloqueado} onClick={() => onSeleccionar(cliente.id)}>
+              <span className="avatar" aria-hidden="true">{iniciales(cliente)}</span>
+              <span className="cliente-texto"><strong>{nombreCliente(cliente)}</strong><small>{cliente.email}</small></span>
+              <Icono nombre="flecha"/>
+            </button>}/>
+          }
+        </div>
+      </section>;
+    }
+
+    function SubformularioActividad({ descripcion, fecha, editando, ocupado, onDescripcion, onFecha, onGuardar, onCancelar, entrada }) {
+      const id = useId();
+      return <form className="subformulario" aria-label={editando ? 'Editar compromiso' : 'Agregar compromiso'}
+        aria-busy={ocupado} data-editando={editando} onSubmit={onGuardar}>
+        <label className="sr-only" htmlFor={`${id}-descripcion`}>Descripción del compromiso (obligatoria)</label>
+        <input ref={entrada} id={`${id}-descripcion`} name="descripcion" placeholder="Describí el compromiso…" title="Descripción del compromiso (obligatoria)" required
+          value={descripcion} disabled={ocupado} onChange={(evento) => onDescripcion(evento.target.value)}/>
+        <label className="sr-only" htmlFor={`${id}-fecha`}>Fecha de compromiso (opcional)</label>
+        <input id={`${id}-fecha`} name="fechaCompromiso" type="date" title="Fecha de compromiso. Dejala vacía si no hay un día previsto."
+          value={fecha} disabled={ocupado} onChange={(evento) => onFecha(evento.target.value)}/>
+        <Boton type="submit" icono="guardar" className="boton icono-solo" aria-label={editando ? 'Guardar cambios del compromiso' : 'Agregar compromiso'} title={editando ? 'Guardar cambios' : 'Agregar compromiso'} disabled={ocupado}/>
+        <Boton icono="cancelar" className="boton icono-solo" aria-label="Descartar cambios y limpiar el formulario" title="Limpiar formulario sin guardar" disabled={ocupado} onClick={onCancelar}/>
+      </form>;
+    }
+    function ItemActividad({ actividad, ocupado, onCompletar, onEditar, onEliminar }) {
+      const completa = actividad.fechaFinalizacion !== null;
+      return <div className={`actividad ${actividad.estado}`}>
+        {completa ? <Icono nombre="completo" className="actividad-check completada"/>
+          : <input className="check-compromiso" type="checkbox" checked={false} disabled={ocupado}
+            aria-label={`Marcar como completada: ${actividad.descripcion}`} title="Marcar como completada. Después no se podrá editar ni borrar." onChange={() => onCompletar(actividad)}/>}
+        <div className="actividad-contenido">
+          <p className="actividad-titulo">{actividad.descripcion}</p>
+          <div className="actividad-meta">
+            <span>{completa ? `Finalizada el ${formatearFecha(actividad.fechaFinalizacion)}`
+              : actividad.fechaCompromiso === null ? 'Sin fecha de compromiso'
+              : `Compromiso: ${formatearFecha(actividad.fechaCompromiso)}`}</span>
+            {!completa && actividad.estado === 'vencida' && <span className="estado vencida">Vencido</span>}
+          </div>
+        </div>
+        {!completa && <div className="acciones-actividad">
+          <Boton icono="editar" className="boton icono-solo" aria-label={`Editar ${actividad.descripcion}`} title="Editar compromiso" disabled={ocupado} onClick={() => onEditar(actividad)}/>
+          <Boton icono="borrar" className="boton icono-solo" aria-label={`Borrar ${actividad.descripcion}`} title="Borrar compromiso. Esta acción no se puede deshacer." disabled={ocupado} onClick={() => onEliminar(actividad)}/>
+        </div>}
+      </div>;
+    }
+    function GrupoActividades({ titulo, actividades, vacio, ...acciones }) {
+      return <section className="grupo-actividades" aria-label={titulo}>
+        <header className="seccion-cabecera"><h3>{titulo} <span>{actividades.length}</span></h3></header>
+        {actividades.length ? <ListaEntidades entidades={actividades} render={(actividad) => <ItemActividad actividad={actividad} {...acciones}/>}/>
+          : <p className="vacio-grupo">{vacio}</p>}
+      </section>;
+    }
+    function ActividadesCliente({ cliente, ocupado, onOperacion }) {
+      const { actividades: ActividadesAPI } = useContext(ServiciosContext);
+      const [edicion, setEdicion] = useState(null);
+      const [descripcion, setDescripcion] = useState('');
+      const [fecha, setFecha] = useState('');
+      const [error, setError] = useState('');
+      const entrada = useRef(null);
+      const compromisos = ordenarCompromisos(cliente.actividades);
+      const completadas = cliente.actividades.filter((actividad) => actividad.fechaFinalizacion !== null);
+      function limpiar() { setEdicion(null); setDescripcion(''); setFecha(''); setError(''); }
+      async function operar(accion, alTerminar) {
+        if (ocupado) return;
+        setError('');
+        try { await onOperacion(cliente.id, accion); alTerminar?.(); }
+        catch (error) { setError(error.message); }
+      }
+      function editar(actividad) {
+        setEdicion(actividad.id); setDescripcion(actividad.descripcion);
+        setFecha(actividad.fechaCompromiso ?? ''); setError(''); entrada.current.focus();
+      }
+      function guardar(evento) {
+        evento.preventDefault();
+        const datos = { descripcion, fechaCompromiso: fecha || null };
+        operar(() => edicion === null ? ActividadesAPI.crear(cliente.id, datos)
+          : ActividadesAPI.actualizar(cliente.id, edicion, datos), limpiar);
+      }
+      return <>
+        <SubformularioActividad descripcion={descripcion} fecha={fecha} editando={edicion !== null} ocupado={ocupado}
+          entrada={entrada} onDescripcion={setDescripcion} onFecha={setFecha} onGuardar={guardar}
+          onCancelar={() => { limpiar(); operar(); }}/>
+        {error && <div className="mensaje error-actividad" role="alert">{error}</div>}
+        <section className="actividades" aria-label="Actividades del cliente" aria-busy={ocupado}>
+          <div className="actividades-lista scroll-interno" role="region" aria-label="Lista de actividades" tabIndex="0">
+            <GrupoActividades titulo="Compromisos" actividades={compromisos} vacio="Sin pendientes. Agregá un compromiso arriba." ocupado={ocupado}
+              onEditar={editar}
+              onCompletar={(actividad) => operar(() => ActividadesAPI.completar(cliente.id, actividad.id), () => { if (edicion === actividad.id) limpiar(); })}
+              onEliminar={(actividad) => operar(() => ActividadesAPI.eliminar(cliente.id, actividad.id), () => { if (edicion === actividad.id) limpiar(); })}/>
+            <GrupoActividades titulo="Actividades completadas" actividades={completadas} vacio="Sin actividades completadas."/>
+          </div>
+        </section>
+      </>;
+    }
+    function DetalleCliente({ cliente, onEditar, ocupado, onOperacion }) {
+      return <>
+        <section className="ficha" aria-label="Ficha del cliente">
+          <div className="fila entre"><span className="etiqueta">Ficha del cliente</span>
+            <span className="cliente-id" aria-label={`Cliente número ${cliente.id}`}>#{cliente.id}</span>
+          </div>
+          <header className="detalle-cabecera"><div className="avatar" aria-hidden="true">{iniciales(cliente)}</div><h2>{nombreCliente(cliente)}</h2><Boton icono="editar" disabled={ocupado} onClick={onEditar}>Editar</Boton></header>
+          <DatosEntidad campos={[
+            ['Email', <a href={`mailto:${cliente.email}`}>{cliente.email}</a>],
+            ['Teléfono', cliente.telefono && <a href={`tel:${cliente.telefono}`}>{cliente.telefono}</a>],
+            ['Domicilio', cliente.domicilio], ['Localidad', cliente.localidad]
+          ]}/>
+        </section>
+        <ActividadesCliente cliente={cliente} ocupado={ocupado} onOperacion={onOperacion}/>
+      </>;
+    }
+    function App() {
+      const [modo, setModo] = useState('rest');
+      const servicios = modo === 'mcp' ? window.MicroCrmMcp : { clientes: ClientesREST, actividades: ActividadesREST };
+      const ClientesAPI = servicios.clientes;
+      const [clientes, setClientes] = useState([]);
+      const [activo, setActivo] = useState(null);
+      const [busqueda, setBusqueda] = useState('');
+      const [editor, setEditor] = useState(null);
+      const [guardando, setGuardando] = useState(false);
+      const [cargando, setCargando] = useState(true);
+      const [error, setError] = useState('');
+      async function cargar(signal) {
+        setError(''); setCargando(true);
+        try {
+          const datos = await ClientesAPI.listar(signal);
+          if (!signal?.aborted) setClientes(datos);
+        }
+        catch (error) { if (error.name !== 'AbortError') setError(error.message); }
+        finally { if (!signal?.aborted) setCargando(false); }
+      }
+      useEffect(() => {
+        const abort = new AbortController();
+        cargar(abort.signal);
+        return () => abort.abort();
+      }, [modo]);
+      const visibles = buscarClientes(clientes, busqueda);
+      const cliente = visibles.find((item) => item.id === activo) || visibles[0];
+      useEffect(() => { setActivo(cliente?.id ?? null); }, [cliente?.id]);
+      async function operarActividad(clienteId, accion) {
+        setGuardando(true);
+        try {
+          await accion?.();
+          const actualizado = await ClientesAPI.obtener(clienteId);
+          setClientes((actuales) => actuales.map((item) => item.id === clienteId ? actualizado : item));
+        } finally { setGuardando(false); }
+      }
+      async function guardarCliente(datos) {
+        setGuardando(true);
+        try {
+          const guardado = editor.cliente
+            ? await ClientesAPI.actualizar(editor.cliente.id, datos)
+            : await ClientesAPI.crear(datos);
+          // La respuesta normalizada es la fuente del maestro y de la ficha.
+          setClientes((actuales) => {
+            const anterior = actuales.find((item) => item.id === guardado.id);
+            const actualizado = { ...guardado, actividades: anterior?.actividades ?? [] };
+            return anterior ? actuales.map((item) => item.id === guardado.id ? actualizado : item)
+              : [...actuales, actualizado];
+          });
+          setBusqueda(''); setActivo(guardado.id); setEditor(null);
+        } finally { setGuardando(false); }
+      }
+      return <ServiciosContext.Provider value={servicios}><Layout>
+        <header className="cabecera">
+          <div><h1>Clientes</h1><p>Consultá clientes y organizá sus compromisos.</p></div>
+          <div className="acciones-cabecera">
+            <Boton icono="recargar" disabled={cargando || guardando || !!editor} onClick={() => cargar()}>{cargando ? (modo === 'mcp' ? 'Conectando MCP…' : 'Cargando…') : 'Actualizar'}</Boton>
+            <Boton icono="mas" variante="primario" disabled={cargando || guardando || !!editor} onClick={() => setEditor({ cliente: null })}>Agregar</Boton>
+          </div>
+        </header>
+        {error && <div className="mensaje" role="alert">{error}</div>}
+        <div className="espacio-trabajo" aria-busy={cargando}>
+          <MaestroClientes clientes={visibles} activo={cliente?.id} busqueda={busqueda} onBuscar={setBusqueda}
+            onSeleccionar={(id) => { setActivo(id); setEditor(null); }} cargando={cargando} bloqueado={guardando}
+            modo={modo} onModo={setModo} conexionBloqueada={guardando || cargando || !!editor}/>
+          <section className="detalle" aria-label="Detalle del cliente">
+            {editor ? <FormularioCliente key={editor.cliente?.id ?? 'nuevo'} cliente={editor.cliente}
+              guardando={guardando} onGuardar={guardarCliente} onCancelar={() => setEditor(null)}/>
+              : cliente ? <DetalleCliente key={cliente.id} cliente={cliente} ocupado={guardando} onOperacion={operarActividad} onEditar={() => setEditor({ cliente })}/> : <Vacio titulo={cargando ? 'Cargando los datos…' : busqueda ? 'No hay clientes que coincidan' : 'Todavía no hay clientes'}>
+              {busqueda ? 'Probá con otro dato o borrá la búsqueda.' : 'Usá Agregar para registrar el primer cliente.'}
+            </Vacio>}
+          </section>
+        </div>
+      </Layout></ServiciosContext.Provider>;
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
