@@ -19,7 +19,13 @@ npm install
 npm run dev
 ```
 
-El servidor queda disponible en `http://localhost:3000`. Se puede cambiar el puerto definiendo la variable de entorno `PORT`.
+El servidor queda disponible en `http://localhost:3000`. La página de clientes se abre en esa dirección o en `/MiniCRM.html`; la API está bajo `/api/clientes`. Se puede cambiar el puerto definiendo la variable de entorno `PORT`.
+
+La página presenta el maestro de clientes y el detalle en una misma vista. El campo de búsqueda consulta en vivo por cualquier campo del cliente mientras se escribe; el maestro y las listas de actividades tienen desplazamiento interno.
+
+## Eliminación de clientes
+
+La eliminación de un cliente se impide mientras tenga actividades asociadas. Así se conserva el historial y no se borran actividades completadas de forma indirecta. La API responde con un conflicto (`409`); la interfaz pide confirmación antes de intentar eliminar y muestra el error devuelto por el servidor.
 
 ## Compilación y ejecución
 
