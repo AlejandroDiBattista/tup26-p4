@@ -136,7 +136,8 @@ static listarActividades(clienteId: number) {
           lt(actividades.fechaCompromiso, hoy),
           isNull(actividades.fechaFinalizacion)
         )
-      );
+      )
+      .all();
   }
 
 
