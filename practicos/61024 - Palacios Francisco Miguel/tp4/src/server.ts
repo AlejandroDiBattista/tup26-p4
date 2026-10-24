@@ -11,6 +11,7 @@ app.use(express.json({ limit: "100kb" }));
 app.use(express.static(path.resolve(directorio, "../public")));
 app.use("/api/clientes", clientesRouter);
 app.get("/api", (_req, res) => res.json({ mensaje: "API MiniCRM", clientes: "/api/clientes" }));
+app.get("/", (_req, res) => res.redirect("/MiniCRM.html"));
 
 app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (error instanceof SyntaxError && "status" in error && error.status === 400) {
