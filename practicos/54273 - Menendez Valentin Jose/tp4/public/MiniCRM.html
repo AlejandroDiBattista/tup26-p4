@@ -311,6 +311,81 @@
       color: #334155;
     }
 
+    .form-cliente-titulo {
+      margin: 0 0 14px 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .form-cliente-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    .campo-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .campo-etiqueta {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .campo-input {
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0f172a;
+      outline: none;
+    }
+
+    .campo-input:focus {
+      border-color: #1d72e8;
+      box-shadow: 0 0 0 2px rgba(29, 114, 232, 0.15);
+    }
+
+    .form-cliente-acciones {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-primario {
+      background: #1d72e8;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primario:hover {
+      background: #155fc8;
+    }
+
+    .btn-secundario {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-secundario:hover {
+      background: #e2e8f0;
+    }
+
     .detalle-scroll {
       flex: 1;
       overflow-y: auto;
@@ -369,6 +444,7 @@
       padding: 10px 14px;
       margin-bottom: 12px;
       font-size: 13px;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -400,6 +476,15 @@
       { fondo: '#ccfbf1', texto: '#0f766e' },
     ];
 
+    const FORMULARIO_CLIENTE_VACIO = {
+      nombre: '',
+      apellido: '',
+      email: '',
+      telefono: '',
+      domicilio: '',
+      localidad: '',
+    };
+
     function obtenerEstiloAvatar(id) {
       const indice = Math.abs((Number(id) || 1) - 1) % PALETA_AVATARES.length;
       return PALETA_AVATARES[indice];
@@ -429,11 +514,12 @@
       const [busqueda, setBusqueda] = useState('');
       const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
       const [clienteDetalle, setClienteDetalle] = useState(null);
+      const [modoCliente, setModoCliente] = useState('ver');
+      const [formCliente, setFormCliente] = useState(FORMULARIO_CLIENTE_VACIO);
       const [error, setError] = useState('');
 
       async function cargarClientes(terminoBusqueda, idPreferido) {
         try {
-          setError('');
           const query = terminoBusqueda.trim()
             ? `?q=${encodeURIComponent(terminoBusqueda.trim())}`
             : '';
@@ -443,15 +529,17 @@
           if (lista.length === 0) {
             setClienteSeleccionadoId(null);
             setClienteDetalle(null);
-            return;
+            return null;
           }
 
-          const idObjetivo = idPreferido ?? clienteSeleccionadoId;
+          const idObjetivo = idPreferido !== undefined ? idPreferido : clienteSeleccionadoId;
           const existeEnLista = lista.some((c) => c.id === idObjetivo);
           const nuevoId = existeEnLista ? idObjetivo : lista[0].id;
           setClienteSeleccionadoId(nuevoId);
+          return nuevoId;
         } catch (err) {
           setError(err.message);
+          return null;
         }
       }
 
@@ -461,7 +549,6 @@
           return;
         }
         try {
-          setError('');
           const detalle = await pedirJSON(`/api/clientes/${id}`);
           setClienteDetalle(detalle);
         } catch (err) {
@@ -481,6 +568,90 @@
         }
       }, [clienteSeleccionadoId]);
 
+      function iniciarAltaCliente() {
+        setError('');
+        setFormCliente(FORMULARIO_CLIENTE_VACIO);
+        setModoCliente('crear');
+      }
+
+      function iniciarEdicionCliente() {
+        if (!clienteDetalle) return;
+        setError('');
+        setFormCliente({
+          nombre: clienteDetalle.nombre || '',
+          apellido: clienteDetalle.apellido || '',
+          email: clienteDetalle.email || '',
+          telefono: clienteDetalle.telefono || '',
+          domicilio: clienteDetalle.domicilio || '',
+          localidad: clienteDetalle.localidad || '',
+        });
+        setModoCliente('editar');
+      }
+
+      function cancelarFormularioCliente() {
+        setError('');
+        setModoCliente('ver');
+      }
+
+      function cambiarCampoCliente(campo, valor) {
+        setFormCliente((prev) => ({
+          ...prev,
+          [campo]: valor,
+        }));
+      }
+
+      async function guardarCliente(e) {
+        e.preventDefault();
+        try {
+          setError('');
+          if (modoCliente === 'crear') {
+            const creado = await pedirJSON('/api/clientes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formCliente),
+            });
+            setModoCliente('ver');
+            await cargarClientes(busqueda, creado.id);
+            setClienteSeleccionadoId(creado.id);
+            setClienteDetalle(creado);
+          } else if (modoCliente === 'editar' && clienteDetalle) {
+            const actualizado = await pedirJSON(`/api/clientes/${clienteDetalle.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formCliente),
+            });
+            setModoCliente('ver');
+            setClienteDetalle(actualizado);
+            await cargarClientes(busqueda, actualizado.id);
+          }
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      async function eliminarClienteActual() {
+        if (!clienteDetalle) return;
+        try {
+          setError('');
+          await pedirJSON(`/api/clientes/${clienteDetalle.id}`, {
+            method: 'DELETE',
+          });
+          setModoCliente('ver');
+          const nuevoId = await cargarClientes(busqueda, null);
+          if (nuevoId) {
+            await cargarDetalleCliente(nuevoId);
+          }
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      function seleccionarClienteEnMaestro(id) {
+        setError('');
+        setModoCliente('ver');
+        setClienteSeleccionadoId(id);
+      }
+
       return (
         <>
           <header className="barra-superior">MiniCRM</header>
@@ -489,7 +660,11 @@
             <section className="panel-maestro" aria-label="Listado de clientes">
               <div className="maestro-cabecera">
                 <h2 className="maestro-titulo">Clientes</h2>
-                <button type="button" className="btn-agregar">
+                <button
+                  type="button"
+                  className="btn-agregar"
+                  onClick={iniciarAltaCliente}
+                >
                   + Agregar
                 </button>
               </div>
@@ -518,12 +693,12 @@
                 ) : (
                   clientes.map((c) => {
                     const colorAvatar = obtenerEstiloAvatar(c.id);
-                    const esActivo = c.id === clienteSeleccionadoId;
+                    const esActivo = c.id === clienteSeleccionadoId && modoCliente !== 'crear';
                     return (
                       <div
                         key={c.id}
                         className={`fila-cliente ${esActivo ? 'activo' : ''}`}
-                        onClick={() => setClienteSeleccionadoId(c.id)}
+                        onClick={() => seleccionarClienteEnMaestro(c.id)}
                       >
                         <div
                           className="avatar-iniciales"
@@ -550,101 +725,194 @@
             <section className="panel-detalle" aria-label="Detalle del cliente">
               {error && <div className="alerta-error">{error}</div>}
 
-              {!clienteDetalle ? (
+              {modoCliente === 'crear' || modoCliente === 'editar' ? (
+                <div className="ficha-cliente">
+                  <h2 className="form-cliente-titulo">
+                    {modoCliente === 'crear' ? 'Nuevo cliente' : 'Editar cliente'}
+                  </h2>
+                  <form onSubmit={guardarCliente}>
+                    <div className="form-cliente-grid">
+                      <div className="campo-grupo">
+                        <label className="campo-etiqueta">Nombre *</label>
+                        <input
+                          type="text"
+                          className="campo-input"
+                          placeholder="Nombre"
+                          value={formCliente.nombre}
+                          onChange={(e) => cambiarCampoCliente('nombre', e.target.value)}
+                        />
+                      </div>
+                      <div className="campo-grupo">
+                        <label className="campo-etiqueta">Apellido *</label>
+                        <input
+                          type="text"
+                          className="campo-input"
+                          placeholder="Apellido"
+                          value={formCliente.apellido}
+                          onChange={(e) => cambiarCampoCliente('apellido', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="campo-grupo">
+                        <label className="campo-etiqueta">Email *</label>
+                        <input
+                          type="email"
+                          className="campo-input"
+                          placeholder="correo@ejemplo.com"
+                          value={formCliente.email}
+                          onChange={(e) => cambiarCampoCliente('email', e.target.value)}
+                        />
+                      </div>
+                      <div className="campo-grupo">
+                        <label className="campo-etiqueta">Teléfono</label>
+                        <input
+                          type="text"
+                          className="campo-input"
+                          placeholder="Ej. 381 555 0123"
+                          value={formCliente.telefono}
+                          onChange={(e) => cambiarCampoCliente('telefono', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="campo-grupo">
+                        <label className="campo-etiqueta">Domicilio</label>
+                        <input
+                          type="text"
+                          className="campo-input"
+                          placeholder="Calle y número"
+                          value={formCliente.domicilio}
+                          onChange={(e) => cambiarCampoCliente('domicilio', e.target.value)}
+                        />
+                      </div>
+                      <div className="campo-grupo">
+                        <label className="campo-etiqueta">Localidad</label>
+                        <input
+                          type="text"
+                          className="campo-input"
+                          placeholder="Ciudad / Localidad"
+                          value={formCliente.localidad}
+                          onChange={(e) => cambiarCampoCliente('localidad', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-cliente-acciones">
+                      <button type="submit" className="btn-primario">
+                        Guardar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secundario"
+                        onClick={cancelarFormularioCliente}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : !clienteDetalle ? (
                 <div className="estado-vacio">
-                  Selecciona un cliente de la lista para ver su información.
+                  Selecciona un cliente de la lista o pulsa "+ Agregar" para crear uno nuevo.
                 </div>
               ) : (
-                <>
-                  <div className="ficha-cliente">
-                    <div className="ficha-cabecera">
-                      <h1 className="ficha-nombre">
-                        {clienteDetalle.nombre} {clienteDetalle.apellido}
-                      </h1>
-                      <div className="ficha-derecha">
-                        <span className="ficha-id">#{clienteDetalle.id}</span>
-                        <div className="ficha-acciones">
-                          <button type="button" className="btn-ficha btn-editar-cliente">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                            </svg>
-                            Editar
-                          </button>
-                          <button type="button" className="btn-ficha btn-eliminar-cliente">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6" />
-                              <path d="M14 11v6" />
-                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                            </svg>
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="ficha-datos-grid">
-                      <div className="dato-columna">
-                        <div className="dato-item">
-                          <span className="dato-icono" aria-hidden="true">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="2" y="4" width="20" height="16" rx="2" />
-                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                            </svg>
-                          </span>
-                          <span>{clienteDetalle.email}</span>
-                        </div>
-                        <div className="dato-item">
-                          <span className="dato-icono" aria-hidden="true">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                            </svg>
-                          </span>
-                          <span>{clienteDetalle.telefono || 'Sin teléfono'}</span>
-                        </div>
-                      </div>
-
-                      <div className="dato-columna">
-                        <div className="dato-item">
-                          <span className="dato-icono" aria-hidden="true">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                              <circle cx="12" cy="10" r="3" />
-                            </svg>
-                          </span>
-                          <span>{clienteDetalle.domicilio || 'Sin domicilio'}</span>
-                        </div>
-                        {clienteDetalle.localidad && (
-                          <div className="dato-subtexto">{clienteDetalle.localidad}</div>
-                        )}
+                <div className="ficha-cliente">
+                  <div className="ficha-cabecera">
+                    <h1 className="ficha-nombre">
+                      {clienteDetalle.nombre} {clienteDetalle.apellido}
+                    </h1>
+                    <div className="ficha-derecha">
+                      <span className="ficha-id">#{clienteDetalle.id}</span>
+                      <div className="ficha-acciones">
+                        <button
+                          type="button"
+                          className="btn-ficha btn-editar-cliente"
+                          onClick={iniciarEdicionCliente}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ficha btn-eliminar-cliente"
+                          onClick={eliminarClienteActual}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                          </svg>
+                          Eliminar
+                        </button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="detalle-scroll">
-                    <h2 className="seccion-titulo">Actividades</h2>
-                    {(!clienteDetalle.actividades || clienteDetalle.actividades.length === 0) ? (
-                      <div className="estado-vacio">Este cliente no registra actividades.</div>
-                    ) : (
-                      <div className="lista-actividades-lectura">
-                        {clienteDetalle.actividades.map((act) => (
-                          <div key={act.id} className="item-actividad-lectura">
-                            <div className="actividad-descripcion">{act.descripcion}</div>
-                            <div className="actividad-meta">
-                              {act.fechaFinalizacion
-                                ? `Completada el ${formatearFechaLocal(act.fechaFinalizacion)}`
-                                : act.fechaCompromiso
-                                ? formatearFechaLocal(act.fechaCompromiso)
-                                : 'Sin fecha'}
-                            </div>
+                  <div className="ficha-datos-grid">
+                    <div className="dato-columna">
+                      <div className="dato-item">
+                        <span className="dato-icono" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                          </svg>
+                        </span>
+                        <span>{clienteDetalle.email}</span>
+                      </div>
+                      <div className="dato-item">
+                        <span className="dato-icono" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                          </svg>
+                        </span>
+                        <span>{clienteDetalle.telefono || 'Sin teléfono'}</span>
+                      </div>
+                    </div>
+
+                    <div className="dato-columna">
+                      <div className="dato-item">
+                        <span className="dato-icono" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        </span>
+                        <span>{clienteDetalle.domicilio || 'Sin domicilio'}</span>
+                      </div>
+                      {clienteDetalle.localidad && (
+                        <div className="dato-subtexto">{clienteDetalle.localidad}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {clienteDetalle && modoCliente !== 'crear' && (
+                <div className="detalle-scroll">
+                  <h2 className="seccion-titulo">Actividades</h2>
+                  {(!clienteDetalle.actividades || clienteDetalle.actividades.length === 0) ? (
+                    <div className="estado-vacio">Este cliente no registra actividades.</div>
+                  ) : (
+                    <div className="lista-actividades-lectura">
+                      {clienteDetalle.actividades.map((act) => (
+                        <div key={act.id} className="item-actividad-lectura">
+                          <div className="actividad-descripcion">{act.descripcion}</div>
+                          <div className="actividad-meta">
+                            {act.fechaFinalizacion
+                              ? `Completada el ${formatearFechaLocal(act.fechaFinalizacion)}`
+                              : act.fechaCompromiso
+                              ? formatearFechaLocal(act.fechaCompromiso)
+                              : 'Sin fecha'}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </section>
           </main>
