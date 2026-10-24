@@ -386,6 +386,100 @@
       background: #e2e8f0;
     }
 
+    .subformulario-actividad {
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 16px;
+      background: #fafbfd;
+      flex-shrink: 0;
+    }
+
+    .subformulario-titulo {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .subformulario-fila {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input-actividad-descripcion {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+    }
+
+    .input-actividad-descripcion:focus {
+      border-color: #1d72e8;
+      box-shadow: 0 0 0 2px rgba(29, 114, 232, 0.15);
+    }
+
+    .input-actividad-fecha {
+      width: 175px;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .input-actividad-fecha:focus {
+      border-color: #1d72e8;
+      box-shadow: 0 0 0 2px rgba(29, 114, 232, 0.15);
+    }
+
+    .btn-guardar-actividad {
+      background: #1d72e8;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 15px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .btn-guardar-actividad:hover {
+      background: #155fc8;
+    }
+
+    .btn-cancelar-actividad {
+      background: #ffffff;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-cancelar-actividad:hover {
+      background: #f1f5f9;
+    }
+
     .detalle-scroll {
       flex: 1;
       overflow-y: auto;
@@ -422,6 +516,10 @@
       padding: 12px 16px;
       border-bottom: 1px solid #eef2f6;
       background: #ffffff;
+    }
+
+    .fila-compromiso.editando {
+      background: #f0f7ff;
     }
 
     .fila-compromiso:last-child {
@@ -590,6 +688,11 @@
       localidad: '',
     };
 
+    const FORMULARIO_ACTIVIDAD_VACIO = {
+      descripcion: '',
+      fechaCompromiso: '',
+    };
+
     function obtenerEstiloAvatar(id) {
       const indice = Math.abs((Number(id) || 1) - 1) % PALETA_AVATARES.length;
       return PALETA_AVATARES[indice];
@@ -658,6 +761,8 @@
       const [clienteDetalle, setClienteDetalle] = useState(null);
       const [modoCliente, setModoCliente] = useState('ver');
       const [formCliente, setFormCliente] = useState(FORMULARIO_CLIENTE_VACIO);
+      const [actividadEditandoId, setActividadEditandoId] = useState(null);
+      const [formActividad, setFormActividad] = useState(FORMULARIO_ACTIVIDAD_VACIO);
       const [error, setError] = useState('');
 
       const hoy = obtenerFechaLocalHoy();
@@ -669,6 +774,11 @@
       const actividadesCompletadas = ordenarCompletadas(
         todasActividades.filter((a) => a.fechaFinalizacion !== null)
       );
+
+      function limpiarFormularioActividad() {
+        setActividadEditandoId(null);
+        setFormActividad(FORMULARIO_ACTIVIDAD_VACIO);
+      }
 
       async function cargarClientes(terminoBusqueda, idPreferido) {
         try {
@@ -713,6 +823,7 @@
       }, [busqueda]);
 
       useEffect(() => {
+        limpiarFormularioActividad();
         if (clienteSeleccionadoId !== null) {
           cargarDetalleCliente(clienteSeleccionadoId);
         } else {
@@ -722,6 +833,7 @@
 
       function iniciarAltaCliente() {
         setError('');
+        limpiarFormularioActividad();
         setFormCliente(FORMULARIO_CLIENTE_VACIO);
         setModoCliente('crear');
       }
@@ -789,6 +901,7 @@
             method: 'DELETE',
           });
           setModoCliente('ver');
+          limpiarFormularioActividad();
           const nuevoId = await cargarClientes(busqueda, null);
           if (nuevoId) {
             await cargarDetalleCliente(nuevoId);
@@ -801,7 +914,97 @@
       function seleccionarClienteEnMaestro(id) {
         setError('');
         setModoCliente('ver');
+        limpiarFormularioActividad();
         setClienteSeleccionadoId(id);
+      }
+
+      function iniciarEdicionActividad(actividad) {
+        setError('');
+        setActividadEditandoId(actividad.id);
+        setFormActividad({
+          descripcion: actividad.descripcion || '',
+          fechaCompromiso: actividad.fechaCompromiso || '',
+        });
+      }
+
+      function cancelarEdicionActividad() {
+        setError('');
+        limpiarFormularioActividad();
+      }
+
+      async function guardarActividad(e) {
+        e.preventDefault();
+        if (!clienteDetalle) return;
+        try {
+          setError('');
+          const payload = {
+            descripcion: formActividad.descripcion,
+            fechaCompromiso: formActividad.fechaCompromiso || null,
+          };
+
+          if (actividadEditandoId === null) {
+            await pedirJSON(`/api/clientes/${clienteDetalle.id}/actividades`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+          } else {
+            await pedirJSON(
+              `/api/clientes/${clienteDetalle.id}/actividades/${actividadEditandoId}`,
+              {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              }
+            );
+          }
+
+          limpiarFormularioActividad();
+          await cargarDetalleCliente(clienteDetalle.id);
+          await cargarClientes(busqueda, clienteDetalle.id);
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      async function completarActividad(actividadId) {
+        if (!clienteDetalle) return;
+        try {
+          setError('');
+          await pedirJSON(
+            `/api/clientes/${clienteDetalle.id}/actividades/${actividadId}/completar`,
+            {
+              method: 'PATCH',
+            }
+          );
+          if (actividadEditandoId === actividadId) {
+            limpiarFormularioActividad();
+          }
+          await cargarDetalleCliente(clienteDetalle.id);
+          await cargarClientes(busqueda, clienteDetalle.id);
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      async function eliminarActividad(actividadId) {
+        if (!clienteDetalle) return;
+        try {
+          setError('');
+          await pedirJSON(
+            `/api/clientes/${clienteDetalle.id}/actividades/${actividadId}`,
+            {
+              method: 'DELETE',
+            }
+          );
+          if (actividadEditandoId === actividadId) {
+            limpiarFormularioActividad();
+          }
+          await cargarDetalleCliente(clienteDetalle.id);
+          await cargarClientes(busqueda, clienteDetalle.id);
+        } catch (err) {
+          setError(err.message);
+        }
       }
 
       return (
@@ -1044,96 +1247,152 @@
               )}
 
               {clienteDetalle && modoCliente !== 'crear' && (
-                <div className="detalle-scroll">
-                  <div className="seccion-bloque">
-                    <h2 className="seccion-titulo">Compromisos</h2>
-                    {compromisos.length === 0 ? (
-                      <div className="estado-vacio">No hay compromisos pendientes.</div>
-                    ) : (
-                      <div className="bloque-compromisos">
-                        {compromisos.map((act) => {
-                          const esVencida =
-                            act.fechaCompromiso !== null && act.fechaCompromiso < hoy;
-                          return (
-                            <div key={act.id} className="fila-compromiso">
-                              <input
-                                type="checkbox"
-                                className="checkbox-compromiso"
-                                checked={false}
-                                readOnly
-                                aria-label={`Completar ${act.descripcion}`}
-                              />
+                <>
+                  <form className="subformulario-actividad" onSubmit={guardarActividad}>
+                    <h3 className="subformulario-titulo">
+                      {actividadEditandoId === null ? 'Agregar actividad' : 'Editar actividad'}
+                    </h3>
+                    <div className="subformulario-fila">
+                      <input
+                        type="text"
+                        className="input-actividad-descripcion"
+                        placeholder="Descripción de la actividad"
+                        aria-label="Descripción de la actividad"
+                        value={formActividad.descripcion}
+                        onChange={(e) =>
+                          setFormActividad((prev) => ({
+                            ...prev,
+                            descripcion: e.target.value,
+                          }))
+                        }
+                      />
+                      <input
+                        type="date"
+                        className="input-actividad-fecha"
+                        aria-label="Fecha opcional"
+                        value={formActividad.fechaCompromiso}
+                        onChange={(e) =>
+                          setFormActividad((prev) => ({
+                            ...prev,
+                            fechaCompromiso: e.target.value,
+                          }))
+                        }
+                      />
+                      <button type="submit" className="btn-guardar-actividad">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                          <polyline points="17 21 17 13 7 13 7 21" />
+                          <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Guardar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-cancelar-actividad"
+                        onClick={cancelarEdicionActividad}
+                      >
+                        ✕ Cancelar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className="detalle-scroll">
+                    <div className="seccion-bloque">
+                      <h2 className="seccion-titulo">Compromisos</h2>
+                      {compromisos.length === 0 ? (
+                        <div className="estado-vacio">No hay compromisos pendientes.</div>
+                      ) : (
+                        <div className="bloque-compromisos">
+                          {compromisos.map((act) => {
+                            const esVencida =
+                              act.fechaCompromiso !== null && act.fechaCompromiso < hoy;
+                            const estaEditando = actividadEditandoId === act.id;
+                            return (
+                              <div
+                                key={act.id}
+                                className={`fila-compromiso ${estaEditando ? 'editando' : ''}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="checkbox-compromiso"
+                                  checked={false}
+                                  onChange={() => completarActividad(act.id)}
+                                  aria-label={`Completar ${act.descripcion}`}
+                                />
+                                <div className="actividad-centro">
+                                  <div className="actividad-descripcion">{act.descripcion}</div>
+                                  {!act.fechaCompromiso ? (
+                                    <div className="actividad-fecha">Sin fecha</div>
+                                  ) : esVencida ? (
+                                    <div className="actividad-fecha vencida">
+                                      {formatearFechaLocal(act.fechaCompromiso)} · Vencido
+                                    </div>
+                                  ) : (
+                                    <div className="actividad-fecha">
+                                      {formatearFechaLocal(act.fechaCompromiso)}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="compromiso-acciones">
+                                  <button
+                                    type="button"
+                                    className="btn-icono-cuadrado btn-icono-editar"
+                                    title="Editar actividad"
+                                    aria-label="Editar actividad"
+                                    onClick={() => iniciarEdicionActividad(act)}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M12 20h9" />
+                                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-icono-cuadrado btn-icono-eliminar"
+                                    title="Eliminar actividad"
+                                    aria-label="Eliminar actividad"
+                                    onClick={() => eliminarActividad(act.id)}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                      <path d="M10 11v6" />
+                                      <path d="M14 11v6" />
+                                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="seccion-bloque">
+                      <h2 className="seccion-titulo">Actividades completadas</h2>
+                      {actividadesCompletadas.length === 0 ? (
+                        <div className="estado-vacio">No hay actividades completadas.</div>
+                      ) : (
+                        <div className="bloque-completadas">
+                          {actividadesCompletadas.map((act) => (
+                            <div key={act.id} className="fila-completada">
+                              <div className="icono-completada" aria-hidden="true">
+                                ✓
+                              </div>
                               <div className="actividad-centro">
                                 <div className="actividad-descripcion">{act.descripcion}</div>
-                                {!act.fechaCompromiso ? (
-                                  <div className="actividad-fecha">Sin fecha</div>
-                                ) : esVencida ? (
-                                  <div className="actividad-fecha vencida">
-                                    {formatearFechaLocal(act.fechaCompromiso)} · Vencido
-                                  </div>
-                                ) : (
-                                  <div className="actividad-fecha">
-                                    {formatearFechaLocal(act.fechaCompromiso)}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="compromiso-acciones">
-                                <button
-                                  type="button"
-                                  className="btn-icono-cuadrado btn-icono-editar"
-                                  title="Editar actividad"
-                                  aria-label="Editar actividad"
-                                >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 20h9" />
-                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                                  </svg>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn-icono-cuadrado btn-icono-eliminar"
-                                  title="Eliminar actividad"
-                                  aria-label="Eliminar actividad"
-                                >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                    <path d="M10 11v6" />
-                                    <path d="M14 11v6" />
-                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                                  </svg>
-                                </button>
+                                <div className="actividad-fecha">
+                                  Completada el {formatearFechaLocal(act.fechaFinalizacion)}
+                                </div>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="seccion-bloque">
-                    <h2 className="seccion-titulo">Actividades completadas</h2>
-                    {actividadesCompletadas.length === 0 ? (
-                      <div className="estado-vacio">No hay actividades completadas.</div>
-                    ) : (
-                      <div className="bloque-completadas">
-                        {actividadesCompletadas.map((act) => (
-                          <div key={act.id} className="fila-completada">
-                            <div className="icono-completada" aria-hidden="true">
-                              ✓
-                            </div>
-                            <div className="actividad-centro">
-                              <div className="actividad-descripcion">{act.descripcion}</div>
-                              <div className="actividad-fecha">
-                                Completada el {formatearFechaLocal(act.fechaFinalizacion)}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                </>
               )}
             </section>
           </main>
