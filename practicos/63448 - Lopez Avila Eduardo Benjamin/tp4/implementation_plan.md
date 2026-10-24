@@ -85,7 +85,7 @@ tp4/
   - `DELETE /api/clientes/:id/actividades/:actId`
 - Crear [`src/server.ts`](file:///c:/Users/lopez/OneDrive/Documentos/A1%20Tecnicatura/Programacion%204/tup26-p4/practicos/63448%20-%20Lopez%20Avila%20Eduardo%20Benjamin/tp4/src/server.ts) que inicializa la base de datos (`await initDb()`), sirve `public/` como estático, redirige `/` a `/MiniCRM.html` y monta `/api/clientes`.
 
-### Paso 5. Interfaz Web (`public/MiniCRM.html`)
+### Paso 5. Interfaz Web (`public/MiniCRM.html`) (Completado)
 - Construir [`public/MiniCRM.html`](file:///c:/Users/lopez/OneDrive/Documentos/A1%20Tecnicatura/Programacion%204/tup26-p4/practicos/63448%20-%20Lopez%20Avila%20Eduardo%20Benjamin/tp4/public/MiniCRM.html) cargando desde CDN con **versiones fijas** (`react@18.3.1`, `react-dom@18.3.1`, `@babel/standalone@7.26.2`).
 - **Comportamiento de Layout y Scroll**:
   - `height: 100vh` y `overflow: hidden` a nivel página para que nunca haya scroll de ventana completa.
