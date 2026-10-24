@@ -102,6 +102,64 @@ clientes 1 ──── N actividades
 | `fechaCompromiso`   | text    | opcional, `YYYY-MM-DD`                                  |
 | `fechaFinalizacion` | text    | `null` = pendiente; con valor = completada              |
 
+## Capa de servicio
+
+Las reglas de negocio viven en la clase `Clientes` ([src/servicios/clientes.ts](src/servicios/clientes.ts)), con métodos estáticos. No conoce HTTP: ante un problema lanza errores de dominio que la API traducirá a un status.
+
+### Clientes
+
+| Método                        | Descripción                                                     |
+| ----------------------------- | --------------------------------------------------------------- |
+| `listar(busqueda?)`           | Lista ordenada por apellido y nombre, con búsqueda flexible.    |
+| `obtener(id)`                 | Ficha del cliente con sus actividades (con estado y ordenadas). |
+| `crear(datos)`                | Alta con normalización y email único.                           |
+| `actualizar(id, cambios)`     | Modifica solo los campos enviados.                              |
+| `eliminar(id)`                | Borra el cliente y todas sus actividades.                       |
+
+**Búsqueda:** cada palabra debe aparecer en algún campo, sin distinguir mayúsculas ni acentos (`jose tucuman`). Con `campo:valor` se limita a un campo (`localidad:salta`, `email:gmail`). El teléfono también se encuentra sin separadores (`3815550101`).
+
+### Actividades
+
+| Método                                   | Descripción                                         |
+| ---------------------------------------- | --------------------------------------------------- |
+| `listarActividades(clienteId)`           | Actividades del cliente con su estado.              |
+| `agregarActividad(clienteId, datos)`     | Alta (descripción única por cliente).               |
+| `actualizarActividad(id, cambios)`       | Edita descripción o fecha de compromiso.            |
+| `completarActividad(id, fecha?)`         | Registra la finalización (hoy por defecto).         |
+| `eliminarActividad(id)`                  | Borra una actividad pendiente.                      |
+
+Cada actividad se devuelve con `estado`, `completada` y `vencida`:
+
+- **completada:** tiene `fechaFinalizacion`.
+- **vencida:** no está completada y su `fechaCompromiso` es anterior a hoy.
+- **pendiente:** el resto, incluidas las que no tienen fecha.
+
+Las actividades **completadas no se pueden editar, volver a completar ni borrar individualmente**; solo desaparecen al eliminar su cliente. La regla se aplica en la propia consulta (`WHERE fecha_finalizacion IS NULL`), así que tampoco se rompe con dos operaciones simultáneas.
+
+### Normalización
+
+Se aplica antes de guardar ([src/servicios/normalizar.ts](src/servicios/normalizar.ts)):
+
+| Campo                 | Regla                                                                   | Ejemplo                                        |
+| --------------------- | ----------------------------------------------------------------------- | ---------------------------------------------- |
+| nombre, apellido      | Espacios recortados, mayúscula inicial, partículas en minúscula         | `maría JOSÉ de la vega` → `María José de la Vega` |
+| localidad             | Igual que los nombres                                                   | `san miguel de tucumán` → `San Miguel de Tucumán` |
+| email                 | Minúsculas y formato válido                                             | ` Ana@Mail.COM ` → `ana@mail.com`              |
+| teléfono              | Separadores unificados con `-`, 6 a 15 dígitos, conserva `+` inicial    | `(381) 555 0101` → `381-555-0101`              |
+| descripción           | Espacios recortados y mayúscula inicial                                 | `  enviar   mail ` → `Enviar mail`             |
+| fechas                | `AAAA-MM-DD` de un día real; la finalización no puede ser futura        | `2026-02-30` → error                           |
+
+Un campo opcional enviado vacío se guarda como `null`.
+
+### Errores
+
+| Clase               | Código          | Cuándo                                           |
+| ------------------- | --------------- | ------------------------------------------------ |
+| `ErrorValidacion`   | `VALIDACION`    | Datos con formato inválido o faltantes.          |
+| `ErrorNoEncontrado` | `NO_ENCONTRADO` | El cliente o la actividad no existen.            |
+| `ErrorConflicto`    | `CONFLICTO`     | Email o descripción repetidos.                   |
+| `ErrorReglaNegocio` | `REGLA_NEGOCIO` | Editar, completar o borrar una actividad completada. |
+
 ## Estructura
 
 ```
@@ -109,6 +167,11 @@ tp4/
 ├── drizzle/              # Migraciones SQL generadas por drizzle-kit
 ├── src/
 │   ├── config.ts         # Lectura y validación de variables de entorno
+│   ├── servicios/
+│   │   ├── clientes.ts   # Clase Clientes: reglas de negocio de clientes y actividades
+│   │   ├── normalizar.ts # Validación y normalización de entradas
+│   │   ├── fechas.ts     # Fecha de hoy y validación de fechas ISO
+│   │   └── errores.ts    # Errores de dominio
 │   └── db/
 │       ├── schema.ts     # Tablas, relaciones y tipos
 │       ├── client.ts     # Conexión (libSQL) e instancia de Drizzle
