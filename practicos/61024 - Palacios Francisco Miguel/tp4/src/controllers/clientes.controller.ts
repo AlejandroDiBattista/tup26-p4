@@ -11,9 +11,6 @@ const cuerpo = (valor: unknown): Objeto =>
 const numero = (valor: string) =>
   Number.isInteger(Number(valor)) && Number(valor) > 0 ? Number(valor) : null;
 
-const textoOpcional = (valor: unknown): valor is string | undefined =>
-  valor === undefined || typeof valor === "string";
-
 const fechaValida = (valor: unknown): valor is string | null | undefined => {
   if (valor === undefined || valor === null || valor === "") return true;
   if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
@@ -42,7 +39,7 @@ export const crearCliente = (req: Request, res: Response) => {
   if (!emailValido(email.trim())) return res.status(400).json({ error: "El email no tiene un formato valido" });
   if (nombre.trim().length > 120 || email.trim().length > 180)
     return res.status(400).json({ error: "Nombre o email demasiado largo" });
-  if (!textoOpcional(telefono) || !textoOpcional(direccion) || telefono.length > 40 || direccion.length > 180)
+  if (typeof telefono !== "string" || typeof direccion !== "string" || telefono.length > 40 || direccion.length > 180)
     return res.status(400).json({ error: "Telefono o direccion no validos" });
   return res.status(201).json(Clientes.crear({ nombre: nombre.trim(), email: email.trim(), telefono, direccion }));
 };
@@ -57,7 +54,7 @@ export const actualizarCliente = (req: Request, res: Response) => {
   if (!emailValido(email.trim())) return res.status(400).json({ error: "El email no tiene un formato valido" });
   if (nombre.trim().length > 120 || email.trim().length > 180)
     return res.status(400).json({ error: "Nombre o email demasiado largo" });
-  if (!textoOpcional(telefono) || !textoOpcional(direccion) || telefono.length > 40 || direccion.length > 180)
+  if (typeof telefono !== "string" || typeof direccion !== "string" || telefono.length > 40 || direccion.length > 180)
     return res.status(400).json({ error: "Telefono o direccion no validos" });
   const cliente = Clientes.actualizar(id, { nombre: nombre.trim(), email: email.trim(), telefono, direccion });
   return cliente ? res.json(cliente) : res.status(404).json({ error: "Cliente no encontrado" });
