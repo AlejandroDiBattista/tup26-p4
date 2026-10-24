@@ -71,7 +71,7 @@ tp4/
     - Verifica que la actividad exista y pertenezca a `clienteId`.
     - **Regla de negocio**: si `actividad.completada === true`, lanza error de negocio (no se permite borrar individualmente actividades completadas).
 
-### Paso 4. API REST con Express (Controladores y Routers)
+### Paso 4. API REST con Express (Controladores y Routers) (Completado)
 - Crear [`src/clientes.controller.ts`](file:///c:/Users/lopez/OneDrive/Documentos/A1%20Tecnicatura/Programacion%204/tup26-p4/practicos/63448%20-%20Lopez%20Avila%20Eduardo%20Benjamin/tp4/src/clientes.controller.ts) traduciendo entre HTTP (`req`, `res`) y los métodos estáticos de `Clientes`, respondiendo con códigos claros (`200`, `201`, `204`, `400`, `404`).
 - Crear [`src/clientes.routes.ts`](file:///c:/Users/lopez/OneDrive/Documentos/A1%20Tecnicatura/Programacion%204/tup26-p4/practicos/63448%20-%20Lopez%20Avila%20Eduardo%20Benjamin/tp4/src/clientes.routes.ts) con las rutas REST:
   - `GET /api/clientes?q=...`
