@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f2f5f9; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 360px; height: 100vh; overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { height: 100vh; display: flex; flex-direction: column; }
+    header { height: 64px; flex: none; display: flex; align-items: center; padding: 0 28px; color: white; background: #294768; font-size: 25px; font-weight: 750; letter-spacing: -.5px; }
+    main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 32%) 1fr; gap: 12px; padding: 12px; }
+    .panel { min-height: 0; overflow: hidden; border: 1px solid #dce3ec; border-radius: 12px; background: white; box-shadow: 0 2px 8px #17203308; }
+    .master { display: flex; flex-direction: column; }
+    .master-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 18px 14px; }
+    h1, h2, h3, p { margin: 0; }
+    .master-head h1 { font-size: 25px; }
+    .search { margin: 0 16px 14px; width: calc(100% - 32px); padding: 12px 14px; border: 1px solid #d4dbe5; border-radius: 7px; outline: none; }
+    .search:focus, input:focus { border-color: #3478db; box-shadow: 0 0 0 3px #3478db20; }
+    .client-list { overflow-y: auto; min-height: 0; }
+    .client { display: flex; align-items: center; gap: 13px; width: 100%; padding: 14px 18px; text-align: left; border: 0; border-top: 1px solid #edf0f4; background: white; }
+    .client:hover { background: #f6f9fd; }
+    .client.selected { background: #e8f2ff; }
+    .avatar { width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%; color: #2466b7; background: #d8eaff; font-weight: 700; }
+    .client-name { font-weight: 700; margin-bottom: 4px; }
+    .muted { color: #68758a; font-size: 14px; }
+    .detail { overflow-y: auto; padding: 28px; }
+    .empty { height: 100%; display: grid; place-items: center; color: #68758a; text-align: center; }
+    .profile-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .profile-top h2 { font-size: 32px; margin-bottom: 24px; }
+    .profile-data { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 30px; color: #303b4d; }
+    .profile-data div { overflow-wrap: anywhere; }
+    .eyebrow { display: block; margin-bottom: 5px; color: #78849a; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .divider { border: 0; border-top: 1px solid #e8ecf1; margin: 28px 0; }
+    .section-title { font-size: 20px; margin-bottom: 12px; }
+    .notice { padding: 14px; color: #68758a; border: 1px dashed #d7dee8; border-radius: 8px; }
+    .primary { border: 0; border-radius: 7px; padding: 10px 15px; color: white; background: #2874d4; font-weight: 650; }
+    .primary:hover { background: #1c62bb; }
+    .error { margin: 12px 16px; color: #a52f35; font-size: 14px; }
+    @media (max-width: 720px) {
+      body { overflow: auto; height: auto; min-height: 100vh; }
+      .app { height: auto; min-height: 100vh; }
+      main { grid-template-columns: 1fr; grid-template-rows: minmax(260px, 38vh) minmax(420px, 1fr); }
+      .detail { padding: 20px; }
+      .profile-data { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useEffect, useState } = React;
+
+    function MiniCRM() {
+      const [clientes, setClientes] = useState([]);
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [busqueda, setBusqueda] = useState("");
+      const [error, setError] = useState("");
+
+      useEffect(() => {
+        const controlador = new AbortController();
+        const demora = setTimeout(async () => {
+          try {
+            const respuesta = await fetch(`/api/clientes?q=${encodeURIComponent(busqueda)}`, { signal: controlador.signal });
+            if (!respuesta.ok) throw new Error("No se pudo cargar la lista de clientes.");
+            const lista = await respuesta.json();
+            setClientes(lista);
+            setError("");
+            if (seleccionado && !lista.some(cliente => cliente.id === seleccionado.id)) setSeleccionado(null);
+          } catch (e) {
+            if (e.name !== "AbortError") setError(e.message || "No se pudo conectar con el servidor.");
+          }
+        }, 180);
+        return () => { clearTimeout(demora); controlador.abort(); };
+      }, [busqueda]);
+
+      async function elegir(cliente) {
+        try {
+          const respuesta = await fetch(`/api/clientes/${cliente.id}`);
+          if (!respuesta.ok) throw new Error("No se pudo abrir la ficha del cliente.");
+          setSeleccionado(await respuesta.json());
+          setError("");
+        } catch (e) { setError(e.message); }
+      }
+
+      return <div className="app">
+        <header>MiniCRM</header>
+        <main>
+          <section className="panel master">
+            <div className="master-head"><h1>Clientes</h1><button className="primary" type="button" disabled>＋ Agregar</button></div>
+            <input className="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes" />
+            {error && <p className="error" role="alert">{error}</p>}
+            <div className="client-list">
+              {clientes.map(cliente => <button key={cliente.id} type="button" className={`client ${seleccionado?.id === cliente.id ? "selected" : ""}`} onClick={() => elegir(cliente)}>
+                <span className="avatar">{cliente.nombre.split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase()}</span>
+                <span><span className="client-name">{cliente.nombre}</span><br /><span className="muted">{cliente.email}</span></span>
+              </button>)}
+              {!clientes.length && !error && <p className="muted" style={{padding: 18}}>No hay clientes para mostrar.</p>}
+            </div>
+          </section>
+          <section className="panel detail">
+            {seleccionado ? <>
+              <div className="profile-top"><div><h2>{seleccionado.nombre}</h2>
+                <div className="profile-data">
+                  <div><span className="eyebrow">Email</span>{seleccionado.email}</div>
+                  <div><span className="eyebrow">Teléfono</span>{seleccionado.telefono || "Sin teléfono"}</div>
+                  <div><span className="eyebrow">Dirección</span>{seleccionado.direccion || "Sin dirección"}</div>
+                </div></div><span className="muted">#{seleccionado.id}</span></div>
+              <hr className="divider" />
+              <h3 className="section-title">Actividades</h3>
+              <p className="notice">La gestión de actividades estará disponible en la siguiente etapa.</p>
+            </> : <div className="empty">Seleccioná un cliente para ver su ficha.</div>}
+          </section>
+        </main>
+      </div>;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<MiniCRM />);
+  </script>
+</body>
+</html>
