@@ -24,11 +24,32 @@ npm run dev     # modo desarrollo (se reinicia al guardar)
 npm start       # ejecución normal
 ```
 
+El servidor queda en `http://localhost:3000` (se puede cambiar con la variable `PORT`).
+
 ## Pruebas
 
 ```bash
 npm run typecheck   # verifica los tipos de TypeScript
 ```
+
+Para probar la API, abrir `api.http` en VS Code con la extensión **REST Client** y hacer clic en *Send Request* sobre cada pedido.
+
+## API REST
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/clientes?q=texto` | Lista clientes (búsqueda opcional por cualquier campo) |
+| GET | `/api/clientes/:id` | Cliente con sus actividades |
+| POST | `/api/clientes` | Crea un cliente |
+| PUT | `/api/clientes/:id` | Edita un cliente |
+| DELETE | `/api/clientes/:id` | Elimina un cliente y sus actividades |
+| GET | `/api/clientes/:clienteId/actividades` | Lista las actividades del cliente |
+| POST | `/api/clientes/:clienteId/actividades` | Crea una actividad |
+| PUT | `/api/clientes/:clienteId/actividades/:id` | Edita una actividad pendiente |
+| POST | `/api/clientes/:clienteId/actividades/:id/completar` | Completa una actividad |
+| DELETE | `/api/clientes/:clienteId/actividades/:id` | Elimina una actividad pendiente |
+
+Los errores se devuelven como `{ "error": "mensaje" }` con código 400 (datos inválidos), 404 (no encontrado) o 409 (email duplicado o actividad completada).
 
 ## Modelo
 
@@ -52,5 +73,9 @@ src/
     seed.ts     # datos de ejemplo
   services/
     clientes.ts # clase Clientes: CRUD, búsqueda y reglas de negocio
-  index.ts      # punto de entrada
+  controllers/  # traducen HTTP <-> servicio (sin reglas de negocio)
+  routes/       # definen las rutas y las asocian a los controladores
+  middlewares/  # manejo de errores
+  app.ts        # configuración de Express
+  index.ts      # inicia el servidor
 ```
