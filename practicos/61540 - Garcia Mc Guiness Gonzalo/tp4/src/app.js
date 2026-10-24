@@ -4,6 +4,9 @@ const path = require("node:path");
 const app = express();
 
 app.use(express.json({ limit: "100kb" }));
+app.get("/", (_request, response) => {
+  response.sendFile(path.join(__dirname, "..", "public", "MiniCRM.html"));
+});
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.use("/api/clientes", require("./rutas/clientesRoutes"));
