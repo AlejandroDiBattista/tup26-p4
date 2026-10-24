@@ -148,6 +148,9 @@
     .ficha { padding: 14px; border-bottom: 1px solid var(--borde); }
     .ficha-cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
     .ficha-cabecera h3 { font-size: 18px; font-weight: 600; margin: 0; }
+    .ficha-acciones { display: flex; align-items: center; gap: 2px; }
+    .ficha-acciones .id { margin-left: 8px; }
+    .ficha .formulario { margin-top: 12px; }
     .ficha .id { color: var(--suave); font-variant-numeric: tabular-nums; }
     .ficha dl {
       display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -192,6 +195,9 @@
     const api = {
       listarClientes: (q = '') => pedir(`/api/clientes?q=${encodeURIComponent(q)}`),
       obtenerCliente: id => pedir(`/api/clientes/${id}`),
+      crearCliente: datos => pedir('/api/clientes', { method: 'POST', body: datos }),
+      actualizarCliente: (id, datos) => pedir(`/api/clientes/${id}`, { method: 'PUT', body: datos }),
+      eliminarCliente: id => pedir(`/api/clientes/${id}`, { method: 'DELETE' }),
     };
 
     // ================= Componentes base =================
@@ -234,11 +240,12 @@
       );
     }
 
-    function Formulario({ onGuardar, onCancelar, children }) {
+    function Formulario({ onGuardar, onCancelar, error, children }) {
       const enviar = e => { e.preventDefault(); onGuardar(); };
       return (
         <form className="formulario" onSubmit={enviar}>
           {children}
+          {error && <p className="mensaje error" role="alert">{error}</p>}
           <div className="acciones">
             <Boton icono="cancelar" onClick={onCancelar}>Cancelar</Boton>
             <Boton icono="guardar" variante="primario" type="submit">Guardar</Boton>
@@ -320,7 +327,43 @@
       );
     }
 
-    function FichaCliente({ cliente }) {
+    const clienteVacio = { nombre: '', apellido: '', email: '', telefono: '', domicilio: '', localidad: '' };
+
+    function FormularioCliente({ cliente, onGuardar, onCancelar }) {
+      const [datos, setDatos] = useState(() => ({ ...clienteVacio, ...cliente }));
+      const [error, setError] = useState('');
+
+      const cambiar = e => setDatos({ ...datos, [e.target.name]: e.target.value });
+      const guardar = () => onGuardar(datos).catch(e => setError(e.message));
+      const campo = (name, etiqueta, props = {}) => (
+        <Campo name={name} etiqueta={etiqueta} value={datos[name] ?? ''} onChange={cambiar} {...props} />
+      );
+
+      return (
+        <div className="ficha">
+          <div className="ficha-cabecera">
+            <h3>{cliente?.id ? 'Editar cliente' : 'Nuevo cliente'}</h3>
+            {cliente?.id && <span className="id">#{cliente.id}</span>}
+          </div>
+          <Formulario onGuardar={guardar} onCancelar={onCancelar} error={error}>
+            <div className="fila">
+              {campo('nombre', 'Nombre', { required: true, autoFocus: true })}
+              {campo('apellido', 'Apellido', { required: true })}
+            </div>
+            <div className="fila">
+              {campo('email', 'Email', { type: 'email', required: true })}
+              {campo('telefono', 'Teléfono', { type: 'tel' })}
+            </div>
+            <div className="fila">
+              {campo('domicilio', 'Domicilio')}
+              {campo('localidad', 'Localidad')}
+            </div>
+          </Formulario>
+        </div>
+      );
+    }
+
+    function FichaCliente({ cliente, onEditar, onEliminar }) {
       const datos = [
         ['Email', cliente.email],
         ['Teléfono', cliente.telefono],
@@ -331,7 +374,11 @@
         <div className="ficha">
           <div className="ficha-cabecera">
             <h3>{cliente.nombre} {cliente.apellido}</h3>
-            <span className="id">#{cliente.id}</span>
+            <div className="ficha-acciones">
+              <Boton icono="editar" variante="icono" onClick={onEditar} aria-label="Editar cliente" title="Editar" />
+              <Boton icono="borrar" variante="icono peligro" onClick={onEliminar} aria-label="Eliminar cliente" title="Eliminar" />
+              <span className="id">#{cliente.id}</span>
+            </div>
           </div>
           <dl>
             {datos.map(([etiqueta, valor]) => (
@@ -371,10 +418,13 @@
 
     // ================= Maestro y detalle =================
 
-    function Maestro({ busqueda, onBuscar, clientes, seleccionado, onSeleccionar, error }) {
+    function Maestro({ busqueda, onBuscar, clientes, seleccionado, onSeleccionar, onAgregar, error }) {
       return (
         <section className="panel">
-          <div className="panel-cabecera"><h2>Clientes ({clientes.length})</h2></div>
+          <div className="panel-cabecera">
+            <h2>Clientes ({clientes.length})</h2>
+            <Boton icono="mas" variante="primario" onClick={onAgregar}>Agregar</Boton>
+          </div>
           <Buscador valor={busqueda} onCambiar={onBuscar} />
           <div className="panel-cuerpo">
             {error
@@ -385,13 +435,22 @@
       );
     }
 
-    function Detalle({ cliente }) {
+    function Detalle({ cliente, modo, onEditar, onEliminar, onGuardar, onCancelar }) {
+      if (modo === 'nuevo') {
+        return (
+          <section className="panel">
+            <FormularioCliente onGuardar={onGuardar} onCancelar={onCancelar} />
+          </section>
+        );
+      }
       if (!cliente) {
         return <section className="panel"><div className="vacio-detalle">Seleccioná un cliente para ver su ficha.</div></section>;
       }
       return (
         <section className="panel">
-          <FichaCliente cliente={cliente} />
+          {modo === 'editar'
+            ? <FormularioCliente key={cliente.id} cliente={cliente} onGuardar={onGuardar} onCancelar={onCancelar} />
+            : <FichaCliente cliente={cliente} onEditar={onEditar} onEliminar={onEliminar} />}
           <h4 className="seccion-titulo">Actividades</h4>
           <div className="panel-cuerpo">
             <ListaActividades actividades={cliente.actividades} />
@@ -407,23 +466,49 @@
       const [clientes, setClientes] = useState([]);
       const [seleccionado, setSeleccionado] = useState(null);
       const [cliente, setCliente] = useState(null);
+      const [modo, setModo] = useState('ver'); // 'ver' | 'editar' | 'nuevo'
       const [error, setError] = useState('');
+
+      const cargarClientes = () =>
+        api.listarClientes(busqueda)
+          .then(lista => { setClientes(lista); setError(''); })
+          .catch(e => setError(e.message));
+
+      const cargarCliente = id =>
+        id ? api.obtenerCliente(id).then(setCliente).catch(e => setError(e.message)) : setCliente(null);
 
       // Búsqueda en vivo (espera 250 ms después de la última tecla)
       useEffect(() => {
-        const espera = setTimeout(() => {
-          api.listarClientes(busqueda)
-            .then(lista => { setClientes(lista); setError(''); })
-            .catch(e => setError(e.message));
-        }, 250);
+        const espera = setTimeout(cargarClientes, 250);
         return () => clearTimeout(espera);
       }, [busqueda]);
 
       // Al seleccionar, trae la ficha con sus actividades
-      useEffect(() => {
-        if (!seleccionado) { setCliente(null); return; }
-        api.obtenerCliente(seleccionado).then(setCliente).catch(e => setError(e.message));
-      }, [seleccionado]);
+      useEffect(() => { cargarCliente(seleccionado); }, [seleccionado]);
+
+      const seleccionar = id => { setModo('ver'); setSeleccionado(id); };
+
+      // Guarda (alta o edición) y actualiza el maestro y la ficha
+      const guardar = async datos => {
+        const guardado = modo === 'nuevo'
+          ? await api.crearCliente(datos)
+          : await api.actualizarCliente(cliente.id, datos);
+        setModo('ver');
+        await cargarClientes();
+        if (guardado.id === seleccionado) await cargarCliente(guardado.id);
+        else setSeleccionado(guardado.id);
+      };
+
+      const eliminar = async () => {
+        if (!confirm(`¿Eliminar a ${cliente.nombre} ${cliente.apellido} y todas sus actividades?`)) return;
+        try {
+          await api.eliminarCliente(cliente.id);
+          setSeleccionado(null);
+          await cargarClientes();
+        } catch (e) {
+          setError(e.message);
+        }
+      };
 
       return (
         <Layout>
@@ -433,10 +518,18 @@
               onBuscar={setBusqueda}
               clientes={clientes}
               seleccionado={seleccionado}
-              onSeleccionar={setSeleccionado}
+              onSeleccionar={seleccionar}
+              onAgregar={() => setModo('nuevo')}
               error={error}
             />
-            <Detalle cliente={cliente} />
+            <Detalle
+              cliente={cliente}
+              modo={modo}
+              onEditar={() => setModo('editar')}
+              onEliminar={eliminar}
+              onGuardar={guardar}
+              onCancelar={() => setModo('ver')}
+            />
           </div>
         </Layout>
       );
