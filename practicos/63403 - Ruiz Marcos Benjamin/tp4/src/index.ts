@@ -1,4 +1,4 @@
 import { db } from './db';
 
-const resultado = await db.run('select 1');
-console.log('MiniCRM: conexión a SQLite OK', resultado.rows);
+const clientes = await db.query.clientes.findMany({ with: { actividades: true } });
+console.log(`MiniCRM: ${clientes.length} clientes en la base`);
