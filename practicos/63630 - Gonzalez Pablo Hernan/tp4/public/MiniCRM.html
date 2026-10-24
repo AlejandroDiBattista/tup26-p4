@@ -62,6 +62,16 @@
     .form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--suave); }
     .acciones { display: flex; gap: 8px; }
     .error { color: var(--peligro); font-size: 14px; }
+
+    .subform { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 16px; }
+    .actividades { list-style: none; margin: 0; padding: 0; border: 1px solid var(--borde); border-radius: 8px; overflow-y: auto; min-height: 0; }
+    .actividades li { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--borde); }
+    .actividades li:last-child { border-bottom: none; }
+    .actividades li.activo { background: var(--sel); }
+    .actividades .texto { flex: 1; min-width: 0; }
+    .actividades input[type=checkbox] { width: 18px; height: 18px; flex: none; accent-color: var(--ok); }
+    .completadas { background: #f0fdf4; }
+    .vencido { color: var(--peligro); }
   </style>
 </head>
 <body>
@@ -119,7 +129,95 @@
       );
     }
 
-    function Detalle({ cliente, editando, setEditando, onGuardar, onEliminar }) {
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const formatoFecha = f => { const [a, m, d] = f.split('-'); return `${+d} ${MESES[m - 1]} ${a}`; };
+    const hoy = () => new Date().toLocaleDateString('sv'); // AAAA-MM-DD local
+
+    function FormActividad({ inicial, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(inicial?.descripcion ?? '');
+      const [fecha, setFecha] = useState(inicial?.fecha ?? '');
+      const [error, setError] = useState('');
+      const enviar = async e => {
+        e.preventDefault();
+        try {
+          await onGuardar({ descripcion, fecha: fecha || null });
+          setDescripcion(''); setFecha(''); setError('');
+        } catch (err) { setError(err.message); }
+      };
+      return (
+        <form className="subform" onSubmit={enviar}>
+          <h3>{inicial ? 'Editar actividad' : 'Agregar actividad'}</h3>
+          <div className="fila">
+            <input placeholder="Descripción de la actividad" value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+            <input type="date" title="Fecha opcional" value={fecha} onChange={e => setFecha(e.target.value)} style={{ width: 170 }} />
+            <button className="primario">Guardar</button>
+            <button type="button" onClick={() => { setDescripcion(''); setFecha(''); setError(''); onCancelar(); }}>✕ Cancelar</button>
+          </div>
+          {error && <div className="error">{error}</div>}
+        </form>
+      );
+    }
+
+    function Actividades({ cliente, onCambio }) {
+      const [editandoId, setEditandoId] = useState(null);
+      useEffect(() => setEditandoId(null), [cliente.id]);
+
+      const base = `/${cliente.id}/actividades`;
+      const accion = async (url, opciones) => {
+        try { await api(base + url, opciones); onCambio(); } catch (err) { alert(err.message); }
+      };
+      const guardar = async datos => {
+        if (editandoId) await api(`${base}/${editandoId}`, { method: 'PUT', body: datos });
+        else await api(base, { method: 'POST', body: datos });
+        setEditandoId(null);
+        onCambio();
+      };
+
+      const pendientes = cliente.actividades.filter(a => !a.completada);
+      const completadas = cliente.actividades.filter(a => a.completada)
+        .sort((a, b) => b.completadaEl.localeCompare(a.completadaEl));
+      const editada = pendientes.find(a => a.id === editandoId);
+
+      return (
+        <>
+          <FormActividad key={editandoId ?? 'nueva'} inicial={editada} onGuardar={guardar} onCancelar={() => setEditandoId(null)} />
+
+          <h3>Compromisos</h3>
+          <ul className="actividades">
+            {pendientes.map(a => (
+              <li key={a.id} className={a.id === editandoId ? 'activo' : ''}>
+                <input type="checkbox" title="Completar" checked={false} onChange={() => accion(`/${a.id}/completar`, { method: 'PATCH' })} />
+                <div className="texto">
+                  <div>{a.descripcion}</div>
+                  <div className={'sub' + (a.fecha && a.fecha < hoy() ? ' vencido' : '')}>
+                    {a.fecha ? formatoFecha(a.fecha) + (a.fecha < hoy() ? ' · Vencido' : '') : 'Sin fecha'}
+                  </div>
+                </div>
+                <button title="Editar" onClick={() => setEditandoId(a.id)}>✎</button>
+                <button title="Eliminar" className="peligro" onClick={() => confirm('¿Eliminar la actividad?') && accion('/' + a.id, { method: 'DELETE' })}>🗑</button>
+              </li>
+            ))}
+            {pendientes.length === 0 && <li className="vacio">No hay compromisos pendientes</li>}
+          </ul>
+
+          <h3>Actividades completadas</h3>
+          <ul className="actividades completadas">
+            {completadas.map(a => (
+              <li key={a.id}>
+                <input type="checkbox" checked disabled />
+                <div className="texto">
+                  <div>{a.descripcion}</div>
+                  <div className="sub">Completada el {formatoFecha(a.completadaEl)}</div>
+                </div>
+              </li>
+            ))}
+            {completadas.length === 0 && <li className="vacio">Todavía no hay actividades completadas</li>}
+          </ul>
+        </>
+      );
+    }
+
+    function Detalle({ cliente, editando, setEditando, onGuardar, onEliminar, onCambio }) {
       if (editando) {
         return (
           <section className="panel detalle">
@@ -147,6 +245,7 @@
             <div>☎ {cliente.telefono || '—'}</div>
             <div>{cliente.ciudad}</div>
           </div>
+          <Actividades cliente={cliente} onCambio={onCambio} />
         </section>
       );
     }
@@ -208,7 +307,7 @@
                 {clientes.length === 0 && <li className="vacio">Sin resultados</li>}
               </ul>
             </section>
-            <Detalle cliente={cliente} editando={editando} setEditando={setEditando} onGuardar={guardar} onEliminar={eliminar} />
+            <Detalle cliente={cliente} editando={editando} setEditando={setEditando} onGuardar={guardar} onEliminar={eliminar} onCambio={() => cargarCliente(seleccionId)} />
           </main>
         </div>
       );
