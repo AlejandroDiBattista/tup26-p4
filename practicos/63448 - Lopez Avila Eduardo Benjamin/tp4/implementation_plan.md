@@ -94,6 +94,6 @@ tp4/
     - Si se está creando o editando un cliente, muestra el **formulario del cliente en el detalle** (`nombre`, `email`, `telefono`, `direccion`, botones `Guardar` y `Cancelar`).
     - Si hay un cliente seleccionado en modo lectura, muestra su **ficha** (nombre, `#id`, `Editar`, `Eliminar`, correo, teléfono y dirección), el **subformulario de actividades** (alta o edición de actividad pendiente) y el área de actividades con desplazamiento vertical interno (`overflow-y: auto`), dividida en **Compromisos** (con checkbox para completar, indicador de `"Vencido"` si `fecha < hoy`, y botones de editar/eliminar) y **Actividades completadas** (solo lectura, sin botones de edición ni borrado).
 
-### Paso 6. Verificación Integral
+### Paso 6. Verificación Integral (Completado)
 - Probar arranque limpio con `npm start` y verificar que la base y semilla se creen solas.
 - Probar todas las operaciones CRUD y reglas de negocio desde la API REST y la interfaz `public/MiniCRM.html`.
