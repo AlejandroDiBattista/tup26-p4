@@ -30,6 +30,11 @@ El servidor queda en `http://localhost:3000` (se puede cambiar con la variable `
 
 `public/MiniCRM.html` es una página autocontenida: React 18.3.1 y Babel 7.26.10 se cargan desde CDN con versiones fijas, el JSX va embebido (Babel con *runtime classic*) y los estilos son CSS puro, sin librerías de componentes. Toda la información se obtiene de la API REST.
 
+- **Maestro:** listado de clientes con búsqueda en vivo por cualquier campo y botón *Agregar*.
+- **Detalle:** ficha del cliente (con su `#id`), botones para editar y eliminar. El alta y la edición usan un formulario en el mismo detalle.
+- **Actividades:** debajo de la ficha hay un subformulario (descripción y fecha opcional) para agregar o editar. Se listan en *Compromisos* (primero sin fecha, luego vencidos y después con fecha de hoy o futura) y *Actividades completadas*. Al marcar el check se completa; las completadas no se pueden editar ni borrar.
+- La página ocupa la altura de la ventana: solo hacen scroll el listado de clientes y las actividades.
+
 ## Pruebas
 
 ```bash
