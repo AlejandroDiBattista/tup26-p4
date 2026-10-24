@@ -52,6 +52,15 @@
     .field input { width: 100%; padding: 11px 12px; border: 1px solid #d4dbe5; border-radius: 7px; outline: none; color: #172033; }
     .field.full { grid-column: 1 / -1; }
     .form-actions { display: flex; gap: 9px; margin-top: 18px; }
+    .activity-form { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(150px, 220px) auto auto; align-items: end; gap: 10px; padding: 14px; margin: 16px 0 22px; border: 1px dashed #d4dbe5; border-radius: 9px; }
+    .activity-list { max-height: 230px; overflow-y: auto; border: 1px solid #e3e8ef; border-radius: 9px; margin-bottom: 18px; }
+    .activity-row { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-bottom: 1px solid #edf0f4; }
+    .activity-row:last-child { border-bottom: 0; }
+    .activity-row.done { background: #f0faf5; }
+    .activity-info { flex: 1; min-width: 0; }
+    .activity-description { overflow-wrap: anywhere; }
+    .activity-buttons { display: flex; gap: 6px; }
+    .activity-buttons button { padding: 7px 9px; }
     .error { margin: 12px 16px; color: #a52f35; font-size: 14px; }
     @media (max-width: 720px) {
       body { overflow: auto; height: auto; min-height: 100vh; }
@@ -59,6 +68,8 @@
       main { grid-template-columns: 1fr; grid-template-rows: minmax(260px, 38vh) minmax(420px, 1fr); }
       .detail { padding: 20px; }
       .profile-data { grid-template-columns: 1fr; }
+      .activity-form { grid-template-columns: 1fr; }
+      .activity-buttons button { padding: 7px 6px; font-size: 12px; }
     }
   </style>
 </head>
@@ -76,6 +87,8 @@
       const [nuevo, setNuevo] = useState(false);
       const [version, setVersion] = useState(0);
       const [formulario, setFormulario] = useState({ nombre: "", email: "", telefono: "", direccion: "" });
+      const [actividadEditando, setActividadEditando] = useState(null);
+      const [formActividad, setFormActividad] = useState({ descripcion: "", fecha: "" });
 
       useEffect(() => {
         const controlador = new AbortController();
@@ -152,6 +165,62 @@
         } catch (e) { setError(e.message); }
       }
 
+      async function actualizarFicha() {
+        if (!seleccionado) return;
+        const respuesta = await fetch(`/api/clientes/${seleccionado.id}`);
+        if (respuesta.ok) setSeleccionado(await respuesta.json());
+      }
+
+      function nuevaActividad() {
+        setActividadEditando("nueva");
+        setFormActividad({ descripcion: "", fecha: "" });
+        setError("");
+      }
+
+      function editarActividad(actividad) {
+        setActividadEditando(actividad.id);
+        setFormActividad({ descripcion: actividad.descripcion, fecha: actividad.fecha || "" });
+        setError("");
+      }
+
+      async function guardarActividad(evento) {
+        evento.preventDefault();
+        const esNueva = actividadEditando === "nueva";
+        const url = esNueva
+          ? `/api/clientes/${seleccionado.id}/actividades`
+          : `/api/clientes/${seleccionado.id}/actividades/${actividadEditando}`;
+        try {
+          const respuesta = await fetch(url, {
+            method: esNueva ? "POST" : "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ descripcion: formActividad.descripcion, fecha: formActividad.fecha || null })
+          });
+          const datos = await respuesta.json();
+          if (!respuesta.ok) throw new Error(datos.error || "No se pudo guardar la actividad.");
+          setActividadEditando(null);
+          setError("");
+          await actualizarFicha();
+        } catch (e) { setError(e.message || "No se pudo guardar la actividad."); }
+      }
+
+      async function cambiarActividad(id, accion) {
+        try {
+          const opciones = accion === "completar"
+            ? { method: "PATCH" }
+            : { method: "DELETE" };
+          const respuesta = await fetch(`/api/clientes/${seleccionado.id}/actividades/${id}${accion === "completar" ? "/completar" : ""}`, opciones);
+          if (!respuesta.ok) {
+            const datos = await respuesta.json();
+            throw new Error(datos.error || "No se pudo actualizar la actividad.");
+          }
+          setError("");
+          await actualizarFicha();
+        } catch (e) { setError(e.message); }
+      }
+
+      const pendientes = seleccionado?.actividades?.filter(a => !a.completada) || [];
+      const completadas = seleccionado?.actividades?.filter(a => a.completada) || [];
+
       return <div className="app">
         <header>MiniCRM</header>
         <main>
@@ -187,8 +256,29 @@
                   <div><span className="eyebrow">Dirección</span>{seleccionado.direccion || "Sin dirección"}</div>
                 </div></div><div style={{textAlign:"right"}}><span className="muted">#{seleccionado.id}</span><div className="actions" style={{marginTop:14}}><button className="secondary" type="button" onClick={iniciarEdicion}>Editar</button><button className="danger" type="button" onClick={borrarCliente}>Eliminar</button></div></div></div>
               <hr className="divider" />
-              <h3 className="section-title">Actividades</h3>
-              <p className="notice">La gestión de actividades estará disponible en la siguiente etapa.</p>
+              <div className="profile-top"><h3 className="section-title">Compromisos</h3><button className="primary" type="button" onClick={nuevaActividad}>＋ Agregar actividad</button></div>
+              {actividadEditando !== null && <form className="activity-form" onSubmit={guardarActividad}>
+                <label className="field">Descripción<input required maxLength="240" autoFocus value={formActividad.descripcion} onChange={e => setFormActividad({...formActividad, descripcion: e.target.value})} placeholder="Descripción de la actividad" /></label>
+                <label className="field">Fecha opcional<input type="date" value={formActividad.fecha} onChange={e => setFormActividad({...formActividad, fecha: e.target.value})} /></label>
+                <button className="primary" type="submit">Guardar</button>
+                <button className="secondary" type="button" onClick={() => { setActividadEditando(null); setError(""); }}>Cancelar</button>
+              </form>}
+              <div className="activity-list">
+                {pendientes.map(actividad => <div className="activity-row" key={actividad.id}>
+                  <input type="checkbox" aria-label={`Completar ${actividad.descripcion}`} checked={false} onChange={() => cambiarActividad(actividad.id, "completar")} />
+                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div><span className="muted">{actividad.fecha || "Sin fecha"}</span></div>
+                  <div className="activity-buttons"><button className="secondary" type="button" onClick={() => editarActividad(actividad)}>Editar</button><button className="danger" type="button" onClick={() => cambiarActividad(actividad.id, "eliminar")}>Eliminar</button></div>
+                </div>)}
+                {!pendientes.length && <p className="muted" style={{padding:14}}>No hay compromisos pendientes.</p>}
+              </div>
+              <h3 className="section-title">Actividades completadas</h3>
+              <div className="activity-list">
+                {completadas.map(actividad => <div className="activity-row done" key={actividad.id}>
+                  <input type="checkbox" aria-label={`${actividad.descripcion}, completada`} checked readOnly />
+                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div><span className="muted">Completada{actividad.fecha ? ` · Fecha: ${actividad.fecha}` : ""}</span></div>
+                </div>)}
+                {!completadas.length && <p className="muted" style={{padding:14}}>Todavía no hay actividades completadas.</p>}
+              </div>
             </> : <div className="empty">Seleccioná un cliente para ver su ficha.</div>}
           </section>
         </main>
