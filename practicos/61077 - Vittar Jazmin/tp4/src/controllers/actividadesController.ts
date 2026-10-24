@@ -42,6 +42,7 @@ export async function crearActividad(req: Request, res: Response) {
         if (
             fechaCompromiso !== undefined &&
             fechaCompromiso !== null &&
+            fechaCompromiso !== "" &&
             (typeof fechaCompromiso !== "string" ||
                 !/^\d{4}-\d{2}-\d{2}$/.test(fechaCompromiso) ||
                 Number.isNaN(Date.parse(`${fechaCompromiso}T00:00:00Z`)) ||
@@ -103,6 +104,7 @@ export async function actualizarActividad(req: Request, res: Response) {
         if (
             "fechaCompromiso" in datos &&
             datos.fechaCompromiso !== null &&
+            datos.fechaCompromiso !== "" &&
             (typeof datos.fechaCompromiso !== "string" ||
                 !/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaCompromiso) ||
                 Number.isNaN(Date.parse(`${datos.fechaCompromiso}T00:00:00Z`)) ||

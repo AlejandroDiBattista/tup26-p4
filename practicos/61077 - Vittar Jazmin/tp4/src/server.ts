@@ -5,8 +5,14 @@ import actividadesRoutes from "./routes/actividadesRoutes.js";
 
 const app = express();
 // permitir que Express entregue los archivos de la carpeta public
-app.use(express.static("public"));const PORT = 3000;
+app.use(express.static("public"));
 
+// al entrar a la dirección principal, mostrar MiniCRM
+app.get("/", (_req, res) => {
+  res.sendFile("MiniCRM.html", { root: "public" });
+});
+
+const PORT = 3000;
 app.use(express.json());
 
 app.get("/api/estado", async (_req, res) => {
