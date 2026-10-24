@@ -68,14 +68,42 @@ export class Clientes {
     const lista = await db
       .select()
       .from(actividades)
-      .where(eq(actividades.clienteId, id))
-      .orderBy(desc(actividades.id));
+      .where(eq(actividades.clienteId, id));
+
+    const hoy = new Date().toISOString().split("T")[0];
+
+    const compromisos = lista
+      .filter((a) => !a.completada)
+      .sort((a, b) => {
+        const cat = (act: Actividad) => {
+          if (!act.fecha) return 1;
+          if (act.fecha < hoy) return 2;
+          return 3;
+        };
+        const catA = cat(a);
+        const catB = cat(b);
+        if (catA !== catB) return catA - catB;
+
+        if (a.fecha && b.fecha && a.fecha !== b.fecha) {
+          return a.fecha.localeCompare(b.fecha);
+        }
+        return a.id - b.id;
+      });
+
+    const completadas = lista
+      .filter((a) => a.completada)
+      .sort((a, b) => {
+        const fA = a.fechaCompletada || a.fecha || "";
+        const fB = b.fechaCompletada || b.fecha || "";
+        if (fA !== fB) return fB.localeCompare(fA);
+        return b.id - a.id;
+      });
 
     return {
       ...cliente,
-      actividades: lista,
-      compromisos: lista.filter((a) => !a.completada),
-      completadas: lista.filter((a) => a.completada),
+      actividades: [...compromisos, ...completadas],
+      compromisos,
+      completadas,
     };
   }
 
@@ -92,7 +120,7 @@ export class Clientes {
       .insert(clientes)
       .values({
         nombre: datos.nombre.trim(),
-        email: datos.email.trim(),
+        email: datos.email.trim().toLowerCase(),
         telefono: datos.telefono?.trim() || "",
         domicilio: datos.domicilio?.trim() || "",
       })
@@ -112,7 +140,7 @@ export class Clientes {
     }
     if (datos.email !== undefined) {
       if (!datos.email.trim()) throw new Error("El email no puede estar vacío.");
-      actualizacion.email = datos.email.trim();
+      actualizacion.email = datos.email.trim().toLowerCase();
     }
     if (datos.telefono !== undefined) actualizacion.telefono = datos.telefono.trim();
     if (datos.domicilio !== undefined) actualizacion.domicilio = datos.domicilio.trim();
