@@ -42,6 +42,16 @@
     .notice { padding: 14px; color: #68758a; border: 1px dashed #d7dee8; border-radius: 8px; }
     .primary { border: 0; border-radius: 7px; padding: 10px 15px; color: white; background: #2874d4; font-weight: 650; }
     .primary:hover { background: #1c62bb; }
+    .actions { display: flex; gap: 8px; }
+    .secondary, .danger { border: 1px solid #d4dbe5; border-radius: 7px; padding: 9px 13px; background: white; color: #273448; font-weight: 600; }
+    .secondary:hover { background: #f3f6fa; }
+    .danger { color: #a52f35; border-color: #e3b9bc; }
+    .danger:hover { background: #fff4f4; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 760px; }
+    .field { display: flex; flex-direction: column; gap: 7px; color: #526076; font-size: 14px; }
+    .field input { width: 100%; padding: 11px 12px; border: 1px solid #d4dbe5; border-radius: 7px; outline: none; color: #172033; }
+    .field.full { grid-column: 1 / -1; }
+    .form-actions { display: flex; gap: 9px; margin-top: 18px; }
     .error { margin: 12px 16px; color: #a52f35; font-size: 14px; }
     @media (max-width: 720px) {
       body { overflow: auto; height: auto; min-height: 100vh; }
@@ -62,6 +72,10 @@
       const [seleccionado, setSeleccionado] = useState(null);
       const [busqueda, setBusqueda] = useState("");
       const [error, setError] = useState("");
+      const [editando, setEditando] = useState(false);
+      const [nuevo, setNuevo] = useState(false);
+      const [version, setVersion] = useState(0);
+      const [formulario, setFormulario] = useState({ nombre: "", email: "", telefono: "", direccion: "" });
 
       useEffect(() => {
         const controlador = new AbortController();
@@ -78,7 +92,7 @@
           }
         }, 180);
         return () => { clearTimeout(demora); controlador.abort(); };
-      }, [busqueda]);
+      }, [busqueda, version]);
 
       async function elegir(cliente) {
         try {
@@ -89,11 +103,60 @@
         } catch (e) { setError(e.message); }
       }
 
+      function iniciarAlta() {
+        setSeleccionado(null);
+        setEditando(true);
+        setNuevo(true);
+        setError("");
+        setFormulario({ nombre: "", email: "", telefono: "", direccion: "" });
+      }
+
+      function iniciarEdicion() {
+        setFormulario({ nombre: seleccionado.nombre, email: seleccionado.email, telefono: seleccionado.telefono || "", direccion: seleccionado.direccion || "" });
+        setNuevo(false);
+        setEditando(true);
+        setError("");
+      }
+
+      async function guardarCliente(evento) {
+        evento.preventDefault();
+        try {
+          const respuesta = await fetch(nuevo ? "/api/clientes" : `/api/clientes/${seleccionado.id}`, {
+            method: nuevo ? "POST" : "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formulario)
+          });
+          const datos = await respuesta.json();
+          if (!respuesta.ok) throw new Error(datos.error || "No se pudo guardar el cliente.");
+          setEditando(false);
+          setNuevo(false);
+          setError("");
+          setVersion(v => v + 1);
+          const detalle = await fetch(`/api/clientes/${datos.id}`);
+          if (detalle.ok) setSeleccionado(await detalle.json());
+        } catch (e) { setError(e.message || "No se pudo guardar el cliente."); }
+      }
+
+      async function borrarCliente() {
+        if (!window.confirm(`¿Eliminar a ${seleccionado.nombre}? También se eliminarán sus actividades.`)) return;
+        try {
+          const respuesta = await fetch(`/api/clientes/${seleccionado.id}`, { method: "DELETE" });
+          if (!respuesta.ok) {
+            const datos = await respuesta.json();
+            throw new Error(datos.error || "No se pudo eliminar el cliente.");
+          }
+          setSeleccionado(null);
+          setEditando(false);
+          setError("");
+          setVersion(v => v + 1);
+        } catch (e) { setError(e.message); }
+      }
+
       return <div className="app">
         <header>MiniCRM</header>
         <main>
           <section className="panel master">
-            <div className="master-head"><h1>Clientes</h1><button className="primary" type="button" disabled>＋ Agregar</button></div>
+            <div className="master-head"><h1>Clientes</h1><button className="primary" type="button" onClick={iniciarAlta}>＋ Agregar</button></div>
             <input className="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes" />
             {error && <p className="error" role="alert">{error}</p>}
             <div className="client-list">
@@ -105,13 +168,24 @@
             </div>
           </section>
           <section className="panel detail">
-            {seleccionado ? <>
+            {editando ? <>
+              <h2 style={{marginBottom:24}}>{nuevo ? "Agregar cliente" : "Editar cliente"}</h2>
+              <form onSubmit={guardarCliente}>
+                <div className="form-grid">
+                  <label className="field">Nombre<input required maxLength="120" value={formulario.nombre} onChange={e => setFormulario({...formulario, nombre: e.target.value})} /></label>
+                  <label className="field">Email<input required type="email" maxLength="180" value={formulario.email} onChange={e => setFormulario({...formulario, email: e.target.value})} /></label>
+                  <label className="field">Teléfono<input maxLength="40" value={formulario.telefono} onChange={e => setFormulario({...formulario, telefono: e.target.value})} /></label>
+                  <label className="field">Dirección<input maxLength="180" value={formulario.direccion} onChange={e => setFormulario({...formulario, direccion: e.target.value})} /></label>
+                </div>
+                <div className="form-actions"><button className="primary" type="submit">Guardar</button><button className="secondary" type="button" onClick={() => { setEditando(false); setNuevo(false); setError(""); }}>Cancelar</button></div>
+              </form>
+            </> : seleccionado ? <>
               <div className="profile-top"><div><h2>{seleccionado.nombre}</h2>
                 <div className="profile-data">
                   <div><span className="eyebrow">Email</span>{seleccionado.email}</div>
                   <div><span className="eyebrow">Teléfono</span>{seleccionado.telefono || "Sin teléfono"}</div>
                   <div><span className="eyebrow">Dirección</span>{seleccionado.direccion || "Sin dirección"}</div>
-                </div></div><span className="muted">#{seleccionado.id}</span></div>
+                </div></div><div style={{textAlign:"right"}}><span className="muted">#{seleccionado.id}</span><div className="actions" style={{marginTop:14}}><button className="secondary" type="button" onClick={iniciarEdicion}>Editar</button><button className="danger" type="button" onClick={borrarCliente}>Eliminar</button></div></div></div>
               <hr className="divider" />
               <h3 className="section-title">Actividades</h3>
               <p className="notice">La gestión de actividades estará disponible en la siguiente etapa.</p>
