@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniCRM | Gestión de clientes</title>
+
+    <!-- React permite construir la interfaz con componentes -->
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+
+    <!-- Babel permite escribir JSX directamente en HTML -->
+    <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+
+    <style>
+        :root {
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            color: #243047;
+            background: #f3f5f9;
+            font-synthesis: none;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* encabezado superior de la aplicación */
+        .topbar {
+            min-height: 76px;
+            background: #fff;
+            border-bottom: 1px solid #e4e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: #4059c7;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+
+        .subtitle {
+            color: #7c879a;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #17845b;
+            background: #e8f7ef;
+            border-radius: 20px;
+            padding: 8px 12px;
+            white-space: nowrap;
+        }
+
+        /* distribución principal: listado a la izquierda y detalle a la derecha */
+        .workspace {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+            gap: 18px;
+            padding: 18px;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid #e4e8f0;
+            border-radius: 14px;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .clients-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-heading {
+            padding: 20px;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .heading-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-bottom: 0;
+        }
+
+        .count {
+            color: #65718a;
+            background: #eef1f8;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .search {
+            width: 100%;
+            border: 1px solid #dce2ed;
+            border-radius: 9px;
+            padding: 11px 12px;
+            outline: none;
+            background: #fafbfe;
+        }
+
+        .search:focus {
+            border-color: #6478d8;
+            box-shadow: 0 0 0 3px #4059c71a;
+        }
+
+        /* scroll queda dentro del listado, no en toda la página */
+        .client-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .client-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: white;
+            padding: 13px 12px;
+            margin-bottom: 4px;
+            color: inherit;
+        }
+
+        .client-item:hover {
+            background: #f6f7fc;
+        }
+
+        .client-item.selected {
+            background: #eef1ff;
+            border-color: #d5dcff;
+        }
+
+        .client-name {
+            font-size: 14px;
+            font-weight: 650;
+            margin-bottom: 5px;
+        }
+
+        .client-email {
+            color: #778299;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        /* panel de detalle del cliente */
+        .detail-panel {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .detail-header {
+            padding: 23px 26px;
+            border-bottom: 1px solid #edf0f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .eyebrow {
+            color: #6878ce;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .detail-title {
+            font-size: 23px;
+            margin-bottom: 5px;
+        }
+
+        .detail-content {
+            padding: 24px 26px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .field-label {
+            color: #8791a4;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .field-value {
+            font-size: 14px;
+            overflow-wrap: anywhere;
+            min-height: 18px;
+        }
+
+        .activity-columns {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .activity-box {
+            border: 1px solid #e7eaf1;
+            border-radius: 11px;
+            padding: 15px;
+            min-width: 0;
+        }
+
+        .activity-heading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 13px;
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d99a32;
+        }
+
+        .dot.done {
+            background: #29a477;
+        }
+
+        .activity-list {
+            max-height: 210px;
+            overflow-y: auto;
+        }
+
+        .activity {
+            padding: 11px 0;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .activity:last-child {
+            border-bottom: 0;
+        }
+
+        .activity-description {
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .activity-date {
+            color: #8791a4;
+            font-size: 11px;
+        }
+
+        .empty,
+        .message {
+            color: #8993a5;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 18px 10px;
+            text-align: center;
+        }
+
+        .message.error {
+            color: #b42318;
+            background: #fff1f0;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px;
+        }
+
+        .placeholder {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 30px;
+            color: #8590a4;
+        }
+
+        .placeholder-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        /* botones y formularios para administrar clientes */
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            border: 1px solid #dce2ed;
+            background: #fff;
+            color: #34405a;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #f3f5fb;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: #4059c7;
+            border-color: #4059c7;
+        }
+
+        .btn-primary:hover {
+            background: #3048ad;
+        }
+
+        .btn-danger {
+            color: #b42318;
+            border-color: #f1cecb;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .form-field label {
+            color: #68748b;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .form-field input {
+            width: 100%;
+            border: 1px solid #dce2ed;
+            border-radius: 8px;
+            padding: 11px;
+            outline: none;
+        }
+
+        .form-field input:focus {
+            border-color: #6478d8;
+            box-shadow: 0 0 0 3px #4059c71a;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 22px;
+        }
+
+        /* acciones disponibles para cada actividad */
+        .activity-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 9px;
+        }
+
+        .activity-actions .btn {
+            padding: 6px 9px;
+            font-size: 11px;
+        }
+
+        .activity-form {
+            border: 1px solid #dce2ed;
+            border-radius: 11px;
+            background: #fafbfe;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .activity-form h3 {
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .activity-form input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dce2ed;
+            border-radius: 8px;
+            margin-top: 6px;
+        }
+
+        .activity-form label {
+            font-size: 12px;
+            color: #68748b;
+        }
+
+        /* responsive */
+        @media (max-width: 760px) {
+            .form-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 760px) {
+            .workspace {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: minmax(180px, 35%) minmax(0, 1fr);
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .topbar {
+                padding: 0 14px;
+            }
+
+            .detail-header,
+            .detail-content {
+                padding: 17px;
+            }
+
+            .activity-columns,
+            .fields {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .detail-title {
+                font-size: 19px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        // dirección base de API, implementada en Express
+        const API = "/api";
+
+        // formatear nombre completo sin dejar espacios innecesarios
+        function nombreCompleto(cliente) {
+            return `${cliente.nombre} ${cliente.apellido}`.trim();
+        }
+
+        // convertir fecha YYYY-MM-DD a formato local
+        function mostrarFecha(fecha) {
+            if (!fecha) return "Sin fecha";
+            const partes = fecha.split("-");
+            if (partes.length !== 3) return fecha;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        // componente principal: administrar los datos y la selección
+        function MiniCRM() {
+            const [clientes, setClientes] = useState([]);
+            const [busqueda, setBusqueda] = useState("");
+            const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+            const [actividades, setActividades] = useState([]);
+            const [cargando, setCargando] = useState(true);
+            const [error, setError] = useState("");
+
+            // indicar si se está creando, editando o viendo un cliente
+            const [modoFormulario, setModoFormulario] = useState(null);
+            const [guardando, setGuardando] = useState(false);
+
+            // valores de los campos del formulario
+            const [formCliente, setFormCliente] = useState({
+                nombre: "",
+                apellido: "",
+                email: "",
+                telefono: "",
+                domicilio: "",
+                localidad: "",
+            });
+
+            // controlar si estamos creando o editando una actividad
+            const [modoActividad, setModoActividad] = useState(null);
+            const [actividadEditada, setActividadEditada] = useState(null);
+            const [guardandoActividad, setGuardandoActividad] = useState(false);
+
+            // datos que se escriben en el formulario de actividad
+            const [formActividad, setFormActividad] = useState({
+                descripcion: "",
+                fechaCompromiso: "",
+            });
+
+            // abrir formulario vacío para registrar cliente nuevo
+            function nuevoCliente() {
+                setFormCliente({
+                    nombre: "",
+                    apellido: "",
+                    email: "",
+                    telefono: "",
+                    domicilio: "",
+                    localidad: "",
+                });
+                setError("");
+                setModoFormulario("nuevo");
+            }
+
+            // copiar datos del cliente seleccionado al formulario de edición
+            function editarCliente() {
+                if (!clienteSeleccionado) return;
+
+                setFormCliente({
+                    nombre: clienteSeleccionado.nombre || "",
+                    apellido: clienteSeleccionado.apellido || "",
+                    email: clienteSeleccionado.email || "",
+                    telefono: clienteSeleccionado.telefono || "",
+                    domicilio: clienteSeleccionado.domicilio || "",
+                    localidad: clienteSeleccionado.localidad || "",
+                });
+
+                setError("");
+                setModoFormulario("editar");
+            }
+
+            // enviar los datos al endpoint de creación o actualización
+            async function guardarCliente(evento) {
+                evento.preventDefault();
+                setGuardando(true);
+                setError("");
+
+                try {
+                    const esNuevo = modoFormulario === "nuevo";
+
+                    const url = esNuevo
+                        ? `${API}/clientes`
+                        : `${API}/clientes/${clienteSeleccionado.id}`;
+
+                    const respuesta = await fetch(url, {
+                        method: esNuevo ? "POST" : "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(formCliente),
+                    });
+
+                    const resultado = await respuesta.json();
+
+                    if (!respuesta.ok) {
+                        throw new Error(
+                            resultado.error || "No se pudieron guardar los datos"
+                        );
+                    }
+
+                    // volver a consultar la lista para mostrar los datos actualizados
+                    const respuestaLista = await fetch(
+                        `${API}/clientes?q=${encodeURIComponent(busqueda)}`
+                    );
+
+                    if (!respuestaLista.ok) {
+                        throw new Error("El cliente se guardó, pero no se pudo actualizar la lista");
+                    }
+
+                    const listaActualizada = await respuestaLista.json();
+                    setClientes(listaActualizada);
+
+                    // seleccionar el cliente recién creado o actualizado
+                    const idGuardado = esNuevo
+                        ? resultado.id
+                        : clienteSeleccionado.id;
+
+                    const clienteActualizado = listaActualizada.find(
+                        (cliente) => cliente.id === idGuardado
+                    );
+
+                    if (clienteActualizado) {
+                        setClienteSeleccionado(clienteActualizado);
+                    } else {
+                        // si no coincide con el filtro de búsqueda, limpiar la selección
+                        setClienteSeleccionado(null);
+                    }
+
+                    setModoFormulario(null);
+                } catch (e) {
+                    setError(e.message);
+                } finally {
+                    setGuardando(false);
+                }
+            }
+
+            // pedir confirmación antes de borrar un cliente y sus actividades
+            async function eliminarCliente() {
+                if (!clienteSeleccionado) return;
+
+                const confirmar = window.confirm(
+                    `¿Seguro que querés eliminar a ${nombreCompleto(clienteSeleccionado)}? También se eliminarán sus actividades`
+                );
+
+                if (!confirmar) return;
+
+                setError("");
+
+                try {
+                    const respuesta = await fetch(
+                        `${API}/clientes/${clienteSeleccionado.id}`,
+                        { method: "DELETE" }
+                    );
+
+                    const resultado = await respuesta.json();
+
+                    if (!respuesta.ok) {
+                        throw new Error(resultado.error || "No se pudo eliminar el cliente");
+                    }
+
+                    setClienteSeleccionado(null);
+                    setActividades([]);
+
+                    // actualizar lista después de eliminar
+                    const respuestaLista = await fetch(
+                        `${API}/clientes?q=${encodeURIComponent(busqueda)}`
+                    );
+
+                    if (!respuestaLista.ok) {
+                        throw new Error("El cliente se eliminó, pero no se pudo actualizar la lista");
+                    }
+
+                    setClientes(await respuestaLista.json());
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            // abrir formulario para crear una actividad para el cliente elegido
+            function nuevaActividad() {
+                setFormActividad({
+                    descripcion: "",
+                    fechaCompromiso: "",
+                });
+                setActividadEditada(null);
+                setModoActividad("nuevo");
+                setError("");
+            }
+
+            // copiar los datos de una actividad pendiente para editarla
+            function editarActividad(actividad) {
+                if (actividad.fechaFinalizacion) return;
+
+                setFormActividad({
+                    descripcion: actividad.descripcion || "",
+                    fechaCompromiso: actividad.fechaCompromiso || "",
+                });
+                setActividadEditada(actividad);
+                setModoActividad("editar");
+                setError("");
+            }
+
+            // guardar una actividad nueva o actualizar una pendiente
+            async function guardarActividad(evento) {
+                evento.preventDefault();
+
+                if (!clienteSeleccionado) return;
+
+                setGuardandoActividad(true);
+                setError("");
+
+                try {
+                    const esNueva = modoActividad === "nuevo";
+                    const url = esNueva
+                        ? `${API}/clientes/${clienteSeleccionado.id}/actividades`
+                        : `${API}/actividades/${actividadEditada.id}`;
+
+                    const respuesta = await fetch(url, {
+                        method: esNueva ? "POST" : "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(formActividad),
+                    });
+
+                    const resultado = await respuesta.json();
+
+                    if (!respuesta.ok) {
+                        throw new Error(
+                            resultado.error || "No se pudo guardar la actividad"
+                        );
+                    }
+
+                    // recargar las actividades para reflejar los cambios
+                    const respuestaActividades = await fetch(
+                        `${API}/clientes/${clienteSeleccionado.id}/actividades`
+                    );
+
+                    if (!respuestaActividades.ok) {
+                        throw new Error("La actividad se guardó, pero no se pudo actualizar la lista");
+                    }
+
+                    setActividades(await respuestaActividades.json());
+                    setModoActividad(null);
+                    setActividadEditada(null);
+                } catch (e) {
+                    setError(e.message);
+                } finally {
+                    setGuardandoActividad(false);
+                }
+            }
+
+            // eliminar únicamente actividades que todavía están pendientes
+            async function eliminarActividad(actividad) {
+                if (actividad.fechaFinalizacion) return;
+
+                const confirmar = window.confirm(
+                    `¿Querés eliminar la actividad "${actividad.descripcion}"?`
+                );
+
+                if (!confirmar) return;
+
+                setError("");
+
+                try {
+                    const respuesta = await fetch(
+                        `${API}/actividades/${actividad.id}`,
+                        { method: "DELETE" }
+                    );
+
+                    const resultado = await respuesta.json();
+
+                    if (!respuesta.ok) {
+                        throw new Error(resultado.error || "No se pudo eliminar la actividad");
+                    }
+
+                    setActividades((actuales) =>
+                        actuales.filter((item) => item.id !== actividad.id)
+                    );
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            // marca una actividad pendiente como completada
+            async function completarActividad(actividad) {
+                if (actividad.fechaFinalizacion) return;
+
+                setError("");
+
+                try {
+                    const respuesta = await fetch(
+                        `${API}/actividades/${actividad.id}/completar`,
+                        { method: "PATCH" }
+                    );
+
+                    const resultado = await respuesta.json();
+
+                    if (!respuesta.ok) {
+                        throw new Error(resultado.error || "No se pudo completar la actividad");
+                    }
+
+                    // volver a consultar para obtener la fecha de finalización guardada
+                    const respuestaActividades = await fetch(
+                        `${API}/clientes/${clienteSeleccionado.id}/actividades`
+                    );
+
+                    if (!respuestaActividades.ok) {
+                        throw new Error("La actividad se completó, pero no se pudo actualizar la lista");
+                    }
+
+                    setActividades(await respuestaActividades.json());
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            // cargar los clientes y repetir la búsqueda cuando cambia el texto
+            useEffect(() => {
+                let cancelado = false;
+
+                async function cargarClientes() {
+                    setCargando(true);
+                    setError("");
+
+                    try {
+                        const respuesta = await fetch(
+                            `${API}/clientes?q=${encodeURIComponent(busqueda)}`
+                        );
+
+                        if (!respuesta.ok) {
+                            throw new Error("No se pudieron cargar los clientes");
+                        }
+
+                        const datos = await respuesta.json();
+
+                        if (cancelado) return;
+
+                        setClientes(datos);
+
+                        // Conservar cliente seleccionado si todavía aparece en los resultados de la búsqueda
+                        setClienteSeleccionado((actual) => {
+                            if (!actual) return null;
+                            return datos.find((c) => c.id === actual.id) || null;
+                        });
+                    } catch (e) {
+                        if (!cancelado) setError(e.message);
+                    } finally {
+                        if (!cancelado) setCargando(false);
+                    }
+                }
+
+                // esperar un momento para no consultar por cada tecla mientras se está escribiendo
+                const temporizador = setTimeout(cargarClientes, 250);
+
+                return () => {
+                    cancelado = true;
+                    clearTimeout(temporizador);
+                };
+            }, [busqueda]);
+
+            // consultar las actividades cuando se elige un cliente
+            useEffect(() => {
+                let cancelado = false;
+
+                async function cargarActividades() {
+                    if (!clienteSeleccionado) {
+                        setActividades([]);
+                        return;
+                    }
+
+                    try {
+                        const respuesta = await fetch(
+                            `${API}/clientes/${clienteSeleccionado.id}/actividades`
+                        );
+
+                        if (!respuesta.ok) {
+                            throw new Error("No se pudieron cargar las actividades");
+                        }
+
+                        const datos = await respuesta.json();
+                        if (!cancelado) setActividades(datos);
+                    } catch (e) {
+                        if (!cancelado) setError(e.message);
+                    }
+                }
+
+                cargarActividades();
+
+                return () => {
+                    cancelado = true;
+                };
+            }, [clienteSeleccionado?.id]);
+
+            // separar las actividades según fecha de finalización
+            const pendientes = actividades.filter(
+                (actividad) => !actividad.fechaFinalizacion
+            );
+
+            const completadas = actividades.filter(
+                (actividad) => actividad.fechaFinalizacion
+            );
+
+            return (
+                <div className="app">
+                    <header className="topbar">
+                        <div className="brand">
+                            <div className="brand-icon">M</div>
+                            <div>
+                                <h1>MiniCRM</h1>
+                                <p className="subtitle">Gestión de clientes y actividades</p>
+                            </div>
+                        </div>
+                        <div className="status">● Sistema de gestión</div>
+                    </header>
+                    <main className="workspace">
+                        <aside className="panel clients-panel">
+                            <div className="panel-heading">
+                                <div className="heading-row">
+                                    <h2>Clientes</h2>
+                                    <button className="btn btn-primary" onClick={nuevoCliente}>
+                                        + Nuevo
+                                    </button>
+                                </div>
+                                <div className="subtitle" style={{ marginBottom: 12 }}>
+                                    {clientes.length} clientes encontrados
+                                </div>
+                                <input className="search" type="search" placeholder="Buscar por nombre, email, teléfono..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} aria-label="Buscar clientes" />
+                            </div>
+
+                            <div className="client-list">
+                                {cargando && <p className="empty">Cargando clientes...</p>}
+
+                                {!cargando && !error && clientes.length === 0 && (
+                                    <p className="empty">
+                                        No se encontraron clientes para esa búsqueda
+                                    </p>
+                                )}
+
+                                {clientes.map((cliente) => (
+                                    <button key={cliente.id}
+                                        className={"client-item" + (clienteSeleccionado?.id === cliente.id ? " selected" : "")}
+                                        onClick={() => {
+                                            setClienteSeleccionado(cliente);
+                                            setError("");
+                                        }}
+                                    >
+                                        <div className="client-name">
+                                            {nombreCompleto(cliente)}
+                                        </div>
+                                        <div className="client-email">
+                                            {cliente.email || "Sin correo electrónico"}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </aside>
+                        <section className="panel detail-panel">
+                            {error && <div className="message error">{error}</div>}
+
+                            {modoFormulario ? (
+                                <div className="detail-content">
+                                    <div>
+                                        <div className="eyebrow">
+                                            {modoFormulario === "nuevo" ? "Nuevo registro" : "Modificar registro"}
+                                        </div>
+                                        <h2 className="detail-title">
+                                            {modoFormulario === "nuevo" ? "Agregar cliente" : "Editar cliente"}
+                                        </h2>
+                                        <p className="subtitle">Los campos marcados con * son obligatorios</p>
+                                    </div>
+                                    <form onSubmit={guardarCliente}>
+                                        <div className="form-grid">
+                                            {[
+                                                ["nombre", "Nombre *"],
+                                                ["apellido", "Apellido *"],
+                                                ["email", "Correo electrónico *"],
+                                                ["telefono", "Teléfono"],
+                                                ["domicilio", "Domicilio"],
+                                                ["localidad", "Localidad"],
+                                            ].map(([campo, etiqueta]) => (
+                                                <div className="form-field" key={campo}>
+                                                    <label htmlFor={`cliente-${campo}`}>{etiqueta}</label>
+                                                    <input id={`cliente-${campo}`} type={campo === "email" ? "email" : "text"} required={["nombre", "apellido", "email"].includes(campo)} value={formCliente[campo]}
+                                                        onChange={(evento) =>
+                                                            setFormCliente((actual) => ({
+                                                                ...actual,
+                                                                [campo]: evento.target.value,
+                                                            }))
+                                                        }
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="form-actions">
+                                            <button className="btn btn-primary" type="submit" disabled={guardando}>
+                                                {guardando ? "Guardando..." : "Guardar cliente"}
+                                            </button>
+                                            <button className="btn" type="button"
+                                                onClick={() => {
+                                                    setModoFormulario(null);
+                                                    setError("");
+                                                }}
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            ) : !clienteSeleccionado ? (
+                                <div className="placeholder">
+                                    <div>
+                                        <div className="placeholder-icon">◎</div>
+                                        <h2>Detalle del cliente</h2>
+                                        <p>Seleccioná un cliente de la lista para ver sus datos y actividades</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <header className="detail-header">
+                                        <div>
+                                            <div className="eyebrow">Ficha del cliente</div>
+                                            <h2 className="detail-title">
+                                                {nombreCompleto(clienteSeleccionado)}
+                                            </h2>
+                                            <p className="subtitle">
+                                                Cliente #{clienteSeleccionado.id}
+                                            </p>
+                                        </div>
+                                        <div className="actions">
+                                            <button className="btn" onClick={editarCliente}>Editar</button>
+                                            <button className="btn btn-danger" onClick={eliminarCliente}>Eliminar</button>
+                                        </div>
+                                    </header>
+                                    <div className="detail-content">
+                                        <section>
+                                            <h3 className="section-title">Información de contacto</h3>
+                                            <div className="fields">
+                                                <div>
+                                                    <div className="field-label">Nombre</div>
+                                                    <div className="field-value">{clienteSeleccionado.nombre}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="field-label">Apellido</div>
+                                                    <div className="field-value">{clienteSeleccionado.apellido}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="field-label">Correo electrónico</div>
+                                                    <div className="field-value">{clienteSeleccionado.email || "—"}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="field-label">Teléfono</div>
+                                                    <div className="field-value">{clienteSeleccionado.telefono || "—"}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="field-label">Domicilio</div>
+                                                    <div className="field-value">{clienteSeleccionado.domicilio || "—"}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="field-label">Localidad</div>
+                                                    <div className="field-value">{clienteSeleccionado.localidad || "—"}</div>
+                                                </div>
+                                            </div>
+                                        </section>
+                                        <section>
+                                            <div className="heading-row">
+                                                <h3 className="section-title">Actividades</h3>
+                                                <button className="btn btn-primary" onClick={nuevaActividad}>+ Nueva actividad</button>
+                                            </div>
+                                            {modoActividad && (
+                                                <form className="activity-form" onSubmit={guardarActividad}>
+                                                    <h3>
+                                                        {modoActividad === "nuevo" ? "Agregar actividad" : "Editar actividad"}
+                                                    </h3>
+                                                    <div className="form-field">
+                                                        <label htmlFor="actividad-descripcion">Descripción *</label>
+                                                        <input id="actividad-descripcion" type="text" required value={formActividad.descripcion}
+                                                            onChange={(evento) =>
+                                                                setFormActividad((actual) => ({
+                                                                    ...actual,
+                                                                    descripcion: evento.target.value,
+                                                                }))
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="form-field" style={{ marginTop: 14 }}>
+                                                        <label htmlFor="actividad-fecha">Fecha de compromiso</label>
+                                                        <input id="actividad-fecha" type="date" value={formActividad.fechaCompromiso}
+                                                            onChange={(evento) =>
+                                                                setFormActividad((actual) => ({
+                                                                    ...actual,
+                                                                    fechaCompromiso: evento.target.value,
+                                                                }))
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="form-actions">
+                                                        <button className="btn btn-primary" type="submit" disabled={guardandoActividad}>
+                                                            {guardandoActividad ? "Guardando..." : "Guardar actividad"}
+                                                        </button>
+                                                        <button className="btn" type="button"
+                                                            onClick={() => {
+                                                                setModoActividad(null);
+                                                                setActividadEditada(null);
+                                                                setError("");
+                                                            }}
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            )}
+                                            <div className="activity-columns">
+                                                <div className="activity-box">
+                                                    <div className="activity-heading">
+                                                        <span className="dot"></span>
+                                                        Pendientes ({pendientes.length})
+                                                    </div>
+                                                    <div className="activity-list">
+                                                        {pendientes.length === 0 ? (
+                                                            <p className="empty">No hay actividades pendientes.</p>
+                                                        ) : (
+                                                            pendientes.map((actividad) => (
+                                                                <div className="activity" key={actividad.id}>
+                                                                    <div className="activity-description">
+                                                                        {actividad.descripcion}
+                                                                    </div>
+                                                                    <div className="activity-date">
+                                                                        Fecha compromiso: {mostrarFecha(actividad.fechaCompromiso)}
+                                                                    </div>
+                                                                    <div className="activity-actions">
+                                                                        <button className="btn btn-primary"
+                                                                            onClick={() => completarActividad(actividad)}
+                                                                        >
+                                                                            Completar
+                                                                        </button>
+                                                                        <button className="btn"
+                                                                            onClick={() => editarActividad(actividad)}
+                                                                        >
+                                                                            Editar
+                                                                        </button>
+                                                                        <button className="btn btn-danger"
+                                                                            onClick={() => eliminarActividad(actividad)}
+                                                                        >
+                                                                            Eliminar
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="activity-box">
+                                                    <div className="activity-heading">
+                                                        <span className="dot done"></span>
+                                                        Completadas ({completadas.length})
+                                                    </div>
+                                                    <div className="activity-list">
+                                                        {completadas.length === 0 ? (
+                                                            <p className="empty">Todavía no hay actividades completadas</p>
+                                                        ) : (
+                                                            completadas.map((actividad) => (
+                                                                <div className="activity" key={actividad.id}>
+                                                                    <div className="activity-description">
+                                                                        {actividad.descripcion}
+                                                                    </div>
+                                                                    <div className="activity-date">
+                                                                        Completada: {mostrarFecha(actividad.fechaFinalizacion)}
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    </div>
+                                </>
+                            )}
+                        </section>
+                    </main>
+                </div>
+            );
+        }
+
+        // armar React dentro del elemento root del HTML
+        ReactDOM.createRoot(document.getElementById("root")).render(<MiniCRM />);
+    </script>
+</body>
+
+</html>

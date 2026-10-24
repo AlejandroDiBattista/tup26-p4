@@ -4,7 +4,8 @@ import clientesRoutes from "./routes/clientesRoutes.js";
 import actividadesRoutes from "./routes/actividadesRoutes.js";
 
 const app = express();
-const PORT = 3000;
+// permitir que Express entregue los archivos de la carpeta public
+app.use(express.static("public"));const PORT = 3000;
 
 app.use(express.json());
 
