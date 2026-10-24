@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM - Gestión de Clientes</title>
+
+  <!--bibliotecas para react-->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.9/babel.min.js"></script>
+
+  <!--iconos bootstrap-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!--estilos css-->
+  <style>
+    :root { --turquesa: #129E9A; --verde-oscuro: #0B6E6B; --menta: #6BCFC5; --gris-claro: #C9D4D5; --oscuro: #1E2626; --fondo: #F4F9F9; --blanco: #FFFFFF; }
+    * { box-sizing: border-box; }  
+    body {margin: 0; font-family: Arial, sans-serif; background: var(--fondo); color: var(--oscuro); }
+    .app-container {display: flex; height: 100vh; overflow: hidden;}
+    
+    .sidebar {width: 230px; flex-shrink: 0; background: var(--verde-oscuro); color: var(--blanco); padding: 25px;}
+    .sidebar-logo {text-align: center; margin-bottom: 40px;}
+    .sidebar-logo h2 {margin: 0; font-size: 26px;}
+    .sidebar-menu { display: flex; flex-direction: column; gap: 10px;}
+    
+    .menu-item {display: flex; align-items: center; gap: 14px; padding: 15px; border-radius: 10px; color: var(--blanco); font-size: 15px;}
+    .menu-item i {font-size: 20px;}
+    .menu-item.active { background: var(--turquesa); font-weight: bold;}
+    .main-content { flex: 1; min-width: 0; padding: 30px; overflow-y: auto;}
+    .main-content {display: flex; gap: 20px; overflow: hidden;}
+
+    .panel-clientes { width: 370px; max-width: 100%; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; padding: 22px; background: var(--blanco); border: 1px solid var(--gris-claro); border-radius: 14px; min-height: 0;}
+    .panel-clientes-header { display: flex; justify-content: space-between; align-items: center; gap: 12px;}
+    .panel-clientes-header h2 { margin: 0; font-size: 24px;}
+
+    .btn-agregar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: none; border-radius: 9px; background: var(--turquesa); color: var(--blanco); font-size: 14px; font-weight: 600; cursor: pointer;}
+    .btn-agregar:hover { background: var(--verde-oscuro);}
+
+    .buscador-clientes { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--gris-claro); border-radius: 9px;}
+    .buscador-clientes i { color: var(--verde-oscuro); font-size: 18px;}
+    .buscador-clientes input { flex: 1; width: 100%; border: none; outline: none; background: transparent; font-size: 14px;}
+
+    .lista-clientes { flex: 1; min-height: 0; overflow-y: auto;}
+
+    .cliente-item { display: flex; align-items: center; gap: 12px; padding: 15px 10px; border-bottom: 1px solid #e5eeee; border-radius: 10px; cursor: pointer; transition: background 0.2s ease;}
+    .cliente-item:hover { background: #e3f7f5;}
+    .cliente-avatar { width: 45px; height: 45px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--menta); color: var(--verde-oscuro); font-size: 23px;}
+    .cliente-info { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0;}
+    .cliente-info strong { font-size: 15px; color: var(--oscuro);}
+    .cliente-info span { font-size: 12px; color: #667b80; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+    .cliente-item > .bi-chevron-right { color: var(--verde-oscuro); font-size: 14px;}
+
+    .panel-detalle { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 24px; background: var(--blanco); border: 1px solid var(--gris-claro); border-radius: 14px;}
+    .detalle-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 18px; border-bottom: 1px solid #e5eeee;}
+    .detalle-header h2 {margin: 0; font-size: 24px; color: var(--oscuro);}
+    .detalle-vacio { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px; color: #667b80;}
+    .detalle-vacio i {font-size: 65px; color: var(--menta);}
+    .detalle-vacio h3 { margin: 0; font-size: 22px; color: var(--verde-oscuro);}
+    .detalle-vacio p { margin: 0; max-width: 320px; font-size: 15px; line-height: 1.6;}
+
+    .datos-cliente {padding: 25px 10px;}
+    .datos-cliente h3 {margin: 0 0 15px; font-size: 25px; color: var(--oscuro);}
+    .datos-cliente p { display: flex; align-items: center; gap: 10px; margin: 10px 0; color: #667b80; font-size: 15px;}
+    .datos-cliente p i { color: var(--turquesa); font-size: 19px;}
+    
+    .cliente-perfil { display: flex; align-items: center; gap: 20px;}
+    .perfil-avatar { width: 85px; height: 85px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--menta); color: var(--verde-oscuro); font-size: 30px; font-weight: bold;}
+    .perfil-info { min-width: 0;}
+    .perfil-info h3 { margin-bottom: 10px;}
+    .perfil-info p { margin: 5px 0; line-height: 1.3;}
+
+    .acciones-cliente { display: flex; align-items: center; gap: 10px;}
+    .acciones-cliente button { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s ease;}
+    .btn-editar { background: var(--turquesa); color: var(--blanco);}
+    .btn.editar:hover { background: var(--verde-oscuro);}
+    .btn-eliminar {background: #FCE8E8; color: #C62828;}
+    .btn-eliminar:hover { background: #F8D0D0;}
+
+    .actividades-cliente { margin-top: 30px; display: flex; flex-direction: column; gap: 20px;}
+    .actividades-header { display: flex; justify-content: space-between; align-items: center; gap: 15px;}
+    .actividades-header h3 { margin: 0; font-size: 22px; color: var(--oscuro);}
+
+    .btn-agregar-actividad { display: flex; align-items: center; gap: 8px; padding: 11px 16px; background: var(--turquesa); color: var(--blanco); border: none; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer;}
+    .btn-agregar-actividad:hover { background: var(--verde-oscuro);}
+
+    .actividades-pendientes,
+    .actividades-completadas { padding: 20px; border: 1px solid var(--gris-claro); border-radius: 12px;}
+    .actividades-pendientes h4,
+    .actividades-completadas h4 { margin: 0 0 15px; font-size: 17px;}
+    .actividades-completadas { background: #E8F8F5;}
+    .actividades-pendientes p,
+    .actividades-completadas p { color: #667b80; font-size: 14px;}
+
+    .actividad-item {display: flex; align-items: center; gap: 15px; padding: 12px 5px; border-bottom: 1px solid #e5eeee;}
+    .actividad-item input[type="checkbox"] {width: 18px; height: 18px; accent-color: var(--turquesa); cursor: pointer;}
+    .actividad-item span { font-size: 14px; color: var(--oscuro);}
+    .actividad-item > span:nth-of-type(2) { margin-left: auto; color: #667b80; white-space: nowrap;}
+  
+    .acciones-actividad { display: flex; align-items: center; gap: 8px;}
+    .acciones-actividad button { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;}
+    .btn-editar-actividad { background: #E3F7F5;}
+    .btn-editar-actividad:hover { background: var(--menta);}
+    .btn-eliminar-actividad {background: #FCE8E8; color: #C62828;}
+    .btn-eliminar-actividad:hover {background: #F8D0D0;}
+
+    .actividades-completadas .bi-check-circle-fill { color: var(--turquesa); font-size: 18px;}
+    
+    .formulario-actividad { display: flex; flex-direction: column; gap: 12px; padding: 20px; margin-bottom: 20px; background: #f0faf9; border: 1px dashed var(--turquesa); border-radius: 12px;}
+    .formulario-actividad label { font-size: 14px; font-weight: 600; color: var(--oscuro);}
+    .formulario-actividad input { width: 100%; padding: 11px 12px; border: 1px solid var(--gris-claro); border-radius: 8px; background: var(--blanco); font-size: 14px;}
+    .formulario-actividad input:focus { outline: 2px solid var(--menta); border-color: var(--turquesa);}
+    .formulario-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;}
+    .formulario-acciones button { padding: 10px 18px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;}
+    .formulario-acciones button[type="submit"] { background: var(--turquesa); color: var(--blanco);}
+    .formulario-acciones button:disabled { opacity: 0.5; cursor: not-allowed;}
+    .formulario-acciones button[type="button"] { background: #e5eeee; color: var(--oscuro);}
+  
+    .formulario-cliente { display: flex; flex-direction: column; gap: 12px; padding: 15px; margin-bottom: 15px; background-color: #F4F9F9; border: 1px solid #C9D4D5; border-radius: 10px; }
+    .formulario-cliente h3 { margin: 0 0 5px; font-size: 17px; color: #0B6E6B; }
+    .campo-formulario { display: flex; flex-direction: column; gap: 5px; }
+    .campo-formulario label { font-size: 13px; font-weight: 600; }
+    .campo-formulario input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #C9D4D5; border-radius: 6px; font-size: 14px; }
+
+  </style>
+  
+</head>
+
+<body>
+  <div id="root"></div>
+    
+  <script type="text/babel">
+    function Sidebar() {
+      return (
+        <aside className="sidebar">
+          <div className="sidebar-logo">
+            <h2>MiniCRM</h2>
+          </div>
+          
+          <nav className="sidebar-menu">
+            <div className="menu-item">
+              <i className="bi bi-house-door-fill"></i>
+              <span>Dashboard</span>
+            </div>
+
+            <div className="menu-item active">
+              <i className="bi bi-people-fill"></i>
+              <span>Clientes</span>
+            </div>
+
+            <div className="menu-item">
+              <i className="bi bi-gear-fill"></i>
+              <span>Configuración</span>
+            </div>
+          </nav>
+        </aside>
+      );
+    }
+    function ListaClientes({onSeleccionar, clienteParaEditar, clienteParaEliminar, onClienteEliminado}) {
+        
+        const [busqueda, setBusqueda] = React.useState("");
+        const [mostrarFormularioCliente, setMostrarFormularioCliente] = React.useState(false);
+        const [nuevoCliente, setNuevoCliente] = React.useState({
+            nombre: "", apellido: "", email: "", telefono: "", domicilio: "", localidad: ""
+        });
+        const [clienteEnEdicion, setClienteEnEdicion] = React.useState(null);
+
+        const [clientes, setClientes] = React.useState([
+            { id: 1, nombre: "Ana Garcia", email: "ana@garcia.com", telefono: "381999992", domicilio: "San Martin 450", localidad: "Yerba buena",},
+            { id: 2, nombre: "Bruno Lopez", email: "lopez@bruno.com", telefono: "381777772", domicilio: "25 de Mayo 120", localidad: "San Miguel de Tucumán",},
+            { id: 3, nombre: "Carla Perez", email: "carla@prz.com", telefono: "3815555553", domicilio: "Belgrano 850", localidad: "Tafi Viejo",},
+            { id: 4, nombre: "Diego Ruiz", email: "diego@rz.com", telefono: "3813332220", domicilio: "Mitre 230", localidad: "Banda del Rio Sali",},
+        ]);
+
+        React.useEffect(() => {
+            if (clienteParaEditar) {
+                setClienteEnEdicion(clienteParaEditar);
+                
+                setNuevoCliente({
+                    nombre: clienteParaEditar.nombre || "",
+                    apellido: clienteParaEditar.apellido || "",
+                    email: clienteParaEditar.email || "",
+                    telefono: clienteParaEditar.telefono || "",
+                    domicilio: clienteParaEditar.domicilio || "",
+                    localidad: clienteParaEditar.localidad || ""
+                });
+                setMostrarFormularioCliente(true);
+            }
+        }, [clienteParaEditar]);
+
+        React.useEffect(() => {
+            if (clienteParaEliminar) {
+                setClientes((anteriores) => anteriores.filter(
+                    (cliente) => cliente.id !== clienteParaEliminar.id
+                )
+            );
+            onClienteEliminado();
+            }
+        }, [clienteParaEliminar]);
+
+        const clientesFiltrados = clientes.filter((cliente) =>
+            Object.values(cliente).some((valor) => 
+                String(valor) .toLowerCase() .includes(busqueda.toLowerCase()))
+            );
+
+        console.log("Cliente en React:", clientes);
+
+    function guardarCliente(event) {
+        event.preventDefault();
+
+        const clienteNuevo = {
+            ...nuevoCliente,
+            id: Date.now(),
+            nombre: nuevoCliente.nombre.trim(),
+            apellido: nuevoCliente.apellido.trim(),
+            email: nuevoCliente.email.trim()
+        };
+        setClientes((anteriores) => 
+            clienteEnEdicion ? anteriores.map((cliente) => 
+                cliente.id === clienteEnEdicion.id ? {...cliente, ...clienteNuevo, id: cliente.id} : cliente) : [...anteriores, clienteNuevo]
+            );
+        setNuevoCliente({ nombre: "", apellido: "", email: "", telefono: "", domicilio: "", localidad: ""});
+        setClienteEnEdicion(null);
+        setMostrarFormularioCliente(false);
+    }
+
+
+        return (
+            <section className="panel-clientes">
+                <div className="panel-clientes-header">
+                    <h2>Clientes</h2>
+
+                    <button type="button" className="btn-agregar" onClick={() =>{
+                        setClienteEnEdicion(null);
+                        setNuevoCliente({
+                            nombre: "",
+                            apellido: "",
+                            email: "",
+                            telefono: "",
+                            domicilio: "",
+                            localidad: ""
+                        });
+                        setMostrarFormularioCliente(true);
+                    }}>
+                        <i className="bi bi-plus-lg"></i>
+                        Agregar    
+                    </button>
+                </div>
+                
+                <div className="buscador-clientes">
+                    {mostrarFormularioCliente && (
+                        /*FORMULARIO NUEVO CLIENTE*/
+                        <form className="formulario-cliente" onSubmit={guardarCliente} >
+                            <h3>{clienteEnEdicion ? "Editar cliente" : "Nuevo cliente"}</h3>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="nombre-cliente">Nombre</label>
+                                <input id="nombre-cliente" type="text" placeholder="Ingrese el nombre" value={nuevoCliente.nombre}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, nombre: event.target.value})} required />
+                            </div> 
+
+                            <div className="campo-formulario">
+                                <label htmlFor="apellido-cliente">Apellido</label>
+                                <input id="apellido-cliente" type="text" placeholder="Ingrese el apellido" value={nuevoCliente.apellido}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, apellido: event.target.value})} required />
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="email-cliente">Correo electronico</label>
+                                <input id="email-cliente" type="email" placeholder="ejemplo@correo.com" value={nuevoCliente.email}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, email: event.target.value})} required />
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="telefono-cliente">Telefono</label>
+                                <input id="telefono-cliente" type="tel" placeholder="Ej:381155667" value={nuevoCliente.telefono} 
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, telefono: event.target.value})} />    
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="domicilio-cliente">Domicilio</label>
+                                <input id="domicilio-cliente" type="text" placeholder="Ej:San Martin 800" value={nuevoCliente.domicilio}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, domicilio: event.target.value})} />
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="localidad-cliente">Localidad</label>
+                                <input id="localidad-cliente" type="text" placeholder="Ej:Tafi Viejo" value={nuevoCliente.localidad} 
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, localidad: event.target.value})} />
+                            </div> 
+                            
+                            <button type="submit" className="btn-guardar-cliente">
+                                <i className="bi bi-check-lg"></i>
+                                Guardar Cliente    
+                            </button>
+
+                            <button type="button" onClick={() => {
+                                setMostrarFormularioCliente(false);
+                                setClienteEnEdicion(null);
+                                setNuevoCliente({
+                                    nombre: "",
+                                    apellido: "",
+                                    email: "",
+                                    telefono: "",
+                                    domicilio: "",
+                                    localidad: ""
+                                });
+                            }} >
+                                Cancelar
+                            </button>
+                        </form>
+                    )}
+
+                    {!mostrarFormularioCliente && (
+                        <div clas="buscador-clientes">
+                            <i className="bi bi-search"></i>
+                            <input type="search" placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes" value={busqueda} onChange={(event) => setBusqueda(event.target.value)} />
+                        </div>
+                    )}
+                    
+                </div>
+                
+                <div className="lista-clientes">
+                   {clientesFiltrados.map((cliente) => (
+                    <div className="cliente-item" key={cliente.id} role="button" tabIndex={0} onClick={() => onSeleccionar(cliente)}
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                                event.preventDeFault();
+                                onSeleccionar(cliente);
+                            }
+                        }}
+                        >
+                        <div className="cliente-avatar">
+                            <i className="bi bi-person-fill"></i>    
+                        </div>
+
+                    <div className="cliente-info">
+                        <strong>{cliente.nombre} {cliente.apellido || "" } </strong>
+                        <span>{cliente.email}</span>                        
+                    </div>
+                        <i className="bi bi-chevron-right"></i>
+                     </div>
+                   ))}
+                </div>
+            </section>
+        );
+    }
+    function FichaCliente({cliente, onEditarCliente, onElminarCliente}) {
+        const [mostrarFormularioActividad, setMostrarFormularioActividad] = React.useState(false);
+        const [descripcionActividad, setDescripcionActividad] = React.useState("");
+        const [fechaCompromiso, setFechaCompromiso] = React.useState("");
+        const [actividadesPorCliente, setActividadesPorCliente] = React.useState({});
+        const [actividadEnEdicion, setActividadEnEdicion] = React.useState(null);
+        const [clienteEnEdicion, setClienteEnEdicion] = React.useState(null);
+
+    function guardarActividad(event) {
+        event.preventDefault();
+
+        const descripcion = descripcionActividad.trim();
+
+        if (!cliente || !descripcion) {
+                    return;
+        }
+
+        const nuevaActividad = {id: Date.now(), descripcion: descripcion, fechaCompromiso: fechaCompromiso || null, fechaFinalizacion: null,
+        };
+
+        setActividadesPorCliente((anteriores) => ({ ...anteriores, [cliente.id]: actividadEnEdicion
+            ? (anteriores[cliente.id] || []).map((actividad) => actividad.id === actividadEnEdicion.id
+                    ? { ...actividad, descripcion: descripcion, fechaCompromiso: fechaCompromiso || null
+                        }: actividad ) : [ ...(anteriores[cliente.id] || []), nuevaActividad
+                        ]
+            }));
+
+        setActividadEnEdicion(null);
+        setDescripcionActividad("");
+        setFechaCompromiso("");
+        setMostrarFormularioActividad(false);
+    }
+
+    function completarActividad(idActividad) {
+            if (!cliente) return;
+
+            const hoy = new Date();
+
+            const fechaFinalizacion = [
+                hoy.getFullYear(),
+                String(hoy.getMonth() + 1).padStart(2, "0"),
+                String(hoy.getDate()).padStart(2, "0"),
+            ].join("-");
+
+            setActividadesPorCliente((anteriores) => ({ ...anteriores, [cliente.id]: (anteriores[cliente.id] || []).map((actividad) => 
+            actividad.id === idActividad ? { ...actividad, fechaFinalizacion} : actividad),
+            }));
+        }
+        const actividadesPendientes = (
+            actividadesPorCliente[cliente?.id] || []
+        ).filter((actividad) => !actividad.fechaFinalizacion);
+
+        const actividadesCompletadas = (
+            actividadesPorCliente[cliente?.id] || []
+        ).filter((actividad) => actividad.fechaFinalizacion);
+
+    function eliminarActividad(idActividad) {
+        if (!cliente) return;
+
+        setActividadesPorCliente((anteriores) => ({...anteriores, [cliente.id]: (anteriores[cliente.id] || []).filter((actividad) => actividad.id !== idActividad)
+    }));
+    }
+
+        return (
+            <section className="panel-detalle">
+                <div className="detalle-header">
+                    <h2>Ficha del cliente</h2>
+                    
+                    {cliente && (
+                        <div className="acciones-cliente">
+                            <button type="button" className="btn-editar" onClick={() => onEditarCliente(cliente)} >
+                                <i className="bi bi-pencil-square"></i>
+                                Editar    
+                            </button>
+                            <button type="button" className="btn-eliminar" onClick={() => {
+                                if (window.confirm("Seguro que quieres eliminar este cliente.")){
+                                    onElminarCliente(cliente);
+                                }
+                            }} >
+                                <i className="bi bi-trash"></i>
+                                Eliminar    
+                            </button>    
+                        </div>
+                    )}
+                </div>
+                
+                {cliente ? (
+                    <div className="datos-cliente">
+                        <div className="cliente-perfil">
+                            <div className="perfil-avatar">
+                                {cliente.nombre 
+                                    .trim()
+                                    .split(" ")
+                                    .map((parte) => parte[0])
+                                    .slice(0, 2)
+                                    .join("")
+                                    .toUpperCase() }    
+                            </div>         
+                            <div className="perfil-info">
+                                <h3>{cliente.nombre} {cliente.apellido || ""} </h3>    
+                                <p>
+                                    <i className="bi bi-envelope"></i>
+                                    {cliente.email}    
+                                </p>
+                                <p>
+                                    <i className="bi bi-telephone"></i>
+                                    {cliente.telefono}    
+                                </p>
+                                <p>
+                                    <i className="bi bi-geo-alt"></i>    
+                                    {cliente.domicilio}, {cliente.localidad}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="actividades-cliente">
+                            <div className="actividades-header">
+                                <h3>Actividades</h3>        
+                                <button type="button" className="btn-agregar-actividad" 
+                                    onClick={() => {setActividadEnEdicion(null);
+                                                    setDescripcionActividad("");
+                                                    setFechaCompromiso("");
+                                                    setMostrarFormularioActividad(true);
+                                    }}>
+                                    <i className="bi bi-plus-lg"></i>
+                                    Nueva actividad    
+                                </button>
+                            </div>
+                            {mostrarFormularioActividad && (
+                                <form className="formulario-actividad" onSubmit={guardarActividad}>
+                                    <label htmlFor="descripcion-actividad">
+                                        Descripcion de la actividad
+                                    </label>
+                                    
+                                    <input id="descripcion-actividad" type="text" placeholder=" Ej: Llamar al cliente" value={descripcionActividad} onChange={(event) => setDescripcionActividad(event.target.value)} required />
+                                    <label htmlFor="fecha-actividad">
+                                        Fecha de compromiso    
+                                    </label>
+
+                                    <input id="fecha-actividad" type="date" value={fechaCompromiso} onChange={(event) => setFechaCompromiso(event.target.value)} />
+                                    <div className="formulario-acciones">
+                                        <button type="submit" disabled={!descripcionActividad.trim()}>
+                                            Guardar    
+                                        </button>
+                                        <button type="button" onClick={() => setMostrarFormularioActividad(false)}>
+                                            Cancelar    
+                                        </button>    
+                                    </div>
+                                </form>
+                            )}
+
+                            <div className="actividades-pendientes">
+                                <h4>Compromisos pendientes</h4>
+                                
+                                {actividadesPorCliente.length === 0 ? (
+                                    <p>No hay actividades pendientes.</p>
+                                ):(
+                                    actividadesPendientes.map((actividad) => (
+                                        <div className="actividad-item" key={actividad.id}>
+                                            <input type="checkbox" aria-label="Completar actividad" onChange={() => completarActividad(actividad.id)}/>
+
+                                            <span>{actividad.descripcion}</span>
+
+                                            <span>{actividad.fechaCompromiso ? actividad.fechaCompromiso.split("-").reverse().join("/") : "Sin compromiso"}</span>
+
+                                            <div className="acciones-actividad">
+                                                <button type="button" className="btn-editar-actividad" ara-label="Editar actividad" title="Editar actividad"
+                                                    onClick={() => {
+                                                        setActividadEnEdicion(actividad);
+                                                        setDescripcionActividad(actividad.descripcion);
+                                                        setFechaCompromiso(actividad.fechaCompromiso);
+                                                        setMostrarFormularioActividad(true);
+                                                    }}
+                                                    >
+                                                        <i className="bi bi-pencil-square"></i>
+                                                </button>
+
+                                                <button type="button" className="btn-eliminar-actividad" aria-label="Eliminar actividad" title="Eliminar actividad" onClick={() => eliminarActividad(actividad.id)} >
+                                                    <i className="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="actividades-completadas">
+                                <h4>Actividades completadas</h4>
+                                
+                                {actividadesCompletadas.length === 0 ? (
+                                    <p>No hay actividades completadas.</p>
+                                ) : (
+                                    actividadesCompletadas.map((actividad) => (
+                                        <div className="actividad-item" key={actividad.id}>
+                                            <i className="bi bi-check-circle-fill"></i>
+                                            
+                                            <span>{actividad.descripcion}</span>
+
+                                            <span>
+                                                completada el{" "} {actividad.fechaFinalizacion
+                                                    .split("-")
+                                                    .reverse()
+                                                    .join("/")}    
+                                            </span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>    
+                            
+                        </div>     
+                    </div>
+                ):(
+                    <div className="detalle-vacio">
+                        <i className="bi bi-person-vcard"></i>
+                        <h3>Selecciona un cliente</h3>
+                        <p>
+                        Elegi un cliente de la lista para consultar
+                        sus datos y actividades.    
+                        </p>    
+                    </div>
+                )}
+            </section>
+        );
+    }
+
+    function App() {
+        const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
+        const [clienteParaEditar, setClienteParaEditar] = React.useState(null);
+        const [clienteParaEliminar, setClienteParaEliminar] = React.useState(null);
+
+        return (
+        <div className="app-container">
+            <Sidebar />
+            <main className="main-content">
+                <ListaClientes onSeleccionar={setClienteSeleccionado} clienteParaEditar={clienteParaEditar} clienteParaEliminar={clienteParaEliminar}
+                    onClienteEliminado={() => {
+                    setClienteSeleccionado(null);
+                    setClienteParaEliminar(null);
+                    setClienteParaEditar(null);
+                    }}
+                />
+                <FichaCliente cliente={clienteSeleccionado} onEditarCliente={setClienteParaEditar} onElminarCliente={setClienteParaEliminar} />    
+            </main>
+        </div>
+      );
+    }
+    
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
