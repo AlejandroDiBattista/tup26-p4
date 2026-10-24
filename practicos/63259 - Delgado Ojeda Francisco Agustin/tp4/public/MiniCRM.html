@@ -396,12 +396,32 @@
       gap: 24px;
     }
 
+    .detalle-layout {
+      height: 100%;
+      overflow: hidden;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .actividades-scrollable {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-right: 6px;
+    }
+
     .ficha-cliente-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       padding: 24px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
     }
 
     .ficha-cabecera {
@@ -522,42 +542,56 @@
 
     .subformulario-card {
       background: var(--bg-surface);
-      border: 1px solid var(--border-color);
+      border: 1.5px dashed var(--border-subtle);
       border-radius: var(--radius-lg);
-      padding: 20px 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      padding: 16px 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
     }
 
     .subformulario-card h3 {
-      font-size: 1.05rem;
+      font-size: 0.98rem;
       font-weight: 700;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .subform-campos {
+    .subform-fila-unica {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .subform-fila {
-      display: flex;
-      gap: 12px;
+      gap: 10px;
+      align-items: center;
       flex-wrap: wrap;
     }
 
-    .subform-fila .campo-desc {
+    .subform-fila-unica .campo-desc {
       flex: 2;
-      min-width: 250px;
+      min-width: 220px;
     }
 
-    .subform-fila .campo-fecha {
+    .subform-fila-unica .campo-fecha {
       flex: 1;
-      min-width: 160px;
+      min-width: 140px;
+    }
+
+    .subform-fila-unica .subform-botones-inline {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .form-fila-doble {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-fila-doble {
+        grid-template-columns: 1fr;
+      }
     }
 
     .input-control {
@@ -578,13 +612,6 @@
 
     .input-control::placeholder {
       color: var(--text-light);
-    }
-
-    .subform-botones {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 4px;
     }
 
     .seccion-actividades {
@@ -649,18 +676,21 @@
     }
 
     .btn-completar-check {
-      background: transparent;
-      border: 2px solid var(--border-subtle);
-      width: 22px;
-      height: 22px;
-      border-radius: var(--radius-full);
+      background: var(--bg-input);
+      border: 1.5px solid var(--border-subtle);
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       color: transparent;
+      font-size: 12px;
+      font-weight: bold;
       flex-shrink: 0;
       padding: 0;
+      transition: all 0.15s ease;
     }
 
     .btn-completar-check:hover {
@@ -670,10 +700,17 @@
     }
 
     .icono-check-completa {
-      color: var(--success);
+      background: var(--success);
+      color: #ffffff;
       width: 20px;
       height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
+      font-size: 12px;
+      font-weight: bold;
     }
 
     .actividad-textos {
@@ -867,6 +904,33 @@
         return palabras[0].substring(0, 2).toUpperCase();
       }
       return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+    }
+
+    const PALETAS_AVATAR = {
+      claro: [
+        { bg: "#dbeafe", color: "#1d4ed8", border: "#bfdbfe" },
+        { bg: "#dcfce7", color: "#15803d", border: "#bbf7d0" },
+        { bg: "#f3e8ff", color: "#7e22ce", border: "#e9d5ff" },
+        { bg: "#ffedd5", color: "#c2410c", border: "#fed7aa" },
+        { bg: "#fce7f3", color: "#be185d", border: "#fbcfe8" },
+        { bg: "#ccfbf1", color: "#0f766e", border: "#99f6e4" },
+        { bg: "#e0e7ff", color: "#4338ca", border: "#c7d2fe" },
+      ],
+      oscuro: [
+        { bg: "rgba(59, 130, 246, 0.2)", color: "#93c5fd", border: "rgba(59, 130, 246, 0.4)" },
+        { bg: "rgba(34, 197, 94, 0.2)", color: "#86efac", border: "rgba(34, 197, 94, 0.4)" },
+        { bg: "rgba(168, 85, 247, 0.2)", color: "#d8b4fe", border: "rgba(168, 85, 247, 0.4)" },
+        { bg: "rgba(249, 115, 22, 0.2)", color: "#fed7aa", border: "rgba(249, 115, 22, 0.4)" },
+        { bg: "rgba(236, 72, 153, 0.2)", color: "#fbcfe8", border: "rgba(236, 72, 153, 0.4)" },
+        { bg: "rgba(20, 184, 166, 0.2)", color: "#99f6e4", border: "rgba(20, 184, 166, 0.4)" },
+        { bg: "rgba(99, 102, 241, 0.2)", color: "#c7d2fe", border: "rgba(99, 102, 241, 0.4)" },
+      ],
+    };
+
+    function obtenerColorAvatar(id, nombre, temaOscuro) {
+      const lista = temaOscuro ? PALETAS_AVATAR.oscuro : PALETAS_AVATAR.claro;
+      const idx = Math.abs((id || 0) + (nombre ? nombre.charCodeAt(0) : 0)) % lista.length;
+      return lista[idx];
     }
 
     function MiniCRMApp() {
@@ -1150,7 +1214,7 @@
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
-                  <span>Nuevo</span>
+                  <span>Agregar</span>
                 </button>
               </div>
 
@@ -1178,6 +1242,7 @@
                 )}
                 {clientes.map((c) => {
                   const activa = c.id === clienteSeleccionadoId && modoDetalle === "ver";
+                  const estiloAvatar = obtenerColorAvatar(c.id, c.nombre, temaOscuro);
                   return (
                     <div
                       key={c.id}
@@ -1188,7 +1253,20 @@
                         cancelarEdicionActividad();
                       }}
                     >
-                      <div className="avatar-circulo">{obtenerIniciales(c.nombre)}</div>
+                      <div
+                        className="avatar-circulo"
+                        style={
+                          activa
+                            ? {}
+                            : {
+                                backgroundColor: estiloAvatar.bg,
+                                color: estiloAvatar.color,
+                                borderColor: estiloAvatar.border,
+                              }
+                        }
+                      >
+                        {obtenerIniciales(c.nombre)}
+                      </div>
                       <div className="cliente-info-corta">
                         <div className="cliente-nombre-fila">{c.nombre}</div>
                         <div className="cliente-email-fila">{c.email}</div>
@@ -1223,27 +1301,29 @@
                         />
                       </div>
 
-                      <div className="form-grupo">
-                        <label>Correo electrónico <span className="requerido">*</span></label>
-                        <input
-                          type="email"
-                          className="input-control"
-                          placeholder="Ej: ana.garcia@example.com"
-                          value={formCliente.email}
-                          onChange={(e) => setFormCliente({ ...formCliente, email: e.target.value })}
-                          required
-                        />
-                      </div>
+                      <div className="form-fila-doble">
+                        <div className="form-grupo">
+                          <label>Correo electrónico <span className="requerido">*</span></label>
+                          <input
+                            type="email"
+                            className="input-control"
+                            placeholder="Ej: ana.garcia@example.com"
+                            value={formCliente.email}
+                            onChange={(e) => setFormCliente({ ...formCliente, email: e.target.value })}
+                            required
+                          />
+                        </div>
 
-                      <div className="form-grupo">
-                        <label>Teléfono</label>
-                        <input
-                          type="text"
-                          className="input-control"
-                          placeholder="Ej: 381 555 0123"
-                          value={formCliente.telefono}
-                          onChange={(e) => setFormCliente({ ...formCliente, telefono: e.target.value })}
-                        />
+                        <div className="form-grupo">
+                          <label>Teléfono</label>
+                          <input
+                            type="text"
+                            className="input-control"
+                            placeholder="Ej: 381 555 0123"
+                            value={formCliente.telefono}
+                            onChange={(e) => setFormCliente({ ...formCliente, telefono: e.target.value })}
+                          />
+                        </div>
                       </div>
 
                       <div className="form-grupo">
@@ -1266,14 +1346,14 @@
                           Cancelar
                         </button>
                         <button type="submit" className="btn-nuevo">
-                          {modoDetalle === "crear" ? "Guardar Cliente" : "Actualizar Cliente"}
+                          Guardar
                         </button>
                       </div>
                     </form>
                   </div>
                 </div>
               ) : clienteDetalle ? (
-                <div className="detalle-scrollable">
+                <div className="detalle-layout">
                   <article className="ficha-cliente-card">
                     <header className="ficha-cabecera">
                       <div className="ficha-titulos">
@@ -1359,147 +1439,155 @@
 
                     {errorActividad && <div className="alerta-error">{errorActividad}</div>}
 
-                    <form onSubmit={guardarActividad} className="subform-campos">
-                      <div className="subform-fila">
-                        <div className="campo-desc">
-                          <input
-                            type="text"
-                            className="input-control"
-                            placeholder="Descripción de la actividad..."
-                            value={formActividad.descripcion}
-                            onChange={(e) => setFormActividad({ ...formActividad, descripcion: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div className="campo-fecha">
-                          <input
-                            type="date"
-                            className="input-control"
-                            value={formActividad.fecha}
-                            onChange={(e) => setFormActividad({ ...formActividad, fecha: e.target.value })}
-                          />
-                        </div>
+                    <form onSubmit={guardarActividad} className="subform-fila-unica">
+                      <div className="campo-desc">
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Descripción de la actividad"
+                          value={formActividad.descripcion}
+                          onChange={(e) => setFormActividad({ ...formActividad, descripcion: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="campo-fecha">
+                        <input
+                          type="date"
+                          className="input-control"
+                          title="Fecha opcional"
+                          value={formActividad.fecha}
+                          onChange={(e) => setFormActividad({ ...formActividad, fecha: e.target.value })}
+                        />
                       </div>
 
-                      <div className="subform-botones">
-                        {actividadEnEdicionId && (
-                          <button
-                            type="button"
-                            className="btn-secundario"
-                            onClick={cancelarEdicionActividad}
-                          >
-                            Cancelar
-                          </button>
-                        )}
+                      <div className="subform-botones-inline">
                         <button type="submit" className="btn-nuevo">
-                          {actividadEnEdicionId ? "Guardar cambios" : "Agregar"}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                          </svg>
+                          <span>Guardar</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secundario"
+                          onClick={cancelarEdicionActividad}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                          <span>Cancelar</span>
                         </button>
                       </div>
                     </form>
                   </div>
 
-                  <section className="seccion-actividades">
-                    <div className="seccion-titulo-fila">
-                      <h3 className="seccion-titulo">
-                        <span>Compromisos</span>
-                        <span className="contador-pill">{clienteDetalle.compromisos?.length || 0}</span>
-                      </h3>
-                    </div>
+                  <div className="actividades-scrollable">
+                    <section className="seccion-actividades">
+                      <div className="seccion-titulo-fila">
+                        <h3 className="seccion-titulo">
+                          <span>Compromisos</span>
+                          <span className="contador-pill">{clienteDetalle.compromisos?.length || 0}</span>
+                        </h3>
+                      </div>
 
-                    <div className="lista-actividades-grupo">
-                      {(!clienteDetalle.compromisos || clienteDetalle.compromisos.length === 0) && (
-                        <div className="sin-actividades-aviso">
-                          No hay compromisos pendientes.
-                        </div>
-                      )}
-                      {clienteDetalle.compromisos?.map((act) => {
-                        const vencida = esFechaVencida(act.fecha);
-                        return (
+                      <div className="lista-actividades-grupo">
+                        {(!clienteDetalle.compromisos || clienteDetalle.compromisos.length === 0) && (
+                          <div className="sin-actividades-aviso">
+                            No hay compromisos pendientes.
+                          </div>
+                        )}
+                        {clienteDetalle.compromisos?.map((act) => {
+                          const vencida = esFechaVencida(act.fecha);
+                          return (
+                            <div key={act.id} className="actividad-fila">
+                              <div className="actividad-cuerpo">
+                                <button
+                                  type="button"
+                                  className="btn-completar-check"
+                                  title="Marcar como completada"
+                                  onClick={() => completarActividad(act.id)}
+                                >
+                                  ✓
+                                </button>
+                                <div className="actividad-textos">
+                                  <span className="actividad-desc">{act.descripcion}</span>
+                                  <span className={`actividad-fecha-tag ${vencida ? "vencida" : ""}`}>
+                                    {act.fecha ? (
+                                      <>
+                                        {formatearFecha(act.fecha)}
+                                        {vencida && " · Vencido"}
+                                      </>
+                                    ) : (
+                                      "Sin fecha"
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="actividad-acciones">
+                                <button
+                                  type="button"
+                                  className="btn-icono"
+                                  title="Editar compromiso"
+                                  onClick={() => iniciarEditarActividad(act)}
+                                >
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-icono icono-peligro"
+                                  title="Eliminar compromiso"
+                                  onClick={() => eliminarActividad(act.id)}
+                                >
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+
+                    <section className="seccion-actividades">
+                      <div className="seccion-titulo-fila">
+                        <h3 className="seccion-titulo">
+                          <span>Actividades completadas</span>
+                          <span className="contador-pill">{clienteDetalle.completadas?.length || 0}</span>
+                        </h3>
+                      </div>
+
+                      <div className="lista-actividades-grupo">
+                        {(!clienteDetalle.completadas || clienteDetalle.completadas.length === 0) && (
+                          <div className="sin-actividades-aviso">
+                            No hay actividades completadas.
+                          </div>
+                        )}
+                        {clienteDetalle.completadas?.map((act) => (
                           <div key={act.id} className="actividad-fila">
                             <div className="actividad-cuerpo">
-                              <button
-                                type="button"
-                                className="btn-completar-check"
-                                onClick={() => completarActividad(act.id)}
-                              >
-                                ✓
-                              </button>
+                              <div className="icono-check-completa" title="Completada">✓</div>
                               <div className="actividad-textos">
                                 <span className="actividad-desc">{act.descripcion}</span>
-                                <span className={`actividad-fecha-tag ${vencida ? "vencida" : ""}`}>
-                                  {act.fecha ? (
-                                    <>
-                                      {formatearFecha(act.fecha)}
-                                      {vencida && " · Vencido"}
-                                    </>
-                                  ) : (
-                                    "Sin fecha"
-                                  )}
+                                <span className="actividad-fecha-tag">
+                                  {act.fechaCompletada
+                                    ? `Completada el ${formatearFecha(act.fechaCompletada)}`
+                                    : "Completada"}
                                 </span>
                               </div>
                             </div>
-                            <div className="actividad-acciones">
-                              <button
-                                type="button"
-                                className="btn-icono"
-                                onClick={() => iniciarEditarActividad(act)}
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-icono icono-peligro"
-                                onClick={() => eliminarActividad(act.id)}
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="3 6 5 6 21 6"></polyline>
-                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                              </button>
-                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-
-                  <section className="seccion-actividades">
-                    <div className="seccion-titulo-fila">
-                      <h3 className="seccion-titulo">
-                        <span>Actividades completadas</span>
-                        <span className="contador-pill">{clienteDetalle.completadas?.length || 0}</span>
-                      </h3>
-                    </div>
-
-                    <div className="lista-actividades-grupo">
-                      {(!clienteDetalle.completadas || clienteDetalle.completadas.length === 0) && (
-                        <div className="sin-actividades-aviso">
-                          No hay actividades completadas.
-                        </div>
-                      )}
-                      {clienteDetalle.completadas?.map((act) => (
-                        <div key={act.id} className="actividad-fila">
-                          <div className="actividad-cuerpo">
-                            <svg className="icono-check-completa" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                            </svg>
-                            <div className="actividad-textos">
-                              <span className="actividad-desc completada-texto">{act.descripcion}</span>
-                              <span className="actividad-fecha-tag">
-                                {act.fechaCompletada
-                                  ? `Completada el ${formatearFecha(act.fechaCompletada)}`
-                                  : "Completada"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
                 </div>
               ) : (
                 <div className="detalle-vacio">
