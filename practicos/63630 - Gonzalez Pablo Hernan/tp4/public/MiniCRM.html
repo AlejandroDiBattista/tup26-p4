@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <style>
+    :root {
+      --fondo: #f3f5f8;
+      --panel: #fff;
+      --borde: #e2e6ec;
+      --texto: #1f2937;
+      --suave: #6b7280;
+      --primario: #2563eb;
+      --peligro: #dc2626;
+      --ok: #16a34a;
+      --header: #2c4466;
+      --sel: #e8f0fe;
+    }
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--fondo);
+      color: var(--texto);
+      overflow: hidden;
+    }
+    .app { height: 100%; display: flex; flex-direction: column; }
+    header { background: var(--header); color: #fff; padding: 12px 24px; font-size: 22px; font-weight: 700; }
+    main { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px 1fr; gap: 12px; padding: 12px; }
+    .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; min-height: 0; display: flex; flex-direction: column; }
+
+    .maestro-top { padding: 16px; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--borde); }
+    .fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    h2 { margin: 0; font-size: 22px; }
+    h3 { margin: 0 0 8px; font-size: 16px; }
+    input { font: inherit; padding: 8px 10px; border: 1px solid var(--borde); border-radius: 6px; width: 100%; }
+    input:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
+    button { font: inherit; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--borde); background: #fff; cursor: pointer; white-space: nowrap; }
+    button:hover { background: #f5f7fa; }
+    button.primario { background: var(--primario); border-color: var(--primario); color: #fff; }
+    button.peligro { color: var(--peligro); border-color: #f3b4b4; }
+
+    .lista { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+    .lista li { display: flex; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--borde); cursor: pointer; }
+    .lista li:hover { background: #f8fafc; }
+    .lista li.activo { background: var(--sel); }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 14px; flex: none; }
+    .nombre { font-weight: 600; }
+    .sub { color: var(--suave); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vacio { color: var(--suave); padding: 24px; text-align: center; }
+
+    .detalle { padding: 20px 24px; gap: 16px; overflow: hidden; }
+    .ficha-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .ficha-top h2 { font-size: 26px; }
+    .id { color: var(--suave); font-size: 14px; text-align: right; margin-bottom: 6px; }
+    .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; padding-bottom: 16px; border-bottom: 1px solid var(--borde); }
+    .form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--suave); }
+    .acciones { display: flex; gap: 8px; }
+    .error { color: var(--peligro); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    async function api(url, opciones = {}) {
+      const res = await fetch('/api/clientes' + url, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opciones,
+        body: opciones.body && JSON.stringify(opciones.body),
+      });
+      if (res.status === 204) return null;
+      const datos = await res.json();
+      if (!res.ok) throw new Error(datos.error);
+      return datos;
+    }
+
+    const COLORES = ['#dbeafe', '#dcfce7', '#ede9fe', '#ffedd5', '#fce7f3', '#ccfbf1'];
+    const iniciales = nombre => nombre.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+
+    function Avatar({ cliente }) {
+      return <div className="avatar" style={{ background: COLORES[cliente.id % COLORES.length] }}>{iniciales(cliente.nombre)}</div>;
+    }
+
+    const VACIO = { nombre: '', email: '', telefono: '', direccion: '', ciudad: '' };
+
+    function FormCliente({ inicial, onGuardar, onCancelar }) {
+      const [datos, setDatos] = useState(inicial);
+      const [error, setError] = useState('');
+      const campo = (k, etiqueta, tipo = 'text') => (
+        <label>{etiqueta}
+          <input type={tipo} value={datos[k]} onChange={e => setDatos({ ...datos, [k]: e.target.value })} autoFocus={k === 'nombre'} />
+        </label>
+      );
+      const enviar = async e => {
+        e.preventDefault();
+        try { await onGuardar(datos); } catch (err) { setError(err.message); }
+      };
+      return (
+        <form className="form" onSubmit={enviar}>
+          {campo('nombre', 'Nombre')}
+          {campo('email', 'Email', 'email')}
+          {campo('telefono', 'Teléfono')}
+          {campo('direccion', 'Dirección')}
+          {campo('ciudad', 'Ciudad')}
+          <div className="acciones" style={{ alignSelf: 'end' }}>
+            <button className="primario">Guardar</button>
+            <button type="button" onClick={onCancelar}>Cancelar</button>
+          </div>
+          {error && <div className="error">{error}</div>}
+        </form>
+      );
+    }
+
+    function Detalle({ cliente, editando, setEditando, onGuardar, onEliminar }) {
+      if (editando) {
+        return (
+          <section className="panel detalle">
+            <h2>{cliente ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+            <FormCliente inicial={cliente ? { ...VACIO, ...cliente } : VACIO} onGuardar={onGuardar} onCancelar={() => setEditando(false)} />
+          </section>
+        );
+      }
+      if (!cliente) return <section className="panel detalle"><div className="vacio">Seleccioná un cliente</div></section>;
+      return (
+        <section className="panel detalle">
+          <div className="ficha-top">
+            <h2>{cliente.nombre}</h2>
+            <div>
+              <div className="id">#{cliente.id}</div>
+              <div className="acciones">
+                <button onClick={() => setEditando(true)}>✎ Editar</button>
+                <button className="peligro" onClick={onEliminar}>🗑 Eliminar</button>
+              </div>
+            </div>
+          </div>
+          <div className="datos">
+            <div>✉ {cliente.email || '—'}</div>
+            <div>📍 {cliente.direccion || '—'}</div>
+            <div>☎ {cliente.telefono || '—'}</div>
+            <div>{cliente.ciudad}</div>
+          </div>
+        </section>
+      );
+    }
+
+    function App() {
+      const [busqueda, setBusqueda] = useState('');
+      const [clientes, setClientes] = useState([]);
+      const [seleccionId, setSeleccionId] = useState(null);
+      const [cliente, setCliente] = useState(null);
+      const [editando, setEditando] = useState(false);
+
+      const cargarLista = () => api('?q=' + encodeURIComponent(busqueda)).then(setClientes);
+      const cargarCliente = id => id ? api('/' + id).then(setCliente) : setCliente(null);
+
+      useEffect(() => { cargarLista(); }, [busqueda]);
+      useEffect(() => { cargarCliente(seleccionId); }, [seleccionId]);
+
+      const seleccionar = id => { setSeleccionId(id); setEditando(false); };
+      const nuevo = () => { setSeleccionId(null); setEditando(true); };
+
+      const guardar = async datos => {
+        const guardado = cliente
+          ? await api('/' + cliente.id, { method: 'PUT', body: datos })
+          : await api('', { method: 'POST', body: datos });
+        setEditando(false);
+        await cargarLista();
+        if (guardado.id === seleccionId) cargarCliente(guardado.id); else setSeleccionId(guardado.id);
+      };
+
+      const eliminar = async () => {
+        if (!confirm(`¿Eliminar a ${cliente.nombre} y todas sus actividades?`)) return;
+        await api('/' + cliente.id, { method: 'DELETE' });
+        setSeleccionId(null);
+        cargarLista();
+      };
+
+      return (
+        <div className="app">
+          <header>MiniCRM</header>
+          <main>
+            <section className="panel">
+              <div className="maestro-top">
+                <div className="fila">
+                  <h2>Clientes</h2>
+                  <button className="primario" onClick={nuevo}>+ Agregar</button>
+                </div>
+                <input type="search" placeholder="🔍 Buscar por cualquier campo..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+              </div>
+              <ul className="lista">
+                {clientes.map(c => (
+                  <li key={c.id} className={c.id === seleccionId ? 'activo' : ''} onClick={() => seleccionar(c.id)}>
+                    <Avatar cliente={c} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="nombre">{c.nombre}</div>
+                      <div className="sub">{c.email}</div>
+                    </div>
+                  </li>
+                ))}
+                {clientes.length === 0 && <li className="vacio">Sin resultados</li>}
+              </ul>
+            </section>
+            <Detalle cliente={cliente} editando={editando} setEditando={setEditando} onGuardar={guardar} onEliminar={eliminar} />
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
