@@ -115,6 +115,19 @@ function coincide(cliente: Cliente, terminos: Termino[]): boolean {
   );
 }
 
+// ── Condiciones de actividad ──────────────────────────────────────────────────
+
+type ReferenciaActividad = { clienteId: number; id: number };
+
+function condicionActividad({ clienteId, id }: ReferenciaActividad) {
+  return and(eq(actividades.id, id), eq(actividades.clienteId, clienteId));
+}
+
+/** Las escrituras sobre actividades solo afectan a las pendientes (regla de negocio en la propia consulta). */
+function condicionPendiente(ref: ReferenciaActividad) {
+  return and(condicionActividad(ref), isNull(actividades.fechaFinalizacion));
+}
+
 // ── Servicio ──────────────────────────────────────────────────────────────────
 
 /**
@@ -208,46 +221,58 @@ export class Clientes {
     return describirActividad(actividad!);
   }
 
+  // Las operaciones sobre una actividad reciben también su cliente: una actividad de otro
+  // cliente se trata como inexistente.
+
+  static async obtenerActividad(clienteId: number | string, id: number | string): Promise<ActividadConEstado> {
+    const ref = Clientes.referenciaActividad(clienteId, id);
+    return describirActividad(await Clientes.exigirActividad(ref));
+  }
+
   /** Solo se editan las actividades pendientes. La finalización se registra con completarActividad. */
-  static async actualizarActividad(id: number | string, cambios: CambiosActividad): Promise<ActividadConEstado> {
-    const actividadId = normalizarId(id);
+  static async actualizarActividad(
+    clienteId: number | string,
+    id: number | string,
+    cambios: CambiosActividad,
+  ): Promise<ActividadConEstado> {
+    const ref = Clientes.referenciaActividad(clienteId, id);
     const datos = normalizarCambiosActividad(cambios);
-    const actual = await Clientes.exigirActividadPendiente(actividadId, "editar");
+    const actual = await Clientes.exigirActividadPendiente(ref, "editar");
     if (Object.keys(datos).length === 0) return describirActividad(actual);
 
-    // La condición isNull evita editar una actividad que se completó entre la lectura y la escritura.
+    // La condición de pendiente evita editar una actividad que se completó entre la lectura y la escritura.
     const [actividad] = await Clientes.traducirDescripcionDuplicada(
-      Clientes.db
-        .update(actividades)
-        .set(datos)
-        .where(and(eq(actividades.id, actividadId), isNull(actividades.fechaFinalizacion)))
-        .returning(),
+      Clientes.db.update(actividades).set(datos).where(condicionPendiente(ref)).returning(),
     );
-    if (!actividad) return Clientes.fallarActividadNoPendiente(actividadId, "editar");
+    if (!actividad) return Clientes.fallarActividadNoPendiente(ref, "editar");
     return describirActividad(actividad);
   }
 
   /** Marca la actividad como completada en la fecha indicada (hoy por defecto). */
-  static async completarActividad(id: number | string, fechaFinalizacion?: FechaISO): Promise<ActividadConEstado> {
-    const actividadId = normalizarId(id);
+  static async completarActividad(
+    clienteId: number | string,
+    id: number | string,
+    fechaFinalizacion?: FechaISO | null,
+  ): Promise<ActividadConEstado> {
+    const ref = Clientes.referenciaActividad(clienteId, id);
     const fecha = normalizarFechaFinalizacion(fechaFinalizacion) ?? hoy();
     const [actividad] = await Clientes.db
       .update(actividades)
       .set({ fechaFinalizacion: fecha })
-      .where(and(eq(actividades.id, actividadId), isNull(actividades.fechaFinalizacion)))
+      .where(condicionPendiente(ref))
       .returning();
-    if (!actividad) return Clientes.fallarActividadNoPendiente(actividadId, "completar");
+    if (!actividad) return Clientes.fallarActividadNoPendiente(ref, "completar");
     return describirActividad(actividad);
   }
 
   /** Las completadas no se borran individualmente: solo desaparecen al eliminar su cliente. */
-  static async eliminarActividad(id: number | string): Promise<void> {
-    const actividadId = normalizarId(id);
+  static async eliminarActividad(clienteId: number | string, id: number | string): Promise<void> {
+    const ref = Clientes.referenciaActividad(clienteId, id);
     const eliminadas = await Clientes.db
       .delete(actividades)
-      .where(and(eq(actividades.id, actividadId), isNull(actividades.fechaFinalizacion)))
+      .where(condicionPendiente(ref))
       .returning({ id: actividades.id });
-    if (eliminadas.length === 0) await Clientes.fallarActividadNoPendiente(actividadId, "eliminar");
+    if (eliminadas.length === 0) await Clientes.fallarActividadNoPendiente(ref, "eliminar");
   }
 
   // ── Auxiliares ──
@@ -266,9 +291,18 @@ export class Clientes {
     if (existente) throw new ErrorConflicto(`Ya existe un cliente con el email ${email}`, "email");
   }
 
-  private static async exigirActividadPendiente(id: number, accion: string): Promise<Actividad> {
-    const [actividad] = await Clientes.db.select().from(actividades).where(eq(actividades.id, id));
+  private static referenciaActividad(clienteId: number | string, id: number | string): ReferenciaActividad {
+    return { clienteId: normalizarId(clienteId, "clienteId"), id: normalizarId(id) };
+  }
+
+  private static async exigirActividad(ref: ReferenciaActividad): Promise<Actividad> {
+    const [actividad] = await Clientes.db.select().from(actividades).where(condicionActividad(ref));
     if (!actividad) throw new ErrorNoEncontrado("Actividad no encontrada");
+    return actividad;
+  }
+
+  private static async exigirActividadPendiente(ref: ReferenciaActividad, accion: string): Promise<Actividad> {
+    const actividad = await Clientes.exigirActividad(ref);
     if (actividad.fechaFinalizacion !== null) {
       throw new ErrorReglaNegocio(`La actividad ya está completada: no se puede ${accion}`);
     }
@@ -276,8 +310,8 @@ export class Clientes {
   }
 
   /** Explica por qué una escritura condicionada a "pendiente" no afectó filas. */
-  private static async fallarActividadNoPendiente(id: number, accion: string): Promise<never> {
-    await Clientes.exigirActividadPendiente(id, accion);
+  private static async fallarActividadNoPendiente(ref: ReferenciaActividad, accion: string): Promise<never> {
+    await Clientes.exigirActividadPendiente(ref, accion);
     // Si llegó aquí, la actividad cambió de estado en medio de la operación.
     throw new ErrorConflicto("La actividad fue modificada por otra operación; vuelva a intentarlo");
   }

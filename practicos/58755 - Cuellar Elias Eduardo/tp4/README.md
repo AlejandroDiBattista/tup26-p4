@@ -29,6 +29,7 @@ cp .env.example .env
 | --------------------- | --------------------------------------------------------- | ------------------ |
 | `DATABASE_URL`        | `file:<archivo>.db` (SQLite) o `libsql://...` (Turso)     | `file:minicrm.db`  |
 | `DATABASE_AUTH_TOKEN` | Token de Turso. No hace falta en local.                   | —                  |
+| `PORT`                | Puerto del servidor HTTP.                                 | `3000`             |
 | `NODE_ENV`            | Con `production`, `DATABASE_URL` pasa a ser obligatoria.  | —                  |
 
 ### Producción con Turso
@@ -63,10 +64,33 @@ El seed carga 10 clientes ficticios con actividades completadas, pendientes con 
 
 Para empezar de cero, borre `minicrm.db` y vuelva a ejecutar `npm run db:setup`.
 
+## Ejecución
+
+En desarrollo (se reinicia al guardar cambios):
+
+```bash
+npm run dev
+```
+
+En producción, compilar y ejecutar:
+
+```bash
+npm run build
+```
+
+```bash
+npm start
+```
+
+El servidor queda en `http://localhost:3000`: la API bajo `/api` y la interfaz web (`public/MiniCRM.html`) en la raíz.
+
 ## Scripts
 
 | Script                | Acción                                                         |
 | --------------------- | -------------------------------------------------------------- |
+| `npm run dev`         | Servidor en modo desarrollo con recarga automática (tsx).      |
+| `npm run build`       | Compila TypeScript a `dist/`.                                  |
+| `npm start`           | Ejecuta la versión compilada.                                  |
 | `npm run db:generate` | Genera una nueva migración en `drizzle/` tras cambiar el esquema. |
 | `npm run db:migrate`  | Aplica las migraciones pendientes.                             |
 | `npm run db:seed`     | Carga los datos de ejemplo (sin duplicar).                     |
@@ -120,13 +144,16 @@ Las reglas de negocio viven en la clase `Clientes` ([src/servicios/clientes.ts](
 
 ### Actividades
 
-| Método                                   | Descripción                                         |
-| ---------------------------------------- | --------------------------------------------------- |
-| `listarActividades(clienteId)`           | Actividades del cliente con su estado.              |
-| `agregarActividad(clienteId, datos)`     | Alta (descripción única por cliente).               |
-| `actualizarActividad(id, cambios)`       | Edita descripción o fecha de compromiso.            |
-| `completarActividad(id, fecha?)`         | Registra la finalización (hoy por defecto).         |
-| `eliminarActividad(id)`                  | Borra una actividad pendiente.                      |
+| Método                                          | Descripción                                  |
+| ----------------------------------------------- | -------------------------------------------- |
+| `listarActividades(clienteId)`                  | Actividades del cliente con su estado.       |
+| `obtenerActividad(clienteId, id)`               | Una actividad del cliente.                   |
+| `agregarActividad(clienteId, datos)`            | Alta (descripción única por cliente).        |
+| `actualizarActividad(clienteId, id, cambios)`   | Edita descripción o fecha de compromiso.     |
+| `completarActividad(clienteId, id, fecha?)`     | Registra la finalización (hoy por defecto).  |
+| `eliminarActividad(clienteId, id)`              | Borra una actividad pendiente.               |
+
+Una actividad que pertenece a otro cliente se trata como inexistente.
 
 Cada actividad se devuelve con `estado`, `completada` y `vencida`:
 
@@ -160,13 +187,84 @@ Un campo opcional enviado vacío se guarda como `null`.
 | `ErrorConflicto`    | `CONFLICTO`     | Email o descripción repetidos.                   |
 | `ErrorReglaNegocio` | `REGLA_NEGOCIO` | Editar, completar o borrar una actividad completada. |
 
+## API REST
+
+Todas las rutas aceptan y devuelven JSON (`Content-Type: application/json`).
+
+### Clientes
+
+| Método           | Ruta                         | Descripción                              | Respuesta |
+| ---------------- | ---------------------------- | ---------------------------------------- | --------- |
+| `GET`            | `/api/clientes?q=texto`      | Lista; `q` es opcional (ver búsqueda)    | `200`     |
+| `POST`           | `/api/clientes`              | Alta                                     | `201` + `Location` |
+| `GET`            | `/api/clientes/:clienteId`   | Ficha con sus actividades                | `200`     |
+| `PUT` \| `PATCH` | `/api/clientes/:clienteId`   | Modifica los campos enviados             | `200`     |
+| `DELETE`         | `/api/clientes/:clienteId`   | Baja del cliente y sus actividades       | `204`     |
+
+### Actividades
+
+| Método           | Ruta                                                | Descripción                            | Respuesta |
+| ---------------- | --------------------------------------------------- | -------------------------------------- | --------- |
+| `GET`            | `/api/clientes/:clienteId/actividades`              | Lista con estado                       | `200`     |
+| `POST`           | `/api/clientes/:clienteId/actividades`              | Alta                                   | `201` + `Location` |
+| `GET`            | `/api/clientes/:clienteId/actividades/:id`          | Una actividad                          | `200`     |
+| `PUT` \| `PATCH` | `/api/clientes/:clienteId/actividades/:id`          | Edita descripción y/o compromiso       | `200`     |
+| `DELETE`         | `/api/clientes/:clienteId/actividades/:id`          | Baja (solo pendientes)                 | `204`     |
+| `POST`           | `/api/clientes/:clienteId/actividades/:id/completar`| Completa; body opcional `{ "fechaFinalizacion": "AAAA-MM-DD" }` | `200` |
+
+### Ejemplos
+
+```bash
+curl "http://localhost:3000/api/clientes?q=localidad:salta"
+```
+
+```bash
+curl -X POST http://localhost:3000/api/clientes -H "Content-Type: application/json" -d "{\"nombre\":\"ana\",\"apellido\":\"perez\",\"email\":\"Ana@Mail.com\"}"
+```
+
+```bash
+curl -X POST http://localhost:3000/api/clientes/1/actividades -H "Content-Type: application/json" -d "{\"descripcion\":\"Llamar\",\"fechaCompromiso\":\"2026-11-10\"}"
+```
+
+```bash
+curl -X POST http://localhost:3000/api/clientes/1/actividades/2/completar
+```
+
+### Errores
+
+Todos los errores responden con el mismo formato:
+
+```json
+{ "error": { "codigo": "VALIDACION", "mensaje": "El campo apellido es obligatorio", "campo": "apellido" } }
+```
+
+| Status | Código               | Causa                                                    |
+| ------ | -------------------- | -------------------------------------------------------- |
+| `400`  | `VALIDACION`         | Datos faltantes o con formato inválido (incluye ids).    |
+| `400`  | `SOLICITUD_INVALIDA` | El cuerpo no es un JSON válido.                          |
+| `404`  | `NO_ENCONTRADO`      | El cliente o la actividad no existen.                    |
+| `404`  | `RUTA_NO_ENCONTRADA` | La ruta no existe.                                       |
+| `409`  | `CONFLICTO`          | Email o descripción de actividad repetidos.              |
+| `422`  | `REGLA_NEGOCIO`      | Editar, completar o borrar una actividad completada.     |
+| `500`  | `INTERNO`            | Error inesperado (se registra en la consola del servidor). |
+
 ## Estructura
 
 ```
 tp4/
 ├── drizzle/              # Migraciones SQL generadas por drizzle-kit
+├── public/               # Archivos estáticos (interfaz web MiniCRM.html)
 ├── src/
+│   ├── index.ts          # Arranque del servidor HTTP
+│   ├── app.ts            # Configuración de Express (JSON, API, estáticos, errores)
 │   ├── config.ts         # Lectura y validación de variables de entorno
+│   ├── api/
+│   │   ├── index.ts                  # Router /api
+│   │   ├── clientes.routes.ts        # Rutas de clientes
+│   │   ├── clientes.controller.ts    # Controladores de clientes
+│   │   ├── actividades.routes.ts     # Rutas anidadas de actividades
+│   │   ├── actividades.controller.ts # Controladores de actividades
+│   │   └── errores.ts                # 404 y traducción de errores a HTTP
 │   ├── servicios/
 │   │   ├── clientes.ts   # Clase Clientes: reglas de negocio de clientes y actividades
 │   │   ├── normalizar.ts # Validación y normalización de entradas
@@ -179,6 +277,7 @@ tp4/
 │       ├── seed-data.ts  # Datos ficticios
 │       └── seed.ts       # Carga idempotente
 ├── drizzle.config.ts
-├── tsconfig.json
+├── tsconfig.json         # Configuración estricta (typecheck)
+├── tsconfig.build.json   # Compilación a dist/
 └── package.json
 ```
