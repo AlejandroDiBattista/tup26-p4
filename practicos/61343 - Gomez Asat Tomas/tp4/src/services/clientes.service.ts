@@ -58,6 +58,7 @@ async editar(
     return resultado[0] ?? null;
 },
 async eliminar(id: number){ //eliminacion en cascada de actividades asociadas al cliente
+    await db.delete(actividades).where(eq(actividades.clienteId, id));
     const resultado = await db
     .delete(actividades)
     .where(eq(clientes.id, id))
