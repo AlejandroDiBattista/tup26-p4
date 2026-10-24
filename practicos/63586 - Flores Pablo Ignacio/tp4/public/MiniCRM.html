@@ -6,86 +6,97 @@
 <title>MiniCRM</title>
 <style>
   :root {
-    --fondo: #f3f5f9; --panel: #fff; --borde: #dfe3ec; --texto: #1b2236; --suave: #6b7488;
-    --primario: #1f6feb; --primario-oscuro: #1858bc; --peligro: #d1344a; --ok: #2e9e6a;
-    --cabecera: #2c4268; --seleccion: #e6f0ff; --radio: 8px;
+    --fondo: #f6f3ee; --panel: #fffdfa; --borde: #e6e0d6; --texto: #1d2b2f; --suave: #76817f;
+    --lateral: #12323a; --lateral-2: #1b4650; --lateral-texto: #d6e4e6;
+    --acento: #0f9d8a; --acento-oscuro: #0b7d6e; --acento-suave: #e2f4f1;
+    --peligro: #c93c3c; --ok: #2f9e62; --aviso: #d98b1f; --radio: 10px;
+    --serif: Georgia, "Times New Roman", serif;
   }
   * { box-sizing: border-box; }
   html, body, #root { height: 100%; margin: 0; }
   body { overflow: hidden; background: var(--fondo); color: var(--texto); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   button, input { font: inherit; color: inherit; }
 
-  .app { height: 100%; display: flex; flex-direction: column; }
-  .cabecera { background: var(--cabecera); color: #fff; padding: 10px 24px; font-size: 22px; font-weight: 700; flex: none; }
-  .cuerpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 12px; padding: 12px; }
-  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; min-height: 0; display: flex; flex-direction: column; }
+  .app { height: 100%; }
+  .cuerpo { height: 100%; display: grid; grid-template-columns: minmax(270px, 330px) 1fr; }
 
-  /* maestro */
-  .maestro-cab { padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 10px; flex: none; }
+  /* barra lateral (maestro) */
+  .maestro { background: var(--lateral); color: var(--lateral-texto); display: flex; flex-direction: column; min-height: 0; }
+  .marca { display: flex; align-items: center; gap: 10px; padding: 20px 20px 4px; font-family: var(--serif); font-size: 24px; color: #fff; }
+  .marca i { width: 14px; height: 14px; border-radius: 4px; background: var(--acento); transform: rotate(45deg); }
+  .maestro-cab { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 12px; flex: none; }
   .maestro-cab .fila { display: flex; align-items: center; justify-content: space-between; }
-  h2 { margin: 0; font-size: 22px; }
-  h3 { margin: 0; font-size: 17px; }
+  .maestro h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #8fb0b5; font-family: inherit; }
   .busqueda { position: relative; }
-  .busqueda svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--suave); }
-  .busqueda input { width: 100%; padding: 9px 10px 9px 34px; border: 1px solid var(--borde); border-radius: var(--radio); }
-  .lista { flex: 1; min-height: 0; overflow-y: auto; }
-  .item { display: flex; gap: 12px; align-items: center; width: 100%; padding: 10px 14px; border: 0; border-top: 1px solid var(--borde); background: none; text-align: left; cursor: pointer; }
-  .item:hover { background: #f6f8fc; }
-  .item.activo { background: var(--seleccion); }
+  .busqueda svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #8fb0b5; }
+  .busqueda input { width: 100%; padding: 9px 10px 9px 36px; border: 1px solid transparent; border-radius: 999px; background: var(--lateral-2); color: #fff; }
+  .busqueda input::placeholder { color: #8fb0b5; }
+  .lista { flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 12px; scrollbar-width: thin; scrollbar-color: var(--lateral-2) transparent; }
+  .item { display: flex; gap: 12px; align-items: center; width: 100%; padding: 9px 10px; border: 0; border-left: 3px solid transparent; border-radius: 10px; background: none; text-align: left; cursor: pointer; color: inherit; margin-bottom: 2px; }
+  .item:hover { background: rgba(255,255,255,.06); }
+  .item.activo { background: var(--lateral-2); border-left-color: var(--acento); }
   .item .datos { min-width: 0; }
-  .item .nombre { font-weight: 600; }
-  .item .sub { color: var(--suave); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
-  .vacio { padding: 20px 14px; color: var(--suave); }
+  .item .nombre { font-weight: 600; color: #fff; }
+  .item .sub { color: #8fb0b5; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .avatar { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+  .vacio { padding: 20px 12px; color: #8fb0b5; }
 
   /* detalle */
-  .detalle { padding: 18px 22px; gap: 12px; overflow: hidden; position: relative; }
-  .detalle-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex: none; }
-  .detalle-cab h2 { font-size: 28px; }
-  .id { position: absolute; top: 10px; right: 16px; color: var(--suave); font-size: 14px; }
-  .acciones { display: flex; gap: 8px; margin-top: 14px; }
-  .ficha { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; padding-bottom: 12px; border-bottom: 1px solid var(--borde); flex: none; }
-  .dato { display: flex; gap: 10px; align-items: flex-start; color: var(--texto); min-width: 0; overflow-wrap: anywhere; }
-  .dato svg { color: var(--suave); flex: none; margin-top: 2px; }
+  .panel { min-height: 0; display: flex; flex-direction: column; }
+  .detalle { padding: 26px 34px 22px; gap: 14px; overflow: hidden; position: relative; }
+  h2 { margin: 0; font-size: 22px; }
+  h3 { margin: 0; font-size: 15px; letter-spacing: .02em; }
+  .detalle-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex: none; }
+  .detalle-cab h2 { font-family: var(--serif); font-size: 34px; font-weight: 400; }
+  .id { position: absolute; top: 14px; right: 24px; background: var(--acento-suave); color: var(--acento-oscuro); font-weight: 600; font-size: 13px; padding: 2px 10px; border-radius: 999px; }
+  .acciones { display: flex; gap: 8px; margin-top: 16px; }
+  .ficha { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
+  .dato { display: inline-flex; gap: 8px; align-items: center; padding: 6px 12px; background: var(--panel); border: 1px solid var(--borde); border-radius: 999px; min-width: 0; }
+  .dato svg { color: var(--acento); flex: none; }
   .dato.tenue { color: var(--suave); }
 
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: #fff; cursor: pointer; white-space: nowrap; }
-  .btn:hover { background: #f3f5f9; }
-  .btn.primario { background: var(--primario); border-color: var(--primario); color: #fff; }
-  .btn.primario:hover { background: var(--primario-oscuro); }
-  .btn.peligro { color: var(--peligro); border-color: #f0c0c8; }
-  .btn.peligro:hover { background: #fdf0f2; }
-  .btn.icono { padding: 6px; }
-  .btn:focus-visible, input:focus-visible, .item:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--panel); cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: #f1ece3; }
+  .btn.primario { background: var(--acento); border-color: var(--acento); color: #fff; }
+  .btn.primario:hover { background: var(--acento-oscuro); }
+  .btn.peligro { color: var(--peligro); border-color: transparent; background: transparent; }
+  .btn.peligro:hover { background: #fbeaea; }
+  .btn.icono { padding: 6px; border-radius: 8px; }
+  .maestro .btn.primario { padding: 6px 14px; }
+  .btn:focus-visible, input:focus-visible, .item:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
 
   /* formularios */
-  .form { display: flex; flex-direction: column; gap: 10px; flex: none; }
+  .form { display: flex; flex-direction: column; gap: 10px; flex: none; padding: 14px; background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; }
   .form .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .form-botones { display: flex; gap: 8px; }
-  .campo { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--suave); }
-  .campo input, .sub-form input { padding: 8px 10px; border: 1px solid var(--borde); border-radius: var(--radio); color: var(--texto); background: #fff; font-size: 15px; }
-  .sub-form { display: flex; gap: 8px; align-items: center; padding: 10px; border: 2px dashed #c4ccdc; border-radius: 12px; flex: none; }
+  .campo { display: flex; flex-direction: column; gap: 3px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); }
+  .campo input, .sub-form input { padding: 8px 10px; border: 1px solid var(--borde); border-radius: var(--radio); color: var(--texto); background: #fff; font-size: 15px; text-transform: none; letter-spacing: 0; }
+  .sub-form { display: flex; gap: 8px; align-items: center; padding: 10px; border: 2px dashed #9ed6cd; background: var(--acento-suave); border-radius: 14px; flex: none; }
   .sub-form input[type=text] { flex: 1; min-width: 0; }
   .sub-form input[type=date] { width: 160px; }
-  .error { background: #fdf0f2; color: var(--peligro); border: 1px solid #f0c0c8; border-radius: var(--radio); padding: 8px 12px; flex: none; }
+  .error { background: #fbeaea; color: var(--peligro); border: 1px solid #efc3c3; border-radius: var(--radio); padding: 8px 12px; flex: none; }
 
   /* actividades */
   .grupo { display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto; }
-  .grupo h3 { padding: 2px 0 6px; flex: none; }
-  .grupo .cuerpo-grupo { overflow-y: auto; min-height: 0; border: 1px solid var(--borde); border-radius: var(--radio); }
-  .grupo.completadas .cuerpo-grupo { background: #f3faf6; }
-  .actividad { display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--borde); }
-  .actividad:first-child { border-top: 0; }
-  .actividad input[type=checkbox] { width: 18px; height: 18px; flex: none; cursor: pointer; accent-color: var(--ok); }
+  .grupo h3 { padding: 2px 0 8px; flex: none; display: flex; align-items: center; gap: 8px; }
+  .cuenta { background: var(--lateral); color: #fff; border-radius: 999px; font-size: 12px; padding: 0 8px; }
+  .grupo .cuerpo-grupo { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
+  .actividad { display: flex; gap: 12px; align-items: center; padding: 8px 12px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid #c9c2b5; border-radius: var(--radio); flex: none; }
+  .actividad.futura { border-left-color: var(--acento); }
+  .actividad.vencida-fila { border-left-color: var(--peligro); }
+  .actividad.hecha { border-left-color: var(--ok); background: #f1f8f3; }
+  .actividad.hecha .texto > div:first-child { color: var(--suave); text-decoration: line-through; }
+  .actividad input[type=checkbox] { width: 20px; height: 20px; flex: none; cursor: pointer; accent-color: var(--ok); }
   .actividad .texto { flex: 1; min-width: 0; }
   .actividad .fecha { color: var(--suave); font-size: 13px; }
-  .actividad .fecha.vencida { color: var(--peligro); }
-  .vacio-chico { padding: 6px 12px; color: var(--suave); font-size: 13px; }
-  .centro { flex: 1; display: grid; place-items: center; color: var(--suave); }
+  .actividad .fecha.vencida { color: var(--peligro); font-weight: 600; }
+  .vacio-chico { padding: 2px 4px; color: var(--suave); font-size: 13px; }
+  .centro { flex: 1; display: grid; place-items: center; color: var(--suave); font-family: var(--serif); font-size: 20px; }
 
   @media (max-width: 760px) {
-    .cuerpo { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; }
-    .ficha { grid-template-columns: 1fr; }
+    .cuerpo { grid-template-columns: 1fr; grid-template-rows: 42% 1fr; }
+    .detalle { padding: 16px; }
+    .detalle-cab h2 { font-size: 26px; }
     .sub-form { flex-wrap: wrap; }
   }
 </style>
@@ -191,7 +202,8 @@ function Avatar({ cliente }) {
 /* ---------- Maestro ---------- */
 function Maestro({ clientes, seleccionado, busqueda, alBuscar, alElegir, alAgregar }) {
   return (
-    <section className="panel" aria-label="Clientes">
+    <section className="maestro" aria-label="Clientes">
+      <div className="marca"><i />MiniCRM</div>
       <div className="maestro-cab">
         <div className="fila">
           <h2>Clientes</h2>
@@ -271,7 +283,7 @@ function Actividad({ actividad, alCompletar, alEditar, alBorrar }) {
   const completa = Boolean(fechaFinalizacion)
   const vencida = !completa && fechaCompromiso && fechaCompromiso < hoy()
   return (
-    <div className="actividad">
+    <div className={`actividad ${completa ? 'hecha' : vencida ? 'vencida-fila' : fechaCompromiso ? 'futura' : ''}`}>
       <input type="checkbox" checked={completa} disabled={completa} onChange={() => alCompletar(actividad)} aria-label={`Completar: ${descripcion}`} />
       <div className="texto">
         <div>{descripcion}</div>
@@ -293,7 +305,7 @@ function Grupo({ titulo, clase, vacio, children }) {
   const vacia = React.Children.count(children) === 0
   return (
     <section className={`grupo ${clase}`} aria-label={titulo}>
-      <h3>{titulo}</h3>
+      <h3>{titulo}<span className="cuenta">{React.Children.count(children)}</span></h3>
       <div className="cuerpo-grupo">{vacia ? <div className="vacio-chico">{vacio}</div> : children}</div>
     </section>
   )
@@ -395,7 +407,6 @@ function App() {
 
   return (
     <div className="app">
-      <header className="cabecera">MiniCRM</header>
       <main className="cuerpo">
         <Maestro clientes={clientes} seleccionado={seleccionado} busqueda={busqueda} alBuscar={setBusqueda} alElegir={elegir} alAgregar={() => { setSeleccionado(null); cambiarModo('nuevo') }} />
         <Detalle cliente={cliente} modo={modo} error={error} alModo={cambiarModo} alGuardarCliente={guardarCliente} alEliminar={eliminar} alRecargar={recargar} alError={setError} />
