@@ -1,4 +1,5 @@
 import { count } from 'drizzle-orm'
+import { pathToFileURL } from 'node:url'
 import { db } from './db/conexion.js'
 import { actividades, clientes } from './db/esquema.js'
 
@@ -41,21 +42,26 @@ const tareas: [number, string, string | null, string | null][] = [
   [9, 'Llamar para ofrecer capacitación', dia(-1), null],
 ]
 
-const [{ total }] = await db.select({ total: count() }).from(clientes)
-if (total > 0) {
-  console.log(`La base ya tiene ${total} clientes: no se vuelve a sembrar.`)
-} else {
-  const creados = await db
-    .insert(clientes)
-    .values(datos.map(([nombre, apellido, email, domicilio, localidad, telefono]) => ({ nombre, apellido, email, domicilio, localidad, telefono })))
-    .returning({ id: clientes.id })
-  await db.insert(actividades).values(
-    tareas.map(([i, descripcion, fechaCompromiso, fechaFinalizacion]) => ({
-      clienteId: creados[i].id,
-      descripcion,
-      fechaCompromiso,
-      fechaFinalizacion,
-    })),
-  )
-  console.log(`Sembrados ${creados.length} clientes y ${tareas.length} actividades.`)
+export async function sembrar() {
+  const [{ total }] = await db.select({ total: count() }).from(clientes)
+  if (total > 0) {
+    console.log(`La base ya tiene ${total} clientes: no se vuelve a sembrar.`)
+  } else {
+    const creados = await db
+      .insert(clientes)
+      .values(datos.map(([nombre, apellido, email, domicilio, localidad, telefono]) => ({ nombre, apellido, email, domicilio, localidad, telefono })))
+      .returning({ id: clientes.id })
+    await db.insert(actividades).values(
+      tareas.map(([i, descripcion, fechaCompromiso, fechaFinalizacion]) => ({
+        clienteId: creados[i].id,
+        descripcion,
+        fechaCompromiso,
+        fechaFinalizacion,
+      })),
+    )
+    console.log(`Sembrados ${creados.length} clientes y ${tareas.length} actividades.`)
+  }
 }
+
+// Al ejecutarse directamente (npm run seed) siembra la base.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await sembrar()
