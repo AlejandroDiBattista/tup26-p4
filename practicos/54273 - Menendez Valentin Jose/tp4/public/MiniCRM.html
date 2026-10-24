@@ -393,47 +393,152 @@
       padding-top: 16px;
     }
 
+    .seccion-bloque {
+      margin-bottom: 22px;
+    }
+
+    .seccion-bloque:last-child {
+      margin-bottom: 0;
+    }
+
     .seccion-titulo {
       font-size: 18px;
       font-weight: 700;
       color: #0f172a;
-      margin: 0 0 12px 0;
+      margin: 0 0 10px 0;
     }
 
-    .lista-actividades-lectura {
+    .bloque-compromisos {
       border: 1px solid #e2e8f0;
       border-radius: 10px;
       overflow: hidden;
+      background: #ffffff;
     }
 
-    .item-actividad-lectura {
+    .fila-compromiso {
+      display: flex;
+      align-items: center;
+      gap: 14px;
       padding: 12px 16px;
       border-bottom: 1px solid #eef2f6;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      background: #ffffff;
     }
 
-    .item-actividad-lectura:last-child {
+    .fila-compromiso:last-child {
       border-bottom: none;
     }
 
-    .actividad-descripcion {
-      font-weight: 600;
-      font-size: 14px;
-      color: #0f172a;
+    .checkbox-compromiso {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      cursor: pointer;
+      accent-color: #1d72e8;
+      margin: 0;
     }
 
-    .actividad-meta {
+    .actividad-centro {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .actividad-descripcion {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .actividad-fecha {
       font-size: 13px;
       color: #64748b;
     }
 
+    .actividad-fecha.vencida {
+      color: #c5221f;
+      font-weight: 500;
+    }
+
+    .compromiso-acciones {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-icono-cuadrado {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #ffffff;
+      padding: 0;
+    }
+
+    .btn-icono-editar {
+      border: 1px solid #cbd5e1;
+      color: #334155;
+    }
+
+    .btn-icono-editar:hover {
+      background: #f8fafc;
+    }
+
+    .btn-icono-eliminar {
+      border: 1px solid #f1b5b1;
+      background: #fffafa;
+      color: #d93025;
+    }
+
+    .btn-icono-eliminar:hover {
+      background: #fef2f2;
+    }
+
+    .bloque-completadas {
+      border: 1px solid #d7ece0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f1f9f4;
+    }
+
+    .fila-completada {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e1f2e8;
+      background: #f1f9f4;
+    }
+
+    .fila-completada:last-child {
+      border-bottom: none;
+    }
+
+    .icono-completada {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      border-radius: 5px;
+      background: #4caf7a;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     .estado-vacio {
-      padding: 24px;
+      padding: 18px;
       text-align: center;
       color: #64748b;
       font-size: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fafbfc;
     }
 
     .alerta-error {
@@ -496,6 +601,14 @@
       return `${inicialNombre}${inicialApellido}` || 'CL';
     }
 
+    function obtenerFechaLocalHoy() {
+      const hoy = new Date();
+      const anio = hoy.getFullYear();
+      const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+      const dia = String(hoy.getDate()).padStart(2, '0');
+      return `${anio}-${mes}-${dia}`;
+    }
+
     function formatearFechaLocal(fechaStr) {
       if (!fechaStr) return 'Sin fecha';
       const fecha = new Date(`${fechaStr}T00:00:00`);
@@ -509,6 +622,35 @@
         .replace('.', '');
     }
 
+    function obtenerGrupoCompromiso(fechaCompromiso, hoy) {
+      if (!fechaCompromiso) return 0;
+      if (fechaCompromiso < hoy) return 1;
+      return 2;
+    }
+
+    function ordenarCompromisos(lista, hoy) {
+      return [...lista].sort((a, b) => {
+        const grupoA = obtenerGrupoCompromiso(a.fechaCompromiso, hoy);
+        const grupoB = obtenerGrupoCompromiso(b.fechaCompromiso, hoy);
+        if (grupoA !== grupoB) return grupoA - grupoB;
+        if (a.fechaCompromiso && b.fechaCompromiso) {
+          const cmp = a.fechaCompromiso.localeCompare(b.fechaCompromiso);
+          if (cmp !== 0) return cmp;
+        }
+        return a.id - b.id;
+      });
+    }
+
+    function ordenarCompletadas(lista) {
+      return [...lista].sort((a, b) => {
+        const fechaA = a.fechaFinalizacion || '';
+        const fechaB = b.fechaFinalizacion || '';
+        const cmp = fechaB.localeCompare(fechaA);
+        if (cmp !== 0) return cmp;
+        return b.id - a.id;
+      });
+    }
+
     function App() {
       const [clientes, setClientes] = useState([]);
       const [busqueda, setBusqueda] = useState('');
@@ -517,6 +659,16 @@
       const [modoCliente, setModoCliente] = useState('ver');
       const [formCliente, setFormCliente] = useState(FORMULARIO_CLIENTE_VACIO);
       const [error, setError] = useState('');
+
+      const hoy = obtenerFechaLocalHoy();
+      const todasActividades = clienteDetalle?.actividades || [];
+      const compromisos = ordenarCompromisos(
+        todasActividades.filter((a) => a.fechaFinalizacion === null),
+        hoy
+      );
+      const actividadesCompletadas = ordenarCompletadas(
+        todasActividades.filter((a) => a.fechaFinalizacion !== null)
+      );
 
       async function cargarClientes(terminoBusqueda, idPreferido) {
         try {
@@ -893,25 +1045,94 @@
 
               {clienteDetalle && modoCliente !== 'crear' && (
                 <div className="detalle-scroll">
-                  <h2 className="seccion-titulo">Actividades</h2>
-                  {(!clienteDetalle.actividades || clienteDetalle.actividades.length === 0) ? (
-                    <div className="estado-vacio">Este cliente no registra actividades.</div>
-                  ) : (
-                    <div className="lista-actividades-lectura">
-                      {clienteDetalle.actividades.map((act) => (
-                        <div key={act.id} className="item-actividad-lectura">
-                          <div className="actividad-descripcion">{act.descripcion}</div>
-                          <div className="actividad-meta">
-                            {act.fechaFinalizacion
-                              ? `Completada el ${formatearFechaLocal(act.fechaFinalizacion)}`
-                              : act.fechaCompromiso
-                              ? formatearFechaLocal(act.fechaCompromiso)
-                              : 'Sin fecha'}
+                  <div className="seccion-bloque">
+                    <h2 className="seccion-titulo">Compromisos</h2>
+                    {compromisos.length === 0 ? (
+                      <div className="estado-vacio">No hay compromisos pendientes.</div>
+                    ) : (
+                      <div className="bloque-compromisos">
+                        {compromisos.map((act) => {
+                          const esVencida =
+                            act.fechaCompromiso !== null && act.fechaCompromiso < hoy;
+                          return (
+                            <div key={act.id} className="fila-compromiso">
+                              <input
+                                type="checkbox"
+                                className="checkbox-compromiso"
+                                checked={false}
+                                readOnly
+                                aria-label={`Completar ${act.descripcion}`}
+                              />
+                              <div className="actividad-centro">
+                                <div className="actividad-descripcion">{act.descripcion}</div>
+                                {!act.fechaCompromiso ? (
+                                  <div className="actividad-fecha">Sin fecha</div>
+                                ) : esVencida ? (
+                                  <div className="actividad-fecha vencida">
+                                    {formatearFechaLocal(act.fechaCompromiso)} · Vencido
+                                  </div>
+                                ) : (
+                                  <div className="actividad-fecha">
+                                    {formatearFechaLocal(act.fechaCompromiso)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="compromiso-acciones">
+                                <button
+                                  type="button"
+                                  className="btn-icono-cuadrado btn-icono-editar"
+                                  title="Editar actividad"
+                                  aria-label="Editar actividad"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-icono-cuadrado btn-icono-eliminar"
+                                  title="Eliminar actividad"
+                                  aria-label="Eliminar actividad"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="seccion-bloque">
+                    <h2 className="seccion-titulo">Actividades completadas</h2>
+                    {actividadesCompletadas.length === 0 ? (
+                      <div className="estado-vacio">No hay actividades completadas.</div>
+                    ) : (
+                      <div className="bloque-completadas">
+                        {actividadesCompletadas.map((act) => (
+                          <div key={act.id} className="fila-completada">
+                            <div className="icono-completada" aria-hidden="true">
+                              ✓
+                            </div>
+                            <div className="actividad-centro">
+                              <div className="actividad-descripcion">{act.descripcion}</div>
+                              <div className="actividad-fecha">
+                                Completada el {formatearFechaLocal(act.fechaFinalizacion)}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </section>
