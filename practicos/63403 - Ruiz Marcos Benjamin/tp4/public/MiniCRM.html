@@ -120,6 +120,53 @@
     }
     .campo input:focus { border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
     .acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* Maestro y detalle */
+    .maestro-detalle {
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(260px, 340px) 1fr;
+      gap: 16px;
+    }
+
+    .buscador {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      color: var(--suave);
+      border-bottom: 1px solid var(--borde);
+    }
+    .buscador input {
+      flex: 1; min-width: 0;
+      font: inherit; color: var(--texto);
+      border: none; outline: none; background: transparent;
+    }
+
+    .lista-item.seleccionable { cursor: pointer; }
+    .lista-item.seleccionable:hover { background: var(--fondo); }
+    .lista-item.activo, .lista-item.activo:hover { background: var(--acento-suave); box-shadow: inset 3px 0 var(--acento); }
+
+    .ficha { padding: 14px; border-bottom: 1px solid var(--borde); }
+    .ficha-cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .ficha-cabecera h3 { font-size: 18px; font-weight: 600; margin: 0; }
+    .ficha .id { color: var(--suave); font-variant-numeric: tabular-nums; }
+    .ficha dl {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px; margin: 12px 0 0;
+    }
+    .ficha dt { font-size: 12px; color: var(--suave); }
+    .ficha dd { margin: 0; overflow-wrap: anywhere; }
+
+    .seccion-titulo {
+      font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+      color: var(--suave);
+      margin: 0; padding: 12px 14px 4px;
+    }
+
+    .vacio-detalle {
+      height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--suave);
+    }
   </style>
 </head>
 <body>
@@ -144,6 +191,7 @@
 
     const api = {
       listarClientes: (q = '') => pedir(`/api/clientes?q=${encodeURIComponent(q)}`),
+      obtenerCliente: id => pedir(`/api/clientes/${id}`),
     };
 
     // ================= Componentes base =================
@@ -228,44 +276,168 @@
       return <ul className="lista">{items.map(render)}</ul>;
     }
 
+    function Buscador({ valor, onCambiar }) {
+      return (
+        <label className="buscador">
+          <Icono nombre="buscar" />
+          <input
+            type="search"
+            placeholder="Buscar por cualquier campo…"
+            aria-label="Buscar clientes"
+            value={valor}
+            onChange={e => onCambiar(e.target.value)}
+          />
+        </label>
+      );
+    }
+
     // ================= Componentes de clientes =================
 
     const nombreCompleto = c => `${c.apellido}, ${c.nombre}`;
 
-    function ItemCliente({ cliente }) {
+    function ItemCliente({ cliente, activo, onSeleccionar }) {
       return (
-        <li className="lista-item">
+        <li
+          className={`lista-item seleccionable ${activo ? 'activo' : ''}`}
+          onClick={() => onSeleccionar(cliente.id)}
+          aria-current={activo || undefined}
+        >
           <div className="titulo">{nombreCompleto(cliente)}</div>
           <div className="detalle">{[cliente.email, cliente.localidad].filter(Boolean).join(' · ')}</div>
         </li>
       );
     }
 
-    function ListaClientes({ clientes }) {
+    function ListaClientes({ clientes, seleccionado, onSeleccionar }) {
       return (
         <Lista
           items={clientes}
-          vacio="No hay clientes."
-          render={c => <ItemCliente key={c.id} cliente={c} />}
+          vacio="No se encontraron clientes."
+          render={c => (
+            <ItemCliente key={c.id} cliente={c} activo={c.id === seleccionado} onSeleccionar={onSeleccionar} />
+          )}
         />
+      );
+    }
+
+    function FichaCliente({ cliente }) {
+      const datos = [
+        ['Email', cliente.email],
+        ['Teléfono', cliente.telefono],
+        ['Domicilio', cliente.domicilio],
+        ['Localidad', cliente.localidad],
+      ];
+      return (
+        <div className="ficha">
+          <div className="ficha-cabecera">
+            <h3>{cliente.nombre} {cliente.apellido}</h3>
+            <span className="id">#{cliente.id}</span>
+          </div>
+          <dl>
+            {datos.map(([etiqueta, valor]) => (
+              <div key={etiqueta}>
+                <dt>{etiqueta}</dt>
+                <dd>{valor || '—'}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      );
+    }
+
+    // ================= Componentes de actividades =================
+
+    function ItemActividad({ actividad }) {
+      const fecha = actividad.completada
+        ? `Completada el ${actividad.fechaFinalizacion}`
+        : actividad.fechaCompromiso ? `Compromiso: ${actividad.fechaCompromiso}` : 'Sin compromiso';
+      return (
+        <li className="lista-item">
+          <div className="titulo">{actividad.descripcion}</div>
+          <div className="detalle">{fecha}</div>
+        </li>
+      );
+    }
+
+    function ListaActividades({ actividades }) {
+      return (
+        <Lista
+          items={actividades}
+          vacio="Sin actividades."
+          render={a => <ItemActividad key={a.id} actividad={a} />}
+        />
+      );
+    }
+
+    // ================= Maestro y detalle =================
+
+    function Maestro({ busqueda, onBuscar, clientes, seleccionado, onSeleccionar, error }) {
+      return (
+        <section className="panel">
+          <div className="panel-cabecera"><h2>Clientes ({clientes.length})</h2></div>
+          <Buscador valor={busqueda} onCambiar={onBuscar} />
+          <div className="panel-cuerpo">
+            {error
+              ? <p className="mensaje error">{error}</p>
+              : <ListaClientes clientes={clientes} seleccionado={seleccionado} onSeleccionar={onSeleccionar} />}
+          </div>
+        </section>
+      );
+    }
+
+    function Detalle({ cliente }) {
+      if (!cliente) {
+        return <section className="panel"><div className="vacio-detalle">Seleccioná un cliente para ver su ficha.</div></section>;
+      }
+      return (
+        <section className="panel">
+          <FichaCliente cliente={cliente} />
+          <h4 className="seccion-titulo">Actividades</h4>
+          <div className="panel-cuerpo">
+            <ListaActividades actividades={cliente.actividades} />
+          </div>
+        </section>
       );
     }
 
     // ================= Aplicación =================
 
     function App() {
+      const [busqueda, setBusqueda] = useState('');
       const [clientes, setClientes] = useState([]);
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [cliente, setCliente] = useState(null);
       const [error, setError] = useState('');
 
+      // Búsqueda en vivo (espera 250 ms después de la última tecla)
       useEffect(() => {
-        api.listarClientes().then(setClientes).catch(e => setError(e.message));
-      }, []);
+        const espera = setTimeout(() => {
+          api.listarClientes(busqueda)
+            .then(lista => { setClientes(lista); setError(''); })
+            .catch(e => setError(e.message));
+        }, 250);
+        return () => clearTimeout(espera);
+      }, [busqueda]);
+
+      // Al seleccionar, trae la ficha con sus actividades
+      useEffect(() => {
+        if (!seleccionado) { setCliente(null); return; }
+        api.obtenerCliente(seleccionado).then(setCliente).catch(e => setError(e.message));
+      }, [seleccionado]);
 
       return (
         <Layout>
-          <Panel titulo={`Clientes (${clientes.length})`}>
-            {error ? <p className="mensaje error">{error}</p> : <ListaClientes clientes={clientes} />}
-          </Panel>
+          <div className="maestro-detalle">
+            <Maestro
+              busqueda={busqueda}
+              onBuscar={setBusqueda}
+              clientes={clientes}
+              seleccionado={seleccionado}
+              onSeleccionar={setSeleccionado}
+              error={error}
+            />
+            <Detalle cliente={cliente} />
+          </div>
         </Layout>
       );
     }
