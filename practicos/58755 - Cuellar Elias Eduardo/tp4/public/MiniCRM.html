@@ -14,14 +14,18 @@
       --color-texto: #1d2633;
       --color-suave: #5f6b7a;
       --color-borde: #e1e6ed;
+      --color-borde-fuerte: #c9d1dc;
       --color-hover: #f5f8fc;
       --color-seleccion: #e6f0fd;
       --color-primario: #2470dc;
+      --color-primario-hover: #1c5fc0;
       --color-peligro: #d03535;
+      --color-peligro-fondo: #fdf1f1;
       --color-exito: #2f9e5b;
       --color-exito-fondo: #f2faf5;
 
       --radio: 10px;
+      --radio-control: 8px;
       --espacio: 16px;
       --sombra: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 8%);
       --fuente: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -43,7 +47,7 @@
 
     h1, h2, h3, p, ul { margin: 0; }
     ul { padding: 0; list-style: none; }
-    button { font: inherit; color: inherit; }
+    button, input { font: inherit; color: inherit; }
 
     .app {
       display: flex;
@@ -83,24 +87,70 @@
 
     .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 
+    /* ── Botones ────────────────────────────────────────────────────────── */
+    .boton {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 14px;
+      border: 1px solid var(--color-borde-fuerte);
+      border-radius: var(--radio-control);
+      background: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color .15s, border-color .15s;
+    }
+    .boton:hover { background: var(--color-hover); }
+    .boton:focus-visible, .boton-icono:focus-visible, .marca:focus-visible {
+      outline: 2px solid var(--color-primario); outline-offset: 2px;
+    }
+    .boton:disabled, .boton-icono:disabled, .marca:disabled { opacity: .55; cursor: not-allowed; }
+    .boton svg, .boton-icono svg { width: 17px; height: 17px; flex: none; }
+
+    .boton.primario { background: var(--color-primario); border-color: var(--color-primario); color: #fff; }
+    .boton.primario:hover:not(:disabled) { background: var(--color-primario-hover); }
+    .boton.peligro { color: var(--color-peligro); border-color: #f0b4b4; }
+    .boton.peligro:hover:not(:disabled) { background: var(--color-peligro-fondo); }
+
+    .boton-icono {
+      display: inline-grid; place-items: center;
+      width: 36px; height: 36px; flex: none;
+      border: 1px solid var(--color-borde-fuerte);
+      border-radius: var(--radio-control);
+      background: #fff;
+      cursor: pointer;
+    }
+    .boton-icono:hover:not(:disabled) { background: var(--color-hover); }
+    .boton-icono.primario { background: var(--color-primario); border-color: var(--color-primario); color: #fff; }
+    .boton-icono.primario:hover:not(:disabled) { background: var(--color-primario-hover); }
+    .boton-icono.peligro { color: var(--color-peligro); }
+    .boton-icono.peligro:hover:not(:disabled) { background: var(--color-peligro-fondo); }
+
+    /* ── Controles de formulario ────────────────────────────────────────── */
+    .control {
+      width: 100%;
+      min-width: 0;
+      padding: 9px 12px;
+      border: 1px solid var(--color-borde-fuerte);
+      border-radius: var(--radio-control);
+      background: #fff;
+    }
+    .control:focus { outline: 2px solid var(--color-primario); outline-offset: -1px; border-color: transparent; }
+    .control[aria-invalid="true"] { border-color: var(--color-peligro); }
+    .control::placeholder { color: #8a95a3; }
+
+    .error-formulario { color: var(--color-peligro); font-size: 14px; }
+
     /* ── Maestro ────────────────────────────────────────────────────────── */
     .maestro-cabecera { flex: none; padding: 20px 20px 14px; }
-    .maestro-cabecera h2 { font-size: 22px; margin-bottom: 14px; }
+    .maestro-titulo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .maestro-titulo h2 { font-size: 22px; }
 
     .buscador { position: relative; }
     .buscador svg {
       position: absolute; left: 12px; top: 50%; translate: 0 -50%;
       width: 18px; height: 18px; color: var(--color-suave); pointer-events: none;
     }
-    .buscador input {
-      width: 100%;
-      padding: 10px 12px 10px 38px;
-      border: 1px solid var(--color-borde);
-      border-radius: 8px;
-      font: inherit;
-      background: #fff;
-    }
-    .buscador input:focus { outline: 2px solid var(--color-primario); outline-offset: -1px; }
+    .buscador .control { padding-left: 38px; }
 
     .contador { margin-top: 8px; font-size: 13px; color: var(--color-suave); }
 
@@ -131,7 +181,7 @@
       font-weight: 600; font-size: 15px;
     }
 
-    /* ── Detalle ────────────────────────────────────────────────────────── */
+    /* ── Detalle: ficha ─────────────────────────────────────────────────── */
     .ficha {
       flex: none;
       position: relative;
@@ -139,7 +189,9 @@
       border-bottom: 1px solid var(--color-borde);
     }
     .ficha-id { position: absolute; top: 14px; right: 20px; color: var(--color-suave); font-variant-numeric: tabular-nums; }
-    .ficha h2 { font-size: 28px; line-height: 1.2; margin: 0 60px 16px 0; }
+    .ficha-cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 0 16px; }
+    .ficha h2 { font-size: 28px; line-height: 1.2; overflow-wrap: anywhere; }
+    .ficha-acciones { display: flex; gap: 8px; flex: none; margin-top: 18px; }
 
     .ficha-datos {
       display: grid;
@@ -152,7 +204,34 @@
     .dato span { overflow-wrap: anywhere; }
     .dato-vacio { color: var(--color-suave); font-style: italic; }
 
-    .actividades { padding: 20px 28px 24px; }
+    /* ── Detalle: formulario de cliente ─────────────────────────────────── */
+    .formulario-cliente { display: grid; gap: 14px; }
+    .formulario-cliente h2 { font-size: 22px; margin-right: 60px; }
+    .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    .campo { display: grid; gap: 4px; min-width: 0; }
+    .campo label { font-size: 13px; font-weight: 500; color: var(--color-suave); }
+    .campo abbr { color: var(--color-peligro); text-decoration: none; }
+    .formulario-acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+    .detalle-formulario { padding: 24px 28px; position: relative; }
+
+    /* ── Detalle: subformulario de actividades ──────────────────────────── */
+    .subformulario {
+      flex: none;
+      margin: 16px 28px 0;
+      padding: 12px;
+      border: 2px dotted var(--color-borde-fuerte);
+      border-radius: 12px;
+      transition: border-color .15s, background-color .15s;
+    }
+    .subformulario.editando { border-color: var(--color-primario); background: #f7faff; }
+    .subformulario-linea { display: flex; gap: 8px; align-items: center; }
+    .subformulario-linea .descripcion { flex: 1 1 auto; }
+    .subformulario-linea .fecha { flex: 0 0 170px; }
+    .subformulario .error-formulario { margin-top: 8px; }
+
+    /* ── Detalle: actividades ───────────────────────────────────────────── */
+    .actividades { padding: 18px 28px 24px; }
     .actividades section + section { margin-top: 24px; }
     .actividades h3 { font-size: 18px; margin-bottom: 10px; }
     .actividades h3 small { font-weight: 400; color: var(--color-suave); font-size: 14px; }
@@ -160,21 +239,31 @@
     .lista-actividades { border: 1px solid var(--color-borde); border-radius: var(--radio); overflow: hidden; }
     .lista-actividades.completadas { background: var(--color-exito-fondo); }
 
-    .actividad { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; }
+    .actividad { display: flex; gap: 14px; align-items: center; padding: 10px 12px 10px 16px; transition: background-color .15s; }
     .actividad + .actividad { border-top: 1px solid var(--color-borde); }
+    .actividad.editando { background: var(--color-seleccion); }
+    .actividad-texto { flex: 1; min-width: 0; }
     .actividad-descripcion { overflow-wrap: anywhere; }
     .actividad-fecha { font-size: 14px; color: var(--color-suave); }
     .actividad-fecha.vencida { color: var(--color-peligro); }
+    .actividad-acciones { display: flex; gap: 6px; flex: none; }
+    .actividad-acciones .boton-icono { width: 34px; height: 34px; }
 
     .marca {
       flex: none;
       display: grid; place-items: center;
-      width: 20px; height: 20px; margin-top: 2px;
-      border: 2px solid #b7c0cc; border-radius: 5px;
+      width: 22px; height: 22px;
+      padding: 0;
+      border: 2px solid #b7c0cc; border-radius: 6px;
+      background: #fff;
       color: #fff;
     }
+    button.marca { cursor: pointer; }
+    button.marca:hover:not(:disabled) { border-color: var(--color-exito); color: var(--color-exito); }
     .marca.hecha { background: var(--color-exito); border-color: var(--color-exito); }
     .marca svg { width: 14px; height: 14px; }
+    button.marca svg { opacity: 0; }
+    button.marca:hover:not(:disabled) svg { opacity: 1; }
 
     /* ── Estados ────────────────────────────────────────────────────────── */
     .aviso {
@@ -183,22 +272,37 @@
       color: var(--color-suave);
     }
     .aviso.error { color: var(--color-peligro); }
-    .aviso button {
-      margin-top: 10px; padding: 6px 14px;
-      border: 1px solid var(--color-borde); border-radius: 8px; background: #fff; cursor: pointer;
-    }
+    .aviso .boton { margin-top: 10px; }
     .detalle-vacio { flex: 1; display: grid; place-items: center; }
     .lista-actividades .aviso { padding: 16px; }
+
+    .banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 16px; padding: 10px 12px 10px 16px;
+      border: 1px solid #f0b4b4; border-radius: var(--radio-control);
+      background: var(--color-peligro-fondo); color: var(--color-peligro);
+    }
+    .banner .boton-icono { width: 30px; height: 30px; border: 0; background: none; color: inherit; }
 
     /* ── Pantallas angostas: maestro arriba, detalle abajo, cada uno con su scroll ── */
     @media (max-width: 760px) {
       .barra { padding: 10px 16px; }
-      .contenido { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; gap: 12px; padding: 12px; }
-      .maestro-cabecera { padding: 14px 16px 10px; }
-      .maestro-cabecera h2 { display: none; }
+      .contenido { grid-template-columns: 1fr; grid-template-rows: 38% 1fr; gap: 12px; padding: 12px; }
+      .maestro-cabecera { padding: 12px 16px 10px; }
+      .maestro-titulo { margin-bottom: 10px; }
+      .maestro-titulo h2 { font-size: 18px; }
       .cliente { padding: 10px 16px; }
-      .ficha { padding: 18px 16px 14px; }
-      .ficha h2 { font-size: 22px; margin-bottom: 12px; }
+      .ficha, .detalle-formulario { padding: 18px 16px 14px; }
+      .ficha h2 { font-size: 22px; }
+      .ficha-acciones { margin-top: 22px; }
+      .ficha-acciones .boton span { display: none; } /* solo iconos */
+      .ficha-acciones .boton { padding: 8px 10px; }
+      .fila { grid-template-columns: 1fr; }
+      .subformulario { margin: 12px 16px 0; padding: 8px; }
+      .subformulario-linea { gap: 6px; }
+      .subformulario-linea .control { padding: 8px; }
+      .subformulario-linea .fecha { flex-basis: 112px; font-size: 13px; }
+      .subformulario-linea .boton-icono { width: 34px; height: 34px; }
       .actividades { padding: 16px; }
     }
   </style>
@@ -218,29 +322,44 @@
   <div id="raiz"></div>
 
   <script type="text/babel" data-presets="react-clasico">
-    const { useState, useEffect, useCallback, useMemo } = React;
+    const { useState, useEffect, useCallback, useMemo, useRef, useId } = React;
 
     // ── API ────────────────────────────────────────────────────────────────
 
-    /** fetch con JSON y errores uniformes: lanza Error con el mensaje que envía la API. */
-    async function pedir(ruta, { signal, ...opciones } = {}) {
+    /**
+     * fetch con JSON y errores uniformes. Ante un error lanza Error con el mensaje de la API
+     * y, si viene, el campo afectado (para marcarlo en el formulario).
+     */
+    async function pedir(ruta, { signal, metodo = "GET", datos } = {}) {
       const respuesta = await fetch(`/api${ruta}`, {
-        ...opciones,
+        method: metodo,
         signal,
-        headers: { Accept: "application/json", ...(opciones.body ? { "Content-Type": "application/json" } : {}) },
+        headers: { Accept: "application/json", ...(datos !== undefined ? { "Content-Type": "application/json" } : {}) },
+        body: datos !== undefined ? JSON.stringify(datos) : undefined,
       });
       if (respuesta.status === 204) return null;
       const cuerpo = await respuesta.json().catch(() => null);
       if (!respuesta.ok) {
-        throw new Error(cuerpo?.error?.mensaje ?? `Error ${respuesta.status} al consultar el servidor`);
+        const error = new Error(cuerpo?.error?.mensaje ?? `Error ${respuesta.status} al consultar el servidor`);
+        error.campo = cuerpo?.error?.campo;
+        throw error;
       }
       return cuerpo;
     }
 
     const api = {
-      listarClientes: (busqueda, signal) =>
-        pedir(`/clientes?q=${encodeURIComponent(busqueda)}`, { signal }),
+      listarClientes: (busqueda, signal) => pedir(`/clientes?q=${encodeURIComponent(busqueda)}`, { signal }),
       obtenerCliente: (id, signal) => pedir(`/clientes/${id}`, { signal }),
+      crearCliente: (datos) => pedir("/clientes", { metodo: "POST", datos }),
+      actualizarCliente: (id, datos) => pedir(`/clientes/${id}`, { metodo: "PUT", datos }),
+      eliminarCliente: (id) => pedir(`/clientes/${id}`, { metodo: "DELETE" }),
+
+      crearActividad: (clienteId, datos) => pedir(`/clientes/${clienteId}/actividades`, { metodo: "POST", datos }),
+      actualizarActividad: (clienteId, id, datos) =>
+        pedir(`/clientes/${clienteId}/actividades/${id}`, { metodo: "PUT", datos }),
+      completarActividad: (clienteId, id) =>
+        pedir(`/clientes/${clienteId}/actividades/${id}/completar`, { metodo: "POST", datos: {} }),
+      eliminarActividad: (clienteId, id) => pedir(`/clientes/${clienteId}/actividades/${id}`, { metodo: "DELETE" }),
     };
 
     const esCancelacion = (error) => error?.name === "AbortError";
@@ -266,7 +385,22 @@
       return FORMATO_FECHA.format(new Date(anio, mes - 1, dia)).replace(/\./g, "").replace(/ de /g, " ");
     }
 
-    /** Ejecuta el valor con demora: la búsqueda en vivo no consulta la API en cada tecla. */
+    /**
+     * Orden de los compromisos: primero sin fecha, luego vencidos y al final los de hoy o futuros.
+     * Dentro de cada grupo con fecha, ascendente; a igual fecha, por orden de alta.
+     */
+    const GRUPO_COMPROMISO = { sinFecha: 0, vencida: 1, vigente: 2 };
+    const grupoCompromiso = (a) =>
+      a.fechaCompromiso === null ? GRUPO_COMPROMISO.sinFecha : a.vencida ? GRUPO_COMPROMISO.vencida : GRUPO_COMPROMISO.vigente;
+
+    function ordenarCompromisos(lista) {
+      return [...lista].sort((a, b) =>
+        grupoCompromiso(a) - grupoCompromiso(b)
+        || (a.fechaCompromiso ?? "").localeCompare(b.fechaCompromiso ?? "")
+        || a.id - b.id);
+    }
+
+    /** Devuelve el valor con demora: la búsqueda en vivo no consulta la API en cada tecla. */
     function useDemorado(valor, ms) {
       const [demorado, setDemorado] = useState(valor);
       useEffect(() => {
@@ -278,7 +412,8 @@
 
     /**
      * Consulta asíncrona cancelable: si cambian las dependencias antes de que responda,
-     * la respuesta vieja se descarta (evita que una búsqueda lenta pise a una más nueva).
+     * la respuesta vieja se descarta. `recargar` repite la consulta conservando los datos
+     * actuales mientras llega la nueva (sin parpadeos).
      */
     function useConsulta(consultar, dependencias) {
       const [estado, setEstado] = useState({ datos: null, cargando: true, error: null });
@@ -312,14 +447,51 @@
     );
     const IconoUbicacion = () => <Icono><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></Icono>;
     const IconoCheck = () => <Icono><path d="m5 12 5 5 9-10" /></Icono>;
+    const IconoMas = () => <Icono><path d="M12 5v14M5 12h14" /></Icono>;
+    const IconoLapiz = () => <Icono><path d="M4 20h4L19 9l-4-4L4 16v4z" /><path d="m13.5 6.5 4 4" /></Icono>;
+    const IconoPapelera = () => (
+      <Icono><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></Icono>
+    );
+    const IconoGuardar = () => (
+      <Icono><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 1-2z" /><path d="M8 3v5h7V3M8 21v-7h8v7" /></Icono>
+    );
+    const IconoCerrar = () => <Icono><path d="M6 6l12 12M18 6 6 18" /></Icono>;
 
     // ── Componentes genéricos ──────────────────────────────────────────────
+
+    function Boton({ variante, icono, children, ...props }) {
+      return (
+        <button type="button" className={`boton${variante ? ` ${variante}` : ""}`} {...props}>
+          {icono}{children && <span>{children}</span>}
+        </button>
+      );
+    }
+
+    /** Botón solo con ícono: el texto queda como tooltip y nombre accesible. */
+    function BotonIcono({ titulo, icono, variante, ...props }) {
+      return (
+        <button type="button" className={`boton-icono${variante ? ` ${variante}` : ""}`}
+                title={titulo} aria-label={titulo} {...props}>
+          {icono}
+        </button>
+      );
+    }
 
     function Aviso({ children, error, onReintentar }) {
       return (
         <div className={`aviso${error ? " error" : ""}`} role={error ? "alert" : "status"}>
           <p>{children}</p>
-          {onReintentar && <button type="button" onClick={onReintentar}>Reintentar</button>}
+          {onReintentar && <Boton onClick={onReintentar}>Reintentar</Boton>}
+        </div>
+      );
+    }
+
+    function Banner({ mensaje, onCerrar }) {
+      if (!mensaje) return null;
+      return (
+        <div className="banner" role="alert">
+          <span>{mensaje}</span>
+          <BotonIcono titulo="Cerrar aviso" icono={<IconoCerrar />} onClick={onCerrar} />
         </div>
       );
     }
@@ -336,6 +508,7 @@
         <div className="buscador">
           <IconoBuscar />
           <input
+            className="control"
             type="search"
             value={valor}
             onChange={(e) => onCambio(e.target.value)}
@@ -348,14 +521,16 @@
     }
 
     function ItemCliente({ cliente, seleccionado, onSeleccionar }) {
+      const ref = useRef(null);
+      // Mantiene visible al seleccionado (por ejemplo, después de dar de alta un cliente).
+      useEffect(() => {
+        if (seleccionado) ref.current?.scrollIntoView({ block: "nearest" });
+      }, [seleccionado]);
+
       return (
         <li>
-          <button
-            type="button"
-            className="cliente"
-            aria-current={seleccionado}
-            onClick={() => onSeleccionar(cliente.id)}
-          >
+          <button ref={ref} type="button" className="cliente" aria-current={seleccionado}
+                  onClick={() => onSeleccionar(cliente.id)}>
             <Avatar cliente={cliente} />
             <span className="cliente-datos">
               <span className="cliente-nombre">{nombreCompleto(cliente)}</span>
@@ -366,7 +541,7 @@
       );
     }
 
-    function Maestro({ busqueda, onBuscar, consulta, seleccionadoId, onSeleccionar }) {
+    function Maestro({ busqueda, onBuscar, consulta, seleccionadoId, onSeleccionar, onAgregar }) {
       const { datos: clientes, cargando, error, recargar } = consulta;
 
       let cuerpo;
@@ -387,7 +562,10 @@
       return (
         <aside className="panel" aria-label="Clientes">
           <div className="maestro-cabecera">
-            <h2>Clientes</h2>
+            <div className="maestro-titulo">
+              <h2>Clientes</h2>
+              <Boton variante="primario" icono={<IconoMas />} onClick={onAgregar}>Agregar</Boton>
+            </div>
             <Buscador valor={busqueda} onCambio={onBuscar} />
             <p className="contador" aria-live="polite">
               {clientes ? `${clientes.length} cliente${clientes.length === 1 ? "" : "s"}` : " "}
@@ -399,7 +577,7 @@
       );
     }
 
-    // ── Detalle ────────────────────────────────────────────────────────────
+    // ── Detalle: ficha y formulario de cliente ─────────────────────────────
 
     function Dato({ icono, children }) {
       const vacio = !children || (Array.isArray(children) && children.every((c) => !c));
@@ -411,11 +589,17 @@
       );
     }
 
-    function FichaCliente({ cliente }) {
+    function FichaCliente({ cliente, ocupado, onEditar, onEliminar }) {
       return (
         <header className="ficha">
           <span className="ficha-id" title="Identificador del cliente">#{cliente.id}</span>
-          <h2>{nombreCompleto(cliente)}</h2>
+          <div className="ficha-cabecera">
+            <h2>{nombreCompleto(cliente)}</h2>
+            <div className="ficha-acciones">
+              <Boton icono={<IconoLapiz />} onClick={onEditar} disabled={ocupado}>Editar</Boton>
+              <Boton variante="peligro" icono={<IconoPapelera />} onClick={onEliminar} disabled={ocupado}>Eliminar</Boton>
+            </div>
+          </div>
           <div className="ficha-datos">
             <div className="ficha-contacto">
               <Dato icono={<IconoEmail />}>{cliente.email}</Dato>
@@ -431,74 +615,355 @@
       );
     }
 
-    function ItemActividad({ actividad }) {
-      const { descripcion, fechaCompromiso, fechaFinalizacion, completada, vencida } = actividad;
+    // Tres filas de dos campos: nombre/apellido, email/teléfono, domicilio/localidad.
+    const FILAS_CLIENTE = [
+      [
+        { campo: "nombre", etiqueta: "Nombre", requerido: true, autoComplete: "given-name" },
+        { campo: "apellido", etiqueta: "Apellido", requerido: true, autoComplete: "family-name" },
+      ],
+      [
+        { campo: "email", etiqueta: "Email", tipo: "email", requerido: true, autoComplete: "email" },
+        { campo: "telefono", etiqueta: "Teléfono", tipo: "tel", autoComplete: "tel" },
+      ],
+      [
+        { campo: "domicilio", etiqueta: "Domicilio", autoComplete: "street-address" },
+        { campo: "localidad", etiqueta: "Localidad", autoComplete: "address-level2" },
+      ],
+    ];
+    const CAMPOS_CLIENTE = FILAS_CLIENTE.flat().map((f) => f.campo);
 
-      let fecha;
-      if (completada) fecha = `Completada el ${formatearFecha(fechaFinalizacion)}`;
-      else if (!fechaCompromiso) fecha = "Sin fecha";
-      else fecha = `${formatearFecha(fechaCompromiso)}${vencida ? " · Vencida" : ""}`;
+    const valoresIniciales = (cliente) =>
+      Object.fromEntries(CAMPOS_CLIENTE.map((campo) => [campo, cliente?.[campo] ?? ""]));
+
+    /** Alta (sin cliente) o edición. `onGuardar` debe lanzar el error de la API para mostrarlo aquí. */
+    function FormCliente({ cliente, onGuardar, onCancelar }) {
+      const [valores, setValores] = useState(() => valoresIniciales(cliente));
+      const [guardando, setGuardando] = useState(false);
+      const [error, setError] = useState(null);
+      const prefijoId = useId();
+
+      const cambiar = (campo) => (e) => setValores((v) => ({ ...v, [campo]: e.target.value }));
+
+      async function enviar(e) {
+        e.preventDefault();
+        setGuardando(true);
+        setError(null);
+        try {
+          await onGuardar(valores); // al tener éxito, el padre cierra el formulario
+        } catch (err) {
+          setError(err);
+          setGuardando(false);
+        }
+      }
 
       return (
-        <li className="actividad">
-          <span className={`marca${completada ? " hecha" : ""}`} role="img"
-                aria-label={completada ? "Completada" : "Pendiente"}>
-            {completada && <IconoCheck />}
-          </span>
-          <div>
-            <p className="actividad-descripcion">{descripcion}</p>
-            <p className={`actividad-fecha${vencida ? " vencida" : ""}`}>{fecha}</p>
+        <form className="formulario-cliente" onSubmit={enviar} onKeyDown={(e) => e.key === "Escape" && onCancelar()}>
+          <h2>{cliente ? "Editar cliente" : "Nuevo cliente"}</h2>
+          {FILAS_CLIENTE.map((fila, i) => (
+            <div className="fila" key={i}>
+              {fila.map(({ campo, etiqueta, tipo = "text", requerido, autoComplete }, j) => (
+                <div className="campo" key={campo}>
+                  <label htmlFor={`${prefijoId}-${campo}`}>
+                    {etiqueta}{requerido && <abbr title="obligatorio"> *</abbr>}
+                  </label>
+                  <input
+                    id={`${prefijoId}-${campo}`}
+                    className="control"
+                    type={tipo}
+                    value={valores[campo]}
+                    onChange={cambiar(campo)}
+                    required={requerido}
+                    autoComplete={autoComplete}
+                    autoFocus={i === 0 && j === 0}
+                    aria-invalid={error?.campo === campo}
+                    disabled={guardando}
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+          {error && <p className="error-formulario" role="alert">{error.message}</p>}
+          <div className="formulario-acciones">
+            <Boton icono={<IconoCerrar />} onClick={onCancelar} disabled={guardando}>Cancelar</Boton>
+            <button type="submit" className="boton primario" disabled={guardando}>
+              <IconoGuardar /><span>{guardando ? "Guardando…" : "Guardar"}</span>
+            </button>
           </div>
+        </form>
+      );
+    }
+
+    // ── Detalle: actividades ───────────────────────────────────────────────
+
+    /**
+     * Subformulario de una sola línea, sin etiquetas visibles. Sirve para el alta y para editar
+     * una actividad pendiente (`editando`). `onGuardar` lanza el error de la API para mostrarlo aquí.
+     */
+    function FormActividad({ editando, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState("");
+      const [fecha, setFecha] = useState("");
+      const [guardando, setGuardando] = useState(false);
+      const [error, setError] = useState(null);
+      const refDescripcion = useRef(null);
+
+      // Al elegir una actividad para editar se cargan sus datos; al terminar, se limpia.
+      useEffect(() => {
+        setDescripcion(editando?.descripcion ?? "");
+        setFecha(editando?.fechaCompromiso ?? "");
+        setError(null);
+        if (editando) refDescripcion.current?.focus();
+      }, [editando]);
+
+      const vacio = !descripcion.trim() && !fecha;
+
+      function cancelar() {
+        setDescripcion("");
+        setFecha("");
+        setError(null);
+        onCancelar();
+      }
+
+      async function enviar(e) {
+        e.preventDefault();
+        setGuardando(true);
+        setError(null);
+        try {
+          await onGuardar({ descripcion, fechaCompromiso: fecha || null });
+          setDescripcion("");
+          setFecha("");
+        } catch (err) {
+          setError(err);
+        } finally {
+          setGuardando(false);
+        }
+      }
+
+      return (
+        <form className={`subformulario${editando ? " editando" : ""}`} onSubmit={enviar}
+              onKeyDown={(e) => e.key === "Escape" && cancelar()}
+              aria-label={editando ? "Editar actividad" : "Agregar actividad"}>
+          <div className="subformulario-linea">
+            <input
+              ref={refDescripcion}
+              className="control descripcion"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder={editando ? "Descripción de la actividad" : "Nueva actividad…"}
+              aria-label="Descripción de la actividad"
+              aria-invalid={error?.campo === "descripcion"}
+              maxLength={500}
+              required
+              disabled={guardando}
+            />
+            <input
+              className="control fecha"
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              aria-label="Fecha de compromiso (opcional)"
+              title="Fecha de compromiso (opcional)"
+              aria-invalid={error?.campo === "fechaCompromiso"}
+              disabled={guardando}
+            />
+            <BotonIcono type="submit" variante="primario" icono={<IconoGuardar />}
+                        titulo={editando ? "Guardar cambios" : "Agregar actividad"}
+                        disabled={guardando || !descripcion.trim()} />
+            <BotonIcono icono={<IconoCerrar />} titulo={editando ? "Cancelar edición" : "Limpiar"}
+                        onClick={cancelar} disabled={guardando || (!editando && vacio)} />
+          </div>
+          {error && <p className="error-formulario" role="alert">{error.message}</p>}
+        </form>
+      );
+    }
+
+    function textoFecha({ completada, fechaCompromiso, fechaFinalizacion, vencida }) {
+      if (completada) return `Completada el ${formatearFecha(fechaFinalizacion)}`;
+      if (!fechaCompromiso) return "Sin fecha";
+      return `${formatearFecha(fechaCompromiso)}${vencida ? " · Vencida" : ""}`;
+    }
+
+    /** Fila de actividad. Las completadas no tienen acciones: son inalterables. */
+    function ItemActividad({ actividad, editando, ocupado, onCompletar, onEditar, onEliminar }) {
+      const { descripcion, completada, vencida } = actividad;
+      return (
+        <li className={`actividad${editando ? " editando" : ""}`}>
+          {completada ? (
+            <span className="marca hecha" role="img" aria-label="Completada"><IconoCheck /></span>
+          ) : (
+            <button type="button" className="marca" onClick={onCompletar} disabled={ocupado}
+                    title="Marcar como completada" aria-label={`Marcar como completada: ${descripcion}`}>
+              <IconoCheck />
+            </button>
+          )}
+          <div className="actividad-texto">
+            <p className="actividad-descripcion">{descripcion}</p>
+            <p className={`actividad-fecha${vencida ? " vencida" : ""}`}>{textoFecha(actividad)}</p>
+          </div>
+          {!completada && (
+            <div className="actividad-acciones">
+              <BotonIcono titulo="Editar actividad" icono={<IconoLapiz />} onClick={onEditar} disabled={ocupado} />
+              <BotonIcono titulo="Eliminar actividad" variante="peligro" icono={<IconoPapelera />}
+                          onClick={onEliminar} disabled={ocupado} />
+            </div>
+          )}
         </li>
       );
     }
 
-    function ListaActividades({ titulo, actividades, vacio, completadas }) {
+    function ListaActividades({ titulo, actividades, vacio, completadas, children }) {
       return (
         <section>
           <h3>{titulo} <small>({actividades.length})</small></h3>
           <ul className={`lista-actividades${completadas ? " completadas" : ""}`}>
-            {actividades.length
-              ? actividades.map((a) => <ItemActividad key={a.id} actividad={a} />)
-              : <li><Aviso>{vacio}</Aviso></li>}
+            {actividades.length ? children : <li><Aviso>{vacio}</Aviso></li>}
           </ul>
         </section>
       );
     }
 
-    function Detalle({ clienteId }) {
-      const consulta = useConsulta(
-        (signal) => (clienteId == null ? Promise.resolve(null) : api.obtenerCliente(clienteId, signal)),
-        [clienteId],
+    // ── Detalle ────────────────────────────────────────────────────────────
+
+    function PanelDetalle({ children, cargando }) {
+      return <main className="panel" aria-label="Detalle del cliente" aria-busy={cargando}>{children}</main>;
+    }
+
+    function DetalleNuevo({ onCreado, onCancelar }) {
+      async function guardar(datos) {
+        onCreado(await api.crearCliente(datos));
+      }
+      return (
+        <PanelDetalle>
+          <div className="scroll detalle-formulario">
+            <FormCliente onGuardar={guardar} onCancelar={onCancelar} />
+          </div>
+        </PanelDetalle>
       );
+    }
+
+    /** Ficha del cliente (o su formulario de edición), subformulario y listas de actividades. */
+    function Detalle({ clienteId, onGuardado, onEliminado }) {
+      const consulta = useConsulta((signal) => api.obtenerCliente(clienteId, signal), [clienteId]);
       const { datos: cliente, error, recargar } = consulta;
 
-      // La API ya devuelve las actividades ordenadas: pendientes por compromiso, completadas recientes primero.
-      const [pendientes, completadas] = useMemo(() => {
+      const [editandoCliente, setEditandoCliente] = useState(false);
+      const [actividadEditada, setActividadEditada] = useState(null);
+      const [ocupado, setOcupado] = useState(false);
+      const [mensaje, setMensaje] = useState(null);
+
+      const [compromisos, completadas] = useMemo(() => {
         const lista = cliente?.actividades ?? [];
-        return [lista.filter((a) => !a.completada), lista.filter((a) => a.completada)];
+        // Completadas: la API ya las entrega de la más reciente a la más antigua.
+        return [ordenarCompromisos(lista.filter((a) => !a.completada)), lista.filter((a) => a.completada)];
       }, [cliente]);
 
-      let cuerpo;
-      if (clienteId == null) {
-        cuerpo = <div className="detalle-vacio"><Aviso>Seleccione un cliente para ver su ficha.</Aviso></div>;
-      } else if (error) {
-        cuerpo = <div className="detalle-vacio"><Aviso error onReintentar={recargar}>No se pudo cargar el cliente: {error.message}</Aviso></div>;
-      } else if (!cliente || cliente.id !== clienteId) {
-        cuerpo = <div className="detalle-vacio"><Aviso>Cargando ficha…</Aviso></div>;
-      } else {
-        cuerpo = (
-          <>
-            <FichaCliente cliente={cliente} />
-            <div className="scroll actividades">
-              <ListaActividades titulo="Compromisos" actividades={pendientes} vacio="No hay actividades pendientes." />
-              <ListaActividades titulo="Actividades completadas" actividades={completadas} vacio="Aún no hay actividades completadas." completadas />
+      /** Acciones de un clic: bloquea los botones mientras corre y muestra el error en el banner. */
+      async function ejecutar(accion) {
+        setOcupado(true);
+        setMensaje(null);
+        try {
+          await accion();
+        } catch (err) {
+          setMensaje(err.message);
+          recargar(); // el estado pudo cambiar en el servidor (por ejemplo, otra pestaña)
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      async function guardarCliente(datos) {
+        const actualizado = await api.actualizarCliente(clienteId, datos);
+        setEditandoCliente(false);
+        recargar();
+        onGuardado(actualizado);
+      }
+
+      function eliminarCliente() {
+        const cantidad = cliente.actividades.length;
+        const detalle = cantidad ? ` y sus ${cantidad} actividad${cantidad === 1 ? "" : "es"}` : "";
+        if (!window.confirm(`¿Eliminar a ${nombreCompleto(cliente)}${detalle}? Esta acción no se puede deshacer.`)) return;
+        ejecutar(async () => {
+          await api.eliminarCliente(clienteId);
+          onEliminado(clienteId);
+        });
+      }
+
+      async function guardarActividad(datos) {
+        if (actividadEditada) await api.actualizarActividad(clienteId, actividadEditada.id, datos);
+        else await api.crearActividad(clienteId, datos);
+        setActividadEditada(null);
+        recargar();
+      }
+
+      function completarActividad(actividad) {
+        if (!window.confirm(`¿Marcar "${actividad.descripcion}" como completada? Después no podrá editarse ni borrarse.`)) return;
+        ejecutar(async () => {
+          await api.completarActividad(clienteId, actividad.id);
+          if (actividadEditada?.id === actividad.id) setActividadEditada(null);
+          recargar();
+        });
+      }
+
+      function eliminarActividad(actividad) {
+        if (!window.confirm(`¿Eliminar la actividad "${actividad.descripcion}"?`)) return;
+        ejecutar(async () => {
+          await api.eliminarActividad(clienteId, actividad.id);
+          if (actividadEditada?.id === actividad.id) setActividadEditada(null);
+          recargar();
+        });
+      }
+
+      if (error && !cliente) {
+        return (
+          <PanelDetalle>
+            <div className="detalle-vacio">
+              <Aviso error onReintentar={recargar}>No se pudo cargar el cliente: {error.message}</Aviso>
             </div>
-          </>
+          </PanelDetalle>
+        );
+      }
+      if (!cliente) {
+        return <PanelDetalle cargando><div className="detalle-vacio"><Aviso>Cargando ficha…</Aviso></div></PanelDetalle>;
+      }
+
+      if (editandoCliente) {
+        return (
+          <PanelDetalle>
+            <div className="scroll detalle-formulario">
+              <span className="ficha-id">#{cliente.id}</span>
+              <FormCliente cliente={cliente} onGuardar={guardarCliente} onCancelar={() => setEditandoCliente(false)} />
+            </div>
+          </PanelDetalle>
         );
       }
 
-      return <main className="panel" aria-label="Detalle del cliente" aria-busy={consulta.cargando}>{cuerpo}</main>;
+      return (
+        <PanelDetalle cargando={consulta.cargando}>
+          <FichaCliente cliente={cliente} ocupado={ocupado}
+                        onEditar={() => setEditandoCliente(true)} onEliminar={eliminarCliente} />
+          <FormActividad editando={actividadEditada} onGuardar={guardarActividad}
+                         onCancelar={() => setActividadEditada(null)} />
+          <div className="scroll actividades">
+            <Banner mensaje={mensaje} onCerrar={() => setMensaje(null)} />
+            <ListaActividades titulo="Compromisos" actividades={compromisos} vacio="No hay actividades pendientes.">
+              {compromisos.map((a) => (
+                <ItemActividad
+                  key={a.id}
+                  actividad={a}
+                  editando={actividadEditada?.id === a.id}
+                  ocupado={ocupado}
+                  onCompletar={() => completarActividad(a)}
+                  onEditar={() => setActividadEditada(a)}
+                  onEliminar={() => eliminarActividad(a)}
+                />
+              ))}
+            </ListaActividades>
+            <ListaActividades titulo="Actividades completadas" actividades={completadas}
+                              vacio="Aún no hay actividades completadas." completadas>
+              {completadas.map((a) => <ItemActividad key={a.id} actividad={a} />)}
+            </ListaActividades>
+          </div>
+        </PanelDetalle>
+      );
     }
 
     // ── Aplicación ─────────────────────────────────────────────────────────
@@ -506,18 +971,56 @@
     function App() {
       const [busqueda, setBusqueda] = useState("");
       const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [creando, setCreando] = useState(false);
       const busquedaDemorada = useDemorado(busqueda, 250);
 
       const consultaClientes = useConsulta(
         (signal) => api.listarClientes(busquedaDemorada.trim(), signal),
         [busquedaDemorada],
       );
-
-      // Al cargar por primera vez se selecciona el primer cliente para no mostrar el detalle vacío.
       const clientes = consultaClientes.datos;
+      const recargarClientes = consultaClientes.recargar;
+
+      // Solo en la primera carga se selecciona el primer cliente, para no mostrar el detalle vacío.
+      const autoseleccionado = useRef(false);
       useEffect(() => {
-        if (seleccionadoId == null && clientes?.length) setSeleccionadoId(clientes[0].id);
-      }, [clientes, seleccionadoId]);
+        if (autoseleccionado.current || !clientes) return;
+        autoseleccionado.current = true;
+        if (clientes.length) setSeleccionadoId((actual) => actual ?? clientes[0].id);
+      }, [clientes]);
+
+      function seleccionar(id) {
+        setCreando(false);
+        setSeleccionadoId(id);
+      }
+
+      function alCrear(cliente) {
+        setCreando(false);
+        setSeleccionadoId(cliente.id);
+        recargarClientes();
+      }
+
+      /** Tras eliminar, se pasa al cliente vecino de la lista para no dejar el detalle vacío. */
+      function alEliminar(id) {
+        const lista = clientes ?? [];
+        const i = lista.findIndex((c) => c.id === id);
+        const vecino = i === -1 ? null : (lista[i + 1] ?? lista[i - 1] ?? null);
+        setSeleccionadoId(vecino?.id ?? null);
+        recargarClientes();
+      }
+
+      let detalle;
+      if (creando) detalle = <DetalleNuevo onCreado={alCrear} onCancelar={() => setCreando(false)} />;
+      else if (seleccionadoId == null) {
+        detalle = (
+          <PanelDetalle>
+            <div className="detalle-vacio"><Aviso>Seleccione un cliente o agregue uno nuevo.</Aviso></div>
+          </PanelDetalle>
+        );
+      } else {
+        // key: al cambiar de cliente se reinicia el estado interno (formularios, edición en curso).
+        detalle = <Detalle key={seleccionadoId} clienteId={seleccionadoId} onGuardado={recargarClientes} onEliminado={alEliminar} />;
+      }
 
       return (
         <div className="app">
@@ -527,10 +1030,11 @@
               busqueda={busqueda}
               onBuscar={setBusqueda}
               consulta={consultaClientes}
-              seleccionadoId={seleccionadoId}
-              onSeleccionar={setSeleccionadoId}
+              seleccionadoId={creando ? null : seleccionadoId}
+              onSeleccionar={seleccionar}
+              onAgregar={() => setCreando(true)}
             />
-            <Detalle clienteId={seleccionadoId} />
+            {detalle}
           </div>
         </div>
       );

@@ -42,18 +42,21 @@ export function describirActividad(actividad: Actividad, fechaHoy: FechaISO = ho
   return { ...actividad, estado, completada, vencida };
 }
 
-/** Pendientes primero por compromiso (las sin fecha al final); luego completadas, la más reciente primero. */
+/**
+ * Pendientes primero: las sin fecha, luego por compromiso ascendente (así las vencidas quedan
+ * antes que las de hoy o futuras). Después las completadas, la más reciente primero.
+ */
 function compararActividades(a: ActividadConEstado, b: ActividadConEstado): number {
   if (a.completada !== b.completada) return a.completada ? 1 : -1;
   if (a.completada) return compararTexto(b.fechaFinalizacion, a.fechaFinalizacion) || b.id - a.id;
   return compararTexto(a.fechaCompromiso, b.fechaCompromiso) || a.id - b.id;
 }
 
-/** Orden ascendente con los null al final. */
+/** Orden ascendente con los null al principio. */
 function compararTexto(a: string | null, b: string | null): number {
   if (a === b) return 0;
-  if (a === null) return 1;
-  if (b === null) return -1;
+  if (a === null) return -1;
+  if (b === null) return 1;
   return a < b ? -1 : 1;
 }
 

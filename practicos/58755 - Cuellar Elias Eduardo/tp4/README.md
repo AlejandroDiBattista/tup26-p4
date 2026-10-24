@@ -260,9 +260,21 @@ Todos los errores responden con el mismo formato:
 
 La página ocupa exactamente la altura de la ventana (`100dvh`) y **nunca se desplaza**: cada panel tiene su propio scroll vertical.
 
-- **Maestro (izquierda):** buscador en vivo (consulta la API 250 ms después de dejar de escribir y descarta respuestas viejas) y la lista de clientes con scroll interno.
-- **Detalle (derecha):** ficha de lectura con el id `#123` arriba a la derecha, y debajo las actividades con scroll interno, separadas en *Compromisos* (pendientes, con las vencidas en rojo) y *Actividades completadas*.
+- **Maestro (izquierda):** botón *Agregar*, buscador en vivo (consulta la API 250 ms después de dejar de escribir y descarta respuestas viejas) y la lista de clientes con scroll interno.
+- **Detalle (derecha):** ficha de lectura con el id `#123` arriba a la derecha y los botones *Editar* y *Eliminar*; debajo, el subformulario de actividades y las listas de actividades con scroll interno.
 - **Pantallas angostas (≤ 760 px):** el maestro pasa arriba y el detalle abajo, cada uno con su scroll.
+
+### Clientes
+
+- **Alta y edición en el detalle:** formulario de tres filas (Nombre y Apellido · Email y Teléfono · Domicilio y Localidad) con *Guardar* y *Cancelar* (también `Esc`). Los errores de la API (por ejemplo, un email repetido) se muestran en el formulario y marcan el campo afectado.
+- **Eliminar:** pide confirmación indicando cuántas actividades se borran con el cliente; después se selecciona el cliente vecino de la lista.
+
+### Actividades
+
+- **Compromisos:** primero los sin fecha, luego los vencidos (en rojo) y al final los de hoy o futuros; los que tienen fecha, en orden ascendente.
+- **Actividades completadas:** con su fecha de finalización, la más reciente primero. Son **inalterables**: no muestran acciones.
+- Cada fila muestra un check a la izquierda, la descripción y la fecha (o *Sin fecha*). En los compromisos, el check marca la actividad como completada (con confirmación, porque no se puede deshacer) y hay botones para editar y eliminar.
+- **Subformulario** debajo de la ficha, con borde de puntos redondeado y en una sola línea sin etiquetas visibles: descripción, fecha opcional y botones con ícono para guardar y cancelar. Al editar un compromiso, sus datos se cargan aquí y el borde se resalta.
 
 ## Estructura
 
