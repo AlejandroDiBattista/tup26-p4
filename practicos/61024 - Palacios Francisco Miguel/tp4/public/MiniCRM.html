@@ -57,6 +57,7 @@
     .activity-row { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-bottom: 1px solid #edf0f4; }
     .activity-row:last-child { border-bottom: 0; }
     .activity-row.done { background: #f0faf5; }
+    .activity-date.overdue { color: #b43f43; font-weight: 650; }
     .activity-info { flex: 1; min-width: 0; }
     .activity-description { overflow-wrap: anywhere; }
     .activity-buttons { display: flex; gap: 6px; }
@@ -77,6 +78,16 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useEffect, useState } = React;
+
+    function fechaLocalISO() {
+      const hoy = new Date();
+      return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+    }
+
+    function mostrarFecha(fecha) {
+      const [anio, mes, dia] = fecha.split("-").map(Number);
+      return new Date(anio, mes - 1, dia).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+    }
 
     function MiniCRM() {
       const [clientes, setClientes] = useState([]);
@@ -266,7 +277,9 @@
               <div className="activity-list">
                 {pendientes.map(actividad => <div className="activity-row" key={actividad.id}>
                   <input type="checkbox" aria-label={`Completar ${actividad.descripcion}`} checked={false} onChange={() => cambiarActividad(actividad.id, "completar")} />
-                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div><span className="muted">{actividad.fecha || "Sin fecha"}</span></div>
+                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div>{actividad.fecha
+                    ? <time className={`activity-date ${actividad.fecha < fechaLocalISO() ? "overdue" : "muted"}`} dateTime={actividad.fecha}>{mostrarFecha(actividad.fecha)}{actividad.fecha < fechaLocalISO() ? " · Vencido" : ""}</time>
+                    : <span className="muted">Sin fecha</span>}</div>
                   <div className="activity-buttons"><button className="secondary" type="button" onClick={() => editarActividad(actividad)}>Editar</button><button className="danger" type="button" onClick={() => cambiarActividad(actividad.id, "eliminar")}>Eliminar</button></div>
                 </div>)}
                 {!pendientes.length && <p className="muted" style={{padding:14}}>No hay compromisos pendientes.</p>}
@@ -275,7 +288,7 @@
               <div className="activity-list">
                 {completadas.map(actividad => <div className="activity-row done" key={actividad.id}>
                   <input type="checkbox" aria-label={`${actividad.descripcion}, completada`} checked readOnly />
-                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div><span className="muted">Completada{actividad.fecha ? ` · Fecha: ${actividad.fecha}` : ""}</span></div>
+                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div><span className="muted">Completada{actividad.fecha ? ` · Fecha: ${mostrarFecha(actividad.fecha)}` : ""}</span></div>
                 </div>)}
                 {!completadas.length && <p className="muted" style={{padding:14}}>Todavía no hay actividades completadas.</p>}
               </div>
