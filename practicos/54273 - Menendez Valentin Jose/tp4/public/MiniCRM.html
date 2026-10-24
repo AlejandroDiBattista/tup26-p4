@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.2/babel.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: #f3f5f8;
+      font-family: system-ui, sans-serif;
+      color: #1e293b;
+    }
+
+    #root {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .barra-superior {
+      background: #1f3047;
+      color: #ffffff;
+      height: 52px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 22px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+
+    .contenedor-principal {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel-maestro {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .maestro-cabecera {
+      padding: 18px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .maestro-titulo {
+      margin: 0;
+      font-size: 21px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .btn-agregar {
+      background: #1d72e8;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .btn-agregar:hover {
+      background: #155fc8;
+    }
+
+    .buscador-contenedor {
+      padding: 0 16px 14px;
+      border-bottom: 1px solid #eef2f6;
+    }
+
+    .buscador-caja {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .buscador-icono {
+      position: absolute;
+      left: 11px;
+      color: #64748b;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .buscador-input {
+      width: 100%;
+      padding: 9px 12px 9px 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1e293b;
+      background: #ffffff;
+      outline: none;
+    }
+
+    .buscador-input:focus {
+      border-color: #1d72e8;
+      box-shadow: 0 0 0 2px rgba(29, 114, 232, 0.15);
+    }
+
+    .lista-clientes {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .fila-cliente {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    .fila-cliente:hover {
+      background: #f8fafc;
+    }
+
+    .fila-cliente.activo {
+      background: #e8f1fb;
+    }
+
+    .avatar-iniciales {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.3px;
+    }
+
+    .cliente-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .cliente-nombre-lista {
+      font-weight: 700;
+      font-size: 15px;
+      color: #0f172a;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cliente-email-lista {
+      font-size: 13px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .panel-detalle {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .ficha-cliente {
+      padding-bottom: 18px;
+      border-bottom: 1px solid #eef2f6;
+      flex-shrink: 0;
+    }
+
+    .ficha-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .ficha-nombre {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .ficha-derecha {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .ficha-id {
+      font-size: 14px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .ficha-acciones {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-ficha {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #ffffff;
+    }
+
+    .btn-editar-cliente {
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+    }
+
+    .btn-editar-cliente:hover {
+      background: #f8fafc;
+    }
+
+    .btn-eliminar-cliente {
+      border: 1px solid #f1b5b1;
+      color: #d93025;
+      background: #fffafa;
+    }
+
+    .btn-eliminar-cliente:hover {
+      background: #fef2f2;
+    }
+
+    .ficha-datos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 24px;
+      max-width: 720px;
+    }
+
+    .dato-columna {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dato-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #1e293b;
+    }
+
+    .dato-icono {
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      width: 18px;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .dato-subtexto {
+      padding-left: 28px;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .detalle-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding-top: 16px;
+    }
+
+    .seccion-titulo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 12px 0;
+    }
+
+    .lista-actividades-lectura {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .item-actividad-lectura {
+      padding: 12px 16px;
+      border-bottom: 1px solid #eef2f6;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .item-actividad-lectura:last-child {
+      border-bottom: none;
+    }
+
+    .actividad-descripcion {
+      font-weight: 600;
+      font-size: 14px;
+      color: #0f172a;
+    }
+
+    .actividad-meta {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .estado-vacio {
+      padding: 24px;
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .alerta-error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    async function pedirJSON(url, opciones) {
+      const respuesta = await fetch(url, opciones);
+      const datos = await respuesta.json().catch(() => null);
+      if (!respuesta.ok) {
+        const mensaje =
+          datos && typeof datos.error === 'string'
+            ? datos.error
+            : 'Ocurrió un error al comunicarse con el servidor';
+        throw new Error(mensaje);
+      }
+      return datos;
+    }
+
+    const PALETA_AVATARES = [
+      { fondo: '#dbeafe', texto: '#1d4ed8' },
+      { fondo: '#dcfce7', texto: '#15803d' },
+      { fondo: '#ede9fe', texto: '#6d28d9' },
+      { fondo: '#ffedd5', texto: '#c2410c' },
+      { fondo: '#fce7f3', texto: '#be185d' },
+      { fondo: '#ccfbf1', texto: '#0f766e' },
+    ];
+
+    function obtenerEstiloAvatar(id) {
+      const indice = Math.abs((Number(id) || 1) - 1) % PALETA_AVATARES.length;
+      return PALETA_AVATARES[indice];
+    }
+
+    function obtenerIniciales(nombre, apellido) {
+      const inicialNombre = (nombre || '').trim().charAt(0).toUpperCase();
+      const inicialApellido = (apellido || '').trim().charAt(0).toUpperCase();
+      return `${inicialNombre}${inicialApellido}` || 'CL';
+    }
+
+    function formatearFechaLocal(fechaStr) {
+      if (!fechaStr) return 'Sin fecha';
+      const fecha = new Date(`${fechaStr}T00:00:00`);
+      if (Number.isNaN(fecha.getTime())) return fechaStr;
+      return new Intl.DateTimeFormat('es-AR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+        .format(fecha)
+        .replace('.', '');
+    }
+
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [busqueda, setBusqueda] = useState('');
+      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+      const [clienteDetalle, setClienteDetalle] = useState(null);
+      const [error, setError] = useState('');
+
+      async function cargarClientes(terminoBusqueda, idPreferido) {
+        try {
+          setError('');
+          const query = terminoBusqueda.trim()
+            ? `?q=${encodeURIComponent(terminoBusqueda.trim())}`
+            : '';
+          const lista = await pedirJSON(`/api/clientes${query}`);
+          setClientes(lista);
+
+          if (lista.length === 0) {
+            setClienteSeleccionadoId(null);
+            setClienteDetalle(null);
+            return;
+          }
+
+          const idObjetivo = idPreferido ?? clienteSeleccionadoId;
+          const existeEnLista = lista.some((c) => c.id === idObjetivo);
+          const nuevoId = existeEnLista ? idObjetivo : lista[0].id;
+          setClienteSeleccionadoId(nuevoId);
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      async function cargarDetalleCliente(id) {
+        if (!id) {
+          setClienteDetalle(null);
+          return;
+        }
+        try {
+          setError('');
+          const detalle = await pedirJSON(`/api/clientes/${id}`);
+          setClienteDetalle(detalle);
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      useEffect(() => {
+        cargarClientes(busqueda);
+      }, [busqueda]);
+
+      useEffect(() => {
+        if (clienteSeleccionadoId !== null) {
+          cargarDetalleCliente(clienteSeleccionadoId);
+        } else {
+          setClienteDetalle(null);
+        }
+      }, [clienteSeleccionadoId]);
+
+      return (
+        <>
+          <header className="barra-superior">MiniCRM</header>
+
+          <main className="contenedor-principal">
+            <section className="panel-maestro" aria-label="Listado de clientes">
+              <div className="maestro-cabecera">
+                <h2 className="maestro-titulo">Clientes</h2>
+                <button type="button" className="btn-agregar">
+                  + Agregar
+                </button>
+              </div>
+
+              <div className="buscador-contenedor">
+                <div className="buscador-caja">
+                  <span className="buscador-icono" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </span>
+                  <input
+                    type="search"
+                    className="buscador-input"
+                    placeholder="Buscar por cualquier campo..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="lista-clientes">
+                {clientes.length === 0 ? (
+                  <div className="estado-vacio">No se encontraron clientes</div>
+                ) : (
+                  clientes.map((c) => {
+                    const colorAvatar = obtenerEstiloAvatar(c.id);
+                    const esActivo = c.id === clienteSeleccionadoId;
+                    return (
+                      <div
+                        key={c.id}
+                        className={`fila-cliente ${esActivo ? 'activo' : ''}`}
+                        onClick={() => setClienteSeleccionadoId(c.id)}
+                      >
+                        <div
+                          className="avatar-iniciales"
+                          style={{
+                            backgroundColor: colorAvatar.fondo,
+                            color: colorAvatar.texto,
+                          }}
+                        >
+                          {obtenerIniciales(c.nombre, c.apellido)}
+                        </div>
+                        <div className="cliente-info">
+                          <div className="cliente-nombre-lista">
+                            {c.nombre} {c.apellido}
+                          </div>
+                          <div className="cliente-email-lista">{c.email}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+
+            <section className="panel-detalle" aria-label="Detalle del cliente">
+              {error && <div className="alerta-error">{error}</div>}
+
+              {!clienteDetalle ? (
+                <div className="estado-vacio">
+                  Selecciona un cliente de la lista para ver su información.
+                </div>
+              ) : (
+                <>
+                  <div className="ficha-cliente">
+                    <div className="ficha-cabecera">
+                      <h1 className="ficha-nombre">
+                        {clienteDetalle.nombre} {clienteDetalle.apellido}
+                      </h1>
+                      <div className="ficha-derecha">
+                        <span className="ficha-id">#{clienteDetalle.id}</span>
+                        <div className="ficha-acciones">
+                          <button type="button" className="btn-ficha btn-editar-cliente">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            </svg>
+                            Editar
+                          </button>
+                          <button type="button" className="btn-ficha btn-eliminar-cliente">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6" />
+                              <path d="M14 11v6" />
+                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                            </svg>
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="ficha-datos-grid">
+                      <div className="dato-columna">
+                        <div className="dato-item">
+                          <span className="dato-icono" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="4" width="20" height="16" rx="2" />
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                          </span>
+                          <span>{clienteDetalle.email}</span>
+                        </div>
+                        <div className="dato-item">
+                          <span className="dato-icono" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            </svg>
+                          </span>
+                          <span>{clienteDetalle.telefono || 'Sin teléfono'}</span>
+                        </div>
+                      </div>
+
+                      <div className="dato-columna">
+                        <div className="dato-item">
+                          <span className="dato-icono" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                          </span>
+                          <span>{clienteDetalle.domicilio || 'Sin domicilio'}</span>
+                        </div>
+                        {clienteDetalle.localidad && (
+                          <div className="dato-subtexto">{clienteDetalle.localidad}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="detalle-scroll">
+                    <h2 className="seccion-titulo">Actividades</h2>
+                    {(!clienteDetalle.actividades || clienteDetalle.actividades.length === 0) ? (
+                      <div className="estado-vacio">Este cliente no registra actividades.</div>
+                    ) : (
+                      <div className="lista-actividades-lectura">
+                        {clienteDetalle.actividades.map((act) => (
+                          <div key={act.id} className="item-actividad-lectura">
+                            <div className="actividad-descripcion">{act.descripcion}</div>
+                            <div className="actividad-meta">
+                              {act.fechaFinalizacion
+                                ? `Completada el ${formatearFechaLocal(act.fechaFinalizacion)}`
+                                : act.fechaCompromiso
+                                ? formatearFechaLocal(act.fechaCompromiso)
+                                : 'Sin fecha'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </section>
+          </main>
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
