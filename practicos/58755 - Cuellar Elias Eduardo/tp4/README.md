@@ -1,6 +1,6 @@
 # MiniCRM
 
-Gestión de clientes y sus actividades con **Node.js**, **TypeScript**, **Drizzle ORM** y **SQLite** (local) o **Turso** (producción).
+Gestión de clientes y sus actividades con **Node.js**, **TypeScript**, **Drizzle ORM** y **SQLite** (local) o **Turso** (producción). Se expone como **API REST** (Express) y como **servidor MCP** (Model Context Protocol), y se usa desde una interfaz web en **React**.
 
 > TP4 — Cuellar Elias Eduardo (58755). Ver [enunciado.md](enunciado.md).
 
@@ -82,7 +82,7 @@ npm run build
 npm start
 ```
 
-El servidor queda en `http://localhost:3000`: la API bajo `/api` y la interfaz web (`public/MiniCRM.html`) en la raíz.
+El servidor queda en `http://localhost:3000`: la API REST bajo `/api`, el servidor MCP en `/mcp` y la interfaz web (`public/MiniCRM.html`) en la raíz.
 
 ## Scripts
 
@@ -248,9 +248,60 @@ Todos los errores responden con el mismo formato:
 | `422`  | `REGLA_NEGOCIO`      | Editar, completar o borrar una actividad completada.     |
 | `500`  | `INTERNO`            | Error inesperado (se registra en la consola del servidor). |
 
+## Servidor MCP
+
+El servidor MCP ([src/mcp/servidor.ts](src/mcp/servidor.ts)) usa el SDK oficial `@modelcontextprotocol/sdk` con transporte **Streamable HTTP** en `POST /mcp`. Sus herramientas llaman a la misma clase `Clientes` que la API REST, sobre la misma base de datos: las validaciones, la normalización y las reglas de negocio son exactamente las mismas.
+
+- **Sin estado:** cada `POST` crea su servidor y su transporte, sin sesiones. `GET` y `DELETE` responden `405`.
+- **Respuestas JSON** (`enableJsonResponse`) en lugar de stream SSE.
+- **Resultados:** el dato va como JSON en `content` (texto para el modelo) y en `structuredContent` (objeto para programas).
+- **Errores de negocio:** se devuelven con `isError: true` y `structuredContent.error = { codigo, mensaje, campo? }`, así el modelo puede leerlos y corregir.
+- **Anotaciones:** lectura (`readOnlyHint`), escritura y borrado (`destructiveHint`) para que el cliente sepa qué pedir confirmar.
+
+| Herramienta            | Argumentos                                                        | Devuelve                 |
+| ---------------------- | ----------------------------------------------------------------- | ------------------------ |
+| `listar_clientes`      | `busqueda?`                                                       | `{ clientes }`           |
+| `obtener_cliente`      | `clienteId`                                                       | `{ cliente }` con actividades |
+| `crear_cliente`        | `nombre`, `apellido`, `email`, `telefono?`, `domicilio?`, `localidad?` | `{ cliente }`       |
+| `actualizar_cliente`   | `clienteId` y los campos a cambiar                                | `{ cliente }`            |
+| `eliminar_cliente`     | `clienteId`                                                       | `{ eliminado, clienteId }` |
+| `listar_actividades`   | `clienteId`                                                       | `{ actividades }`        |
+| `agregar_actividad`    | `clienteId`, `descripcion`, `fechaCompromiso?`                    | `{ actividad }`          |
+| `actualizar_actividad` | `clienteId`, `actividadId`, `descripcion?`, `fechaCompromiso?`    | `{ actividad }`          |
+| `completar_actividad`  | `clienteId`, `actividadId`, `fechaFinalizacion?`                  | `{ actividad }`          |
+| `eliminar_actividad`   | `clienteId`, `actividadId`                                        | `{ eliminada, actividadId }` |
+
+### Probarlo
+
+Con el inspector oficial (en *Transport Type* elegir *Streamable HTTP* y la URL `http://localhost:3000/mcp`):
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+O agregarlo a Claude Code:
+
+```bash
+claude mcp add --transport http minicrm http://localhost:3000/mcp
+```
+
+O directamente con JSON-RPC:
+
+```bash
+curl -X POST http://localhost:3000/mcp -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"listar_clientes\",\"arguments\":{\"busqueda\":\"localidad:salta\"}}}"
+```
+
 ## Interfaz web
 
-[public/MiniCRM.html](public/MiniCRM.html) es una página autocontenida que se abre en `http://localhost:3000` con el servidor en marcha. Usa toda la funcionalidad a través de la API REST.
+[public/MiniCRM.html](public/MiniCRM.html) es una página autocontenida que se abre en `http://localhost:3000` con el servidor en marcha. Toda la funcionalidad pasa por el servidor, a elección por la **API REST** o por el **servidor MCP**.
+
+### Conexión REST / MCP
+
+En la barra superior, el selector **Conexión** alterna entre los dos canales; la elección se recuerda en el navegador.
+
+- Ambos canales implementan la misma interfaz (`listarClientes`, `obtenerCliente`, `crearCliente`, …) y se entregan a los componentes por un contexto de React, así que la interfaz no sabe cuál está usando.
+- El canal MCP es un cliente JSON-RPC mínimo escrito en la página: hace el handshake `initialize` una vez y luego invoca las herramientas con `tools/call`. Los errores de negocio (`isError`) se muestran igual que los de REST, marcando el campo afectado.
+- Al cambiar de canal se vuelven a pedir la lista y la ficha por el nuevo canal.
 
 - **Bibliotecas por CDN con versiones fijas:** React 18.3.1 y ReactDOM 18.3.1 (última versión con build UMD, que expone los globales `React` y `ReactDOM`) y Babel Standalone 7.26.10.
 - **JSX embebido:** Babel compila el `<script type="text/babel">` en el navegador con un preset registrado como `runtime: "classic"`, que traduce el JSX a `React.createElement` usando el React global.
@@ -294,6 +345,9 @@ tp4/
 │   │   ├── actividades.routes.ts     # Rutas anidadas de actividades
 │   │   ├── actividades.controller.ts # Controladores de actividades
 │   │   └── errores.ts                # 404 y traducción de errores a HTTP
+│   ├── mcp/
+│   │   ├── servidor.ts   # Servidor MCP y sus herramientas
+│   │   └── mcp.routes.ts # Transporte Streamable HTTP en /mcp
 │   ├── servicios/
 │   │   ├── clientes.ts   # Clase Clientes: reglas de negocio de clientes y actividades
 │   │   ├── normalizar.ts # Validación y normalización de entradas
@@ -310,3 +364,70 @@ tp4/
 ├── tsconfig.build.json   # Compilación a dist/
 └── package.json
 ```
+
+## Informe final
+
+### Métrica de líneas de código
+
+Se cuentan solo los archivos escritos para el proyecto: `src/**/*.ts` y `public/MiniCRM.html`. Quedan **excluidos** las bibliotecas (`node_modules`), la compilación (`dist/`), los archivos de configuración (`package.json`, `package-lock.json`, `tsconfig*.json`, `drizzle.config.ts`, `.env.example`, `.gitignore`), la migración SQL generada por drizzle-kit (`drizzle/`) y la documentación.
+
+*Código* = líneas que no están en blanco ni son solo comentario.
+
+| Archivo                             | Total | En blanco | Comentario | **Código** |
+| ----------------------------------- | ----: | --------: | ---------: | ---------: |
+| `public/MiniCRM.html`               | 1202  | 129       | 63         | **1010**   |
+| `src/servicios/clientes.ts`         | 342   | 49        | 45         | **248**    |
+| `src/servicios/normalizar.ts`       | 191   | 27        | 13         | **151**    |
+| `src/mcp/servidor.ts`               | 187   | 24        | 12         | **151**    |
+| `src/db/seed-data.ts`               | 85    | 2         | 2          | **81**     |
+| `src/db/schema.ts`                  | 43    | 5         | 4          | **34**     |
+| `src/db/seed.ts`                    | 42    | 6         | 2          | **34**     |
+| `src/api/errores.ts`                | 42    | 8         | 2          | **32**     |
+| `src/config.ts`                     | 36    | 6         | 0          | **30**     |
+| `src/servicios/errores.ts`          | 42    | 7         | 6          | **29**     |
+| `src/api/actividades.controller.ts` | 41    | 8         | 6          | **27**     |
+| `src/mcp/mcp.routes.ts`             | 34    | 4         | 3          | **27**     |
+| `src/api/clientes.controller.ts`    | 37    | 8         | 7          | **22**     |
+| `src/app.ts`                        | 24    | 6         | 1          | **17**     |
+| `src/servicios/fechas.ts`           | 22    | 3         | 4          | **15**     |
+| `src/index.ts`                      | 19    | 3         | 1          | **15**     |
+| `src/api/clientes.routes.ts`        | 13    | 2         | 0          | **11**     |
+| `src/api/actividades.routes.ts`     | 13    | 2         | 1          | **10**     |
+| `src/db/client.ts`                  | 14    | 3         | 1          | **10**     |
+| `src/api/index.ts`                  | 9     | 2         | 1          | **6**      |
+| `src/db/migrate.ts`                 | 6     | 1         | 0          | **5**      |
+| **Total**                           | **2444** | **305** | **174**   | **1965**   |
+
+Por capa (líneas de código):
+
+| Capa                                         | Código |
+| -------------------------------------------- | -----: |
+| Frontend (`MiniCRM.html`): JSX 714 · CSS 273 · HTML 23 | 1010 |
+| Servicio (`src/servicios`)                   | 443    |
+| MCP (`src/mcp`)                              | 178    |
+| Base de datos (`src/db`, incluye 81 de datos de ejemplo) | 164 |
+| API REST (`src/api`)                         | 108    |
+| Arranque y configuración en código (`app.ts`, `index.ts`, `config.ts`) | 62 |
+| **Total**                                    | **1965** |
+
+### Tiempo de desarrollo
+
+- **Tiempo neto medido:** alrededor de **1 h 05 min**, el 23/10/2026 de 21:23 a 22:27 (hora de Argentina). Va desde la creación de `tsconfig.json` (primer archivo del proyecto) hasta el cierre de este informe, según las marcas de tiempo de los archivos. Incluye las pruebas de cada etapa (servicio, curl contra REST y MCP, y navegador) y el tiempo entre prompts.
+- **Tiempo estimado para un desarrollador sin asistencia:** entre **14 y 18 horas**.
+
+| Etapa                                              | Estimado |
+| -------------------------------------------------- | -------: |
+| Configuración, esquema, migración y seed           | 1,5 h    |
+| Servicio, normalización y reglas de negocio        | 3 h      |
+| API REST y manejo de errores                       | 2 h      |
+| Interfaz maestro-detalle                           | 3 h      |
+| Formularios y gestión de actividades               | 3 h      |
+| Servidor MCP y selector REST/MCP                   | 2 h      |
+| Pruebas y documentación                            | 1,5–3,5 h |
+
+### Limitaciones conocidas
+
+- **Descripción única por cliente:** la unicidad distingue mayúsculas, así que "Llamar" y "LLAMAR" pueden convivir. Para que no las distinga habría que crear el índice con `COLLATE NOCASE`, lo que requiere una nueva migración.
+- **Búsqueda en memoria:** se resuelve en el servidor de la aplicación para ignorar acentos, cosa que SQLite no hace sin extensiones. Es adecuada para el volumen de un MiniCRM.
+- **Babel en el navegador:** compila el JSX al cargar la página, lo cual es apropiado para el TP pero no para producción, donde convendría precompilar.
+- **Servidor MCP sin autenticación ni sesiones:** está pensado para uso local.

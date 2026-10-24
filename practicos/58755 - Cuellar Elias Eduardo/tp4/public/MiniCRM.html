@@ -58,12 +58,31 @@
 
     .barra {
       flex: none;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
       padding: 12px 24px;
       background: var(--color-barra);
       color: #fff;
     }
 
     .barra h1 { font-size: 22px; font-weight: 700; letter-spacing: .2px; }
+
+    .selector-conexion {
+      display: flex; align-items: center; gap: 2px;
+      padding: 3px;
+      border-radius: 9px;
+      background: rgb(255 255 255 / 12%);
+    }
+    .selector-titulo { padding: 0 8px 0 6px; font-size: 13px; opacity: .8; }
+    .selector-conexion button {
+      padding: 4px 12px;
+      border: 0; border-radius: 6px;
+      background: none; color: #fff;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    .selector-conexion button:hover { background: rgb(255 255 255 / 12%); }
+    .selector-conexion button[aria-checked="true"] { background: #fff; color: var(--color-barra); }
+    .selector-conexion button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 
     .contenido {
       flex: 1;
@@ -287,6 +306,7 @@
     /* ── Pantallas angostas: maestro arriba, detalle abajo, cada uno con su scroll ── */
     @media (max-width: 760px) {
       .barra { padding: 10px 16px; }
+      .selector-titulo { display: none; }
       .contenido { grid-template-columns: 1fr; grid-template-rows: 38% 1fr; gap: 12px; padding: 12px; }
       .maestro-cabecera { padding: 12px 16px 10px; }
       .maestro-titulo { margin-bottom: 10px; }
@@ -322,14 +342,13 @@
   <div id="raiz"></div>
 
   <script type="text/babel" data-presets="react-clasico">
-    const { useState, useEffect, useCallback, useMemo, useRef, useId } = React;
+    const { useState, useEffect, useCallback, useMemo, useRef, useId, createContext, useContext } = React;
 
-    // ── API ────────────────────────────────────────────────────────────────
+    // ── Acceso a datos ─────────────────────────────────────────────────────
+    // Dos implementaciones con la misma interfaz: la API REST (/api) y el servidor MCP (/mcp).
+    // Ambas lanzan Error con el mensaje del servidor y, si viene, `campo` (para marcarlo en el formulario).
 
-    /**
-     * fetch con JSON y errores uniformes. Ante un error lanza Error con el mensaje de la API
-     * y, si viene, el campo afectado (para marcarlo en el formulario).
-     */
+    /** REST: fetch con JSON y errores uniformes. */
     async function pedir(ruta, { signal, metodo = "GET", datos } = {}) {
       const respuesta = await fetch(`/api${ruta}`, {
         method: metodo,
@@ -347,7 +366,7 @@
       return cuerpo;
     }
 
-    const api = {
+    const apiRest = {
       listarClientes: (busqueda, signal) => pedir(`/clientes?q=${encodeURIComponent(busqueda)}`, { signal }),
       obtenerCliente: (id, signal) => pedir(`/clientes/${id}`, { signal }),
       crearCliente: (datos) => pedir("/clientes", { metodo: "POST", datos }),
@@ -361,6 +380,109 @@
         pedir(`/clientes/${clienteId}/actividades/${id}/completar`, { metodo: "POST", datos: {} }),
       eliminarActividad: (clienteId, id) => pedir(`/clientes/${clienteId}/actividades/${id}`, { metodo: "DELETE" }),
     };
+
+    /**
+     * Cliente MCP mínimo sobre Streamable HTTP (JSON-RPC 2.0 por POST a /mcp).
+     * Hace el handshake `initialize` una vez y luego invoca herramientas con `tools/call`.
+     */
+    function crearClienteMcp(url) {
+      const VERSION_PROTOCOLO = "2025-06-18";
+      let siguienteId = 1;
+      let inicializacion = null;
+
+      async function enviar(mensaje, signal) {
+        const respuesta = await fetch(url, {
+          method: "POST",
+          signal,
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json, text/event-stream",
+            "MCP-Protocol-Version": VERSION_PROTOCOLO,
+          },
+          body: JSON.stringify({ jsonrpc: "2.0", ...mensaje }),
+        });
+        if (respuesta.status === 202) return null; // notificación aceptada, sin cuerpo
+        const texto = await respuesta.text();
+        // El servidor responde JSON; si respondiera como stream SSE, el mensaje viene en las líneas "data:".
+        const json = respuesta.headers.get("Content-Type")?.includes("text/event-stream")
+          ? texto.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5)).join("")
+          : texto;
+        const cuerpo = json ? JSON.parse(json) : null;
+        if (cuerpo?.error) throw new Error(`MCP: ${cuerpo.error.message}`);
+        if (!respuesta.ok) throw new Error(`Error ${respuesta.status} del servidor MCP`);
+        return cuerpo?.result;
+      }
+
+      const rpc = (method, params, signal) => enviar({ id: siguienteId++, method, params }, signal);
+
+      async function inicializar() {
+        await rpc("initialize", {
+          protocolVersion: VERSION_PROTOCOLO,
+          capabilities: {},
+          clientInfo: { name: "minicrm-web", version: "1.0.0" },
+        });
+        await enviar({ method: "notifications/initialized" });
+      }
+
+      /** Invoca una herramienta y devuelve su structuredContent; los errores de negocio llegan con isError. */
+      async function herramienta(nombre, argumentos, signal) {
+        inicializacion ??= inicializar().catch((error) => {
+          inicializacion = null; // permite reintentar si el servidor no estaba disponible
+          throw error;
+        });
+        await inicializacion;
+        const resultado = await rpc("tools/call", { name: nombre, arguments: argumentos }, signal);
+        if (resultado.isError) {
+          const detalle = resultado.structuredContent?.error;
+          const error = new Error(detalle?.mensaje ?? resultado.content?.[0]?.text ?? `Falló ${nombre}`);
+          error.campo = detalle?.campo;
+          throw error;
+        }
+        return resultado.structuredContent;
+      }
+
+      return herramienta;
+    }
+
+    const herramientaMcp = crearClienteMcp("/mcp");
+
+    const apiMcp = {
+      listarClientes: async (busqueda, signal) => (await herramientaMcp("listar_clientes", { busqueda }, signal)).clientes,
+      obtenerCliente: async (id, signal) => (await herramientaMcp("obtener_cliente", { clienteId: id }, signal)).cliente,
+      crearCliente: async (datos) => (await herramientaMcp("crear_cliente", datos)).cliente,
+      actualizarCliente: async (id, datos) => (await herramientaMcp("actualizar_cliente", { clienteId: id, ...datos })).cliente,
+      eliminarCliente: async (id) => { await herramientaMcp("eliminar_cliente", { clienteId: id }); },
+
+      crearActividad: async (clienteId, datos) => (await herramientaMcp("agregar_actividad", { clienteId, ...datos })).actividad,
+      actualizarActividad: async (clienteId, id, datos) =>
+        (await herramientaMcp("actualizar_actividad", { clienteId, actividadId: id, ...datos })).actividad,
+      completarActividad: async (clienteId, id) =>
+        (await herramientaMcp("completar_actividad", { clienteId, actividadId: id })).actividad,
+      eliminarActividad: async (clienteId, id) => { await herramientaMcp("eliminar_actividad", { clienteId, actividadId: id }); },
+    };
+
+    const CONEXIONES = {
+      rest: { etiqueta: "REST", descripcion: "API REST en /api", api: apiRest },
+      mcp: { etiqueta: "MCP", descripcion: "Servidor MCP en /mcp", api: apiMcp },
+    };
+
+    // La conexión elegida se recuerda en este navegador (si el almacenamiento está disponible).
+    const CLAVE_CONEXION = "minicrm.conexion";
+    function leerConexion() {
+      try {
+        const guardada = localStorage.getItem(CLAVE_CONEXION);
+        return guardada in CONEXIONES ? guardada : "rest";
+      } catch {
+        return "rest";
+      }
+    }
+    function guardarConexion(conexion) {
+      try { localStorage.setItem(CLAVE_CONEXION, conexion); } catch { /* sin almacenamiento: solo dura la sesión */ }
+    }
+
+    /** Los componentes obtienen la implementación activa desde el contexto. */
+    const ApiContexto = createContext(apiRest);
+    const useApi = () => useContext(ApiContexto);
 
     const esCancelacion = (error) => error?.name === "AbortError";
 
@@ -828,6 +950,7 @@
     }
 
     function DetalleNuevo({ onCreado, onCancelar }) {
+      const api = useApi();
       async function guardar(datos) {
         onCreado(await api.crearCliente(datos));
       }
@@ -842,7 +965,8 @@
 
     /** Ficha del cliente (o su formulario de edición), subformulario y listas de actividades. */
     function Detalle({ clienteId, onGuardado, onEliminado }) {
-      const consulta = useConsulta((signal) => api.obtenerCliente(clienteId, signal), [clienteId]);
+      const api = useApi();
+      const consulta = useConsulta((signal) => api.obtenerCliente(clienteId, signal), [clienteId, api]);
       const { datos: cliente, error, recargar } = consulta;
 
       const [editandoCliente, setEditandoCliente] = useState(false);
@@ -968,16 +1092,40 @@
 
     // ── Aplicación ─────────────────────────────────────────────────────────
 
+    /** Selector de la conexión: el resto de la app no sabe si habla con REST o con MCP. */
+    function SelectorConexion({ valor, onCambio }) {
+      return (
+        <div className="selector-conexion" role="radiogroup" aria-label="Conexión con el servidor">
+          <span className="selector-titulo">Conexión</span>
+          {Object.entries(CONEXIONES).map(([clave, { etiqueta, descripcion }]) => (
+            <button key={clave} type="button" role="radio" aria-checked={valor === clave}
+                    title={descripcion} onClick={() => onCambio(clave)}>
+              {etiqueta}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
     function App() {
+      const [conexion, setConexion] = useState(leerConexion);
+      const api = CONEXIONES[conexion].api;
+
       const [busqueda, setBusqueda] = useState("");
       const [seleccionadoId, setSeleccionadoId] = useState(null);
       const [creando, setCreando] = useState(false);
       const busquedaDemorada = useDemorado(busqueda, 250);
 
+      // Al cambiar de conexión, la lista y el detalle se vuelven a pedir por el nuevo canal.
       const consultaClientes = useConsulta(
         (signal) => api.listarClientes(busquedaDemorada.trim(), signal),
-        [busquedaDemorada],
+        [busquedaDemorada, api],
       );
+
+      function cambiarConexion(nueva) {
+        setConexion(nueva);
+        guardarConexion(nueva);
+      }
       const clientes = consultaClientes.datos;
       const recargarClientes = consultaClientes.recargar;
 
@@ -1018,13 +1166,20 @@
           </PanelDetalle>
         );
       } else {
-        // key: al cambiar de cliente se reinicia el estado interno (formularios, edición en curso).
-        detalle = <Detalle key={seleccionadoId} clienteId={seleccionadoId} onGuardado={recargarClientes} onEliminado={alEliminar} />;
+        // key: al cambiar de cliente o de conexión se reinicia el estado interno (formularios, edición en curso).
+        detalle = (
+          <Detalle key={`${conexion}:${seleccionadoId}`} clienteId={seleccionadoId}
+                   onGuardado={recargarClientes} onEliminado={alEliminar} />
+        );
       }
 
       return (
+        <ApiContexto.Provider value={api}>
         <div className="app">
-          <header className="barra"><h1>MiniCRM</h1></header>
+          <header className="barra">
+            <h1>MiniCRM</h1>
+            <SelectorConexion valor={conexion} onCambio={cambiarConexion} />
+          </header>
           <div className="contenido">
             <Maestro
               busqueda={busqueda}
@@ -1037,6 +1192,7 @@
             {detalle}
           </div>
         </div>
+        </ApiContexto.Provider>
       );
     }
 
