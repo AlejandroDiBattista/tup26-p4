@@ -165,6 +165,23 @@
       margin: 0; padding: 12px 14px 4px;
     }
 
+    /* Actividades */
+    .grupo + .grupo { border-top: 1px solid var(--borde); }
+    .actividad {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 14px;
+    }
+    .actividad input[type=checkbox] {
+      width: 16px; height: 16px; margin: 2px 0 0;
+      accent-color: var(--acento);
+      flex-shrink: 0;
+    }
+    .actividad-texto { flex: 1; min-width: 0; }
+    .actividad .detalle { color: var(--suave); font-size: 12px; margin-top: 2px; }
+    .actividad.vencida .detalle { color: var(--peligro); }
+    .actividad.completada .titulo { color: var(--suave); text-decoration: line-through; }
+    .vacio-grupo { color: var(--suave); font-size: 12px; margin: 0; padding: 0 14px 10px; }
+
     .vacio-detalle {
       height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -394,25 +411,62 @@
 
     // ================= Componentes de actividades =================
 
+    // 'AAAA-MM-DD' -> 'DD/MM/AAAA'
+    const formatoFecha = f => f.split('-').reverse().join('/');
+
+    // Compromisos: primero sin fecha, luego vencidos, luego hoy o futuro; con fecha, ascendente
+    const grupo = a => (!a.fechaCompromiso ? 0 : a.vencida ? 1 : 2);
+    const ordenarCompromisos = lista =>
+      [...lista].sort((a, b) =>
+        grupo(a) - grupo(b) || (a.fechaCompromiso ?? '').localeCompare(b.fechaCompromiso ?? '') || a.id - b.id);
+
+    // Completadas: la más reciente primero
+    const ordenarCompletadas = lista =>
+      [...lista].sort((a, b) => b.fechaFinalizacion.localeCompare(a.fechaFinalizacion) || b.id - a.id);
+
     function ItemActividad({ actividad }) {
-      const fecha = actividad.completada
-        ? `Completada el ${actividad.fechaFinalizacion}`
-        : actividad.fechaCompromiso ? `Compromiso: ${actividad.fechaCompromiso}` : 'Sin compromiso';
+      const { completada, vencida, fechaCompromiso, fechaFinalizacion } = actividad;
+      const fecha = completada
+        ? `Completada el ${formatoFecha(fechaFinalizacion)}`
+        : fechaCompromiso
+          ? `${vencida ? 'Vencida' : 'Compromiso'}: ${formatoFecha(fechaCompromiso)}`
+          : 'Sin compromiso';
+
       return (
-        <li className="lista-item">
-          <div className="titulo">{actividad.descripcion}</div>
-          <div className="detalle">{fecha}</div>
+        <li className={`actividad ${completada ? 'completada' : ''} ${vencida ? 'vencida' : ''}`}>
+          <input
+            type="checkbox"
+            checked={completada}
+            disabled
+            aria-label={completada ? 'Actividad completada' : 'Actividad pendiente'}
+          />
+          <div className="actividad-texto">
+            <div className="titulo">{actividad.descripcion}</div>
+            <div className="detalle">{fecha}</div>
+          </div>
         </li>
       );
     }
 
-    function ListaActividades({ actividades }) {
+    function GrupoActividades({ titulo, actividades, vacio }) {
       return (
-        <Lista
-          items={actividades}
-          vacio="Sin actividades."
-          render={a => <ItemActividad key={a.id} actividad={a} />}
-        />
+        <div className="grupo">
+          <h4 className="seccion-titulo">{titulo} ({actividades.length})</h4>
+          {actividades.length
+            ? <ul className="lista">{actividades.map(a => <ItemActividad key={a.id} actividad={a} />)}</ul>
+            : <p className="vacio-grupo">{vacio}</p>}
+        </div>
+      );
+    }
+
+    function ListaActividades({ actividades }) {
+      const compromisos = ordenarCompromisos(actividades.filter(a => !a.completada));
+      const completadas = ordenarCompletadas(actividades.filter(a => a.completada));
+      return (
+        <>
+          <GrupoActividades titulo="Compromisos" actividades={compromisos} vacio="Sin compromisos pendientes." />
+          <GrupoActividades titulo="Actividades completadas" actividades={completadas} vacio="Ninguna completada." />
+        </>
       );
     }
 
@@ -451,7 +505,6 @@
           {modo === 'editar'
             ? <FormularioCliente key={cliente.id} cliente={cliente} onGuardar={onGuardar} onCancelar={onCancelar} />
             : <FichaCliente cliente={cliente} onEditar={onEditar} onEliminar={onEliminar} />}
-          <h4 className="seccion-titulo">Actividades</h4>
           <div className="panel-cuerpo">
             <ListaActividades actividades={cliente.actividades} />
           </div>
