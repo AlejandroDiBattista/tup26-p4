@@ -303,6 +303,40 @@
     }
     .banner .boton-icono { width: 30px; height: 30px; border: 0; background: none; color: inherit; }
 
+    /* ── Modal de confirmación ──────────────────────────────────────────── */
+    .dialogo {
+      width: min(440px, calc(100vw - 32px));
+      padding: 0;
+      border: 0;
+      border-radius: 14px;
+      background: var(--color-panel);
+      color: var(--color-texto);
+      box-shadow: 0 24px 60px rgb(16 24 40 / 28%);
+    }
+    .dialogo[open] { animation: aparecer .16s ease-out; }
+    .dialogo::backdrop { background: rgb(16 24 40 / 45%); animation: oscurecer .16s ease-out; }
+    .dialogo-cuerpo { display: flex; gap: 16px; align-items: flex-start; padding: 24px 24px 20px; }
+    .dialogo-icono {
+      flex: none;
+      display: grid; place-items: center;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--color-exito-fondo); color: var(--color-exito);
+    }
+    .dialogo-icono.peligro { background: var(--color-peligro-fondo); color: var(--color-peligro); }
+    .dialogo-icono svg { width: 22px; height: 22px; }
+    .dialogo-mensaje { padding-top: 9px; overflow-wrap: anywhere; }
+    .dialogo-acciones {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 12px 24px;
+      background: #f7f9fc;
+      border-top: 1px solid var(--color-borde);
+    }
+    .boton.peligro-solido { background: var(--color-peligro); border-color: var(--color-peligro); color: #fff; }
+    .boton.peligro-solido:hover:not(:disabled) { background: #b72c2c; }
+    @keyframes aparecer { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+    @keyframes oscurecer { from { opacity: 0; } }
+
     /* ── Pantallas angostas: maestro arriba, detalle abajo, cada uno con su scroll ── */
     @media (max-width: 760px) {
       .barra { padding: 10px 16px; }
@@ -617,6 +651,62 @@
         </div>
       );
     }
+
+    /**
+     * Modal de confirmación con <dialog> (reemplaza a window.confirm).
+     * `pedido` = { mensaje, peligro } mientras está abierto; null cuando está cerrado.
+     * Esc, Cancelar o un clic fuera del recuadro responden false.
+     */
+    function DialogoConfirmacion({ pedido, onResponder }) {
+      const refDialogo = useRef(null);
+      const refAceptar = useRef(null);
+      const refCancelar = useRef(null);
+
+      useEffect(() => {
+        const dialogo = refDialogo.current;
+        if (pedido && !dialogo.open) {
+          dialogo.showModal();
+          // En las acciones destructivas el foco queda en Cancelar, para no confirmar con Enter por error.
+          (pedido.peligro ? refCancelar : refAceptar).current?.focus();
+        } else if (!pedido && dialogo.open) {
+          dialogo.close();
+        }
+      }, [pedido]);
+
+      return (
+        <dialog
+          ref={refDialogo}
+          className="dialogo"
+          aria-describedby="dialogo-mensaje"
+          onCancel={(e) => { e.preventDefault(); onResponder(false); }}
+          onClick={(e) => e.target === refDialogo.current && onResponder(false)}
+        >
+          {pedido && (
+            <>
+              <div className="dialogo-cuerpo">
+                <span className={`dialogo-icono${pedido.peligro ? " peligro" : ""}`} aria-hidden="true">
+                  {pedido.peligro ? <IconoPapelera /> : <IconoCheck />}
+                </span>
+                <p id="dialogo-mensaje" className="dialogo-mensaje">{pedido.mensaje}</p>
+              </div>
+              <div className="dialogo-acciones">
+                <button ref={refCancelar} type="button" className="boton" onClick={() => onResponder(false)}>
+                  Cancelar
+                </button>
+                <button ref={refAceptar} type="button" className={`boton ${pedido.peligro ? "peligro-solido" : "primario"}`}
+                        onClick={() => onResponder(true)}>
+                  Aceptar
+                </button>
+              </div>
+            </>
+          )}
+        </dialog>
+      );
+    }
+
+    /** `confirmar(mensaje, { peligro })` abre el modal y devuelve una promesa con la respuesta. */
+    const ConfirmacionContexto = createContext(async (mensaje) => window.confirm(mensaje));
+    const useConfirmar = () => useContext(ConfirmacionContexto);
 
     function Avatar({ cliente }) {
       const [fondo, texto] = colorAvatar(cliente.id);
@@ -966,6 +1056,7 @@
     /** Ficha del cliente (o su formulario de edición), subformulario y listas de actividades. */
     function Detalle({ clienteId, onGuardado, onEliminado }) {
       const api = useApi();
+      const confirmar = useConfirmar();
       const consulta = useConsulta((signal) => api.obtenerCliente(clienteId, signal), [clienteId, api]);
       const { datos: cliente, error, recargar } = consulta;
 
@@ -1001,10 +1092,11 @@
         onGuardado(actualizado);
       }
 
-      function eliminarCliente() {
+      async function eliminarCliente() {
         const cantidad = cliente.actividades.length;
         const detalle = cantidad ? ` y sus ${cantidad} actividad${cantidad === 1 ? "" : "es"}` : "";
-        if (!window.confirm(`¿Eliminar a ${nombreCompleto(cliente)}${detalle}? Esta acción no se puede deshacer.`)) return;
+        const mensaje = `¿Eliminar a ${nombreCompleto(cliente)}${detalle}? Esta acción no se puede deshacer.`;
+        if (!(await confirmar(mensaje, { peligro: true }))) return;
         ejecutar(async () => {
           await api.eliminarCliente(clienteId);
           onEliminado(clienteId);
@@ -1018,8 +1110,9 @@
         recargar();
       }
 
-      function completarActividad(actividad) {
-        if (!window.confirm(`¿Marcar "${actividad.descripcion}" como completada? Después no podrá editarse ni borrarse.`)) return;
+      async function completarActividad(actividad) {
+        const mensaje = `¿Marcar "${actividad.descripcion}" como completada? Después no podrá editarse ni borrarse.`;
+        if (!(await confirmar(mensaje))) return;
         ejecutar(async () => {
           await api.completarActividad(clienteId, actividad.id);
           if (actividadEditada?.id === actividad.id) setActividadEditada(null);
@@ -1027,8 +1120,8 @@
         });
       }
 
-      function eliminarActividad(actividad) {
-        if (!window.confirm(`¿Eliminar la actividad "${actividad.descripcion}"?`)) return;
+      async function eliminarActividad(actividad) {
+        if (!(await confirmar(`¿Eliminar la actividad "${actividad.descripcion}"?`, { peligro: true }))) return;
         ejecutar(async () => {
           await api.eliminarActividad(clienteId, actividad.id);
           if (actividadEditada?.id === actividad.id) setActividadEditada(null);
@@ -1126,6 +1219,18 @@
         setConexion(nueva);
         guardarConexion(nueva);
       }
+
+      // Un único modal de confirmación para toda la app; `confirmar` se reparte por contexto.
+      const [pedidoConfirmacion, setPedidoConfirmacion] = useState(null);
+      const confirmar = useCallback(
+        (mensaje, { peligro = false } = {}) =>
+          new Promise((resolver) => setPedidoConfirmacion({ mensaje, peligro, resolver })),
+        [],
+      );
+      function responderConfirmacion(aceptado) {
+        pedidoConfirmacion?.resolver(aceptado);
+        setPedidoConfirmacion(null);
+      }
       const clientes = consultaClientes.datos;
       const recargarClientes = consultaClientes.recargar;
 
@@ -1175,6 +1280,7 @@
 
       return (
         <ApiContexto.Provider value={api}>
+        <ConfirmacionContexto.Provider value={confirmar}>
         <div className="app">
           <header className="barra">
             <h1>MiniCRM</h1>
@@ -1191,7 +1297,9 @@
             />
             {detalle}
           </div>
+          <DialogoConfirmacion pedido={pedidoConfirmacion} onResponder={responderConfirmacion} />
         </div>
+        </ConfirmacionContexto.Provider>
         </ApiContexto.Provider>
       );
     }
