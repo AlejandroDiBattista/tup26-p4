@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
+  <style>
+    /* tus estilos */
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [textoBusqueda, setTextoBusqueda] = useState('');
+      const [clientes, setClientes] = useState([]);
+      const [seleccionado, setSeleccionado] = useState(null);
+
+      useEffect(() => {
+        fetch('/api/clientes?buscar=' + textoBusqueda)
+          .then(response => response.json())
+          .then(data => setClientes(data));
+      }, [textoBusqueda]);
+
+      return (
+        <>
+          <h1>MiniCRM</h1>
+          <input
+            type="text"
+            value={textoBusqueda}
+            onChange={event => setTextoBusqueda(event.target.value)}
+          />
+          <ul>
+            {clientes.map(cliente => (
+              <li key={cliente.id} onClick={() => setSeleccionado(cliente)}>
+                {cliente.nombre} - {cliente.email}
+              </li>
+            ))}
+          </ul>
+          {seleccionado ? (
+            <section>
+              <h2>{seleccionado.nombre}</h2>
+              <p>Email: {seleccionado.email}</p>
+              <p>Teléfono: {seleccionado.telefono}</p>
+              <p>Dirección: {seleccionado.direccion}</p>
+            </section>
+          ) : (
+            <p>Elegí un cliente</p>
+          )}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
