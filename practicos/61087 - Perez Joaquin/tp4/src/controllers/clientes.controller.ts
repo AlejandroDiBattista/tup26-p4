@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { Clientes, ErrorDeNegocio } from "../services/clientes.js";
 
-const idNumerico = (valor: string) => {
-  const id = Number(valor);
+const idNumerico = (valor: string | string[]) => {
+  const id = Number(Array.isArray(valor) ? valor[0] : valor);
   if (!Number.isInteger(id) || id < 1) throw new ErrorDeNegocio("Id inválido.");
   return id;
 };
