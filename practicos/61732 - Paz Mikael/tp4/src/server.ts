@@ -2,6 +2,7 @@ import express from 'express'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import './db/index.js'
+import { sembrarDatos } from './db/seed.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -16,6 +17,11 @@ app.get('/', (_req, res) => {
   res.redirect('/MiniCRM.html')
 })
 
-app.listen(puerto, () => {
-  console.log(`MiniCRM iniciado en http://localhost:${puerto}`)
-})
+async function iniciar() {
+  await sembrarDatos()
+  app.listen(puerto, () => {
+    console.log(`MiniCRM iniciado en http://localhost:${puerto}`)
+  })
+}
+
+iniciar()
