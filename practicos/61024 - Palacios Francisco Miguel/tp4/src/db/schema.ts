@@ -14,6 +14,7 @@ export const actividades = sqliteTable("actividades", {
   descripcion: text("descripcion").notNull(),
   fecha: text("fecha"),
   completada: integer("completada", { mode: "boolean" }).notNull().default(false),
+  completadaEn: text("completada_en"),
 });
 
 export type Cliente = typeof clientes.$inferSelect;

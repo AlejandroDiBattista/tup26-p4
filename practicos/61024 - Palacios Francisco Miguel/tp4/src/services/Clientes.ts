@@ -49,7 +49,9 @@ export class Actividades {
   }
 
   static completar(id: number, clienteId: number) {
-    return db.update(actividades).set({ completada: true })
+    const ahora = new Date();
+    const fechaLocal = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
+    return db.update(actividades).set({ completada: true, completadaEn: fechaLocal })
       .where(and(eq(actividades.id, id), eq(actividades.clienteId, clienteId), eq(actividades.completada, false)))
       .returning().get();
   }

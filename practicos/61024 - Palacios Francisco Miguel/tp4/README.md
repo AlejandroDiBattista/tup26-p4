@@ -26,7 +26,7 @@ npm run build
 npm start
 ```
 
-El puerto predeterminado es `3000`; se puede cambiar definiendo la variable de entorno `PORT`.
+El puerto predeterminado es `3000`; se puede cambiar definiendo la variable de entorno `PORT`. Para usar otro archivo SQLite (por ejemplo, durante una prueba), se puede indicar con `MINICRM_DATABASE_FILE`.
 
 ## API
 
