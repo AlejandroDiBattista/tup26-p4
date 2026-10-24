@@ -117,6 +117,13 @@
     .formulario-acciones button[type="submit"] { background: var(--turquesa); color: var(--blanco);}
     .formulario-acciones button:disabled { opacity: 0.5; cursor: not-allowed;}
     .formulario-acciones button[type="button"] { background: #e5eeee; color: var(--oscuro);}
+  
+    .formulario-cliente { display: flex; flex-direction: column; gap: 12px; padding: 15px; margin-bottom: 15px; background-color: #F4F9F9; border: 1px solid #C9D4D5; border-radius: 10px; }
+    .formulario-cliente h3 { margin: 0 0 5px; font-size: 17px; color: #0B6E6B; }
+    .campo-formulario { display: flex; flex-direction: column; gap: 5px; }
+    .campo-formulario label { font-size: 13px; font-weight: 600; }
+    .campo-formulario input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #C9D4D5; border-radius: 6px; font-size: 14px; }
+
   </style>
   
 </head>
@@ -151,31 +158,172 @@
         </aside>
       );
     }
-    function ListaClientes({onSeleccionar}) {
-        const ClientesEjemplo = [
+    function ListaClientes({onSeleccionar, clienteParaEditar, clienteParaEliminar, onClienteEliminado}) {
+        
+        const [busqueda, setBusqueda] = React.useState("");
+        const [mostrarFormularioCliente, setMostrarFormularioCliente] = React.useState(false);
+        const [nuevoCliente, setNuevoCliente] = React.useState({
+            nombre: "", apellido: "", email: "", telefono: "", domicilio: "", localidad: ""
+        });
+        const [clienteEnEdicion, setClienteEnEdicion] = React.useState(null);
+
+        const [clientes, setClientes] = React.useState([
             { id: 1, nombre: "Ana Garcia", email: "ana@garcia.com", telefono: "381999992", domicilio: "San Martin 450", localidad: "Yerba buena",},
             { id: 2, nombre: "Bruno Lopez", email: "lopez@bruno.com", telefono: "381777772", domicilio: "25 de Mayo 120", localidad: "San Miguel de Tucumán",},
             { id: 3, nombre: "Carla Perez", email: "carla@prz.com", telefono: "3815555553", domicilio: "Belgrano 850", localidad: "Tafi Viejo",},
             { id: 4, nombre: "Diego Ruiz", email: "diego@rz.com", telefono: "3813332220", domicilio: "Mitre 230", localidad: "Banda del Rio Sali",},
-        ]
+        ]);
+
+        React.useEffect(() => {
+            if (clienteParaEditar) {
+                setClienteEnEdicion(clienteParaEditar);
+                
+                setNuevoCliente({
+                    nombre: clienteParaEditar.nombre || "",
+                    apellido: clienteParaEditar.apellido || "",
+                    email: clienteParaEditar.email || "",
+                    telefono: clienteParaEditar.telefono || "",
+                    domicilio: clienteParaEditar.domicilio || "",
+                    localidad: clienteParaEditar.localidad || ""
+                });
+                setMostrarFormularioCliente(true);
+            }
+        }, [clienteParaEditar]);
+
+        React.useEffect(() => {
+            if (clienteParaEliminar) {
+                setClientes((anteriores) => anteriores.filter(
+                    (cliente) => cliente.id !== clienteParaEliminar.id
+                )
+            );
+            onClienteEliminado();
+            }
+        }, [clienteParaEliminar]);
+
+        const clientesFiltrados = clientes.filter((cliente) =>
+            Object.values(cliente).some((valor) => 
+                String(valor) .toLowerCase() .includes(busqueda.toLowerCase()))
+            );
+
+        console.log("Cliente en React:", clientes);
+
+    function guardarCliente(event) {
+        event.preventDefault();
+
+        const clienteNuevo = {
+            ...nuevoCliente,
+            id: Date.now(),
+            nombre: nuevoCliente.nombre.trim(),
+            apellido: nuevoCliente.apellido.trim(),
+            email: nuevoCliente.email.trim()
+        };
+        setClientes((anteriores) => 
+            clienteEnEdicion ? anteriores.map((cliente) => 
+                cliente.id === clienteEnEdicion.id ? {...cliente, ...clienteNuevo, id: cliente.id} : cliente) : [...anteriores, clienteNuevo]
+            );
+        setNuevoCliente({ nombre: "", apellido: "", email: "", telefono: "", domicilio: "", localidad: ""});
+        setClienteEnEdicion(null);
+        setMostrarFormularioCliente(false);
+    }
+
+
         return (
             <section className="panel-clientes">
                 <div className="panel-clientes-header">
                     <h2>Clientes</h2>
 
-                    <button type="button" className="btn-agregar">
+                    <button type="button" className="btn-agregar" onClick={() =>{
+                        setClienteEnEdicion(null);
+                        setNuevoCliente({
+                            nombre: "",
+                            apellido: "",
+                            email: "",
+                            telefono: "",
+                            domicilio: "",
+                            localidad: ""
+                        });
+                        setMostrarFormularioCliente(true);
+                    }}>
                         <i className="bi bi-plus-lg"></i>
                         Agregar    
                     </button>
                 </div>
                 
                 <div className="buscador-clientes">
-                    <i className="bi bi-search"></i>
-                    <input type="search" placeholder="Buscar por cualquier campo..." arial-label="Buscar clientes"/>
+                    {mostrarFormularioCliente && (
+                        /*FORMULARIO NUEVO CLIENTE*/
+                        <form className="formulario-cliente" onSubmit={guardarCliente} >
+                            <h3>{clienteEnEdicion ? "Editar cliente" : "Nuevo cliente"}</h3>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="nombre-cliente">Nombre</label>
+                                <input id="nombre-cliente" type="text" placeholder="Ingrese el nombre" value={nuevoCliente.nombre}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, nombre: event.target.value})} required />
+                            </div> 
+
+                            <div className="campo-formulario">
+                                <label htmlFor="apellido-cliente">Apellido</label>
+                                <input id="apellido-cliente" type="text" placeholder="Ingrese el apellido" value={nuevoCliente.apellido}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, apellido: event.target.value})} required />
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="email-cliente">Correo electronico</label>
+                                <input id="email-cliente" type="email" placeholder="ejemplo@correo.com" value={nuevoCliente.email}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, email: event.target.value})} required />
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="telefono-cliente">Telefono</label>
+                                <input id="telefono-cliente" type="tel" placeholder="Ej:381155667" value={nuevoCliente.telefono} 
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, telefono: event.target.value})} />    
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="domicilio-cliente">Domicilio</label>
+                                <input id="domicilio-cliente" type="text" placeholder="Ej:San Martin 800" value={nuevoCliente.domicilio}
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, domicilio: event.target.value})} />
+                            </div>
+
+                            <div className="campo-formulario">
+                                <label htmlFor="localidad-cliente">Localidad</label>
+                                <input id="localidad-cliente" type="text" placeholder="Ej:Tafi Viejo" value={nuevoCliente.localidad} 
+                                    onChange={(event) => setNuevoCliente({...nuevoCliente, localidad: event.target.value})} />
+                            </div> 
+                            
+                            <button type="submit" className="btn-guardar-cliente">
+                                <i className="bi bi-check-lg"></i>
+                                Guardar Cliente    
+                            </button>
+
+                            <button type="button" onClick={() => {
+                                setMostrarFormularioCliente(false);
+                                setClienteEnEdicion(null);
+                                setNuevoCliente({
+                                    nombre: "",
+                                    apellido: "",
+                                    email: "",
+                                    telefono: "",
+                                    domicilio: "",
+                                    localidad: ""
+                                });
+                            }} >
+                                Cancelar
+                            </button>
+                        </form>
+                    )}
+
+                    {!mostrarFormularioCliente && (
+                        <div clas="buscador-clientes">
+                            <i className="bi bi-search"></i>
+                            <input type="search" placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes" value={busqueda} onChange={(event) => setBusqueda(event.target.value)} />
+                        </div>
+                    )}
+                    
                 </div>
                 
                 <div className="lista-clientes">
-                   {ClientesEjemplo.map((cliente) => (
+                   {clientesFiltrados.map((cliente) => (
                     <div className="cliente-item" key={cliente.id} role="button" tabIndex={0} onClick={() => onSeleccionar(cliente)}
                         onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -189,7 +337,7 @@
                         </div>
 
                     <div className="cliente-info">
-                        <strong>{cliente.nombre}</strong>
+                        <strong>{cliente.nombre} {cliente.apellido || "" } </strong>
                         <span>{cliente.email}</span>                        
                     </div>
                         <i className="bi bi-chevron-right"></i>
@@ -199,10 +347,69 @@
             </section>
         );
     }
-    function FichaCliente({cliente}) {
+    function FichaCliente({cliente, onEditarCliente, onElminarCliente}) {
         const [mostrarFormularioActividad, setMostrarFormularioActividad] = React.useState(false);
         const [descripcionActividad, setDescripcionActividad] = React.useState("");
         const [fechaCompromiso, setFechaCompromiso] = React.useState("");
+        const [actividadesPorCliente, setActividadesPorCliente] = React.useState({});
+        const [actividadEnEdicion, setActividadEnEdicion] = React.useState(null);
+        const [clienteEnEdicion, setClienteEnEdicion] = React.useState(null);
+
+    function guardarActividad(event) {
+        event.preventDefault();
+
+        const descripcion = descripcionActividad.trim();
+
+        if (!cliente || !descripcion) {
+                    return;
+        }
+
+        const nuevaActividad = {id: Date.now(), descripcion: descripcion, fechaCompromiso: fechaCompromiso || null, fechaFinalizacion: null,
+        };
+
+        setActividadesPorCliente((anteriores) => ({ ...anteriores, [cliente.id]: actividadEnEdicion
+            ? (anteriores[cliente.id] || []).map((actividad) => actividad.id === actividadEnEdicion.id
+                    ? { ...actividad, descripcion: descripcion, fechaCompromiso: fechaCompromiso || null
+                        }: actividad ) : [ ...(anteriores[cliente.id] || []), nuevaActividad
+                        ]
+            }));
+
+        setActividadEnEdicion(null);
+        setDescripcionActividad("");
+        setFechaCompromiso("");
+        setMostrarFormularioActividad(false);
+    }
+
+    function completarActividad(idActividad) {
+            if (!cliente) return;
+
+            const hoy = new Date();
+
+            const fechaFinalizacion = [
+                hoy.getFullYear(),
+                String(hoy.getMonth() + 1).padStart(2, "0"),
+                String(hoy.getDate()).padStart(2, "0"),
+            ].join("-");
+
+            setActividadesPorCliente((anteriores) => ({ ...anteriores, [cliente.id]: (anteriores[cliente.id] || []).map((actividad) => 
+            actividad.id === idActividad ? { ...actividad, fechaFinalizacion} : actividad),
+            }));
+        }
+        const actividadesPendientes = (
+            actividadesPorCliente[cliente?.id] || []
+        ).filter((actividad) => !actividad.fechaFinalizacion);
+
+        const actividadesCompletadas = (
+            actividadesPorCliente[cliente?.id] || []
+        ).filter((actividad) => actividad.fechaFinalizacion);
+
+    function eliminarActividad(idActividad) {
+        if (!cliente) return;
+
+        setActividadesPorCliente((anteriores) => ({...anteriores, [cliente.id]: (anteriores[cliente.id] || []).filter((actividad) => actividad.id !== idActividad)
+    }));
+    }
+
         return (
             <section className="panel-detalle">
                 <div className="detalle-header">
@@ -210,11 +417,15 @@
                     
                     {cliente && (
                         <div className="acciones-cliente">
-                            <button type="button" className="btn-editar">
+                            <button type="button" className="btn-editar" onClick={() => onEditarCliente(cliente)} >
                                 <i className="bi bi-pencil-square"></i>
                                 Editar    
                             </button>
-                            <button type="button" className="btn-eliminar">
+                            <button type="button" className="btn-eliminar" onClick={() => {
+                                if (window.confirm("Seguro que quieres eliminar este cliente.")){
+                                    onElminarCliente(cliente);
+                                }
+                            }} >
                                 <i className="bi bi-trash"></i>
                                 Eliminar    
                             </button>    
@@ -235,7 +446,7 @@
                                     .toUpperCase() }    
                             </div>         
                             <div className="perfil-info">
-                                <h3>{cliente.nombre}</h3>    
+                                <h3>{cliente.nombre} {cliente.apellido || ""} </h3>    
                                 <p>
                                     <i className="bi bi-envelope"></i>
                                     {cliente.email}    
@@ -254,25 +465,30 @@
                         <div className="actividades-cliente">
                             <div className="actividades-header">
                                 <h3>Actividades</h3>        
-                                <button type="button" className="btn-agregar-actividad" onClick={() => setMostrarFormularioActividad(true)}>
+                                <button type="button" className="btn-agregar-actividad" 
+                                    onClick={() => {setActividadEnEdicion(null);
+                                                    setDescripcionActividad("");
+                                                    setFechaCompromiso("");
+                                                    setMostrarFormularioActividad(true);
+                                    }}>
                                     <i className="bi bi-plus-lg"></i>
                                     Nueva actividad    
                                 </button>
                             </div>
                             {mostrarFormularioActividad && (
-                                <form className="formulario-actividad" onSubmit={(event) => event.preventDeFault()}>
+                                <form className="formulario-actividad" onSubmit={guardarActividad}>
                                     <label htmlFor="descripcion-actividad">
                                         Descripcion de la actividad
                                     </label>
                                     
-                                    <input id="descripcion-actividad" type="text" placeholder=" Ej: Llamar al cliente" required />
+                                    <input id="descripcion-actividad" type="text" placeholder=" Ej: Llamar al cliente" value={descripcionActividad} onChange={(event) => setDescripcionActividad(event.target.value)} required />
                                     <label htmlFor="fecha-actividad">
                                         Fecha de compromiso    
                                     </label>
 
-                                    <input id="fecha-actividad" type="date" />
+                                    <input id="fecha-actividad" type="date" value={fechaCompromiso} onChange={(event) => setFechaCompromiso(event.target.value)} />
                                     <div className="formulario-acciones">
-                                        <button type="button" disabled>
+                                        <button type="submit" disabled={!descripcionActividad.trim()}>
                                             Guardar    
                                         </button>
                                         <button type="button" onClick={() => setMostrarFormularioActividad(false)}>
@@ -285,32 +501,59 @@
                             <div className="actividades-pendientes">
                                 <h4>Compromisos pendientes</h4>
                                 
-                                <div className="actividad-item">
-                                    <input type="checkbox" arial-label="Completar actividad" />
-                                    
-                                    <span>Enviar presupuesto</span>
-                                    <span>24/10/2026</span> 
+                                {actividadesPorCliente.length === 0 ? (
+                                    <p>No hay actividades pendientes.</p>
+                                ):(
+                                    actividadesPendientes.map((actividad) => (
+                                        <div className="actividad-item" key={actividad.id}>
+                                            <input type="checkbox" aria-label="Completar actividad" onChange={() => completarActividad(actividad.id)}/>
 
-                                    <div className="acciones-actividad">
-                                        <button type="button" className="btn-editar-actividad" aria-label="Editar actividad" title="Editar actividad">
-                                            <i className="bi bi-pencil-square"></i>    
-                                        </button>
-                                        <button type="button" className="btn-eliminar-actividad" aria-label="Eliminar actividad" title="Eliminar actividad">
-                                            <i className="bi bi-trash"></i>    
-                                        </button>    
-                                    </div>
-                                </div>
+                                            <span>{actividad.descripcion}</span>
+
+                                            <span>{actividad.fechaCompromiso ? actividad.fechaCompromiso.split("-").reverse().join("/") : "Sin compromiso"}</span>
+
+                                            <div className="acciones-actividad">
+                                                <button type="button" className="btn-editar-actividad" ara-label="Editar actividad" title="Editar actividad"
+                                                    onClick={() => {
+                                                        setActividadEnEdicion(actividad);
+                                                        setDescripcionActividad(actividad.descripcion);
+                                                        setFechaCompromiso(actividad.fechaCompromiso);
+                                                        setMostrarFormularioActividad(true);
+                                                    }}
+                                                    >
+                                                        <i className="bi bi-pencil-square"></i>
+                                                </button>
+
+                                                <button type="button" className="btn-eliminar-actividad" aria-label="Eliminar actividad" title="Eliminar actividad" onClick={() => eliminarActividad(actividad.id)} >
+                                                    <i className="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
 
                             <div className="actividades-completadas">
                                 <h4>Actividades completadas</h4>
                                 
-                                <div className="actividad-item">
-                                    <i className="bi bi-check-circle-fill"></i>
-                                    
-                                    <span>Primera reunion con el cliente</span>
-                                    <span>Completada el 20/10/2026</span>
-                                </div>
+                                {actividadesCompletadas.length === 0 ? (
+                                    <p>No hay actividades completadas.</p>
+                                ) : (
+                                    actividadesCompletadas.map((actividad) => (
+                                        <div className="actividad-item" key={actividad.id}>
+                                            <i className="bi bi-check-circle-fill"></i>
+                                            
+                                            <span>{actividad.descripcion}</span>
+
+                                            <span>
+                                                completada el{" "} {actividad.fechaFinalizacion
+                                                    .split("-")
+                                                    .reverse()
+                                                    .join("/")}    
+                                            </span>
+                                        </div>
+                                    ))
+                                )}
                             </div>    
                             
                         </div>     
@@ -331,12 +574,21 @@
 
     function App() {
         const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
-      return (
+        const [clienteParaEditar, setClienteParaEditar] = React.useState(null);
+        const [clienteParaEliminar, setClienteParaEliminar] = React.useState(null);
+
+        return (
         <div className="app-container">
             <Sidebar />
             <main className="main-content">
-                <ListaClientes onSeleccionar={setClienteSeleccionado} />
-                <FichaCliente cliente={clienteSeleccionado} />    
+                <ListaClientes onSeleccionar={setClienteSeleccionado} clienteParaEditar={clienteParaEditar} clienteParaEliminar={clienteParaEliminar}
+                    onClienteEliminado={() => {
+                    setClienteSeleccionado(null);
+                    setClienteParaEliminar(null);
+                    setClienteParaEditar(null);
+                    }}
+                />
+                <FichaCliente cliente={clienteSeleccionado} onEditarCliente={setClienteParaEditar} onElminarCliente={setClienteParaEliminar} />    
             </main>
         </div>
       );
