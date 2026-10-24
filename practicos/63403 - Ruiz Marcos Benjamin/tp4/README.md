@@ -24,7 +24,11 @@ npm run dev     # modo desarrollo (se reinicia al guardar)
 npm start       # ejecución normal
 ```
 
-El servidor queda en `http://localhost:3000` (se puede cambiar con la variable `PORT`).
+El servidor queda en `http://localhost:3000` (se puede cambiar con la variable `PORT`). Al abrir esa dirección se muestra la interfaz web `public/MiniCRM.html`.
+
+## Interfaz web
+
+`public/MiniCRM.html` es una página autocontenida: React 18.3.1 y Babel 7.26.10 se cargan desde CDN con versiones fijas, el JSX va embebido (Babel con *runtime classic*) y los estilos son CSS puro, sin librerías de componentes. Toda la información se obtiene de la API REST.
 
 ## Pruebas
 
@@ -66,6 +70,8 @@ Los errores se devuelven como `{ "error": "mensaje" }` con código 400 (datos in
 ## Estructura
 
 ```
+public/
+  MiniCRM.html  # interfaz web (React + CSS)
 src/
   db/
     index.ts    # conexión a SQLite con Drizzle
