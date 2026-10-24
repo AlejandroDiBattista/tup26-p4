@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MiniCRM</title>
+
+  <style>
+    /* ── Tokens ─────────────────────────────────────────────────────────── */
+    :root {
+      --color-fondo: #f1f4f8;
+      --color-panel: #ffffff;
+      --color-barra: #2c4466;
+      --color-texto: #1d2633;
+      --color-suave: #5f6b7a;
+      --color-borde: #e1e6ed;
+      --color-hover: #f5f8fc;
+      --color-seleccion: #e6f0fd;
+      --color-primario: #2470dc;
+      --color-peligro: #d03535;
+      --color-exito: #2f9e5b;
+      --color-exito-fondo: #f2faf5;
+
+      --radio: 10px;
+      --espacio: 16px;
+      --sombra: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 8%);
+      --fuente: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* ── Base: la página ocupa la pantalla y nunca se desplaza ──────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body, #raiz { height: 100%; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--color-fondo);
+      color: var(--color-texto);
+      font: 15px/1.45 var(--fuente);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, p, ul { margin: 0; }
+    ul { padding: 0; list-style: none; }
+    button { font: inherit; color: inherit; }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    .barra {
+      flex: none;
+      padding: 12px 24px;
+      background: var(--color-barra);
+      color: #fff;
+    }
+
+    .barra h1 { font-size: 22px; font-weight: 700; letter-spacing: .2px; }
+
+    .contenido {
+      flex: 1;
+      min-height: 0; /* permite que los hijos tengan scroll propio */
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: var(--espacio);
+      padding: var(--espacio);
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--color-panel);
+      border: 1px solid var(--color-borde);
+      border-radius: var(--radio);
+      box-shadow: var(--sombra);
+      overflow: hidden;
+    }
+
+    .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+    /* ── Maestro ────────────────────────────────────────────────────────── */
+    .maestro-cabecera { flex: none; padding: 20px 20px 14px; }
+    .maestro-cabecera h2 { font-size: 22px; margin-bottom: 14px; }
+
+    .buscador { position: relative; }
+    .buscador svg {
+      position: absolute; left: 12px; top: 50%; translate: 0 -50%;
+      width: 18px; height: 18px; color: var(--color-suave); pointer-events: none;
+    }
+    .buscador input {
+      width: 100%;
+      padding: 10px 12px 10px 38px;
+      border: 1px solid var(--color-borde);
+      border-radius: 8px;
+      font: inherit;
+      background: #fff;
+    }
+    .buscador input:focus { outline: 2px solid var(--color-primario); outline-offset: -1px; }
+
+    .contador { margin-top: 8px; font-size: 13px; color: var(--color-suave); }
+
+    .cliente {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%;
+      padding: 12px 20px;
+      border: 0;
+      border-top: 1px solid var(--color-borde);
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .cliente:hover { background: var(--color-hover); }
+    .cliente:focus-visible { outline: 2px solid var(--color-primario); outline-offset: -2px; }
+    .cliente[aria-current="true"] { background: var(--color-seleccion); }
+
+    .cliente-datos { min-width: 0; }
+    .cliente-nombre { font-weight: 600; }
+    .cliente-email { font-size: 14px; color: var(--color-suave); }
+    .cliente-nombre, .cliente-email { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .avatar {
+      flex: none;
+      display: grid; place-items: center;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      font-weight: 600; font-size: 15px;
+    }
+
+    /* ── Detalle ────────────────────────────────────────────────────────── */
+    .ficha {
+      flex: none;
+      position: relative;
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--color-borde);
+    }
+    .ficha-id { position: absolute; top: 14px; right: 20px; color: var(--color-suave); font-variant-numeric: tabular-nums; }
+    .ficha h2 { font-size: 28px; line-height: 1.2; margin: 0 60px 16px 0; }
+
+    .ficha-datos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px 32px;
+    }
+    .ficha-contacto { display: grid; gap: 10px; }
+    .dato { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+    .dato svg { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--color-suave); }
+    .dato span { overflow-wrap: anywhere; }
+    .dato-vacio { color: var(--color-suave); font-style: italic; }
+
+    .actividades { padding: 20px 28px 24px; }
+    .actividades section + section { margin-top: 24px; }
+    .actividades h3 { font-size: 18px; margin-bottom: 10px; }
+    .actividades h3 small { font-weight: 400; color: var(--color-suave); font-size: 14px; }
+
+    .lista-actividades { border: 1px solid var(--color-borde); border-radius: var(--radio); overflow: hidden; }
+    .lista-actividades.completadas { background: var(--color-exito-fondo); }
+
+    .actividad { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; }
+    .actividad + .actividad { border-top: 1px solid var(--color-borde); }
+    .actividad-descripcion { overflow-wrap: anywhere; }
+    .actividad-fecha { font-size: 14px; color: var(--color-suave); }
+    .actividad-fecha.vencida { color: var(--color-peligro); }
+
+    .marca {
+      flex: none;
+      display: grid; place-items: center;
+      width: 20px; height: 20px; margin-top: 2px;
+      border: 2px solid #b7c0cc; border-radius: 5px;
+      color: #fff;
+    }
+    .marca.hecha { background: var(--color-exito); border-color: var(--color-exito); }
+    .marca svg { width: 14px; height: 14px; }
+
+    /* ── Estados ────────────────────────────────────────────────────────── */
+    .aviso {
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--color-suave);
+    }
+    .aviso.error { color: var(--color-peligro); }
+    .aviso button {
+      margin-top: 10px; padding: 6px 14px;
+      border: 1px solid var(--color-borde); border-radius: 8px; background: #fff; cursor: pointer;
+    }
+    .detalle-vacio { flex: 1; display: grid; place-items: center; }
+    .lista-actividades .aviso { padding: 16px; }
+
+    /* ── Pantallas angostas: maestro arriba, detalle abajo, cada uno con su scroll ── */
+    @media (max-width: 760px) {
+      .barra { padding: 10px 16px; }
+      .contenido { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; gap: 12px; padding: 12px; }
+      .maestro-cabecera { padding: 14px 16px 10px; }
+      .maestro-cabecera h2 { display: none; }
+      .cliente { padding: 10px 16px; }
+      .ficha { padding: 18px 16px 14px; }
+      .ficha h2 { font-size: 22px; margin-bottom: 12px; }
+      .actividades { padding: 16px; }
+    }
+  </style>
+
+  <!-- Versiones fijas. React 18.3.1 es la última con build UMD (expone los globales React y ReactDOM). -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js" crossorigin></script>
+  <script>
+    // JSX con runtime clásico: se compila a React.createElement y usa el React global (sin imports).
+    Babel.registerPreset("react-clasico", {
+      presets: [[Babel.availablePresets.react, { runtime: "classic" }]],
+    });
+  </script>
+</head>
+<body>
+  <div id="raiz"></div>
+
+  <script type="text/babel" data-presets="react-clasico">
+    const { useState, useEffect, useCallback, useMemo } = React;
+
+    // ── API ────────────────────────────────────────────────────────────────
+
+    /** fetch con JSON y errores uniformes: lanza Error con el mensaje que envía la API. */
+    async function pedir(ruta, { signal, ...opciones } = {}) {
+      const respuesta = await fetch(`/api${ruta}`, {
+        ...opciones,
+        signal,
+        headers: { Accept: "application/json", ...(opciones.body ? { "Content-Type": "application/json" } : {}) },
+      });
+      if (respuesta.status === 204) return null;
+      const cuerpo = await respuesta.json().catch(() => null);
+      if (!respuesta.ok) {
+        throw new Error(cuerpo?.error?.mensaje ?? `Error ${respuesta.status} al consultar el servidor`);
+      }
+      return cuerpo;
+    }
+
+    const api = {
+      listarClientes: (busqueda, signal) =>
+        pedir(`/clientes?q=${encodeURIComponent(busqueda)}`, { signal }),
+      obtenerCliente: (id, signal) => pedir(`/clientes/${id}`, { signal }),
+    };
+
+    const esCancelacion = (error) => error?.name === "AbortError";
+
+    // ── Utilidades ─────────────────────────────────────────────────────────
+
+    const nombreCompleto = (c) => `${c.nombre} ${c.apellido}`;
+
+    const iniciales = (c) => `${c.nombre.charAt(0)}${c.apellido.charAt(0)}`.toUpperCase();
+
+    // Colores estables por cliente (el mismo id siempre da el mismo color).
+    const PALETA_AVATAR = [
+      ["#e3eefc", "#2b62b8"], ["#e2f5ea", "#23804a"], ["#ece6fb", "#6a46c2"], ["#fdeadb", "#b8601b"],
+      ["#fde4ea", "#bf3557"], ["#dff4f5", "#1f7f86"], ["#f3e6fa", "#8a3fae"], ["#fbf1d6", "#8b6a12"],
+    ];
+    const colorAvatar = (id) => PALETA_AVATAR[id % PALETA_AVATAR.length];
+
+    const FORMATO_FECHA = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" });
+
+    /** "2026-10-16" → "16 oct 2026". Se arma en hora local para no correr el día por la zona horaria. */
+    function formatearFecha(iso) {
+      const [anio, mes, dia] = iso.split("-").map(Number);
+      return FORMATO_FECHA.format(new Date(anio, mes - 1, dia)).replace(/\./g, "").replace(/ de /g, " ");
+    }
+
+    /** Ejecuta el valor con demora: la búsqueda en vivo no consulta la API en cada tecla. */
+    function useDemorado(valor, ms) {
+      const [demorado, setDemorado] = useState(valor);
+      useEffect(() => {
+        const t = setTimeout(() => setDemorado(valor), ms);
+        return () => clearTimeout(t);
+      }, [valor, ms]);
+      return demorado;
+    }
+
+    /**
+     * Consulta asíncrona cancelable: si cambian las dependencias antes de que responda,
+     * la respuesta vieja se descarta (evita que una búsqueda lenta pise a una más nueva).
+     */
+    function useConsulta(consultar, dependencias) {
+      const [estado, setEstado] = useState({ datos: null, cargando: true, error: null });
+      const [version, setVersion] = useState(0);
+
+      useEffect(() => {
+        const control = new AbortController();
+        setEstado((e) => ({ ...e, cargando: true, error: null }));
+        consultar(control.signal)
+          .then((datos) => setEstado({ datos, cargando: false, error: null }))
+          .catch((error) => {
+            if (!esCancelacion(error)) setEstado((e) => ({ ...e, cargando: false, error }));
+          });
+        return () => control.abort();
+      }, [...dependencias, version]);
+
+      const recargar = useCallback(() => setVersion((v) => v + 1), []);
+      return { ...estado, recargar };
+    }
+
+    // ── Íconos ─────────────────────────────────────────────────────────────
+
+    const Icono = ({ children }) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+           strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+    );
+    const IconoBuscar = () => <Icono><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></Icono>;
+    const IconoEmail = () => <Icono><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></Icono>;
+    const IconoTelefono = () => (
+      <Icono><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></Icono>
+    );
+    const IconoUbicacion = () => <Icono><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></Icono>;
+    const IconoCheck = () => <Icono><path d="m5 12 5 5 9-10" /></Icono>;
+
+    // ── Componentes genéricos ──────────────────────────────────────────────
+
+    function Aviso({ children, error, onReintentar }) {
+      return (
+        <div className={`aviso${error ? " error" : ""}`} role={error ? "alert" : "status"}>
+          <p>{children}</p>
+          {onReintentar && <button type="button" onClick={onReintentar}>Reintentar</button>}
+        </div>
+      );
+    }
+
+    function Avatar({ cliente }) {
+      const [fondo, texto] = colorAvatar(cliente.id);
+      return <span className="avatar" style={{ background: fondo, color: texto }} aria-hidden="true">{iniciales(cliente)}</span>;
+    }
+
+    // ── Maestro ────────────────────────────────────────────────────────────
+
+    function Buscador({ valor, onCambio }) {
+      return (
+        <div className="buscador">
+          <IconoBuscar />
+          <input
+            type="search"
+            value={valor}
+            onChange={(e) => onCambio(e.target.value)}
+            placeholder="Buscar por cualquier campo…"
+            aria-label="Buscar clientes"
+            autoFocus
+          />
+        </div>
+      );
+    }
+
+    function ItemCliente({ cliente, seleccionado, onSeleccionar }) {
+      return (
+        <li>
+          <button
+            type="button"
+            className="cliente"
+            aria-current={seleccionado}
+            onClick={() => onSeleccionar(cliente.id)}
+          >
+            <Avatar cliente={cliente} />
+            <span className="cliente-datos">
+              <span className="cliente-nombre">{nombreCompleto(cliente)}</span>
+              <span className="cliente-email">{cliente.email}</span>
+            </span>
+          </button>
+        </li>
+      );
+    }
+
+    function Maestro({ busqueda, onBuscar, consulta, seleccionadoId, onSeleccionar }) {
+      const { datos: clientes, cargando, error, recargar } = consulta;
+
+      let cuerpo;
+      if (error) cuerpo = <Aviso error onReintentar={recargar}>No se pudo cargar la lista: {error.message}</Aviso>;
+      else if (!clientes) cuerpo = <Aviso>Cargando clientes…</Aviso>;
+      else if (clientes.length === 0) {
+        cuerpo = <Aviso>{busqueda.trim() ? "Ningún cliente coincide con la búsqueda." : "Todavía no hay clientes."}</Aviso>;
+      } else {
+        cuerpo = (
+          <ul>
+            {clientes.map((c) => (
+              <ItemCliente key={c.id} cliente={c} seleccionado={c.id === seleccionadoId} onSeleccionar={onSeleccionar} />
+            ))}
+          </ul>
+        );
+      }
+
+      return (
+        <aside className="panel" aria-label="Clientes">
+          <div className="maestro-cabecera">
+            <h2>Clientes</h2>
+            <Buscador valor={busqueda} onCambio={onBuscar} />
+            <p className="contador" aria-live="polite">
+              {clientes ? `${clientes.length} cliente${clientes.length === 1 ? "" : "s"}` : " "}
+              {cargando && clientes ? " · buscando…" : ""}
+            </p>
+          </div>
+          <div className="scroll">{cuerpo}</div>
+        </aside>
+      );
+    }
+
+    // ── Detalle ────────────────────────────────────────────────────────────
+
+    function Dato({ icono, children }) {
+      const vacio = !children || (Array.isArray(children) && children.every((c) => !c));
+      return (
+        <div className="dato">
+          {icono}
+          {vacio ? <span className="dato-vacio">Sin datos</span> : <span>{children}</span>}
+        </div>
+      );
+    }
+
+    function FichaCliente({ cliente }) {
+      return (
+        <header className="ficha">
+          <span className="ficha-id" title="Identificador del cliente">#{cliente.id}</span>
+          <h2>{nombreCompleto(cliente)}</h2>
+          <div className="ficha-datos">
+            <div className="ficha-contacto">
+              <Dato icono={<IconoEmail />}>{cliente.email}</Dato>
+              <Dato icono={<IconoTelefono />}>{cliente.telefono}</Dato>
+            </div>
+            <Dato icono={<IconoUbicacion />}>
+              {cliente.domicilio}
+              {cliente.domicilio && cliente.localidad && <br />}
+              {cliente.localidad}
+            </Dato>
+          </div>
+        </header>
+      );
+    }
+
+    function ItemActividad({ actividad }) {
+      const { descripcion, fechaCompromiso, fechaFinalizacion, completada, vencida } = actividad;
+
+      let fecha;
+      if (completada) fecha = `Completada el ${formatearFecha(fechaFinalizacion)}`;
+      else if (!fechaCompromiso) fecha = "Sin fecha";
+      else fecha = `${formatearFecha(fechaCompromiso)}${vencida ? " · Vencida" : ""}`;
+
+      return (
+        <li className="actividad">
+          <span className={`marca${completada ? " hecha" : ""}`} role="img"
+                aria-label={completada ? "Completada" : "Pendiente"}>
+            {completada && <IconoCheck />}
+          </span>
+          <div>
+            <p className="actividad-descripcion">{descripcion}</p>
+            <p className={`actividad-fecha${vencida ? " vencida" : ""}`}>{fecha}</p>
+          </div>
+        </li>
+      );
+    }
+
+    function ListaActividades({ titulo, actividades, vacio, completadas }) {
+      return (
+        <section>
+          <h3>{titulo} <small>({actividades.length})</small></h3>
+          <ul className={`lista-actividades${completadas ? " completadas" : ""}`}>
+            {actividades.length
+              ? actividades.map((a) => <ItemActividad key={a.id} actividad={a} />)
+              : <li><Aviso>{vacio}</Aviso></li>}
+          </ul>
+        </section>
+      );
+    }
+
+    function Detalle({ clienteId }) {
+      const consulta = useConsulta(
+        (signal) => (clienteId == null ? Promise.resolve(null) : api.obtenerCliente(clienteId, signal)),
+        [clienteId],
+      );
+      const { datos: cliente, error, recargar } = consulta;
+
+      // La API ya devuelve las actividades ordenadas: pendientes por compromiso, completadas recientes primero.
+      const [pendientes, completadas] = useMemo(() => {
+        const lista = cliente?.actividades ?? [];
+        return [lista.filter((a) => !a.completada), lista.filter((a) => a.completada)];
+      }, [cliente]);
+
+      let cuerpo;
+      if (clienteId == null) {
+        cuerpo = <div className="detalle-vacio"><Aviso>Seleccione un cliente para ver su ficha.</Aviso></div>;
+      } else if (error) {
+        cuerpo = <div className="detalle-vacio"><Aviso error onReintentar={recargar}>No se pudo cargar el cliente: {error.message}</Aviso></div>;
+      } else if (!cliente || cliente.id !== clienteId) {
+        cuerpo = <div className="detalle-vacio"><Aviso>Cargando ficha…</Aviso></div>;
+      } else {
+        cuerpo = (
+          <>
+            <FichaCliente cliente={cliente} />
+            <div className="scroll actividades">
+              <ListaActividades titulo="Compromisos" actividades={pendientes} vacio="No hay actividades pendientes." />
+              <ListaActividades titulo="Actividades completadas" actividades={completadas} vacio="Aún no hay actividades completadas." completadas />
+            </div>
+          </>
+        );
+      }
+
+      return <main className="panel" aria-label="Detalle del cliente" aria-busy={consulta.cargando}>{cuerpo}</main>;
+    }
+
+    // ── Aplicación ─────────────────────────────────────────────────────────
+
+    function App() {
+      const [busqueda, setBusqueda] = useState("");
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const busquedaDemorada = useDemorado(busqueda, 250);
+
+      const consultaClientes = useConsulta(
+        (signal) => api.listarClientes(busquedaDemorada.trim(), signal),
+        [busquedaDemorada],
+      );
+
+      // Al cargar por primera vez se selecciona el primer cliente para no mostrar el detalle vacío.
+      const clientes = consultaClientes.datos;
+      useEffect(() => {
+        if (seleccionadoId == null && clientes?.length) setSeleccionadoId(clientes[0].id);
+      }, [clientes, seleccionadoId]);
+
+      return (
+        <div className="app">
+          <header className="barra"><h1>MiniCRM</h1></header>
+          <div className="contenido">
+            <Maestro
+              busqueda={busqueda}
+              onBuscar={setBusqueda}
+              consulta={consultaClientes}
+              seleccionadoId={seleccionadoId}
+              onSeleccionar={setSeleccionadoId}
+            />
+            <Detalle clienteId={seleccionadoId} />
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("raiz")).render(<App />);
+  </script>
+</body>
+</html>

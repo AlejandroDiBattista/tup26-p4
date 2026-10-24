@@ -248,12 +248,29 @@ Todos los errores responden con el mismo formato:
 | `422`  | `REGLA_NEGOCIO`      | Editar, completar o borrar una actividad completada.     |
 | `500`  | `INTERNO`            | Error inesperado (se registra en la consola del servidor). |
 
+## Interfaz web
+
+[public/MiniCRM.html](public/MiniCRM.html) es una página autocontenida que se abre en `http://localhost:3000` con el servidor en marcha. Usa toda la funcionalidad a través de la API REST.
+
+- **Bibliotecas por CDN con versiones fijas:** React 18.3.1 y ReactDOM 18.3.1 (última versión con build UMD, que expone los globales `React` y `ReactDOM`) y Babel Standalone 7.26.10.
+- **JSX embebido:** Babel compila el `<script type="text/babel">` en el navegador con un preset registrado como `runtime: "classic"`, que traduce el JSX a `React.createElement` usando el React global.
+- **CSS propio:** sin frameworks ni librerías de componentes.
+
+### Layout
+
+La página ocupa exactamente la altura de la ventana (`100dvh`) y **nunca se desplaza**: cada panel tiene su propio scroll vertical.
+
+- **Maestro (izquierda):** buscador en vivo (consulta la API 250 ms después de dejar de escribir y descarta respuestas viejas) y la lista de clientes con scroll interno.
+- **Detalle (derecha):** ficha de lectura con el id `#123` arriba a la derecha, y debajo las actividades con scroll interno, separadas en *Compromisos* (pendientes, con las vencidas en rojo) y *Actividades completadas*.
+- **Pantallas angostas (≤ 760 px):** el maestro pasa arriba y el detalle abajo, cada uno con su scroll.
+
 ## Estructura
 
 ```
 tp4/
 ├── drizzle/              # Migraciones SQL generadas por drizzle-kit
-├── public/               # Archivos estáticos (interfaz web MiniCRM.html)
+├── public/
+│   └── MiniCRM.html      # Interfaz web (React + JSX por CDN)
 ├── src/
 │   ├── index.ts          # Arranque del servidor HTTP
 │   ├── app.ts            # Configuración de Express (JSON, API, estáticos, errores)
