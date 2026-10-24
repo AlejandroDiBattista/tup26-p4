@@ -5,7 +5,7 @@ import { clientes, actividades } from './schema';
 const dia = (offset: number) => {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString('sv');
 };
 
 type Semilla = {
