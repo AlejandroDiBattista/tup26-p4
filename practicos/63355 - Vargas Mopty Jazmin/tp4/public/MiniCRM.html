@@ -165,11 +165,20 @@
     .error-operacion { flex-shrink: 0; margin-bottom: 16px; color: #b3261e; font-size: 14px; line-height: 1.5; }
     .actividades { flex: 1; min-height: 0; overflow-y: auto; padding-top: 22px; }
     .actividades h3 { margin-bottom: 14px; font-size: 18px; }
+    .grupo-actividades + .grupo-actividades { margin-top: 24px; }
     .lista-actividades { border: 1px solid #e5e9ef; border-radius: 8px; }
-    .actividad { display: flex; flex-direction: column; gap: 7px; padding: 16px; overflow-wrap: anywhere; }
+    .actividad { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px; }
     .actividad + .actividad { border-top: 1px solid #edf0f4; }
-    .actividad strong { font-size: 14px; }
-    .actividad span { color: #6b7583; font-size: 13px; }
+    .actividad input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: #4caf7a; }
+    .texto-actividad { min-width: 0; display: flex; flex-direction: column; gap: 7px; overflow-wrap: anywhere; }
+    .texto-actividad strong { font-size: 14px; }
+    .fecha-actividad { color: #6b7583; font-size: 13px; }
+    .fecha-actividad.vencida { color: #c5221f; }
+    .acciones-actividad { display: flex; gap: 8px; }
+    .boton-icono { width: 34px; min-height: 34px; height: 34px; flex-shrink: 0; padding: 7px; }
+    .lista-completadas { background: #f1f9f4; border-color: #dceee2; }
+    .actividad-completada { grid-template-columns: 20px minmax(0, 1fr); }
+    .marca-completada { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 4px; background: #4caf7a; color: white; font-size: 14px; font-weight: 700; }
     .estado { padding: 24px 20px; color: #6b7583; font-size: 14px; line-height: 1.6; }
     .estado-error { color: #b3261e; }
     .detalle > .estado { margin: auto; text-align: center; }
@@ -193,6 +202,8 @@
       .cabecera-ficha h2 { font-size: 22px; }
       .acciones-ficha { flex-wrap: wrap; }
       .contador { padding: 10px; }
+      .actividad { gap: 8px; padding: 12px; }
+      .acciones-actividad { grid-column: 2; justify-self: start; }
     }
   </style>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
@@ -349,26 +360,70 @@
       return formatoFecha.format(new Date(`${fecha}T00:00:00`));
     }
 
+    function fechaDeHoy() {
+      const hoy = new Date();
+      return [
+        hoy.getFullYear(),
+        String(hoy.getMonth() + 1).padStart(2, '0'),
+        String(hoy.getDate()).padStart(2, '0'),
+      ].join('-');
+    }
+
     function Actividades({ actividades }) {
+      const hoy = fechaDeHoy();
+      const compromisos = actividades.filter((actividad) => actividad.fechaFinalizacion === null)
+        .sort((a, b) => {
+          if (a.fechaCompromiso === null) return b.fechaCompromiso === null ? 0 : -1;
+          if (b.fechaCompromiso === null) return 1;
+          return a.fechaCompromiso.localeCompare(b.fechaCompromiso);
+        });
+      const completadas = actividades.filter((actividad) => actividad.fechaFinalizacion !== null)
+        .sort((a, b) => b.fechaFinalizacion.localeCompare(a.fechaFinalizacion));
+
       return (
         <section className="actividades" aria-label="Actividades del cliente">
-          <h3>Actividades</h3>
-          {actividades.length === 0 ? <Estado>Este cliente todavía no tiene actividades.</Estado> : (
-            <ul className="lista-actividades">
-              {actividades.map((actividad) => (
-                <li key={actividad.id} className="actividad">
-                  <strong>{actividad.descripcion}</strong>
-                  <span>
-                    {actividad.fechaFinalizacion
-                      ? `Completada el ${formatearFecha(actividad.fechaFinalizacion)}`
-                      : actividad.fechaCompromiso
-                        ? `Compromiso: ${formatearFecha(actividad.fechaCompromiso)}`
-                        : 'Sin fecha'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <section className="grupo-actividades" aria-label="Compromisos">
+            <h3>Compromisos</h3>
+            {compromisos.length === 0 ? <Estado>No hay compromisos pendientes.</Estado> : (
+              <ul className="lista-actividades">
+                {compromisos.map((actividad) => {
+                  const vencida = actividad.fechaCompromiso !== null && actividad.fechaCompromiso < hoy;
+                  return (
+                    <li key={actividad.id} className="actividad">
+                      <input type="checkbox" checked={false} disabled aria-label={`Completar actividad: ${actividad.descripcion}`} />
+                      <div className="texto-actividad">
+                        <strong>{actividad.descripcion}</strong>
+                        <span className={`fecha-actividad${vencida ? ' vencida' : ''}`}>
+                          {actividad.fechaCompromiso === null ? 'Sin fecha' : formatearFecha(actividad.fechaCompromiso)}
+                          {vencida ? ' · Vencido' : ''}
+                        </span>
+                      </div>
+                      <div className="acciones-actividad">
+                        <button type="button" className="boton boton-icono" title="Editar actividad" aria-label={`Editar actividad: ${actividad.descripcion}`} disabled><Icono nombre="editar" /></button>
+                        <button type="button" className="boton boton-icono boton-peligro" title="Eliminar actividad" aria-label={`Eliminar actividad: ${actividad.descripcion}`} disabled><Icono nombre="eliminar" /></button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+          <section className="grupo-actividades" aria-label="Actividades completadas">
+            <h3>Actividades completadas</h3>
+            {completadas.length === 0 ? <Estado>No hay actividades completadas.</Estado> : (
+              <ul className="lista-actividades lista-completadas">
+                {completadas.map((actividad) => (
+                  <li key={actividad.id} className="actividad actividad-completada">
+                    <span className="marca-completada" aria-hidden="true">✓</span>
+                    <div className="texto-actividad">
+                      <strong>{actividad.descripcion}</strong>
+                      <span className="fecha-actividad">Completada el {formatearFecha(actividad.fechaFinalizacion)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </section>
       );
     }
