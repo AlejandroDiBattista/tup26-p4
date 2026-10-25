@@ -6,5 +6,5 @@ app.use(express.static("public"));
 app.use("/api", clientesRouter);
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor corriendo en http://localhost:${PORT}/MiniCRM.html`);
 });
