@@ -16,7 +16,8 @@ export interface DatosActividad {
 }
 
 export class Clientes {
-  private static validarDatos(datos: DatosCliente) {
+  
+    private static validarDatos(datos: DatosCliente) {
     const nombre = datos.nombre?.trim();
     const email = datos.email?.trim().toLowerCase();
     const telefono = datos.telefono?.trim();
@@ -29,10 +30,42 @@ export class Clientes {
       );
     }
 
+    if (nombre.length < 2) {
+      throw new ErrorServicio(
+        400,
+        "El nombre debe contener al menos 2 caracteres",
+      );
+    }
+
     const formatoEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!formatoEmail.test(email)) {
       throw new ErrorServicio(400, "El email no tiene un formato válido");
+    }
+
+    const formatoTelefono = /^[+\d\s()-]+$/;
+
+    if (!formatoTelefono.test(telefono)) {
+      throw new ErrorServicio(
+        400,
+        "El teléfono solo puede contener números, espacios, paréntesis, guiones y el signo +",
+      );
+    }
+
+    const cantidadDigitos = telefono.replace(/\D/g, "").length;
+
+    if (cantidadDigitos < 8 || cantidadDigitos > 15) {
+      throw new ErrorServicio(
+        400,
+        "El teléfono debe contener entre 8 y 15 dígitos",
+      );
+    }
+
+    if (direccion.length < 3) {
+      throw new ErrorServicio(
+        400,
+        "La dirección debe contener al menos 3 caracteres",
+      );
     }
 
     return {
@@ -66,22 +99,29 @@ export class Clientes {
     }
   }
 
-  private static validarDatosActividad(datos: DatosActividad) {
-  const descripcion = datos.descripcion?.trim();
-  const fecha = datos.fecha?.trim() || null;
+    private static validarDatosActividad(datos: DatosActividad) {
+    const descripcion = datos.descripcion?.trim();
+    const fecha = datos.fecha?.trim() || null;
 
-  if (!descripcion) {
-    throw new ErrorServicio(
-      400,
-      "La descripción de la actividad es obligatoria",
-    );
+    if (!descripcion) {
+      throw new ErrorServicio(
+        400,
+        "La descripción de la actividad es obligatoria",
+      );
+    }
+
+    if (descripcion.length < 3) {
+      throw new ErrorServicio(
+        400,
+        "La descripción debe contener al menos 3 caracteres",
+      );
+    }
+
+    return {
+      descripcion,
+      fecha,
+    };
   }
-
-  return {
-    descripcion,
-    fecha,
-  };
-}
 
 private static obtenerActividadPorId(id: number) {
   const actividad = db
