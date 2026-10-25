@@ -15,6 +15,15 @@ export class Clientes {
             ));
     }
 
+    static async eliminar(id: number) {
+        const eliminados = await db
+            .delete(clientes)
+            .where(eq(clientes.id, id))
+            .returning();
+
+        return eliminados.length > 0;
+    }
+
     static async obtener(id: number) {
         const [cliente] = await db
             .select()

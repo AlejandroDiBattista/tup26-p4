@@ -7,6 +7,18 @@ export async function buscar(req: Request, res: Response) {
   res.json(clientes);
 }
 
+export async function eliminar(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  const eliminado = await Clientes.eliminar(id);
+
+  if (!eliminado) {
+    res.status(404).json({ message: 'Cliente no encontrado' });
+    return;
+  }
+
+  res.status(204).end();
+}
+
 export async function obtener(req: Request, res: Response) {
   const id = Number(req.params.id);
   const cliente = await Clientes.obtener(id);
