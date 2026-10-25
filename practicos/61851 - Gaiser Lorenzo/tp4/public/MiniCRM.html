@@ -21,6 +21,8 @@
       const [textoBusqueda, setTextoBusqueda] = useState('');
       const [clientes, setClientes] = useState([]);
       const [seleccionado, setSeleccionado] = useState(null);
+      const [form, setForm] = useState({ nombre: '', email: '', telefono: '', direccion: '' });
+      const [error, setError] = useState('');
 
       useEffect(() => {
         fetch('/api/clientes?buscar=' + textoBusqueda)
@@ -28,9 +30,69 @@
           .then(data => setClientes(data));
       }, [textoBusqueda]);
 
+      async function agregar(event) {
+        event.preventDefault();
+        const respuesta = await fetch('/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+          setError(datos.message);
+          return;
+        }
+        setClientes([...clientes, datos]);
+        setSeleccionado(datos);
+        setForm({ nombre: '', email: '', telefono: '', direccion: '' });
+        setError('');
+      }
+
+      async function eliminar() {
+        if (!confirm('¿Eliminar a ' + seleccionado.nombre + '?')) return;
+
+        const respuesta = await fetch('/api/clientes/' + seleccionado.id, {
+          method: 'DELETE'
+        });
+        if (respuesta.ok) {
+          setClientes(clientes.filter(cliente => cliente.id !== seleccionado.id));
+          setSeleccionado(null);
+        }
+      }
+
       return (
         <>
           <h1>MiniCRM</h1>
+          <form onSubmit={agregar}>
+            <input
+              type="text"
+              placeholder="Nombre"
+              value={form.nombre}
+              onChange={event => setForm({ ...form, nombre: event.target.value })}
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={event => setForm({ ...form, email: event.target.value })}
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Teléfono"
+              value={form.telefono}
+              onChange={event => setForm({ ...form, telefono: event.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Dirección"
+              value={form.direccion}
+              onChange={event => setForm({ ...form, direccion: event.target.value })}
+            />
+            <button type="submit">Agregar</button>
+          </form>
+          {error && <p>{error}</p>}
           <input
             type="text"
             value={textoBusqueda}
@@ -49,6 +111,7 @@
               <p>Email: {seleccionado.email}</p>
               <p>Teléfono: {seleccionado.telefono}</p>
               <p>Dirección: {seleccionado.direccion}</p>
+              <button onClick={eliminar}>Eliminar</button>
             </section>
           ) : (
             <p>Elegí un cliente</p>
