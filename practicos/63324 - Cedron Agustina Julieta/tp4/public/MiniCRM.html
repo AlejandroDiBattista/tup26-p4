@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM</title>
+<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      height: 100vh;
+      overflow: hidden; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .app-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 48px);
+      padding: 16px;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    /* Panel izquierdo  */
+    .panel-maestro {
+      width: 320px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .maestro-header {
+      padding: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .maestro-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .maestro-top h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .input-buscar {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .input-buscar:focus {
+      border-color: #2563eb;
+    }
+
+    /* Desplazamiento vertical interno  */
+    .contenedor-lista-clientes {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .cliente-card {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .cliente-card:hover {
+      background-color: #f8fafc;
+    }
+
+    .cliente-card.activo {
+      background-color: #eff6ff;
+      border-left: 4px solid #2563eb;
+    }
+
+    .cliente-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .cliente-card p {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    /* Panel derecho (Detalle) con desplazamiento vertical interno */
+    .contenedor-detalle {
+      flex: 1;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .tarjeta {
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tarjeta-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 12px;
+    }
+
+    .tarjeta-header h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .grid-formulario {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .campo.completo {
+      grid-column: span 2;
+    }
+
+    .campo label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .campo input {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .campo input:disabled {
+      background: #f8fafc;
+      color: #334155;
+      border-color: #e2e8f0;
+    }
+
+    .botones-accion {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primario {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-peligro {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-secundario {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .btn-guardar {
+      background: #2563eb;
+      color: white;
+    }
+
+    .form-nueva-actividad {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #f8fafc;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+
+    .form-nueva-actividad input[type="text"] {
+      flex: 2;
+      padding: 7px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .form-nueva-actividad input[type="date"] {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .fila-actividad {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: #ffffff;
+    }
+
+    .fila-actividad.completada {
+      background: #f8fafc;
+      border-left: 3px solid #16a34a;
+    }
+
+    .actividad-datos {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .actividad-fecha {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-left: 8px;
+    }
+
+    .estado-vacio {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    MiniCRM
+  </header>
+
+</body>
+</html>
