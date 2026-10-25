@@ -22,7 +22,7 @@ router.get('/:id',getClienteId);
 //post
 router.post('/',postCliente);
 //put
-router.put('/:id', postCliente);
+router.put('/:id', putCliente);
 //delete
 router.delete('/:id',deleteCliente);
 

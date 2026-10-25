@@ -76,6 +76,7 @@ export const deleteCliente=async(req: Request, res: Response)=>{
         if (!eliminado) {
             return res.status(404).json({error: 'Cliente no encontrado para eliminar'});
         }
+        return res.status(200).json({mensaje: 'Cliente eliminado correctamente'});
     } catch (error: any) {
         res.status(500).json({error: error.message});
     }
