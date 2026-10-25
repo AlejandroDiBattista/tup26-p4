@@ -1,5 +1,5 @@
 import { db } from "./db/index.ts";
-import { clientes } from "./db/esquema.ts";
+import { actividades, clientes } from "./db/esquema.ts";
 import { eq, like, or } from "drizzle-orm";
 
 export class Clientes {
@@ -13,6 +13,26 @@ export class Clientes {
                 like(clientes.telefono, `%${texto}%`),
                 like(clientes.email, `%${texto}%`)
             ));
+    }
+
+    static async agregarActividad(clienteId: number, datos: { descripcion: string; fecha?: string }) {
+        if (!datos.descripcion || datos.descripcion.trim() === "") {
+            throw new Error("La descripcion es obligatoria");
+        }
+
+        const [actividad] = await db
+            .insert(actividades)
+            .values({ ...datos, clienteId })
+            .returning();
+
+        return actividad;
+    }
+
+    static async actividades(clienteId: number) {
+        return await db
+            .select()
+            .from(actividades)
+            .where(eq(actividades.clienteId, clienteId));
     }
 
     static async eliminar(id: number) {

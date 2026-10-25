@@ -73,6 +73,9 @@ li:hover {
       const [textoBusqueda, setTextoBusqueda] = useState('');
       const [clientes, setClientes] = useState([]);
       const [seleccionado, setSeleccionado] = useState(null);
+      const [actividades, setActividades] = useState([]);
+      const [nuevaDescripcion, setNuevaDescripcion] = useState('');
+      const [nuevaFecha, setNuevaFecha] = useState('');
       const [form, setForm] = useState({ nombre: '', email: '', telefono: '', direccion: '' });
       const [error, setError] = useState('');
 
@@ -81,6 +84,16 @@ li:hover {
           .then(response => response.json())
           .then(data => setClientes(data));
       }, [textoBusqueda]);
+
+      useEffect(() => {
+        if (!seleccionado) {
+          setActividades([]);
+          return;
+        }
+        fetch('/api/clientes/' + seleccionado.id + '/actividades')
+          .then(response => response.json())
+          .then(data => setActividades(data));
+      }, [seleccionado]);
 
       async function agregar(event) {
         event.preventDefault();
@@ -110,6 +123,22 @@ li:hover {
           setClientes(clientes.filter(cliente => cliente.id !== seleccionado.id));
           setSeleccionado(null);
         }
+      }
+
+      async function agregarActividad(event) {
+        event.preventDefault();
+        const respuesta = await fetch('/api/clientes/' + seleccionado.id + '/actividades', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ descripcion: nuevaDescripcion, fecha: nuevaFecha || undefined })
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+          return;
+        }
+        setActividades([...actividades, datos]);
+        setNuevaDescripcion('');
+        setNuevaFecha('');
       }
 
       return (
@@ -171,6 +200,32 @@ li:hover {
                   <p>Teléfono: {seleccionado.telefono}</p>
                   <p>Dirección: {seleccionado.direccion}</p>
                   <button onClick={eliminar}>Eliminar</button>
+                  <form onSubmit={agregarActividad}>
+                    <input
+                      type="text"
+                      value={nuevaDescripcion}
+                      onChange={event => setNuevaDescripcion(event.target.value)}
+                      required
+                    />
+                    <input
+                      type="date"
+                      value={nuevaFecha}
+                      onChange={event => setNuevaFecha(event.target.value)}
+                    />
+                    <button type="submit">Guardar</button>
+                  </form>
+                  <h3>Compromisos</h3>
+                  <ul>
+                    {actividades.filter(a => !a.completada).map(a => (
+                      <li key={a.id}>{a.descripcion} - {a.fecha || 'Sin fecha'}</li>
+                    ))}
+                  </ul>
+                  <h3>Completadas</h3>
+                  <ul>
+                    {actividades.filter(a => a.completada).map(a => (
+                      <li key={a.id}>{a.descripcion} - {a.fecha || 'Sin fecha'}</li>
+                    ))}
+                  </ul>
                 </section>
               ) : (
                 <p>Elegí un cliente</p>
