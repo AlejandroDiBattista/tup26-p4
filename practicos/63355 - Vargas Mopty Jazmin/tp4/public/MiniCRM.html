@@ -141,6 +141,28 @@
     .dato { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; overflow-wrap: anywhere; }
     .dato svg { margin-top: 2px; color: #7b8490; }
     .localidad { padding-left: 28px; color: #6b7583; font-size: 14px; overflow-wrap: anywhere; }
+    .formulario-cliente h2 { margin-bottom: 18px; font-size: 22px; }
+    .campos-cliente {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 18px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+    .campos-cliente label { min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+    .campos-cliente input {
+      min-width: 0;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d7dde5;
+      border-radius: 6px;
+      background: white;
+      color: #192535;
+    }
+    .acciones-formulario { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .error-operacion { flex-shrink: 0; margin-bottom: 16px; color: #b3261e; font-size: 14px; line-height: 1.5; }
     .actividades { flex: 1; min-height: 0; overflow-y: auto; padding-top: 22px; }
     .actividades h3 { margin-bottom: 14px; font-size: 18px; }
     .lista-actividades { border: 1px solid #e5e9ef; border-radius: 8px; }
@@ -224,7 +246,7 @@
       ['#ffedcf', '#955b1d'], ['#fbe0e9', '#9b3c5a'], ['#d9f2f0', '#287571'],
     ];
 
-    function ListaClientes({ clientes, seleccionId, seleccionar }) {
+    function ListaClientes({ clientes, seleccionId, seleccionar, deshabilitado }) {
       return (
         <ul className="lista-clientes" aria-label="Clientes encontrados">
           {clientes.map((cliente) => {
@@ -232,7 +254,7 @@
             const iniciales = `${cliente.nombre[0]}${cliente.apellido[0]}`.toLocaleUpperCase('es-AR');
             return (
               <li key={cliente.id}>
-                <button type="button" className={`cliente${seleccionId === cliente.id ? ' activo' : ''}`} aria-pressed={seleccionId === cliente.id} onClick={() => seleccionar(cliente.id)}>
+                <button type="button" className={`cliente${seleccionId === cliente.id ? ' activo' : ''}`} aria-pressed={seleccionId === cliente.id} disabled={deshabilitado} onClick={() => seleccionar(cliente.id)}>
                   <span className="avatar" style={{ background: fondo, color }} aria-hidden="true">{iniciales}</span>
                   <span className="texto-cliente">
                     <strong>{cliente.nombre} {cliente.apellido}</strong>
@@ -246,7 +268,7 @@
       );
     }
 
-    function FichaCliente({ cliente }) {
+    function FichaCliente({ cliente, editar, eliminar, procesando }) {
       return (
         <section className="ficha" aria-label="Ficha del cliente">
           <div className="cabecera-ficha">
@@ -254,8 +276,8 @@
             <div className="herramientas-ficha">
               <span className="identificador">#{cliente.id}</span>
               <div className="acciones-ficha">
-                <button type="button" className="boton" disabled><Icono nombre="editar" />Editar</button>
-                <button type="button" className="boton boton-peligro" disabled><Icono nombre="eliminar" />Eliminar</button>
+                <button type="button" className="boton" disabled={procesando} onClick={editar}><Icono nombre="editar" />Editar</button>
+                <button type="button" className="boton boton-peligro" disabled={procesando} onClick={eliminar}><Icono nombre="eliminar" />{procesando ? 'Eliminando…' : 'Eliminar'}</button>
               </div>
             </div>
           </div>
@@ -270,6 +292,54 @@
             </div>
           </div>
         </section>
+      );
+    }
+
+    function FormularioCliente({ cliente, guardar, cancelar, procesando }) {
+      const [datos, setDatos] = useState({
+        nombre: cliente?.nombre ?? '',
+        apellido: cliente?.apellido ?? '',
+        email: cliente?.email ?? '',
+        telefono: cliente?.telefono ?? '',
+        domicilio: cliente?.domicilio ?? '',
+        localidad: cliente?.localidad ?? '',
+      });
+
+      const campos = [
+        { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text', obligatorio: true, autocompletar: 'given-name' },
+        { nombre: 'apellido', etiqueta: 'Apellido', tipo: 'text', obligatorio: true, autocompletar: 'family-name' },
+        { nombre: 'email', etiqueta: 'Email', tipo: 'email', obligatorio: true, autocompletar: 'email' },
+        { nombre: 'telefono', etiqueta: 'Teléfono', tipo: 'tel', autocompletar: 'tel' },
+        { nombre: 'domicilio', etiqueta: 'Domicilio', tipo: 'text', autocompletar: 'street-address' },
+        { nombre: 'localidad', etiqueta: 'Localidad', tipo: 'text', autocompletar: 'address-level2' },
+      ];
+
+      function cambiarCampo(evento) {
+        const { name, value } = evento.target;
+        setDatos((actuales) => ({ ...actuales, [name]: value }));
+      }
+
+      function enviar(evento) {
+        evento.preventDefault();
+        guardar(datos);
+      }
+
+      return (
+        <form className="ficha formulario-cliente" onSubmit={enviar} aria-label={cliente ? 'Editar cliente' : 'Agregar cliente'}>
+          <h2>{cliente ? 'Editar cliente' : 'Agregar cliente'}</h2>
+          <fieldset className="campos-cliente" disabled={procesando}>
+            {campos.map((campo) => (
+              <label key={campo.nombre}>
+                {campo.etiqueta}{campo.obligatorio ? ' *' : ''}
+                <input type={campo.tipo} name={campo.nombre} value={datos[campo.nombre]} required={campo.obligatorio} autoComplete={campo.autocompletar} autoFocus={campo.nombre === 'nombre'} onChange={cambiarCampo} />
+              </label>
+            ))}
+          </fieldset>
+          <div className="acciones-formulario">
+            <button type="submit" className="boton boton-primario" disabled={procesando}>{procesando ? 'Guardando…' : 'Guardar'}</button>
+            <button type="button" className="boton" disabled={procesando} onClick={cancelar}>Cancelar</button>
+          </div>
+        </form>
       );
     }
 
@@ -312,6 +382,10 @@
       const [cargandoDetalle, setCargandoDetalle] = useState(false);
       const [errorLista, setErrorLista] = useState('');
       const [errorDetalle, setErrorDetalle] = useState('');
+      const [modoFormulario, setModoFormulario] = useState(null);
+      const [procesando, setProcesando] = useState(false);
+      const [errorOperacion, setErrorOperacion] = useState('');
+      const [revisionLista, setRevisionLista] = useState(0);
 
       useEffect(() => {
         const controlador = new AbortController();
@@ -340,11 +414,13 @@
           vigente = false;
           controlador.abort();
         };
-      }, [busqueda]);
+      }, [busqueda, revisionLista]);
 
       useEffect(() => {
         setCliente(null);
         setErrorDetalle('');
+        setModoFormulario(null);
+        setErrorOperacion('');
         if (seleccionId === null) {
           setCargandoDetalle(false);
           return;
@@ -372,29 +448,99 @@
         };
       }, [seleccionId]);
 
+      function seleccionarCliente(id) {
+        if (procesando) return;
+        setModoFormulario(null);
+        setErrorOperacion('');
+        setSeleccionId(id);
+      }
+
+      function cambiarBusqueda(valor) {
+        setModoFormulario(null);
+        setErrorOperacion('');
+        setBusqueda(valor);
+      }
+
+      function abrirFormulario(modo) {
+        setErrorOperacion('');
+        setModoFormulario(modo);
+      }
+
+      function cancelarFormulario() {
+        setModoFormulario(null);
+        setErrorOperacion('');
+      }
+
+      async function guardarCliente(datos) {
+        if (procesando) return;
+        setProcesando(true);
+        setErrorOperacion('');
+
+        try {
+          const creando = modoFormulario === 'crear';
+          const guardado = await pedirJSON(creando ? '/api/clientes' : `/api/clientes/${cliente.id}`, {
+            method: creando ? 'POST' : 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos),
+          });
+          setCliente(guardado);
+          setSeleccionId(guardado.id);
+          setModoFormulario(null);
+          setBusqueda('');
+          setRevisionLista((actual) => actual + 1);
+        } catch (error) {
+          setErrorOperacion(`No se pudo guardar el cliente. ${error.message}`);
+        } finally {
+          setProcesando(false);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (procesando || !cliente) return;
+        setProcesando(true);
+        setErrorOperacion('');
+
+        try {
+          await pedirJSON(`/api/clientes/${cliente.id}`, { method: 'DELETE' });
+          setCliente(null);
+          setSeleccionId(null);
+          setModoFormulario(null);
+          setRevisionLista((actual) => actual + 1);
+        } catch (error) {
+          setErrorOperacion(`No se pudo eliminar el cliente. ${error.message}`);
+        } finally {
+          setProcesando(false);
+        }
+      }
+
       return (
         <>
           <section className="panel" aria-labelledby="titulo-clientes">
             <div className="cabecera-maestro">
               <h2 id="titulo-clientes">Clientes</h2>
-              <button type="button" className="boton boton-primario" disabled><Icono nombre="agregar" />Agregar</button>
+              <button type="button" className="boton boton-primario" disabled={procesando || cargandoLista} onClick={() => abrirFormulario('crear')}><Icono nombre="agregar" />Agregar</button>
             </div>
             <div className="buscador">
               <Icono nombre="buscar" />
-              <input type="search" placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes por cualquier campo" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
+              <input type="search" placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes por cualquier campo" value={busqueda} disabled={procesando} onChange={(evento) => cambiarBusqueda(evento.target.value)} />
             </div>
             <div className="contenido-maestro" aria-busy={cargandoLista}>
               {cargandoLista ? <Estado>Buscando clientes…</Estado>
                 : errorLista ? <Estado error>{errorLista}</Estado>
                 : clientes.length === 0 ? <Estado>{busqueda.trim() ? 'No se encontraron coincidencias.' : 'Todavía no hay clientes.'}</Estado>
-                : <ListaClientes clientes={clientes} seleccionId={seleccionId} seleccionar={setSeleccionId} />}
+                : <ListaClientes clientes={clientes} seleccionId={seleccionId} seleccionar={seleccionarCliente} deshabilitado={procesando} />}
             </div>
             <p className="contador" role="status">{cargandoLista ? 'Buscando…' : `${clientes.length} ${clientes.length === 1 ? 'cliente' : 'clientes'}`}</p>
           </section>
-          <section className="panel detalle" aria-label="Detalle del cliente" aria-busy={cargandoDetalle}>
-            {cargandoDetalle ? <Estado>Cargando ficha…</Estado>
+          <section className="panel detalle" aria-label="Detalle del cliente" aria-busy={cargandoDetalle || procesando}>
+            {errorOperacion && <p className="error-operacion" role="alert">{errorOperacion}</p>}
+            {modoFormulario ? <>
+                <FormularioCliente key={modoFormulario === 'crear' ? 'nuevo' : cliente.id} cliente={modoFormulario === 'editar' ? cliente : null} guardar={guardarCliente} cancelar={cancelarFormulario} procesando={procesando} />
+                {modoFormulario === 'editar' && cliente && <Actividades actividades={cliente.actividades} />}
+              </>
+              : cargandoDetalle ? <Estado>Cargando ficha…</Estado>
               : errorDetalle ? <Estado error>{errorDetalle}</Estado>
-              : cliente ? <><FichaCliente cliente={cliente} /><Actividades actividades={cliente.actividades} /></>
+              : cliente ? <><FichaCliente cliente={cliente} editar={() => abrirFormulario('editar')} eliminar={eliminarCliente} procesando={procesando} /><Actividades actividades={cliente.actividades} /></>
               : <Estado>Seleccioná un cliente para ver su ficha y sus actividades.</Estado>}
           </section>
         </>
