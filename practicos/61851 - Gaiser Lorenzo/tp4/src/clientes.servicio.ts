@@ -15,6 +15,31 @@ export class Clientes {
             ));
     }
 
+    static async completarActividad(id: number) {
+        const [actividad] = await db
+            .select()
+            .from(actividades)
+            .where(eq(actividades.id, id));
+
+        if (!actividad) {
+            throw new Error("Actividad no encontrada");
+        }
+        if (actividad.completada === true) {
+            throw new Error("La actividad ya está completada");
+        }
+
+        const [actualizada] = await db
+            .update(actividades)
+            .set({
+                completada: true,
+                fechaCompletada: new Date().toISOString().slice(0, 10)
+            })
+            .where(eq(actividades.id, id))
+            .returning();
+
+        return actualizada;
+    }
+
     static async agregarActividad(clienteId: number, datos: { descripcion: string; fecha?: string }) {
         if (!datos.descripcion || datos.descripcion.trim() === "") {
             throw new Error("La descripcion es obligatoria");

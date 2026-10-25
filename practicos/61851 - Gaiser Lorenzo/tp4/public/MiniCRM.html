@@ -126,7 +126,7 @@ li:hover {
       }
 
       async function agregarActividad(event) {
-        event.preventDefault();
+        event.preventEvent();
         const respuesta = await fetch('/api/clientes/' + seleccionado.id + '/actividades', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,6 +139,16 @@ li:hover {
         setActividades([...actividades, datos]);
         setNuevaDescripcion('');
         setNuevaFecha('');
+      }
+
+      async function completar(id) {
+        const respuesta = await fetch('/api/clientes/' + seleccionado.id + '/actividades/' + id + '/completar', {
+          method: 'PATCH'
+        });
+        if (respuesta.ok) {
+          const datos = await respuesta.json();
+          setActividades(actividades.map(x => x.id === id ? datos : x));
+        }
       }
 
       return (
@@ -217,7 +227,7 @@ li:hover {
                   <h3>Compromisos</h3>
                   <ul>
                     {actividades.filter(a => !a.completada).map(a => (
-                      <li key={a.id}>{a.descripcion} - {a.fecha || 'Sin fecha'}</li>
+                      <li key={a.id}><input type="checkbox" onChange={() => completar(a.id)} />{a.descripcion} - {a.fecha || 'Sin fecha'}</li>
                     ))}
                   </ul>
                   <h3>Completadas</h3>

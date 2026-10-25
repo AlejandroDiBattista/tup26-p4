@@ -18,6 +18,17 @@ export async function agregarActividad(req: Request, res: Response) {
   }
 }
 
+export async function completarActividad(req: Request, res: Response) {
+  try {
+    const actividadId = Number(req.params.actividadId);
+    const actividad = await Clientes.completarActividad(actividadId);
+    res.json(actividad);
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : String(error);
+    res.status(400).json({ message: mensaje });
+  }
+}
+
 export async function listarActividades(req: Request, res: Response) {
   const id = Number(req.params.id);
   const actividades = await Clientes.actividades(id);
