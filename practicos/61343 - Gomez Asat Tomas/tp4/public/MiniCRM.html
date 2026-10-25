@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+    <title>Mi CRM</title>
+</head>
+<body>
+    <main id="root"></main>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+function useDebounce(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  let body = null;
+  try { body = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const msg = (body && body.error) ? body.error : `Error ${res.status}`;
+    throw new Error(msg);
+  }
+  return body;
+}
+function ErrorBanner({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <aside className="error-banner" role="alert">
+      <span>alerta!!!{message}</span>
+      <button onClick={onClose}>✕</button>
+    </aside>
+  );
+}
+function ClienteForm({ cliente, onSave, onCancel, onDelete, isNew }) {
+  const [form, setForm] = useState({
+    nombre: cliente?.nombre || "",
+    email: cliente?.email || "",
+    telefono: cliente?.telefono || "",
+    empresa: cliente?.empresa || "",
+  });
+  useEffect(() => {
+    setForm({
+      nombre: cliente?.nombre || "",
+      email: cliente?.email || "",
+      telefono: cliente?.telefono || "",
+      empresa: cliente?.empresa || "",
+    });
+  }, [cliente]);
+  const handleChange = (field) => (e) =>
+    setForm({ ...form, [field]: e.target.value });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form);
+  };
+  return (
+    <form onSubmit={handleSubmit}>
+      <p className="form-group">
+        <label>Nombre *</label>
+        <input value={form.nombre} onChange={handleChange("nombre")} required />
+      </p>
+      <p className="form-group">
+        <label>Email</label>
+        <input value={form.email} onChange={handleChange("email")} />
+      </p>
+      <p className="form-group">
+        <label>Teléfono</label>
+        <input value={form.telefono} onChange={handleChange("telefono")} />
+      </p>
+      <p className="form-group">
+        <label>Empresa</label>
+        <input value={form.empresa} onChange={handleChange("empresa")} />
+      </p>
+      <footer className="form-actions">
+        <button type="submit" className="btn-primary">
+          {isNew ? "Crear cliente" : "Guardar cambios"}
+        </button>
+        {!isNew && (
+          <button type="button" className="btn-danger" onClick={onDelete}>
+            Eliminar cliente
+          </button>
+        )}
+         {isNew && (
+          <button type="button" className="btn-secondary" onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
+      </footer>
+    </form>
+  );
+}
+function ActividadSubform({ actividad, onSave, onCancel }) {
+  const [descripcion, setDescripcion] = useState(actividad?.descripcion || "");
+  const [fecha, setFecha] = useState(actividad?.fecha || "");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({ descripcion, fecha });
+  };
+}
+</script>
+</body>
+</html>
