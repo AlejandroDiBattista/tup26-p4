@@ -162,6 +162,13 @@
       color: #192535;
     }
     .acciones-formulario { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .formulario-actividad { flex-shrink: 0; margin-top: 20px; padding: 14px 16px; border: 1.5px dashed #cbd5e1; border-radius: 10px; }
+    .formulario-actividad h3 { margin-bottom: 12px; font-size: 16px; }
+    .campos-actividad { min-width: 0; display: flex; gap: 10px; align-items: center; }
+    .campos-actividad input { min-width: 0; padding: 10px 12px; border: 1px solid #d7dde5; border-radius: 6px; background: white; color: #192535; }
+    .campos-actividad input[type="text"] { flex: 1; }
+    .campos-actividad input[type="date"] { width: 160px; }
+    .campos-actividad .boton { flex-shrink: 0; }
     .error-operacion { flex-shrink: 0; margin-bottom: 16px; color: #b3261e; font-size: 14px; line-height: 1.5; }
     .actividades { flex: 1; min-height: 0; overflow-y: auto; padding-top: 22px; }
     .actividades h3 { margin-bottom: 14px; font-size: 18px; }
@@ -187,6 +194,9 @@
       .cabecera-ficha { flex-direction: column; }
       .herramientas-ficha { align-items: flex-start; }
       .datos-cliente { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+      .campos-actividad { flex-wrap: wrap; }
+      .campos-actividad input[type="text"] { flex-basis: 100%; }
+      .campos-actividad input[type="date"] { flex: 1; width: 130px; }
     }
     @media (max-width: 600px) {
       header { padding: 0 12px; }
@@ -236,6 +246,8 @@
         agregar: <path d="M12 5v14M5 12h14" />,
         editar: <><path d="m15 4 5 5M4 20l4-1L20 7a2.1 2.1 0 0 0-3-3L5 16l-1 4Z" /></>,
         eliminar: <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" /></>,
+        guardar: <><path d="M3 3h14l4 4v14H3V3ZM7 3v6h10V3M7 21v-8h10v8M14 5v2" /></>,
+        cancelar: <path d="m6 6 12 12M18 6 6 18" />,
         email: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7" /></>,
         telefono: <path d="m7 3 3 5-3 3a15 15 0 0 0 6 6l3-3 5 3-1 4C10 23 1 14 3 4l4-1Z" />,
         ubicacion: <><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2" /></>,
@@ -279,7 +291,7 @@
       );
     }
 
-    function FichaCliente({ cliente, editar, eliminar, procesando }) {
+    function FichaCliente({ cliente, editar, eliminar, procesando, deshabilitado = procesando }) {
       return (
         <section className="ficha" aria-label="Ficha del cliente">
           <div className="cabecera-ficha">
@@ -287,8 +299,8 @@
             <div className="herramientas-ficha">
               <span className="identificador">#{cliente.id}</span>
               <div className="acciones-ficha">
-                <button type="button" className="boton" disabled={procesando} onClick={editar}><Icono nombre="editar" />Editar</button>
-                <button type="button" className="boton boton-peligro" disabled={procesando} onClick={eliminar}><Icono nombre="eliminar" />{procesando ? 'Eliminando…' : 'Eliminar'}</button>
+                <button type="button" className="boton" disabled={deshabilitado} onClick={editar}><Icono nombre="editar" />Editar</button>
+                <button type="button" className="boton boton-peligro" disabled={deshabilitado} onClick={eliminar}><Icono nombre="eliminar" />{procesando ? 'Eliminando…' : 'Eliminar'}</button>
               </div>
             </div>
           </div>
@@ -354,6 +366,30 @@
       );
     }
 
+    function FormularioActividad({ datos, cambiar, guardar, cancelar, procesando }) {
+      function cambiarCampo(evento) {
+        const { name, value } = evento.target;
+        cambiar((actuales) => ({ ...actuales, [name]: value }));
+      }
+
+      function enviar(evento) {
+        evento.preventDefault();
+        guardar();
+      }
+
+      return (
+        <form className="formulario-actividad" onSubmit={enviar} aria-label={datos.id === null ? 'Agregar actividad' : 'Editar actividad'} aria-busy={procesando}>
+          <h3>{datos.id === null ? 'Agregar actividad' : 'Editar actividad'}</h3>
+          <div className="campos-actividad">
+            <input type="text" name="descripcion" placeholder="Descripción de la actividad" aria-label="Descripción de la actividad" value={datos.descripcion} required disabled={procesando} onChange={cambiarCampo} />
+            <input type="date" name="fechaCompromiso" placeholder="YYYY-MM-DD" aria-label="Fecha de compromiso opcional" value={datos.fechaCompromiso} disabled={procesando} onChange={cambiarCampo} />
+            <button type="submit" className="boton boton-primario" disabled={procesando}><Icono nombre="guardar" />Guardar</button>
+            <button type="button" className="boton" disabled={procesando} onClick={cancelar}><Icono nombre="cancelar" />Cancelar</button>
+          </div>
+        </form>
+      );
+    }
+
     const formatoFecha = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 
     function formatearFecha(fecha) {
@@ -369,7 +405,7 @@
       ].join('-');
     }
 
-    function Actividades({ actividades }) {
+    function Actividades({ actividades, editar, eliminar, completar, deshabilitado = false }) {
       const hoy = fechaDeHoy();
       const compromisos = actividades.filter((actividad) => actividad.fechaFinalizacion === null)
         .sort((a, b) => {
@@ -390,7 +426,7 @@
                   const vencida = actividad.fechaCompromiso !== null && actividad.fechaCompromiso < hoy;
                   return (
                     <li key={actividad.id} className="actividad">
-                      <input type="checkbox" checked={false} disabled aria-label={`Completar actividad: ${actividad.descripcion}`} />
+                      <input type="checkbox" checked={false} disabled={deshabilitado} aria-label={`Completar actividad: ${actividad.descripcion}`} onChange={() => completar(actividad)} />
                       <div className="texto-actividad">
                         <strong>{actividad.descripcion}</strong>
                         <span className={`fecha-actividad${vencida ? ' vencida' : ''}`}>
@@ -399,8 +435,8 @@
                         </span>
                       </div>
                       <div className="acciones-actividad">
-                        <button type="button" className="boton boton-icono" title="Editar actividad" aria-label={`Editar actividad: ${actividad.descripcion}`} disabled><Icono nombre="editar" /></button>
-                        <button type="button" className="boton boton-icono boton-peligro" title="Eliminar actividad" aria-label={`Eliminar actividad: ${actividad.descripcion}`} disabled><Icono nombre="eliminar" /></button>
+                        <button type="button" className="boton boton-icono" title="Editar actividad" aria-label={`Editar actividad: ${actividad.descripcion}`} disabled={deshabilitado} onClick={() => editar(actividad)}><Icono nombre="editar" /></button>
+                        <button type="button" className="boton boton-icono boton-peligro" title="Eliminar actividad" aria-label={`Eliminar actividad: ${actividad.descripcion}`} disabled={deshabilitado} onClick={() => eliminar(actividad)}><Icono nombre="eliminar" /></button>
                       </div>
                     </li>
                   );
@@ -441,6 +477,9 @@
       const [procesando, setProcesando] = useState(false);
       const [errorOperacion, setErrorOperacion] = useState('');
       const [revisionLista, setRevisionLista] = useState(0);
+      const [formularioActividad, setFormularioActividad] = useState({ id: null, descripcion: '', fechaCompromiso: '' });
+      const [procesandoActividad, setProcesandoActividad] = useState(false);
+      const ocupado = procesando || procesandoActividad;
 
       useEffect(() => {
         const controlador = new AbortController();
@@ -476,6 +515,7 @@
         setErrorDetalle('');
         setModoFormulario(null);
         setErrorOperacion('');
+        limpiarFormularioActividad();
         if (seleccionId === null) {
           setCargandoDetalle(false);
           return;
@@ -504,9 +544,10 @@
       }, [seleccionId]);
 
       function seleccionarCliente(id) {
-        if (procesando) return;
+        if (ocupado) return;
         setModoFormulario(null);
         setErrorOperacion('');
+        limpiarFormularioActividad();
         setSeleccionId(id);
       }
 
@@ -518,6 +559,7 @@
 
       function abrirFormulario(modo) {
         setErrorOperacion('');
+        limpiarFormularioActividad();
         setModoFormulario(modo);
       }
 
@@ -527,7 +569,7 @@
       }
 
       async function guardarCliente(datos) {
-        if (procesando) return;
+        if (ocupado) return;
         setProcesando(true);
         setErrorOperacion('');
 
@@ -551,7 +593,7 @@
       }
 
       async function eliminarCliente() {
-        if (procesando || !cliente) return;
+        if (ocupado || !cliente) return;
         setProcesando(true);
         setErrorOperacion('');
 
@@ -568,34 +610,138 @@
         }
       }
 
+      function limpiarFormularioActividad() {
+        setFormularioActividad({ id: null, descripcion: '', fechaCompromiso: '' });
+      }
+
+      function cancelarActividad() {
+        limpiarFormularioActividad();
+        setErrorOperacion('');
+      }
+
+      function editarActividad(actividad) {
+        if (ocupado || actividad.fechaFinalizacion !== null) return;
+        setErrorOperacion('');
+        setFormularioActividad({
+          id: actividad.id,
+          descripcion: actividad.descripcion,
+          fechaCompromiso: actividad.fechaCompromiso ?? '',
+        });
+      }
+
+      async function refrescarActividades(clienteId) {
+        try {
+          const actualizado = await pedirJSON(`/api/clientes/${clienteId}`);
+          setCliente(actualizado);
+        } catch (error) {
+          setErrorOperacion(`El cambio se guardó, pero no se pudo recargar la ficha. ${error.message}`);
+        }
+        setRevisionLista((actual) => actual + 1);
+      }
+
+      async function guardarActividad() {
+        if (ocupado || !cliente) return;
+        setProcesandoActividad(true);
+        setErrorOperacion('');
+
+        try {
+          const editando = formularioActividad.id !== null;
+          const ruta = `/api/clientes/${cliente.id}/actividades`;
+          const guardada = await pedirJSON(editando ? `${ruta}/${formularioActividad.id}` : ruta, {
+            method: editando ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              descripcion: formularioActividad.descripcion,
+              fechaCompromiso: formularioActividad.fechaCompromiso || null,
+            }),
+          });
+          setCliente((actual) => ({
+            ...actual,
+            actividades: editando
+              ? actual.actividades.map((actividad) => actividad.id === guardada.id ? guardada : actividad)
+              : [...actual.actividades, guardada],
+          }));
+          limpiarFormularioActividad();
+          await refrescarActividades(cliente.id);
+        } catch (error) {
+          setErrorOperacion(`No se pudo guardar la actividad. ${error.message}`);
+        } finally {
+          setProcesandoActividad(false);
+        }
+      }
+
+      async function completarActividad(actividad) {
+        if (ocupado || !cliente || actividad.fechaFinalizacion !== null) return;
+        setProcesandoActividad(true);
+        setErrorOperacion('');
+
+        try {
+          const completada = await pedirJSON(`/api/clientes/${cliente.id}/actividades/${actividad.id}/completar`, { method: 'PATCH' });
+          setCliente((actual) => ({
+            ...actual,
+            actividades: actual.actividades.map((item) => item.id === completada.id ? completada : item),
+          }));
+          if (formularioActividad.id === actividad.id) limpiarFormularioActividad();
+          await refrescarActividades(cliente.id);
+        } catch (error) {
+          setErrorOperacion(`No se pudo completar la actividad. ${error.message}`);
+        } finally {
+          setProcesandoActividad(false);
+        }
+      }
+
+      async function eliminarActividad(actividad) {
+        if (ocupado || !cliente || actividad.fechaFinalizacion !== null) return;
+        setProcesandoActividad(true);
+        setErrorOperacion('');
+
+        try {
+          await pedirJSON(`/api/clientes/${cliente.id}/actividades/${actividad.id}`, { method: 'DELETE' });
+          setCliente((actual) => ({
+            ...actual,
+            actividades: actual.actividades.filter((item) => item.id !== actividad.id),
+          }));
+          if (formularioActividad.id === actividad.id) limpiarFormularioActividad();
+          await refrescarActividades(cliente.id);
+        } catch (error) {
+          setErrorOperacion(`No se pudo eliminar la actividad. ${error.message}`);
+        } finally {
+          setProcesandoActividad(false);
+        }
+      }
+
       return (
         <>
           <section className="panel" aria-labelledby="titulo-clientes">
             <div className="cabecera-maestro">
               <h2 id="titulo-clientes">Clientes</h2>
-              <button type="button" className="boton boton-primario" disabled={procesando || cargandoLista} onClick={() => abrirFormulario('crear')}><Icono nombre="agregar" />Agregar</button>
+              <button type="button" className="boton boton-primario" disabled={ocupado || cargandoLista} onClick={() => abrirFormulario('crear')}><Icono nombre="agregar" />Agregar</button>
             </div>
             <div className="buscador">
               <Icono nombre="buscar" />
-              <input type="search" placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes por cualquier campo" value={busqueda} disabled={procesando} onChange={(evento) => cambiarBusqueda(evento.target.value)} />
+              <input type="search" placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes por cualquier campo" value={busqueda} disabled={ocupado} onChange={(evento) => cambiarBusqueda(evento.target.value)} />
             </div>
             <div className="contenido-maestro" aria-busy={cargandoLista}>
               {cargandoLista ? <Estado>Buscando clientes…</Estado>
                 : errorLista ? <Estado error>{errorLista}</Estado>
                 : clientes.length === 0 ? <Estado>{busqueda.trim() ? 'No se encontraron coincidencias.' : 'Todavía no hay clientes.'}</Estado>
-                : <ListaClientes clientes={clientes} seleccionId={seleccionId} seleccionar={seleccionarCliente} deshabilitado={procesando} />}
+                : <ListaClientes clientes={clientes} seleccionId={seleccionId} seleccionar={seleccionarCliente} deshabilitado={ocupado} />}
             </div>
             <p className="contador" role="status">{cargandoLista ? 'Buscando…' : `${clientes.length} ${clientes.length === 1 ? 'cliente' : 'clientes'}`}</p>
           </section>
-          <section className="panel detalle" aria-label="Detalle del cliente" aria-busy={cargandoDetalle || procesando}>
+          <section className="panel detalle" aria-label="Detalle del cliente" aria-busy={cargandoDetalle || ocupado}>
             {errorOperacion && <p className="error-operacion" role="alert">{errorOperacion}</p>}
             {modoFormulario ? <>
                 <FormularioCliente key={modoFormulario === 'crear' ? 'nuevo' : cliente.id} cliente={modoFormulario === 'editar' ? cliente : null} guardar={guardarCliente} cancelar={cancelarFormulario} procesando={procesando} />
-                {modoFormulario === 'editar' && cliente && <Actividades actividades={cliente.actividades} />}
+                {modoFormulario === 'editar' && cliente && <Actividades actividades={cliente.actividades} deshabilitado />}
               </>
               : cargandoDetalle ? <Estado>Cargando ficha…</Estado>
               : errorDetalle ? <Estado error>{errorDetalle}</Estado>
-              : cliente ? <><FichaCliente cliente={cliente} editar={() => abrirFormulario('editar')} eliminar={eliminarCliente} procesando={procesando} /><Actividades actividades={cliente.actividades} /></>
+              : cliente ? <>
+                  <FichaCliente cliente={cliente} editar={() => abrirFormulario('editar')} eliminar={eliminarCliente} procesando={procesando} deshabilitado={ocupado || cargandoLista} />
+                  <FormularioActividad datos={formularioActividad} cambiar={setFormularioActividad} guardar={guardarActividad} cancelar={cancelarActividad} procesando={ocupado || cargandoLista} />
+                  <Actividades actividades={cliente.actividades} editar={editarActividad} eliminar={eliminarActividad} completar={completarActividad} deshabilitado={ocupado || cargandoLista} />
+                </>
               : <Estado>Seleccioná un cliente para ver su ficha y sus actividades.</Estado>}
           </section>
         </>
