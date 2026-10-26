@@ -5,641 +5,163 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MiniCRM</title>
 
-  <!-- ========================================================================= -->
-  <!-- CARGA DE BIBLIOTECAS DESDE CDN CON VERSIONES FIJAS (React, ReactDOM, Babel) -->
-  <!-- ========================================================================= -->
-  <!-- React 18: biblioteca central para crear componentes e interfaz reactiva -->
-  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
-  <!-- ReactDOM 18: monta la aplicación React en el árbol DOM del navegador -->
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel Standalone: compila el código JSX en tiempo real en el navegador -->
+  <!-- Bibliotecas de React y Babel desde CDN con versiones fijas -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
 
-  <!-- ========================================================================= -->
-  <!-- ESTILOS CSS DE LA APLICACIÓN -->
-  <!-- ========================================================================= -->
   <style>
-    /* Variables de diseño y colores idénticos a minicrm.jpg */
+    /* Variables de colores basadas en minicrm.jpg */
     :root {
-      --azul-primario: #2563eb;       /* Color azul de botones principales */
-      --azul-hover: #1d4ed8;          /* Azul más oscuro al pasar el ratón */
-      --barra-superior: #1e385b;      /* Azul marino oscuro de la barra superior */
-      --fondo-pantalla: #eef2f6;      /* Fondo gris azulado suave general */
-      --fondo-tarjeta: #ffffff;       /* Fondo blanco de los paneles */
-      --texto-oscuro: #1e293b;        /* Color principal de textos y títulos */
-      --texto-secundario: #64748b;    /* Color gris para subtítulos y etiquetas */
-      --borde: #dce4ec;               /* Color de bordes de tarjetas e inputs */
-      --rojo-peligro: #dc2626;        /* Color rojo para eliminar y tareas vencidas */
-      --borde-peligro: #fca5a5;       /* Borde suave para botones rojos */
-      --verde-completado: #16a34a;    /* Verde para las actividades finalizadas */
-      --seleccionado: #eaf2fd;        /* Fondo celeste para el cliente seleccionado */
-    }
-
-    /* Reseteo de márgenes y tamaño de caja universal */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Fijamos la altura al 100% y bloqueamos el desplazamiento general de la página */
-    html, body, #root {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--fondo-pantalla);
-      color: var(--texto-oscuro);
-    }
-
-    /* Contenedor principal que organiza la barra y el área de trabajo en columna */
-    .app-contenedor {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* Barra superior fija de la aplicación */
-    .barra-navegacion {
-      height: 58px;
-      background-color: var(--barra-superior);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      color: #ffffff;
-      flex-shrink: 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-
-    /* Título MiniCRM */
-    .barra-titulo {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-
-    /* Área de trabajo con dos columnas: Maestro (izquierda) y Detalle (derecha) */
-    .area-trabajo {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 350px 1fr;
-      gap: 16px;
-      padding: 16px;
-      min-height: 0;
-    }
-
-    /* Estilo compartido por ambos paneles */
-    .panel {
-      background: var(--fondo-tarjeta);
-      border: 1px solid var(--borde);
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    /* Cabecera del panel izquierdo (Maestro) */
-    .maestro-cabecera {
-      padding: 18px 20px 12px;
-      flex-shrink: 0;
-    }
-
-    /* Fila del título Clientes y el botón + Agregar */
-    .maestro-titulo-fila {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .maestro-titulo {
-      font-size: 22px;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    /* Estilos base para todos los botones */
-    .boton {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 7px 14px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid var(--borde);
-      background: var(--fondo-tarjeta);
-      color: var(--texto-oscuro);
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-
-    .boton:hover {
-      background: #f8fafc;
-    }
-
-    /* Botón azul principal */
-    .boton-azul {
-      background: var(--azul-primario);
-      color: #ffffff;
-      border-color: var(--azul-primario);
-      font-weight: 600;
-    }
-
-    .boton-azul:hover {
-      background: var(--azul-hover);
-      border-color: var(--azul-hover);
-    }
-
-    /* Botón blanco con borde y texto rojo para eliminar */
-    .boton-peligro {
-      color: var(--rojo-peligro);
-      border-color: var(--borde-peligro);
-      background: #ffffff;
-    }
-
-    .boton-peligro:hover {
-      background: #fef2f2;
-    }
-
-    /* Contenedor del buscador con icono de lupa */
-    .buscador-contenedor {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .buscador-icono {
-      position: absolute;
-      left: 12px;
-      color: #94a3b8;
-      width: 16px;
-      height: 16px;
-      pointer-events: none;
-    }
-
-    .buscador-input {
-      width: 100%;
-      height: 38px;
-      padding: 0 12px 0 36px;
-      border: 1px solid var(--borde);
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      color: var(--texto-oscuro);
-    }
-
-    .buscador-input:focus {
-      border-color: var(--azul-primario);
-      box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
-    }
-
-    /* Lista vertical de clientes con desplazamiento interno */
-    .lista-clientes {
-      flex: 1;
-      overflow-y: auto;
-      border-top: 1px solid #f1f5f9;
-    }
-
-    /* Fila individual de cada cliente */
-    .cliente-fila {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 18px;
-      border-bottom: 1px solid #f1f5f9;
-      cursor: pointer;
-      transition: background-color 0.1s ease;
-      border-left: 3px solid transparent;
-    }
-
-    .cliente-fila:hover {
-      background-color: #f8fafc;
-    }
-
-    /* Fila cuando el cliente está seleccionado */
-    .cliente-fila.activo {
-      background-color: var(--seleccionado);
-      border-left-color: var(--azul-primario);
-    }
-
-    /* Avatar circular con las iniciales del cliente */
-    .avatar-circulo {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-
-    .cliente-datos-resumen {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .cliente-nombre-texto {
-      font-size: 15px;
-      font-weight: 600;
-      color: #0f172a;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .cliente-email-texto {
-      font-size: 13px;
-      color: var(--texto-secundario);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 2px;
-    }
-
-    /* Contenedor del panel derecho (Detalle) */
-    .detalle-contenedor {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px 30px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Mensaje cuando no hay cliente seleccionado */
-    .estado-vacio {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--texto-secundario);
-      text-align: center;
-      padding: 40px;
-    }
-
-    /* Encabezado del detalle con nombre, ID y botones */
-    .detalle-encabezado {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 16px;
-    }
-
-    .detalle-nombre-grande {
-      font-size: 26px;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    .detalle-acciones-derecha {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
-    }
-
-    .cliente-id-etiqueta {
-      font-size: 14px;
-      color: #94a3b8;
-      font-weight: 500;
-    }
-
-    .botones-fila {
-      display: flex;
-      gap: 8px;
-    }
-
-    /* Grilla de dos columnas con los datos del cliente */
-    .grilla-contacto {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 24px;
-      padding: 8px 0 18px 0;
-      border-bottom: 1px solid #f1f5f9;
-      color: #334155;
-      font-size: 14px;
-    }
-
-    .dato-contacto {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .icono-contacto {
-      width: 17px;
-      height: 17px;
-      color: #64748b;
-      flex-shrink: 0;
-    }
-
-    .domicilio-bloque {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    /* Subformulario para agregar y editar actividades */
-    .subformulario-actividad {
-      border: 1px dashed #cbd5e1;
-      border-radius: 8px;
-      padding: 16px 18px;
-      background: #ffffff;
-      margin: 18px 0 24px 0;
-    }
-
-    .subformulario-titulo {
-      font-size: 14px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 12px;
-    }
-
-    .subformulario-fila {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .input-descripcion {
-      flex: 1;
-      height: 38px;
-      padding: 0 12px;
-      border: 1px solid var(--borde);
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .input-fecha {
-      width: 170px;
-      height: 38px;
-      padding: 0 10px;
-      border: 1px solid var(--borde);
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      color: #334155;
-    }
-
-    .input-descripcion:focus, .input-fecha:focus, .formulario-input:focus {
-      border-color: var(--azul-primario);
-      box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
-    }
-
-    /* Secciones de Compromisos y Actividades Completadas */
-    .seccion-actividades {
-      margin-bottom: 24px;
-    }
-
-    .seccion-titulo {
-      font-size: 17px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 12px;
-    }
-
-    .caja-actividades {
-      border: 1px solid var(--borde);
-      border-radius: 8px;
-      background: #ffffff;
-      overflow: hidden;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-
-    .actividad-fila {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .actividad-fila:last-child {
-      border-bottom: none;
-    }
-
-    /* Casilla de verificación (checkbox cuadrado) */
-    .casilla-checkbox {
-      width: 20px;
-      height: 20px;
-      border: 2px solid #94a3b8;
-      border-radius: 5px;
-      background: #ffffff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: all 0.15s ease;
-    }
-
-    .casilla-checkbox:hover {
-      border-color: var(--azul-primario);
-    }
-
-    /* Casilla verde para actividad completada */
-    .casilla-checkbox.completada {
-      background: var(--verde-completado);
-      border-color: var(--verde-completado);
-      color: #ffffff;
-      cursor: default;
-    }
-
-    .actividad-cuerpo {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .actividad-descripcion {
-      font-size: 14px;
-      font-weight: 600;
-      color: #0f172a;
-      line-height: 1.3;
-    }
-
-    .actividad-descripcion.tachada {
-      font-weight: 500;
-      color: #334155;
-    }
-
-    .actividad-fecha-texto {
-      font-size: 12px;
-      color: var(--texto-secundario);
-      margin-top: 3px;
-    }
-
-    .actividad-fecha-texto.vencida {
-      color: var(--rojo-peligro);
-      font-weight: 600;
-    }
-
-    .acciones-actividad-fila {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .boton-icono {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      border: 1px solid var(--borde);
-      background: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: #64748b;
-      transition: all 0.15s ease;
-    }
-
-    .boton-icono:hover {
-      background: #f8fafc;
-      color: #0f172a;
-      border-color: #cbd5e1;
-    }
-
-    .boton-icono.eliminar:hover {
-      color: var(--rojo-peligro);
-      background: #fef2f2;
-      border-color: var(--borde-peligro);
-    }
-
-    .aviso-vacio {
-      padding: 18px;
-      text-align: center;
-      color: #94a3b8;
-      font-size: 13px;
-    }
-
-    /* Formulario para Crear o Editar Cliente en el Detalle */
-    .formulario-cliente {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      max-width: 600px;
-    }
-
-    .formulario-grilla {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    .campo-formulario {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .campo-formulario.ancho-completo {
-      grid-column: span 2;
-    }
-
-    .formulario-etiqueta {
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-    }
-
-    .formulario-input {
-      height: 38px;
-      padding: 0 12px;
-      border: 1px solid var(--borde);
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      color: var(--texto-oscuro);
-    }
-
-    .formulario-acciones {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    /* Barras de desplazamiento elegantes */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
+      --azul: #2563eb;
+      --azul-oscuro: #1e385b;
+      --fondo: #eef2f6;
+      --blanco: #ffffff;
+      --texto: #1e293b;
+      --gris: #64748b;
+      --borde: #dce4ec;
+      --rojo: #dc2626;
+      --verde: #16a34a;
+      --activo: #eaf2fd;
+    }
+
+    /* Reseteo general y layout fijo sin scroll de pantalla */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; background: var(--fondo); color: var(--texto); }
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* Barra superior */
+    .topbar { height: 56px; background: var(--azul-oscuro); display: flex; align-items: center; padding: 0 24px; color: var(--blanco); font-size: 22px; font-weight: 700; flex-shrink: 0; }
+
+    /* Paneles Maestro y Detalle */
+    .workspace { flex: 1; display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px; min-height: 0; }
+    .panel { background: var(--blanco); border: 1px solid var(--borde); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+
+    /* Botones */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid var(--borde); background: var(--blanco); color: var(--texto); }
+    .btn:hover { background: #f8fafc; }
+    .btn-azul { background: var(--azul); color: var(--blanco); border-color: var(--azul); font-weight: 600; }
+    .btn-azul:hover { background: #1d4ed8; }
+    .btn-rojo { color: var(--rojo); border-color: #fca5a5; }
+    .btn-rojo:hover { background: #fef2f2; }
+
+    /* Panel Maestro (Izquierda) */
+    .maestro-header { padding: 16px 16px 12px; }
+    .maestro-titulo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 22px; font-weight: 700; }
+    .buscador-box { position: relative; display: flex; align-items: center; }
+    .buscador-box span { position: absolute; left: 10px; color: var(--gris); font-size: 14px; pointer-events: none; }
+    .buscador-box input { width: 100%; height: 36px; padding-left: 32px; padding-right: 10px; border: 1px solid var(--borde); border-radius: 6px; font-size: 14px; outline: none; }
+    .buscador-box input:focus { border-color: var(--azul); }
+
+    /* Lista de Clientes con scroll interno */
+    .lista-clientes { flex: 1; overflow-y: auto; border-top: 1px solid #f1f5f9; }
+    .cliente-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; border-left: 3px solid transparent; }
+    .cliente-item:hover { background: #f8fafc; }
+    .cliente-item.activo { background: var(--activo); border-left-color: var(--azul); }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+    .cliente-item h4 { font-size: 15px; font-weight: 600; }
+    .cliente-item p { font-size: 13px; color: var(--gris); }
+
+    /* Panel Detalle (Derecha) */
+    .detalle-scroll { flex: 1; overflow-y: auto; padding: 24px 28px; }
+    .detalle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .detalle-header h2 { font-size: 26px; font-weight: 700; }
+    .detalle-header-der { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .detalle-id { font-size: 14px; color: #94a3b8; }
+    .detalle-botones { display: flex; gap: 8px; }
+
+    /* Datos del cliente (2 columnas) */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
+    .info-fila { display: flex; align-items: center; gap: 8px; }
+
+    /* Subformulario de actividades */
+    .subform { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 14px 16px; margin: 18px 0 20px; background: #fff; }
+    .subform h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .subform-fila { display: flex; gap: 8px; }
+    .subform-fila input[type="text"] { flex: 1; height: 36px; padding: 0 10px; border: 1px solid var(--borde); border-radius: 6px; font-size: 14px; outline: none; }
+    .subform-fila input[type="date"] { width: 160px; height: 36px; padding: 0 8px; border: 1px solid var(--borde); border-radius: 6px; font-size: 14px; outline: none; color: #334155; }
+
+    /* Listas de actividades */
+    .seccion-act { margin-bottom: 20px; }
+    .seccion-act h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+    .act-caja { border: 1px solid var(--borde); border-radius: 8px; max-height: 200px; overflow-y: auto; background: #fff; }
+    .act-fila { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
+    .act-fila:last-child { border-bottom: none; }
+    .act-check { width: 18px; height: 18px; border: 2px solid #94a3b8; border-radius: 4px; cursor: pointer; display: grid; place-items: center; background: #fff; flex-shrink: 0; }
+    .act-check.ok { background: var(--verde); border-color: var(--verde); color: #fff; font-size: 12px; cursor: default; }
+    .act-info { flex: 1; min-width: 0; }
+    .act-desc { font-size: 14px; font-weight: 600; }
+    .act-desc.tachada { font-weight: 500; color: #334155; }
+    .act-meta { font-size: 12px; color: var(--gris); margin-top: 2px; }
+    .act-meta.vencida { color: var(--rojo); font-weight: 600; }
+    .btn-ico { width: 30px; height: 30px; border: 1px solid var(--borde); border-radius: 6px; background: #fff; cursor: pointer; display: grid; place-items: center; font-size: 13px; }
+    .btn-ico:hover { background: #f8fafc; }
+    .btn-ico.del:hover { background: #fef2f2; color: var(--rojo); border-color: #fca5a5; }
+
+    /* Formulario para agregar / editar cliente */
+    .form-cliente { max-width: 520px; display: flex; flex-direction: column; gap: 14px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-full { grid-column: span 2; }
+    .campo label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #475569; }
+    .campo input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--borde); border-radius: 6px; font-size: 14px; outline: none; }
+    .campo input:focus { border-color: var(--azul); }
+    .form-btns { display: flex; gap: 8px; margin-top: 8px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
 <body>
-  <!-- Contenedor raíz donde React monta toda la aplicación -->
+  <!-- Elemento raíz donde React inyecta la aplicación -->
   <div id="root"></div>
 
-  <!-- Código React escrito con sintaxis JSX -->
+  <!-- Script con Babel para procesar JSX en el navegador -->
   <script type="text/babel">
-    // Desestructuramos los hooks estándar de React
+    // Desestructuramos los hooks principales de React
     const { useState, useEffect, useMemo } = React;
 
-    // =========================================================================
-    // 1. PALETA DE COLORES PASTEL PARA LOS AVATARES
-    // =========================================================================
-    const COLORES_AVATAR = [
+    // Colores pastel para identificar visualmente a los clientes
+    const PALETA = [
       { fondo: "#dbeafe", texto: "#1d4ed8" }, // Azul
       { fondo: "#dcfce7", texto: "#15803d" }, // Verde
       { fondo: "#ede9fe", texto: "#6d28d9" }, // Violeta
       { fondo: "#ffedd5", texto: "#c2410c" }, // Naranja
       { fondo: "#fce7f3", texto: "#be185d" }, // Rosa
-      { fondo: "#cffafe", texto: "#0e7490" }, // Cian
-      { fondo: "#fef3c7", texto: "#b45309" }, // Ámbar
+      { fondo: "#cffafe", texto: "#0e7490" }  // Cian
     ];
 
-    // Función que selecciona un color fijo según el nombre del cliente
-    function obtenerColorAvatar(nombre, apellido) {
-      const codigo = ((nombre || "").charCodeAt(0) + (apellido || "").charCodeAt(0)) || 0;
-      return COLORES_AVATAR[codigo % COLORES_AVATAR.length];
+    // Obtener iniciales en mayúscula del cliente (ej: "Ana García" -> "AG")
+    function getIniciales(nombre = "", apellido = "") {
+      const n = nombre.trim().charAt(0).toUpperCase();
+      const a = apellido.trim().charAt(0).toUpperCase();
+      return (n + a) || "C";
     }
 
-    // Función que extrae las iniciales en mayúscula (ej: "Ana García" -> "AG")
-    function obtenerIniciales(nombre, apellido) {
-      const i1 = nombre ? nombre.trim().charAt(0).toUpperCase() : "";
-      const i2 = apellido ? apellido.trim().charAt(0).toUpperCase() : "";
-      return i1 + i2 || "C";
+    // Seleccionar color de avatar de forma determinista
+    function getColor(nombre = "", apellido = "") {
+      const suma = (nombre.charCodeAt(0) || 0) + (apellido.charCodeAt(0) || 0);
+      return PALETA[suma % PALETA.length];
     }
 
-    // Función para mostrar fechas en formato amigable en español (ej: "16 oct 2026")
-    function formatearFechaLegible(fechaIso) {
-      if (!fechaIso) return "";
+    // Formatear fecha en formato legible "16 oct 2026"
+    function formatearFecha(iso) {
+      if (!iso) return "Sin fecha";
       const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-      const partes = fechaIso.split("-");
-      if (partes.length !== 3) return fechaIso;
-      const [anio, mes, dia] = partes;
-      const indiceMes = parseInt(mes, 10) - 1;
-      return `${parseInt(dia, 10)} ${meses[indiceMes] || mes} ${anio}`;
+      const [y, m, d] = iso.split("-");
+      if (!y || !m || !d) return iso;
+      return `${parseInt(d, 10)} ${meses[parseInt(m, 10) - 1]} ${y}`;
     }
 
-    // Función para determinar si una fecha compromiso ya venció respecto a hoy
-    function esFechaVencida(fechaIso) {
-      if (!fechaIso) return false;
+    // Verificar si una fecha ya venció
+    function estaVencida(iso) {
+      if (!iso) return false;
       const hoy = new Date().toISOString().split("T")[0];
-      return fechaIso < hoy;
+      return iso < hoy;
     }
 
-    // =========================================================================
-    // 2. DATOS DE RESPALDO (Misma información de muestra que minicrm.jpg)
-    // Permite que la aplicación funcione incluso si se abre como archivo local
-    // =========================================================================
-    const CLIENTES_INICIALES = [
+    // Datos iniciales de demostración (idénticos a minicrm.jpg para funcionamiento offline)
+    const DATOS_SEMILLA = [
       {
         id: 123,
         nombre: "Ana",
@@ -664,22 +186,30 @@
       { id: 129, nombre: "Gabriela", apellido: "Sosa", email: "gabriela.sosa@example.com", telefono: "381 555 0778", domicilio: "Las Heras 420", localidad: "Yerba Buena", actividades: [] }
     ];
 
-    // =========================================================================
-    // 3. CAPA DE COMUNICACIÓN CON LA API REST (con soporte offline)
-    // =========================================================================
-    const servicioApi = {
-      // Método para obtener clientes (con filtro opcional en vivo)
-      async listarClientes(termino = "") {
+    // Capa de API que interactúa con Express y tiene respaldo en localStorage
+    const api = {
+      leerLocal() {
+        const val = localStorage.getItem("crm_data");
+        if (!val) {
+          localStorage.setItem("crm_data", JSON.stringify(DATOS_SEMILLA));
+          return DATOS_SEMILLA;
+        }
+        return JSON.parse(val);
+      },
+      guardarLocal(arr) {
+        localStorage.setItem("crm_data", JSON.stringify(arr));
+      },
+
+      async getClientes(filtro = "") {
         try {
-          const res = await fetch(`/api/clientes?q=${encodeURIComponent(termino)}`);
-          if (!res.ok) throw new Error("Error en servidor");
+          const res = await fetch(`/api/clientes?q=${encodeURIComponent(filtro)}`);
+          if (!res.ok) throw new Error();
           return await res.json();
         } catch {
-          // Fallback a localStorage si el servidor Express no está levantado
-          const locales = this.obtenerLocales();
-          if (!termino.trim()) return locales;
-          const q = termino.toLowerCase();
-          return locales.filter(c =>
+          const datos = this.leerLocal();
+          if (!filtro.trim()) return datos;
+          const q = filtro.toLowerCase();
+          return datos.filter(c =>
             `${c.nombre} ${c.apellido}`.toLowerCase().includes(q) ||
             (c.email || "").toLowerCase().includes(q) ||
             (c.telefono || "").toLowerCase().includes(q) ||
@@ -690,644 +220,363 @@
         }
       },
 
-      // Método para obtener el detalle de un cliente con sus actividades
-      async obtenerCliente(id) {
+      async getCliente(id) {
         try {
           const res = await fetch(`/api/clientes/${id}`);
-          if (!res.ok) throw new Error("Error en servidor");
+          if (!res.ok) throw new Error();
           return await res.json();
         } catch {
-          const locales = this.obtenerLocales();
-          return locales.find(c => c.id === id) || null;
+          return this.leerLocal().find(c => c.id === id) || null;
         }
       },
 
-      // Método para registrar un nuevo cliente
-      async crearCliente(datos) {
+      async guardarCliente(datos, id = null) {
         try {
-          const res = await fetch("/api/clientes", {
-            method: "POST",
+          const url = id ? `/api/clientes/${id}` : "/api/clientes";
+          const method = id ? "PUT" : "POST";
+          const res = await fetch(url, {
+            method,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos)
           });
           if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || "Error al crear cliente");
+            const err = await res.json();
+            throw new Error(err.error || "Error al guardar");
           }
           return await res.json();
-        } catch (error) {
-          const locales = this.obtenerLocales();
-          const nuevo = { ...datos, id: Date.now(), actividades: [] };
-          locales.push(nuevo);
-          this.guardarLocales(locales);
-          return nuevo;
-        }
-      },
-
-      // Método para actualizar los datos de un cliente
-      async actualizarCliente(id, datos) {
-        try {
-          const res = await fetch(`/api/clientes/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(datos)
-          });
-          if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || "Error al actualizar");
-          }
-          return await res.json();
-        } catch {
-          const locales = this.obtenerLocales();
-          const indice = locales.findIndex(c => c.id === id);
-          if (indice !== -1) {
-            locales[indice] = { ...locales[indice], ...datos };
-            this.guardarLocales(locales);
-            return locales[indice];
+        } catch (e) {
+          if (e.message && e.message !== "Failed to fetch") throw e;
+          const arr = this.leerLocal();
+          if (id) {
+            const idx = arr.findIndex(c => c.id === id);
+            arr[idx] = { ...arr[idx], ...datos };
+            this.guardarLocal(arr);
+            return arr[idx];
+          } else {
+            const nuevo = { ...datos, id: Date.now(), actividades: [] };
+            arr.push(nuevo);
+            this.guardarLocal(arr);
+            return nuevo;
           }
         }
       },
 
-      // Método para borrar un cliente y sus actividades asociadas
       async eliminarCliente(id) {
         try {
-          const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
-          if (!res.ok) throw new Error("Error al eliminar cliente");
-          return true;
-        } catch {
-          const filtrados = this.obtenerLocales().filter(c => c.id !== id);
-          this.guardarLocales(filtrados);
-          return true;
-        }
+          await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+        } catch {}
+        const filtrado = this.leerLocal().filter(c => c.id !== id);
+        this.guardarLocal(filtrado);
       },
 
-      // Método para crear una actividad
-      async crearActividad(clienteId, actividad) {
+      async guardarActividad(clienteId, act, actId = null) {
         try {
-          const res = await fetch(`/api/clientes/${clienteId}/actividades`, {
-            method: "POST",
+          const url = actId ? `/api/actividades/${actId}` : `/api/clientes/${clienteId}/actividades`;
+          const method = actId ? "PUT" : "POST";
+          const res = await fetch(url, {
+            method,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(actividad)
+            body: JSON.stringify(act)
           });
           if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || "Error al crear actividad");
+            const err = await res.json();
+            throw new Error(err.error || "Error al guardar actividad");
           }
           return await res.json();
-        } catch {
-          const locales = this.obtenerLocales();
-          const cliente = locales.find(c => c.id === clienteId);
+        } catch (e) {
+          if (e.message && e.message !== "Failed to fetch") throw e;
+          const arr = this.leerLocal();
+          const cliente = arr.find(c => c.id === clienteId);
           if (cliente) {
-            const nueva = { id: Date.now(), clienteId, ...actividad, fechaFinalizacion: null };
             cliente.actividades = cliente.actividades || [];
-            cliente.actividades.push(nueva);
-            this.guardarLocales(locales);
-            return nueva;
+            if (actId) {
+              const item = cliente.actividades.find(a => a.id === actId);
+              if (item) Object.assign(item, act);
+            } else {
+              cliente.actividades.push({ id: Date.now(), clienteId, ...act, fechaFinalizacion: null });
+            }
+            this.guardarLocal(arr);
           }
         }
       },
 
-      // Método para modificar una actividad pendiente
-      async actualizarActividad(actividadId, datos) {
+      async completarActividad(actId) {
         try {
-          const res = await fetch(`/api/actividades/${actividadId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(datos)
-          });
+          await fetch(`/api/actividades/${actId}/completar`, { method: "POST" });
+        } catch {}
+        const arr = this.leerLocal();
+        const hoy = new Date().toISOString().split("T")[0];
+        arr.forEach(c => {
+          const a = (c.actividades || []).find(x => x.id === actId);
+          if (a) a.fechaFinalizacion = hoy;
+        });
+        this.guardarLocal(arr);
+      },
+
+      async eliminarActividad(actId) {
+        try {
+          const res = await fetch(`/api/actividades/${actId}`, { method: "DELETE" });
           if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || "Error al actualizar actividad");
+            const err = await res.json();
+            throw new Error(err.error || "Error al borrar");
           }
-          return await res.json();
-        } catch {
-          const locales = this.obtenerLocales();
-          for (const c of locales) {
-            const act = (c.actividades || []).find(a => a.id === actividadId);
-            if (act) {
-              if (act.fechaFinalizacion) throw new Error("Las actividades completadas no se pueden editar ni borrar individualmente");
-              Object.assign(act, datos);
-              this.guardarLocales(locales);
-              return act;
-            }
-          }
+        } catch (e) {
+          if (e.message && e.message !== "Failed to fetch") throw e;
         }
-      },
-
-      // Método para completar una actividad
-      async completarActividad(actividadId) {
-        try {
-          const res = await fetch(`/api/actividades/${actividadId}/completar`, { method: "POST" });
-          if (!res.ok) throw new Error("Error al completar actividad");
-          return await res.json();
-        } catch {
-          const locales = this.obtenerLocales();
-          const hoy = new Date().toISOString().split("T")[0];
-          for (const c of locales) {
-            const act = (c.actividades || []).find(a => a.id === actividadId);
-            if (act) {
-              act.fechaFinalizacion = hoy;
-              this.guardarLocales(locales);
-              return act;
-            }
-          }
-        }
-      },
-
-      // Método para eliminar una actividad pendiente
-      async eliminarActividad(actividadId) {
-        try {
-          const res = await fetch(`/api/actividades/${actividadId}`, { method: "DELETE" });
-          if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || "Error al eliminar actividad");
-          }
-          return true;
-        } catch {
-          const locales = this.obtenerLocales();
-          for (const c of locales) {
-            const act = (c.actividades || []).find(a => a.id === actividadId);
-            if (act) {
-              if (act.fechaFinalizacion) throw new Error("Las actividades completadas no se pueden editar ni borrar individualmente");
-              c.actividades = c.actividades.filter(a => a.id !== actividadId);
-              this.guardarLocales(locales);
-              return true;
-            }
-          }
-        }
-      },
-
-      // Auxiliar para leer de localStorage
-      obtenerLocales() {
-        const guardado = localStorage.getItem("minicrm_clientes");
-        if (!guardado) {
-          localStorage.setItem("minicrm_clientes", JSON.stringify(CLIENTES_INICIALES));
-          return CLIENTES_INICIALES;
-        }
-        return JSON.parse(guardado);
-      },
-
-      // Auxiliar para escribir en localStorage
-      guardarLocales(datos) {
-        localStorage.setItem("minicrm_clientes", JSON.stringify(datos));
+        const arr = this.leerLocal();
+        arr.forEach(c => {
+          c.actividades = (c.actividades || []).filter(x => x.id !== actId);
+        });
+        this.guardarLocal(arr);
       }
     };
 
-    // =========================================================================
-    // 4. COMPONENTE PRINCIPAL: MiniCRM
-    // Organiza el diseño maestro-detalle, la búsqueda y el manejo de estados
-    // =========================================================================
+    // Componente Principal MiniCRM
     function MiniCRM() {
-      // Estado con la lista de clientes en el panel izquierdo
-      const [listaClientes, setListaClientes] = useState([]);
+      // Estados de clientes y búsqueda
+      const [clientes, setClientes] = useState([]);
+      const [filtro, setFiltro] = useState("");
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [clienteActivo, setClienteActivo] = useState(null);
 
-      // Estado con el texto del buscador en vivo
-      const [textoBusqueda, setTextoBusqueda] = useState("");
+      // Estado para formulario de cliente: null | 'nuevo' | 'editar'
+      const [vistaForm, setVistaForm] = useState(null);
 
-      // ID del cliente que actualmente está seleccionado
-      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+      // Estado del subformulario de actividades
+      const [subform, setSubform] = useState({ id: null, desc: "", fecha: "" });
 
-      // Objeto completo con los datos y actividades del cliente seleccionado
-      const [clienteDetalle, setClienteDetalle] = useState(null);
-
-      // Controla si se muestra el formulario de alta o edición: null | 'nuevo' | 'editar'
-      const [modoFormulario, setModoFormulario] = useState(null);
-
-      // Estado para los campos del subformulario de actividades
-      const [subformActividad, setSubformActividad] = useState({
-        modo: "nuevo", // 'nuevo' o 'editar'
-        id: null,
-        descripcion: "",
-        fechaCompromiso: ""
-      });
-
-      // Función para recargar la lista de clientes desde la API
-      const cargarClientes = async (filtro = textoBusqueda, mantenerSeleccion = true) => {
-        try {
-          const clientes = await servicioApi.listarClientes(filtro);
-          setListaClientes(clientes);
-
-          // Si es la carga inicial o se borró el cliente seleccionado, seleccionamos el primero disponible
-          if (!mantenerSeleccion && clientes.length > 0) {
-            setClienteSeleccionadoId(clientes[0].id);
-          } else if (mantenerSeleccion && clienteSeleccionadoId) {
-            const sigueExistiendo = clientes.some(c => c.id === clienteSeleccionadoId);
-            if (!sigueExistiendo && clientes.length > 0) {
-              setClienteSeleccionadoId(clientes[0].id);
-            }
-          } else if (!clienteSeleccionadoId && clientes.length > 0) {
-            setClienteSeleccionadoId(clientes[0].id);
+      // Cargar lista de clientes
+      const cargarLista = async (q = filtro, mantener = true) => {
+        const datos = await api.getClientes(q);
+        setClientes(datos);
+        if (!mantener && datos.length > 0) {
+          setSeleccionadoId(datos[0].id);
+        } else if (mantener && seleccionadoId) {
+          if (!datos.some(c => c.id === seleccionadoId) && datos.length > 0) {
+            setSeleccionadoId(datos[0].id);
           }
-        } catch (error) {
-          console.error("Error al cargar clientes:", error);
+        } else if (!seleccionadoId && datos.length > 0) {
+          setSeleccionadoId(datos[0].id);
         }
       };
 
-      // Función para traer la información detallada y actividades del cliente activo
-      const cargarDetalleCliente = async (id) => {
-        if (!id) {
-          setClienteDetalle(null);
-          return;
-        }
-        try {
-          const detalle = await servicioApi.obtenerCliente(id);
-          setClienteDetalle(detalle);
-        } catch (error) {
-          console.error("Error al cargar detalle del cliente:", error);
-        }
+      // Cargar cliente activo con sus actividades
+      const cargarDetalle = async (id) => {
+        if (!id) return setClienteActivo(null);
+        const data = await api.getCliente(id);
+        setClienteActivo(data);
       };
 
-      // Efecto que se ejecuta al montar la aplicación por primera vez
-      useEffect(() => {
-        cargarClientes("", false);
-      }, []);
+      // Carga inicial
+      useEffect(() => { cargarLista("", false); }, []);
 
-      // Efecto que se dispara cada vez que cambia el cliente seleccionado
-      useEffect(() => {
-        if (clienteSeleccionadoId) {
-          cargarDetalleCliente(clienteSeleccionadoId);
-        }
-      }, [clienteSeleccionadoId]);
+      // Al cambiar el ID seleccionado, recargar ficha
+      useEffect(() => { if (seleccionadoId) cargarDetalle(seleccionadoId); }, [seleccionadoId]);
 
-      // Manejador del cambio en el campo de búsqueda en vivo
-      const handleCambioBusqueda = (e) => {
-        const valor = e.target.value;
-        setTextoBusqueda(valor);
-        cargarClientes(valor, true);
+      // Búsqueda en vivo
+      const handleBuscar = (e) => {
+        const val = e.target.value;
+        setFiltro(val);
+        cargarLista(val, true);
       };
 
-      // Separamos las actividades en pendientes ("Compromisos") y "Completadas"
+      // Separar compromisos de actividades completadas
       const { compromisos, completadas } = useMemo(() => {
-        if (!clienteDetalle || !clienteDetalle.actividades) {
-          return { compromisos: [], completadas: [] };
-        }
-        const pendientes = [];
-        const finalizadas = [];
-        clienteDetalle.actividades.forEach(act => {
-          if (act.fechaFinalizacion) {
-            finalizadas.push(act);
-          } else {
-            pendientes.push(act);
-          }
+        const comp = [];
+        const done = [];
+        (clienteActivo?.actividades || []).forEach(a => {
+          if (a.fechaFinalizacion) done.push(a);
+          else comp.push(a);
         });
-        return { compromisos: pendientes, completadas: finalizadas };
-      }, [clienteDetalle]);
+        return { compromisos: comp, completadas: done };
+      }, [clienteActivo]);
 
-      // Guardar cliente (alta o edición)
-      const handleGuardarCliente = async (datosFormulario) => {
+      // Guardar Cliente (Nuevo o Editado)
+      const handleGuardarCliente = async (datos) => {
         try {
-          if (modoFormulario === "nuevo") {
-            const creado = await servicioApi.crearCliente(datosFormulario);
-            setModoFormulario(null);
-            await cargarClientes(textoBusqueda);
-            setClienteSeleccionadoId(creado.id);
-          } else if (modoFormulario === "editar") {
-            await servicioApi.actualizarCliente(clienteSeleccionadoId, datosFormulario);
-            setModoFormulario(null);
-            await cargarClientes(textoBusqueda);
-            await cargarDetalleCliente(clienteSeleccionadoId);
-          }
-        } catch (error) {
-          alert(error.message || "Error al guardar cliente");
+          const res = await api.guardarCliente(datos, vistaForm === "editar" ? seleccionadoId : null);
+          setVistaForm(null);
+          await cargarLista(filtro);
+          setSeleccionadoId(res.id);
+        } catch (e) {
+          alert(e.message || "Error al guardar");
         }
       };
 
-      // Eliminar cliente seleccionado
+      // Eliminar Cliente
       const handleEliminarCliente = async () => {
-        if (!clienteDetalle) return;
-        const confirmacion = confirm(`¿Desea eliminar a ${clienteDetalle.nombre} ${clienteDetalle.apellido}?`);
-        if (confirmacion) {
-          await servicioApi.eliminarCliente(clienteDetalle.id);
-          setClienteDetalle(null);
-          setClienteSeleccionadoId(null);
-          await cargarClientes(textoBusqueda, false);
+        if (!clienteActivo) return;
+        if (confirm(`¿Eliminar al cliente ${clienteActivo.nombre} ${clienteActivo.apellido}?`)) {
+          await api.eliminarCliente(clienteActivo.id);
+          setClienteActivo(null);
+          setSeleccionadoId(null);
+          await cargarLista(filtro, false);
         }
       };
 
-      // Guardar actividad en el subformulario (alta o edición)
+      // Guardar Actividad
       const handleGuardarActividad = async (e) => {
         e.preventDefault();
-        if (!subformActividad.descripcion.trim()) {
-          alert("Debe escribir una descripción para la actividad");
-          return;
-        }
-
+        if (!subform.desc.trim()) return alert("La descripción es obligatoria");
         try {
-          if (subformActividad.modo === "nuevo") {
-            await servicioApi.crearActividad(clienteDetalle.id, {
-              descripcion: subformActividad.descripcion.trim(),
-              fechaCompromiso: subformActividad.fechaCompromiso || null
-            });
-          } else {
-            await servicioApi.actualizarActividad(subformActividad.id, {
-              descripcion: subformActividad.descripcion.trim(),
-              fechaCompromiso: subformActividad.fechaCompromiso || null
-            });
-          }
-
-          // Limpiamos el subformulario
-          setSubformActividad({ modo: "nuevo", id: null, descripcion: "", fechaCompromiso: "" });
-          // Recargamos los datos actualizados del cliente
-          await cargarDetalleCliente(clienteDetalle.id);
-        } catch (error) {
-          alert(error.message || "Error al procesar la actividad");
+          await api.guardarActividad(
+            clienteActivo.id,
+            { descripcion: subform.desc.trim(), fechaCompromiso: subform.fecha || null },
+            subform.id
+          );
+          setSubform({ id: null, desc: "", fecha: "" });
+          await cargarDetalle(clienteActivo.id);
+        } catch (err) {
+          alert(err.message || "Error");
         }
       };
 
-      // Cancelar edición en el subformulario
-      const handleCancelarSubformulario = () => {
-        setSubformActividad({ modo: "nuevo", id: null, descripcion: "", fechaCompromiso: "" });
+      // Completar Actividad
+      const handleCompletarActividad = async (id) => {
+        await api.completarActividad(id);
+        await cargarDetalle(clienteActivo.id);
       };
 
-      // Cargar una actividad en el subformulario para editarla
-      const handleIniciarEdicionActividad = (act) => {
-        setSubformActividad({
-          modo: "editar",
-          id: act.id,
-          descripcion: act.descripcion,
-          fechaCompromiso: act.fechaCompromiso || ""
-        });
-      };
-
-      // Marcar actividad como completada
-      const handleCompletarActividad = async (act) => {
-        try {
-          await servicioApi.completarActividad(act.id);
-          await cargarDetalleCliente(clienteDetalle.id);
-        } catch (error) {
-          alert(error.message || "Error al completar actividad");
-        }
-      };
-
-      // Eliminar actividad pendiente
+      // Eliminar Actividad
       const handleEliminarActividad = async (act) => {
-        const confirmacion = confirm(`¿Eliminar la actividad "${act.descripcion}"?`);
-        if (confirmacion) {
+        if (confirm(`¿Eliminar "${act.descripcion}"?`)) {
           try {
-            await servicioApi.eliminarActividad(act.id);
-            await cargarDetalleCliente(clienteDetalle.id);
-          } catch (error) {
-            alert(error.message || "Error al eliminar actividad");
+            await api.eliminarActividad(act.id);
+            await cargarDetalle(clienteActivo.id);
+          } catch (e) {
+            alert(e.message);
           }
         }
       };
 
       return (
-        <div className="app-contenedor">
-          {/* Barra superior de título */}
-          <header className="barra-navegacion">
-            <span className="barra-titulo">MiniCRM</span>
-          </header>
+        <div className="app">
+          {/* Barra Superior */}
+          <div className="topbar">MiniCRM</div>
 
-          {/* Área principal con dos columnas */}
-          <main className="area-trabajo">
-            {/* PANEL MAESTRO: LISTA DE CLIENTES */}
-            <section className="panel">
-              <div className="maestro-cabecera">
-                <div className="maestro-titulo-fila">
-                  <h1 className="maestro-titulo">Clientes</h1>
-                  {/* Botón para iniciar el alta de un nuevo cliente */}
-                  <button
-                    className="boton boton-azul"
-                    onClick={() => setModoFormulario("nuevo")}
-                  >
-                    + Agregar
-                  </button>
+          {/* Área de Trabajo */}
+          <div className="workspace">
+            {/* Panel Izquierdo: Lista de Clientes */}
+            <div className="panel">
+              <div className="maestro-header">
+                <div className="maestro-titulo">
+                  <span>Clientes</span>
+                  <button className="btn btn-azul" onClick={() => setVistaForm("nuevo")}>+ Agregar</button>
                 </div>
-
-                {/* Input de búsqueda en vivo por cualquier campo */}
-                <div className="buscador-contenedor">
-                  <svg className="buscador-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
+                <div className="buscador-box">
+                  <span>🔍</span>
                   <input
                     type="text"
-                    className="buscador-input"
                     placeholder="Buscar por cualquier campo..."
-                    value={textoBusqueda}
-                    onChange={handleCambioBusqueda}
+                    value={filtro}
+                    onChange={handleBuscar}
                   />
                 </div>
               </div>
 
-              {/* Lista desplazable internamente */}
+              {/* Lista Scrollable */}
               <div className="lista-clientes">
-                {listaClientes.length === 0 ? (
-                  <div className="aviso-vacio">No se encontraron clientes</div>
-                ) : (
-                  listaClientes.map((c) => {
-                    const estiloAvatar = obtenerColorAvatar(c.nombre, c.apellido);
-                    const iniciales = obtenerIniciales(c.nombre, c.apellido);
-                    const estaActivo = clienteSeleccionadoId === c.id && modoFormulario !== "nuevo";
-
-                    return (
-                      <div
-                        key={c.id}
-                        className={`cliente-fila ${estaActivo ? "activo" : ""}`}
-                        onClick={() => {
-                          setClienteSeleccionadoId(c.id);
-                          setModoFormulario(null);
-                        }}
-                      >
-                        {/* Avatar con iniciales */}
-                        <div
-                          className="avatar-circulo"
-                          style={{ backgroundColor: estiloAvatar.fondo, color: estiloAvatar.texto }}
-                        >
-                          {iniciales}
-                        </div>
-                        {/* Datos del cliente */}
-                        <div className="cliente-datos-resumen">
-                          <div className="cliente-nombre-texto">{c.nombre} {c.apellido}</div>
-                          <div className="cliente-email-texto">{c.email}</div>
-                        </div>
+                {clientes.map(c => {
+                  const paleta = getColor(c.nombre, c.apellido);
+                  const activo = c.id === seleccionadoId && !vistaForm;
+                  return (
+                    <div
+                      key={c.id}
+                      className={`cliente-item ${activo ? "activo" : ""}`}
+                      onClick={() => { setSeleccionadoId(c.id); setVistaForm(null); }}
+                    >
+                      <div className="avatar" style={{ background: paleta.fondo, color: paleta.texto }}>
+                        {getIniciales(c.nombre, c.apellido)}
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </section>
-
-            {/* PANEL DETALLE */}
-            <section className="panel">
-              <div className="detalle-contenedor">
-                {/* Si estamos en modo de alta o edición, mostramos el formulario */}
-                {modoFormulario ? (
-                  <FormularioCliente
-                    modo={modoFormulario}
-                    inicial={modoFormulario === "editar" ? clienteDetalle : null}
-                    onGuardar={handleGuardarCliente}
-                    onCancelar={() => setModoFormulario(null)}
-                  />
-                ) : clienteDetalle ? (
-                  <>
-                    {/* Encabezado del Detalle */}
-                    <div className="detalle-encabezado">
                       <div>
-                        <h2 className="detalle-nombre-grande">
-                          {clienteDetalle.nombre} {clienteDetalle.apellido}
-                        </h2>
+                        <h4>{c.nombre} {c.apellido}</h4>
+                        <p>{c.email}</p>
                       </div>
-                      <div className="detalle-acciones-derecha">
-                        <span className="cliente-id-etiqueta">#{clienteDetalle.id}</span>
-                        <div className="botones-fila">
-                          {/* Botón Editar Cliente */}
-                          <button
-                            className="boton"
-                            onClick={() => setModoFormulario("editar")}
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M12 20h9"></path>
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                            Editar
-                          </button>
-                          {/* Botón Eliminar Cliente */}
-                          <button
-                            className="boton boton-peligro"
-                            onClick={handleEliminarCliente}
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                            Eliminar
-                          </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Panel Derecho: Detalle o Formulario */}
+            <div className="panel">
+              <div className="detalle-scroll">
+                {vistaForm ? (
+                  <FormCliente
+                    modo={vistaForm}
+                    inicial={vistaForm === "editar" ? clienteActivo : null}
+                    onGuardar={handleGuardarCliente}
+                    onCancelar={() => setVistaForm(null)}
+                  />
+                ) : clienteActivo ? (
+                  <div>
+                    {/* Encabezado del Detalle */}
+                    <div className="detalle-header">
+                      <h2>{clienteActivo.nombre} {clienteActivo.apellido}</h2>
+                      <div className="detalle-header-der">
+                        <span className="detalle-id">#{clienteActivo.id}</span>
+                        <div className="detalle-botones">
+                          <button className="btn" onClick={() => setVistaForm("editar")}>✏️ Editar</button>
+                          <button className="btn btn-rojo" onClick={handleEliminarCliente}>🗑️ Eliminar</button>
                         </div>
                       </div>
                     </div>
 
-                    {/* Ficha de datos en dos columnas (Email, Teléfono, Domicilio, Localidad) */}
-                    <div className="grilla-contacto">
-                      <div className="dato-contacto">
-                        <svg className="icono-contacto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                          <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        <span>{clienteDetalle.email}</span>
+                    {/* Datos del Cliente */}
+                    <div className="info-grid">
+                      <div className="info-fila">✉️ {clienteActivo.email}</div>
+                      <div className="info-fila">
+                        📍 {clienteActivo.domicilio || "Sin domicilio"}
+                        {clienteActivo.localidad && <span style={{ color: "var(--gris)", marginLeft: 6 }}>{clienteActivo.localidad}</span>}
                       </div>
-
-                      <div className="dato-contacto">
-                        <svg className="icono-contacto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                          <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <div className="domicilio-bloque">
-                          <span>{clienteDetalle.domicilio || "Sin domicilio registrado"}</span>
-                          {clienteDetalle.localidad && (
-                            <span style={{ color: "var(--texto-secundario)" }}>{clienteDetalle.localidad}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="dato-contacto">
-                        <svg className="icono-contacto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>
-                        <span>{clienteDetalle.telefono || "Sin teléfono"}</span>
-                      </div>
+                      <div className="info-fila">📞 {clienteActivo.telefono || "Sin teléfono"}</div>
                     </div>
 
-                    {/* Subformulario para agregar o editar una actividad */}
-                    <form className="subformulario-actividad" onSubmit={handleGuardarActividad}>
-                      <div className="subformulario-titulo">
-                        {subformActividad.modo === "editar" ? "Editar actividad" : "Agregar actividad"}
-                      </div>
-                      <div className="subformulario-fila">
+                    {/* Subformulario de Actividad */}
+                    <form className="subform" onSubmit={handleGuardarActividad}>
+                      <h3>{subform.id ? "Editar actividad" : "Agregar actividad"}</h3>
+                      <div className="subform-fila">
                         <input
                           type="text"
-                          className="input-descripcion"
                           placeholder="Descripción de la actividad"
-                          value={subformActividad.descripcion}
-                          onChange={(e) =>
-                            setSubformActividad({ ...subformActividad, descripcion: e.target.value })
-                          }
+                          value={subform.desc}
+                          onChange={e => setSubform({ ...subform, desc: e.target.value })}
                         />
                         <input
                           type="date"
-                          className="input-fecha"
-                          value={subformActividad.fechaCompromiso}
-                          onChange={(e) =>
-                            setSubformActividad({ ...subformActividad, fechaCompromiso: e.target.value })
-                          }
+                          value={subform.fecha}
+                          onChange={e => setSubform({ ...subform, fecha: e.target.value })}
                         />
-                        <button type="submit" className="boton boton-azul">
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                          </svg>
-                          Guardar
-                        </button>
-                        {/* Botón cancelar si estamos editando una actividad */}
-                        {subformActividad.modo === "editar" && (
-                          <button
-                            type="button"
-                            className="boton"
-                            onClick={handleCancelarSubformulario}
-                          >
+                        <button type="submit" className="btn btn-azul">💾 Guardar</button>
+                        {subform.id && (
+                          <button type="button" className="btn" onClick={() => setSubform({ id: null, desc: "", fecha: "" })}>
                             ✕ Cancelar
                           </button>
                         )}
                       </div>
                     </form>
 
-                    {/* SECCIÓN 1: COMPROMISOS (Actividades Pendientes) */}
-                    <div className="seccion-actividades">
-                      <h3 className="seccion-titulo">Compromisos</h3>
-                      <div className="caja-actividades">
+                    {/* Sección Compromisos */}
+                    <div className="seccion-act">
+                      <h3>Compromisos</h3>
+                      <div className="act-caja">
                         {compromisos.length === 0 ? (
-                          <div className="aviso-vacio">No hay compromisos pendientes</div>
+                          <p style={{ padding: 14, color: "var(--gris)", fontSize: 13, textAlign: "center" }}>No hay compromisos pendientes</p>
                         ) : (
-                          compromisos.map((act) => {
-                            const vencida = esFechaVencida(act.fechaCompromiso);
+                          compromisos.map(a => {
+                            const vencida = estaVencida(a.fechaCompromiso);
                             return (
-                              <div key={act.id} className="actividad-fila">
-                                {/* Checkbox para completar */}
-                                <button
-                                  type="button"
-                                  className="casilla-checkbox"
-                                  title="Marcar como completada"
-                                  onClick={() => handleCompletarActividad(act)}
-                                />
-                                <div className="actividad-cuerpo">
-                                  <div className="actividad-descripcion">{act.descripcion}</div>
-                                  <div className={`actividad-fecha-texto ${vencida ? "vencida" : ""}`}>
-                                    {!act.fechaCompromiso ? (
-                                      "Sin fecha"
-                                    ) : vencida ? (
-                                      `${formatearFechaLegible(act.fechaCompromiso)} · Vencido`
-                                    ) : (
-                                      formatearFechaLegible(act.fechaCompromiso)
-                                    )}
+                              <div key={a.id} className="act-fila">
+                                <button className="act-check" title="Completar" onClick={() => handleCompletarActividad(a.id)} />
+                                <div className="act-info">
+                                  <div className="act-desc">{a.descripcion}</div>
+                                  <div className={`act-meta ${vencida ? "vencida" : ""}`}>
+                                    {formatearFecha(a.fechaCompromiso)}{vencida ? " · Vencido" : ""}
                                   </div>
                                 </div>
-                                <div className="acciones-actividad-fila">
-                                  {/* Botón editar actividad pendiente */}
-                                  <button
-                                    type="button"
-                                    className="boton-icono"
-                                    title="Editar actividad"
-                                    onClick={() => handleIniciarEdicionActividad(act)}
-                                  >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M12 20h9"></path>
-                                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                    </svg>
-                                  </button>
-                                  {/* Botón borrar actividad pendiente */}
-                                  <button
-                                    type="button"
-                                    className="boton-icono eliminar"
-                                    title="Eliminar actividad"
-                                    onClick={() => handleEliminarActividad(act)}
-                                  >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="3 6 5 6 21 6"></polyline>
-                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    </svg>
-                                  </button>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  <button className="btn-ico" title="Editar" onClick={() => setSubform({ id: a.id, desc: a.descripcion, fecha: a.fechaCompromiso || "" })}>✏️</button>
+                                  <button className="btn-ico del" title="Borrar" onClick={() => handleEliminarActividad(a)}>🗑️</button>
                                 </div>
                               </div>
                             );
@@ -1336,153 +585,71 @@
                       </div>
                     </div>
 
-                    {/* SECCIÓN 2: ACTIVIDADES COMPLETADAS */}
-                    <div className="seccion-actividades">
-                      <h3 className="seccion-titulo">Actividades completadas</h3>
-                      <div className="caja-actividades">
+                    {/* Sección Actividades Completadas */}
+                    <div className="seccion-act">
+                      <h3>Actividades completadas</h3>
+                      <div className="act-caja">
                         {completadas.length === 0 ? (
-                          <div className="aviso-vacio">No hay actividades completadas</div>
+                          <p style={{ padding: 14, color: "var(--gris)", fontSize: 13, textAlign: "center" }}>No hay actividades completadas</p>
                         ) : (
-                          completadas.map((act) => (
-                            <div key={act.id} className="actividad-fila">
-                              {/* Checkbox verde con tilde */}
-                              <div className="casilla-checkbox completada">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
+                          completadas.map(a => (
+                            <div key={a.id} className="act-fila">
+                              <div className="act-check ok">✓</div>
+                              <div className="act-info">
+                                <div className="act-desc tachada">{a.descripcion}</div>
+                                <div className="act-meta">Completada el {formatearFecha(a.fechaFinalizacion)}</div>
                               </div>
-                              <div className="actividad-cuerpo">
-                                <div className="actividad-descripcion tachada">{act.descripcion}</div>
-                                <div className="actividad-fecha-texto">
-                                  Completada el {formatearFechaLegible(act.fechaFinalizacion)}
-                                </div>
-                              </div>
-                              {/* Nota: Las actividades completadas no muestran botones de edición ni borrado */}
                             </div>
                           ))
                         )}
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="estado-vacio">
-                    <p>Seleccione un cliente de la lista para ver su ficha y actividades</p>
                   </div>
+                ) : (
+                  <p style={{ color: "var(--gris)", textAlign: "center", marginTop: 40 }}>Seleccione un cliente para ver su ficha</p>
                 )}
               </div>
-            </section>
-          </main>
+            </div>
+          </div>
         </div>
       );
     }
 
-    // =========================================================================
-    // 5. SUBCOMPONENTE: FormularioCliente (Alta / Edición de Cliente)
-    // Se renderiza en el panel de detalle según lo solicitado en el enunciado
-    // =========================================================================
-    function FormularioCliente({ modo, inicial, onGuardar, onCancelar }) {
-      const [nombre, setNombre] = useState(inicial ? inicial.nombre : "");
-      const [apellido, setApellido] = useState(inicial ? inicial.apellido : "");
-      const [email, setEmail] = useState(inicial ? inicial.email : "");
-      const [telefono, setTelefono] = useState(inicial ? inicial.telefono || "" : "");
-      const [domicilio, setDomicilio] = useState(inicial ? inicial.domicilio || "" : "");
-      const [localidad, setLocalidad] = useState(inicial ? inicial.localidad || "" : "");
+    // Componente Formulario de Cliente
+    function FormCliente({ modo, inicial, onGuardar, onCancelar }) {
+      const [nombre, setNombre] = useState(inicial?.nombre || "");
+      const [apellido, setApellido] = useState(inicial?.apellido || "");
+      const [email, setEmail] = useState(inicial?.email || "");
+      const [telefono, setTelefono] = useState(inicial?.telefono || "");
+      const [domicilio, setDomicilio] = useState(inicial?.domicilio || "");
+      const [localidad, setLocalidad] = useState(inicial?.localidad || "");
 
-      // Manejador del envío del formulario con validaciones básicas
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (!nombre.trim() || !apellido.trim() || !email.trim()) {
-          alert("Los campos Nombre, Apellido y Email son obligatorios.");
-          return;
-        }
-        onGuardar({
-          nombre: nombre.trim(),
-          apellido: apellido.trim(),
-          email: email.trim(),
-          telefono: telefono.trim() || null,
-          domicilio: domicilio.trim() || null,
-          localidad: localidad.trim() || null
-        });
+        if (!nombre.trim() || !apellido.trim() || !email.trim()) return alert("Nombre, Apellido y Email son requeridos");
+        onGuardar({ nombre, apellido, email, telefono, domicilio, localidad });
       };
 
       return (
-        <form className="formulario-cliente" onSubmit={handleSubmit}>
-          <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "8px" }}>
-            {modo === "nuevo" ? "Nuevo Cliente" : "Editar Cliente"}
-          </h2>
-          <div className="formulario-grilla">
-            <div className="campo-formulario">
-              <label className="formulario-etiqueta">Nombre *</label>
-              <input
-                type="text"
-                className="formulario-input"
-                required
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-              />
-            </div>
-            <div className="campo-formulario">
-              <label className="formulario-etiqueta">Apellido *</label>
-              <input
-                type="text"
-                className="formulario-input"
-                required
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
-              />
-            </div>
-            <div className="campo-formulario ancho-completo">
-              <label className="formulario-etiqueta">Email *</label>
-              <input
-                type="email"
-                className="formulario-input"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="campo-formulario">
-              <label className="formulario-etiqueta">Teléfono</label>
-              <input
-                type="text"
-                className="formulario-input"
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-              />
-            </div>
-            <div className="campo-formulario">
-              <label className="formulario-etiqueta">Localidad</label>
-              <input
-                type="text"
-                className="formulario-input"
-                value={localidad}
-                onChange={(e) => setLocalidad(e.target.value)}
-              />
-            </div>
-            <div className="campo-formulario ancho-completo">
-              <label className="formulario-etiqueta">Domicilio</label>
-              <input
-                type="text"
-                className="formulario-input"
-                value={domicilio}
-                onChange={(e) => setDomicilio(e.target.value)}
-              />
-            </div>
+        <form className="form-cliente" onSubmit={handleSubmit}>
+          <h2 style={{ fontSize: 22, fontWeight: 700 }}>{modo === "nuevo" ? "Nuevo Cliente" : "Editar Cliente"}</h2>
+          <div className="form-grid">
+            <div className="campo"><label>Nombre *</label><input required value={nombre} onChange={e => setNombre(e.target.value)} /></div>
+            <div className="campo"><label>Apellido *</label><input required value={apellido} onChange={e => setApellido(e.target.value)} /></div>
+            <div className="campo form-full"><label>Email *</label><input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
+            <div className="campo"><label>Teléfono</label><input value={telefono} onChange={e => setTelefono(e.target.value)} /></div>
+            <div className="campo"><label>Localidad</label><input value={localidad} onChange={e => setLocalidad(e.target.value)} /></div>
+            <div className="campo form-full"><label>Domicilio</label><input value={domicilio} onChange={e => setDomicilio(e.target.value)} /></div>
           </div>
-
-          <div className="formulario-acciones">
-            <button type="submit" className="boton boton-azul">
-              💾 Guardar
-            </button>
-            <button type="button" className="boton" onClick={onCancelar}>
-              ✕ Cancelar
-            </button>
+          <div className="form-btns">
+            <button type="submit" className="btn btn-azul">💾 Guardar</button>
+            <button type="button" className="btn" onClick={onCancelar}>✕ Cancelar</button>
           </div>
         </form>
       );
     }
 
-    // Montamos la aplicación React en el elemento con id "root"
+    // Montar la aplicación React en el DOM
     ReactDOM.createRoot(document.getElementById("root")).render(<MiniCRM />);
   </script>
 </body>
