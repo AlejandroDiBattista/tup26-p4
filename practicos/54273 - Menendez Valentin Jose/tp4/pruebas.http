@@ -1,0 +1,63 @@
+@baseUrl = http://localhost:3000/api/clientes
+
+### Listar todos los clientes
+GET {{baseUrl}}
+
+### Buscar clientes por texto (nombre, email, localidad o actividad)
+GET {{baseUrl}}?q=presupuesto
+
+### Obtener detalle de un cliente por ID
+GET {{baseUrl}}/1
+
+### Crear un nuevo cliente
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Martín",
+  "apellido": "Gómez",
+  "email": "martin.gomez@example.com",
+  "telefono": "381 555 0999",
+  "domicilio": "Maipú 740",
+  "localidad": "San Miguel de Tucumán"
+}
+
+### Actualizar un cliente existente
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "nombre": "Ana",
+  "apellido": "García",
+  "email": "ana.garcia@example.com",
+  "telefono": "381 555 0123",
+  "domicilio": "San Martín 450",
+  "localidad": "Yerba Buena"
+}
+
+### Agregar actividad pendiente a un cliente
+POST {{baseUrl}}/1/actividades
+Content-Type: application/json
+
+{
+  "descripcion": "Enviar cotización final",
+  "fechaCompromiso": "2026-10-30"
+}
+
+### Editar una actividad pendiente
+PUT {{baseUrl}}/1/actividades/1
+Content-Type: application/json
+
+{
+  "descripcion": "Consultar nuevas necesidades del área comercial",
+  "fechaCompromiso": "2026-10-27"
+}
+
+### Completar una actividad pendiente
+PATCH {{baseUrl}}/1/actividades/1/completar
+
+### Eliminar una actividad pendiente
+DELETE {{baseUrl}}/1/actividades/2
+
+### Eliminar un cliente (borra sus actividades en cascada)
+DELETE {{baseUrl}}/8
