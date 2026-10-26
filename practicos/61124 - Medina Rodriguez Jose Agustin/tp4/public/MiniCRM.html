@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM</title>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    #app { height: 100vh; }
+
+    /* ---------- Estructura general ---------- */
+
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .barra {
+      flex: none;
+      padding: 14px 24px;
+      background: #1e293b;
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .cuerpo {
+      flex: 1;
+      min-height: 0;              /* clave: permite que los paneles se achiquen */
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;               /* clave */
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .maestro { flex: 0 0 clamp(240px, 30%, 340px); }
+    .detalle { flex: 1; }
+
+    /* ---------- Maestro ---------- */
+
+    .maestro-cabecera {
+      flex: none;
+      padding: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .maestro-titulo {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .buscador {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .buscador:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: -1px;
+    }
+
+    .lista {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;           /* el scroll vive acá */
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-bottom: 1px solid #f1f5f9;
+      background: none;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .item:hover { background: #f8fafc; }
+
+    .item.activo {
+      background: #eff6ff;
+      box-shadow: inset 3px 0 0 #2563eb;
+    }
+
+    .inicial {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .item-datos { min-width: 0; }
+
+    .item-nombre {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .item-email {
+      overflow: hidden;
+      color: #64748b;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---------- Detalle ---------- */
+
+      .detalle-contenido {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .detalle-nombre {
+      margin: 0 0 16px;
+      font-size: 28px;
+    }
+
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      gap: 8px 24px;
+      margin-bottom: 24px;
+      color: #334155;
+      font-size: 15px;
+    }
+
+    .seccion {
+      margin: 0 0 10px;
+      font-size: 17px;
+    }
+
+    .actividad {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .actividad.hecha {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .marca {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #cbd5e1;
+      border-radius: 4px;
+      color: white;
+      font-size: 13px;
+    }
+
+    .actividad.hecha .marca {
+      border-color: #16a34a;
+      background: #16a34a;
+    }
+
+    .actividad-texto { font-size: 15px; }
+
+    .actividad-fecha {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .vencido {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .vacio {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      color: #94a3b8;
+      font-size: 16px;
+    }
+
+        /* ---------- Botones ---------- */
+
+    .boton {
+      padding: 8px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      color: #0f172a;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .boton:hover { background: #f8fafc; }
+
+    .boton-primario {
+      border-color: #2563eb;
+      background: #2563eb;
+      color: white;
+    }
+
+    .boton-primario:hover { background: #1d4ed8; }
+
+    .boton-peligro {
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .boton-peligro:hover { background: #fef2f2; }
+
+    .acciones {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ---------- Cabecera del detalle ---------- */
+
+    .detalle-cabecera {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .detalle-cabecera .detalle-nombre { margin: 0; }
+
+    .id-cliente {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    /* ---------- Formularios ---------- */
+
+    .formulario {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .campo label {
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .campo input {
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .campo input:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: -1px;
+    }
+
+    .formulario-acciones {
+      display: flex;
+      gap: 8px;
+      grid-column: 1 / -1;
+    }
+
+    .error {
+      padding: 10px 14px;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      background: #fef2f2;
+      color: #b91c1c;
+      font-size: 14px;
+    }
+
+    .maestro-fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+        /* ---------- Subformulario de actividades ---------- */
+
+    .subformulario {
+      padding: 16px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      background: #f8fafc;
+    }
+
+    .subformulario-titulo {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .subformulario-campos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .subformulario-campos input[type="text"] {
+      flex: 1 1 240px;
+      min-width: 0;
+    }
+
+    .subformulario-campos input {
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .subformulario-campos input:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: -1px;
+    }
+
+    /* ---------- Acciones de cada actividad ---------- */
+
+    .seccion-fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 10px;
+    }
+
+    .seccion-fila .seccion { margin: 0; }
+
+    .actividad-cuerpo {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .boton-icono {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      flex: none;
+      padding: 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .boton-icono:hover { background: #f1f5f9; }
+
+    .boton-icono.peligro:hover { background: #fef2f2; }
+
+    .marca-boton {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 2px solid #cbd5e1;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .marca-boton:hover { border-color: #16a34a; }
+
+        /* ---------- Zonas del detalle ---------- */
+
+    .detalle-scroll {
+      display: block;
+      overflow-y: auto;
+    }
+
+    .detalle-fijo {
+      flex: none;
+    }
+
+    .detalle-listas {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .lista-actividades {
+      flex: 0 1 auto;
+      min-height: 64px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+    <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const API = '/api';
+
+    // ---------- Comunicación con la API ----------
+
+    async function pedirAPI(metodo, ruta, datos) {
+      const respuesta = await fetch(API + ruta, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: datos === undefined ? undefined : JSON.stringify(datos),
+      });
+
+      if (!respuesta.ok) {
+        const cuerpo = await respuesta.json().catch(() => ({}));
+        throw new Error(cuerpo.error ?? `Error ${respuesta.status}`);
+      }
+
+      return respuesta.status === 204 ? null : await respuesta.json();
+    }
+
+    // ---------- Ayudantes ----------
+
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    function formatearFecha(iso) {
+      if (!iso) return null;
+      const [anio, mes, dia] = iso.split('-').map(Number);
+      return `${dia} ${MESES[mes - 1]} ${anio}`;
+    }
+
+    function hoyISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function iniciales(nombre) {
+      return nombre
+        .split(' ')
+        .filter(p => p.length > 0)
+        .slice(0, 2)
+        .map(p => p[0].toUpperCase())
+        .join('');
+    }
+
+    const CLIENTE_VACIO = { nombre: '', email: '', telefono: '', direccion: '', ciudad: '' };
+
+    // ---------- Componentes ----------
+
+    function ItemCliente({ cliente, activo, onSeleccionar }) {
+      return (
+        <li>
+          <button
+            className={activo ? 'item activo' : 'item'}
+            onClick={() => onSeleccionar(cliente.id)}
+          >
+            <span className="inicial">{iniciales(cliente.nombre)}</span>
+            <span className="item-datos">
+              <div className="item-nombre">{cliente.nombre}</div>
+              <div className="item-email">{cliente.email}</div>
+            </span>
+          </button>
+        </li>
+      );
+    }
+
+    function Campo({ etiqueta, valor, onCambiar, tipo = 'text' }) {
+      return (
+        <div className="campo">
+          <label>{etiqueta}</label>
+          <input type={tipo} value={valor} onChange={e => onCambiar(e.target.value)} />
+        </div>
+      );
+    }
+
+    function FormularioCliente({ inicial, onGuardar, onCancelar }) {
+      const [datos, setDatos] = useState(inicial);
+
+      function cambiar(campo) {
+        return valor => setDatos({ ...datos, [campo]: valor });
+      }
+
+      function enviar(evento) {
+        evento.preventDefault();
+        onGuardar(datos);
+      }
+
+      return (
+        <form className="formulario" onSubmit={enviar}>
+          <Campo etiqueta="Nombre"    valor={datos.nombre}    onCambiar={cambiar('nombre')} />
+          <Campo etiqueta="Email"     valor={datos.email}     onCambiar={cambiar('email')} />
+          <Campo etiqueta="Teléfono"  valor={datos.telefono}  onCambiar={cambiar('telefono')} />
+          <Campo etiqueta="Dirección" valor={datos.direccion} onCambiar={cambiar('direccion')} />
+          <Campo etiqueta="Ciudad"    valor={datos.ciudad}    onCambiar={cambiar('ciudad')} />
+
+          <div className="formulario-acciones">
+            <button type="submit" className="boton boton-primario">Guardar</button>
+            <button type="button" className="boton" onClick={onCancelar}>Cancelar</button>
+          </div>
+        </form>
+      );
+    }
+
+        function FormularioActividad({ inicial, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(inicial.descripcion);
+      const [fecha, setFecha] = useState(inicial.fecha ?? '');
+
+      function enviar(evento) {
+        evento.preventDefault();
+        onGuardar({ descripcion, fecha: fecha || null });
+      }
+
+      return (
+        <form className="subformulario" onSubmit={enviar}>
+          <h4 className="subformulario-titulo">
+            {inicial.id ? 'Editar actividad' : 'Agregar actividad'}
+          </h4>
+
+          <div className="subformulario-campos">
+            <input
+              type="text"
+              placeholder="Descripción de la actividad"
+              value={descripcion}
+              onChange={e => setDescripcion(e.target.value)}
+            />
+            <input
+              type="date"
+              value={fecha}
+              onChange={e => setFecha(e.target.value)}
+            />
+            <button type="submit" className="boton boton-primario">💾 Guardar</button>
+            <button type="button" className="boton" onClick={onCancelar}>✕ Cancelar</button>
+          </div>
+        </form>
+      );
+    }
+
+      function Actividad({ actividad, onEditar, onCompletar, onEliminar }) {
+      const vencida = !actividad.completada
+        && actividad.fecha
+        && actividad.fecha < hoyISO();
+
+      const fecha = actividad.completada
+        ? `Completada el ${formatearFecha(actividad.completadaEl)}`
+        : (formatearFecha(actividad.fecha) ?? 'Sin fecha');
+
+      return (
+        <div className={actividad.completada ? 'actividad hecha' : 'actividad'}>
+          {actividad.completada
+            ? <span className="marca">✓</span>
+            : <button
+                className="marca-boton"
+                title="Marcar como completada"
+                onClick={() => onCompletar(actividad.id)}
+              />}
+
+          <span className="actividad-cuerpo">
+            <div className="actividad-texto">{actividad.descripcion}</div>
+            <div className={vencida ? 'actividad-fecha vencido' : 'actividad-fecha'}>
+              {fecha}{vencida ? ' · Vencido' : ''}
+            </div>
+          </span>
+
+          {!actividad.completada && (
+            <span className="acciones">
+              <button
+                className="boton-icono"
+                title="Editar"
+                onClick={() => onEditar(actividad)}
+              >✏️</button>
+              <button
+                className="boton-icono peligro"
+                title="Eliminar"
+                onClick={() => onEliminar(actividad.id)}
+              >🗑️</button>
+            </span>
+          )}
+        </div>
+      );
+    }
+
+          function Detalle({ cliente, modo, error, onEditar, onEliminar, onGuardar, onCancelar, acts }) {
+      if (modo === 'nuevo') {
+        return (
+          <div className="detalle-contenido detalle-scroll">
+            <h2 className="detalle-nombre">Nuevo cliente</h2>
+            {error && <div className="error">{error}</div>}
+            <FormularioCliente
+              inicial={CLIENTE_VACIO}
+              onGuardar={onGuardar}
+              onCancelar={onCancelar}
+            />
+          </div>
+        );
+      }
+
+      if (!cliente) {
+        return <div className="vacio">Seleccioná un cliente de la lista</div>;
+      }
+
+      if (modo === 'editar') {
+        return (
+          <div className="detalle-contenido detalle-scroll">
+            <h2 className="detalle-nombre">Editar cliente</h2>
+            {error && <div className="error">{error}</div>}
+            <FormularioCliente
+              key={cliente.id}
+              inicial={{
+                nombre: cliente.nombre,
+                email: cliente.email,
+                telefono: cliente.telefono ?? '',
+                direccion: cliente.direccion ?? '',
+                ciudad: cliente.ciudad ?? '',
+              }}
+              onGuardar={onGuardar}
+              onCancelar={onCancelar}
+            />
+          </div>
+        );
+      }
+
+      const pendientes = cliente.actividades.filter(a => !a.completada);
+      const hechas = cliente.actividades.filter(a => a.completada);
+
+      return (
+        <div className="detalle-contenido">
+
+          <div className="detalle-fijo">
+            {error && <div className="error">{error}</div>}
+
+            <div className="detalle-cabecera">
+              <div>
+                <h2 className="detalle-nombre">{cliente.nombre}</h2>
+                <span className="id-cliente">#{cliente.id}</span>
+              </div>
+              <div className="acciones">
+                <button className="boton" onClick={onEditar}>✏️ Editar</button>
+                <button className="boton boton-peligro" onClick={onEliminar}>🗑️ Eliminar</button>
+              </div>
+            </div>
+
+            <div className="datos">
+              <div>✉️ {cliente.email}</div>
+              <div>📍 {cliente.direccion || '—'}</div>
+              <div>📞 {cliente.telefono || '—'}</div>
+              <div>🏙️ {cliente.ciudad || '—'}</div>
+            </div>
+
+            {acts.editando && (
+              <FormularioActividad
+                key={acts.editando.id ?? 'nueva'}
+                inicial={acts.editando}
+                onGuardar={acts.onGuardar}
+                onCancelar={acts.onCancelar}
+              />
+            )}
+          </div>
+
+          <div className="detalle-listas">
+
+            <div className="seccion-fila">
+              <h3 className="seccion">Compromisos</h3>
+              {!acts.editando && (
+                <button className="boton" onClick={acts.onNueva}>+ Actividad</button>
+              )}
+            </div>
+
+            <div className="lista-actividades">
+              {pendientes.length === 0
+                ? <p className="actividad-fecha">Sin compromisos pendientes.</p>
+                : pendientes.map(a => (
+                    <Actividad
+                      key={a.id}
+                      actividad={a}
+                      onEditar={acts.onEditar}
+                      onCompletar={acts.onCompletar}
+                      onEliminar={acts.onEliminar}
+                    />
+                  ))}
+            </div>
+
+            <div className="seccion-fila" style={{ marginTop: 16 }}>
+              <h3 className="seccion">Actividades completadas</h3>
+            </div>
+
+            <div className="lista-actividades">
+              {hechas.length === 0
+                ? <p className="actividad-fecha">Todavía no completó ninguna.</p>
+                : hechas.map(a => <Actividad key={a.id} actividad={a} />)}
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+      function App() {
+      const [clientes, setClientes] = useState([]);
+      const [busqueda, setBusqueda] = useState('');
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [detalle, setDetalle] = useState(null);
+      const [modo, setModo] = useState('ver');
+      const [error, setError] = useState(null);
+      const [version, setVersion] = useState(0);
+      const [actEditando, setActEditando] = useState(null);
+
+      useEffect(() => {
+        const temporizador = setTimeout(async () => {
+          const lista = await pedirAPI('GET', `/clientes?q=${encodeURIComponent(busqueda)}`);
+          setClientes(lista);
+        }, 250);
+
+        return () => clearTimeout(temporizador);
+      }, [busqueda, version]);
+
+      useEffect(() => {
+        if (seleccionadoId === null) {
+          setDetalle(null);
+          return;
+        }
+
+        (async () => {
+          try {
+            setDetalle(await pedirAPI('GET', `/clientes/${seleccionadoId}`));
+          } catch {
+            setDetalle(null);
+          }
+        })();
+      }, [seleccionadoId, version]);
+
+      function seleccionar(id) {
+        setSeleccionadoId(id);
+        setModo('ver');
+        setError(null);
+        setActEditando(null);
+      }
+
+      function nuevoCliente() {
+        setSeleccionadoId(null);
+        setModo('nuevo');
+        setError(null);
+        setActEditando(null);
+      }
+
+      async function guardarCliente(datos) {
+        try {
+          if (modo === 'nuevo') {
+            const creado = await pedirAPI('POST', '/clientes', datos);
+            setSeleccionadoId(creado.id);
+          } else {
+            await pedirAPI('PUT', `/clientes/${seleccionadoId}`, datos);
+          }
+          setModo('ver');
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (!confirm(`¿Eliminar a ${detalle.nombre} y todas sus actividades?`)) return;
+
+        try {
+          await pedirAPI('DELETE', `/clientes/${seleccionadoId}`);
+          setSeleccionadoId(null);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      // ---------- Actividades ----------
+
+      async function guardarActividad(datos) {
+        try {
+          if (actEditando.id) {
+            await pedirAPI('PUT', `/actividades/${actEditando.id}`, datos);
+          } else {
+            await pedirAPI('POST', `/clientes/${seleccionadoId}/actividades`, datos);
+          }
+          setActEditando(null);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function completarActividad(id) {
+        try {
+          await pedirAPI('POST', `/actividades/${id}/completar`);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function eliminarActividad(id) {
+        if (!confirm('¿Eliminar esta actividad?')) return;
+
+        try {
+          await pedirAPI('DELETE', `/actividades/${id}`);
+          setActEditando(null);
+          setError(null);
+          setVersion(v => v + 1);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      const acts = {
+        editando: actEditando,
+        onNueva: () => { setActEditando({ id: null, descripcion: '', fecha: '' }); setError(null); },
+        onEditar: a => { setActEditando({ id: a.id, descripcion: a.descripcion, fecha: a.fecha ?? '' }); setError(null); },
+        onGuardar: guardarActividad,
+        onCancelar: () => { setActEditando(null); setError(null); },
+        onCompletar: completarActividad,
+        onEliminar: eliminarActividad,
+      };
+
+      return (
+        <div className="app">
+          <header className="barra">MiniCRM</header>
+
+          <div className="cuerpo">
+            <section className="panel maestro">
+              <div className="maestro-cabecera">
+                <div className="maestro-fila">
+                  <h2 className="maestro-titulo" style={{ margin: 0 }}>Clientes</h2>
+                  <button className="boton boton-primario" onClick={nuevoCliente}>+ Agregar</button>
+                </div>
+                <input
+                  className="buscador"
+                  placeholder="Buscar por cualquier campo..."
+                  value={busqueda}
+                  onChange={e => setBusqueda(e.target.value)}
+                />
+              </div>
+
+              <ul className="lista">
+                {clientes.map(c => (
+                  <ItemCliente
+                    key={c.id}
+                    cliente={c}
+                    activo={c.id === seleccionadoId}
+                    onSeleccionar={seleccionar}
+                  />
+                ))}
+              </ul>
+            </section>
+
+            <section className="panel detalle">
+              <Detalle
+                cliente={detalle}
+                modo={modo}
+                error={error}
+                onEditar={() => { setModo('editar'); setError(null); }}
+                onEliminar={eliminarCliente}
+                onGuardar={guardarCliente}
+                onCancelar={() => { setModo('ver'); setError(null); }}
+                acts={acts}
+              />
+            </section>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+  </script>
+</body>
+</html>
