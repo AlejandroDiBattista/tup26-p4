@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MiniCRM</title>
+  <!-- Bibliotecas CDN con versiones fijas -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body { overflow: hidden; height: 100vh; }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    function App() {
+      const [clientes, setClientes] = React.useState([]);
+      const [busqueda, setBusqueda] = React.useState('');
+      const [seleccionadoId, setSeleccionadoId] = React.useState(null);
+      const [clienteDetalle, setClienteDetalle] = React.useState(null);
+      
+      const [editandoCliente, setEditandoCliente] = React.useState(false);
+      const [formCliente, setFormCliente] = React.useState({ nombre: '', email: '', telefono: '', direccion: '' });
+      
+      const [nuevaActDesc, setNuevaActDesc] = React.useState('');
+      const [nuevaActFecha, setNuevaActFecha] = React.useState('');
+      const [editActId, setEditActId] = React.useState(null);
+      const [editActDesc, setEditActDesc] = React.useState('');
+      const [editActFecha, setEditActFecha] = React.useState('');
+
+      const cargarClientes = async (q = '') => {
+        const res = await fetch(`/api/clientes?q=${q}`);
+        const data = await res.json();
+        setClientes(data);
+        if (seleccionadoId) {
+          seleccionarCliente(seleccionadoId);
+        } else if (data.length > 0 && !seleccionadoId) {
+          seleccionarCliente(data[0].id);
+        }
+      };
+
+      React.useEffect(() => {
+        cargarClientes();
+      }, []);
+
+      const seleccionarCliente = async (id) => {
+        setSeleccionadoId(id);
+        setEditandoCliente(false);
+        const res = await fetch(`/api/clientes/${id}`);
+        const data = await res.json();
+        setClienteDetalle(data);
+        setFormCliente({ nombre: data.nombre, email: data.email, telefono: data.telefono || '', direccion: data.direccion || '' });
+      };
+
+      const guardarClienteNuevo = async () => {
+        const nombre = prompt("Nombre del cliente:");
+        const email = prompt("Email del cliente:");
+        if (!nombre || !email) return;
+        await fetch('/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, email, telefono: '', direccion: '' })
+        });
+        cargarClientes(busqueda);
+      };
+
+      const actualizarCliente = async (e) => {
+        e.preventDefault();
+        await fetch(`/api/clientes/${seleccionadoId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formCliente)
+        });
+        setEditandoCliente(false);
+        cargarClientes(busqueda);
+        seleccionarCliente(seleccionadoId);
+      };
+
+      const eliminarCliente = async () => {
+        if (!confirm("¿Eliminar este cliente y sus actividades?")) return;
+        await fetch(`/api/clientes/${seleccionadoId}`, { method: 'DELETE' });
+        setSeleccionadoId(null);
+        setClienteDetalle(null);
+        cargarClientes(busqueda);
+      };
+
+      const agregarActividad = async (e) => {
+        e.preventDefault();
+        if (!nuevaActDesc) return;
+        await fetch(`/api/clientes/${seleccionadoId}/actividades`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ descripcion: nuevaActDesc, fecha: nuevaActFecha })
+        });
+        setNuevaActDesc('');
+        setNuevaActFecha('');
+        seleccionarCliente(seleccionadoId);
+      };
+
+      const completarActividad = async (act) => {
+        await fetch(`/api/actividades/${act.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completada: true })
+        });
+        seleccionarCliente(seleccionadoId);
+      };
+
+      const eliminarActividad = async (id) => {
+        await fetch(`/api/actividades/${id}`, { method: 'DELETE' });
+        seleccionarCliente(seleccionadoId);
+      };
+
+      const guardarEdicionActividad = async (id) => {
+        await fetch(`/api/actividades/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ descripcion: editActDesc, fecha: editActFecha })
+        });
+        setEditActId(null);
+        seleccionarCliente(seleccionadoId);
+      };
+
+      return (
+        <div className="flex flex-col h-screen">
+          <header className="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center shadow">
+            <h1 className="text-xl font-bold">MiniCRM</h1>
+          </header>
+          <div className="flex flex-1 overflow-hidden">
+            {/* Maestro */}
+            <div className="w-1/3 bg-white border-r flex flex-col">
+              <div className="p-4 border-b flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Buscar por cualquier campo..." 
+                  className="flex-1 border rounded px-3 py-2 text-sm"
+                  value={busqueda}
+                  onChange={e => { setBusqueda(e.target.value); cargarClientes(e.target.value); }}
+                />
+                <button onClick={guardarClienteNuevo} className="bg-indigo-600 text-white px-3 py-2 rounded text-sm font-bold">+ Agregar</button>
+              </div>
+              <div className="flex-1 overflow-y-auto divide-y">
+                {clientes.map(c => (
+                  <div 
+                    key={c.id} 
+                    onClick={() => seleccionarCliente(c.id)}
+                    className={`p-4 cursor-pointer hover:bg-gray-50 ${seleccionadoId === c.id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''}`}
+                  >
+                    <p className="font-semibold text-gray-800">{c.nombre}</p>
+                    <p className="text-xs text-gray-500">{c.email}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Detalle */}
+            <div className="w-2/3 bg-gray-50 flex flex-col overflow-y-auto p-6">
+              {clienteDetalle ? (
+                <div className="max-w-3xl w-full mx-auto bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-start border-b pb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800">{clienteDetalle.nombre}</h2>
+                      <p className="text-sm text-gray-600">{clienteDetalle.email} | {clienteDetalle.telefono || 'Sin teléfono'} | {clienteDetalle.direccion || 'Sin dirección'}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditandoCliente(!editandoCliente)} className="bg-gray-200 px-3 py-1 rounded text-sm">Editar</button>
+                      <button onClick={eliminarCliente} className="bg-red-100 text-red-600 px-3 py-1 rounded text-sm">Eliminar</button>
+                    </div>
+                  </div>
+
+                  {editandoCliente && (
+                    <form onSubmit={actualizarCliente} className="mt-4 p-4 bg-gray-50 rounded border flex flex-col gap-2">
+                      <input type="text" className="border p-2 rounded text-sm" value={formCliente.nombre} onChange={e=>setFormCliente({...formCliente, nombre:e.target.value})} placeholder="Nombre" required />
+                      <input type="email" className="border p-2 rounded text-sm" value={formCliente.email} onChange={e=>setFormCliente({...formCliente, email:e.target.value})} placeholder="Email" required />
+                      <input type="text" className="border p-2 rounded text-sm" value={formCliente.telefono} onChange={e=>setFormCliente({...formCliente, telefono:e.target.value})} placeholder="Teléfono" />
+                      <input type="text" className="border p-2 rounded text-sm" value={formCliente.direccion} onChange={e=>setFormCliente({...formCliente, direccion:e.target.value})} placeholder="Dirección" />
+                      <button type="submit" className="bg-indigo-600 text-white py-1 rounded text-sm">Guardar cambios</button>
+                    </form>
+                  )}
+
+                  {/* Subformulario Actividad */}
+                  <form onSubmit={agregarActividad} className="mt-6 p-4 bg-indigo-50 rounded flex gap-2 items-center">
+                    <input type="text" placeholder="Descripción de la actividad" className="flex-1 border p-2 rounded text-sm" value={nuevaActDesc} onChange={e=>setNuevaActDesc(e.target.value)} />
+                    <input type="date" className="border p-2 rounded text-sm" value={nuevaActFecha} onChange={e=>setNuevaActFecha(e.target.value)} />
+                    <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded text-sm">Guardar</button>
+                  </form>
+
+                  {/* Compromisos Pendientes */}
+                  <div className="mt-6">
+                    <h3 className="font-bold text-gray-700 mb-2">Compromisos Pendientes</h3>
+                    <div className="space-y-2">
+                      {clienteDetalle.actividades.filter(a => !a.completada).map(a => (
+                        <div key={a.id} className="flex items-center justify-between p-3 border rounded bg-white">
+                          <div className="flex items-center gap-3">
+                            <input type="checkbox" checked={false} onChange={() => completarActividad(a)} />
+                            {editActId === a.id ? (
+                              <div className="flex gap-2">
+                                <input type="text" value={editActDesc} onChange={e=>setEditActDesc(e.target.value)} className="border p-1 text-sm rounded"/>
+                                <input type="date" value={editActFecha} onChange={e=>setEditActFecha(e.target.value)} className="border p-1 text-sm rounded"/>
+                                <button onClick={() => guardarEdicionActividad(a.id)} className="bg-green-600 text-white px-2 py-1 rounded text-xs">OK</button>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-sm font-medium">{a.descripcion}</p>
+                                <p className="text-xs text-gray-400">{a.fecha || 'Sin fecha'}</p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => { setEditActId(a.id); setEditActDesc(a.descripcion); setEditActFecha(a.fecha||''); }} className="text-gray-500 text-xs">✏️</button>
+                            <button onClick={() => eliminarActividad(a.id)} className="text-red-500 text-xs">🗑️</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actividades Completadas (Solo Lectura) */}
+                  <div className="mt-6">
+                    <h3 className="font-bold text-gray-700 mb-2">Actividades completadas</h3>
+                    <div className="space-y-2">
+                      {clienteDetalle.actividades.filter(a => a.completada).map(a => (
+                        <div key={a.id} className="flex items-center justify-between p-3 border rounded bg-gray-100 opacity-75">
+                          <div className="flex items-center gap-3">
+                            <input type="checkbox" checked={true} disabled />
+                            <div>
+                              <p className="text-sm font-medium line-through">{a.descripcion}</p>
+                              <p className="text-xs text-gray-500">Completada</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center mt-20">Selecciona un cliente</p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
