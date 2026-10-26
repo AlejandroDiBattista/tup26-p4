@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <style>
+    :root {
+      --fondo: #f1f4f8;
+      --panel: #ffffff;
+      --borde: #e2e8f0;
+      --texto: #1e293b;
+      --suave: #64748b;
+      --barra: #2c4364;
+      --primario: #2563eb;
+      --primario-hover: #1d4ed8;
+      --seleccion: #e8f1fd;
+      --peligro: #dc2626;
+      --exito: #16a34a;
+      --exito-fondo: #f0f9f2;
+      --radio: 8px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: var(--texto); font-size: 15px; }
+    #root { height: 100%; display: flex; flex-direction: column; }
+
+    header { background: var(--barra); color: #fff; padding: 12px 24px; font-size: 22px; font-weight: 700; }
+    main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(260px, 380px) 1fr; gap: 12px; padding: 12px; }
+    .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+
+    /* Botones y campos */
+    button { font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--borde); background: #fff; color: var(--texto); }
+    button:hover { background: #f8fafc; }
+    button.primario { background: var(--primario); border-color: var(--primario); color: #fff; }
+    button.primario:hover { background: var(--primario-hover); }
+    button.peligro { color: var(--peligro); border-color: #fca5a5; }
+    button.peligro:hover { background: #fef2f2; }
+    button.icono { padding: 6px; }
+    input { font: inherit; padding: 8px 10px; border: 1px solid var(--borde); border-radius: 6px; width: 100%; color: var(--texto); }
+    input:focus { outline: 2px solid #bfdbfe; border-color: var(--primario); }
+    svg { width: 16px; height: 16px; flex: none; }
+
+    /* Maestro */
+    .maestro-cabecera { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px; }
+    .maestro-cabecera h2 { margin: 0; font-size: 22px; }
+    .buscador { position: relative; margin: 0 16px 12px; }
+    .buscador svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--suave); }
+    .buscador input { padding-left: 34px; }
+    .lista { list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto; border-top: 1px solid var(--borde); }
+    .lista li { display: flex; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--borde); cursor: pointer; }
+    .lista li:hover { background: #f8fafc; }
+    .lista li.activo { background: var(--seleccion); }
+    .lista .nombre { font-weight: 600; }
+    .lista .sub { color: var(--suave); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lista .vacio { color: var(--suave); cursor: default; justify-content: center; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 14px; flex: none; }
+
+    /* Detalle */
+    .detalle { padding: 20px; gap: 16px; overflow-y: auto; }
+    .vacio-detalle { margin: auto; color: var(--suave); }
+    .ficha-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .ficha-cabecera h2 { margin: 0; font-size: 26px; }
+    .ficha-cabecera .acciones { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .ficha-cabecera .acciones div { display: flex; gap: 8px; }
+    .id { color: var(--suave); font-size: 13px; }
+    .datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; padding-bottom: 16px; border-bottom: 1px solid var(--borde); }
+    .dato { display: flex; gap: 10px; align-items: center; }
+    .dato svg { color: var(--suave); }
+    .dato .falta { color: var(--suave); font-style: italic; }
+
+    .formulario h2 { margin: 0 0 14px; }
+    .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .campos label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--suave); }
+    .campos .ancho { grid-column: 1 / -1; }
+    .botonera { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+    /* Actividades */
+    .subform { border: 1px dashed #cbd5e1; border-radius: var(--radio); padding: 12px 16px; }
+    .subform h3 { margin: 0 0 10px; font-size: 16px; }
+    .subform form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .subform .desc { flex: 3 1 200px; }
+    .subform .fecha { flex: 1 1 140px; }
+    .seccion { display: flex; flex-direction: column; min-height: 110px; flex: 1 1 0; }
+    .seccion h3 { margin: 0 0 8px; font-size: 18px; }
+    .actividades { list-style: none; margin: 0; padding: 0; border: 1px solid var(--borde); border-radius: var(--radio); overflow-y: auto; flex: 0 1 auto; min-height: 0; }
+    .actividades li { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--borde); }
+    .actividades li:last-child { border-bottom: 0; }
+    .actividades li.editando { background: var(--seleccion); }
+    .actividades .texto { flex: 1; min-width: 0; }
+    .actividades .cuando { font-size: 13px; color: var(--suave); }
+    .actividades .cuando.vencido { color: var(--peligro); }
+    .actividades .vacio { color: var(--suave); font-style: italic; }
+    .actividades input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--exito); }
+    .actividades.completadas { background: var(--exito-fondo); }
+    .actividades.completadas input { cursor: default; }
+    .actividades .acciones { display: flex; gap: 6px; }
+
+    .aviso { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #7f1d1d; color: #fff; padding: 10px 18px; border-radius: var(--radio); box-shadow: 0 4px 12px rgb(0 0 0 / .2); cursor: pointer; }
+
+    @media (max-width: 760px) {
+      header { padding: 10px 16px; }
+      main { grid-template-columns: 1fr; grid-template-rows: 38% 1fr; }
+      .datos, .campos { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    // ---------- Utilidades ----------
+
+    /** Llama a la API REST y devuelve el JSON; si falla lanza el mensaje de error. */
+    async function api(metodo, url, cuerpo) {
+      const res = await fetch("/api" + url, {
+        method: metodo,
+        headers: cuerpo ? { "Content-Type": "application/json" } : undefined,
+        body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+      });
+      if (res.status === 204) return null;
+      const datos = await res.json();
+      if (!res.ok) throw new Error(datos.error ?? "Error inesperado");
+      return datos;
+    }
+
+    const hoy = () => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+
+    /** "2026-10-16" -> "16 oct 2026" */
+    function formatearFecha(iso) {
+      const [a, m, d] = iso.split("-").map(Number);
+      return new Date(a, m - 1, d)
+        .toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })
+        .replace(/ de /g, " ")
+        .replace(".", "");
+    }
+
+    const iniciales = (nombre) =>
+      nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join("");
+
+    const COLORES = [
+      ["#dbeafe", "#1d4ed8"], ["#dcfce7", "#15803d"], ["#ede9fe", "#6d28d9"], ["#ffedd5", "#c2410c"],
+      ["#fce7f3", "#be185d"], ["#ccfbf1", "#0f766e"], ["#e0e7ff", "#4338ca"],
+    ];
+
+    // Íconos SVG simples (trazos de 24x24)
+    const TRAZOS = {
+      mas: "M12 5v14M5 12h14",
+      buscar: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5",
+      editar: "M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4",
+      borrar: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6",
+      mail: "M3 6h18v12H3zM3 7l9 6 9-6",
+      telefono: "M5 4h4l2 5-3 2a11 11 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2",
+      ubicacion: "M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12zM12 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
+      ciudad: "M3 21h18M5 21V8l7-4 7 4v13M9 21v-5h6v5",
+      guardar: "M5 3h11l4 4v14H4V3zM8 3v5h8V3M8 21v-7h8v7",
+      cerrar: "M6 6l12 12M18 6L6 18",
+    };
+    const Icono = ({ nombre }) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d={TRAZOS[nombre]} />
+      </svg>
+    );
+
+    // ---------- Maestro ----------
+
+    function Maestro({ clientes, texto, onBuscar, seleccionado, onSeleccionar, onNuevo }) {
+      return (
+        <section className="panel">
+          <div className="maestro-cabecera">
+            <h2>Clientes</h2>
+            <button className="primario" onClick={onNuevo}><Icono nombre="mas" /> Agregar</button>
+          </div>
+          <div className="buscador">
+            <Icono nombre="buscar" />
+            <input type="search" placeholder="Buscar por cualquier campo..." value={texto} onChange={(e) => onBuscar(e.target.value)} />
+          </div>
+          <ul className="lista">
+            {clientes.length === 0 && <li className="vacio">No se encontraron clientes</li>}
+            {clientes.map((c) => {
+              const [fondo, letra] = COLORES[c.id % COLORES.length];
+              return (
+                <li key={c.id} className={c.id === seleccionado ? "activo" : ""} onClick={() => onSeleccionar(c.id)}>
+                  <span className="avatar" style={{ background: fondo, color: letra }}>{iniciales(c.nombre)}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="nombre">{c.nombre}</div>
+                    <div className="sub">{c.email || c.telefono || c.ciudad || "Sin datos de contacto"}</div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      );
+    }
+
+    // ---------- Detalle: ficha y formulario ----------
+
+    const CLIENTE_VACIO = { nombre: "", email: "", telefono: "", direccion: "", ciudad: "" };
+
+    function FormCliente({ titulo, inicial, onGuardar, onCancelar }) {
+      const [datos, setDatos] = useState({ ...CLIENTE_VACIO, ...inicial });
+      const campo = (nombre) => ({ value: datos[nombre], onChange: (e) => setDatos({ ...datos, [nombre]: e.target.value }) });
+
+      return (
+        <form className="formulario" onSubmit={(e) => { e.preventDefault(); onGuardar(datos); }}>
+          <h2>{titulo}</h2>
+          <div className="campos">
+            <label className="ancho">Nombre *<input required autoFocus {...campo("nombre")} /></label>
+            <label>Email<input type="email" {...campo("email")} /></label>
+            <label>Teléfono<input {...campo("telefono")} /></label>
+            <label>Dirección<input {...campo("direccion")} /></label>
+            <label>Ciudad<input {...campo("ciudad")} /></label>
+          </div>
+          <div className="botonera">
+            <button type="button" onClick={onCancelar}><Icono nombre="cerrar" /> Cancelar</button>
+            <button type="submit" className="primario"><Icono nombre="guardar" /> Guardar</button>
+          </div>
+        </form>
+      );
+    }
+
+    function Dato({ icono, valor }) {
+      return (
+        <div className="dato">
+          <Icono nombre={icono} />
+          {valor ? <span>{valor}</span> : <span className="falta">Sin dato</span>}
+        </div>
+      );
+    }
+
+    function Ficha({ cliente, onEditar, onEliminar }) {
+      return (
+        <>
+          <div className="ficha-cabecera">
+            <h2>{cliente.nombre}</h2>
+            <div className="acciones">
+              <span className="id">#{cliente.id}</span>
+              <div>
+                <button onClick={onEditar}><Icono nombre="editar" /> Editar</button>
+                <button className="peligro" onClick={onEliminar}><Icono nombre="borrar" /> Eliminar</button>
+              </div>
+            </div>
+          </div>
+          <div className="datos">
+            <Dato icono="mail" valor={cliente.email} />
+            <Dato icono="ubicacion" valor={cliente.direccion} />
+            <Dato icono="telefono" valor={cliente.telefono} />
+            <Dato icono="ciudad" valor={cliente.ciudad} />
+          </div>
+        </>
+      );
+    }
+
+    // ---------- Detalle: actividades ----------
+
+    function Actividades({ actividades, onGuardar, onCompletar, onEliminar }) {
+      const [editando, setEditando] = useState(null); // actividad en edición o null
+      const [descripcion, setDescripcion] = useState("");
+      const [fecha, setFecha] = useState("");
+
+      const limpiar = () => { setEditando(null); setDescripcion(""); setFecha(""); };
+      const editar = (a) => { setEditando(a); setDescripcion(a.descripcion); setFecha(a.fecha ?? ""); };
+
+      async function guardar(e) {
+        e.preventDefault();
+        if (await onGuardar({ descripcion, fecha: fecha || null }, editando?.id)) limpiar();
+      }
+
+      const pendientes = actividades.filter((a) => !a.completada);
+      const completadas = actividades.filter((a) => a.completada);
+
+      return (
+        <>
+          <div className="subform">
+            <h3>{editando ? "Editar actividad" : "Agregar actividad"}</h3>
+            <form onSubmit={guardar}>
+              <input className="desc" required placeholder="Descripción de la actividad" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+              <input className="fecha" type="date" title="Fecha opcional" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+              <button type="submit" className="primario"><Icono nombre="guardar" /> Guardar</button>
+              <button type="button" onClick={limpiar}><Icono nombre="cerrar" /> Cancelar</button>
+            </form>
+          </div>
+
+          <div className="seccion">
+            <h3>Compromisos</h3>
+            <ul className="actividades">
+              {pendientes.length === 0 && <li className="vacio">No hay compromisos pendientes</li>}
+              {pendientes.map((a) => {
+                const vencido = a.fecha && a.fecha < hoy();
+                return (
+                  <li key={a.id} className={editando?.id === a.id ? "editando" : ""}>
+                    <input type="checkbox" checked={false} title="Marcar como completada" onChange={() => { if (editando?.id === a.id) limpiar(); onCompletar(a.id); }} />
+                    <div className="texto">
+                      <div>{a.descripcion}</div>
+                      <div className={"cuando" + (vencido ? " vencido" : "")}>
+                        {a.fecha ? formatearFecha(a.fecha) + (vencido ? " · Vencido" : "") : "Sin fecha"}
+                      </div>
+                    </div>
+                    <div className="acciones">
+                      <button className="icono" title="Editar" onClick={() => editar(a)}><Icono nombre="editar" /></button>
+                      <button className="icono peligro" title="Eliminar" onClick={() => { if (editando?.id === a.id) limpiar(); onEliminar(a); }}><Icono nombre="borrar" /></button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="seccion">
+            <h3>Actividades completadas</h3>
+            <ul className="actividades completadas">
+              {completadas.length === 0 && <li className="vacio">Todavía no hay actividades completadas</li>}
+              {completadas.map((a) => (
+                <li key={a.id}>
+                  <input type="checkbox" checked readOnly disabled />
+                  <div className="texto">
+                    <div>{a.descripcion}</div>
+                    <div className="cuando">Completada el {formatearFecha(a.completadaEn)}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      );
+    }
+
+    // ---------- App ----------
+
+    function App() {
+      const [texto, setTexto] = useState("");
+      const [clientes, setClientes] = useState([]);
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [detalle, setDetalle] = useState(null);
+      const [modo, setModo] = useState("ver"); // "ver" | "editar" | "nuevo"
+      const [aviso, setAviso] = useState("");
+
+      /** Ejecuta una acción y muestra el error si falla. Devuelve true si salió bien. */
+      async function intentar(accion) {
+        try { await accion(); return true; }
+        catch (e) { setAviso(e.message); return false; }
+      }
+
+      const cargarClientes = () => api("GET", "/clientes?q=" + encodeURIComponent(texto)).then(setClientes);
+      const cargarDetalle = (id = seleccionado) => (id ? api("GET", "/clientes/" + id).then(setDetalle) : setDetalle(null));
+
+      // Búsqueda en vivo: espera 200 ms después de la última tecla.
+      useEffect(() => {
+        const t = setTimeout(() => intentar(cargarClientes), 200);
+        return () => clearTimeout(t);
+      }, [texto]);
+
+      useEffect(() => { intentar(() => cargarDetalle(seleccionado)); }, [seleccionado]);
+
+      useEffect(() => {
+        if (!aviso) return;
+        const t = setTimeout(() => setAviso(""), 4000);
+        return () => clearTimeout(t);
+      }, [aviso]);
+
+      const seleccionar = (id) => { setSeleccionado(id); setModo("ver"); };
+
+      const guardarCliente = (datos) => intentar(async () => {
+        if (modo === "nuevo") {
+          const nuevo = await api("POST", "/clientes", datos);
+          setSeleccionado(nuevo.id);
+        } else {
+          await api("PUT", "/clientes/" + seleccionado, datos);
+          await cargarDetalle();
+        }
+        setModo("ver");
+        await cargarClientes();
+      });
+
+      const eliminarCliente = () => {
+        if (!confirm(`¿Eliminar a ${detalle.nombre} y todas sus actividades?`)) return;
+        intentar(async () => {
+          await api("DELETE", "/clientes/" + seleccionado);
+          setSeleccionado(null);
+          await cargarClientes();
+        });
+      };
+
+      const guardarActividad = (datos, id) => intentar(async () => {
+        if (id) await api("PUT", "/actividades/" + id, datos);
+        else await api("POST", `/clientes/${seleccionado}/actividades`, datos);
+        await cargarDetalle();
+      });
+
+      const completarActividad = (id) => intentar(async () => {
+        await api("POST", `/actividades/${id}/completar`);
+        await cargarDetalle();
+      });
+
+      const eliminarActividad = (a) => {
+        if (!confirm(`¿Eliminar la actividad "${a.descripcion}"?`)) return;
+        intentar(async () => {
+          await api("DELETE", "/actividades/" + a.id);
+          await cargarDetalle();
+        });
+      };
+
+      let contenido;
+      if (modo === "nuevo") {
+        contenido = <FormCliente titulo="Nuevo cliente" inicial={CLIENTE_VACIO} onGuardar={guardarCliente} onCancelar={() => setModo("ver")} />;
+      } else if (!detalle) {
+        contenido = <p className="vacio-detalle">Seleccioná un cliente para ver su ficha</p>;
+      } else if (modo === "editar") {
+        contenido = <FormCliente titulo="Editar cliente" inicial={detalle} onGuardar={guardarCliente} onCancelar={() => setModo("ver")} />;
+      } else {
+        contenido = (
+          <>
+            <Ficha cliente={detalle} onEditar={() => setModo("editar")} onEliminar={eliminarCliente} />
+            <Actividades key={detalle.id} actividades={detalle.actividades}
+              onGuardar={guardarActividad} onCompletar={completarActividad} onEliminar={eliminarActividad} />
+          </>
+        );
+      }
+
+      return (
+        <>
+          <header>MiniCRM</header>
+          <main>
+            <Maestro clientes={clientes} texto={texto} onBuscar={setTexto}
+              seleccionado={seleccionado} onSeleccionar={seleccionar} onNuevo={() => setModo("nuevo")} />
+            <section className="panel detalle">{contenido}</section>
+          </main>
+          {aviso && <div className="aviso" onClick={() => setAviso("")}>{aviso}</div>}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

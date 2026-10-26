@@ -1,0 +1,10 @@
+import express,{type ErrorRequestHandler} from 'express';
+import {resolve} from 'node:path';
+import {router} from './routes/clientes.js';
+import {ErrorHttp} from './services/clientes.js';
+export const app=express(); app.disable('x-powered-by'); app.use(express.json({limit:'32kb'}));
+app.use('/api/clientes',router); app.get('/',(_r,s)=>{s.redirect('/MiniCRM.html');});
+app.use(express.static(resolve('public')));
+app.use((_r,s)=>{s.status(404).json({error:'Recurso no encontrado.'});});
+const errores:ErrorRequestHandler=(e,_r,s,_next)=>{const status=e instanceof ErrorHttp?e.status:e.status===400?400:e.status===413?413:500;if(status===500)console.error(e);s.status(status).json({error:e instanceof ErrorHttp?e.message:status===400?'JSON inválido.':status===413?'Solicitud demasiado grande.':'Error interno del servidor.'});};
+app.use(errores);

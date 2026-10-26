@@ -1,0 +1,106 @@
+// Datos ficticios: example.com está reservado para ejemplos.
+export const clientesDemo = [
+  {
+    nombre: "Ana",
+    apellido: "García",
+    email: "ana.garcia@example.com",
+    domicilio: "San Martín 450",
+    localidad: "Yerba Buena",
+    telefono: "3815550101",
+  },
+  {
+    nombre: "Bruno",
+    apellido: "López",
+    email: "bruno.lopez@example.com",
+    domicilio: "Belgrano 120",
+    localidad: "San Miguel de Tucumán",
+    telefono: "3815550102",
+  },
+  {
+    nombre: "Carla",
+    apellido: "Pérez",
+    email: "carla.perez@example.com",
+    domicilio: null,
+    localidad: "Tafí Viejo",
+    telefono: null,
+  },
+  {
+    nombre: "Diego",
+    apellido: "Ruiz",
+    email: "diego.ruiz@example.com",
+    domicilio: "Mitre 820",
+    localidad: "Concepción",
+    telefono: "3865550104",
+  },
+  {
+    nombre: "Elena",
+    apellido: "Torres",
+    email: "elena.torres@example.com",
+    domicilio: "Rivadavia 65",
+    localidad: "Yerba Buena",
+    telefono: "3815550105",
+  },
+  {
+    nombre: "Federico",
+    apellido: "Díaz",
+    email: "federico.diaz@example.com",
+    domicilio: null,
+    localidad: null,
+    telefono: null,
+  },
+  {
+    nombre: "Gabriela",
+    apellido: "Soria",
+    email: "gabriela.soria@example.com",
+    domicilio: "Sarmiento 340",
+    localidad: "Monteros",
+    telefono: "3863550107",
+  },
+  {
+    nombre: "Hugo",
+    apellido: "Medina",
+    email: "hugo.medina@example.com",
+    domicilio: "Lavalle 215",
+    localidad: "Famaillá",
+    telefono: "3863550108",
+  },
+  {
+    nombre: "Inés",
+    apellido: "Vega",
+    email: "ines.vega@example.com",
+    domicilio: null,
+    localidad: "Aguilares",
+    telefono: "3865550109",
+  },
+  {
+    nombre: "Julián",
+    apellido: "Castro",
+    email: "julian.castro@example.com",
+    domicilio: "Maipú 910",
+    localidad: "San Miguel de Tucumán",
+    telefono: null,
+  },
+];
+
+export const actividadesDemo = [
+  {
+    descripcion: "Enviar presupuesto",
+    fechaCompromiso: "2026-11-10",
+    fechaFinalizacion: null,
+  },
+  {
+    descripcion: "Consultar nuevas necesidades",
+    fechaCompromiso: null,
+    fechaFinalizacion: null,
+  },
+  {
+    descripcion: "Realizar reunión inicial",
+    fechaCompromiso: "2026-10-15",
+    fechaFinalizacion: "2026-10-15T15:00:00.000Z",
+  },
+  {
+    descripcion: "Enviar presentación",
+    fechaCompromiso: null,
+    fechaFinalizacion: "2026-10-16T12:30:00.000Z",
+  },
+];

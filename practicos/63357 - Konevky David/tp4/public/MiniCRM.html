@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <script>
+    // Babel con runtime "classic": el JSX usa React.createElement (React global).
+    Babel.registerPreset('react-classic', {
+      presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]],
+    });
+  </script>
+  <style>
+    :root {
+      /* Paleta neutra (zinc) al estilo shadcn */
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #e4e4e7;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #f4f4f5;
+      --brand: #18181b;
+      --primary: #18181b;
+      --primary-dark: #27272a;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --ring: #a1a1aa;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; margin: 0; overflow: hidden; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+    button, input { font: inherit; color: inherit; }
+    h1, h2, h3 { letter-spacing: -0.02em; }
+
+    /* Layout */
+    .app { height: 100%; display: flex; flex-direction: column; }
+    .app-header { background: var(--panel); border-bottom: 1px solid var(--line); color: var(--text); padding: 0 24px; height: 56px; display: flex; align-items: center; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; flex: none; }
+    .app-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px 1fr; gap: 16px; padding: 16px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); min-height: 0; display: flex; flex-direction: column; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 12px; }
+    .panel-head h2 { margin: 0; font-size: 20px; font-weight: 600; }
+    .scroll { overflow-y: auto; min-height: 0; }
+    .empty { color: var(--muted); text-align: center; padding: 32px 16px; }
+    .error { color: var(--danger); padding: 8px 16px; font-size: 14px; }
+
+    /* Botones */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); cursor: pointer; font-size: 14px; font-weight: 500; transition: background .15s, border-color .15s; }
+    .btn:hover { background: var(--accent); }
+    .btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .btn svg { width: 16px; height: 16px; }
+    .btn-icon { width: 36px; padding: 0; }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #fafafa; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-danger { color: var(--danger); }
+    .btn-danger:hover { background: #fef2f2; border-color: #fecaca; }
+
+    /* Campos */
+    .field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: var(--text); }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap > svg { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--muted); }
+    .input { width: 100%; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; color: var(--text); font-weight: 400; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); outline: none; transition: border-color .15s, box-shadow .15s; }
+    .input::placeholder { color: var(--muted); }
+    .input.with-icon { padding-left: 36px; }
+    .input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px rgba(161, 161, 170, .3); }
+
+    /* Lista de clientes */
+    .search { padding: 0 16px 12px; }
+    .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .list-item { transition: background .15s; }
+    .list-item:hover { background: var(--accent); }
+    .list-item.selected { background: var(--accent); box-shadow: inset 3px 0 0 var(--brand); }
+    .avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 500; font-size: 14px; }
+    .item-title { font-weight: 500; }
+    .item-sub { color: var(--muted); font-size: 13px; }
+
+    /* Detalle */
+    .detail { flex: 1; padding: 20px 24px; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+    .detail-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .detail-top h1 { margin: 0; font-size: 28px; font-weight: 600; }
+    .detail-id { color: var(--muted); font-size: 14px; text-align: right; margin-bottom: 8px; }
+    .actions { display: flex; gap: 8px; }
+    .ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 24px; padding-bottom: 16px; border-bottom: 1px dashed var(--line); }
+    .ficha-row { display: flex; align-items: center; gap: 12px; color: var(--text); }
+    .ficha-row svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+    .ficha-row.vacio { color: var(--muted); }
+
+    /* Formulario */
+    .form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 560px) { .form { grid-template-columns: 1fr; } }
+    .form-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+
+    /* Actividades */
+    .section-title { margin: 0 0 8px; font-size: 18px; font-weight: 600; }
+    .detail > * { flex: none; }
+    /* Las actividades se reparten el alto restante y cada lista tiene su scroll; búsqueda y ficha quedan fijas. */
+    .act-sections { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+    .act-section { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .act-section.vacia { flex: none; }
+    .acts-vacio { padding: 8px 16px; color: var(--muted); font-size: 14px; }
+    .acts { flex: 0 1 auto; min-height: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow-y: auto; }
+    .acts.done { background: #fafafa; }
+    .act { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .act:last-child { border-bottom: 0; }
+    .act-title { font-weight: 500; }
+    .act-sub { color: var(--muted); font-size: 13px; }
+    .act-sub.vencida { color: var(--danger); }
+    .check { flex: none; width: 16px; height: 16px; padding: 0; background: #fff; border: 1px solid var(--brand); border-radius: 4px; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+    button.check { cursor: pointer; }
+    button.check:hover { background: var(--accent); }
+    button.check:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .act-texto { flex: 1; min-width: 0; }
+    .act-acciones { display: flex; gap: 6px; }
+    .act-form { padding: 12px 16px 16px; border: 1px dashed #a1a1aa; border-radius: var(--radius); }
+    .act-form-fila { display: flex; gap: 8px; align-items: center; }
+    .act-form-fila .input-wrap:first-child { flex: 1; min-width: 0; }
+    .act-form input[type=date] { width: 170px; }
+    .check.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .check svg { width: 12px; height: 12px; stroke-width: 3; }
+
+    @media (max-width: 800px) {
+      .app-body { grid-template-columns: 1fr; grid-template-rows: 40% 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react-classic">
+    const { useState, useEffect, useCallback } = React;
+
+    // ---------- Servicios (API REST) ----------
+    async function pedir(url, opciones = {}) {
+      const r = await fetch(url, {
+        ...opciones,
+        headers: { 'Content-Type': 'application/json' },
+        body: opciones.body && JSON.stringify(opciones.body),
+      });
+      if (r.status === 204) return null;
+      const datos = await r.json();
+      if (!r.ok) throw new Error(datos.error || 'Error de servidor');
+      return datos;
+    }
+
+    const ClientesService = {
+      listar: (q = '') => pedir('/api/clientes?q=' + encodeURIComponent(q)),
+      obtener: (id) => pedir(`/api/clientes/${id}`),
+      crear: (datos) => pedir('/api/clientes', { method: 'POST', body: datos }),
+      actualizar: (id, datos) => pedir(`/api/clientes/${id}`, { method: 'PUT', body: datos }),
+      eliminar: (id) => pedir(`/api/clientes/${id}`, { method: 'DELETE' }),
+    };
+
+    const ActividadesService = {
+      crear: (clienteId, datos) => pedir(`/api/clientes/${clienteId}/actividades`, { method: 'POST', body: datos }),
+      actualizar: (clienteId, id, datos) => pedir(`/api/clientes/${clienteId}/actividades/${id}`, { method: 'PUT', body: datos }),
+      completar: (clienteId, id) => pedir(`/api/clientes/${clienteId}/actividades/${id}/completar`, { method: 'POST', body: {} }),
+      eliminar: (clienteId, id) => pedir(`/api/clientes/${clienteId}/actividades/${id}`, { method: 'DELETE' }),
+    };
+
+    // ---------- Utilidades ----------
+    const nombreCompleto = (c) => `${c.nombre} ${c.apellido}`;
+    const iniciales = (c) => (c.nombre[0] + c.apellido[0]).toUpperCase();
+
+    const formatoFecha = (iso) => {
+      const [a, m, d] = iso.split('-').map(Number);
+      return new Date(a, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    // ---------- Componentes base ----------
+    const ICONOS = {
+      plus: 'M12 5v14M5 12h14',
+      search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-4.5-4.5',
+      edit: 'M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4',
+      trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+      mail: 'M3 6h18v12H3zM3 7l9 7 9-7',
+      phone: 'M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z',
+      pin: 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+      save: 'M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-7h8v7',
+      x: 'M6 6l12 12M18 6L6 18',
+      check: 'M5 12.5l4.5 4.5L19 7.5',
+    };
+
+    function Icon({ name }) {
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d={ICONOS[name]} />
+        </svg>
+      );
+    }
+
+    function Button({ variant, icon, children, ...props }) {
+      return (
+        <button className={'btn' + (variant ? ` btn-${variant}` : '') + (children ? '' : ' btn-icon')} {...props}>
+          {icon && <Icon name={icon} />}{children}
+        </button>
+      );
+    }
+
+    function Input({ icon, ...props }) {
+      return (
+        <div className="input-wrap">
+          {icon && <Icon name={icon} />}
+          <input className={'input' + (icon ? ' with-icon' : '')} {...props} />
+        </div>
+      );
+    }
+
+    function Field({ label, ...props }) {
+      return (
+        <label className="field">
+          {label}
+          <Input {...props} />
+        </label>
+      );
+    }
+
+    function Layout({ sidebar, children }) {
+      return (
+        <div className="app">
+          <header className="app-header">MiniCRM</header>
+          <main className="app-body">
+            <section className="panel">{sidebar}</section>
+            <section className="panel">{children}</section>
+          </main>
+        </div>
+      );
+    }
+
+    function Avatar({ id, texto }) {
+      const h = (id * 47) % 360;
+      return <div className="avatar" style={{ background: `hsl(${h} 80% 90%)`, color: `hsl(${h} 55% 32%)` }}>{texto}</div>;
+    }
+
+    // ---------- Componentes de entidades ----------
+    function EntityList({ items, selectedId, onSelect, renderItem }) {
+      if (!items.length) return <div className="empty">Sin resultados</div>;
+      return (
+        <ul className="list">
+          {items.map((it) => (
+            <li key={it.id} className={'list-item' + (it.id === selectedId ? ' selected' : '')} onClick={() => onSelect(it.id)}>
+              {renderItem(it)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    // Formulario genérico: fields = [{ name, label, type?, required? }]
+    function EntityForm({ fields, initial, onSubmit, onCancel }) {
+      const [valores, setValores] = useState(initial);
+      const cambiar = (name) => (e) => setValores({ ...valores, [name]: e.target.value });
+      return (
+        <form className="form" onSubmit={(e) => { e.preventDefault(); onSubmit(valores); }}>
+          {fields.map((f) => (
+            <Field key={f.name} label={f.label} type={f.type || 'text'} required={f.required}
+              value={valores[f.name] ?? ''} onChange={cambiar(f.name)} />
+          ))}
+          <div className="form-actions">
+            <Button variant="primary" icon="save" type="submit">Guardar</Button>
+            <Button icon="x" type="button" onClick={onCancel}>Cancelar</Button>
+          </div>
+        </form>
+      );
+    }
+
+    const CAMPOS_CLIENTE = [
+      { name: 'nombre', label: 'Nombre', required: true },
+      { name: 'apellido', label: 'Apellido', required: true },
+      { name: 'email', label: 'Email', type: 'email', required: true },
+      { name: 'telefono', label: 'Teléfono' },
+      { name: 'domicilio', label: 'Domicilio' },
+      { name: 'localidad', label: 'Localidad' },
+    ];
+
+    function ClienteItem({ cliente }) {
+      return (
+        <>
+          <Avatar id={cliente.id} texto={iniciales(cliente)} />
+          <div>
+            <div className="item-title">{nombreCompleto(cliente)}</div>
+            <div className="item-sub">{cliente.email}</div>
+          </div>
+        </>
+      );
+    }
+
+    function FichaRow({ icon, texto }) {
+      return (
+        <div className={'ficha-row' + (texto ? '' : ' vacio')}>
+          <Icon name={icon} />{texto || 'Sin datos'}
+        </div>
+      );
+    }
+
+    function ClienteFicha({ cliente }) {
+      const direccion = [cliente.domicilio, cliente.localidad].filter(Boolean).join(', ');
+      return (
+        <div className="ficha">
+          <FichaRow icon="mail" texto={cliente.email} />
+          <FichaRow icon="pin" texto={direccion} />
+          <FichaRow icon="phone" texto={cliente.telefono} />
+        </div>
+      );
+    }
+
+    // Las completadas son de solo lectura: sin acciones.
+    function ActividadItem({ actividad, onCompletar, onEditar, onEliminar }) {
+      const { estado, fechaCompromiso, fechaFinalizacion, descripcion } = actividad;
+      const completada = estado === 'completada';
+      const detalle = completada
+        ? `Completada el ${formatoFecha(fechaFinalizacion)}`
+        : fechaCompromiso ? formatoFecha(fechaCompromiso) : 'Sin fecha';
+      return (
+        <div className="act">
+          {completada
+            ? <span className="check on" role="img" aria-label="Completada"><Icon name="check" /></span>
+            : <button type="button" className="check" aria-label={`Completar actividad: ${descripcion}`}
+                title="Completar" onClick={() => onCompletar(actividad)} />}
+          <div className="act-texto">
+            <div className="act-title">{descripcion}</div>
+            <div className={'act-sub' + (estado === 'vencida' ? ' vencida' : '')}>
+              {detalle}{estado === 'vencida' && ' · Vencido'}
+            </div>
+          </div>
+          {!completada && (
+            <div className="act-acciones">
+              <Button icon="edit" aria-label={`Editar actividad: ${descripcion}`} title="Editar" onClick={() => onEditar(actividad)} />
+              <Button variant="danger" icon="trash" aria-label={`Borrar actividad: ${descripcion}`} title="Borrar" onClick={() => onEliminar(actividad)} />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Subformulario en una línea, sin etiquetas visibles. Alta, o edición si recibe una actividad.
+    function ActividadForm({ actividad, onSubmit, onCancel }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? '');
+      const [fecha, setFecha] = useState(actividad?.fechaCompromiso ?? '');
+      return (
+        <form className="act-form" onSubmit={(e) => { e.preventDefault(); onSubmit({ descripcion, fechaCompromiso: fecha || null }); }}>
+          <h3 className="section-title">{actividad ? 'Editar actividad' : 'Agregar actividad'}</h3>
+          <div className="act-form-fila">
+            <Input aria-label="Descripción de la actividad" placeholder="Descripción de la actividad" required
+              value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+            <Input type="date" aria-label="Fecha de compromiso (opcional)" title="Fecha de compromiso (opcional)"
+              value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            <Button variant="primary" icon="save" type="submit" aria-label="Guardar actividad" title="Guardar" />
+            <Button icon="x" type="button" aria-label="Cancelar" title="Cancelar" onClick={onCancel} />
+          </div>
+        </form>
+      );
+    }
+
+    function ActividadesLista({ titulo, actividades, completadas, ...acciones }) {
+      return (
+        <div className={'act-section' + (actividades.length ? '' : ' vacia')}>
+          <h3 className="section-title">{titulo}</h3>
+          <div className={'acts' + (completadas ? ' done' : '')}>
+            {actividades.length
+              ? actividades.map((a) => <ActividadItem key={a.id} actividad={a} {...acciones} />)
+              : <div className="acts-vacio">{completadas ? 'Sin actividades completadas' : 'Sin compromisos'}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    // onAccion(fn): ejecuta una llamada a la API y refresca el detalle.
+    function ClienteDetalle({ cliente, onEditar, onEliminar, onAccion }) {
+      const [editando, setEditando] = useState(null);
+      const [version, setVersion] = useState(0); // cambia la key del subformulario para limpiarlo
+      const limpiar = () => { setEditando(null); setVersion((v) => v + 1); };
+
+      const guardar = (datos) => {
+        onAccion(() => editando
+          ? ActividadesService.actualizar(cliente.id, editando.id, datos)
+          : ActividadesService.crear(cliente.id, datos));
+        limpiar();
+      };
+      const completar = (a) => onAccion(() => ActividadesService.completar(cliente.id, a.id));
+      const eliminar = (a) => {
+        if (!confirm(`¿Borrar la actividad "${a.descripcion}"?`)) return;
+        if (editando?.id === a.id) limpiar();
+        onAccion(() => ActividadesService.eliminar(cliente.id, a.id));
+      };
+
+      // Compromisos: sin fecha, luego vencidos, luego vigentes; con fecha, de la más antigua a la más próxima.
+      const grupo = (a) => (!a.fechaCompromiso ? 0 : a.estado === 'vencida' ? 1 : 2);
+      const pendientes = cliente.actividades
+        .filter((a) => a.estado !== 'completada')
+        .sort((a, b) => grupo(a) - grupo(b) || (a.fechaCompromiso ?? '').localeCompare(b.fechaCompromiso ?? ''));
+      const completadas = cliente.actividades
+        .filter((a) => a.estado === 'completada')
+        .sort((a, b) => b.fechaFinalizacion.localeCompare(a.fechaFinalizacion));
+      return (
+        <>
+          <div className="detail-top">
+            <h1>{nombreCompleto(cliente)}</h1>
+            <div>
+              <div className="detail-id">#{cliente.id}</div>
+              <div className="actions">
+                <Button icon="edit" onClick={onEditar}>Editar</Button>
+                <Button variant="danger" icon="trash" onClick={onEliminar}>Eliminar</Button>
+              </div>
+            </div>
+          </div>
+          <ClienteFicha cliente={cliente} />
+          <ActividadForm key={`${editando?.id ?? 'nueva'}-${version}`} actividad={editando}
+            onSubmit={guardar} onCancel={limpiar} />
+          <div className="act-sections">
+            <ActividadesLista titulo="Compromisos" actividades={pendientes}
+              onCompletar={completar} onEditar={setEditando} onEliminar={eliminar} />
+            <ActividadesLista titulo="Actividades completadas" actividades={completadas} completadas />
+          </div>
+        </>
+      );
+    }
+
+    // ---------- Aplicación ----------
+    function App() {
+      const [q, setQ] = useState('');
+      const [clientes, setClientes] = useState([]);
+      const [selId, setSelId] = useState(null);
+      const [detalle, setDetalle] = useState(null);
+      const [modo, setModo] = useState('ver'); // ver | editar | nuevo
+      const [error, setError] = useState('');
+
+      const intentar = (fn) => fn().catch((e) => setError(e.message));
+
+      const cargarLista = useCallback(
+        () => intentar(async () => { setClientes(await ClientesService.listar(q)); setError(''); }),
+        [q],
+      );
+
+      // Búsqueda en vivo (con una pequeña espera mientras se escribe).
+      useEffect(() => {
+        const t = setTimeout(cargarLista, 200);
+        return () => clearTimeout(t);
+      }, [cargarLista]);
+
+      useEffect(() => {
+        if (selId == null) return setDetalle(null);
+        intentar(async () => setDetalle(await ClientesService.obtener(selId)));
+      }, [selId]);
+
+      const seleccionar = (id) => { setSelId(id); setModo('ver'); };
+
+      const guardar = (valores) => intentar(async () => {
+        const datos = Object.fromEntries(CAMPOS_CLIENTE.map((f) => [f.name, valores[f.name] ?? '']));
+        const guardado = modo === 'nuevo'
+          ? await ClientesService.crear(datos)
+          : await ClientesService.actualizar(selId, datos);
+        setError('');
+        setModo('ver');
+        setSelId(guardado.id);
+        setDetalle(await ClientesService.obtener(guardado.id));
+        await cargarLista();
+      });
+
+      const accionActividad = (fn) => intentar(async () => {
+        try { await fn(); setError(''); }
+        finally { setDetalle(await ClientesService.obtener(selId)); }
+      });
+
+      const eliminar = () => {
+        if (!confirm(`¿Eliminar a ${nombreCompleto(detalle)} y sus actividades?`)) return;
+        intentar(async () => {
+          await ClientesService.eliminar(selId);
+          setSelId(null);
+          await cargarLista();
+        });
+      };
+
+      const sidebar = (
+        <>
+          <div className="panel-head">
+            <h2>Clientes</h2>
+            <Button variant="primary" icon="plus" onClick={() => { setSelId(null); setModo('nuevo'); }}>Agregar</Button>
+          </div>
+          <div className="search">
+            <Input icon="search" placeholder="Buscar por cualquier campo..." value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="scroll">
+            <EntityList items={clientes} selectedId={selId} onSelect={seleccionar}
+              renderItem={(c) => <ClienteItem cliente={c} />} />
+          </div>
+        </>
+      );
+
+      let contenido;
+      if (modo === 'nuevo' || (modo === 'editar' && detalle)) {
+        contenido = (
+          <>
+            <h1>{modo === 'nuevo' ? 'Nuevo cliente' : 'Editar cliente'}</h1>
+            <EntityForm key={modo + selId} fields={CAMPOS_CLIENTE}
+              initial={modo === 'nuevo' ? {} : detalle}
+              onSubmit={guardar} onCancel={() => setModo('ver')} />
+          </>
+        );
+      } else if (detalle) {
+        contenido = <ClienteDetalle key={detalle.id} cliente={detalle} onEditar={() => setModo('editar')}
+          onEliminar={eliminar} onAccion={accionActividad} />;
+      } else {
+        contenido = <div className="empty">Seleccioná un cliente para ver su ficha</div>;
+      }
+
+      return (
+        <Layout sidebar={sidebar}>
+          {error && <div className="error">{error}</div>}
+          <div className="detail">{contenido}</div>
+        </Layout>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MiniCRM</title>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@7.26.9/babel.min.js"></script>
+<style>
+:root{font-family:Inter,system-ui,Segoe UI,sans-serif;color:#e8edf5;background:#0b1120;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;height:100vh;overflow:hidden;background:linear-gradient(135deg,#0b1120,#111a2d)}
+button,input,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:9px;padding:10px 13px;background:#5378f5;color:white;font-weight:650}
+button.secondary{background:#25324a;color:#e8edf5}button.danger{background:#8d3345}button:disabled{opacity:.45;cursor:not-allowed}
+input,textarea{width:100%;background:#0e1729;color:#e8edf5;border:1px solid #293750;border-radius:8px;padding:10px;outline:none}
+input:focus,textarea:focus{border-color:#6488ff}label{display:block;font-size:12px;color:#9eacc4;margin:10px 0 5px}
+h1,h2,h3,p{margin-top:0}h1{font-size:22px;margin-bottom:4px}h2{font-size:17px}h3{font-size:14px}
+.app{height:100vh;display:flex;flex-direction:column;padding:18px;gap:14px;max-width:1600px;margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}.sub{color:#91a0b8;font-size:13px}
+.layout{min-height:0;flex:1;display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px}
+.panel{min-height:0;background:#151f32;border:1px solid #28364d;border-radius:14px;padding:16px;display:flex;flex-direction:column;overflow:hidden}
+.search{margin:12px 0}.client-list{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:7px}
+.client-item{text-align:left;background:#1b2940;color:#e8edf5;border:1px solid transparent;padding:12px}
+.client-item.active{border-color:#6488ff;background:#24385a}.client-item small{display:block;color:#9eacc4;margin-top:4px;font-weight:400}
+.detail{overflow:auto;gap:14px}.detail-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.full{grid-column:1/-1}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.activity-form{display:grid;grid-template-columns:1.1fr 1fr 150px auto;gap:8px;align-items:end}
+.activity-form label{margin-top:0}.activity-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:190px}
+.activity-column{background:#101a2b;border:1px solid #293750;border-radius:10px;padding:12px;min-height:0;display:flex;flex-direction:column}
+.activity-list{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:8px}
+.activity{padding:10px;border-radius:9px;background:#1b2940;border:1px solid #293750}
+.activity-title{font-weight:650;font-size:13px}.activity-meta{font-size:12px;color:#9eacc4;margin-top:4px;white-space:pre-wrap}
+.activity-buttons{display:flex;gap:6px;margin-top:9px}.activity-buttons button{font-size:12px;padding:6px 9px}
+.done{opacity:.7}.empty{color:#8f9db4;text-align:center;padding:22px;font-size:13px}
+.notice{font-size:13px;color:#f6c779;min-height:17px}.section{border-top:1px solid #293750;padding-top:14px}
+@media(max-width:760px){.app{padding:10px}.layout{grid-template-columns:220px minmax(0,1fr)}.activity-form{grid-template-columns:1fr 1fr}.activity-columns{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useEffect,useState}=React;
+const API="/api";
+function App(){
+ const [clientes,setClientes]=useState([]);
+ const [busqueda,setBusqueda]=useState("");
+ const [seleccionado,setSeleccionado]=useState(null);
+ const [actividades,setActividades]=useState([]);
+ const [form,setForm]=useState({nombre:"",apellido:"",email:"",telefono:"",empresa:"",notas:""});
+ const [actividadForm,setActividadForm]=useState({titulo:"",descripcion:"",fecha:""});
+ const [editando,setEditando]=useState(false);
+ const [editActividad,setEditActividad]=useState(null);
+ const [mensaje,setMensaje]=useState("");
+ const [cargando,setCargando]=useState(false);
+
+ async function request(url,options={}){
+   const response=await fetch(API+url,{headers:{"Content-Type":"application/json"},...options});
+   if(response.status===204)return null;
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(data.error||"Ocurrió un error.");
+   return data;
+ }
+ async function cargarClientes(q=busqueda){
+   try{const data=await request("/clientes?q="+encodeURIComponent(q));setClientes(data);}
+   catch(e){setMensaje(e.message);}
+ }
+ async function cargarActividades(id){
+   if(!id){setActividades([]);return;}
+   try{setActividades(await request(`/clientes/${id}/actividades`));}
+   catch(e){setMensaje(e.message);}
+ }
+ useEffect(()=>{cargarClientes("");},[]);
+ useEffect(()=>{const t=setTimeout(()=>cargarClientes(busqueda),180);return()=>clearTimeout(t);},[busqueda]);
+ useEffect(()=>{if(seleccionado)cargarActividades(seleccionado.id);else setActividades([]);},[seleccionado?.id]);
+ function elegir(c){setSeleccionado(c);setForm({...c});setEditando(false);setEditActividad(null);setMensaje("");}
+ function nuevoCliente(){setSeleccionado(null);setForm({nombre:"",apellido:"",email:"",telefono:"",empresa:"",notas:""});setEditando(true);setActividades([]);setEditActividad(null);setMensaje("Completá nombre y apellido para crear el cliente.");}
+ function cambiarCampo(e){setForm({...form,[e.target.name]:e.target.value});}
+ async function guardarCliente(e){
+   e.preventDefault();setCargando(true);
+   try{
+     const guardado=seleccionado
+       ?await request(`/clientes/${seleccionado.id}`,{method:"PUT",body:JSON.stringify(form)})
+       :await request("/clientes",{method:"POST",body:JSON.stringify(form)});
+     setSeleccionado(guardado);setForm({...guardado});setEditando(false);setMensaje("Cliente guardado correctamente.");await cargarClientes();
+   }catch(e){setMensaje(e.message);}finally{setCargando(false);}
+ }
+ async function borrarCliente(){
+   if(!seleccionado||!confirm(`¿Eliminar a ${seleccionado.nombre} ${seleccionado.apellido} y sus actividades?`))return;
+   try{await request(`/clientes/${seleccionado.id}`,{method:"DELETE"});setSeleccionado(null);setActividades([]);setEditando(false);await cargarClientes();setMensaje("Cliente eliminado.");}
+   catch(e){setMensaje(e.message);}
+ }
+ async function guardarActividad(e){
+   e.preventDefault();if(!seleccionado)return;
+   try{
+     if(editActividad){
+       await request(`/actividades/${editActividad.id}`,{method:"PUT",body:JSON.stringify(actividadForm)});
+       setMensaje("Actividad actualizada.");
+     }else{
+       await request(`/actividades/cliente/${seleccionado.id}`,{method:"POST",body:JSON.stringify(actividadForm)});
+       setMensaje("Actividad agregada.");
+     }
+     setActividadForm({titulo:"",descripcion:"",fecha:""});setEditActividad(null);await cargarActividades(seleccionado.id);
+   }catch(e){setMensaje(e.message);}
+ }
+ async function completar(id){
+   try{await request(`/actividades/${id}/completar`,{method:"PATCH"});await cargarActividades(seleccionado.id);setMensaje("Actividad completada.");}
+   catch(e){setMensaje(e.message);}
+ }
+ async function eliminarActividad(id){
+   if(!confirm("¿Eliminar esta actividad pendiente?"))return;
+   try{await request(`/actividades/${id}`,{method:"DELETE"});await cargarActividades(seleccionado.id);setMensaje("Actividad eliminada.");}
+   catch(e){setMensaje(e.message);}
+ }
+ function empezarEdicionActividad(a){setEditActividad(a);setActividadForm({titulo:a.titulo,descripcion:a.descripcion,fecha:a.fecha});}
+ function cancelarEdicion(){setEditActividad(null);setActividadForm({titulo:"",descripcion:"",fecha:""});}
+ const pendientes=actividades.filter(a=>!a.completada);
+ const completadas=actividades.filter(a=>a.completada);
+ return <div className="app">
+  <header><div><h1>MiniCRM</h1><div className="sub">Gestión simple de clientes y actividades</div></div><button onClick={nuevoCliente}>＋ Nuevo cliente</button></header>
+  <div className="layout">
+   <aside className="panel">
+    <h2>Clientes <span className="sub">({clientes.length})</span></h2>
+    <input className="search" placeholder="Buscar por cualquier campo..." value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
+    <div className="client-list">
+     {clientes.map(c=><button key={c.id} className={"client-item "+(seleccionado?.id===c.id?"active":"")} onClick={()=>elegir(c)}>
+       {c.apellido}, {c.nombre}<small>{c.empresa||c.email||c.telefono||"Sin datos adicionales"}</small>
+      </button>)}
+     {clientes.length===0&&<div className="empty">No hay clientes para mostrar.</div>}
+    </div>
+   </aside>
+   <main className="panel detail">
+    {!seleccionado&&!editando?<div className="empty">Elegí un cliente del listado o creá uno nuevo.</div>:<>
+     <div className="detail-top"><div><h2>{seleccionado?(editando?"Editar cliente":"Ficha del cliente"):"Nuevo cliente"}</h2><div className="sub">{seleccionado?`Cliente #${seleccionado.id}`:"Alta de cliente"}</div></div>
+      {seleccionado&&<button className="danger" onClick={borrarCliente}>Eliminar cliente</button>}
+     </div>
+     <form onSubmit={guardarCliente}>
+      <div className="form-grid">
+       <div><label>Nombre *</label><input name="nombre" value={form.nombre} onChange={cambiarCampo} required disabled={!editando}/></div>
+       <div><label>Apellido *</label><input name="apellido" value={form.apellido} onChange={cambiarCampo} required disabled={!editando}/></div>
+       <div><label>Email</label><input type="email" name="email" value={form.email||""} onChange={cambiarCampo} disabled={!editando}/></div>
+       <div><label>Teléfono</label><input name="telefono" value={form.telefono||""} onChange={cambiarCampo} disabled={!editando}/></div>
+       <div className="full"><label>Empresa</label><input name="empresa" value={form.empresa||""} onChange={cambiarCampo} disabled={!editando}/></div>
+       <div className="full"><label>Notas</label><textarea name="notas" rows="2" value={form.notas||""} onChange={cambiarCampo} disabled={!editando}/></div>
+      </div>
+      <div className="actions">
+       {!editando&&seleccionado&&<button type="button" onClick={()=>setEditando(true)}>Editar ficha</button>}
+       {editando&&<button type="submit" disabled={cargando}>{cargando?"Guardando...":"Guardar cliente"}</button>}
+       {editando&&<button type="button" className="secondary" onClick={()=>{if(seleccionado){setForm({...seleccionado});setEditando(false);}else{setSeleccionado(null);setEditando(false);}}}>Cancelar</button>}
+      </div>
+     </form>
+     {seleccionado&&<section className="section">
+      <h2>{editActividad?"Editar actividad": "Nueva actividad"}</h2>
+      <form className="activity-form" onSubmit={guardarActividad}>
+       <div><label>Título *</label><input value={actividadForm.titulo} onChange={e=>setActividadForm({...actividadForm,titulo:e.target.value})} required placeholder="Llamar al cliente" /></div>
+       <div><label>Descripción</label><input value={actividadForm.descripcion} onChange={e=>setActividadForm({...actividadForm,descripcion:e.target.value})} placeholder="Detalle breve" /></div>
+       <div><label>Fecha</label><input type="date" value={actividadForm.fecha} onChange={e=>setActividadForm({...actividadForm,fecha:e.target.value})}/></div>
+       <div className="actions"><button type="submit">{editActividad?"Guardar":"Agregar"}</button>{editActividad&&<button type="button" className="secondary" onClick={cancelarEdicion}>Cancelar</button>}</div>
+      </form>
+     </section>}
+     {seleccionado&&<div className="activity-columns">
+      <section className="activity-column"><h3>Compromisos / pendientes ({pendientes.length})</h3><div className="activity-list">
+       {pendientes.map(a=><article className="activity" key={a.id}><div className="activity-title">{a.titulo}</div><div className="activity-meta">{a.fecha||"Sin fecha"}{a.descripcion?" · "+a.descripcion:""}</div><div className="activity-buttons"><button onClick={()=>completar(a.id)}>Completar</button><button className="secondary" onClick={()=>empezarEdicionActividad(a)}>Editar</button><button className="danger" onClick={()=>eliminarActividad(a.id)}>Borrar</button></div></article>)}
+       {!pendientes.length&&<div className="empty">No hay actividades pendientes.</div>}
+      </div></section>
+      <section className="activity-column"><h3>Actividades completadas ({completadas.length})</h3><div className="activity-list">
+       {completadas.map(a=><article className="activity done" key={a.id}><div className="activity-title">✓ {a.titulo}</div><div className="activity-meta">{a.fecha||"Sin fecha"}{a.descripcion?" · "+a.descripcion:""}</div></article>)}
+       {!completadas.length&&<div className="empty">Todavía no hay actividades completadas.</div>}
+      </div></section>
+     </div>}
+    </>}
+    <div className="notice">{mensaje}</div>
+   </main>
+  </div>
+ </div>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+openapi: 3.0.3
+info:
+  title: MiniCRM API
+  version: 1.0.0
+  description: API REST para administrar clientes y sus actividades.
+servers:
+  - url: /api
+tags:
+  - name: Clientes
+  - name: Actividades
+paths:
+  /clientes:
+    get:
+      tags: [Clientes]
+      summary: Listar clientes
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cliente'
+    post:
+      tags: [Clientes]
+      summary: Crear cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NuevoCliente'
+      responses:
+        '201':
+          description: Cliente creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+        '500':
+          $ref: '#/components/responses/Error'
+  /clientes/buscar:
+    get:
+      tags: [Clientes]
+      summary: Buscar clientes por nombre, apellido, teléfono o email
+      parameters:
+        - name: termino
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Clientes coincidentes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cliente'
+  /clientes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Clientes]
+      summary: Obtener cliente por ID
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [Clientes]
+      summary: Actualizar cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarCliente'
+      responses:
+        '200':
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+        '404':
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [Clientes]
+      summary: Eliminar cliente y sus actividades asociadas
+      responses:
+        '200':
+          description: Cliente eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+        '404':
+          $ref: '#/components/responses/Error'
+  /actividades:
+    get:
+      tags: [Actividades]
+      summary: Listar y filtrar actividades
+      description: Se puede filtrar por clienteId o por estado. Estados válidos: pendiente, completa y vencida.
+      parameters:
+        - name: clienteId
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, completa, vencida]
+      responses:
+        '200':
+          description: Actividades encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actividad'
+        '400':
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Actividades]
+      summary: Crear actividad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NuevaActividad'
+      responses:
+        '201':
+          description: Actividad creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actividad'
+        '400':
+          $ref: '#/components/responses/Error'
+  /actividades/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Actividades]
+      summary: Obtener actividad por ID
+      responses:
+        '200':
+          description: Actividad encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actividad'
+        '404':
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [Actividades]
+      summary: Actualizar actividad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarActividad'
+      responses:
+        '200':
+          description: Actividad actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actividad'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [Actividades]
+      summary: Eliminar actividad
+      responses:
+        '200':
+          description: Actividad eliminada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actividad'
+        '404':
+          $ref: '#/components/responses/Error'
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    Error:
+      description: Error en la solicitud
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Cliente:
+      type: object
+      required: [id, nombre, apellido, email, fechaCreacion]
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        telefono:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+        fechaCreacion:
+          type: string
+          format: date-time
+    NuevoCliente:
+      type: object
+      required: [nombre, apellido, email]
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        telefono:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+    ActualizarCliente:
+      type: object
+      minProperties: 1
+      properties:
+        nombre:
+          type: string
+        apellido:
+          type: string
+        telefono:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+    Actividad:
+      type: object
+      required: [id, clienteId, descripcion, estado, fechaCreacion]
+      properties:
+        id:
+          type: integer
+        clienteId:
+          type: integer
+        descripcion:
+          type: string
+        estado:
+          type: string
+          enum: [pendiente, completa]
+        fecha:
+          type: string
+          format: date-time
+          nullable: true
+        fechaCreacion:
+          type: string
+          format: date-time
+        fechaCompletada:
+          type: string
+          format: date-time
+          nullable: true
+    NuevaActividad:
+      type: object
+      required: [clienteId, descripcion]
+      properties:
+        clienteId:
+          type: integer
+        descripcion:
+          type: string
+        estado:
+          type: string
+          enum: [pendiente, completa]
+          default: pendiente
+        fecha:
+          type: string
+          format: date-time
+          nullable: true
+        fechaCompletada:
+          type: string
+          format: date-time
+          nullable: true
+    ActualizarActividad:
+      type: object
+      minProperties: 1
+      properties:
+        clienteId:
+          type: integer
+        descripcion:
+          type: string
+        estado:
+          type: string
+          enum: [pendiente, completa]
+        fecha:
+          type: string
+          format: date-time
+          nullable: true
+        fechaCompletada:
+          type: string
+          format: date-time
+          nullable: true
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

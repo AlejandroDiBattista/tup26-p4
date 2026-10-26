@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniCRM</title>
+    <style>
+      :root {
+        color: #172033;
+        background: #eef2f7;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; overflow: hidden; }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+
+      .app { height: 100vh; display: flex; flex-direction: column; }
+      .topbar { flex: 0 0 68px; padding: 14px 30px; background: #25476b; color: white; }
+      .topbar h1 { margin: 0; font-size: 32px; }
+      .workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 480px minmax(0, 1fr); gap: 14px; padding: 10px 12px 12px; }
+
+      .panel { min-height: 0; background: white; border: 1px solid #d8e0e9; border-radius: 10px; overflow: hidden; }
+      .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 22px; }
+      .panel-header h2 { margin: 0; font-size: 30px; }
+
+      .primary, .danger, .secondary { border-radius: 6px; padding: 10px 16px; border: 1px solid transparent; font-weight: 700; }
+      .primary { color: white; background: #1976df; }
+      .primary:hover { background: #1267c6; }
+      .secondary { color: #172033; background: white; border-color: #d4dbe4; }
+      .danger { color: #b33b3b; background: white; border-color: #e3b2b2; }
+      .danger:hover { background: #fff2f2; }
+
+      .client-list { height: calc(100% - 82px); overflow-y: auto; border-top: 1px solid #e5eaf0; }
+      .search { margin: 0 22px 14px; display: flex; align-items: center; border: 1px solid #cfd7e1; border-radius: 6px; padding: 0 12px; }
+      .search span { color: #68788b; font-size: 24px; }
+      .search input { width: 100%; border: 0; outline: 0; padding: 13px 10px; }
+      .client-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 22px; border: 0; border-bottom: 1px solid #e7ebf0; background: white; text-align: left; }
+      .client-row:hover, .client-row.selected { background: #e4f0ff; }
+      .initials { flex: 0 0 44px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: #2362a6; background: #d9eaff; font-weight: 700; }
+      .client-row:nth-child(3n) .initials { color: #32815c; background: #d9f4e5; }
+      .client-row:nth-child(4n) .initials { color: #7650a8; background: #eee3ff; }
+      .client-name { display: block; color: #1c2738; font-size: 18px; font-weight: 700; }
+      .client-email { display: block; margin-top: 3px; color: #667386; }
+
+      .detail { display: flex; flex-direction: column; min-height: 0; }
+      .detail-scroll { min-height: 0; overflow-y: auto; padding: 26px 20px; }
+      .detail-header { display: flex; justify-content: space-between; gap: 24px; padding: 0 16px 24px; border-bottom: 1px solid #e6ebf1; }
+      .detail-header h2 { margin: 0 0 18px; font-size: 38px; }
+      .detail-id { color: #647286; }
+      .detail-actions { display: flex; align-items: flex-start; gap: 12px; }
+      .contact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; color: #303d4f; }
+      .contact-grid p { margin: 0; }
+      .inline-form { margin-top: 16px; padding: 18px; border: 1px dashed #bdc9d7; border-radius: 8px; }
+      .inline-form h3 { margin: 0 0 14px; }
+      .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .form-field { display: flex; flex-direction: column; gap: 5px; }
+      .form-field.full { grid-column: 1 / -1; }
+      .form-field label { color: #526174; font-size: 13px; font-weight: 700; }
+      .form-field input { width: 100%; padding: 11px 12px; border: 1px solid #cad3df; border-radius: 6px; outline-color: #1976df; }
+      .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+      .section-title { margin: 22px 0 10px; font-size: 24px; }
+      .activity-list { overflow-y: auto; max-height: 250px; border: 1px solid #dfe6ee; border-radius: 8px; }
+      .activity-list.completed { background: #f1fbf5; }
+      .activity { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #e5eaf0; }
+      .activity:last-child { border-bottom: 0; }
+      .activity-check { flex: 0 0 25px; width: 25px; height: 25px; }
+      .activity-main { flex: 1; min-width: 0; }
+      .activity-description { display: block; font-size: 17px; }
+      .activity-date { display: block; margin-top: 4px; color: #68788b; font-size: 14px; }
+      .activity-date.overdue { color: #c25252; }
+      .activity-actions { display: flex; gap: 6px; }
+      .icon-button { width: 38px; height: 38px; border: 1px solid #d5dde7; border-radius: 6px; background: white; font-size: 18px; }
+      .empty { padding: 36px; color: #718096; text-align: center; }
+      .error { margin: 14px 22px; padding: 12px; border-radius: 6px; color: #9c3030; background: #fff0f0; }
+      .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgb(13 27 42 / 42%); }
+      .confirm-modal { width: min(420px, 100%); padding: 24px; border-radius: 10px; background: white; box-shadow: 0 18px 50px rgb(13 27 42 / 25%); }
+      .confirm-modal h3 { margin: 0 0 10px; font-size: 22px; }
+      .confirm-modal p { margin: 0; color: #5e6c7d; line-height: 1.45; }
+      .confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+      @media (max-width: 850px) {
+        body { overflow: auto; }
+        .app { height: auto; min-height: 100vh; }
+        .workspace { grid-template-columns: 1fr; }
+        .panel { min-height: 420px; }
+        .client-list { height: 360px; }
+        .detail { min-height: 650px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.0/babel.min.js"></script>
+    <script type="text/babel" data-presets="react">
+      const { useEffect, useState } = React;
+      const API = '/api';
+
+      async function request(url, options = {}) {
+        const response = await fetch(`${API}${url}`, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options,
+        });
+        const body = response.status === 204 ? null : await response.json();
+        if (!response.ok) throw new Error(body?.error || 'No se pudo completar la operación.');
+        return body;
+      }
+
+      function iniciales(nombre) {
+        return nombre.split(' ').filter(Boolean).slice(0, 2).map(parte => parte[0]).join('').toUpperCase();
+      }
+
+      function App() {
+        const [clientes, setClientes] = useState([]);
+        const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+        const [busqueda, setBusqueda] = useState('');
+        const [modoFormulario, setModoFormulario] = useState(null);
+        const [actividadEditando, setActividadEditando] = useState(null);
+        const [eliminacionPendiente, setEliminacionPendiente] = useState(null);
+        const [error, setError] = useState('');
+
+        async function cargarClientes(texto = busqueda) {
+          try {
+            setError('');
+            const resultado = await request(`/clientes?buscar=${encodeURIComponent(texto)}`);
+            setClientes(resultado);
+            if (clienteSeleccionado && !resultado.some(cliente => cliente.id === clienteSeleccionado.id)) {
+              setClienteSeleccionado(null);
+            }
+          } catch (problema) {
+            setError(problema.message);
+          }
+        }
+
+        async function seleccionarCliente(id) {
+          try {
+            setError('');
+            setClienteSeleccionado(await request(`/clientes/${id}`));
+            setModoFormulario(null);
+            setActividadEditando(null);
+          } catch (problema) {
+            setError(problema.message);
+          }
+        }
+
+        useEffect(() => {
+          const temporizador = setTimeout(() => cargarClientes(), 180);
+          return () => clearTimeout(temporizador);
+        }, [busqueda]);
+
+        async function refrescar(id = clienteSeleccionado?.id) {
+          await cargarClientes();
+          if (id) await seleccionarCliente(id);
+        }
+
+        async function eliminarCliente() {
+          if (clienteSeleccionado) setEliminacionPendiente({ tipo: 'cliente' });
+        }
+
+        async function confirmarEliminacion() {
+          try {
+            if (eliminacionPendiente.tipo === 'cliente') {
+              await request(`/clientes/${clienteSeleccionado.id}`, { method: 'DELETE' });
+              setClienteSeleccionado(null);
+              setModoFormulario(null);
+              await cargarClientes();
+            } else {
+              await request(`/actividades/${eliminacionPendiente.actividad.id}`, { method: 'DELETE' });
+              await refrescar(clienteSeleccionado.id);
+            }
+            setEliminacionPendiente(null);
+          } catch (problema) {
+            setError(problema.message);
+          }
+        }
+
+        return (
+          <div className="app">
+            <header className="topbar"><h1>MiniCRM</h1></header>
+            {error && <div className="error">{error}</div>}
+            <main className="workspace">
+              <section className="panel">
+                <div className="panel-header">
+                  <h2>Clientes</h2>
+                  <button className="primary" onClick={() => { setClienteSeleccionado(null); setModoFormulario('nuevo'); }}>＋ Agregar</button>
+                </div>
+                <label className="search">
+                  <span>⌕</span>
+                  <input value={busqueda} onChange={evento => setBusqueda(evento.target.value)} placeholder="Buscar por cualquier campo..." />
+                </label>
+                <div className="client-list">
+                  {clientes.length === 0 && <div className="empty">No hay clientes para mostrar.</div>}
+                  {clientes.map(cliente => (
+                    <button key={cliente.id} className={`client-row ${clienteSeleccionado?.id === cliente.id ? 'selected' : ''}`} onClick={() => seleccionarCliente(cliente.id)}>
+                      <span className="initials">{iniciales(cliente.nombre)}</span>
+                      <span><span className="client-name">{cliente.nombre}</span><span className="client-email">{cliente.email}</span></span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel detail">
+                {modoFormulario === 'nuevo' && <ClienteForm onCancel={() => setModoFormulario(null)} onSaved={async cliente => { setModoFormulario(null); await refrescar(cliente.id); }} />}
+                {!modoFormulario && !clienteSeleccionado && <div className="empty">Seleccioná un cliente para ver su ficha.</div>}
+                {clienteSeleccionado && !modoFormulario && (
+                  <div className="detail-scroll">
+                    <div className="detail-header">
+                      <div><h2>{clienteSeleccionado.nombre}</h2><div className="contact-grid"><p>✉ {clienteSeleccionado.email}</p><p>⌖ {clienteSeleccionado.direccion}</p><p>☎ {clienteSeleccionado.telefono}</p></div></div>
+                      <div><span className="detail-id">#{clienteSeleccionado.id}</span><div className="detail-actions"><button className="secondary" onClick={() => setModoFormulario('editar')}>✎ Editar</button><button className="danger" onClick={eliminarCliente}>♲ Eliminar</button></div></div>
+                    </div>
+                    {modoFormulario === 'editar' ? null : <ActividadForm clienteId={clienteSeleccionado.id} initial={actividadEditando} onCancel={() => setActividadEditando(null)} onSaved={() => { setActividadEditando(null); refrescar(clienteSeleccionado.id); }} />}
+                    <h3 className="section-title">Compromisos</h3>
+                    <ActividadList actividades={clienteSeleccionado.actividades.filter(actividad => !actividad.completada)} onComplete={async id => { await request(`/actividades/${id}/completar`, { method: 'PATCH' }); await refrescar(clienteSeleccionado.id); }} onEdit={actividad => setActividadEditando(actividad)} onDelete={actividad => setEliminacionPendiente({ tipo: 'actividad', actividad })} />
+                    <h3 className="section-title">Actividades completadas</h3>
+                    <ActividadList actividades={clienteSeleccionado.actividades.filter(actividad => actividad.completada)} completadas />
+                  </div>
+                )}
+                {modoFormulario === 'editar' && clienteSeleccionado && <ClienteForm initial={clienteSeleccionado} onCancel={() => setModoFormulario(null)} onSaved={async cliente => { setModoFormulario(null); await refrescar(cliente.id); }} />}
+              </section>
+            </main>
+            {eliminacionPendiente && <div className="modal-backdrop" role="presentation"><div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="titulo-confirmacion"><h3 id="titulo-confirmacion">{eliminacionPendiente.tipo === 'cliente' ? 'Eliminar cliente' : 'Eliminar actividad'}</h3><p>{eliminacionPendiente.tipo === 'cliente' ? '¿Querés eliminar este cliente y todas sus actividades?' : `¿Querés eliminar “${eliminacionPendiente.actividad.descripcion}”?`}</p><div className="confirm-actions"><button className="secondary" onClick={() => setEliminacionPendiente(null)}>Cancelar</button><button className="danger" onClick={confirmarEliminacion}>Eliminar</button></div></div></div>}
+          </div>
+        );
+      }
+
+      function ClienteForm({ initial, onCancel, onSaved }) {
+        const [datos, setDatos] = useState(initial || { nombre: '', email: '', telefono: '', direccion: '' });
+        const [error, setError] = useState('');
+        const editar = Boolean(initial);
+
+        function cambiar(evento) { setDatos({ ...datos, [evento.target.name]: evento.target.value }); }
+        async function guardar(evento) {
+          evento.preventDefault();
+          try {
+            const cliente = await request(editar ? `/clientes/${initial.id}` : '/clientes', { method: editar ? 'PUT' : 'POST', body: JSON.stringify(datos) });
+            await onSaved(cliente);
+          } catch (problema) { setError(problema.message); }
+        }
+
+        return <div className="detail-scroll"><form className="inline-form" onSubmit={guardar}><h2>{editar ? 'Editar cliente' : 'Agregar cliente'}</h2>{error && <div className="error">{error}</div>}<div className="form-grid">{[['nombre', 'Nombre'], ['email', 'Email'], ['telefono', 'Teléfono'], ['direccion', 'Dirección']].map(([name, label]) => <div className="form-field" key={name}><label>{label}</label><input name={name} value={datos[name]} onChange={cambiar} required /></div>)}</div><div className="form-actions"><button type="button" className="secondary" onClick={onCancel}>Cancelar</button><button className="primary">Guardar</button></div></form></div>;
+      }
+
+      function ActividadForm({ clienteId, initial, onCancel, onSaved }) {
+        const [datos, setDatos] = useState({ descripcion: initial?.descripcion || '', fecha: initial?.fecha || '' });
+        const [error, setError] = useState('');
+
+        useEffect(() => {
+          setDatos({ descripcion: initial?.descripcion || '', fecha: initial?.fecha || '' });
+          setError('');
+        }, [initial]);
+
+        async function guardar(evento) {
+          evento.preventDefault();
+          try {
+            const url = initial ? `/actividades/${initial.id}` : `/clientes/${clienteId}/actividades`;
+            const metodo = initial ? 'PUT' : 'POST';
+            await request(url, { method: metodo, body: JSON.stringify(datos) });
+            await onSaved();
+            setDatos({ descripcion: '', fecha: '' });
+          } catch (problema) {
+            setError(problema.message);
+          }
+        }
+        return <form className="inline-form" onSubmit={guardar}><h3>{initial ? 'Editar actividad' : 'Agregar actividad'}</h3>{error && <div className="error">{error}</div>}<div className="form-grid"><div className="form-field"><label>Descripción</label><input value={datos.descripcion} onChange={evento => setDatos({ ...datos, descripcion: evento.target.value })} required /></div><div className="form-field"><label>Fecha opcional</label><input type="date" value={datos.fecha || ''} onChange={evento => setDatos({ ...datos, fecha: evento.target.value })} /></div></div><div className="form-actions"><button type="button" className="secondary" onClick={onCancel}>Cancelar</button><button className="primary">Guardar</button></div></form>;
+      }
+
+      function ActividadList({ actividades, completadas, onComplete, onEdit, onDelete }) {
+        if (actividades.length === 0) return <div className="empty">No hay actividades.</div>;
+        return <div className={`activity-list ${completadas ? 'completed' : ''}`}>{actividades.map(actividad => <div className="activity" key={actividad.id}><input className="activity-check" type="checkbox" checked={actividad.completada} disabled={completadas} onChange={() => onComplete?.(actividad.id)} /><div className="activity-main"><span className="activity-description">{actividad.descripcion}</span><span className="activity-date">{actividad.fecha ? actividad.fecha : completadas ? `Completada el ${new Date(actividad.fechaCompletada).toLocaleDateString('es-AR')}` : 'Sin fecha'}</span></div>{!completadas && <div className="activity-actions"><button type="button" className="icon-button" onClick={() => onEdit(actividad)}>✎</button><button type="button" className="icon-button" onClick={() => onDelete(actividad)}>♲</button></div>}</div>)}</div>;
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
