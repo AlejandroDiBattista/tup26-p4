@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini React</title>
+  <style>
+    body        { font: 20px/1.4 system-ui, sans-serif; background: #fafafa; color: #222; margin: 0; padding: 24px; }
+    main        { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    h1          { grid-column: 1 / -1; margin: 0; }
+    .contadores { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .resultados { grid-column: 1 / -1; }
+    .tarjeta    { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 8px 16px; }
+    h2          { margin-top: 0; }
+    button      { font: inherit; padding: 4px 10px; }
+    .contador   { display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; padding: 10px 20px; font-size: 2em; text-align: left; cursor: pointer; border: 1px solid #ccc; border-radius: 999px; background: white; }
+    .dato       { display: flex; justify-content: space-between; gap: 24px; margin: 0; padding: 3px 0; border-bottom: 1px solid #eee; }
+    .dato:last-child { border-bottom: 0; }
+    .valor      { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .contador-etiqueta { font-size: 1.15em; }
+    .contador-icono    { display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; font-size: 1.35em; vertical-align: middle; }
+    .contador > span   { display: inline-flex; align-items: center; }
+    .contador-etiqueta { display: inline-flex; align-items: center; }
+    @media (max-width: 600px) { body { padding: 16px; } .contadores { gap: 8px; } .contador { padding: 10px 28px; font-size: 1em; } }
+  </style>
+</head>
+<body>
+  <div id="raiz"></div>
+
+  <!-- 1. El traductor de JSX (podría ir como <script src="mini-babel.js">) -->
+  <script>
+    // mini-babel.js
+    // Traduce JSX (simplificado) a llamadas h(tipo, props, ...hijos).
+    //
+    // Idea: una sola regex corta el código en pedazos (tags, llaves, texto)
+    // y para cada pedazo decidimos con qué reemplazarlo. Una pila recuerda
+    // si estamos dentro de un elemento JSX o en código JavaScript común.
+    //
+    // Restricciones (a cambio de una implementación mínima):
+    //  - Atributos siempre con valor: nombre="texto" o nombre={expresión}.
+    //  - Las expresiones de los atributos no llevan llaves: nada de style={{...}}.
+    //  - Nombres simples: <div>, <Saludo>. Sin <a.b>, sin aria-label, sin <> </>.
+    //  - Comparaciones con espacios: a < b (no a<b>).
+    //  - Sin { } ni < en strings ni comentarios dentro del JSX.
+
+    const TOKEN    = /<(\w+)((?:\s+\w+=(?:"[^"]*"|\{[^}]*\}))*)\s*(\/?)>|<\/\w+\s*>|\{|\}|[^<{}]+|</g
+    const ATRIBUTO = /(\w+)=(?:("[^"]*")|\{([^}]*)\})/g
+    const TEXTO    = /^(\s*\n\s*)?([\s\S]*?)(\s*\n\s*)?$/
+
+    function transformar(codigo, h = 'h') {
+      const pila  = []                                 // 'jsx' | 'expr' | 'llave'
+      const enJSX = () => pila.at(-1) === 'jsx'
+      const coma  = () => enJSX() ? ', ' : ''          // un hijo se separa con coma
+
+      const salida = codigo.replace(TOKEN, (token, tag, atributos, autocierre) => {
+        // <tag ...>  o  <tag ... />
+        if (tag) {
+          const tipo  = /^[A-Z]/.test(tag) ? tag : `"${tag}"`   // componente o etiqueta HTML
+          const lista = [...atributos.matchAll(ATRIBUTO)].map(([, nombre, texto, expr]) => `${nombre}: ${texto ?? expr}`)
+          const props = lista.length ? `{ ${lista.join(', ')} }` : 'null'
+
+          if (autocierre) return `${h}(${tipo}, ${props})${coma()}`
+          pila.push('jsx')
+          return `${h}(${tipo}, ${props}, `
+        }
+
+        // </tag>
+        if (token.startsWith('</')) {
+          pila.pop()
+          return `)${coma()}`
+        }
+
+        // { : dentro de JSX abre una expresión hija; afuera es una llave común
+        if (token === '{') {
+          if (enJSX()) { pila.push('expr'); return '' }
+          pila.push('llave')
+          return '{'
+        }
+
+        // } : cierra lo último que se abrió
+        if (token === '}') {
+          return pila.pop() === 'expr' ? ', ' : '}'
+        }
+
+        // Texto dentro de JSX: se convierte en string. Los saltos de línea
+        // del principio y del final son solo indentación: se dejan afuera.
+        if (enJSX()) {
+          const [, antes = '', texto, despues = ''] = token.match(TEXTO)
+          if (texto === '') return token
+          return `${antes}${JSON.stringify(texto.replace(/\s*\n\s*/g, ' '))}, ${despues}`
+        }
+
+        // Código JavaScript común: queda igual
+        return token
+      })
+
+      return salida
+    }
+
+    // ---------------------------------------------------------------------------
+    // En el navegador: traduce y ejecuta los <script type="text/jsx"> de la página,
+    // reemplazándolos por <script> normales.
+    document.addEventListener('DOMContentLoaded', () => {
+      for (const original of document.querySelectorAll('script[type="text/jsx"]')) {
+        const traducido = document.createElement('script')
+        traducido.textContent = transformar(original.textContent)
+        original.replaceWith(traducido)          // al insertarlo, el navegador lo ejecuta
+      }
+    })
+  </script>
+
+  <!-- 2. Mini React: h, render, useState y useEffect (podría ir como <script src="mini-react.js">) -->
+  <script>
+    // mini-react.js
+    // Una versión mínima de React: h, render, useState y useEffect.
+    //
+    // Simplificaciones:
+    //  - Cada cambio de estado redibuja toda la app desde cero.
+    //  - Los hooks de toda la app viven en una sola lista, en el orden en que se
+    //    llaman. Por eso el árbol no puede cambiar de forma: nada de componentes
+    //    que aparecen o desaparecen, y nada de hooks dentro de un if.
+    //  - Una sola raíz por página.
+
+    // h() es nuestro React.createElement: lo que genera el JSX.
+    // No dibuja nada, solo describe el elemento.
+    function h(tipo, props, ...children) {
+      return { tipo, props: props ?? {}, children }
+    }
+
+    const hooks = []         // los hooks de toda la app, en orden
+    let actual  =  0         // índice del próximo hook
+    let efectos = []         // useEffect que esperan a que el DOM esté listo
+    let actualizar
+
+    function render(nodo, elemento) {
+      let pendiente = false
+    
+      function dibujar() {
+        actual  =  0
+        efectos = []
+        elemento.replaceChildren(crearDOM(nodo))
+        efectos.forEach(efecto => efecto())
+      }
+
+      actualizar = () => {
+        if (pendiente) return
+        pendiente = true
+        queueMicrotask(() => {
+          dibujar()
+          pendiente = false
+        })
+      }
+
+      dibujar()
+    }
+
+    // Convierte la descripción que arma h() en nodos reales del DOM
+    function crearDOM(nodo) {
+      if (nodo == null || typeof nodo === 'boolean') return document.createTextNode('')
+      if (typeof nodo !== 'object') return document.createTextNode(nodo)
+
+      const { tipo, props, children } = nodo
+
+      // Componente: se ejecuta la función y se dibuja lo que devuelve
+      if (typeof tipo === 'function') return crearDOM(tipo({ ...props, children }))
+
+      // Etiqueta HTML
+      const el = document.createElement(tipo)
+      for (const [nombre, valor] of Object.entries(props)) {
+        if (nombre.startsWith('on')) {
+          el.addEventListener(nombre.slice(2).toLowerCase(), valor)
+        } else if (nombre in el) {
+          el[nombre] = valor        // value, checked, disabled...
+        } else {
+          el.setAttribute(nombre, valor)              // class, data-..., etc.
+        }
+      }
+      el.append(...children.flat(Infinity).map(crearDOM))  // flat: por las listas de un .map()
+      return el
+    }
+
+    // ---------------------------------------------------------------------------
+    // Hooks
+
+    function useState(inicial) {
+      const i = actual++
+      hooks[i] ??= { valor: inicial }
+
+      const setEstado = nuevo => {
+        if (nuevo === hooks[i].valor) return     // si no cambió, no se redibuja
+        hooks[i].valor = nuevo
+        actualizar()
+      }
+      return [hooks[i].valor, setEstado]
+    }
+
+    function useEffect(efecto, deps) {
+      const i = actual++
+      const anterior = hooks[i]
+
+      // Si ya corrió y ninguna dependencia cambió, no se hace nada
+      if (anterior && deps && deps.every((d, k) => d === anterior.deps[k])) return
+
+      efectos.push(() => {
+        anterior?.limpiar?.()
+        hooks[i] = { deps, limpiar: efecto() }
+      })
+    }
+  </script>
+
+  <!-- 3. La aplicación, escrita con JSX -->
+  <script type="text/jsx">
+    function Dato({ etiqueta, valor }) {
+      return <p class="dato"><span>{etiqueta}</span><span class="valor">{valor}</span></p>
+    }
+
+    function Contador({ etiqueta, icono, alRegistrar }) {
+      const [n, setN] = useState(0)
+
+      return <button class="contador" onClick={() => (setN(n + 1), alRegistrar())}>
+                <span><span class="contador-icono">{icono}</span><span class="contador-etiqueta">{etiqueta}</span></span><strong class="valor">{n}</strong>
+             </button>
+    }
+
+    function formatoFlujo({ total, segundos }) {
+      const flujo = segundos === 0 ? 0 : Math.round(total * 3600 / segundos)
+      return `${flujo} v/h`
+    }
+    function formatoTiempo({ segundos }) {
+      const minutos = Math.floor(segundos / 60)
+      const resto  = segundos % 60
+      return `${minutos}:${String(resto).padStart(2, "0")}`
+    }
+
+    function App() {
+      const [total, setTotal] = useState(0)
+      const [segundos, setSegundos] = useState(0)
+      const incrementarTotal = () => setTotal(total + 1)
+
+      useEffect(() => {
+        const id = setInterval(() => setSegundos(segundos + 1), 1_000)
+        return () => clearInterval(id)
+      }, [segundos])
+
+      const tiempo = formatoTiempo({ segundos })
+      const flujoTexto = formatoFlujo({ total, segundos })
+
+      return (
+        <main>
+          <h1>Mini React</h1>
+          <div class="contadores">
+            <Contador icono="🛵" etiqueta="Motos" alRegistrar={incrementarTotal} />
+            <Contador icono="🚗" etiqueta="Autos" alRegistrar={incrementarTotal} />
+          </div>
+          <div class="tarjeta resultados">
+            <Dato etiqueta="Vehículos" valor={total} />
+            <Dato etiqueta="Tiempo"    valor={tiempo} />
+            <Dato etiqueta="Flujo"     valor={flujoTexto} />
+          </div>
+        </main>
+      )
+    }
+
+    render(<App />, document.getElementById("raiz"))
+  </script>
+</body>
+</html>
