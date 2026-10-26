@@ -4,55 +4,66 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MiniCRM</title>
-  <!-- Bibliotecas React con versiones fijas desde CDN -->
+
+  <!-- ========================================================================= -->
+  <!-- CARGA DE BIBLIOTECAS DESDE CDN CON VERSIONES FIJAS (React, ReactDOM, Babel) -->
+  <!-- ========================================================================= -->
+  <!-- React 18: biblioteca central para crear componentes e interfaz reactiva -->
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <!-- ReactDOM 18: monta la aplicación React en el árbol DOM del navegador -->
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone: compila el código JSX en tiempo real en el navegador -->
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
 
+  <!-- ========================================================================= -->
+  <!-- ESTILOS CSS DE LA APLICACIÓN -->
+  <!-- ========================================================================= -->
   <style>
+    /* Variables de diseño y colores idénticos a minicrm.jpg */
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --navy: #1e385b;
-      --bg: #eef2f6;
-      --surface: #ffffff;
-      --text: #1e293b;
-      --muted: #64748b;
-      --border: #dce4ec;
-      --danger: #dc2626;
-      --danger-border: #fca5a5;
-      --success: #16a34a;
-      --overdue: #dc2626;
-      --selected-bg: #eaf2fd;
+      --azul-primario: #2563eb;       /* Color azul de botones principales */
+      --azul-hover: #1d4ed8;          /* Azul más oscuro al pasar el ratón */
+      --barra-superior: #1e385b;      /* Azul marino oscuro de la barra superior */
+      --fondo-pantalla: #eef2f6;      /* Fondo gris azulado suave general */
+      --fondo-tarjeta: #ffffff;       /* Fondo blanco de los paneles */
+      --texto-oscuro: #1e293b;        /* Color principal de textos y títulos */
+      --texto-secundario: #64748b;    /* Color gris para subtítulos y etiquetas */
+      --borde: #dce4ec;               /* Color de bordes de tarjetas e inputs */
+      --rojo-peligro: #dc2626;        /* Color rojo para eliminar y tareas vencidas */
+      --borde-peligro: #fca5a5;       /* Borde suave para botones rojos */
+      --verde-completado: #16a34a;    /* Verde para las actividades finalizadas */
+      --seleccionado: #eaf2fd;        /* Fondo celeste para el cliente seleccionado */
     }
 
+    /* Reseteo de márgenes y tamaño de caja universal */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    /* Fijamos la altura al 100% y bloqueamos el desplazamiento general de la página */
     html, body, #root {
       height: 100%;
       width: 100%;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--fondo-pantalla);
+      color: var(--texto-oscuro);
     }
 
-    /* Layout principal sin desplazamiento de página */
-    .app-container {
+    /* Contenedor principal que organiza la barra y el área de trabajo en columna */
+    .app-contenedor {
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
     }
 
-    /* Barra superior */
-    .navbar {
+    /* Barra superior fija de la aplicación */
+    .barra-navegacion {
       height: 58px;
-      background-color: var(--navy);
+      background-color: var(--barra-superior);
       display: flex;
       align-items: center;
       padding: 0 24px;
@@ -61,14 +72,15 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
-    .navbar-title {
+    /* Título MiniCRM */
+    .barra-titulo {
       font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.3px;
     }
 
-    /* Espacio de trabajo (Maestro - Detalle) */
-    .workspace {
+    /* Área de trabajo con dos columnas: Maestro (izquierda) y Detalle (derecha) */
+    .area-trabajo {
       flex: 1;
       display: grid;
       grid-template-columns: 350px 1fr;
@@ -77,10 +89,10 @@
       min-height: 0;
     }
 
-    /* Paneles */
+    /* Estilo compartido por ambos paneles */
     .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--fondo-tarjeta);
+      border: 1px solid var(--borde);
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -89,26 +101,28 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
-    /* Panel Maestro: Clientes */
-    .master-header {
+    /* Cabecera del panel izquierdo (Maestro) */
+    .maestro-cabecera {
       padding: 18px 20px 12px;
       flex-shrink: 0;
     }
 
-    .master-title-row {
+    /* Fila del título Clientes y el botón + Agregar */
+    .maestro-titulo-fila {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 14px;
     }
 
-    .master-title {
+    .maestro-titulo {
       font-size: 22px;
       font-weight: 700;
       color: #0f172a;
     }
 
-    .btn {
+    /* Estilos base para todos los botones */
+    .boton {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -118,47 +132,49 @@
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
+      border: 1px solid var(--borde);
+      background: var(--fondo-tarjeta);
+      color: var(--texto-oscuro);
       transition: all 0.15s ease;
       white-space: nowrap;
     }
 
-    .btn:hover {
+    .boton:hover {
       background: #f8fafc;
     }
 
-    .btn-primary {
-      background: var(--primary);
+    /* Botón azul principal */
+    .boton-azul {
+      background: var(--azul-primario);
       color: #ffffff;
-      border-color: var(--primary);
+      border-color: var(--azul-primario);
       font-weight: 600;
     }
 
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      border-color: var(--primary-hover);
+    .boton-azul:hover {
+      background: var(--azul-hover);
+      border-color: var(--azul-hover);
     }
 
-    .btn-danger-outline {
-      color: var(--danger);
-      border-color: var(--danger-border);
+    /* Botón blanco con borde y texto rojo para eliminar */
+    .boton-peligro {
+      color: var(--rojo-peligro);
+      border-color: var(--borde-peligro);
       background: #ffffff;
     }
 
-    .btn-danger-outline:hover {
+    .boton-peligro:hover {
       background: #fef2f2;
     }
 
-    /* Barra de búsqueda */
-    .search-wrapper {
+    /* Contenedor del buscador con icono de lupa */
+    .buscador-contenedor {
       position: relative;
       display: flex;
       align-items: center;
     }
 
-    .search-icon {
+    .buscador-icono {
       position: absolute;
       left: 12px;
       color: #94a3b8;
@@ -167,30 +183,31 @@
       pointer-events: none;
     }
 
-    .search-input {
+    .buscador-input {
       width: 100%;
       height: 38px;
       padding: 0 12px 0 36px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--borde);
       border-radius: 6px;
       font-size: 14px;
       outline: none;
-      color: var(--text);
+      color: var(--texto-oscuro);
     }
 
-    .search-input:focus {
-      border-color: var(--primary);
+    .buscador-input:focus {
+      border-color: var(--azul-primario);
       box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
     }
 
-    /* Lista desplazable de clientes */
-    .client-list {
+    /* Lista vertical de clientes con desplazamiento interno */
+    .lista-clientes {
       flex: 1;
       overflow-y: auto;
       border-top: 1px solid #f1f5f9;
     }
 
-    .client-item {
+    /* Fila individual de cada cliente */
+    .cliente-fila {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -201,16 +218,18 @@
       border-left: 3px solid transparent;
     }
 
-    .client-item:hover {
+    .cliente-fila:hover {
       background-color: #f8fafc;
     }
 
-    .client-item.active {
-      background-color: var(--selected-bg);
-      border-left-color: var(--primary);
+    /* Fila cuando el cliente está seleccionado */
+    .cliente-fila.activo {
+      background-color: var(--seleccionado);
+      border-left-color: var(--azul-primario);
     }
 
-    .avatar {
+    /* Avatar circular con las iniciales del cliente */
+    .avatar-circulo {
       width: 42px;
       height: 42px;
       border-radius: 50%;
@@ -222,12 +241,12 @@
       flex-shrink: 0;
     }
 
-    .client-info {
+    .cliente-datos-resumen {
       min-width: 0;
       flex: 1;
     }
 
-    .client-name {
+    .cliente-nombre-texto {
       font-size: 15px;
       font-weight: 600;
       color: #0f172a;
@@ -236,17 +255,17 @@
       text-overflow: ellipsis;
     }
 
-    .client-email {
+    .cliente-email-texto {
       font-size: 13px;
-      color: var(--muted);
+      color: var(--texto-secundario);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       margin-top: 2px;
     }
 
-    /* Panel Detalle */
-    .detail-container {
+    /* Contenedor del panel derecho (Detalle) */
+    .detalle-contenedor {
       flex: 1;
       overflow-y: auto;
       padding: 24px 30px;
@@ -254,51 +273,52 @@
       flex-direction: column;
     }
 
-    .empty-state {
+    /* Mensaje cuando no hay cliente seleccionado */
+    .estado-vacio {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: var(--muted);
+      color: var(--texto-secundario);
       text-align: center;
       padding: 40px;
     }
 
-    /* Cabecera del detalle */
-    .detail-header {
+    /* Encabezado del detalle con nombre, ID y botones */
+    .detalle-encabezado {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 16px;
     }
 
-    .detail-title-group h2 {
+    .detalle-nombre-grande {
       font-size: 26px;
       font-weight: 700;
       color: #0f172a;
     }
 
-    .detail-actions-group {
+    .detalle-acciones-derecha {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
       gap: 10px;
     }
 
-    .client-badge-id {
+    .cliente-id-etiqueta {
       font-size: 14px;
       color: #94a3b8;
       font-weight: 500;
     }
 
-    .header-buttons {
+    .botones-fila {
       display: flex;
       gap: 8px;
     }
 
-    /* Ficha de datos del cliente */
-    .client-details-grid {
+    /* Grilla de dos columnas con los datos del cliente */
+    .grilla-contacto {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px 24px;
@@ -308,27 +328,27 @@
       font-size: 14px;
     }
 
-    .detail-field {
+    .dato-contacto {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .field-icon {
+    .icono-contacto {
       width: 17px;
       height: 17px;
       color: #64748b;
       flex-shrink: 0;
     }
 
-    .address-details {
+    .domicilio-bloque {
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
 
-    /* Subformulario de actividades */
-    .activity-subform {
+    /* Subformulario para agregar y editar actividades */
+    .subformulario-actividad {
       border: 1px dashed #cbd5e1;
       border-radius: 8px;
       padding: 16px 18px;
@@ -336,59 +356,59 @@
       margin: 18px 0 24px 0;
     }
 
-    .subform-title {
+    .subformulario-titulo {
       font-size: 14px;
       font-weight: 700;
       color: #0f172a;
       margin-bottom: 12px;
     }
 
-    .subform-row {
+    .subformulario-fila {
       display: flex;
       gap: 10px;
       align-items: center;
     }
 
-    .input-desc {
+    .input-descripcion {
       flex: 1;
       height: 38px;
       padding: 0 12px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--borde);
       border-radius: 6px;
       font-size: 14px;
       outline: none;
     }
 
-    .input-date {
+    .input-fecha {
       width: 170px;
       height: 38px;
       padding: 0 10px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--borde);
       border-radius: 6px;
       font-size: 14px;
       outline: none;
       color: #334155;
     }
 
-    .input-desc:focus, .input-date:focus, .form-input:focus {
-      border-color: var(--primary);
+    .input-descripcion:focus, .input-fecha:focus, .formulario-input:focus {
+      border-color: var(--azul-primario);
       box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
     }
 
-    /* Secciones de actividades */
-    .activities-section {
+    /* Secciones de Compromisos y Actividades Completadas */
+    .seccion-actividades {
       margin-bottom: 24px;
     }
 
-    .section-heading {
+    .seccion-titulo {
       font-size: 17px;
       font-weight: 700;
       color: #0f172a;
       margin-bottom: 12px;
     }
 
-    .activities-box {
-      border: 1px solid var(--border);
+    .caja-actividades {
+      border: 1px solid var(--borde);
       border-radius: 8px;
       background: #ffffff;
       overflow: hidden;
@@ -396,7 +416,7 @@
       overflow-y: auto;
     }
 
-    .activity-row {
+    .actividad-fila {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -404,12 +424,12 @@
       border-bottom: 1px solid #f1f5f9;
     }
 
-    .activity-row:last-child {
+    .actividad-fila:last-child {
       border-bottom: none;
     }
 
-    /* Checkbox de actividades */
-    .checkbox-btn {
+    /* Casilla de verificación (checkbox cuadrado) */
+    .casilla-checkbox {
       width: 20px;
       height: 20px;
       border: 2px solid #94a3b8;
@@ -423,56 +443,57 @@
       transition: all 0.15s ease;
     }
 
-    .checkbox-btn:hover {
-      border-color: var(--primary);
+    .casilla-checkbox:hover {
+      border-color: var(--azul-primario);
     }
 
-    .checkbox-btn.checked {
-      background: var(--success);
-      border-color: var(--success);
+    /* Casilla verde para actividad completada */
+    .casilla-checkbox.completada {
+      background: var(--verde-completado);
+      border-color: var(--verde-completado);
       color: #ffffff;
       cursor: default;
     }
 
-    .activity-main {
+    .actividad-cuerpo {
       flex: 1;
       min-width: 0;
     }
 
-    .activity-title {
+    .actividad-descripcion {
       font-size: 14px;
       font-weight: 600;
       color: #0f172a;
       line-height: 1.3;
     }
 
-    .activity-title.completed {
+    .actividad-descripcion.tachada {
       font-weight: 500;
       color: #334155;
     }
 
-    .activity-meta {
+    .actividad-fecha-texto {
       font-size: 12px;
-      color: var(--muted);
+      color: var(--texto-secundario);
       margin-top: 3px;
     }
 
-    .activity-meta.overdue {
-      color: var(--overdue);
+    .actividad-fecha-texto.vencida {
+      color: var(--rojo-peligro);
       font-weight: 600;
     }
 
-    .activity-row-actions {
+    .acciones-actividad-fila {
       display: flex;
       gap: 6px;
       flex-shrink: 0;
     }
 
-    .icon-action-btn {
+    .boton-icono {
       width: 32px;
       height: 32px;
       border-radius: 6px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--borde);
       background: #ffffff;
       display: flex;
       align-items: center;
@@ -482,85 +503,75 @@
       transition: all 0.15s ease;
     }
 
-    .icon-action-btn:hover {
+    .boton-icono:hover {
       background: #f8fafc;
       color: #0f172a;
       border-color: #cbd5e1;
     }
 
-    .icon-action-btn.delete:hover {
-      color: var(--danger);
+    .boton-icono.eliminar:hover {
+      color: var(--rojo-peligro);
       background: #fef2f2;
-      border-color: var(--danger-border);
+      border-color: var(--borde-peligro);
     }
 
-    .empty-list-note {
+    .aviso-vacio {
       padding: 18px;
       text-align: center;
       color: #94a3b8;
       font-size: 13px;
     }
 
-    /* Formulario de cliente (Alta / Edición en Detalle) */
-    .client-form {
+    /* Formulario para Crear o Editar Cliente en el Detalle */
+    .formulario-cliente {
       display: flex;
       flex-direction: column;
       gap: 16px;
       max-width: 600px;
     }
 
-    .client-form h2 {
-      font-size: 22px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 6px;
-    }
-
-    .form-grid {
+    .formulario-grilla {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 14px;
     }
 
-    .form-group {
+    .campo-formulario {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    .form-group.full-width {
+    .campo-formulario.ancho-completo {
       grid-column: span 2;
     }
 
-    .form-label {
+    .formulario-etiqueta {
       font-size: 13px;
       font-weight: 600;
       color: #475569;
     }
 
-    .form-input {
+    .formulario-input {
       height: 38px;
       padding: 0 12px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--borde);
       border-radius: 6px;
       font-size: 14px;
       outline: none;
-      color: var(--text);
+      color: var(--texto-oscuro);
     }
 
-    .form-actions {
+    .formulario-acciones {
       display: flex;
       gap: 10px;
       margin-top: 10px;
     }
 
-    /* Scrollbars elegantes */
+    /* Barras de desplazamiento elegantes */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
     }
     ::-webkit-scrollbar-thumb {
       background: #cbd5e1;
@@ -572,52 +583,63 @@
   </style>
 </head>
 <body>
+  <!-- Contenedor raíz donde React monta toda la aplicación -->
   <div id="root"></div>
 
+  <!-- Código React escrito con sintaxis JSX -->
   <script type="text/babel">
+    // Desestructuramos los hooks estándar de React
     const { useState, useEffect, useMemo } = React;
 
-    // Paleta de avatares según iniciales
-    const AVATAR_COLORS = [
-      { bg: "#dbeafe", text: "#1d4ed8" }, // Azul
-      { bg: "#dcfce7", text: "#15803d" }, // Verde
-      { bg: "#ede9fe", text: "#6d28d9" }, // Violeta
-      { bg: "#ffedd5", text: "#c2410c" }, // Naranja
-      { bg: "#fce7f3", text: "#be185d" }, // Rosa
-      { bg: "#cffafe", text: "#0e7490" }, // Cian
-      { bg: "#fef3c7", text: "#b45309" }, // Ámbar
+    // =========================================================================
+    // 1. PALETA DE COLORES PASTEL PARA LOS AVATARES
+    // =========================================================================
+    const COLORES_AVATAR = [
+      { fondo: "#dbeafe", texto: "#1d4ed8" }, // Azul
+      { fondo: "#dcfce7", texto: "#15803d" }, // Verde
+      { fondo: "#ede9fe", texto: "#6d28d9" }, // Violeta
+      { fondo: "#ffedd5", texto: "#c2410c" }, // Naranja
+      { fondo: "#fce7f3", texto: "#be185d" }, // Rosa
+      { fondo: "#cffafe", texto: "#0e7490" }, // Cian
+      { fondo: "#fef3c7", texto: "#b45309" }, // Ámbar
     ];
 
-    function getAvatarStyle(name, lastName) {
-      const code = ((name || "").charCodeAt(0) + (lastName || "").charCodeAt(0)) || 0;
-      return AVATAR_COLORS[code % AVATAR_COLORS.length];
+    // Función que selecciona un color fijo según el nombre del cliente
+    function obtenerColorAvatar(nombre, apellido) {
+      const codigo = ((nombre || "").charCodeAt(0) + (apellido || "").charCodeAt(0)) || 0;
+      return COLORES_AVATAR[codigo % COLORES_AVATAR.length];
     }
 
-    function formatInitials(name, lastName) {
-      const i1 = name ? name.trim().charAt(0).toUpperCase() : "";
-      const i2 = lastName ? lastName.trim().charAt(0).toUpperCase() : "";
+    // Función que extrae las iniciales en mayúscula (ej: "Ana García" -> "AG")
+    function obtenerIniciales(nombre, apellido) {
+      const i1 = nombre ? nombre.trim().charAt(0).toUpperCase() : "";
+      const i2 = apellido ? apellido.trim().charAt(0).toUpperCase() : "";
       return i1 + i2 || "C";
     }
 
-    // Formatear fechas en español (ej. "16 oct 2026")
+    // Función para mostrar fechas en formato amigable en español (ej: "16 oct 2026")
     function formatearFechaLegible(fechaIso) {
       if (!fechaIso) return "";
       const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
       const partes = fechaIso.split("-");
       if (partes.length !== 3) return fechaIso;
-      const [year, month, day] = partes;
-      const mIdx = parseInt(month, 10) - 1;
-      return `${parseInt(day, 10)} ${meses[mIdx] || month} ${year}`;
+      const [anio, mes, dia] = partes;
+      const indiceMes = parseInt(mes, 10) - 1;
+      return `${parseInt(dia, 10)} ${meses[indiceMes] || mes} ${anio}`;
     }
 
+    // Función para determinar si una fecha compromiso ya venció respecto a hoy
     function esFechaVencida(fechaIso) {
       if (!fechaIso) return false;
-      const hoyIso = new Date().toISOString().split("T")[0];
-      return fechaIso < hoyIso;
+      const hoy = new Date().toISOString().split("T")[0];
+      return fechaIso < hoy;
     }
 
-    // Datos iniciales de demostración (coincidentes con minicrm.jpg)
-    const DATOS_SEMILLA = [
+    // =========================================================================
+    // 2. DATOS DE RESPALDO (Misma información de muestra que minicrm.jpg)
+    // Permite que la aplicación funcione incluso si se abre como archivo local
+    // =========================================================================
+    const CLIENTES_INICIALES = [
       {
         id: 123,
         nombre: "Ana",
@@ -634,84 +656,31 @@
           { id: 5, clienteId: 123, descripcion: "Primera reunión", fechaCompromiso: "2026-10-12", fechaFinalizacion: "2026-10-12" }
         ]
       },
-      {
-        id: 124,
-        nombre: "Bruno",
-        apellido: "López",
-        email: "bruno.lopez@example.com",
-        telefono: "381 555 0456",
-        domicilio: "Av. Aconquija 1200",
-        localidad: "Yerba Buena",
-        actividades: []
-      },
-      {
-        id: 125,
-        nombre: "Carla",
-        apellido: "Pérez",
-        email: "carla.perez@example.com",
-        telefono: "381 555 0789",
-        domicilio: "25 de Mayo 320",
-        localidad: "San Miguel de Tucumán",
-        actividades: []
-      },
-      {
-        id: 126,
-        nombre: "Diego",
-        apellido: "Ruiz",
-        email: "diego.ruiz@example.com",
-        telefono: "381 555 0112",
-        domicilio: "Crisóstomo Álvarez 650",
-        localidad: "San Miguel de Tucumán",
-        actividades: []
-      },
-      {
-        id: 127,
-        nombre: "Elena",
-        apellido: "Torres",
-        email: "elena.torres@example.com",
-        telefono: "381 555 0334",
-        domicilio: "Av. Mate de Luna 2800",
-        localidad: "San Miguel de Tucumán",
-        actividades: []
-      },
-      {
-        id: 128,
-        nombre: "Federico",
-        apellido: "Díaz",
-        email: "federico.diaz@example.com",
-        telefono: "381 555 0556",
-        domicilio: "Laprida 150",
-        localidad: "San Miguel de Tucumán",
-        actividades: []
-      },
-      {
-        id: 129,
-        nombre: "Gabriela",
-        apellido: "Sosa",
-        email: "gabriela.sosa@example.com",
-        telefono: "381 555 0778",
-        domicilio: "Las Heras 420",
-        localidad: "Yerba Buena",
-        actividades: []
-      }
+      { id: 124, nombre: "Bruno", apellido: "López", email: "bruno.lopez@example.com", telefono: "381 555 0456", domicilio: "Av. Aconquija 1200", localidad: "Yerba Buena", actividades: [] },
+      { id: 125, nombre: "Carla", apellido: "Pérez", email: "carla.perez@example.com", telefono: "381 555 0789", domicilio: "25 de Mayo 320", localidad: "San Miguel de Tucumán", actividades: [] },
+      { id: 126, nombre: "Diego", apellido: "Ruiz", email: "diego.ruiz@example.com", telefono: "381 555 0112", domicilio: "Crisóstomo Álvarez 650", localidad: "San Miguel de Tucumán", actividades: [] },
+      { id: 127, nombre: "Elena", apellido: "Torres", email: "elena.torres@example.com", telefono: "381 555 0334", domicilio: "Av. Mate de Luna 2800", localidad: "San Miguel de Tucumán", actividades: [] },
+      { id: 128, nombre: "Federico", apellido: "Díaz", email: "federico.diaz@example.com", telefono: "381 555 0556", domicilio: "Laprida 150", localidad: "San Miguel de Tucumán", actividades: [] },
+      { id: 129, nombre: "Gabriela", apellido: "Sosa", email: "gabriela.sosa@example.com", telefono: "381 555 0778", domicilio: "Las Heras 420", localidad: "Yerba Buena", actividades: [] }
     ];
 
-    // Capa de API REST con fallback automático a localStorage si se abre directamente
-    const api = {
-      isApiAvailable: true,
-
-      async getClientes(query = "") {
+    // =========================================================================
+    // 3. CAPA DE COMUNICACIÓN CON LA API REST (con soporte offline)
+    // =========================================================================
+    const servicioApi = {
+      // Método para obtener clientes (con filtro opcional en vivo)
+      async listarClientes(termino = "") {
         try {
-          const res = await fetch(`/api/clientes?q=${encodeURIComponent(query)}`);
-          if (!res.ok) throw new Error("API error");
+          const res = await fetch(`/api/clientes?q=${encodeURIComponent(termino)}`);
+          if (!res.ok) throw new Error("Error en servidor");
           return await res.json();
         } catch {
-          this.isApiAvailable = false;
-          const datos = this.getLocal();
-          if (!query.trim()) return datos;
-          const q = query.toLowerCase();
-          return datos.filter(c =>
-            (c.nombre + " " + c.apellido).toLowerCase().includes(q) ||
+          // Fallback a localStorage si el servidor Express no está levantado
+          const locales = this.obtenerLocales();
+          if (!termino.trim()) return locales;
+          const q = termino.toLowerCase();
+          return locales.filter(c =>
+            `${c.nombre} ${c.apellido}`.toLowerCase().includes(q) ||
             (c.email || "").toLowerCase().includes(q) ||
             (c.telefono || "").toLowerCase().includes(q) ||
             (c.domicilio || "").toLowerCase().includes(q) ||
@@ -721,75 +690,78 @@
         }
       },
 
-      async getCliente(id) {
+      // Método para obtener el detalle de un cliente con sus actividades
+      async obtenerCliente(id) {
         try {
           const res = await fetch(`/api/clientes/${id}`);
-          if (!res.ok) throw new Error("API error");
+          if (!res.ok) throw new Error("Error en servidor");
           return await res.json();
         } catch {
-          const datos = this.getLocal();
-          return datos.find(c => c.id === id) || null;
+          const locales = this.obtenerLocales();
+          return locales.find(c => c.id === id) || null;
         }
       },
 
-      async crearCliente(cliente) {
+      // Método para registrar un nuevo cliente
+      async crearCliente(datos) {
         try {
           const res = await fetch("/api/clientes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cliente)
+            body: JSON.stringify(datos)
           });
           if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Error al crear cliente");
+            const error = await res.json();
+            throw new Error(error.error || "Error al crear cliente");
           }
           return await res.json();
-        } catch (e) {
-          if (this.isApiAvailable && !e.message.includes("Failed to fetch")) throw e;
-          const datos = this.getLocal();
-          const nuevo = { ...cliente, id: Date.now(), actividades: [] };
-          datos.push(nuevo);
-          this.setLocal(datos);
+        } catch (error) {
+          const locales = this.obtenerLocales();
+          const nuevo = { ...datos, id: Date.now(), actividades: [] };
+          locales.push(nuevo);
+          this.guardarLocales(locales);
           return nuevo;
         }
       },
 
-      async actualizarCliente(id, cambios) {
+      // Método para actualizar los datos de un cliente
+      async actualizarCliente(id, datos) {
         try {
           const res = await fetch(`/api/clientes/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cambios)
+            body: JSON.stringify(datos)
           });
           if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Error al actualizar");
+            const error = await res.json();
+            throw new Error(error.error || "Error al actualizar");
           }
           return await res.json();
-        } catch (e) {
-          if (this.isApiAvailable && !e.message.includes("Failed to fetch")) throw e;
-          const datos = this.getLocal();
-          const idx = datos.findIndex(c => c.id === id);
-          if (idx !== -1) {
-            datos[idx] = { ...datos[idx], ...cambios };
-            this.setLocal(datos);
-            return datos[idx];
+        } catch {
+          const locales = this.obtenerLocales();
+          const indice = locales.findIndex(c => c.id === id);
+          if (indice !== -1) {
+            locales[indice] = { ...locales[indice], ...datos };
+            this.guardarLocales(locales);
+            return locales[indice];
           }
         }
       },
 
+      // Método para borrar un cliente y sus actividades asociadas
       async eliminarCliente(id) {
         try {
           const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
-          if (!res.ok) throw new Error("Error al eliminar");
+          if (!res.ok) throw new Error("Error al eliminar cliente");
           return true;
-        } catch (e) {
-          const datos = this.getLocal().filter(c => c.id !== id);
-          this.setLocal(datos);
+        } catch {
+          const filtrados = this.obtenerLocales().filter(c => c.id !== id);
+          this.guardarLocales(filtrados);
           return true;
         }
       },
 
+      // Método para crear una actividad
       async crearActividad(clienteId, actividad) {
         try {
           const res = await fetch(`/api/clientes/${clienteId}/actividades`, {
@@ -798,254 +770,277 @@
             body: JSON.stringify(actividad)
           });
           if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Error al crear actividad");
+            const error = await res.json();
+            throw new Error(error.error || "Error al crear actividad");
           }
           return await res.json();
-        } catch (e) {
-          const datos = this.getLocal();
-          const c = datos.find(x => x.id === clienteId);
-          if (c) {
+        } catch {
+          const locales = this.obtenerLocales();
+          const cliente = locales.find(c => c.id === clienteId);
+          if (cliente) {
             const nueva = { id: Date.now(), clienteId, ...actividad, fechaFinalizacion: null };
-            c.actividades = c.actividades || [];
-            c.actividades.push(nueva);
-            this.setLocal(datos);
+            cliente.actividades = cliente.actividades || [];
+            cliente.actividades.push(nueva);
+            this.guardarLocales(locales);
             return nueva;
           }
         }
       },
 
-      async actualizarActividad(actividadId, cambios) {
+      // Método para modificar una actividad pendiente
+      async actualizarActividad(actividadId, datos) {
         try {
           const res = await fetch(`/api/actividades/${actividadId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cambios)
+            body: JSON.stringify(datos)
           });
           if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Error al actualizar actividad");
+            const error = await res.json();
+            throw new Error(error.error || "Error al actualizar actividad");
           }
           return await res.json();
-        } catch (e) {
-          const datos = this.getLocal();
-          for (const c of datos) {
+        } catch {
+          const locales = this.obtenerLocales();
+          for (const c of locales) {
             const act = (c.actividades || []).find(a => a.id === actividadId);
             if (act) {
               if (act.fechaFinalizacion) throw new Error("Las actividades completadas no se pueden editar ni borrar individualmente");
-              Object.assign(act, cambios);
-              this.setLocal(datos);
+              Object.assign(act, datos);
+              this.guardarLocales(locales);
               return act;
             }
           }
         }
       },
 
+      // Método para completar una actividad
       async completarActividad(actividadId) {
         try {
           const res = await fetch(`/api/actividades/${actividadId}/completar`, { method: "POST" });
           if (!res.ok) throw new Error("Error al completar actividad");
           return await res.json();
         } catch {
-          const datos = this.getLocal();
+          const locales = this.obtenerLocales();
           const hoy = new Date().toISOString().split("T")[0];
-          for (const c of datos) {
+          for (const c of locales) {
             const act = (c.actividades || []).find(a => a.id === actividadId);
             if (act) {
               act.fechaFinalizacion = hoy;
-              this.setLocal(datos);
+              this.guardarLocales(locales);
               return act;
             }
           }
         }
       },
 
+      // Método para eliminar una actividad pendiente
       async eliminarActividad(actividadId) {
         try {
           const res = await fetch(`/api/actividades/${actividadId}`, { method: "DELETE" });
           if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Error al eliminar actividad");
+            const error = await res.json();
+            throw new Error(error.error || "Error al eliminar actividad");
           }
           return true;
-        } catch (e) {
-          const datos = this.getLocal();
-          for (const c of datos) {
+        } catch {
+          const locales = this.obtenerLocales();
+          for (const c of locales) {
             const act = (c.actividades || []).find(a => a.id === actividadId);
             if (act) {
               if (act.fechaFinalizacion) throw new Error("Las actividades completadas no se pueden editar ni borrar individualmente");
               c.actividades = c.actividades.filter(a => a.id !== actividadId);
-              this.setLocal(datos);
+              this.guardarLocales(locales);
               return true;
             }
           }
         }
       },
 
-      getLocal() {
-        const raw = localStorage.getItem("minicrm_clientes");
-        if (!raw) {
-          localStorage.setItem("minicrm_clientes", JSON.stringify(DATOS_SEMILLA));
-          return DATOS_SEMILLA;
+      // Auxiliar para leer de localStorage
+      obtenerLocales() {
+        const guardado = localStorage.getItem("minicrm_clientes");
+        if (!guardado) {
+          localStorage.setItem("minicrm_clientes", JSON.stringify(CLIENTES_INICIALES));
+          return CLIENTES_INICIALES;
         }
-        return JSON.parse(raw);
+        return JSON.parse(guardado);
       },
 
-      setLocal(data) {
-        localStorage.setItem("minicrm_clientes", JSON.stringify(data));
+      // Auxiliar para escribir en localStorage
+      guardarLocales(datos) {
+        localStorage.setItem("minicrm_clientes", JSON.stringify(datos));
       }
     };
 
-    // Componente Principal
+    // =========================================================================
+    // 4. COMPONENTE PRINCIPAL: MiniCRM
+    // Organiza el diseño maestro-detalle, la búsqueda y el manejo de estados
+    // =========================================================================
     function MiniCRM() {
-      const [clientes, setClientes] = useState([]);
-      const [busqueda, setBusqueda] = useState("");
-      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
-      const [clienteDetalle, setClienteDetalle] = useState(null);
-      const [modoFormulario, setModoFormulario] = useState(null); // null | 'nuevo' | 'editar'
+      // Estado con la lista de clientes en el panel izquierdo
+      const [listaClientes, setListaClientes] = useState([]);
 
-      // Subformulario de actividad
+      // Estado con el texto del buscador en vivo
+      const [textoBusqueda, setTextoBusqueda] = useState("");
+
+      // ID del cliente que actualmente está seleccionado
+      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+
+      // Objeto completo con los datos y actividades del cliente seleccionado
+      const [clienteDetalle, setClienteDetalle] = useState(null);
+
+      // Controla si se muestra el formulario de alta o edición: null | 'nuevo' | 'editar'
+      const [modoFormulario, setModoFormulario] = useState(null);
+
+      // Estado para los campos del subformulario de actividades
       const [subformActividad, setSubformActividad] = useState({
-        modo: "nuevo", // 'nuevo' | 'editar'
+        modo: "nuevo", // 'nuevo' o 'editar'
         id: null,
         descripcion: "",
         fechaCompromiso: ""
       });
 
-      // Cargar lista de clientes
-      const cargarClientes = async (term = busqueda, preservarSeleccion = true) => {
+      // Función para recargar la lista de clientes desde la API
+      const cargarClientes = async (filtro = textoBusqueda, mantenerSeleccion = true) => {
         try {
-          const lista = await api.getClientes(term);
-          setClientes(lista);
-          if (!preservarSeleccion && lista.length > 0) {
-            setClienteSeleccionadoId(lista[0].id);
-          } else if (preservarSeleccion && clienteSeleccionadoId) {
-            // Verificar si el seleccionado aún existe
-            if (!lista.some(c => c.id === clienteSeleccionadoId) && lista.length > 0) {
-              setClienteSeleccionadoId(lista[0].id);
+          const clientes = await servicioApi.listarClientes(filtro);
+          setListaClientes(clientes);
+
+          // Si es la carga inicial o se borró el cliente seleccionado, seleccionamos el primero disponible
+          if (!mantenerSeleccion && clientes.length > 0) {
+            setClienteSeleccionadoId(clientes[0].id);
+          } else if (mantenerSeleccion && clienteSeleccionadoId) {
+            const sigueExistiendo = clientes.some(c => c.id === clienteSeleccionadoId);
+            if (!sigueExistiendo && clientes.length > 0) {
+              setClienteSeleccionadoId(clientes[0].id);
             }
-          } else if (!clienteSeleccionadoId && lista.length > 0) {
-            setClienteSeleccionadoId(lista[0].id);
+          } else if (!clienteSeleccionadoId && clientes.length > 0) {
+            setClienteSeleccionadoId(clientes[0].id);
           }
-        } catch (e) {
-          console.error(e);
+        } catch (error) {
+          console.error("Error al cargar clientes:", error);
         }
       };
 
-      // Cargar detalle del cliente seleccionado
-      const cargarDetalle = async (id) => {
+      // Función para traer la información detallada y actividades del cliente activo
+      const cargarDetalleCliente = async (id) => {
         if (!id) {
           setClienteDetalle(null);
           return;
         }
         try {
-          const det = await api.getCliente(id);
-          setClienteDetalle(det);
-        } catch (e) {
-          console.error(e);
+          const detalle = await servicioApi.obtenerCliente(id);
+          setClienteDetalle(detalle);
+        } catch (error) {
+          console.error("Error al cargar detalle del cliente:", error);
         }
       };
 
+      // Efecto que se ejecuta al montar la aplicación por primera vez
       useEffect(() => {
         cargarClientes("", false);
       }, []);
 
+      // Efecto que se dispara cada vez que cambia el cliente seleccionado
       useEffect(() => {
         if (clienteSeleccionadoId) {
-          cargarDetalle(clienteSeleccionadoId);
+          cargarDetalleCliente(clienteSeleccionadoId);
         }
       }, [clienteSeleccionadoId]);
 
-      // Filtrado en vivo mientras se escribe
-      const handleBuscar = (e) => {
-        const val = e.target.value;
-        setBusqueda(val);
-        cargarClientes(val, true);
+      // Manejador del cambio en el campo de búsqueda en vivo
+      const handleCambioBusqueda = (e) => {
+        const valor = e.target.value;
+        setTextoBusqueda(valor);
+        cargarClientes(valor, true);
       };
 
-      // Separar actividades en Compromisos y Completadas
+      // Separamos las actividades en pendientes ("Compromisos") y "Completadas"
       const { compromisos, completadas } = useMemo(() => {
         if (!clienteDetalle || !clienteDetalle.actividades) {
           return { compromisos: [], completadas: [] };
         }
-        const pend = [];
-        const comp = [];
-        clienteDetalle.actividades.forEach(a => {
-          if (a.fechaFinalizacion) {
-            comp.push(a);
+        const pendientes = [];
+        const finalizadas = [];
+        clienteDetalle.actividades.forEach(act => {
+          if (act.fechaFinalizacion) {
+            finalizadas.push(act);
           } else {
-            pend.push(a);
+            pendientes.push(act);
           }
         });
-        return { compromisos: pend, completadas: comp };
+        return { compromisos: pendientes, completadas: finalizadas };
       }, [clienteDetalle]);
 
-      // Guardar Cliente (Alta o Modificación)
-      const handleGuardarCliente = async (datos) => {
+      // Guardar cliente (alta o edición)
+      const handleGuardarCliente = async (datosFormulario) => {
         try {
           if (modoFormulario === "nuevo") {
-            const nuevo = await api.crearCliente(datos);
+            const creado = await servicioApi.crearCliente(datosFormulario);
             setModoFormulario(null);
-            await cargarClientes(busqueda);
-            setClienteSeleccionadoId(nuevo.id);
+            await cargarClientes(textoBusqueda);
+            setClienteSeleccionadoId(creado.id);
           } else if (modoFormulario === "editar") {
-            await api.actualizarCliente(clienteSeleccionadoId, datos);
+            await servicioApi.actualizarCliente(clienteSeleccionadoId, datosFormulario);
             setModoFormulario(null);
-            await cargarClientes(busqueda);
-            await cargarDetalle(clienteSeleccionadoId);
+            await cargarClientes(textoBusqueda);
+            await cargarDetalleCliente(clienteSeleccionadoId);
           }
-        } catch (e) {
-          alert(e.message || "Error al guardar");
+        } catch (error) {
+          alert(error.message || "Error al guardar cliente");
         }
       };
 
-      // Eliminar Cliente
+      // Eliminar cliente seleccionado
       const handleEliminarCliente = async () => {
         if (!clienteDetalle) return;
-        if (confirm(`¿Está seguro de eliminar al cliente ${clienteDetalle.nombre} ${clienteDetalle.apellido}?`)) {
-          await api.eliminarCliente(clienteDetalle.id);
+        const confirmacion = confirm(`¿Desea eliminar a ${clienteDetalle.nombre} ${clienteDetalle.apellido}?`);
+        if (confirmacion) {
+          await servicioApi.eliminarCliente(clienteDetalle.id);
           setClienteDetalle(null);
           setClienteSeleccionadoId(null);
-          await cargarClientes(busqueda, false);
+          await cargarClientes(textoBusqueda, false);
         }
       };
 
-      // Guardar Actividad (Alta o Edición)
+      // Guardar actividad en el subformulario (alta o edición)
       const handleGuardarActividad = async (e) => {
         e.preventDefault();
         if (!subformActividad.descripcion.trim()) {
-          alert("La descripción de la actividad es obligatoria.");
+          alert("Debe escribir una descripción para la actividad");
           return;
         }
 
         try {
           if (subformActividad.modo === "nuevo") {
-            await api.crearActividad(clienteDetalle.id, {
+            await servicioApi.crearActividad(clienteDetalle.id, {
               descripcion: subformActividad.descripcion.trim(),
               fechaCompromiso: subformActividad.fechaCompromiso || null
             });
           } else {
-            await api.actualizarActividad(subformActividad.id, {
+            await servicioApi.actualizarActividad(subformActividad.id, {
               descripcion: subformActividad.descripcion.trim(),
               fechaCompromiso: subformActividad.fechaCompromiso || null
             });
           }
 
-          // Reiniciar subformulario
+          // Limpiamos el subformulario
           setSubformActividad({ modo: "nuevo", id: null, descripcion: "", fechaCompromiso: "" });
-          await cargarDetalle(clienteDetalle.id);
-        } catch (err) {
-          alert(err.message || "Error al procesar la actividad");
+          // Recargamos los datos actualizados del cliente
+          await cargarDetalleCliente(clienteDetalle.id);
+        } catch (error) {
+          alert(error.message || "Error al procesar la actividad");
         }
       };
 
-      // Cancelar edición de actividad
-      const handleCancelarSubform = () => {
+      // Cancelar edición en el subformulario
+      const handleCancelarSubformulario = () => {
         setSubformActividad({ modo: "nuevo", id: null, descripcion: "", fechaCompromiso: "" });
       };
 
-      // Iniciar edición de actividad en el subformulario
-      const handleIniciarEditarActividad = (act) => {
+      // Cargar una actividad en el subformulario para editarla
+      const handleIniciarEdicionActividad = (act) => {
         setSubformActividad({
           modo: "editar",
           id: act.id,
@@ -1054,92 +1049,98 @@
         });
       };
 
-      // Completar actividad
+      // Marcar actividad como completada
       const handleCompletarActividad = async (act) => {
         try {
-          await api.completarActividad(act.id);
-          await cargarDetalle(clienteDetalle.id);
-        } catch (e) {
-          alert(e.message || "Error al completar");
+          await servicioApi.completarActividad(act.id);
+          await cargarDetalleCliente(clienteDetalle.id);
+        } catch (error) {
+          alert(error.message || "Error al completar actividad");
         }
       };
 
-      // Eliminar actividad
+      // Eliminar actividad pendiente
       const handleEliminarActividad = async (act) => {
-        if (confirm(`¿Eliminar la actividad "${act.descripcion}"?`)) {
+        const confirmacion = confirm(`¿Eliminar la actividad "${act.descripcion}"?`);
+        if (confirmacion) {
           try {
-            await api.eliminarActividad(act.id);
-            await cargarDetalle(clienteDetalle.id);
-          } catch (e) {
-            alert(e.message || "Error al eliminar actividad");
+            await servicioApi.eliminarActividad(act.id);
+            await cargarDetalleCliente(clienteDetalle.id);
+          } catch (error) {
+            alert(error.message || "Error al eliminar actividad");
           }
         }
       };
 
       return (
-        <div className="app-container">
-          {/* Barra superior con estilo fiel a la imagen */}
-          <header className="navbar">
-            <span className="navbar-title">MiniCRM</span>
+        <div className="app-contenedor">
+          {/* Barra superior de título */}
+          <header className="barra-navegacion">
+            <span className="barra-titulo">MiniCRM</span>
           </header>
 
-          <main className="workspace">
-            {/* Panel Maestro: Listado de clientes */}
+          {/* Área principal con dos columnas */}
+          <main className="area-trabajo">
+            {/* PANEL MAESTRO: LISTA DE CLIENTES */}
             <section className="panel">
-              <div className="master-header">
-                <div className="master-title-row">
-                  <h1 className="master-title">Clientes</h1>
+              <div className="maestro-cabecera">
+                <div className="maestro-titulo-fila">
+                  <h1 className="maestro-titulo">Clientes</h1>
+                  {/* Botón para iniciar el alta de un nuevo cliente */}
                   <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      setModoFormulario("nuevo");
-                    }}
+                    className="boton boton-azul"
+                    onClick={() => setModoFormulario("nuevo")}
                   >
                     + Agregar
                   </button>
                 </div>
-                <div className="search-wrapper">
-                  <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+
+                {/* Input de búsqueda en vivo por cualquier campo */}
+                <div className="buscador-contenedor">
+                  <svg className="buscador-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                   </svg>
                   <input
                     type="text"
-                    className="search-input"
+                    className="buscador-input"
                     placeholder="Buscar por cualquier campo..."
-                    value={busqueda}
-                    onChange={handleBuscar}
+                    value={textoBusqueda}
+                    onChange={handleCambioBusqueda}
                   />
                 </div>
               </div>
 
-              <div className="client-list">
-                {clientes.length === 0 ? (
-                  <div className="empty-list-note">No se encontraron clientes</div>
+              {/* Lista desplazable internamente */}
+              <div className="lista-clientes">
+                {listaClientes.length === 0 ? (
+                  <div className="aviso-vacio">No se encontraron clientes</div>
                 ) : (
-                  clientes.map((c) => {
-                    const avatarStyle = getAvatarStyle(c.nombre, c.apellido);
-                    const initials = formatInitials(c.nombre, c.apellido);
-                    const isSelected = clienteSeleccionadoId === c.id && modoFormulario !== "nuevo";
+                  listaClientes.map((c) => {
+                    const estiloAvatar = obtenerColorAvatar(c.nombre, c.apellido);
+                    const iniciales = obtenerIniciales(c.nombre, c.apellido);
+                    const estaActivo = clienteSeleccionadoId === c.id && modoFormulario !== "nuevo";
 
                     return (
                       <div
                         key={c.id}
-                        className={`client-item ${isSelected ? "active" : ""}`}
+                        className={`cliente-fila ${estaActivo ? "activo" : ""}`}
                         onClick={() => {
                           setClienteSeleccionadoId(c.id);
                           setModoFormulario(null);
                         }}
                       >
+                        {/* Avatar con iniciales */}
                         <div
-                          className="avatar"
-                          style={{ backgroundColor: avatarStyle.bg, color: avatarStyle.text }}
+                          className="avatar-circulo"
+                          style={{ backgroundColor: estiloAvatar.fondo, color: estiloAvatar.texto }}
                         >
-                          {initials}
+                          {iniciales}
                         </div>
-                        <div className="client-info">
-                          <div className="client-name">{c.nombre} {c.apellido}</div>
-                          <div className="client-email">{c.email}</div>
+                        {/* Datos del cliente */}
+                        <div className="cliente-datos-resumen">
+                          <div className="cliente-nombre-texto">{c.nombre} {c.apellido}</div>
+                          <div className="cliente-email-texto">{c.email}</div>
                         </div>
                       </div>
                     );
@@ -1148,9 +1149,10 @@
               </div>
             </section>
 
-            {/* Panel Detalle */}
+            {/* PANEL DETALLE */}
             <section className="panel">
-              <div className="detail-container">
+              <div className="detalle-contenedor">
+                {/* Si estamos en modo de alta o edición, mostramos el formulario */}
                 {modoFormulario ? (
                   <FormularioCliente
                     modo={modoFormulario}
@@ -1161,15 +1163,18 @@
                 ) : clienteDetalle ? (
                   <>
                     {/* Encabezado del Detalle */}
-                    <div className="detail-header">
-                      <div className="detail-title-group">
-                        <h2>{clienteDetalle.nombre} {clienteDetalle.apellido}</h2>
+                    <div className="detalle-encabezado">
+                      <div>
+                        <h2 className="detalle-nombre-grande">
+                          {clienteDetalle.nombre} {clienteDetalle.apellido}
+                        </h2>
                       </div>
-                      <div className="detail-actions-group">
-                        <span className="client-badge-id">#{clienteDetalle.id}</span>
-                        <div className="header-buttons">
+                      <div className="detalle-acciones-derecha">
+                        <span className="cliente-id-etiqueta">#{clienteDetalle.id}</span>
+                        <div className="botones-fila">
+                          {/* Botón Editar Cliente */}
                           <button
-                            className="btn"
+                            className="boton"
                             onClick={() => setModoFormulario("editar")}
                           >
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1178,8 +1183,9 @@
                             </svg>
                             Editar
                           </button>
+                          {/* Botón Eliminar Cliente */}
                           <button
-                            className="btn btn-danger-outline"
+                            className="boton boton-peligro"
                             onClick={handleEliminarCliente}
                           >
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1192,46 +1198,46 @@
                       </div>
                     </div>
 
-                    {/* Ficha de datos (2 columnas como en la imagen) */}
-                    <div className="client-details-grid">
-                      <div className="detail-field">
-                        <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {/* Ficha de datos en dos columnas (Email, Teléfono, Domicilio, Localidad) */}
+                    <div className="grilla-contacto">
+                      <div className="dato-contacto">
+                        <svg className="icono-contacto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                           <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
                         <span>{clienteDetalle.email}</span>
                       </div>
 
-                      <div className="detail-field">
-                        <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <div className="dato-contacto">
+                        <svg className="icono-contacto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                           <circle cx="12" cy="10" r="3"></circle>
                         </svg>
-                        <div className="address-details">
+                        <div className="domicilio-bloque">
                           <span>{clienteDetalle.domicilio || "Sin domicilio registrado"}</span>
                           {clienteDetalle.localidad && (
-                            <span style={{ color: "var(--muted)" }}>{clienteDetalle.localidad}</span>
+                            <span style={{ color: "var(--texto-secundario)" }}>{clienteDetalle.localidad}</span>
                           )}
                         </div>
                       </div>
 
-                      <div className="detail-field">
-                        <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <div className="dato-contacto">
+                        <svg className="icono-contacto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                         </svg>
                         <span>{clienteDetalle.telefono || "Sin teléfono"}</span>
                       </div>
                     </div>
 
-                    {/* Subformulario para Agregar o Editar Actividades */}
-                    <form className="activity-subform" onSubmit={handleGuardarActividad}>
-                      <div className="subform-title">
+                    {/* Subformulario para agregar o editar una actividad */}
+                    <form className="subformulario-actividad" onSubmit={handleGuardarActividad}>
+                      <div className="subformulario-titulo">
                         {subformActividad.modo === "editar" ? "Editar actividad" : "Agregar actividad"}
                       </div>
-                      <div className="subform-row">
+                      <div className="subformulario-fila">
                         <input
                           type="text"
-                          className="input-desc"
+                          className="input-descripcion"
                           placeholder="Descripción de la actividad"
                           value={subformActividad.descripcion}
                           onChange={(e) =>
@@ -1240,13 +1246,13 @@
                         />
                         <input
                           type="date"
-                          className="input-date"
+                          className="input-fecha"
                           value={subformActividad.fechaCompromiso}
                           onChange={(e) =>
                             setSubformActividad({ ...subformActividad, fechaCompromiso: e.target.value })
                           }
                         />
-                        <button type="submit" className="btn btn-primary">
+                        <button type="submit" className="boton boton-azul">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -1254,11 +1260,12 @@
                           </svg>
                           Guardar
                         </button>
+                        {/* Botón cancelar si estamos editando una actividad */}
                         {subformActividad.modo === "editar" && (
                           <button
                             type="button"
-                            className="btn"
-                            onClick={handleCancelarSubform}
+                            className="boton"
+                            onClick={handleCancelarSubformulario}
                           >
                             ✕ Cancelar
                           </button>
@@ -1266,26 +1273,27 @@
                       </div>
                     </form>
 
-                    {/* Sección: Compromisos (Actividades Pendientes) */}
-                    <div className="activities-section">
-                      <h3 className="section-heading">Compromisos</h3>
-                      <div className="activities-box">
+                    {/* SECCIÓN 1: COMPROMISOS (Actividades Pendientes) */}
+                    <div className="seccion-actividades">
+                      <h3 className="seccion-titulo">Compromisos</h3>
+                      <div className="caja-actividades">
                         {compromisos.length === 0 ? (
-                          <div className="empty-list-note">No hay compromisos pendientes</div>
+                          <div className="aviso-vacio">No hay compromisos pendientes</div>
                         ) : (
                           compromisos.map((act) => {
                             const vencida = esFechaVencida(act.fechaCompromiso);
                             return (
-                              <div key={act.id} className="activity-row">
+                              <div key={act.id} className="actividad-fila">
+                                {/* Checkbox para completar */}
                                 <button
                                   type="button"
-                                  className="checkbox-btn"
+                                  className="casilla-checkbox"
                                   title="Marcar como completada"
                                   onClick={() => handleCompletarActividad(act)}
                                 />
-                                <div className="activity-main">
-                                  <div className="activity-title">{act.descripcion}</div>
-                                  <div className={`activity-meta ${vencida ? "overdue" : ""}`}>
+                                <div className="actividad-cuerpo">
+                                  <div className="actividad-descripcion">{act.descripcion}</div>
+                                  <div className={`actividad-fecha-texto ${vencida ? "vencida" : ""}`}>
                                     {!act.fechaCompromiso ? (
                                       "Sin fecha"
                                     ) : vencida ? (
@@ -1295,21 +1303,23 @@
                                     )}
                                   </div>
                                 </div>
-                                <div className="activity-row-actions">
+                                <div className="acciones-actividad-fila">
+                                  {/* Botón editar actividad pendiente */}
                                   <button
                                     type="button"
-                                    className="icon-action-btn"
+                                    className="boton-icono"
                                     title="Editar actividad"
-                                    onClick={() => handleIniciarEditarActividad(act)}
+                                    onClick={() => handleIniciarEdicionActividad(act)}
                                   >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M12 20h9"></path>
                                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                                     </svg>
                                   </button>
+                                  {/* Botón borrar actividad pendiente */}
                                   <button
                                     type="button"
-                                    className="icon-action-btn delete"
+                                    className="boton-icono eliminar"
                                     title="Eliminar actividad"
                                     onClick={() => handleEliminarActividad(act)}
                                   >
@@ -1326,27 +1336,28 @@
                       </div>
                     </div>
 
-                    {/* Sección: Actividades Completadas */}
-                    <div className="activities-section">
-                      <h3 className="section-heading">Actividades completadas</h3>
-                      <div className="activities-box">
+                    {/* SECCIÓN 2: ACTIVIDADES COMPLETADAS */}
+                    <div className="seccion-actividades">
+                      <h3 className="seccion-titulo">Actividades completadas</h3>
+                      <div className="caja-actividades">
                         {completadas.length === 0 ? (
-                          <div className="empty-list-note">No hay actividades completadas</div>
+                          <div className="aviso-vacio">No hay actividades completadas</div>
                         ) : (
                           completadas.map((act) => (
-                            <div key={act.id} className="activity-row">
-                              <div className="checkbox-btn checked">
+                            <div key={act.id} className="actividad-fila">
+                              {/* Checkbox verde con tilde */}
+                              <div className="casilla-checkbox completada">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                               </div>
-                              <div className="activity-main">
-                                <div className="activity-title completed">{act.descripcion}</div>
-                                <div className="activity-meta">
+                              <div className="actividad-cuerpo">
+                                <div className="actividad-descripcion tachada">{act.descripcion}</div>
+                                <div className="actividad-fecha-texto">
                                   Completada el {formatearFechaLegible(act.fechaFinalizacion)}
                                 </div>
                               </div>
-                              {/* Las actividades completadas no muestran botones de edición ni borrado individual */}
+                              {/* Nota: Las actividades completadas no muestran botones de edición ni borrado */}
                             </div>
                           ))
                         )}
@@ -1354,7 +1365,7 @@
                     </div>
                   </>
                 ) : (
-                  <div className="empty-state">
+                  <div className="estado-vacio">
                     <p>Seleccione un cliente de la lista para ver su ficha y actividades</p>
                   </div>
                 )}
@@ -1365,7 +1376,10 @@
       );
     }
 
-    // Subcomponente: Formulario de Alta / Edición de Cliente
+    // =========================================================================
+    // 5. SUBCOMPONENTE: FormularioCliente (Alta / Edición de Cliente)
+    // Se renderiza en el panel de detalle según lo solicitado en el enunciado
+    // =========================================================================
     function FormularioCliente({ modo, inicial, onGuardar, onCancelar }) {
       const [nombre, setNombre] = useState(inicial ? inicial.nombre : "");
       const [apellido, setApellido] = useState(inicial ? inicial.apellido : "");
@@ -1374,10 +1388,11 @@
       const [domicilio, setDomicilio] = useState(inicial ? inicial.domicilio || "" : "");
       const [localidad, setLocalidad] = useState(inicial ? inicial.localidad || "" : "");
 
+      // Manejador del envío del formulario con validaciones básicas
       const handleSubmit = (e) => {
         e.preventDefault();
         if (!nombre.trim() || !apellido.trim() || !email.trim()) {
-          alert("Nombre, Apellido y Email son campos obligatorios.");
+          alert("Los campos Nombre, Apellido y Email son obligatorios.");
           return;
         }
         onGuardar({
@@ -1391,73 +1406,75 @@
       };
 
       return (
-        <form className="client-form" onSubmit={handleSubmit}>
-          <h2>{modo === "nuevo" ? "Nuevo Cliente" : "Editar Cliente"}</h2>
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Nombre *</label>
+        <form className="formulario-cliente" onSubmit={handleSubmit}>
+          <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "8px" }}>
+            {modo === "nuevo" ? "Nuevo Cliente" : "Editar Cliente"}
+          </h2>
+          <div className="formulario-grilla">
+            <div className="campo-formulario">
+              <label className="formulario-etiqueta">Nombre *</label>
               <input
                 type="text"
-                className="form-input"
+                className="formulario-input"
                 required
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Apellido *</label>
+            <div className="campo-formulario">
+              <label className="formulario-etiqueta">Apellido *</label>
               <input
                 type="text"
-                className="form-input"
+                className="formulario-input"
                 required
                 value={apellido}
                 onChange={(e) => setApellido(e.target.value)}
               />
             </div>
-            <div className="form-group full-width">
-              <label className="form-label">Email *</label>
+            <div className="campo-formulario ancho-completo">
+              <label className="formulario-etiqueta">Email *</label>
               <input
                 type="email"
-                className="form-input"
+                className="formulario-input"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Teléfono</label>
+            <div className="campo-formulario">
+              <label className="formulario-etiqueta">Teléfono</label>
               <input
                 type="text"
-                className="form-input"
+                className="formulario-input"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Localidad</label>
+            <div className="campo-formulario">
+              <label className="formulario-etiqueta">Localidad</label>
               <input
                 type="text"
-                className="form-input"
+                className="formulario-input"
                 value={localidad}
                 onChange={(e) => setLocalidad(e.target.value)}
               />
             </div>
-            <div className="form-group full-width">
-              <label className="form-label">Domicilio</label>
+            <div className="campo-formulario ancho-completo">
+              <label className="formulario-etiqueta">Domicilio</label>
               <input
                 type="text"
-                className="form-input"
+                className="formulario-input"
                 value={domicilio}
                 onChange={(e) => setDomicilio(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
+          <div className="formulario-acciones">
+            <button type="submit" className="boton boton-azul">
               💾 Guardar
             </button>
-            <button type="button" className="btn" onClick={onCancelar}>
+            <button type="button" className="boton" onClick={onCancelar}>
               ✕ Cancelar
             </button>
           </div>
@@ -1465,6 +1482,7 @@
       );
     }
 
+    // Montamos la aplicación React en el elemento con id "root"
     ReactDOM.createRoot(document.getElementById("root")).render(<MiniCRM />);
   </script>
 </body>

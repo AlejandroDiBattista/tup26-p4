@@ -1,13 +1,18 @@
+// Importamos la función de inicialización de la base de datos
 import { initDb } from "./index.js";
+
+// Importamos la clase Clientes para reutilizar sus métodos y reglas de negocio
 import { Clientes } from "../services/clientes.js";
 
-async function seed() {
-  console.log("Inicializando base de datos...");
+// Función principal para poblar la base de datos con los datos de ejemplo de minicrm.jpg
+async function sembrarDatos() {
+  console.log("Iniciando carga de datos de ejemplo...");
+
+  // Nos aseguramos de que las tablas existan en la base de datos SQLite
   await initDb();
 
-  console.log("Cargando clientes y actividades de ejemplo...");
-
-  const clientesEjemplo = [
+  // Lista de clientes y actividades idénticos a los mostrados en la imagen de referencia minicrm.jpg
+  const listaClientes = [
     {
       nombre: "Ana",
       apellido: "García",
@@ -18,12 +23,12 @@ async function seed() {
       actividades: [
         {
           descripcion: "Consultar nuevas necesidades",
-          fechaCompromiso: null,
+          fechaCompromiso: null, // Sin fecha
           completada: false,
         },
         {
           descripcion: "Enviar presupuesto",
-          fechaCompromiso: "2026-10-16",
+          fechaCompromiso: "2026-10-16", // Vencida respecto a la fecha actual
           completada: false,
         },
         {
@@ -34,14 +39,12 @@ async function seed() {
         {
           descripcion: "Enviar presentación",
           fechaCompromiso: "2026-10-15",
-          completada: true,
-          fechaFinalizacion: "2026-10-15",
+          completada: true, // Completada el 15 oct 2026
         },
         {
           descripcion: "Primera reunión",
           fechaCompromiso: "2026-10-12",
-          completada: true,
-          fechaFinalizacion: "2026-10-12",
+          completada: true, // Completada el 12 oct 2026
         },
       ],
     },
@@ -54,8 +57,8 @@ async function seed() {
       localidad: "Yerba Buena",
       actividades: [
         {
-          descripcion: "Revisar requerimientos técnicos",
-          fechaCompromiso: "2026-10-25",
+          descripcion: "Revisar especificaciones técnicas",
+          fechaCompromiso: "2026-10-28",
           completada: false,
         },
       ],
@@ -67,14 +70,7 @@ async function seed() {
       telefono: "381 555 0789",
       domicilio: "25 de Mayo 320",
       localidad: "San Miguel de Tucumán",
-      actividades: [
-        {
-          descripcion: "Llamada inicial de contacto",
-          fechaCompromiso: "2026-10-18",
-          completada: true,
-          fechaFinalizacion: "2026-10-18",
-        },
-      ],
+      actividades: [],
     },
     {
       nombre: "Diego",
@@ -114,8 +110,10 @@ async function seed() {
     },
   ];
 
-  for (const item of clientesEjemplo) {
+  // Recorremos cada cliente e insertamos si no existe previamente
+  for (const item of listaClientes) {
     try {
+      // Creamos el cliente utilizando el servicio
       const cliente = await Clientes.crear({
         nombre: item.nombre,
         apellido: item.apellido,
@@ -125,27 +123,32 @@ async function seed() {
         localidad: item.localidad,
       });
 
+      // Insertamos cada una de las actividades del cliente
       for (const act of item.actividades) {
-        const creada = await Clientes.crearActividad(cliente.id, {
+        const actividadCreada = await Clientes.crearActividad(cliente.id, {
           descripcion: act.descripcion,
           fechaCompromiso: act.fechaCompromiso,
         });
 
+        // Si la actividad fue configurada como completada, la marcamos como tal
         if (act.completada) {
-          await Clientes.completarActividad(creada.id);
+          await Clientes.completarActividad(actividadCreada.id);
         }
       }
-      console.log(`Cliente creado: ${cliente.nombre} ${cliente.apellido}`);
-    } catch (e: any) {
-      console.log(`Saltando ${item.nombre} ${item.apellido}: ${e.message}`);
+
+      console.log(` Cliente creado: ${cliente.nombre} ${cliente.apellido}`);
+    } catch (error: any) {
+      // Si el email ya existía, simplemente lo salteamos sin detener el script
+      console.log(` Omitiendo ${item.nombre} ${item.apellido}: ${error.message}`);
     }
   }
 
-  console.log("Seed completado exitosamente.");
+  console.log("Carga de datos finalizada.");
   process.exit(0);
 }
 
-seed().catch((err) => {
-  console.error("Error en seed:", err);
+// Ejecutamos la función de sembrado
+sembrarDatos().catch((error) => {
+  console.error("Error al sembrar datos:", error);
   process.exit(1);
 });
