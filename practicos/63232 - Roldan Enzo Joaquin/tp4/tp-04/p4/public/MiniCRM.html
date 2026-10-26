@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f9">
+  <title>MiniCRM | Clientes</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172332;
+      background: #f4f6f9;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --muted: #758296;
+      --line: #e7ebf1;
+      --blue: #315eea;
+      --blue-soft: #eef2ff;
+      --green: #15845d;
+      --shadow: 0 14px 38px rgba(22, 38, 67, .07);
+    }
+
+    * { box-sizing: border-box; }
+    html, body, #app { width: 100%; height: 100%; min-height: 0; margin: 0; overflow: hidden; }
+    body { padding: 22px; }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    .shell { height: 100%; max-width: 1480px; margin: auto; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 18px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: white; background: linear-gradient(145deg, #5476ff, #3152d7); font-weight: 800; box-shadow: 0 7px 17px #315eea35; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 19px; letter-spacing: -.035em; }
+    .subtitle { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .workspace { min-height: 0; display: grid; grid-template-columns: minmax(260px, 330px) minmax(0, 1fr); gap: 18px; }
+    .panel { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: white; box-shadow: var(--shadow); }
+    .master { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+    .master-heading { padding: 21px 19px 15px; display: flex; justify-content: space-between; align-items: center; }
+    .master-heading h2, .section-heading h2 { font-size: 14px; letter-spacing: -.01em; }
+    .count { color: var(--muted); font-size: 12px; }
+    .search-wrap { padding: 0 15px 14px; }
+    .search { width: 100%; height: 40px; padding: 0 12px 0 36px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: #fafbfc; color: #172332; }
+    .search:focus, .field input:focus, .field textarea:focus { border-color: #9aaeff; box-shadow: 0 0 0 3px #315eea14; }
+    .search-box { position: relative; }
+    .search-icon { position: absolute; left: 12px; top: 11px; color: #96a1b1; font-size: 14px; pointer-events: none; }
+    .client-list { min-height: 0; overflow-y: auto; padding: 0 9px 10px; scrollbar-width: thin; scrollbar-color: #d9dfeb transparent; }
+    .client-row { display: flex; width: 100%; align-items: center; gap: 11px; padding: 11px 10px; border: 0; border-radius: 11px; text-align: left; color: inherit; background: transparent; }
+    .client-row:hover { background: #f7f8fb; }
+    .client-row.active { background: var(--blue-soft); }
+    .avatar { width: 39px; height: 39px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; color: #4964bd; background: #e9edfb; font-size: 12px; font-weight: 750; }
+    .client-row.active .avatar { background: #dfe6ff; color: #3152d7; }
+    .client-meta { min-width: 0; flex: 1; }
+    .client-name { overflow: hidden; font-size: 13px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; }
+    .client-company { overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .client-arrow { color: #a8b1c0; font-size: 17px; }
+    .master-footer { padding: 11px 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .detail { position: relative; display: grid; grid-template-rows: minmax(0, 1fr); }
+    .detail-content { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    .profile { padding: 22px 25px 18px; border-bottom: 1px solid var(--line); }
+    .profile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .profile-identity { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .profile-avatar { width: 50px; height: 50px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 15px; color: #3152d7; background: var(--blue-soft); font-size: 15px; font-weight: 750; }
+    .profile-name { font-size: 20px; letter-spacing: -.04em; }
+    .profile-caption { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .profile-actions { display: flex; gap: 8px; }
+    .button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: white; color: #405067; font-size: 12px; font-weight: 650; white-space: nowrap; }
+    .button:hover { border-color: #c9d1df; background: #fafbfc; }
+    .button.primary { border-color: var(--blue); color: white; background: var(--blue); }
+    .button.primary:hover { background: #244ed6; }
+    .button.danger { color: #b53d4d; }
+    .button.small { min-height: 29px; padding: 0 9px; font-size: 11px; }
+    .button.ghost { border-color: transparent; background: transparent; }
+    .profile-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px 18px; margin-top: 18px; }
+    .profile-item { min-width: 0; }
+    .profile-label { color: #96a0ae; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .profile-value { overflow: hidden; margin-top: 5px; color: #344256; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-value a { color: var(--blue); text-decoration: none; }
+    .notes { grid-column: span 2; }
+    .activity-area { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 18px 20px 17px; }
+    .activity-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 13px; }
+    .activity-title h2 { font-size: 14px; }
+    .activity-columns { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+    .activity-column { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .section-heading { display: flex; justify-content: space-between; align-items: center; padding: 12px 13px; border-bottom: 1px solid var(--line); background: #fbfcfd; }
+    .section-heading span { color: var(--muted); font-size: 11px; }
+    .activity-list { min-height: 0; overflow-y: auto; padding: 8px; scrollbar-width: thin; scrollbar-color: #d9dfeb transparent; }
+    .activity-card { padding: 11px 10px; border-bottom: 1px solid #f0f2f6; }
+    .activity-card:last-child { border-bottom: 0; }
+    .activity-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .activity-name { min-width: 0; font-size: 12px; font-weight: 700; line-height: 1.45; }
+    .activity-date { flex: 0 0 auto; color: var(--muted); font-size: 10px; }
+    .activity-description { margin-top: 6px; color: #738095; font-size: 11px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .activity-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+    .completed .activity-name { color: #59687b; }
+    .completed .activity-name::before { content: "✓"; margin-right: 6px; color: var(--green); }
+    .empty { display: grid; height: 100%; min-height: 96px; place-items: center; padding: 18px; color: #929dae; text-align: center; font-size: 12px; line-height: 1.6; }
+    .placeholder { display: grid; height: 100%; align-content: center; justify-items: center; gap: 10px; padding: 30px; text-align: center; }
+    .placeholder-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 17px; color: var(--blue); background: var(--blue-soft); font-size: 22px; }
+    .placeholder h2 { font-size: 17px; }
+    .placeholder p { max-width: 340px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .alert { position: absolute; z-index: 5; top: 14px; left: 50%; width: min(500px, calc(100% - 28px)); padding: 11px 14px; transform: translateX(-50%); border: 1px solid #f2c5cb; border-radius: 10px; background: #fff5f6; color: #a23848; box-shadow: var(--shadow); font-size: 12px; }
+    .modal-backdrop { position: absolute; z-index: 4; inset: 0; display: grid; place-items: center; padding: 18px; background: #17233255; }
+    .form-card { width: min(600px, 100%); max-height: 100%; overflow-y: auto; padding: 21px; border: 1px solid var(--line); border-radius: 15px; background: white; box-shadow: 0 22px 60px #17233230; }
+    .form-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 17px; }
+    .form-heading h2 { font-size: 16px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .field { min-width: 0; display: grid; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #647287; font-size: 11px; font-weight: 650; }
+    .field input, .field textarea { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: white; color: #172332; font-size: 12px; }
+    .field input { height: 37px; }
+    .field textarea { min-height: 72px; resize: vertical; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 17px; }
+    .busy { color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 900px) {
+      body { padding: 12px; }
+      .workspace { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 10px; }
+      .profile { padding: 17px; }
+      .profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+      .activity-area { padding: 14px; }
+    }
+    @media (max-width: 650px) {
+      body { padding: 8px; }
+      .shell { gap: 9px; }
+      .topbar { min-height: 44px; }
+      .brand-mark { width: 36px; height: 36px; }
+      .subtitle { display: none; }
+      .workspace { grid-template-columns: 1fr; grid-template-rows: minmax(145px, 31%) minmax(0, 1fr); gap: 9px; }
+      .master { grid-template-rows: auto auto minmax(0, 1fr); }
+      .master-heading { padding: 11px 13px 8px; }
+      .search-wrap { padding: 0 10px 7px; }
+      .search { height: 34px; }
+      .search-icon { top: 8px; }
+      .client-list { display: block; overflow-x: hidden; overflow-y: auto; padding: 0 7px 7px; }
+      .client-row { width: 100%; padding: 7px; }
+      .client-row .avatar { width: 33px; height: 33px; }
+      .master-footer { display: none; }
+      .detail-content { grid-template-rows: auto minmax(0, 1fr); }
+      .profile { padding: 12px; }
+      .profile-avatar { width: 40px; height: 40px; }
+      .profile-name { font-size: 16px; }
+      .profile-caption { font-size: 10px; }
+      .profile-grid { margin-top: 11px; gap: 8px; }
+      .profile-label { font-size: 9px; }
+      .profile-value { font-size: 11px; }
+      .profile-actions .button { min-height: 30px; padding: 0 8px; font-size: 10px; }
+      .activity-area { padding: 10px; }
+      .activity-title { padding-bottom: 8px; }
+      .activity-columns { gap: 7px; }
+      .section-heading { padding: 9px; }
+      .section-heading h2 { font-size: 11px; }
+      .activity-list { padding: 4px; }
+      .activity-card { padding: 8px 6px; }
+      .activity-date { font-size: 9px; }
+      .button.small { min-height: 25px; padding: 0 6px; font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.9/babel.min.js"></script>
+  <script type="text/babel">
+    const { useCallback, useEffect, useMemo, useState } = React;
+    const CAMPOS = [
+      ["nombre", "Nombre", true],
+      ["apellido", "Apellido", true],
+      ["email", "Email", false],
+      ["telefono", "Teléfono", false],
+      ["empresa", "Empresa", false],
+      ["cargo", "Cargo", false],
+      ["notas", "Notas", false]
+    ];
+    const CLIENTE_VACIO = { nombre: "", apellido: "", email: "", telefono: "", empresa: "", cargo: "", notas: "" };
+    const ACTIVIDAD_VACIA = { titulo: "", descripcion: "", fecha: fechaLocal() };
+
+    function fechaLocal() {
+      const hoy = new Date();
+      return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+    }
+
+    async function api(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        ...opciones,
+        headers: { ...(opciones.body ? { "Content-Type": "application/json" } : {}), ...opciones.headers }
+      });
+      if (respuesta.status === 204) return null;
+      const datos = await respuesta.json();
+      if (!respuesta.ok) throw new Error(datos.error || `Error HTTP ${respuesta.status}`);
+      return datos;
+    }
+
+    function iniciales(cliente) {
+      return `${cliente.nombre?.[0] || ""}${cliente.apellido?.[0] || ""}`.toUpperCase();
+    }
+
+    function fechaVisible(fecha) {
+      if (!fecha) return "Sin fecha";
+      return new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${fecha}T00:00:00Z`));
+    }
+
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [clienteId, setClienteId] = useState(null);
+      const [cliente, setCliente] = useState(null);
+      const [busqueda, setBusqueda] = useState("");
+      const [error, setError] = useState("");
+      const [cargando, setCargando] = useState(true);
+      const [editandoCliente, setEditandoCliente] = useState(false);
+      const [clienteForm, setClienteForm] = useState(CLIENTE_VACIO);
+      const [editandoActividad, setEditandoActividad] = useState(null);
+      const [actividadForm, setActividadForm] = useState(ACTIVIDAD_VACIA);
+      const [guardando, setGuardando] = useState(false);
+
+      const cargarClientes = useCallback(async (texto = busqueda) => {
+        const lista = await api(`/api/clientes?q=${encodeURIComponent(texto)}`);
+        setClientes(lista);
+        return lista;
+      }, [busqueda]);
+
+      useEffect(() => {
+        let vigente = true;
+        const temporizador = setTimeout(() => {
+          setCargando(true);
+          api(`/api/clientes?q=${encodeURIComponent(busqueda)}`)
+            .then(lista => {
+              if (vigente) {
+                setClientes(lista);
+                setError("");
+                if (clienteId && !lista.some(item => item.id === clienteId)) setClienteId(null);
+              }
+            })
+            .catch(err => { if (vigente) setError(err.message); })
+            .finally(() => { if (vigente) setCargando(false); });
+        }, 140);
+        return () => { vigente = false; clearTimeout(temporizador); };
+      }, [busqueda, clienteId]);
+
+      useEffect(() => {
+        if (!clienteId) {
+          setCliente(null);
+          return undefined;
+        }
+        let vigente = true;
+        api(`/api/clientes/${clienteId}`)
+          .then(datos => { if (vigente) setCliente(datos); })
+          .catch(err => { if (vigente) setError(err.message); });
+        return () => { vigente = false; };
+      }, [clienteId]);
+
+      const pendientes = useMemo(() => cliente?.actividades.filter(item => !item.completada) || [], [cliente]);
+      const completadas = useMemo(() => cliente?.actividades.filter(item => item.completada) || [], [cliente]);
+
+      function nuevoCliente() {
+        setClienteId(null);
+        setCliente(null);
+        setBusqueda("");
+        setClienteForm(CLIENTE_VACIO);
+        setEditandoCliente(true);
+        setError("");
+      }
+
+      function editarCliente() {
+        setClienteForm(Object.fromEntries(CAMPOS.map(([campo]) => [campo, cliente[campo] || ""])));
+        setEditandoCliente(true);
+      }
+
+      async function guardarCliente(evento) {
+        evento.preventDefault();
+        setGuardando(true);
+        setError("");
+        try {
+          const creando = clienteId === null;
+          const actualizado = clienteId
+            ? await api(`/api/clientes/${clienteId}`, { method: "PUT", body: JSON.stringify(clienteForm) })
+            : await api("/api/clientes", { method: "POST", body: JSON.stringify(clienteForm) });
+          await cargarClientes(creando ? "" : busqueda);
+          if (creando) setBusqueda("");
+          setClienteId(actualizado.id);
+          setCliente(actualizado);
+          setEditandoCliente(false);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setGuardando(false);
+        }
+      }
+
+      async function borrarCliente() {
+        if (!window.confirm(`¿Eliminar a ${cliente.nombre} ${cliente.apellido} y sus actividades?`)) return;
+        try {
+          await api(`/api/clientes/${cliente.id}`, { method: "DELETE" });
+          setClienteId(null);
+          setCliente(null);
+          await cargarClientes();
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      function nuevaActividad() {
+        setActividadForm({ ...ACTIVIDAD_VACIA, fecha: fechaLocal() });
+        setEditandoActividad({ id: null });
+      }
+
+      function editarActividad(actividad) {
+        setActividadForm({ titulo: actividad.titulo, descripcion: actividad.descripcion, fecha: actividad.fecha });
+        setEditandoActividad(actividad);
+      }
+
+      async function guardarActividad(evento) {
+        evento.preventDefault();
+        setGuardando(true);
+        try {
+          const esEdicion = Boolean(editandoActividad?.id);
+          const url = esEdicion
+            ? `/api/clientes/${cliente.id}/actividades/${editandoActividad.id}`
+            : `/api/clientes/${cliente.id}/actividades`;
+          await api(url, { method: esEdicion ? "PUT" : "POST", body: JSON.stringify(actividadForm) });
+          setCliente(await api(`/api/clientes/${cliente.id}`));
+          await cargarClientes();
+          setEditandoActividad(null);
+          setError("");
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setGuardando(false);
+        }
+      }
+
+      async function completarActividad(actividad) {
+        try {
+          await api(`/api/clientes/${cliente.id}/actividades/${actividad.id}/completar`, { method: "PATCH" });
+          setCliente(await api(`/api/clientes/${cliente.id}`));
+          await cargarClientes();
+          setError("");
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      async function borrarActividad(actividad) {
+        if (!window.confirm(`¿Eliminar la actividad "${actividad.titulo}"?`)) return;
+        try {
+          await api(`/api/clientes/${cliente.id}/actividades/${actividad.id}`, { method: "DELETE" });
+          setCliente(await api(`/api/clientes/${cliente.id}`));
+          await cargarClientes();
+          setError("");
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      function campoCliente([campo, etiqueta, requerido]) {
+        const esNotas = campo === "notas";
+        return <div className={`field ${esNotas ? "full" : ""}`} key={campo}>
+          <label htmlFor={`cliente-${campo}`}>{etiqueta}{requerido ? " *" : ""}</label>
+          {esNotas
+            ? <textarea id={`cliente-${campo}`} value={clienteForm[campo]} maxLength="2000" onChange={e => setClienteForm({ ...clienteForm, [campo]: e.target.value })} />
+            : <input id={`cliente-${campo}`} type={campo === "email" ? "email" : "text"} required={requerido} maxLength={campo === "nombre" || campo === "apellido" ? 100 : campo === "email" ? 254 : campo === "telefono" ? 50 : 120} value={clienteForm[campo]} onChange={e => setClienteForm({ ...clienteForm, [campo]: e.target.value })} />}
+        </div>;
+      }
+
+      function listaActividades(items, completada) {
+        if (!items.length) return <div className="empty">{completada ? "Todavía no hay actividades completadas." : "No hay actividades pendientes."}</div>;
+        return items.map(actividad => <article className={`activity-card ${completada ? "completed" : ""}`} key={actividad.id}>
+          <div className="activity-card-head">
+            <div className="activity-name">{actividad.titulo}</div>
+            <time className="activity-date">{fechaVisible(actividad.fecha)}</time>
+          </div>
+          {actividad.descripcion && <p className="activity-description">{actividad.descripcion}</p>}
+          {!completada && <div className="activity-actions">
+            <button className="button small" onClick={() => completarActividad(actividad)}>Completar</button>
+            <button className="button small ghost" onClick={() => editarActividad(actividad)}>Editar</button>
+            <button className="button small ghost danger" onClick={() => borrarActividad(actividad)}>Eliminar</button>
+          </div>}
+        </article>);
+      }
+
+      return <main className="shell">
+        <header className="topbar">
+          <div className="brand">
+            <div className="brand-mark">M</div>
+            <div><h1>MiniCRM</h1><p className="subtitle">Relaciones y seguimiento, en un solo lugar</p></div>
+          </div>
+          <div className="top-actions">
+            {cargando && <span className="busy">Actualizando…</span>}
+            <button className="button primary" onClick={nuevoCliente}>＋ Nuevo cliente</button>
+          </div>
+        </header>
+
+        <div className="workspace">
+          <aside className="panel master">
+            <div className="master-heading"><h2>Clientes</h2><span className="count">{clientes.length}</span></div>
+            <div className="search-wrap"><div className="search-box">
+              <span className="search-icon">⌕</span>
+              <input className="search" type="search" placeholder="Buscar en todos los campos…" value={busqueda} onChange={e => setBusqueda(e.target.value)} aria-label="Buscar clientes" />
+            </div></div>
+            <div className="client-list">
+              {clientes.length ? clientes.map(item => <button key={item.id} className={`client-row ${clienteId === item.id ? "active" : ""}`} onClick={() => { setClienteId(item.id); setEditandoCliente(false); }}>
+                <span className="avatar">{iniciales(item)}</span>
+                <span className="client-meta"><span className="client-name">{item.nombre} {item.apellido}</span><span className="client-company">{item.empresa || item.email || "Sin empresa"}</span></span>
+                <span className="client-arrow">›</span>
+              </button>) : <div className="empty">{cargando ? "Buscando clientes…" : "No hay clientes que coincidan con la búsqueda."}</div>}
+            </div>
+            <div className="master-footer">La búsqueda incluye datos de clientes y actividades</div>
+          </aside>
+
+          <section className="panel detail" aria-label="Detalle del cliente">
+            {error && <div className="alert" role="alert">{error}</div>}
+            {cliente ? <div className="detail-content">
+              <section className="profile">
+                <div className="profile-head">
+                  <div className="profile-identity">
+                    <div className="profile-avatar">{iniciales(cliente)}</div>
+                    <div><h2 className="profile-name">{cliente.nombre} {cliente.apellido}</h2><p className="profile-caption">{cliente.cargo || "Cliente"}{cliente.empresa ? ` · ${cliente.empresa}` : ""}</p></div>
+                  </div>
+                  <div className="profile-actions">
+                    <button className="button" onClick={editarCliente}>Editar</button>
+                    <button className="button danger" onClick={borrarCliente}>Eliminar</button>
+                  </div>
+                </div>
+                <div className="profile-grid">
+                  <div className="profile-item"><div className="profile-label">Email</div><div className="profile-value">{cliente.email ? <a href={`mailto:${cliente.email}`}>{cliente.email}</a> : "—"}</div></div>
+                  <div className="profile-item"><div className="profile-label">Teléfono</div><div className="profile-value">{cliente.telefono || "—"}</div></div>
+                  <div className="profile-item"><div className="profile-label">Empresa</div><div className="profile-value">{cliente.empresa || "—"}</div></div>
+                  <div className="profile-item"><div className="profile-label">Cargo</div><div className="profile-value">{cliente.cargo || "—"}</div></div>
+                  {cliente.notas && <div className="profile-item notes"><div className="profile-label">Notas</div><div className="profile-value">{cliente.notas}</div></div>}
+                </div>
+              </section>
+              <section className="activity-area">
+                <div className="activity-title"><h2>Actividades</h2><button className="button primary small" onClick={nuevaActividad}>＋ Nueva actividad</button></div>
+                <div className="activity-columns">
+                  <section className="activity-column">
+                    <div className="section-heading"><h2>Pendientes</h2><span>{pendientes.length}</span></div>
+                    <div className="activity-list">{listaActividades(pendientes, false)}</div>
+                  </section>
+                  <section className="activity-column">
+                    <div className="section-heading"><h2>Completadas</h2><span>{completadas.length}</span></div>
+                    <div className="activity-list">{listaActividades(completadas, true)}</div>
+                  </section>
+                </div>
+              </section>
+            </div> : editandoCliente ? <div className="modal-backdrop">
+              <form className="form-card" onSubmit={guardarCliente}>
+                <div className="form-heading"><h2>Nuevo cliente</h2><button type="button" className="button small ghost" onClick={() => setEditandoCliente(false)}>Cerrar</button></div>
+                <div className="form-grid">{CAMPOS.map(campoCliente)}</div>
+                <div className="form-actions"><button type="button" className="button" onClick={() => setEditandoCliente(false)}>Cancelar</button><button className="button primary" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cliente"}</button></div>
+              </form>
+            </div> : <div className="placeholder">
+              <div className="placeholder-icon">◎</div>
+              <h2>Elegí un cliente</h2>
+              <p>Seleccioná un registro de la lista para ver su ficha y administrar sus actividades.</p>
+              {!clientes.length && <button className="button primary" onClick={nuevoCliente}>＋ Crear primer cliente</button>}
+            </div>}
+
+            {cliente && editandoCliente && <div className="modal-backdrop">
+              <form className="form-card" onSubmit={guardarCliente}>
+                <div className="form-heading"><h2>Editar cliente</h2><button type="button" className="button small ghost" onClick={() => setEditandoCliente(false)}>Cerrar</button></div>
+                <div className="form-grid">{CAMPOS.map(campoCliente)}</div>
+                <div className="form-actions"><button type="button" className="button" onClick={() => setEditandoCliente(false)}>Cancelar</button><button className="button primary" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button></div>
+              </form>
+            </div>}
+
+            {cliente && editandoActividad && <div className="modal-backdrop">
+              <form className="form-card" onSubmit={guardarActividad}>
+                <div className="form-heading"><h2>{editandoActividad.id ? "Editar actividad" : "Nueva actividad"}</h2><button type="button" className="button small ghost" onClick={() => setEditandoActividad(null)}>Cerrar</button></div>
+                <div className="form-grid">
+                  <div className="field full"><label htmlFor="actividad-titulo">Título *</label><input id="actividad-titulo" required maxLength="160" value={actividadForm.titulo} onChange={e => setActividadForm({ ...actividadForm, titulo: e.target.value })} /></div>
+                  <div className="field full"><label htmlFor="actividad-descripcion">Descripción</label><textarea id="actividad-descripcion" maxLength="2000" value={actividadForm.descripcion} onChange={e => setActividadForm({ ...actividadForm, descripcion: e.target.value })} /></div>
+                  <div className="field"><label htmlFor="actividad-fecha">Fecha *</label><input id="actividad-fecha" type="date" required value={actividadForm.fecha} onChange={e => setActividadForm({ ...actividadForm, fecha: e.target.value })} /></div>
+                </div>
+                <div className="form-actions"><button type="button" className="button" onClick={() => setEditandoActividad(null)}>Cancelar</button><button className="button primary" disabled={guardando}>{guardando ? "Guardando…" : "Guardar actividad"}</button></div>
+              </form>
+            </div>}
+          </section>
+        </div>
+      </main>;
+    }
+
+    ReactDOM.createRoot(document.getElementById("app")).render(<App />);
+  </script>
+</body>
+</html>
