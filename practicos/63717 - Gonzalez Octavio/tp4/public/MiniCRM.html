@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM</title>
+  <style>
+    :root {
+      --barra: #2b3f66;
+      --fondo: #f2f5fa;
+      --panel: #ffffff;
+      --borde: #dde3ed;
+      --texto: #161f3a;
+      --suave: #667089;
+      --primario: #1e6ae6;
+      --primario-osc: #1657c2;
+      --peligro: #d13838;
+      --exito: #2f9e63;
+      --exito-fondo: #eef7f1;
+      --seleccion: #e6f0ff;
+      --radio: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid;
+      grid-template-rows: 56px minmax(0, 1fr);
+      overflow: hidden;
+      background: var(--fondo);
+      color: var(--texto);
+      font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    button, input { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+    .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    .barra {
+      background: var(--barra);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+    }
+    .barra h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: .01em;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px;
+      min-height: 0;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Botones */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 38px;
+      padding: 0 14px;
+      cursor: pointer;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      background: #f7f8fb;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #eef1f6; }
+    .btn.primario { background: var(--primario); border-color: var(--primario); color: #fff; }
+    .btn.primario:hover { background: var(--primario-osc); }
+    .btn.peligro { color: var(--peligro); border-color: #f0b9b9; background: #fff5f5; }
+    .btn.peligro:hover { background: #ffe9e9; }
+    .btn.icono { width: 36px; height: 34px; padding: 0; justify-content: center; background: #fff; }
+    .btn.icono.peligro { background: #fff5f5; }
+    .icono-svg { flex: none; }
+
+    /* Maestro */
+    .maestro-cab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 8px;
+    }
+    .maestro-cab h2 { margin: 0; font-size: 24px; font-weight: 700; }
+    .buscador {
+      position: relative;
+      margin: 8px 16px 12px;
+      color: var(--suave);
+    }
+    .buscador svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .buscador input {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px 0 40px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--texto);
+    }
+    .lista {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      border-top: 1px solid var(--borde);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      text-align: left;
+      cursor: pointer;
+      background: none;
+      border: 0;
+      border-bottom: 1px solid var(--borde);
+    }
+    .item:hover { background: #f6f8fc; }
+    .item[aria-current="true"] { background: var(--seleccion); }
+    .item b { display: block; font-size: 15px; }
+    .item small { display: block; color: var(--suave); font-size: 13px; margin-top: 2px; }
+    .item .txt { min-width: 0; }
+    .item .txt * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .avatar {
+      flex: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .vacio { padding: 18px 16px; color: var(--suave); }
+
+    /* Detalle */
+    .detalle {
+      padding: 18px 22px 0;
+      overflow: hidden;
+    }
+    .cabecera {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4px 16px;
+      align-items: start;
+    }
+    .cabecera h2 { margin: 6px 0 0; font-size: 28px; line-height: 1.15; font-weight: 700; }
+    .cabecera .id { grid-column: 2; justify-self: end; color: var(--suave); font-weight: 500; font-size: 14px; }
+    .cabecera .acciones { grid-column: 2; display: flex; gap: 8px; margin-top: 4px; }
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 24px;
+      margin: 6px 0 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px dashed var(--borde);
+    }
+    .dato {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--texto);
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .dato svg { color: var(--suave); }
+    .dato.sin { color: var(--suave); }
+
+    /* Formularios */
+    .fila {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .campo { display: block; }
+    .campo .etiqueta { display: block; margin-bottom: 4px; font-size: 13px; color: var(--suave); }
+    .campo input {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .botones { display: flex; gap: 8px; margin: 4px 0 14px; }
+    .error { margin: 0 0 10px; color: var(--peligro); font-size: 14px; }
+
+    /* Subformulario de actividades */
+    .sub {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 2px dotted #c3cde0;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .sub.editando { border-color: var(--primario); }
+    .sub .campo input { height: 38px; }
+    .sub .botones { margin: 0; }
+
+    /* Listas de Actividades */
+    .actividades {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      margin: 0 -22px;
+      padding: 0 22px 16px;
+    }
+    .actividades h3 { margin: 10px 0 6px; font-size: 18px; font-weight: 600; }
+    .grupo {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .grupo.hechas { background: var(--exito-fondo); border-color: #d3e8da; }
+    .grupo-vacio { margin: 0; padding: 2px 0 8px; font-size: 13px; color: var(--suave); }
+    .act {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 12px;
+    }
+    .act + .act { border-top: 1px solid var(--borde); }
+    .act input[type=checkbox] {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      accent-color: var(--exito);
+      cursor: pointer;
+    }
+    .act input:disabled { cursor: default; }
+    .act .cuerpo { flex: 1; min-width: 0; }
+    .act .desc { overflow-wrap: anywhere; font-size: 14px; }
+    .act .fecha { font-size: 13px; color: var(--suave); margin-top: 2px; }
+    .act .fecha.vencida { color: var(--peligro); font-weight: 500; }
+    .act .acc { display: flex; gap: 6px; }
+
+    /* Aviso flotante */
+    .aviso {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      max-width: 90vw;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #3a1d1d;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      z-index: 999;
+    }
+    .aviso button {
+      background: none;
+      border: 0;
+      color: #fff;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    @media (max-width: 768px) {
+      body { overflow: auto; }
+      .app { grid-template-columns: minmax(0, 1fr); }
+      .sub { grid-template-columns: minmax(0, 1fr) auto; }
+      .sub .campo:first-child { grid-column: 1 / -1; }
+      .datos, .fila { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="raiz"></div>
+
+<!-- Bibliotecas React y Babel desde CDN con versiones fijas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+/** @jsxRuntime classic */
+/** @jsx React.createElement */
+const { useState, useEffect, useCallback, useRef } = React;
+
+/* ================= Servicios (API REST) ================= */
+const hoy = () => new Date().toLocaleDateString('en-CA'); // AAAA-MM-DD en hora local
+const conEstado = (a) => {
+  const completada = !!a.fechaFinalizacion;
+  return {
+    ...a,
+    completada,
+    vencida: !completada && !!a.fechaCompromiso && a.fechaCompromiso < hoy()
+  };
+};
+
+const mensajeDeError = (status, texto = '') =>
+  /UNIQUE/i.test(texto) ? 'Ya existe un cliente con ese email'
+  : status === 404 ? 'No encontrado'
+  : texto || `Error ${status} del servidor`;
+
+async function pedir(url, opciones = {}) {
+  let r;
+  try {
+    r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opciones });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor. ¿Está corriendo el servidor en http://localhost:3000?');
+  }
+  if (r.status === 204) return null;
+  const esJson = (r.headers.get('content-type') || '').includes('json');
+  const datos = esJson ? await r.json().catch(() => null) : null;
+  if (!r.ok) throw new Error(mensajeDeError(r.status, datos?.error));
+  if (datos === null) throw new Error(`Respuesta inesperada (${r.status}) de ${url}.`);
+  return datos;
+}
+
+const conCuerpo = (method, body) => ({ method, body: JSON.stringify(body) });
+
+const ClientesAPI = {
+  buscar: (q) => pedir(`/api/clientes?q=${encodeURIComponent(q)}`),
+  obtener: (id) => pedir(`/api/clientes/${id}`).then((c) => ({
+    ...c,
+    actividades: (c.actividades || []).map(conEstado)
+  })),
+  crear: (d) => pedir('/api/clientes', conCuerpo('POST', d)),
+  actualizar: (id, d) => pedir(`/api/clientes/${id}`, conCuerpo('PUT', d)),
+  eliminar: (id) => pedir(`/api/clientes/${id}`, { method: 'DELETE' }),
+};
+
+const ActividadesAPI = {
+  crear: (clienteId, d) => pedir(`/api/clientes/${clienteId}/actividades`, conCuerpo('POST', d)),
+  actualizar: (id, d) => pedir(`/api/actividades/${id}`, conCuerpo('PUT', d)),
+  eliminar: (id) => pedir(`/api/actividades/${id}`, { method: 'DELETE' }),
+  completar: (id) => pedir(`/api/actividades/${id}/completar`, { method: 'PATCH' }),
+};
+
+/* ================= Utilidades ================= */
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const formatearFecha = (iso) => {
+  if (!iso) return '';
+  const [a, m, d] = iso.split('-');
+  return `${Number(d)} ${MESES[m - 1]} ${a}`;
+};
+
+const PALETAS = [
+  ['#dbeafe', '#1d4ed8'],
+  ['#d9f5e5', '#15803d'],
+  ['#e9e0fb', '#6d28d9'],
+  ['#fde6cf', '#c2570c'],
+  ['#fcdbe5', '#be185d'],
+  ['#d5f3f0', '#0f766e']
+];
+
+const iniciales = (c) => ((c.nombre?.[0] || '') + (c.apellido?.[0] || '')).toUpperCase() || '?';
+
+// Sin fecha (0), luego vencidos (1), luego vigentes (2); dentro de los grupos con fecha, orden ascendente.
+const rango = (a) => (a.fechaCompromiso === null ? 0 : a.vencida ? 1 : 2);
+const ordenarCompromisos = (lista) => [...lista].sort((a, b) =>
+  rango(a) - rango(b) || (a.fechaCompromiso || '').localeCompare(b.fechaCompromiso || '') || a.id - b.id);
+const ordenarCompletadas = (lista) => [...lista].sort((a, b) =>
+  (b.fechaFinalizacion || '').localeCompare(a.fechaFinalizacion || '') || b.id - a.id);
+
+/* ================= Iconos SVG ================= */
+const RUTAS = {
+  mas: <path d="M12 5v14M5 12h14" />,
+  buscar: <><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></>,
+  editar: <path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" />,
+  borrar: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></>,
+  telefono: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2" />,
+  pin: <><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></>,
+  guardar: <path d="M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-7h8v7" />,
+  cancelar: <path d="M6 6l12 12M18 6L6 18" />,
+};
+
+function Icono({ nombre, tamano = 18 }) {
+  return (
+    <svg className="icono-svg" width={tamano} height={tamano} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{RUTAS[nombre]}</svg>
+  );
+}
+
+function Boton({ icono, variante = '', children, ...props }) {
+  return (
+    <button type="button" className={`btn ${variante}`} {...props}>
+      {icono && <Icono nombre={icono} />}{children}
+    </button>
+  );
+}
+
+function BotonIcono({ icono, nombre, variante = '', ...props }) {
+  return (
+    <button type="button" className={`btn icono ${variante}`} aria-label={nombre} title={nombre} {...props}>
+      <Icono nombre={icono} />
+    </button>
+  );
+}
+
+function Campo({ etiqueta, oculta = false, ...props }) {
+  return (
+    <label className="campo">
+      <span className={oculta ? 'solo-lector' : 'etiqueta'}>{etiqueta}</span>
+      <input {...props} />
+    </label>
+  );
+}
+
+function Avatar({ cliente }) {
+  const [fondo, color] = PALETAS[cliente.id % PALETAS.length];
+  return <span className="avatar" style={{ background: fondo, color }} aria-hidden="true">{iniciales(cliente)}</span>;
+}
+
+function Panel({ clase = '', children, ...props }) {
+  return <section className={`panel ${clase}`} {...props}>{children}</section>;
+}
+
+function Layout({ maestro, detalle }) {
+  return (
+    <>
+      <header className="barra"><h1>MiniCRM</h1></header>
+      <main className="app">{maestro}{detalle}</main>
+    </>
+  );
+}
+
+/* ================= Maestro ================= */
+function ItemCliente({ cliente, activo, onElegir }) {
+  return (
+    <li>
+      <button className="item" aria-current={activo} onClick={() => onElegir(cliente.id)}>
+        <Avatar cliente={cliente} />
+        <span className="txt">
+          <b>{cliente.nombre} {cliente.apellido}</b>
+          <small>{cliente.email}</small>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function Maestro({ clientes, seleccionId, q, onBuscar, onElegir, onAgregar }) {
+  return (
+    <Panel aria-label="Clientes">
+      <div className="maestro-cab">
+        <h2>Clientes</h2>
+        <Boton variante="primario" icono="mas" onClick={onAgregar}>Agregar</Boton>
+      </div>
+      <div className="buscador">
+        <Icono nombre="buscar" />
+        <input type="search" value={q} onChange={(e) => onBuscar(e.target.value)}
+          placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes" />
+      </div>
+      <ul className="lista">
+        {clientes.map((c) => (
+          <ItemCliente key={c.id} cliente={c} activo={c.id === seleccionId} onElegir={onElegir} />
+        ))}
+        {!clientes.length && <li className="vacio">No hay clientes que coincidan.</li>}
+      </ul>
+    </Panel>
+  );
+}
+
+/* ================= Detalle: Ficha y Formulario ================= */
+function Dato({ icono, children }) {
+  return children ? <div className="dato"><Icono nombre={icono} /><span>{children}</span></div> : null;
+}
+
+function Ficha({ cliente, onEditar, onEliminar }) {
+  const direccion = [cliente.domicilio, cliente.localidad].filter(Boolean).join(', ');
+  return (
+    <>
+      <div className="cabecera">
+        <h2>{cliente.nombre} {cliente.apellido}</h2>
+        <span className="id" aria-label={`Número de cliente ${cliente.id}`}>#{cliente.id}</span>
+        <div className="acciones">
+          <Boton icono="editar" onClick={onEditar}>Editar</Boton>
+          <Boton icono="borrar" variante="peligro" onClick={onEliminar}>Eliminar</Boton>
+        </div>
+      </div>
+      <div className="datos">
+        <div>
+          <Dato icono="mail">{cliente.email}</Dato>
+          <Dato icono="telefono">{cliente.telefono}</Dato>
+        </div>
+        <div>
+          <Dato icono="pin">{direccion}</Dato>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const VACIO = { nombre: '', apellido: '', email: '', telefono: '', domicilio: '', localidad: '' };
+
+function FormularioCliente({ inicial, onGuardar, onCancelar }) {
+  const [v, setV] = useState({
+    ...VACIO,
+    ...Object.fromEntries(Object.entries(inicial || {}).map(([k, x]) => [k, x ?? '']))
+  });
+  const [error, setError] = useState('');
+  const cambiar = (k) => (e) => setV({ ...v, [k]: e.target.value });
+  const enviar = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await onGuardar(Object.fromEntries(Object.keys(VACIO).map((k) => [k, v[k]])));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  return (
+    <form onSubmit={enviar} aria-label={inicial ? 'Editar cliente' : 'Nuevo cliente'}>
+      <div className="cabecera">
+        <h2>{inicial ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+        {inicial && <span className="id">#{inicial.id}</span>}
+      </div>
+      <div className="fila" style={{ marginTop: 14 }}>
+        <Campo etiqueta="Nombre" value={v.nombre} onChange={cambiar('nombre')} required autoFocus />
+        <Campo etiqueta="Apellido" value={v.apellido} onChange={cambiar('apellido')} required />
+      </div>
+      <div className="fila">
+        <Campo etiqueta="Email" type="email" value={v.email} onChange={cambiar('email')} required />
+        <Campo etiqueta="Teléfono" type="tel" value={v.telefono} onChange={cambiar('telefono')} />
+      </div>
+      <div className="fila">
+        <Campo etiqueta="Domicilio" value={v.domicilio} onChange={cambiar('domicilio')} />
+        <Campo etiqueta="Localidad" value={v.localidad} onChange={cambiar('localidad')} />
+      </div>
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="botones">
+        <button type="submit" className="btn primario"><Icono nombre="guardar" />Guardar</button>
+        <Boton icono="cancelar" onClick={onCancelar}>Cancelar</Boton>
+      </div>
+    </form>
+  );
+}
+
+/* ================= Detalle: Subformulario y Actividades ================= */
+function SubformularioActividad({ actividad, onGuardar, onCancelar }) {
+  const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? '');
+  const [fecha, setFecha] = useState(actividad?.fechaCompromiso ?? '');
+  const limpiar = () => { setDescripcion(''); setFecha(''); };
+  const enviar = async (e) => {
+    e.preventDefault();
+    if (await onGuardar({ descripcion, fechaCompromiso: fecha || null })) limpiar();
+  };
+  const cancelar = () => { limpiar(); onCancelar(); };
+  return (
+    <form className={`sub ${actividad ? 'editando' : ''}`} onSubmit={enviar}
+      aria-label={actividad ? 'Editar compromiso' : 'Agregar compromiso'}>
+      <Campo etiqueta="Descripción de la actividad" oculta placeholder="Descripción de la actividad"
+        value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required />
+      <Campo etiqueta="Fecha de compromiso (opcional)" oculta type="date"
+        value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      <div className="botones">
+        <button type="submit" className="btn icono primario" aria-label="Guardar actividad" title="Guardar actividad">
+          <Icono nombre="guardar" />
+        </button>
+        <BotonIcono icono="cancelar" nombre="Cancelar" onClick={cancelar} />
+      </div>
+    </form>
+  );
+}
+
+function FilaActividad({ a, onCompletar, onEditar, onBorrar }) {
+  const fecha = a.completada
+    ? `Completada el ${formatearFecha(a.fechaFinalizacion)}`
+    : a.fechaCompromiso === null
+    ? 'Sin fecha'
+    : `${formatearFecha(a.fechaCompromiso)}${a.vencida ? ' · Vencido' : ''}`;
+
+  return (
+    <li className="act">
+      <input type="checkbox" checked={a.completada} disabled={a.completada}
+        aria-label={a.completada ? `Completada: ${a.descripcion}` : `Completar: ${a.descripcion}`}
+        onChange={() => onCompletar(a)} />
+      <div className="cuerpo">
+        <div className="desc">{a.descripcion}</div>
+        <div className={`fecha ${a.vencida ? 'vencida' : ''}`}>{fecha}</div>
+      </div>
+      {!a.completada && (
+        <div className="acc">
+          <BotonIcono icono="editar" nombre={`Editar: ${a.descripcion}`} onClick={() => onEditar(a)} />
+          <BotonIcono icono="borrar" variante="peligro" nombre={`Borrar: ${a.descripcion}`} onClick={() => onBorrar(a)} />
+        </div>
+      )}
+    </li>
+  );
+}
+
+function GrupoActividades({ titulo, vacio, clase = '', actividades, ...acciones }) {
+  return (
+    <>
+      <h3>{titulo}</h3>
+      {actividades.length ? (
+        <ul className={`grupo ${clase}`} aria-label={titulo}>
+          {actividades.map((a) => <FilaActividad key={a.id} a={a} {...acciones} />)}
+        </ul>
+      ) : <p className="grupo-vacio">{vacio}</p>}
+    </>
+  );
+}
+
+function ListaActividades({ actividades, ...acciones }) {
+  return (
+    <div className="actividades">
+      <GrupoActividades
+        titulo="Compromisos"
+        vacio="Sin compromisos pendientes."
+        actividades={ordenarCompromisos(actividades.filter((a) => !a.completada))}
+        {...acciones}
+      />
+      <GrupoActividades
+        titulo="Actividades completadas"
+        vacio="Aún no hay actividades completadas."
+        clase="hechas"
+        actividades={ordenarCompletadas(actividades.filter((a) => a.completada))}
+        {...acciones}
+      />
+    </div>
+  );
+}
+
+/* ================= Componente Principal (App) ================= */
+function App() {
+  const [q, setQ] = useState('');
+  const [clientes, setClientes] = useState([]);
+  const [cliente, setCliente] = useState(null);       // cliente seleccionado con sus actividades
+  const [modo, setModo] = useState('ver');            // 'ver' | 'nuevo' | 'editar'
+  const [editando, setEditando] = useState(null);     // actividad en edición
+  const [aviso, setAviso] = useState('');
+
+  const intentar = async (fn) => {
+    try {
+      return await fn();
+    } catch (e) {
+      setAviso(e.message);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (aviso) {
+      const t = setTimeout(() => setAviso(''), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [aviso]);
+
+  // Búsqueda en vivo con debounce de 200ms
+  const ultimaBusqueda = useRef(0);
+  const cargarLista = useCallback(async () => {
+    const n = ++ultimaBusqueda.current;
+    try {
+      const lista = await ClientesAPI.buscar(q);
+      if (n === ultimaBusqueda.current) {
+        setClientes([...lista].sort((a, b) =>
+          a.apellido.localeCompare(b.apellido, 'es') || a.nombre.localeCompare(b.nombre, 'es')
+        ));
+      }
+    } catch (e) {
+      setAviso(e.message);
+    }
+  }, [q]);
+
+  useEffect(() => {
+    const t = setTimeout(cargarLista, 200);
+    return () => clearTimeout(t);
+  }, [cargarLista]);
+
+  const abrir = (id) => intentar(async () => {
+    setCliente(await ClientesAPI.obtener(id));
+    setModo('ver');
+    setEditando(null);
+  });
+
+  const recargar = async () => {
+    if (cliente) {
+      setCliente(await ClientesAPI.obtener(cliente.id));
+    }
+  };
+
+  const guardarCliente = async (datos) => {
+    const g = modo === 'nuevo'
+      ? await ClientesAPI.crear(datos)
+      : await ClientesAPI.actualizar(cliente.id, datos);
+    await cargarLista();
+    await abrir(modo === 'nuevo' ? g.id : cliente.id);
+  };
+
+  const eliminarCliente = () => {
+    if (!confirm(`¿Eliminar a ${cliente.nombre} ${cliente.apellido} y todas sus actividades?`)) return;
+    intentar(async () => {
+      await ClientesAPI.eliminar(cliente.id);
+      setCliente(null);
+      await cargarLista();
+    });
+  };
+
+  const guardarActividad = (datos) => intentar(async () => {
+    if (editando) {
+      await ActividadesAPI.actualizar(editando.id, datos);
+    } else {
+      await ActividadesAPI.crear(cliente.id, datos);
+    }
+    setEditando(null);
+    await recargar();
+    return true;
+  });
+
+  const completar = (a) => intentar(async () => {
+    await ActividadesAPI.completar(a.id);
+    await recargar();
+  });
+
+  const borrar = (a) => {
+    if (!confirm(`¿Borrar «${a.descripcion}»?`)) return;
+    intentar(async () => {
+      await ActividadesAPI.eliminar(a.id);
+      if (editando?.id === a.id) setEditando(null);
+      await recargar();
+    });
+  };
+
+  const formulario = modo !== 'ver';
+  const detalle = (
+    <Panel clase="detalle" aria-label="Detalle del cliente">
+      {modo === 'nuevo' && (
+        <FormularioCliente onGuardar={guardarCliente} onCancelar={() => setModo('ver')} />
+      )}
+      {modo === 'editar' && (
+        <FormularioCliente key={cliente.id} inicial={cliente} onGuardar={guardarCliente} onCancelar={() => setModo('ver')} />
+      )}
+      {!formulario && cliente && (
+        <Ficha cliente={cliente} onEditar={() => setModo('editar')} onEliminar={eliminarCliente} />
+      )}
+      {!formulario && !cliente && (
+        <p className="vacio">Elige un cliente de la lista o agrega uno nuevo.</p>
+      )}
+      {cliente && modo !== 'nuevo' && (
+        <>
+          <SubformularioActividad
+            key={editando?.id ?? 'nueva'}
+            actividad={editando}
+            onGuardar={guardarActividad}
+            onCancelar={() => setEditando(null)}
+          />
+          <ListaActividades
+            actividades={cliente.actividades}
+            onCompletar={completar}
+            onEditar={setEditando}
+            onBorrar={borrar}
+          />
+        </>
+      )}
+    </Panel>
+  );
+
+  return (
+    <>
+      <Layout
+        maestro={
+          <Maestro
+            clientes={clientes}
+            seleccionId={cliente?.id}
+            q={q}
+            onBuscar={setQ}
+            onElegir={abrir}
+            onAgregar={() => { setModo('nuevo'); }}
+          />
+        }
+        detalle={detalle}
+      />
+      {aviso && (
+        <div className="aviso" role="alert">
+          {aviso}
+          <button aria-label="Cerrar aviso" onClick={() => setAviso('')}>×</button>
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('raiz')).render(<App />);
+</script>
+</body>
+</html>
