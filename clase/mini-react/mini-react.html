@@ -184,9 +184,10 @@
 
     function useState(inicial) {
       const i = actual++
-      hooks[i] ??= { valor: inicial }
+      hooks[i] ??= { valor: typeof inicial === 'function' ? inicial() : inicial }
 
       const setEstado = nuevo => {
+        if (typeof nuevo === 'function') nuevo = nuevo(hooks[i].valor)
         if (nuevo === hooks[i].valor) return     // si no cambió, no se redibuja
         hooks[i].valor = nuevo
         actualizar()

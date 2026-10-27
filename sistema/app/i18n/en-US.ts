@@ -110,6 +110,11 @@ const messages = {
     checkTp3Hint:
       "Checks filtered students: tp3/agenda.html must contain at least 100 added lines compared to the original assignment template. Details show the added line count.",
     tp3Checked: "TP3: {{count}} statuses updated.",
+    checkTp4: "Check TP4 ({{count}})",
+    checkingTp4: "Checking TP4…",
+    checkTp4Hint:
+      "Checks filtered students: nonempty public/MiniCRM.html and server TypeScript source in the same project within tp4, including subfolders. Only checks submission presence; does not test functionality.",
+    tp4Checked: "TP4: {{count}} statuses updated.",
     checkFailures: "{{count}} checks failed; see the details.",
     checkDetails: "Check details",
     checkingTp1: "Checking TP1…",

@@ -36,7 +36,7 @@ export async function comprobarTrabajo(
   ownerEmail: string,
   assessmentId: string,
   legajos: string[],
-  trabajo: "tp1" | "tp2" | "tp3",
+  trabajo: "tp1" | "tp2" | "tp3" | "tp4",
   ejecutar: (legajo: string) => Promise<z.infer<typeof resultSchema> & { detalle?: string; lineas?: number }>,
 ) {
   const assessment = await getAssessment(ownerEmail, assessmentId);

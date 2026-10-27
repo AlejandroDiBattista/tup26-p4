@@ -8,8 +8,8 @@ const app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
-app.use('/api/clientes', rutasClientes);
-app.use('/api', rutaInexistente);
+app.use('/api/v1/clientes', rutasClientes);
+app.use('/api/v1', rutaInexistente);
 app.use('/mcp', rutasMcp);
 app.use(manejarErrores);
 

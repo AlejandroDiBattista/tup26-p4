@@ -151,7 +151,8 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const checkTp1 = useActionMutation("comprobar-tp1");
   const checkTp2 = useActionMutation("comprobar-tp2");
   const checkTp3 = useActionMutation("comprobar-tp3");
-  const checking = checkTp1.isPending || checkTp2.isPending || checkTp3.isPending;
+  const checkTp4 = useActionMutation("comprobar-tp4");
+  const checking = checkTp1.isPending || checkTp2.isPending || checkTp3.isPending || checkTp4.isPending;
   const [checkDetails, setCheckDetails] = useState<Array<{ legajo: string; detalle?: string }>>([]);
   const [checkErrors, setCheckErrors] = useState<Array<{ legajo: string; error?: string }>>([]);
 
@@ -160,7 +161,9 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
   const courses = courseData?.courses ?? [];
   const selectedWork = works.find((work) => work.id === selectedWorkId) ?? null;
   const checkableWork = selectedWork?.title.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const checkLabels = checkableWork === "tp3"
+  const checkLabels = checkableWork === "tp4"
+    ? { action: "agenda.checkTp4", pending: "agenda.checkingTp4", hint: "agenda.checkTp4Hint", done: "agenda.tp4Checked" }
+    : checkableWork === "tp3"
     ? { action: "agenda.checkTp3", pending: "agenda.checkingTp3", hint: "agenda.checkTp3Hint", done: "agenda.tp3Checked" }
     : checkableWork === "tp2"
       ? { action: "agenda.checkTp2", pending: "agenda.checkingTp2", hint: "agenda.checkTp2Hint", done: "agenda.tp2Checked" }
@@ -335,7 +338,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
     if (!selectedWork || !filteredRows.length) return;
     setCheckErrors([]);
     setCheckDetails([]);
-    const mutation = checkableWork === "tp3" ? checkTp3 : checkableWork === "tp2" ? checkTp2 : checkTp1;
+    const mutation = checkableWork === "tp4" ? checkTp4 : checkableWork === "tp3" ? checkTp3 : checkableWork === "tp2" ? checkTp2 : checkTp1;
     mutation.mutate(
       { assessmentId: selectedWork.id, legajos: filteredRows.map((row) => row.legajo) },
       {
@@ -498,16 +501,16 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
               ) : null}
               <DropdownMenuItem
                 onSelect={handleBajarTp}
-                disabled={downloadTp.isPending}
+                disabled={downloadTp.isPending || checking}
                 title={t("agenda.downloadTpHint")}
               >
                 <IconGitPullRequest aria-hidden="true" />
                 {t(downloadTp.isPending ? "agenda.downloadingTp" : "agenda.downloadTp")}
               </DropdownMenuItem>
-              {checkableWork === "tp1" || checkableWork === "tp2" || checkableWork === "tp3" ? (
+              {checkableWork === "tp1" || checkableWork === "tp2" || checkableWork === "tp3" || checkableWork === "tp4" ? (
                 <DropdownMenuItem
                   onSelect={handleCheckWork}
-                  disabled={checking || setResult.isPending || filteredRows.length === 0}
+                  disabled={checking || downloadTp.isPending || setResult.isPending || filteredRows.length === 0}
                   title={t(checkLabels.hint)}
                 >
                   <IconChecklist aria-hidden="true" />
@@ -558,7 +561,7 @@ export function AssessmentTab({ courseId }: { courseId?: string; kind?: "practic
           {t("agenda.checkingTp1Hint")}
         </p>
       ) : null}
-      {checkableWork === "tp2" || checkableWork === "tp3" ? (
+      {checkableWork === "tp2" || checkableWork === "tp3" || checkableWork === "tp4" ? (
         <p className="mb-4 text-sm text-muted-foreground">{t(checkLabels.hint)}</p>
       ) : null}
       {checkDetails.length > 0 ? (

@@ -46,6 +46,18 @@ muestra la ruta que comprobó. Lee los archivos directamente en el servidor,
 sin iniciar otro runtime por alumno. Los fallos se indican junto al total de
 estados actualizados.
 
+Seleccionando TP4, **Acciones → Comprobar TP4** actualiza únicamente los alumnos
+filtrados. Marca presentado si encuentra `public/MiniCRM.html` y código
+TypeScript del servidor, ambos con contenido y en el mismo proyecto dentro de
+`tp4`. También busca proyectos subidos en subcarpetas. El enunciado, la imagen,
+dependencias, carpetas de compilación, pruebas, declaraciones y archivos
+`*.config.ts` no cuentan como código del servidor. Si faltan los archivos o
+están vacíos, marca pendiente y explica qué falta. Es un control de presencia
+de la entrega: no ejecuta ni compila código, no instala dependencias y no
+califica el funcionamiento. Guarda y verifica cada estado; ante fallos técnicos
+conserva el estado anterior. Después de **Bajar TP**, usá **Comprobar TP4** para
+actualizar los presentados desde los archivos descargados.
+
 “Bajar TP” usa el repositorio de `origin` del checkout que contiene el
 sistema. Revisa todos los PR abiertos sin aplicar los filtros de TP o comisión.
 Omite borradores. Solo procesa cuando todos los archivos (incluidas las
@@ -114,5 +126,5 @@ Cada operación tiene un límite de unos tres minutos. Solo se conserva la sesi�
 local de cada docente en `.cache/whatsapp`, fuera de Git. El intervalo es fijo.
 No se almacenan mensajes ni códigos QR en SQL.
 La integración requiere Google Chrome instalado en `/Applications` y usa
-`whatsapp-web.js`, un cliente no oficial. Las comprobaciones de archivos TP1/TP2/TP3
+`whatsapp-web.js`, un cliente no oficial. Las comprobaciones de archivos TP1/TP2/TP3/TP4
 siguen usando las entregas locales.

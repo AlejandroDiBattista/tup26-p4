@@ -106,6 +106,11 @@ const messages = {
     checkTp3Hint:
       "Comprueba los alumnos filtrados: tp3/agenda.html debe tener al menos 100 líneas agregadas respecto del enunciado original. El detalle muestra cuántas líneas se agregaron.",
     tp3Checked: "TP3: {{count}} estados actualizados.",
+    checkTp4: "Comprobar TP4 ({{count}})",
+    checkingTp4: "Comprobando TP4…",
+    checkTp4Hint:
+      "Comprueba los alumnos filtrados: public/MiniCRM.html y código TypeScript del servidor con contenido en el mismo proyecto dentro de tp4, incluidas subcarpetas. Solo controla presencia de la entrega; no verifica funcionamiento.",
+    tp4Checked: "TP4: {{count}} estados actualizados.",
     checkFailures: "{{count}} comprobaciones fallaron; revisá el detalle.",
     checkDetails: "Detalle de la comprobación",
     checkingTp1: "Comprobando TP1…",

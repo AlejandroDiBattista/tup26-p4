@@ -396,9 +396,10 @@ El mini React lo guarda en el arreglo `hooks`. Cada llamada a un hook usa una ra
 
 function useState(inicial) {
   const i = actual++
-  hooks[i] ??= { valor: inicial }
+  hooks[i] ??= { valor: typeof inicial === 'function' ? inicial() : inicial }
 
   const setEstado = nuevo => {
+    if (typeof nuevo === 'function') nuevo = nuevo(hooks[i].valor)
     if (nuevo === hooks[i].valor) return     // si no cambió, no se redibuja
     hooks[i].valor = nuevo
     actualizar()
@@ -410,11 +411,34 @@ function useState(inicial) {
 Paso a paso:
 
 1. `useState` toma la ranura siguiente y avanza `actual`, así el próximo hook usa la de al lado.
-2. Si la ranura está vacía, es la primera vez: guarda el valor inicial. Las veces siguientes, `??=` no hace nada y se conserva el valor anterior.
+2. Si la ranura está vacía, es la primera vez: guarda el valor inicial. Si recibió una función, la ejecuta sin argumentos y guarda lo que devuelve. Las veces siguientes, `??=` no evalúa su lado derecho: la función inicializadora no vuelve a ejecutarse.
 3. Devuelve el valor actual y una función para cambiarlo.
-4. `setEstado` compara el valor nuevo con el guardado. Si es el mismo, no hace nada. Si cambió, lo guarda y pide un nuevo dibujo.
+4. Si `setEstado` recibe una función, la ejecuta con el último valor guardado para calcular el nuevo. Después compara los valores: si son iguales, no hace nada; si cambió, lo guarda y pide un nuevo dibujo.
 
 Comparar evita dibujos inútiles: `setN(n)` no cambia nada, así que no redibuja. React hace lo mismo.
+
+### Inicializar y actualizar con funciones
+
+Las dos operaciones aceptan un valor directo o una función:
+
+```js
+const [n, setN] = useState(0)          // valor inicial directo
+const [lista, setLista] = useState(() => [])  // se ejecuta solo al inicializar
+
+setN(10)                             // reemplaza el valor
+setN(anterior => anterior + 1)        // calcula desde el último valor guardado
+```
+
+La función inicializadora sirve para calcular el estado inicial una sola vez. Por ejemplo, `useState(() => JSON.parse(localStorage.getItem('lista') ?? '[]'))` lee una lista guardada al iniciar, en lugar de leerla en cada dibujo.
+
+La función actualizadora sirve cuando el valor nuevo depende del anterior. Si llamamos dos veces a `setN(n + 1)` antes del próximo dibujo, ambas llamadas usan el mismo `n` y solo se suma uno. Con funciones, cada llamada recibe el resultado de la anterior:
+
+```js
+setN(anterior => anterior + 1)
+setN(anterior => anterior + 1)        // en total suma dos, con un solo dibujo
+```
+
+Estas funciones deben calcular y devolver el valor, sin efectos secundarios. Si el estado que queremos guardar es una función, hay que envolverla: `useState(() => miFuncion)` para inicializar y `setN(() => miFuncion)` para reemplazarla.
 
 La comparación usa `===`. Para números y textos compara el valor. Para arreglos y objetos compara si son el mismo objeto, no su contenido. Por eso, si se agrega un elemento a un arreglo con `push` y se pasa el mismo arreglo, no se redibuja: hay que pasar un arreglo nuevo, por ejemplo `setLista([...lista, nuevo])`.
 
@@ -511,6 +535,7 @@ function formatoFlujo({ total, segundos }) {
   const flujo = segundos === 0 ? 0 : Math.round(total * 3600 / segundos)
   return `${flujo} v/h`
 }
+
 function formatoTiempo({ segundos }) {
   const minutos = Math.floor(segundos / 60)
   const resto  = segundos % 60
@@ -526,7 +551,7 @@ El flujo divide por los segundos. En el segundo cero devuelve 0 para no dividir 
 
 ```js
 function App() {
-  const [total, setTotal] = useState(0)
+  const [total,    setTotal]    = useState(0)
   const [segundos, setSegundos] = useState(0)
   const incrementarTotal = () => setTotal(total + 1)
 
@@ -661,9 +686,8 @@ Reconstruir toda la pantalla en cada cambio hace corto el mini React, pero tiene
 - se pierde el estado propio del navegador: si hubiera un `<input>`, perdería el foco y lo escrito no confirmado, y con el reloj andando eso pasaría una vez por segundo
 - se rehace trabajo: cada segundo se crean de nuevo todos los nodos, aunque solo cambien 2 textos
 - el árbol no puede cambiar de forma, por las ranuras compartidas
-- varios cambios antes de un dibujo leen el mismo valor viejo: si se llama 2 veces a `setTotal(total + 1)` sin dibujar en el medio, el total sube uno solo
 
-React resuelve los 3 primeros con la reconciliación: compara el árbol nuevo con el anterior y cambia solo los nodos que cambiaron. Resuelve el último permitiendo pasar una función al setter: `setTotal(t => t + 1)` siempre parte del valor más reciente.
+React conserva el DOM mediante la reconciliación y guarda los hooks por componente. En ambos, las actualizaciones que dependen del estado anterior se pueden escribir como `setTotal(t => t + 1)` para partir del último valor guardado.
 
 ## Otra forma: levantar el estado
 
@@ -703,7 +727,8 @@ El código de la aplicación casi no cambia al pasar a React:
 | `render(<App />, elemento)` | `ReactDOM.createRoot(elemento).render(<App />)` |
 | `class="dato"` | `className="dato"` |
 | `useState` y `useEffect` globales | `import { useState, useEffect } from "react"` |
-| `setEstado(valor)` | `setEstado(valor)` o `setEstado(anterior => nuevo)` |
+| `useState(valor)` o `useState(() => valor)` | las mismas dos formas de inicializar |
+| `setEstado(valor)` o `setEstado(anterior => nuevo)` | las mismas dos formas de actualizar |
 | redibuja todo | cambia solo los nodos que cambiaron |
 | ranuras de toda la aplicación | ranuras de cada componente |
 | `<script type="text/jsx">` y el traductor | Babel o Vite traducen el JSX antes de publicar |

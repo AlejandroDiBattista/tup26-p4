@@ -107,6 +107,7 @@ function fechaRelativa(dias?: number) {
   return dias === undefined ? null : sumarDias(hoy(), dias);
 }
 
+
 function fechaHoraRelativa(dias?: number) {
   // Tucumán está siempre en UTC-3: se finaliza a las 12:30 de ese día.
   return dias === undefined ? null : new Date(`${sumarDias(hoy(), dias)}T12:30:00-03:00`);
