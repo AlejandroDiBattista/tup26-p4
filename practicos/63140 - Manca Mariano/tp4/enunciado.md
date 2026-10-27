@@ -26,4 +26,4 @@ La edicion del formulario debe ser en el detalle. La alta y edicion de las activ
 
 Ejemplo ilustrativo de la interfaz. El diseño puede variar siempre que cumpla los requisitos.
 
-![MiniCRM con listado de clientes, ficha del cliente seleccionado, subformulario de actividades y listas de compromisos y actividades completadas.](minicrm.jpg)
+![MiniCRM con listado de clientes, ficha del cliente seleccionado, subformulario de actividades y listas de compromisos y actividades completadas.](minicrm.jpg).
