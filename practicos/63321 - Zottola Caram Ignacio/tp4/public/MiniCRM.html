@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <style>
+    :root {
+      --navy: #243447;
+      --fondo: #e9eef5;
+      --panel: #ffffff;
+      --texto: #1c2430;
+      --suave: #5d6b7c;
+      --linea: #d7dee8;
+      --azul: #1d6fd8;
+      --azul-suave: #e8f1fd;
+      --rojo: #d23b3b;
+      --rojo-suave: #fdecec;
+      --verde: #1f8a4c;
+      --verde-suave: #e8f7ee;
+      --sombra: 0 1px 2px rgba(16, 24, 40, .06);
+    }
+    * { box-sizing: border-box; }
+    html, body, #raiz { height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      background: var(--fondo);
+      color: var(--texto);
+      font: 14.5px/1.4 "Segoe UI", system-ui, sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { height: 100%; display: grid; grid-template-rows: 52px 1fr; }
+    header.barra {
+      display: flex; align-items: center; padding: 0 18px;
+      background: var(--navy); color: #fff; font-size: 20px; font-weight: 650;
+      letter-spacing: .01em;
+    }
+    .cuerpo {
+      min-height: 0; padding: 14px;
+      display: grid; grid-template-columns: 300px 1fr; gap: 14px;
+    }
+    .maestro, .detalle {
+      min-height: 0; background: var(--panel); border-radius: 10px;
+      box-shadow: var(--sombra); display: flex; flex-direction: column;
+    }
+    .maestro { padding: 14px 12px 0; }
+    .maestro-top { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 10px; }
+    .maestro-top h2 { margin: 0; font-size: 18px; }
+    .btn {
+      border: 0; border-radius: 8px; padding: 7px 12px; color: #fff; background: var(--azul);
+      display: inline-flex; align-items: center; gap: 6px; font-weight: 600;
+    }
+    .btn.rojo { background: #fff; color: var(--rojo); border: 1px solid #f3c1c1; }
+    .btn.gris { background: #fff; color: var(--texto); border: 1px solid var(--linea); }
+    .btn.icono { padding: 6px 8px; background: transparent; color: var(--suave); border: 0; }
+    .btn.icono:hover { color: var(--azul); }
+    .btn.icono.peligro:hover { color: var(--rojo); }
+    .buscar {
+      display: flex; align-items: center; gap: 8px; margin: 0 4px 10px;
+      border: 1px solid var(--linea); border-radius: 8px; padding: 7px 10px; background: #f7f9fc;
+    }
+    .buscar input { border: 0; outline: 0; width: 100%; background: transparent; }
+    .lista { flex: 1; min-height: 0; overflow: auto; padding-bottom: 10px; }
+    .fila {
+      width: 100%; display: flex; gap: 10px; align-items: center; text-align: left;
+      border: 0; background: transparent; border-radius: 10px; padding: 8px 8px;
+    }
+    .fila:hover { background: #f4f7fb; }
+    .fila.sel { background: var(--azul-suave); }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+      font-weight: 700; font-size: 12px; color: #1b3a6b; flex: none;
+    }
+    .fila strong { display: block; font-size: 14px; }
+    .fila small { color: var(--suave); }
+    .detalle { padding: 16px 18px 0; }
+    .detalle-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .detalle-top h2 { margin: 0 0 10px; font-size: 26px; }
+    .id-ficha { color: #98a4b3; font-weight: 700; }
+    .acciones { display: flex; gap: 8px; }
+    .meta {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; color: var(--suave); margin-bottom: 14px;
+    }
+    .meta span { display: flex; gap: 8px; align-items: center; }
+    .form-cliente { display: flex; flex-direction: column; gap: 10px; }
+    .form-cliente .fila-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-cliente input, .subform input {
+      width: 100%; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 10px; outline: none;
+    }
+    .form-cliente input:focus, .subform input:focus { border-color: var(--azul); }
+    .subform {
+      border: 1.5px dashed #c5d0de; border-radius: 10px; padding: 12px;
+      display: grid; grid-template-columns: 1fr 170px auto auto; gap: 8px; align-items: center;
+      margin-bottom: 14px;
+    }
+    .subform h3 { grid-column: 1 / -1; margin: 0 0 2px; font-size: 14px; }
+    .acts { flex: 1; min-height: 0; overflow: auto; padding-bottom: 16px; }
+    .acts h3 { margin: 8px 0 8px; font-size: 15px; }
+    .act {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+      padding: 8px 6px; border-top: 1px solid #eef2f6;
+    }
+    .act p { margin: 0; }
+    .act .fecha { color: var(--suave); font-size: 12.5px; }
+    .act .fecha.vencida { color: var(--rojo); font-weight: 650; }
+    .act .ops { display: flex; opacity: .85; }
+    .check {
+      width: 18px; height: 18px; border: 1.5px solid #b7c2d0; border-radius: 4px;
+      background: #fff; padding: 0; display: grid; place-items: center;
+    }
+    .check.hecho { background: var(--verde); border-color: var(--verde); color: #fff; }
+    .vacio { color: var(--suave); padding: 24px 8px; }
+    .hecho-grupo { background: var(--verde-suave); border-radius: 10px; padding: 4px 8px 8px; }
+  </style>
+</head>
+<body>
+  <div id="raiz"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
+    const api = {
+      clientes: (q = "") =>
+        fetch("/api/clientes?q=" + encodeURIComponent(q)).then((r) => r.json()),
+      ficha: (id) => fetch("/api/clientes/" + id).then((r) => r.json()),
+      crear: (datos) =>
+        fetch("/api/clientes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
+        }).then((r) => r.json()),
+      actualizar: (id, datos) =>
+        fetch("/api/clientes/" + id, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
+        }).then((r) => r.json()),
+      eliminar: (id) => fetch("/api/clientes/" + id, { method: "DELETE" }),
+      agregarActividad: (id, datos) =>
+        fetch("/api/clientes/" + id + "/actividades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
+        }).then((r) => r.json()),
+      editarActividad: (id, actId, datos) =>
+        fetch("/api/clientes/" + id + "/actividades/" + actId, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
+        }).then((r) => r.json()),
+      completar: (id, actId) =>
+        fetch("/api/clientes/" + id + "/actividades/" + actId + "/completar", {
+          method: "POST",
+        }).then((r) => r.json()),
+      borrarActividad: (id, actId) =>
+        fetch("/api/clientes/" + id + "/actividades/" + actId, { method: "DELETE" }),
+    };
+
+    const VACIO = {
+      nombre: "", apellido: "", email: "",
+      telefono: "", domicilio: "", localidad: "",
+    };
+
+    const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const COLORES = ["#d7e8fb", "#d8f3e4", "#eadcf8", "#fde3c8", "#fad7e2", "#d7f3f3", "#e7e4fb"];
+
+    function hoy() {
+      const d = new Date();
+      const mes = String(d.getMonth() + 1).padStart(2, "0");
+      const dia = String(d.getDate()).padStart(2, "0");
+      return `${d.getFullYear()}-${mes}-${dia}`;
+    }
+
+    function formatearFecha(iso) {
+      if (!iso) return "Sin fecha";
+      const [anio, mes, dia] = iso.split("-");
+      return `${Number(dia)} ${MESES[Number(mes) - 1]} ${anio}`;
+    }
+
+    function iniciales(c) {
+      return ((c.nombre?.[0] || "") + (c.apellido?.[0] || "")).toUpperCase();
+    }
+
+    function ordenarPendientes(lista) {
+      const h = hoy();
+      const peso = (a) => {
+        if (!a.fechaCompromiso) return 0;
+        if (a.fechaCompromiso < h) return 1;
+        return 2;
+      };
+      return [...lista].sort(
+        (a, b) => peso(a) - peso(b) || (a.fechaCompromiso || "").localeCompare(b.fechaCompromiso || ""),
+      );
+    }
+
+    function IconoLupa() {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7b8796" strokeWidth="2">
+          <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+        </svg>
+      );
+    }
+
+    function FormCliente({ inicial, onGuardar, onCancelar }) {
+      const [f, setF] = useState(inicial);
+      const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+      return (
+        <form className="form-cliente" onSubmit={(e) => { e.preventDefault(); onGuardar(f); }}>
+          <div className="fila-form">
+            <input value={f.nombre} onChange={set("nombre")} required placeholder="Nombre" />
+            <input value={f.apellido} onChange={set("apellido")} required placeholder="Apellido" />
+          </div>
+          <div className="fila-form">
+            <input value={f.email} onChange={set("email")} required placeholder="Email" />
+            <input value={f.telefono || ""} onChange={set("telefono")} placeholder="Teléfono" />
+          </div>
+          <div className="fila-form">
+            <input value={f.domicilio || ""} onChange={set("domicilio")} placeholder="Domicilio" />
+            <input value={f.localidad || ""} onChange={set("localidad")} placeholder="Localidad" />
+          </div>
+          <div className="acciones">
+            <button className="btn" type="submit">Guardar</button>
+            <button className="btn gris" type="button" onClick={onCancelar}>Cancelar</button>
+          </div>
+        </form>
+      );
+    }
+
+    function FormActividad({ inicial, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(inicial?.descripcion ?? "");
+      const [fecha, setFecha] = useState(inicial?.fechaCompromiso ?? "");
+      return (
+        <form
+          className="subform"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onGuardar({ descripcion, fechaCompromiso: fecha || null });
+            setDescripcion("");
+            setFecha("");
+          }}
+        >
+          <h3>{inicial ? "Editar actividad" : "Agregar actividad"}</h3>
+          <input
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            required
+            placeholder="Descripción de la actividad"
+            aria-label="Descripción de la actividad"
+          />
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            aria-label="Fecha de compromiso"
+          />
+          <button className="btn" aria-label="Guardar actividad">Guardar</button>
+          <button
+            className="btn gris"
+            type="button"
+            aria-label="Cancelar"
+            onClick={() => {
+              setDescripcion("");
+              setFecha("");
+              onCancelar();
+            }}
+          >Cancelar</button>
+        </form>
+      );
+    }
+
+    function App() {
+      const [lista, setLista] = useState([]);
+      const [q, setQ] = useState("");
+      const [sel, setSel] = useState(null);
+      const [ficha, setFicha] = useState(null);
+      const [modo, setModo] = useState("ver");
+      const [editandoAct, setEditandoAct] = useState(null);
+
+      useEffect(() => {
+        const t = setTimeout(() => api.clientes(q).then(setLista), 200);
+        return () => clearTimeout(t);
+      }, [q]);
+
+      useEffect(() => {
+        if (sel == null) {
+          setFicha(null);
+          return;
+        }
+        api.ficha(sel).then(setFicha);
+      }, [sel]);
+
+      const pendientes = ordenarPendientes((ficha?.actividades ?? []).filter((a) => !a.fechaFinalizacion));
+      const hechas = (ficha?.actividades ?? [])
+        .filter((a) => a.fechaFinalizacion)
+        .sort((a, b) => (b.fechaFinalizacion || "").localeCompare(a.fechaFinalizacion || ""));
+
+      async function recargarLista() {
+        setLista(await api.clientes(q));
+      }
+
+      async function recargarFicha() {
+        if (sel != null) setFicha(await api.ficha(sel));
+      }
+
+      return (
+        <div className="app">
+          <header className="barra">MiniCRM</header>
+          <div className="cuerpo">
+            <aside className="maestro">
+              <div className="maestro-top">
+                <h2>Clientes</h2>
+                <button className="btn" type="button" onClick={() => { setModo("nuevo"); setSel(null); setEditandoAct(null); }}>
+                  + Agregar
+                </button>
+              </div>
+              <label className="buscar">
+                <IconoLupa />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por cualquier campo..."
+                />
+              </label>
+              <div className="lista">
+                {lista.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={"fila" + (c.id === sel ? " sel" : "")}
+                    onClick={() => { setSel(c.id); setModo("ver"); setEditandoAct(null); }}
+                  >
+                    <span className="avatar" style={{ background: COLORES[c.id % COLORES.length] }}>{iniciales(c)}</span>
+                    <span>
+                      <strong>{c.nombre} {c.apellido}</strong>
+                      <small>{c.email}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </aside>
+            <main className="detalle">
+              {modo === "nuevo" && (
+                <>
+                  <h2>Nuevo cliente</h2>
+                  <FormCliente
+                    inicial={VACIO}
+                    onGuardar={async (datos) => {
+                      const creado = await api.crear(datos);
+                      setModo("ver");
+                      setSel(creado.id);
+                      recargarLista();
+                    }}
+                    onCancelar={() => setModo("ver")}
+                  />
+                </>
+              )}
+              {modo === "editar" && ficha && (
+                <>
+                  <h2>Editar cliente</h2>
+                  <FormCliente
+                    key={ficha.id}
+                    inicial={ficha}
+                    onGuardar={async (datos) => {
+                      await api.actualizar(sel, datos);
+                      setModo("ver");
+                      recargarLista();
+                      recargarFicha();
+                    }}
+                    onCancelar={() => setModo("ver")}
+                  />
+                </>
+              )}
+              {modo === "ver" && ficha && (
+                <>
+                  <div className="detalle-top">
+                    <div>
+                      <h2>{ficha.nombre} {ficha.apellido}</h2>
+                    </div>
+                    <div className="acciones">
+                      <span className="id-ficha">#{ficha.id}</span>
+                      <button className="btn gris" type="button" onClick={() => setModo("editar")}>Editar</button>
+                      <button
+                        className="btn rojo"
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("¿Eliminar este cliente y sus actividades?")) return;
+                          await api.eliminar(sel);
+                          setSel(null);
+                          recargarLista();
+                        }}
+                      >Eliminar</button>
+                    </div>
+                  </div>
+                  <div className="meta">
+                    <span>✉ {ficha.email}</span>
+                    <span>📍 {[ficha.domicilio, ficha.localidad].filter(Boolean).join(" · ") || "Sin domicilio"}</span>
+                    <span>☎ {ficha.telefono || "Sin teléfono"}</span>
+                  </div>
+                  <FormActividad
+                    key={editandoAct ? editandoAct.id : "nueva"}
+                    inicial={editandoAct}
+                    onGuardar={async (datos) => {
+                      if (editandoAct) await api.editarActividad(sel, editandoAct.id, datos);
+                      else await api.agregarActividad(sel, datos);
+                      setEditandoAct(null);
+                      recargarFicha();
+                    }}
+                    onCancelar={() => setEditandoAct(null)}
+                  />
+                  <div className="acts">
+                    <h3>Compromisos</h3>
+                    {pendientes.length === 0 && <p className="vacio" style={{ padding: 0 }}>No hay compromisos.</p>}
+                    {pendientes.map((a) => {
+                      const vencida = a.fechaCompromiso && a.fechaCompromiso < hoy();
+                      return (
+                        <div className="act" key={a.id}>
+                          <button
+                            className="check"
+                            type="button"
+                            aria-label="Completar actividad"
+                            onClick={() => api.completar(sel, a.id).then(recargarFicha)}
+                          />
+                          <div>
+                            <p>{a.descripcion}</p>
+                            <p className={"fecha" + (vencida ? " vencida" : "")}>
+                              {a.fechaCompromiso ? formatearFecha(a.fechaCompromiso) : "Sin fecha"}
+                              {vencida ? " · Vencido" : ""}
+                            </p>
+                          </div>
+                          <div className="ops">
+                            <button className="btn icono" type="button" aria-label="Editar actividad" onClick={() => setEditandoAct(a)}>✎</button>
+                            <button
+                              className="btn icono peligro"
+                              type="button"
+                              aria-label="Borrar actividad"
+                              onClick={() => api.borrarActividad(sel, a.id).then(recargarFicha)}
+                            >🗑</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="hecho-grupo">
+                      <h3>Actividades completadas</h3>
+                      {hechas.length === 0 && <p className="vacio" style={{ padding: 0 }}>No hay actividades completadas.</p>}
+                      {hechas.map((a) => (
+                        <div className="act" key={a.id}>
+                          <span className="check hecho" aria-hidden="true">✓</span>
+                          <div>
+                            <p>{a.descripcion}</p>
+                            <p className="fecha">Completada el {formatearFecha(a.fechaFinalizacion)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              {modo === "ver" && !ficha && <p className="vacio">Elegí un cliente de la lista o agregá uno nuevo.</p>}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("raiz")).render(<App />);
+  </script>
+</body>
+</html>
