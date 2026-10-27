@@ -79,7 +79,7 @@ Es el "DNI" del proyecto Node.js. Contiene:
 - **scripts**: comandos que podemos correr con `npm run <nombre>`
 - **dependencies**: librerías que la app necesita para funcionar
 - **devDependencies**: librerías que solo se necesitan para desarrollar
-
+.
 ```
 Dependencias principales:
 ├── express          → Framework web para crear el servidor HTTP
