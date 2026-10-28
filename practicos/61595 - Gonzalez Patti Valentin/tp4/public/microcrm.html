@@ -76,11 +76,13 @@
     .contact-line span { overflow-wrap: anywhere; }
     .section { margin-top: 22px; }
     .activity-section { min-height: 0; flex: 1 1 0; display: flex; flex-direction: column; }
+    .activity-section.is-empty { flex: 0 0 auto; }
     .section-title-row { margin-bottom: 10px; }
     .activity-section > .section-title-row { flex: 0 0 auto; }
     .section h3 { margin: 0; color: #26354a; font-size: 15px; letter-spacing: -.02em; }
     .section-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
     .activity-list { min-height: 0; flex: 1; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; scrollbar-color: #c5cfdb transparent; scrollbar-width: thin; }
+    .activity-section.is-empty .activity-list { flex: 0 0 auto; overflow: visible; border-color: transparent; background: transparent; }
     .activity-list.completed-list { border-color: #dceee5; background: #f6fbf8; }
     .activity-row { min-height: 66px; padding: 11px 12px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid var(--line); }
     .activity-row:last-child { border-bottom: 0; }
@@ -91,6 +93,7 @@
     .activity-meta { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
     .activity-meta.overdue { color: var(--red); }
     .empty-list { padding: 18px; color: #8b97a5; font-size: 12px; text-align: center; }
+    .activity-section.is-empty .empty-list { padding: 3px 0 2px; text-align: left; }
     .button { min-height: 37px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #dbe2ea; border-radius: 9px; color: #3d4c60; background: #fff; font-size: 12px; font-weight: 650; transition: background .15s ease, border-color .15s ease, transform .15s ease; white-space: nowrap; }
     .button:hover { border-color: #bcc9d8; background: #f7f9fb; }
     .button:active { transform: translateY(1px); }
@@ -295,7 +298,7 @@
     }
 
     function fechaCorta(fecha) {
-      if (!fecha) return "Sin fecha";
+      if (!fecha) return "Sin fecha de compromiso";
       const [year, month, day] = fecha.split("-").map(Number);
       return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, day)));
     }
@@ -311,7 +314,7 @@
     }
 
     function ListaActividades({ titulo, actividades, completadas = false }) {
-      return <section className="section activity-section">
+      return <section className={`section activity-section ${actividades.length === 0 ? "is-empty" : ""}`}>
         <div className="section-title-row"><div><h3>{titulo}</h3></div><span className="client-count">{actividades.length}</span></div>
         <div className={`activity-list ${completadas ? "completed-list" : ""}`}>
           {actividades.length === 0 ? <div className="empty-list">{completadas ? "Todavía no hay actividades completadas." : "No hay compromisos pendientes."}</div> : actividades.map((actividad) => <ActividadRow key={actividad.id} actividad={actividad}/>) }
@@ -321,7 +324,14 @@
 
     function ClienteDetalle({ cliente, onEdit, onDelete, onBack }) {
       const todas = cliente.actividades ?? [];
-      const pendientes = useMemo(() => todas.filter((actividad) => actividad.estado !== "completada").sort((a, b) => (a.fechaCompromiso || "9999").localeCompare(b.fechaCompromiso || "9999")), [todas]);
+      const pendientes = useMemo(() => todas
+        .filter((actividad) => actividad.estado !== "completada")
+        .sort((a, b) => {
+          const grupo = (actividad) => !actividad.fechaCompromiso ? 0 : actividad.estado === "vencida" ? 1 : 2;
+          const diferenciaDeGrupo = grupo(a) - grupo(b);
+          if (diferenciaDeGrupo !== 0 || grupo(a) === 0) return diferenciaDeGrupo;
+          return a.fechaCompromiso.localeCompare(b.fechaCompromiso);
+        }), [todas]);
       const completadas = useMemo(() => todas.filter((actividad) => actividad.estado === "completada").sort((a, b) => (b.fechaFinalizacion || "").localeCompare(a.fechaFinalizacion || "")), [todas]);
 
       return <div className="detail-scroll customer-detail">
