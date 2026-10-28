@@ -37,10 +37,12 @@ npm test
 
 El comando usa el ejecutor de pruebas integrado de Node.js con soporte para TypeScript mediante `tsx`.
 
-## Esquema de base de datos
+## Base de datos
 
-Después de definir tablas en `src/db/schema.ts`, aplicar el esquema local con:
+Crear o actualizar las tablas y cargar los 10 clientes ficticios con sus actividades:
 
 ```sh
-npm run db:push
+npm run db:seed
 ```
+
+La carga puede repetirse: los identificadores fijos hacen que los registros de ejemplo existentes se omitan. La base se guarda en `data/local.db`.
