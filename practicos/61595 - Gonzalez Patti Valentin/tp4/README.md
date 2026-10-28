@@ -29,6 +29,8 @@ npm start
 
 El servidor escucha en `http://localhost:3000` (o en el puerto indicado por `PORT`). La base SQLite se crea localmente en `data/local.db` al iniciar.
 
+La interfaz está disponible en `http://localhost:3000/` y en `/microcrm.html`.
+
 ## Pruebas
 
 ```sh

@@ -1,12 +1,17 @@
 import express from "express";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import "./db/index.js";
 import { clientesRouter } from "./routes/clientes.js";
 import { ErrorServicio } from "./services/error.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
+const publicDir = fileURLToPath(new URL("../public/", import.meta.url));
 
 app.use(express.json());
+app.use(express.static(publicDir));
+app.get("/", (_req, res) => res.sendFile(path.join(publicDir, "microcrm.html")));
 app.use("/api/clientes", clientesRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
