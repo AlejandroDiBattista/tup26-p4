@@ -75,6 +75,12 @@
     .contact-line .icon { flex: 0 0 auto; margin-top: 1px; color: #8693a2; }
     .contact-line span { overflow-wrap: anywhere; }
     .section { margin-top: 22px; }
+    .activity-form-wrap { flex: 0 0 auto; margin-top: 14px; padding: 10px; border: 1px dashed #c9d5e3; border-radius: 12px; background: #fbfcfe; }
+    .activity-form-grid { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(145px, .48fr) 36px 36px; align-items: center; gap: 8px; }
+    .activity-inline-field { display: block; }
+    .activity-inline-field .field-input { height: 37px; }
+    .activity-inline-field input[type="date"] { padding: 0 7px; font-size: 12px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .activity-section { min-height: 0; flex: 1 1 0; display: flex; flex-direction: column; }
     .activity-section.is-empty { flex: 0 0 auto; }
     .section-title-row { margin-bottom: 10px; }
@@ -87,11 +93,14 @@
     .activity-row { min-height: 66px; padding: 11px 12px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid var(--line); }
     .activity-row:last-child { border-bottom: 0; }
     .activity-check { width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center; border: 1.5px solid #aeb9c6; border-radius: 7px; color: white; background: white; }
+    .activity-check:not(.done) { cursor: pointer; }
+    .activity-check:not(.done):hover { border-color: var(--green); color: var(--green); }
     .activity-check.done { border-color: #7eb89c; color: white; background: #68a987; }
     .activity-copy { min-width: 0; flex: 1; }
     .activity-description { margin: 0; overflow-wrap: anywhere; color: #344155; font-size: 13px; font-weight: 590; line-height: 1.4; }
     .activity-meta { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
     .activity-meta.overdue { color: var(--red); }
+    .activity-tools { display: flex; gap: 5px; }
     .empty-list { padding: 18px; color: #8b97a5; font-size: 12px; text-align: center; }
     .activity-section.is-empty .empty-list { padding: 3px 0 2px; text-align: left; }
     .button { min-height: 37px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #dbe2ea; border-radius: 9px; color: #3d4c60; background: #fff; font-size: 12px; font-weight: 650; transition: background .15s ease, border-color .15s ease, transform .15s ease; white-space: nowrap; }
@@ -106,7 +115,7 @@
     .icon { width: 17px; height: 17px; display: inline-block; vertical-align: middle; }
     .field { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .field-label { color: #576579; font-size: 11px; font-weight: 690; }
-    .field-input { width: 100%; height: 39px; padding: 0 11px; border: 1px solid #dce3eb; border-radius: 9px; color: var(--ink); background: white; font-size: 13px; }
+    .field-input { width: 100%; min-width: 0; height: 39px; padding: 0 11px; border: 1px solid #dce3eb; border-radius: 9px; color: var(--ink); background: white; font-size: 13px; }
     .field-input:focus { border-color: #85a9ed; }
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .field-grid .span-two { grid-column: span 2; }
@@ -127,6 +136,7 @@
     @media (max-width: 860px) {
       .workspace { grid-template-columns: minmax(255px, 290px) minmax(0, 1fr); padding: 10px; gap: 10px; }
       .contact-grid { grid-template-columns: 1fr 1fr; }
+      .activity-form-grid { grid-template-columns: minmax(100px, 1fr) minmax(130px, .7fr) 36px 36px; }
     }
     @media (max-width: 650px) {
       body { min-width: 320px; }
@@ -148,6 +158,8 @@
       .detail-title-wrap { display: flex; align-items: flex-start; }
       .detail-heading h2 { font-size: 23px; }
       .contact-grid { grid-template-columns: 1fr; gap: 10px; }
+      .activity-form-wrap { padding: 8px; }
+      .activity-form-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr) 32px 32px; gap: 5px; }
       .activity-row { gap: 8px; padding: 10px 8px; }
       .button.icon-button { width: 32px; min-width: 32px; height: 32px; min-height: 32px; }
       .field-grid { grid-template-columns: 1fr; }
@@ -224,13 +236,13 @@
     }
 
     function IconButton({ label, icon, variant = "", ...props }) {
-      const { className = "", ...buttonProps } = props;
-      return <button type="button" className={`button icon-button ${variant} ${className}`} aria-label={label} title={label} {...buttonProps}><Icon name={icon}/></button>;
+      const { className = "", type = "button", ...buttonProps } = props;
+      return <button type={type} className={`button icon-button ${variant} ${className}`} aria-label={label} title={label} {...buttonProps}><Icon name={icon}/></button>;
     }
 
-    function Field({ label, name, value, onChange, type = "text", placeholder = "", required = false, className = "" }) {
+    function Field({ label, name, value, onChange, type = "text", placeholder = "", required = false, className = "", labelVisible = true }) {
       return <label className={`field ${className}`}>
-        <span className="field-label">{label}{required ? " *" : ""}</span>
+        <span className={labelVisible ? "field-label" : "sr-only"}>{label}{required ? " *" : ""}</span>
         <input className="field-input" name={name} type={type} value={value ?? ""} placeholder={placeholder} required={required} onChange={(event) => onChange(name, event.target.value)}/>
       </label>;
     }
@@ -303,26 +315,54 @@
       return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, day)));
     }
 
-    function ActividadRow({ actividad }) {
+    function ActividadForm({ actividad, guardando, onSave, onCancel }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? "");
+      const [fechaCompromiso, setFechaCompromiso] = useState(actividad?.fechaCompromiso ?? "");
+
+      const enviar = async (event) => {
+        event.preventDefault();
+        const guardada = await onSave({ descripcion, fechaCompromiso: fechaCompromiso || null });
+        if (guardada) { setDescripcion(""); setFechaCompromiso(""); }
+      };
+
+      const cancelar = async () => {
+        setDescripcion("");
+        setFechaCompromiso("");
+        await onCancel();
+      };
+
+      return <form className="activity-form-wrap" aria-label={actividad ? "Editar actividad" : "Agregar actividad"} onSubmit={enviar}>
+        <div className="activity-form-grid">
+          <Field label="Descripción de la actividad" name="descripcion" value={descripcion} onChange={(_, value) => setDescripcion(value)} placeholder="Descripción" required labelVisible={false} className="activity-inline-field"/>
+          <Field label="Fecha de compromiso opcional" name="fechaCompromiso" type="date" value={fechaCompromiso} onChange={(_, value) => setFechaCompromiso(value)} labelVisible={false} className="activity-inline-field"/>
+          <IconButton label="Guardar actividad" icon="save" type="submit" disabled={guardando}/>
+          <IconButton label="Cancelar y limpiar formulario" icon="close" onClick={cancelar} disabled={guardando}/>
+        </div>
+      </form>;
+    }
+
+    function ActividadRow({ actividad, accionando, onComplete, onEdit, onDelete }) {
       const completada = actividad.estado === "completada";
       let metadata = completada ? `Completada el ${fechaCorta(actividad.fechaFinalizacion)}` : fechaCorta(actividad.fechaCompromiso);
       if (actividad.estado === "vencida") metadata += " · Vencido";
       return <article className="activity-row">
-        <span className={`activity-check ${completada ? "done" : ""}`} aria-hidden="true">{completada && <Icon name="check" size={15}/>}</span>
+        {completada ? <span className="activity-check done" aria-label="Actividad completada"><Icon name="check" size={15}/></span> : <button type="button" className="activity-check" aria-label={`Completar actividad: ${actividad.descripcion}`} title="Completar actividad" disabled={accionando} onClick={() => onComplete(actividad)}><Icon name="check" size={15}/></button>}
         <div className="activity-copy"><p className="activity-description">{actividad.descripcion}</p><p className={`activity-meta ${actividad.estado === "vencida" ? "overdue" : ""}`}>{metadata}</p></div>
+        {!completada && <div className="activity-tools"><IconButton label={`Editar actividad: ${actividad.descripcion}`} icon="edit" disabled={accionando} onClick={() => onEdit(actividad)}/><IconButton label={`Borrar actividad: ${actividad.descripcion}`} icon="trash" variant="danger" disabled={accionando} onClick={() => onDelete(actividad)}/></div>}
       </article>;
     }
 
-    function ListaActividades({ titulo, actividades, completadas = false }) {
+    function ListaActividades({ titulo, actividades, completadas = false, acciones }) {
       return <section className={`section activity-section ${actividades.length === 0 ? "is-empty" : ""}`}>
         <div className="section-title-row"><div><h3>{titulo}</h3></div><span className="client-count">{actividades.length}</span></div>
         <div className={`activity-list ${completadas ? "completed-list" : ""}`}>
-          {actividades.length === 0 ? <div className="empty-list">{completadas ? "Todavía no hay actividades completadas." : "No hay compromisos pendientes."}</div> : actividades.map((actividad) => <ActividadRow key={actividad.id} actividad={actividad}/>) }
+          {actividades.length === 0 ? <div className="empty-list">{completadas ? "Todavía no hay actividades completadas." : "No hay compromisos pendientes."}</div> : actividades.map((actividad) => <ActividadRow key={actividad.id} actividad={actividad} {...acciones}/>) }
         </div>
       </section>;
     }
 
-    function ClienteDetalle({ cliente, onEdit, onDelete, onBack }) {
+    function ClienteDetalle({ cliente, onEdit, onDelete, onBack, accionando, onGuardarActividad, onCancelarActividad, onCompletarActividad, onBorrarActividad }) {
+      const [actividadEditando, setActividadEditando] = useState(null);
       const todas = cliente.actividades ?? [];
       const pendientes = useMemo(() => todas
         .filter((actividad) => actividad.estado !== "completada")
@@ -333,6 +373,23 @@
           return a.fechaCompromiso.localeCompare(b.fechaCompromiso);
         }), [todas]);
       const completadas = useMemo(() => todas.filter((actividad) => actividad.estado === "completada").sort((a, b) => (b.fechaFinalizacion || "").localeCompare(a.fechaFinalizacion || "")), [todas]);
+      const acciones = {
+        accionando,
+        onComplete: onCompletarActividad,
+        onEdit: setActividadEditando,
+        onDelete: onBorrarActividad,
+      };
+
+      const guardarActividad = async (datos) => {
+        const guardada = await onGuardarActividad(actividadEditando, datos);
+        if (guardada) setActividadEditando(null);
+        return guardada;
+      };
+
+      const cancelarActividad = async () => {
+        setActividadEditando(null);
+        await onCancelarActividad();
+      };
 
       return <div className="detail-scroll customer-detail">
         <div className="detail-heading">
@@ -345,8 +402,9 @@
           <ContactLine icon="phone">{cliente.telefono}</ContactLine>
         </div>
 
-        <ListaActividades titulo="Compromisos" actividades={pendientes}/>
-        <ListaActividades titulo="Actividades completadas" actividades={completadas} completadas/>
+        <ActividadForm key={actividadEditando ? `editar-${actividadEditando.id}` : `nueva-${cliente.id}`} actividad={actividadEditando} guardando={accionando} onSave={guardarActividad} onCancel={cancelarActividad}/>
+        <ListaActividades titulo="Compromisos" actividades={pendientes} acciones={acciones}/>
+        <ListaActividades titulo="Actividades completadas" actividades={completadas} completadas acciones={acciones}/>
       </div>;
     }
 
@@ -361,6 +419,7 @@
       const [modoCliente, setModoCliente] = useState("ver");
       const [cargando, setCargando] = useState(true);
       const [guardando, setGuardando] = useState(false);
+      const [accionando, setAccionando] = useState(false);
       const [error, setError] = useState("");
       const [mobileDetail, setMobileDetail] = useState(false);
 
@@ -423,11 +482,35 @@
         } catch (problema) { setError(problema.message); }
       }
 
+      async function ejecutarActividad(operacion) {
+        setAccionando(true); setError("");
+        try {
+          await operacion();
+          await refrescar(seleccionado.id);
+          return true;
+        } catch (problema) {
+          setError(problema.message);
+          return false;
+        } finally { setAccionando(false); }
+      }
+
+      async function cancelarEdicionActividad() {
+        try { await refrescar(seleccionado.id); }
+        catch (problema) { setError(problema.message); }
+      }
+
       const detalle = modoCliente === "nuevo" || !seleccionado ? <EstadoVacio onCreate={() => { setModoCliente("nuevo"); setSeleccionado(null); setMobileDetail(true); }}/> : modoCliente === "editar" ? <ClienteForm key={`cliente-${seleccionado.id}`} cliente={seleccionado} guardando={guardando} onCancel={() => setModoCliente("ver")} onSave={guardarCliente}/> : <ClienteDetalle
         cliente={seleccionado}
+        accionando={accionando}
         onBack={() => setMobileDetail(false)}
         onEdit={() => setModoCliente("editar")}
         onDelete={eliminarCliente}
+        onGuardarActividad={(actividad, datos) => ejecutarActividad(() => actividad
+          ? servicios.actualizarActividad(seleccionado.id, actividad.id, datos)
+          : servicios.crearActividad(seleccionado.id, datos))}
+        onCancelarActividad={cancelarEdicionActividad}
+        onCompletarActividad={(actividad) => ejecutarActividad(() => servicios.completarActividad(seleccionado.id, actividad.id))}
+        onBorrarActividad={(actividad) => ejecutarActividad(() => servicios.eliminarActividad(seleccionado.id, actividad.id))}
       />;
 
       return <PanelLayout mobileDetail={mobileDetail} sidebar={<ClienteList clientes={clientes} seleccionado={seleccionado} busqueda={busqueda} onSearch={setBusqueda} onSelect={(cliente) => { setSeleccionado(cliente); setModoCliente("ver"); setMobileDetail(true); }} onCreate={() => { setSeleccionado(null); setModoCliente("nuevo"); setMobileDetail(true); }} cargando={cargando}/>}>
