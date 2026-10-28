@@ -7,5 +7,6 @@ const databasePath = "./data/local.db";
 mkdirSync(dirname(databasePath), { recursive: true });
 
 export const sqlite = new Database(databasePath);
+sqlite.pragma("foreign_keys = ON");
 
 export const db = drizzle(sqlite);

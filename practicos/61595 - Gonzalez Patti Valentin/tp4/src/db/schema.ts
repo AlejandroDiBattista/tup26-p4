@@ -30,3 +30,8 @@ export const actividadesRelations = relations(actividades, ({ one }) => ({
     references: [clientes.id],
   }),
 }));
+
+export type Cliente = typeof clientes.$inferSelect;
+export type NuevoCliente = typeof clientes.$inferInsert;
+export type Actividad = typeof actividades.$inferSelect;
+export type NuevaActividad = typeof actividades.$inferInsert;
