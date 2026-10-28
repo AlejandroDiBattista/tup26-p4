@@ -276,16 +276,16 @@
       const enviar = (event) => { event.preventDefault(); onSave({ ...datos, domicilio: datos.domicilio || null, localidad: datos.localidad || null, telefono: datos.telefono || null }); };
 
       return <form className="detail-scroll form-card" onSubmit={enviar}>
-        <div className="form-card-head"><div><h2>{cliente ? "Editar cliente" : "Nuevo cliente"}</h2><p>Completá los datos de contacto para la ficha.</p></div><IconButton label="Cancelar" icon="close" onClick={onCancel}/></div>
+        <div className="form-card-head"><div><h2>{cliente ? "Editar cliente" : "Nuevo cliente"}</h2><p>Completá los datos de contacto para la ficha.</p></div></div>
         <div className="field-grid">
           <Field label="Nombre" name="nombre" value={datos.nombre} onChange={cambiar} required/>
           <Field label="Apellido" name="apellido" value={datos.apellido} onChange={cambiar} required/>
-          <Field label="Email" name="email" type="email" value={datos.email} onChange={cambiar} required className="span-two"/>
+          <Field label="Email" name="email" type="email" value={datos.email} onChange={cambiar} required/>
           <Field label="Teléfono" name="telefono" type="tel" value={datos.telefono} onChange={cambiar}/>
+          <Field label="Domicilio" name="domicilio" value={datos.domicilio} onChange={cambiar}/>
           <Field label="Localidad" name="localidad" value={datos.localidad} onChange={cambiar}/>
-          <Field label="Domicilio" name="domicilio" value={datos.domicilio} onChange={cambiar} className="span-two"/>
         </div>
-        <div className="form-actions"><Button onClick={onCancel}>Cancelar</Button><Button type="submit" icon="save" variant="primary" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cliente"}</Button></div>
+        <div className="form-actions"><Button type="submit" icon="save" variant="primary" disabled={guardando}>{guardando ? "Guardando…" : "Guardar"}</Button><Button onClick={onCancel}>Cancelar</Button></div>
       </form>;
     }
 
@@ -376,9 +376,9 @@
         return () => window.clearTimeout(timer);
       }, [error]);
 
-      async function refrescar(id = seleccionado?.id) {
+      async function refrescar(id = seleccionado?.id, termino = busqueda) {
         const [lista, detalle] = await Promise.all([
-          servicios.listarClientes(busqueda),
+          servicios.listarClientes(termino),
           id ? servicios.obtenerCliente(id) : Promise.resolve(null),
         ]);
         setClientes(lista.sort((a, b) => a.apellido.localeCompare(b.apellido, "es-AR") || a.nombre.localeCompare(b.nombre, "es-AR")));
@@ -390,7 +390,8 @@
         try {
           if (modoCliente === "nuevo") {
             const nuevo = await servicios.crearCliente(datos);
-            await refrescar(nuevo.id);
+            setBusqueda("");
+            await refrescar(nuevo.id, "");
             setMobileDetail(true);
           } else {
             await servicios.actualizarCliente(seleccionado.id, datos);
