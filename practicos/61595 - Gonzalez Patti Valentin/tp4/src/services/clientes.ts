@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/index.js";
+import { ErrorServicio } from "./error.js";
 import {
   actividades,
   clientes,
@@ -9,33 +10,36 @@ import {
   type NuevoCliente,
 } from "../db/schema.js";
 
-type DatosCliente = Omit<NuevoCliente, "id">;
-type CambiosCliente = Partial<DatosCliente>;
-type DatosActividad = Omit<NuevaActividad, "id" | "clienteId">;
-type CambiosActividad = Partial<DatosActividad>;
+export type DatosCliente = Omit<NuevoCliente, "id">;
+export type CambiosCliente = Partial<DatosCliente>;
+export type DatosActividad = Omit<NuevaActividad, "id" | "clienteId">;
+export type CambiosActividad = Partial<DatosActividad>;
 
 export type EstadoActividad = "pendiente" | "vencida" | "completada";
 export type ActividadConEstado = Actividad & { estado: EstadoActividad };
 export type ClienteConActividades = Cliente & { actividades: ActividadConEstado[] };
 
 function normalizarNombre(valor: string): string {
+  if (typeof valor !== "string") throw new ErrorServicio("El nombre y el apellido son obligatorios.");
   const nombre = valor.trim().replace(/\s+/g, " ").toLocaleLowerCase("es-AR");
   const normalizado = nombre.replace(/(^|[\s'-])\p{L}/gu, (letra) =>
     letra.toLocaleUpperCase("es-AR"),
   );
 
-  if (!normalizado) throw new Error("El nombre y el apellido son obligatorios.");
+  if (!normalizado) throw new ErrorServicio("El nombre y el apellido son obligatorios.");
   return normalizado;
 }
 
 function normalizarEmail(valor: string): string {
+  if (typeof valor !== "string") throw new ErrorServicio("El email es obligatorio.");
   const email = valor.trim().toLocaleLowerCase("es-AR");
-  if (!email) throw new Error("El email es obligatorio.");
+  if (!email) throw new ErrorServicio("El email es obligatorio.");
   return email;
 }
 
 function normalizarTelefono(valor: string | null): string | null {
   if (valor === null) return null;
+  if (typeof valor !== "string") throw new ErrorServicio("El teléfono debe ser texto.");
   const texto = valor.trim();
   const digitos = texto.replace(/\D/g, "");
   if (!digitos) return null;
@@ -43,19 +47,21 @@ function normalizarTelefono(valor: string | null): string | null {
 }
 
 function normalizarTextoOpcional(valor: string | null): string | null {
+  if (valor !== null && typeof valor !== "string") throw new ErrorServicio("El dato debe ser texto.");
   return valor?.trim() || null;
 }
 
 function normalizarFecha(valor: string | null): string | null {
   if (valor === null) return null;
+  if (typeof valor !== "string") throw new ErrorServicio("La fecha debe ser texto o nula.");
   const fecha = valor.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    throw new Error("Las fechas deben usar el formato AAAA-MM-DD.");
+    throw new ErrorServicio("Las fechas deben usar el formato AAAA-MM-DD.");
   }
 
   const fechaParseada = new Date(`${fecha}T00:00:00.000Z`);
   if (Number.isNaN(fechaParseada.valueOf()) || fechaParseada.toISOString().slice(0, 10) !== fecha) {
-    throw new Error("La fecha indicada no es válida.");
+    throw new ErrorServicio("La fecha indicada no es válida.");
   }
   return fecha;
 }
@@ -104,8 +110,9 @@ function normalizarCambiosCliente(datos: CambiosCliente): CambiosCliente {
 }
 
 function normalizarDescripcion(valor: string): string {
+  if (typeof valor !== "string") throw new ErrorServicio("La descripción es obligatoria.");
   const descripcion = valor.trim().replace(/\s+/g, " ");
-  if (!descripcion) throw new Error("La descripción es obligatoria.");
+  if (!descripcion) throw new ErrorServicio("La descripción es obligatoria.");
   return descripcion;
 }
 
@@ -134,13 +141,15 @@ function actividadesDe(clienteId: number): ActividadConEstado[] {
 
 function exigirCliente(id: number): Cliente {
   const cliente = db.select().from(clientes).where(eq(clientes.id, id)).get();
-  if (!cliente) throw new Error("Cliente no encontrado.");
+  if (!cliente) throw new ErrorServicio("Cliente no encontrado.", 404);
   return cliente;
 }
 
-function exigirActividad(id: number): Actividad {
+function exigirActividad(id: number, clienteId?: number): Actividad {
   const actividad = db.select().from(actividades).where(eq(actividades.id, id)).get();
-  if (!actividad) throw new Error("Actividad no encontrada.");
+  if (!actividad || (clienteId !== undefined && actividad.clienteId !== clienteId)) {
+    throw new ErrorServicio("Actividad no encontrada para este cliente.", 404);
+  }
   return actividad;
 }
 
@@ -171,13 +180,14 @@ export class Clientes {
     return actividadesDe(clienteId);
   }
 
-  static obtenerActividad(id: number): ActividadConEstado {
-    return conEstado(exigirActividad(id));
+  static obtenerActividad(clienteId: number, id: number): ActividadConEstado {
+    exigirCliente(clienteId);
+    return conEstado(exigirActividad(id, clienteId));
   }
 
   static crear(datos: DatosCliente): Cliente {
     const cliente = db.insert(clientes).values(normalizarDatosCliente(datos)).returning().get();
-    if (!cliente) throw new Error("No se pudo crear el cliente.");
+    if (!cliente) throw new ErrorServicio("No se pudo crear el cliente.", 500);
     return cliente;
   }
 
@@ -188,7 +198,7 @@ export class Clientes {
 
     const cliente = db.update(clientes).set(cambios)
       .where(eq(clientes.id, id)).returning().get();
-    if (!cliente) throw new Error("Cliente no encontrado.");
+    if (!cliente) throw new ErrorServicio("Cliente no encontrado.", 404);
     return cliente;
   }
 
@@ -202,14 +212,15 @@ export class Clientes {
     const actividad = db.insert(actividades)
       .values({ clienteId, ...normalizarDatosActividad(datos) })
       .returning().get();
-    if (!actividad) throw new Error("No se pudo crear la actividad.");
+    if (!actividad) throw new ErrorServicio("No se pudo crear la actividad.", 500);
     return conEstado(actividad);
   }
 
-  static actualizarActividad(id: number, datos: CambiosActividad): ActividadConEstado {
-    const actual = exigirActividad(id);
+  static actualizarActividad(clienteId: number, id: number, datos: CambiosActividad): ActividadConEstado {
+    exigirCliente(clienteId);
+    const actual = exigirActividad(id, clienteId);
     if (actual.fechaFinalizacion) {
-      throw new Error("No se puede editar una actividad completada.");
+      throw new ErrorServicio("No se puede editar una actividad completada.", 409);
     }
 
     const cambios = normalizarCambiosActividad(datos);
@@ -217,27 +228,29 @@ export class Clientes {
 
     const actividad = db.update(actividades).set(cambios)
       .where(eq(actividades.id, id)).returning().get();
-    if (!actividad) throw new Error("Actividad no encontrada.");
+    if (!actividad) throw new ErrorServicio("Actividad no encontrada.", 404);
     return conEstado(actividad);
   }
 
-  static completarActividad(id: number, fechaEjecucion = fechaLocalDeHoy()): ActividadConEstado {
-    const actual = exigirActividad(id);
+  static completarActividad(clienteId: number, id: number, fechaEjecucion = fechaLocalDeHoy()): ActividadConEstado {
+    exigirCliente(clienteId);
+    const actual = exigirActividad(id, clienteId);
     if (actual.fechaFinalizacion) {
-      throw new Error("La actividad ya está completada.");
+      throw new ErrorServicio("La actividad ya está completada.", 409);
     }
 
     const actividad = db.update(actividades)
       .set({ fechaFinalizacion: normalizarFecha(fechaEjecucion) })
       .where(eq(actividades.id, id)).returning().get();
-    if (!actividad) throw new Error("Actividad no encontrada.");
+    if (!actividad) throw new ErrorServicio("Actividad no encontrada.", 404);
     return conEstado(actividad);
   }
 
-  static eliminarActividad(id: number): void {
-    const actividad = exigirActividad(id);
+  static eliminarActividad(clienteId: number, id: number): void {
+    exigirCliente(clienteId);
+    const actividad = exigirActividad(id, clienteId);
     if (actividad.fechaFinalizacion) {
-      throw new Error("No se puede eliminar una actividad completada.");
+      throw new ErrorServicio("No se puede eliminar una actividad completada.", 409);
     }
     db.delete(actividades).where(eq(actividades.id, id)).run();
   }
