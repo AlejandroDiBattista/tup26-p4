@@ -37,17 +37,11 @@ export class ClienteService {
         like(clientes.direccion, coincidencia),
         like(clientes.notas, coincidencia),
 
-        static buscar(texto: string) {
-    return db.select().from(clientes).where(
-        or(
-            like(clientes.nombre, `%${texto}%`),
-            like(clientes.email, `%${texto}%`),
-            like(clientes.empresa, `%${texto}%`),
-            like(clientes.telefono, `%${texto}%`)
-        )
-    )
-}
+        
       ),
     ).all()
+  
   }
+
+  
 }
