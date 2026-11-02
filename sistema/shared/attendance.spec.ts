@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   attendanceStatusForArrival,
+  attendanceTextForDate,
   parseAttendanceLegajos,
   summarizeAttendance,
 } from "./attendance";
 
 describe("llegadas tarde", () => {
+  it("recorta mensajes y continuaciones a la fecha seleccionada", () => {
+    const text = "[19/10/2026, 19:10] Alumno: 60001\ncontinuación\n[20/10/2026, 19:20] Alumno: 60002\nsegunda línea";
+    expect(attendanceTextForDate(text, "2026-10-20")).toBe("[20/10/2026, 19:20] Alumno: 60002\nsegunda línea");
+  });
   it("marca tarde desde los 20 minutos inclusive y usa el inicio de cada comisión", () => {
     const result = parseAttendanceLegajos(`
 [19/10/2026, 19:19:59] WhatsApp: 60001

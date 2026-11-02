@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { attendanceStatusForArrival, parseAttendanceLegajos } from "@shared/attendance";
+import { attendanceStatusForArrival, attendanceTextForDate, parseAttendanceLegajos } from "@shared/attendance";
 
 export { parseAttendanceLegajos } from "@shared/attendance";
 
@@ -139,14 +139,13 @@ export function AttendanceTab() {
     selectedCourseId === ALL_COURSES
       ? sessions
       : sessions.filter((session) => session.courseId === selectedCourseId);
-  const availableSessions = sessionsForCourse.filter((session) => session.date <= today);
-  const allAvailableSessions = sessions.filter((session) => session.date <= today);
+  const availableSessions = sessionsForCourse;
+  const allAvailableSessions = sessions;
   const selectedDate =
     requestedDate || sessions.find((session) => session.id === legacySessionId)?.date || "";
   const selectedSessions = sessions.filter(
     (session) =>
       session.date === selectedDate &&
-      session.date <= today &&
       (selectedCourseId === ALL_COURSES || session.courseId === selectedCourseId),
   );
   const selectedSession = selectedSessions.length === 1 ? selectedSessions[0] : null;
@@ -171,7 +170,7 @@ export function AttendanceTab() {
 
   useEffect(() => {
     const legacySession = sessions.find((session) => session.id === legacySessionId);
-    const legacyDate = legacySession && legacySession.date <= today ? legacySession.date : "";
+    const legacyDate = legacySession?.date ?? "";
     const nextDate =
       requestedDate && allAvailableSessions.some((session) => session.date === requestedDate)
         ? requestedDate
@@ -266,12 +265,12 @@ export function AttendanceTab() {
     >();
 
     for (const entry of parsedAttendance.entries) {
+      if (entry.date !== selectedDate) continue;
       const row = rowsByLegajo.get(entry.legajo);
       const session = row
         ? sessions.find(
             (item) =>
               item.date === entry.date &&
-              item.date <= today &&
               item.status === "programada" &&
               item.courseId === row.course.id,
           )
@@ -287,7 +286,7 @@ export function AttendanceTab() {
     }
 
     return Array.from(groups.values());
-  }, [displayedRows, parsedAttendance.entries, sessions, today]);
+  }, [displayedRows, parsedAttendance.entries, sessions, selectedDate]);
 
   const bulkAttendanceImportableCount = bulkAttendanceGroups.reduce(
     (total, group) => total + group.entries.length,
@@ -328,10 +327,12 @@ export function AttendanceTab() {
 
     setLoadingBulkAttendance(true);
     try {
+      let savedCount = 0;
       for (const group of bulkAttendanceGroups) {
-        await setAttendance.mutateAsync({ classId: group.classId, entries: group.entries });
+        const result = await setAttendance.mutateAsync({ classId: group.classId, entries: group.entries, onlyUnmarked: true }) as { updated: unknown[] };
+        savedCount += result.updated.length;
       }
-      toast.success(t("agenda.attendanceLoaded", { count: bulkAttendanceImportableCount }));
+      toast.success(t("agenda.attendanceLoaded", { count: savedCount }));
       setBulkAttendanceOpen(false);
       setBulkAttendanceText("");
     } catch (error) {
@@ -484,11 +485,13 @@ export function AttendanceTab() {
                   <WhatsAppTextImport
                     targetId="bulk-attendance-text"
                     disabled={loadingBulkAttendance}
-                    onText={(value) =>
+                    onText={(value) => {
+                      const relevant = value.startsWith(t("agenda.whatsappFailed"))
+                        ? value : attendanceTextForDate(value, selectedDate);
                       setBulkAttendanceText((current) =>
-                        current ? `${current}${current.endsWith("\n") ? "" : "\n"}${value}` : value,
-                      )
-                    }
+                        current && relevant ? `${current}${current.endsWith("\n") ? "" : "\n"}${relevant}` : current || relevant,
+                      );
+                    }}
                     onBusy={setImportingWhatsapp}
                   />
                 </div>

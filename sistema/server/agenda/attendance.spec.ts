@@ -46,6 +46,14 @@ afterEach(() => {
 });
 
 describe("asistencia tarde en SQL", () => {
+  it("la importación aditiva conserva estados existentes e incorpora solo alumnos sin marca", async () => {
+    await setAttendance(owner, { sessionId: "cl1", entries: [{ legajo: "60001", status: "justificada" }] });
+    const result = await setAttendance(owner, { sessionId: "cl1", onlyUnmarked: true, entries: [{ legajo: "60001", status: "presente" }] });
+    expect(result).toMatchObject({ updated: [], skipped: ["60001"] });
+    expect(await getDb().select().from(attendance)).toMatchObject([{ status: "justificada" }]);
+    const added = await setAttendance(owner, { sessionId: "cl2", onlyUnmarked: true, entries: [{ legajo: "60001", status: "tarde" }] });
+    expect(added.updated).toEqual([{ legajo: "60001", status: "tarde" }]);
+  });
   it("acepta tarde en la acción, guarda, relee y permite corregir o limpiar", async () => {
     expect(
       await action.run(

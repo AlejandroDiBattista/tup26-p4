@@ -45,6 +45,15 @@ function parseAttendanceHeader(text: string) {
   return { date: date.toISOString().slice(0, 10), arrivalMinutes };
 }
 
+export function attendanceTextForDate(text: string, selectedDate: string) {
+  let date = "";
+  return text.split(/\r?\n/).filter((line) => {
+    const header = parseAttendanceHeader(line);
+    if (header) date = header.date;
+    return date === selectedDate;
+  }).join("\n");
+}
+
 export function parseAttendanceLegajos(text: string, fallbackDate = "") {
   const valid = new Set<string>();
   const invalid = new Set<string>();

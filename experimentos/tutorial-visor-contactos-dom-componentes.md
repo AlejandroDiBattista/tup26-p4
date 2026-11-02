@@ -1217,9 +1217,7 @@ evento → modifica estado → renderiza
 Nuestra función:
 
 ```js
-h(
-  "div",
-  { class: "contacto" },
+h("div",{ class: "contacto" },
   h("strong", {}, contacto.apellido),
   h("span", {}, contacto.nombre)
 )

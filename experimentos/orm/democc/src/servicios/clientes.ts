@@ -24,7 +24,10 @@ export type DatosActividad = Pick<NuevaActividad, 'descripcion' | 'fecha' | 'com
 export const filtrosActividades = ['todas', 'pendientes', 'vencidas', 'sin-compromiso'] as const;
 export type FiltroActividades = (typeof filtrosActividades)[number];
 
-const ordenClientes = [asc(clientes.apellido), asc(clientes.nombre)];
+const ordenClientes = [
+  asc(clientes.apellido), 
+  asc(clientes.nombre)
+];
 
 export class Clientes {
   // ── Clientes ────────────────────────────────────────────────
@@ -33,9 +36,10 @@ export class Clientes {
     return db.select().from(clientes).orderBy(...ordenClientes);
   }
 
-  static async obtener(id: number): Promise<Cliente> {
+  static async obtener(id=0): Promise<Cliente> {
     const [cliente] = await db.select().from(clientes).where(eq(clientes.id, id));
     if (!cliente) throw new NoEncontrado(`No existe el cliente #${id}.`);
+
     return cliente;
   }
 

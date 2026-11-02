@@ -11,8 +11,5 @@ clientesRouter.delete('/:id', ClientesControlador.eliminar);
 
 clientesRouter.post('/:id/actividades', ClientesControlador.agregarActividad);
 clientesRouter.put('/:id/actividades/:actividadId', ClientesControlador.actualizarActividad);
-clientesRouter.patch(
-  '/:id/actividades/:actividadId/completar',
-  ClientesControlador.completarActividad
-);
+clientesRouter.patch( '/:id/actividades/:actividadId/completar', ClientesControlador.completarActividad );
 clientesRouter.delete('/:id/actividades/:actividadId', ClientesControlador.eliminarActividad);

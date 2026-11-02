@@ -1,0 +1,192 @@
+.sesiones {
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--glass-stroke);
+}
+
+.sesiones-formulario,
+.sesiones-guardadas {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.sesiones-formulario label,
+.sesiones-guardadas h2 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.sesiones-ayuda {
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.sesiones-mensaje {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  animation: aparecer-sesion 180ms ease-out both;
+}
+
+.sesiones-mensaje::before {
+  content: '✓';
+}
+
+.sesiones-campos {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sesiones-campos input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-control);
+  color: var(--text-h);
+  background: var(--glass-surface-solid);
+  box-shadow: var(--glass-inset);
+  font: inherit;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .sesiones-campos input {
+    background: var(--glass-surface);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+}
+
+.sesiones-campos input:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.sesiones button {
+  min-height: 2.75rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-control);
+  color: var(--text-h);
+  background: var(--glass-surface-solid);
+  box-shadow: var(--glass-inset), var(--shadow-control);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 160ms ease-out, background-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .sesiones button {
+    background: var(--glass-surface);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+}
+
+.sesiones button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glass-inset), var(--shadow-control-hover);
+}
+
+.sesiones button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.sesiones button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sesion-navegacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-surface);
+  background: var(--glass-surface-solid);
+  box-shadow: var(--glass-inset);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .sesion-navegacion {
+    background: var(--glass-surface);
+    -webkit-backdrop-filter: blur(16px) saturate(1.25);
+    backdrop-filter: blur(16px) saturate(1.25);
+  }
+}
+
+.sesion-detalle {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.sesion-detalle strong {
+  overflow-wrap: anywhere;
+  color: var(--text-h);
+}
+
+.sesion-detalle span {
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.sesion-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.sesion-acciones button {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.sesion-acciones .sesion-borrar {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+}
+
+.sesion-acciones button:focus-visible,
+.sesiones-campos button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .sesiones-campos {
+    align-items: stretch;
+  }
+
+  .sesion-navegacion { gap: 0.25rem; }
+}
+
+@keyframes aparecer-sesion {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sesiones-mensaje { animation: none; }
+  .sesiones button,
+  .sesiones button:not(:disabled):hover,
+  .sesiones button:not(:disabled):active { transition: none; transform: none; }
+}

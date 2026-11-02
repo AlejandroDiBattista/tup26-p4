@@ -1,0 +1,2 @@
+export const DURACION_OBSERVACION_MS = 5 * 60 * 1000
+export const INTERVALO_CRONOMETRO_MS = 100
