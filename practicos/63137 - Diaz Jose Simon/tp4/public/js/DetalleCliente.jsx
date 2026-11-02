@@ -50,6 +50,7 @@ function DetalleCliente({ id, alCambiar, alEliminar }) {
         <button type="button" onClick={empezarEdicion}>Editar</button>
         <button type="button" className="peligro" onClick={eliminar}>Eliminar</button>
       </div>
+      <SeccionActividades clienteId={id} actividades={cliente.actividades} alCambiar={cargarCliente} />
     </div>
   );
 }

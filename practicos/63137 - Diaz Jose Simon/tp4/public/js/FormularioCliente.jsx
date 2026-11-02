@@ -14,11 +14,7 @@ function tomarCamposCliente(cliente) {
 }
 
 function FormularioCliente({ clienteInicial = {}, alGuardar, alCancelar }) {
-  const [datos, setDatos] = React.useState(tomarCamposCliente(clienteInicial));
-
-  function cambiarCampo(evento) {
-    setDatos({ ...datos, [evento.target.name]: evento.target.value });
-  }
+  const { datos, cambiarCampo } = useFormulario(tomarCamposCliente(clienteInicial));
 
   function guardar(evento) {
     evento.preventDefault();
