@@ -8,6 +8,22 @@ interface AttendanceEntry {
   arrivalMinutes: number | null;
 }
 
+export function todayInArgentina(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function isRecentAttendanceDate(date: string, today = todayInArgentina()) {
+  const age = (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`)) / 86_400_000;
+  return age >= 0 && age < 7;
+}
+
 function timeMinutes(time: string) {
   const match = time.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (!match) return null;
@@ -45,13 +61,16 @@ function parseAttendanceHeader(text: string) {
   return { date: date.toISOString().slice(0, 10), arrivalMinutes };
 }
 
-export function attendanceTextForDate(text: string, selectedDate: string) {
+export function recentAttendanceText(text: string, today = todayInArgentina()) {
   let date = "";
-  return text.split(/\r?\n/).filter((line) => {
-    const header = parseAttendanceHeader(line);
-    if (header) date = header.date;
-    return date === selectedDate;
-  }).join("\n");
+  return text
+    .split(/\r?\n/)
+    .filter((line) => {
+      const header = parseAttendanceHeader(line);
+      if (header) date = header.date;
+      return isRecentAttendanceDate(date, today);
+    })
+    .join("\n");
 }
 
 export function parseAttendanceLegajos(text: string, fallbackDate = "") {
@@ -59,7 +78,7 @@ export function parseAttendanceLegajos(text: string, fallbackDate = "") {
   const invalid = new Set<string>();
   const dates = new Set<string>();
   const entries = new Map<string, AttendanceEntry>();
-  let date = parseAttendanceHeader(text)?.date ?? fallbackDate;
+  let date = fallbackDate;
   let arrivalMinutes: number | null = null;
 
   for (const line of text.split(/\r?\n/)) {
@@ -94,6 +113,54 @@ export function parseAttendanceLegajos(text: string, fallbackDate = "") {
     dates: Array.from(dates),
     entries: Array.from(entries.values()),
   };
+}
+
+/** Importa solo fechas explícitas recientes, sin depender de la fecha visible. */
+export function prepareAttendanceImport(
+  text: string,
+  rows: Array<{ legajo: string; course: { id: string } }>,
+  sessions: Array<{
+    id: string;
+    courseId: string;
+    date: string;
+    status: string;
+    startTime: string | null;
+  }>,
+  today = todayInArgentina(),
+) {
+  const rowsByLegajo = new Map(rows.map((row) => [row.legajo, row]));
+  const scheduled = new Map(
+    sessions
+      .filter((session) => session.status === "programada")
+      .map((session) => [`${session.courseId}:${session.date}`, session]),
+  );
+  const groups = new Map<
+    string,
+    {
+      classId: string;
+      date: string;
+      entries: Array<{ legajo: string; status: "presente" | "tarde" }>;
+    }
+  >();
+
+  for (const entry of parseAttendanceLegajos(text).entries) {
+    if (!isRecentAttendanceDate(entry.date, today)) continue;
+    const row = rowsByLegajo.get(entry.legajo);
+    const session = row ? scheduled.get(`${row.course.id}:${entry.date}`) : undefined;
+    if (!session) continue;
+    const group = groups.get(session.id) ?? {
+      classId: session.id,
+      date: session.date,
+      entries: [],
+    };
+    group.entries.push({
+      legajo: entry.legajo,
+      status: attendanceStatusForArrival(entry.arrivalMinutes, session.startTime),
+    });
+    groups.set(session.id, group);
+  }
+
+  return Array.from(groups.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function attendanceStatusForArrival(

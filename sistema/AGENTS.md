@@ -119,6 +119,14 @@ call over one call per student.
 - Late attendance (`tarde`) counts as half attendance: `(presentes + tardes / 2) / (presentes + tardes + ausentes)`. Imported messages use each student's earliest message time per date and the start time of their commission's class: at least 20 minutes after the start means `tarde`. Without a message or class start time, use `presente`; manual status selection remains explicit.
 - Attendance can only be recorded for scheduled classes and students belonging
   to that class's commission.
+- Pasted attendance uses each message's date, independently of the selected UI
+  date, and may load multiple classes in the selected commissions. Only today
+  and the previous six calendar days in Argentina are eligible; ignore dates
+  seven or more days old, future dates and undated text. The import is additive:
+  use `set-attendance` with `onlyUnmarked=true`, preserve all existing marks and
+  never infer absence from missing messages. Manual attendance remains explicit.
+  `Traer de WApp` trims attendance text to that same period; changing the visible
+  date or commission preserves the draft, and saving shows the latest processed date.
 - Classes may be cancelled for `feriado`, `asueto`, `examen`, `paro` or `otro`.
 - Deleting a student, practical or class destroys dependent records. Confirm.
 - Practical statements live in `../enunciados`. A folder is matched to the

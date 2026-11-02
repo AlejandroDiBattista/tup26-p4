@@ -24,7 +24,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { attendanceStatusForArrival, attendanceTextForDate, parseAttendanceLegajos } from "@shared/attendance";
+import {
+  prepareAttendanceImport,
+  recentAttendanceText,
+  todayInArgentina,
+} from "@shared/attendance";
 
 export { parseAttendanceLegajos } from "@shared/attendance";
 
@@ -79,17 +83,6 @@ function formatDate(value: string) {
     day: "numeric",
     month: "long",
   }).format(new Date(`${value}T12:00:00`));
-}
-
-function todayInArgentina() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Argentina/Buenos_Aires",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function initialDate(sessions: ClassSession[]) {
@@ -252,41 +245,10 @@ export function AttendanceTab() {
     return counts;
   }, [visibleRows, selectedSessions]);
 
-  const parsedAttendance = useMemo(
-    () => parseAttendanceLegajos(bulkAttendanceText, selectedDate),
-    [bulkAttendanceText, selectedDate],
+  const bulkAttendanceGroups = useMemo(
+    () => prepareAttendanceImport(bulkAttendanceText, displayedRows, sessions, today),
+    [bulkAttendanceText, displayedRows, sessions, today],
   );
-
-  const bulkAttendanceGroups = useMemo(() => {
-    const rowsByLegajo = new Map(displayedRows.map((row) => [row.legajo, row]));
-    const groups = new Map<
-      string,
-      { classId: string; entries: Array<{ legajo: string; status: AttendanceStatus }> }
-    >();
-
-    for (const entry of parsedAttendance.entries) {
-      if (entry.date !== selectedDate) continue;
-      const row = rowsByLegajo.get(entry.legajo);
-      const session = row
-        ? sessions.find(
-            (item) =>
-              item.date === entry.date &&
-              item.status === "programada" &&
-              item.courseId === row.course.id,
-          )
-        : null;
-      if (!row || !session) continue;
-
-      const group = groups.get(session.id) ?? { classId: session.id, entries: [] };
-      group.entries.push({
-        legajo: entry.legajo,
-        status: attendanceStatusForArrival(entry.arrivalMinutes, session.startTime),
-      });
-      groups.set(session.id, group);
-    }
-
-    return Array.from(groups.values());
-  }, [displayedRows, parsedAttendance.entries, sessions, selectedDate]);
 
   const bulkAttendanceImportableCount = bulkAttendanceGroups.reduce(
     (total, group) => total + group.entries.length,
@@ -301,12 +263,6 @@ export function AttendanceTab() {
     setAttendanceFilter("todos");
   }, [selectedDate]);
 
-  useEffect(() => {
-    setBulkAttendanceOpen(false);
-    setImportingWhatsapp(false);
-    setBulkAttendanceText("");
-  }, [selectedCourseId, selectedDate]);
-
   function mark(legajo: string, status: AttendanceStatus | null) {
     const row = rows.find((item) => item.legajo === legajo);
     const session = row ? selectedSessions.find((item) => item.courseId === row.course.id) : null;
@@ -320,7 +276,9 @@ export function AttendanceTab() {
   async function loadBulkAttendance(event: React.FormEvent) {
     event.preventDefault();
     if (importingWhatsapp || loadingBulkAttendance) return;
-    if (bulkAttendanceGroups.length === 0) {
+    // Recalcular el límite al guardar, por si el formulario quedó abierto de un día a otro.
+    const groups = prepareAttendanceImport(bulkAttendanceText, displayedRows, sessions);
+    if (groups.length === 0) {
       toast.error(t("agenda.attendanceNothingDetected"));
       return;
     }
@@ -328,13 +286,18 @@ export function AttendanceTab() {
     setLoadingBulkAttendance(true);
     try {
       let savedCount = 0;
-      for (const group of bulkAttendanceGroups) {
-        const result = await setAttendance.mutateAsync({ classId: group.classId, entries: group.entries, onlyUnmarked: true }) as { updated: unknown[] };
+      for (const group of groups) {
+        const result = (await setAttendance.mutateAsync({
+          classId: group.classId,
+          entries: group.entries,
+          onlyUnmarked: true,
+        })) as { updated: unknown[] };
         savedCount += result.updated.length;
       }
       toast.success(t("agenda.attendanceLoaded", { count: savedCount }));
       setBulkAttendanceOpen(false);
       setBulkAttendanceText("");
+      selectDate(groups[groups.length - 1].date);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
@@ -439,7 +402,7 @@ export function AttendanceTab() {
           </select>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {attendanceRows.length > 0 ? (
+          {displayedRows.length > 0 ? (
             <Button
               type="button"
               variant="outline"
@@ -463,68 +426,82 @@ export function AttendanceTab() {
         </div>
       </div>
 
+      {bulkAttendanceOpen ? (
+        <form
+          onSubmit={loadBulkAttendance}
+          className="mb-6 grid gap-4 border-y border-border bg-muted/25 py-4"
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="bulk-attendance-text">{t("agenda.loadAttendance")}</Label>
+            <div className="flex items-start gap-2">
+              <textarea
+                id="bulk-attendance-text"
+                disabled={importingWhatsapp || loadingBulkAttendance}
+                rows={5}
+                aria-describedby="bulk-attendance-summary"
+                value={bulkAttendanceText}
+                onChange={(event) => setBulkAttendanceText(event.target.value)}
+                placeholder={t("agenda.loadAttendancePlaceholder")}
+                className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <WhatsAppTextImport
+                targetId="bulk-attendance-text"
+                disabled={loadingBulkAttendance}
+                onText={(value) => {
+                  const relevant = value.startsWith(t("agenda.whatsappFailed"))
+                    ? value
+                    : recentAttendanceText(value) || t("agenda.attendanceNothingDetected");
+                  setBulkAttendanceText((current) =>
+                    current
+                      ? `${current}${current.endsWith("\n") ? "" : "\n"}${relevant}`
+                      : relevant,
+                  );
+                }}
+                onBusy={setImportingWhatsapp}
+              />
+            </div>
+          </div>
+          <p id="bulk-attendance-summary" role="status" className="text-sm text-muted-foreground">
+            {bulkAttendanceImportableCount > 0
+              ? t("agenda.attendanceImportPreview", {
+                  count: bulkAttendanceImportableCount,
+                  dates: Array.from(new Set(bulkAttendanceGroups.map((group) => group.date)))
+                    .map(formatDate)
+                    .join(", "),
+                })
+              : bulkAttendanceText.trim()
+                ? t("agenda.attendanceNothingDetected")
+                : t("agenda.loadAttendanceHint")}
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="submit"
+              disabled={
+                importingWhatsapp || loadingBulkAttendance || bulkAttendanceImportableCount === 0
+              }
+            >
+              {loadingBulkAttendance ? t("agenda.loadingAttendance") : t("agenda.save")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              onClick={() => {
+                setBulkAttendanceOpen(false);
+                setBulkAttendanceText("");
+              }}
+              disabled={loadingBulkAttendance}
+              aria-label={t("agenda.cancel")}
+              title={t("agenda.cancel")}
+            >
+              <IconX aria-hidden="true" />
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
       {selectedSessions.length > 0 ? (
         <>
-          {bulkAttendanceOpen ? (
-            <form
-              onSubmit={loadBulkAttendance}
-              className="mb-6 grid gap-4 border-y border-border bg-muted/25 py-4"
-            >
-              <div className="grid gap-1.5">
-                <Label htmlFor="bulk-attendance-text">{t("agenda.loadAttendance")}</Label>
-                <div className="flex items-start gap-2">
-                  <textarea
-                    id="bulk-attendance-text"
-                    disabled={importingWhatsapp || loadingBulkAttendance}
-                    rows={5}
-                    value={bulkAttendanceText}
-                    onChange={(event) => setBulkAttendanceText(event.target.value)}
-                    placeholder={t("agenda.loadAttendancePlaceholder")}
-                    className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                  <WhatsAppTextImport
-                    targetId="bulk-attendance-text"
-                    disabled={loadingBulkAttendance}
-                    onText={(value) => {
-                      const relevant = value.startsWith(t("agenda.whatsappFailed"))
-                        ? value : attendanceTextForDate(value, selectedDate);
-                      setBulkAttendanceText((current) =>
-                        current && relevant ? `${current}${current.endsWith("\n") ? "" : "\n"}${relevant}` : current || relevant,
-                      );
-                    }}
-                    onBusy={setImportingWhatsapp}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  type="submit"
-                  disabled={
-                    importingWhatsapp ||
-                    loadingBulkAttendance ||
-                    bulkAttendanceImportableCount === 0
-                  }
-                >
-                  {loadingBulkAttendance ? t("agenda.loadingAttendance") : t("agenda.save")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => {
-                    setBulkAttendanceOpen(false);
-                    setBulkAttendanceText("");
-                  }}
-                  disabled={loadingBulkAttendance}
-                  aria-label={t("agenda.cancel")}
-                  title={t("agenda.cancel")}
-                >
-                  <IconX aria-hidden="true" />
-                </Button>
-              </div>
-            </form>
-          ) : null}
-
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">

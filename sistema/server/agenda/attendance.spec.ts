@@ -5,6 +5,7 @@ import action from "../../actions/set-attendance";
 import { getDb } from "../db/index";
 import { attendance } from "../db/schema";
 import { attendanceGrid, listStudents, setAttendance, studentSummary } from "./store";
+import { prepareAttendanceImport } from "../../shared/attendance";
 
 let db: Awaited<ReturnType<typeof createDb>>;
 vi.mock("../db/index.js", () => ({ getDb: () => db }));
@@ -46,12 +47,80 @@ afterEach(() => {
 });
 
 describe("asistencia tarde en SQL", () => {
+  it.each(["presente", "tarde", "ausente", "justificada"])(
+    "la importación conserva la marca previa %s",
+    async (status) => {
+      await setAttendance(owner, { sessionId: "cl1", entries: [{ legajo: "60001", status }] });
+      const result = await action.run(
+        { classId: "cl1", onlyUnmarked: true, entries: [{ legajo: "60001", status: "presente" }] },
+        { caller: "http", userEmail: owner },
+      );
+      expect(result).toMatchObject({ updated: [], skipped: ["60001"] });
+      expect(await getDb().select().from(attendance)).toMatchObject([{ sessionId: "cl1", status }]);
+    },
+  );
+
+  it("guarda varias fechas recientes, preserva justificadas y no modifica alumnos sin mensajes", async () => {
+    await setAttendance(owner, {
+      sessionId: "cl3",
+      entries: [{ legajo: "60001", status: "justificada" }],
+    });
+    await setAttendance(owner, {
+      sessionId: "other-class",
+      entries: [{ legajo: "60002", status: "ausente" }],
+    });
+    const grid = await attendanceGrid(owner);
+    const groups = prepareAttendanceImport(
+      `
+[1/1/26, 19:10] Alumno: 60001
+[2/1/26, 19:20] Alumno: 60001
+[3/1/26, 19:10] Alumno: 60001
+[4/1/26, 19:10] Alumno: 60001`,
+      grid.rows,
+      grid.sessions,
+      "2026-01-08",
+    );
+    for (const group of groups) {
+      await action.run(
+        { classId: group.classId, entries: group.entries, onlyUnmarked: true },
+        { caller: "http", userEmail: owner },
+      );
+    }
+    const saved = await getDb().select().from(attendance);
+    expect(saved.map(({ sessionId, status }) => ({ sessionId, status }))).toEqual(
+      expect.arrayContaining([
+        { sessionId: "cl2", status: "tarde" },
+        { sessionId: "cl3", status: "justificada" },
+        { sessionId: "cl4", status: "presente" },
+        { sessionId: "other-class", status: "ausente" },
+      ]),
+    );
+    expect(saved).toHaveLength(4);
+    expect(saved.some((row) => row.sessionId === "cl1")).toBe(false);
+    const repeated = await action.run(
+      { classId: groups[0].classId, entries: groups[0].entries, onlyUnmarked: true },
+      { caller: "http", userEmail: owner },
+    );
+    expect(repeated).toMatchObject({ updated: [], skipped: ["60001"] });
+  });
+
   it("la importación aditiva conserva estados existentes e incorpora solo alumnos sin marca", async () => {
-    await setAttendance(owner, { sessionId: "cl1", entries: [{ legajo: "60001", status: "justificada" }] });
-    const result = await setAttendance(owner, { sessionId: "cl1", onlyUnmarked: true, entries: [{ legajo: "60001", status: "presente" }] });
+    await setAttendance(owner, {
+      sessionId: "cl1",
+      entries: [{ legajo: "60001", status: "justificada" }],
+    });
+    const result = await setAttendance(owner, {
+      sessionId: "cl1",
+      onlyUnmarked: true,
+      entries: [{ legajo: "60001", status: "presente" }],
+    });
     expect(result).toMatchObject({ updated: [], skipped: ["60001"] });
     expect(await getDb().select().from(attendance)).toMatchObject([{ status: "justificada" }]);
-    const added = await setAttendance(owner, { sessionId: "cl2", onlyUnmarked: true, entries: [{ legajo: "60001", status: "tarde" }] });
+    const added = await setAttendance(owner, {
+      sessionId: "cl2",
+      onlyUnmarked: true,
+      entries: [{ legajo: "60001", status: "tarde" }],
+    });
     expect(added.updated).toEqual([{ legajo: "60001", status: "tarde" }]);
   });
   it("acepta tarde en la acción, guarda, relee y permite corregir o limpiar", async () => {

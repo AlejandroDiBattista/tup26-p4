@@ -103,6 +103,16 @@ vinculación por QR; informa faltantes o nombres duplicados como errores.
 
 La lectura no envía mensajes ni guarda notas o asistencias: hay que confirmar
 la carga. Cada línea conserva la fecha y hora del mensaje en la zona horaria de Tucumán.
+La carga de asistencia toma las **fechas del texto**, independientemente del día
+visible: una conversación puede cargar varias clases de las comisiones seleccionadas.
+Solo admite **hoy y los seis días anteriores**, según el calendario argentino;
+ignora mensajes de hace siete días o más, futuros o sin fecha. Solo carga alumnos
+del padrón en clases programadas de su comisión. Al traer texto desde WhatsApp,
+también lo recorta a ese período. Cambiar de fecha o comisión conserva el texto
+pegado; después de guardar se muestra la última fecha procesada.
+La importación es **aditiva**: agrega presente o tarde solo si no hay una marca
+previa, conserva todas las existentes (incluidas justificadas) y nunca crea una
+ausencia por falta de mensajes. Las ediciones manuales siguen disponibles.
 Al cargar asistencia se compara el primer registro de cada alumno por fecha con
 el horario de inicio de su comisión. Desde los 20 minutos posteriores al inicio
 (inclusive) se marca **Tarde**. Si no hay hora de mensaje o de inicio, se marca
