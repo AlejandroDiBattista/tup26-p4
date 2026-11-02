@@ -47,7 +47,7 @@ function parseDelimited(content) {
 
     // ["nombre,apellido,edad,salario,departamento",  "Paula,Acosta1,48,86200,Ingeniería", "Ignacio,Aguirre,53,109700,Finanzas"]
     // ["nombre", "apellido", "edad", "salario", "departamento"]
-    const header = lines[0].split(DEMILITER);
+    const header = lines[0].split(DELIMITER);
 
     // [["Paula", "Acosta", 48, 86200, "Ingeniería"],  ["Ignacio", "Aguirre", 53, 109700, "Finanzas"]]
     const rows = [];
@@ -146,6 +146,14 @@ function sortRows(rows, column, decending) {
     return rowsToSort.sort(compare);
 }
 
+async function saveCsv(path, header, rows) {
+    try {
+        await writeFile(path, serialize(header, rows), 'utf8');
+    } catch (error) {
+        throw new Error('no se pudo escribir el archivo: "' + path + '"');
+    }
+}
+
 function adjustFirstRow(firstRow, selectedRow) {
     if (selectedRow < firstRow) {
         return selectedRow;
@@ -154,6 +162,45 @@ function adjustFirstRow(firstRow, selectedRow) {
         return selectedRow - VISIBLE_ROWS + 1;
     }
     return firstRow;
+}
+
+function Table({ table, columns, cursor }) {
+    const numberWidth = String(table.rows.length).length + 3;
+    const shownRows = table.rows.slice(cursor.firstRow, cursor.firstRow + VISIBLE_ROWS);
+    
+    return (
+        <Box flexDirection="column">
+            <Box>
+                <Box width={numberWidth} marginRight={COLUMN_GAP} justifyContent="flex-end">
+                    <Text bold color={COLORES.secundario}>#</Text>
+                </Box>
+                {table.header.map((name, column) => (
+                    <Box key={column} width={columns[column].width} marginRight={COLUMN_GAP} justifyContent={columns[column].numeric ? 'flex-end' : 'flex-start'}>
+                        <Text bold color={column === cursor.column ? COLORES.acento : COLORES.secundario}>{name.toUpperCase()}</Text>
+                    </Box>
+                ))}
+            </Box>
+            {shownRows.map((row, index) => {
+                const rowIndex = cursor.firstRow + index;
+                const selectedRow = rowIndex === cursor.row;
+                return (
+                    <Box key={rowIndex}>
+                        <Box width={numberWidth} marginRight={COLUMN_GAP} justifyContent="flex-end">
+                            <Text bold={selectedRow} color={selectedRow ? COLORES.acento : COLORES.secundario}>{rowIndex + 1}</Text>
+                        </Box>
+                        {row.map((value, column) => {
+                            const selected = selectedRow && column === cursor.column;
+                            return (
+                                <Box key={column} width={columns[column].width} marginRight={COLUMN_GAP} justifyContent={columns[column].numeric ? 'flex-end' : 'flex-start'} backgroundColor={selected ? COLORES.titulo : undefined}>
+                                    <Text bold={selected} color={selected ? COLORES.fondo : COLORES.titulo}>{formatCell(value, columns[column].numeric)}</Text>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                );
+            })}
+        </Box>
+    );
 }
 
 function App({ initialTable, initialMessage }) {
@@ -212,8 +259,41 @@ function App({ initialTable, initialMessage }) {
             setMessage(error.message); 
         }
     }
+    
+    function editCell(value) {
+        const newRow = [...table.rows[cursor.row]];
+        newRow[cursor.column] = value;
+        
+        const newRows = [...table.rows];
+        newRows[cursor.row] = newRow;
+
+        setTable({ ...table, rows: newRows });
+        setMessage('Celda actualizada');
+        setTimeout( () => {
+            setMessage(null);
+        }, 2000);
+
+        setMode('view');
+    }
+
+    function handleSubmit(value) {
+        if (mode === 'edit') {
+            editCell(value);
+        } else if (mode === 'open') {
+            openFile(value);
+        } else {
+            saveFile(value);
+        }
+    }
 
     useInput((tecla, key) => {
+        if (mode !== 'view') {
+            if (key.escape) {
+                cancel();
+            }
+            return;
+        }
+
         if (key.escape) {
             exit();
         }
@@ -229,7 +309,45 @@ function App({ initialTable, initialMessage }) {
         else if (key.rightArrow) {
             moveTo(cursor.row, cursor.column + 1);
         }
+        else if (tecla === '<') {
+            sortBy(false);
+        }
+        else if (tecla === '>') {
+            sortBy(true);
+        }
+        else if (tecla === 'a' || tecla === 'A') {
+            setMode('open');
+        } 
+        else if (tecla === 'g' || tecla === 'G') {
+            setMode('save');
+        }
+        else if (key.return && hasRows) {
+            setMode('edit');
+        }
     })
+
+    let defaultValue = '';
+    if (mode === 'save') {
+        defaultValue = table.fileName;
+    }
+    else if (mode === 'edit') {
+        defaultValue = currentValue;
+    }
+    
+    let hints = [
+        { key: 'A', label: 'abrir' },
+        { key: 'G', label: 'guardar' },
+        { key: 'Enter', label: 'editar' },
+        { key: '<', label: 'ascendente' },
+        { key: '>', label: 'descendente' },
+        { key: 'Esc', label: 'salir' },
+    ];
+    if (mode !== 'view') {
+        hints = [
+            { key: 'Enter', label: LABELS[mode].toLowerCase() },
+            { key: 'Esc', label: table ? 'cancelar' : 'salir' },
+        ];
+    }
 
     return (
         <Box width={COLUMNAS} height={FILAS} flexDirection="column" paddingX={1} borderStyle="round" borderColor={COLORES.borde} backgroundColor={COLORES.fondo}>
@@ -245,7 +363,7 @@ function App({ initialTable, initialMessage }) {
                     <Text color={COLORES.secundario} wrap="truncate-end">Valor › <Text color={COLORES.titulo}>{currentValue}</Text></Text>
                 ) : (
                     <>
-                        <Text bold color={COLORES.acento}>{PROMPT_LABELS[mode]} › </Text>
+                        <Text bold color={COLORES.acento}>{LABELS[mode]} › </Text>
                         <TextInput key={mode} defaultValue={defaultValue} onSubmit={handleSubmit} />
                     </>
                 )}
