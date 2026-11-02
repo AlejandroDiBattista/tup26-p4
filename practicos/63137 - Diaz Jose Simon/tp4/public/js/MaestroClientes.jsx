@@ -13,7 +13,7 @@ function ItemCliente({ cliente, estaSeleccionado, alSeleccionar }) {
   );
 }
 
-function MaestroClientes({ clientes, busqueda, alBuscar, idSeleccionado, alSeleccionar }) {
+function MaestroClientes({ clientes, busqueda, alBuscar, idSeleccionado, alSeleccionar, alAgregar }) {
   function cambiarBusqueda(evento) {
     alBuscar(evento.target.value);
   }
@@ -31,6 +31,7 @@ function MaestroClientes({ clientes, busqueda, alBuscar, idSeleccionado, alSelec
 
   return (
     <section className="maestro">
+      <button type="button" onClick={alAgregar}>Agregar cliente</button>
       <input placeholder="Buscar por cualquier campo..." value={busqueda} onChange={cambiarBusqueda} />
       <ul className="lista">{clientes.map(mostrarCliente)}</ul>
     </section>

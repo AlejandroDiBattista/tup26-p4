@@ -1,14 +1,51 @@
+const SIN_SELECCION = 0;
+
 function App() {
   const [clientes, setClientes] = React.useState([]);
   const [busqueda, setBusqueda] = React.useState('');
-  const [idSeleccionado, setIdSeleccionado] = React.useState(0);
+  const [idSeleccionado, setIdSeleccionado] = React.useState(SIN_SELECCION);
+  const [agregando, setAgregando] = React.useState(false);
 
-  React.useEffect(() => {
-    async function buscarClientes() {
-      setClientes(await pedirApi(`${RUTA_CLIENTES}?buscar=${encodeURIComponent(busqueda)}`));
-    }
+  async function buscarClientes() {
+    setClientes(await ClientesApi.listar(busqueda));
+  }
+
+  function buscarAlCambiarBusqueda() {
     buscarClientes();
-  }, [busqueda]);
+  }
+
+  React.useEffect(buscarAlCambiarBusqueda, [busqueda]);
+
+  function seleccionar(id) {
+    setAgregando(false);
+    setIdSeleccionado(id);
+  }
+
+  function empezarAlta() {
+    setAgregando(true);
+    setIdSeleccionado(SIN_SELECCION);
+  }
+
+  function cancelarAlta() {
+    setAgregando(false);
+  }
+
+  async function agregar(datos) {
+    const cliente = await ClientesApi.crear(datos);
+    seleccionar(cliente.id);
+    await buscarClientes();
+  }
+
+  async function quitarSeleccionado() {
+    setIdSeleccionado(SIN_SELECCION);
+    await buscarClientes();
+  }
+
+  function mostrarDetalle() {
+    if (agregando) return <FormularioCliente alGuardar={agregar} alCancelar={cancelarAlta} />;
+    if (idSeleccionado === SIN_SELECCION) return <p>Seleccioná un cliente</p>;
+    return <DetalleCliente id={idSeleccionado} alCambiar={buscarClientes} alEliminar={quitarSeleccionado} />;
+  }
 
   return (
     <>
@@ -19,9 +56,10 @@ function App() {
           busqueda={busqueda}
           alBuscar={setBusqueda}
           idSeleccionado={idSeleccionado}
-          alSeleccionar={setIdSeleccionado}
+          alSeleccionar={seleccionar}
+          alAgregar={empezarAlta}
         />
-        <section className="detalle">Seleccioná un cliente</section>
+        <section className="detalle">{mostrarDetalle()}</section>
       </main>
     </>
   );
