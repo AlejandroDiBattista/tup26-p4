@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+:root {
+  --radius: 0.625rem;
+  --background: #fafafa;
+  --foreground: #18181b;
+  --popover: #fff;
+  --popover-foreground: #18181b;
+  --card: #fff;
+  --card-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+}
+* {
+  border-color: var(--border);
+}
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+@layer base {
+  :focus-visible {
+    outline: 2px solid #71717a;
+    outline-offset: 2px;
+  }
+}
+
+/* El foco se indica en el contenedor, sin dibujar un segundo borde en el texto. */
+[data-slot='input-group-control']:focus-visible {
+  outline: none;
+}
+
+/* Los mensajes sin borde conservan la apariencia de los componentes de chat. */
+.assistant-chat [data-slot='bubble-content'] {
+  border-color: transparent;
+}
+
+/* Mantiene legibles las respuestas estructuradas en el espacio reducido del chat. */
+.assistant-markdown {
+  overflow-wrap: anywhere;
+}
+.assistant-markdown > * + * {
+  margin-top: 0.65rem;
+}
+.assistant-markdown h1,
+.assistant-markdown h2,
+.assistant-markdown h3,
+.assistant-markdown h4 {
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.assistant-markdown ul,
+.assistant-markdown ol {
+  padding-left: 1.25rem;
+}
+.assistant-markdown ul {
+  list-style: disc;
+}
+.assistant-markdown ol {
+  list-style: decimal;
+}
+.assistant-markdown li + li {
+  margin-top: 0.25rem;
+}
+.assistant-markdown a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.assistant-markdown code {
+  border-radius: 0.25rem;
+  background: #f4f4f5;
+  padding: 0.1rem 0.25rem;
+  font-size: 0.85em;
+}
+.assistant-markdown pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #f4f4f5;
+  padding: 0.75rem;
+}
+.assistant-markdown pre code {
+  padding: 0;
+}
+.assistant-markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.assistant-markdown th,
+.assistant-markdown td {
+  border: 1px solid #e4e4e7;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+dialog::backdrop {
+  background: #18181b80;
+}
+
+/* Resalta el campo completo de la paleta cuando recibe el foco. */
+.command-palette [data-slot='command-input-wrapper']:focus-within {
+  border-color: #d4d4d8;
+  box-shadow: inset 0 0 0 1px #e4e4e7;
+}
+.command-palette [data-slot='command-input']:focus-visible {
+  outline: none;
+}
+
+/* Destaca la tarjeta para indicar que se puede arrastrar. */
+.task-card {
+  box-shadow: 0 1px 2px rgb(24 24 27 / 0.04);
+  transition:
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+.task-card:hover,
+.task-card:focus-within {
+  border-color: #a1a1aa;
+  box-shadow: 0 6px 16px rgb(24 24 27 / 0.14);
+}
+.task-card:hover {
+  transform: translateY(-2px);
+}
+.task-card:active {
+  cursor: grabbing;
+  transform: none;
+}
+.board-scroll {
+  scrollbar-color: #a1a1aa #f4f4f5;
+  scrollbar-width: thin;
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-card {
+    transition: none;
+  }
+  .task-card:hover {
+    transform: none;
+  }
+}

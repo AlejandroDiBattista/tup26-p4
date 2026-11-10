@@ -30,14 +30,22 @@ function Campos({ id, inicial }) {
   return (
     <form onSubmit={enviar}>
       <h1>{id ? "Editar contacto" : "Nuevo contacto"}</h1>
-      <label>Nombre  <input required {...campo("nombre")} /></label>
-      <label>Apellido<input required {...campo("apellido")} /></label>
-      <label>Teléfono<input required type="tel" {...campo("telefono")} /></label>
+      <Campo etiqueta="Nombre" required {...campo("nombre")} />
+      <Campo etiqueta="Apellido" required {...campo("apellido")} />
+      <Campo etiqueta="Teléfono" required type="tel" {...campo("telefono")} />
       <div className="acciones">
-        <button className="boton primario">Guardar</button>
+        <Boton variante="primario">Guardar</Boton>
         <Link to="/" className="boton">Cancelar</Link>
-        {id && <button type="button" className="boton peligro" onClick={eliminar}>Eliminar</button>}
+        {id && <Boton type="button" variante="peligro" onClick={eliminar}>Eliminar</Boton>}
       </div>
     </form>
   );
+}
+
+function Campo({ etiqueta, ...props }) {
+  return <label>{etiqueta}<input {...props} /></label>;
+}
+
+function Boton({ children, variante = "", className = "", ...props }) {
+  return <button className={`boton ${variante} ${className}`.trim()} {...props}>{children}</button>;
 }
