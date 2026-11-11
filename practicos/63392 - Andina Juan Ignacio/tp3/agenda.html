@@ -179,10 +179,8 @@
           cursor: pointer;
         }
 
-        /* Eliminar es el primer hijo cuando existe; queda rojo */
         button:first-child:not([type="submit"]) { color: #c0392b; }
 
-        /* margin-left: auto empuja Guardar y Cancelar a la derecha */
         button[type="submit"] {
           margin-left: auto;
           border-color: #2f3e33;
@@ -241,6 +239,62 @@
     }
 
     const visibles = reactive(() => alumnosVisibles()); 
+
+    function abrirAlta() {
+      borrador.id = null;
+      for (const campo of CAMPOS) {
+        borrador[campo] = '';
+      }
+      dialogo.showModal();
+    }
+
+    function guardarAlumno(evento) {
+      evento.preventDefault();
+      
+      //Testear typo 
+      const datos = {...borrador };
+      // TODO: hacer if
+      if (datos.id === null) {
+        const id = Math.max(0, ...estado.alumnos.map(a => a.id)) +1
+        estado.alumnos.push({ ...datos, id, favorito: false });
+      } else {
+        const alumno = estado.alumnos.find(a => a.id === borrador.id);
+        Object.assign(alumno, datos);
+      }
+
+      dialogo.close();
+    }
+
+    function abrirEdicion(alumno) {
+      borrador.id = alumno.id;
+      for (const campo of CAMPOS) {
+        borrador[campo] = alumno[campo];
+      }
+      dialogo.showModal();
+    }
+
+    function eliminarAlumno() {
+      estado.alumnos = estado.alumnos.filter(a => a.id !== borrador.id);
+      dialogo.close();
+    }
+
+    function teclaEnTarjeta(evento, alumno) {
+      if (evento.target !== evento.currentTarget) return;
+
+      if (evento.key === 'Enter') {
+        evento.preventDefault();
+        abrirEdicion(alumno);
+      }
+
+      if (evento.key === ' ') {
+        evento.preventDefault();
+        alternarFavorito(alumno);  
+      }
+    }
+
+    function alternarFavorito(alumno) {
+      alumno.favorito = !alumno.favorito;
+    }
 
     const app = document.getElementById('app')
    
