@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dos formas de transcribir</title>
+  <style>
+    body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: #fafafa; color: #171717; font: 15px/1.5 system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    main { width: min(88vw, 720px); display: grid; gap: 12px; padding: 12px; background: #fff; border: 1px solid #eaeaea; border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); }
+    div { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    h2 { margin: 0 0 6px; color: #666; font-size: 13px; font-weight: 500; }
+    article { min-height: 140px; padding: 12px; background: #fafafa; border: 1px solid #eaeaea; border-radius: 8px; white-space: pre-wrap; }
+    article:empty::before { content: '…'; color: #8f8f8f; }
+    button { height: 48px; border: 1px solid #171717; border-radius: 8px; background: #171717; color: #fff; font: inherit; font-weight: 500; font-variant-numeric: tabular-nums; }
+    button:disabled { border-color: #eaeaea; background: #f2f2f2; color: #8f8f8f; }
+    p { margin: 0; color: #666; font-size: 13px; text-align: center; }
+    p:empty { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <section>
+        <h2>Navegador · mientras hablás</h2>
+        <article id="enVivo"></article>
+      </section>
+      <section>
+        <h2>Whisper · al terminar</h2>
+        <article id="alFinal"></article>
+      </section>
+    </div>
+    <button id="boton" disabled>Cargando el modelo…</button>
+    <p id="estado">La primera vez se descarga el modelo. Puede tardar.</p>
+  </main>
+
+  <script type="module">
+    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2'
+
+    const MODELO = 'Xenova/whisper-base' // más chico: whisper-tiny; mejor: whisper-small
+    const Reconocimiento = window.SpeechRecognition || window.webkitSpeechRecognition
+
+    const enVivo  = document.querySelector('#enVivo')
+    const alFinal = document.querySelector('#alFinal')
+    const boton   = document.querySelector('#boton')
+    const estado  = document.querySelector('#estado')
+
+    let transcribir // la función que devuelve el modelo Whisper
+    let grabadora   // la grabación en curso
+    let partes      // los trozos de audio que van llegando
+    let reconocedor // el reconocimiento de voz del navegador
+    let reloj
+
+    // ── Opción A: el reconocimiento de voz del navegador ──────────────────
+    // Escucha el micrófono por su cuenta y avisa cada vez que entiende algo más.
+
+    function empezarEnVivo() {
+      if (!Reconocimiento) {
+        enVivo.textContent = 'Este navegador no tiene reconocimiento de voz.'
+        return
+      }
+
+      reconocedor = new Reconocimiento()
+      reconocedor.lang = 'es-AR'
+      reconocedor.continuous = true     // no se detiene en la primera pausa
+      reconocedor.interimResults = true // entrega resultados provisorios
+
+      reconocedor.onresult = (evento) => {
+        enVivo.textContent = [...evento.results].map((resultado) => resultado[0].transcript).join('')
+      }
+      reconocedor.onerror = (evento) => (estado.textContent = `Navegador: ${evento.error}`)
+      reconocedor.start()
+    }
+
+    function terminarEnVivo() {
+      reconocedor?.stop()
+    }
+
+    // ── Opción B: Whisper, dentro de la página ────────────────────────────
+    // Se graba el audio completo y el modelo lo transcribe al final.
+
+    async function cargarModelo() {
+      transcribir = await pipeline('automatic-speech-recognition', MODELO)
+    }
+
+    async function empezarGrabacion() {
+      const microfono = await navigator.mediaDevices.getUserMedia({ audio: true })
+      partes = []
+      grabadora = new MediaRecorder(microfono)
+      grabadora.ondataavailable = (evento) => partes.push(evento.data)
+      grabadora.start()
+    }
+
+    function terminarGrabacion() {
+      return new Promise((resolver) => {
+        grabadora.onstop = () => resolver(new Blob(partes, { type: grabadora.mimeType }))
+        grabadora.stop()
+        grabadora.stream.getTracks().forEach((pista) => pista.stop())
+      })
+    }
+
+    async function aTexto(audio) {
+      const resultado = await transcribir(URL.createObjectURL(audio), {
+        language: 'spanish',
+        task: 'transcribe',
+      })
+      return resultado.text.trim()
+    }
+
+    // ── El botón pone en marcha las dos opciones a la vez ─────────────────
+
+    boton.onclick = async () => {
+      try {
+        if (grabadora?.state !== 'recording') {
+          enVivo.textContent = ''
+          alFinal.textContent = ''
+          estado.textContent = ''
+
+          await empezarGrabacion()
+          empezarEnVivo()
+
+          let segundos = 0
+          boton.textContent = 'Detener · 0s'
+          reloj = setInterval(() => (boton.textContent = `Detener · ${++segundos}s`), 1000)
+          return
+        }
+
+        clearInterval(reloj)
+        terminarEnVivo()
+        boton.disabled = true
+        boton.textContent = 'Whisper está transcribiendo…'
+        alFinal.textContent = await aTexto(await terminarGrabacion())
+      } catch (error) {
+        estado.textContent = error.message
+      }
+
+      boton.textContent = 'Grabar'
+      boton.disabled = false
+    }
+
+    try {
+      await cargarModelo()
+      estado.textContent = ''
+      boton.textContent = 'Grabar'
+      boton.disabled = false
+    } catch (error) {
+      estado.textContent = error.message
+    }
+  </script>
+</body>
+</html>

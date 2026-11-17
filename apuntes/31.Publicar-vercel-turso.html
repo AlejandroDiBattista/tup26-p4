@@ -1,0 +1,413 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Deploy sin terminal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: guía de lectura con índice fijo a la izquierda (escritorio) y una columna en el teléfono. */
+:root {
+  --bg: #f7f8f8;
+  --surface: #ffffff;
+  --fg: #17212b;
+  --muted: #5b6874;
+  --line: #dde3e6;
+  --accent: #1f6f80;
+  --accent-soft: #e3f0f2;
+  --term-bg: #15202a;
+  --term-fg: #dbe7ec;
+  --term-dim: #8aa0ad;
+  --you: #8a5a00;
+  --you-soft: #fbf1dc;
+  --agent: #1f6f80;
+  --agent-soft: #e3f0f2;
+  --bad: #b3261e;
+  --bad-soft: #fbe9e7;
+  --ok: #1d7a4a;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181e; --surface: #182229; --fg: #e3eaee; --muted: #9aabb6; --line: #2a3742;
+    --accent: #6cc3d3; --accent-soft: #19343b; --term-bg: #0b1116; --term-fg: #dbe7ec; --term-dim: #7f95a2;
+    --you: #f0c46b; --you-soft: #3a2f17; --agent: #6cc3d3; --agent-soft: #19343b;
+    --bad: #ff8a80; --bad-soft: #3b1f1d; --ok: #6fd39e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181e; --surface: #182229; --fg: #e3eaee; --muted: #9aabb6; --line: #2a3742;
+  --accent: #6cc3d3; --accent-soft: #19343b; --term-bg: #0b1116; --term-fg: #dbe7ec; --term-dim: #7f95a2;
+  --you: #f0c46b; --you-soft: #3a2f17; --agent: #6cc3d3; --agent-soft: #19343b;
+  --bad: #ff8a80; --bad-soft: #3b1f1d; --ok: #6fd39e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; } nav.toc { display: none; } }
+nav.toc { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); align-self: start; font-size: 14px; }
+nav.toc p { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.toc a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); background: var(--surface); border-left-color: var(--accent); outline: none; }
+main { min-width: 0; display: grid; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(30px, 4.5vw, 42px); font-weight: 700; letter-spacing: -.02em; }
+h2 { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+section { display: grid; gap: 16px; scroll-margin-top: 24px; }
+.lede { font-size: 18px; color: var(--muted); max-width: 62ch; }
+header.top { display: grid; gap: 14px; }
+.kicker { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+code, kbd { font-family: var(--font-mono); font-size: .88em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 68ch; }
+
+/* Mapa del deploy */
+.map { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; }
+.node { flex: 1 1 150px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; }
+.node b { font-size: 15px; }
+.node span { font-size: 13px; color: var(--muted); }
+.arrow { align-self: center; color: var(--muted); font-family: var(--font-mono); }
+@media (max-width: 640px) { .arrow { display: none; } }
+
+/* Quién hace qué */
+.roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .roles { grid-template-columns: minmax(0, 1fr); } }
+.role { border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.role.you { background: var(--you-soft); }
+.role.agent { background: var(--agent-soft); }
+.role h3 { display: flex; gap: 8px; align-items: center; }
+.tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
+.tag.you { color: var(--you); border: 1px solid currentColor; }
+.tag.agent { color: var(--agent); border: 1px solid currentColor; }
+.role ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 15px; }
+
+/* Pasos */
+.step { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 28px; }
+.step-head { display: flex; gap: 14px; align-items: baseline; }
+.step-num { font-family: var(--font-mono); font-size: 14px; color: var(--accent); font-weight: 500; flex: none; }
+.who { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
+/* Bloques de terminal y prompts */
+.block { background: var(--term-bg); color: var(--term-fg); border-radius: 10px; overflow: hidden; min-width: 0; }
+.block-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.08); font-family: var(--font-mono); font-size: 12px; color: var(--term-dim); }
+.block pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.65; white-space: pre; }
+.block pre .c { color: var(--term-dim); }
+.prompt { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--agent); border-radius: 10px; overflow: hidden; min-width: 0; }
+.prompt .block-bar { color: var(--muted); border-bottom: 1px solid var(--line); }
+.prompt pre { margin: 0; padding: 14px 16px; font-family: var(--font-body); font-size: 15px; line-height: 1.6; white-space: pre-wrap; color: var(--fg); }
+button.copy { font: 500 12px var(--font-mono); background: transparent; color: inherit; border: 1px solid currentColor; border-radius: 6px; padding: 3px 9px; cursor: pointer; opacity: .85; }
+button.copy:hover, button.copy:focus-visible { opacity: 1; outline: none; }
+.note { border-radius: 10px; padding: 12px 16px; font-size: 15px; display: grid; gap: 4px; max-width: 76ch; }
+.note.warn { background: var(--bad-soft); }
+.note.warn strong { color: var(--bad); }
+.note.tip { background: var(--accent-soft); }
+.check { display: flex; gap: 10px; align-items: baseline; font-size: 15px; }
+.check::before { content: "✓"; color: var(--ok); font-weight: 700; }
+
+/* Tablas */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 620px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+
+/* Tabs Claude Code / Codex */
+.tabs { display: grid; gap: 12px; }
+.tablist { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tablist button { font: 500 14px var(--font-body); background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; color: var(--muted); cursor: pointer; margin-bottom: -1px; }
+.tablist button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.tablist button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: grid; gap: 12px; }
+
+ol.final { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 20px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Índice">
+    <p>En esta guía</p>
+    <ol>
+      <li><a href="#idea">La idea</a></li>
+      <li><a href="#proyecto">Preparar el proyecto</a></li>
+      <li><a href="#antes">Antes de empezar</a></li>
+      <li><a href="#paso-1">1 · GitHub</a></li>
+      <li><a href="#paso-2">2 · Vercel</a></li>
+      <li><a href="#paso-3">3 · Turso</a></li>
+      <li><a href="#paso-4">4 · SESSION_SECRET</a></li>
+      <li><a href="#paso-5">5 · Publicar</a></li>
+      <li><a href="#paso-6">6 · Probar</a></li>
+      <li><a href="#recargar">Recargar los datos</a></li>
+      <li><a href="#problemas">Problemas frecuentes</a></li>
+      <li><a href="#entrega">Lista para la entrega</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="top">
+      <span class="kicker">Programación IV · Segundo parcial</span>
+      <h1>Publicar en Vercel y Turso desde el navegador</h1>
+      <p class="lede">Un camino de deploy sin terminal, pensado para quienes trabajan en Windows. Todo se hace desde las páginas de GitHub, Vercel y Turso; el build de Vercel crea las tablas y carga los datos de prueba solo.</p>
+    </header>
+
+    <section id="idea" aria-labelledby="t-idea">
+      <h2 id="t-idea">La idea</h2>
+      <p>En el camino con terminal, vos corrés <code>db:migrate</code> y <code>db:seed</code> contra Turso desde tu máquina, pasando el token. Eso es lo que se complica en Windows. Acá esos dos pasos los hace Vercel en cada deploy, antes de construir la app:</p>
+      <div class="map" role="img" aria-label="Al publicar, Vercel aplica las migraciones, carga los datos si la base está vacía y después construye la app">
+        <div class="node"><b>git push</b><span>desde VS Code</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><b>Migraciones</b><span>crea o actualiza las tablas en Turso</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><b>Datos de prueba</b><span>solo si la base está vacía</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><b>next build</b><span>y la URL pública</span></div>
+      </div>
+      <p>Los secretos (el token de Turso y el <code>SESSION_SECRET</code>) se cargan una sola vez en el panel de Vercel y nunca pasan por tu terminal ni por el chat de un agente.</p>
+    </section>
+
+    <section id="proyecto" aria-labelledby="t-proy">
+      <h2 id="t-proy">Preparar el proyecto (una sola vez)</h2>
+      <p>El proyecto necesita un script que prepare la base antes del build. Hace cuatro cosas:</p>
+      <ul class="plain">
+        <li>Acepta tanto <code>DATABASE_URL</code> / <code>DATABASE_AUTH_TOKEN</code> como <code>TURSO_DATABASE_URL</code> / <code>TURSO_AUTH_TOKEN</code>, que son las que crea la integración de Turso.</li>
+        <li>Aplica las migraciones de <code>drizzle/</code> con el migrador de Drizzle.</li>
+        <li>Si la base no tiene usuarios, carga los datos de prueba con los servicios de la app.</li>
+        <li>En Vercel solo actúa en Production y corta el build con un mensaje claro si falta una variable.</li>
+      </ul>
+      <p>En <code>package.json</code>, el build queda así:</p>
+      <div class="block">
+        <div class="block-bar"><span>package.json</span><button class="copy" type="button">Copiar</button></div>
+<pre>"build": "tsx src/db/deploy.ts &amp;&amp; next build",
+"db:deploy": "tsx src/db/deploy.ts"</pre>
+      </div>
+      <p>El núcleo de <code>src/db/deploy.ts</code>:</p>
+      <div class="block">
+        <div class="block-bar"><span>src/db/deploy.ts (resumido)</span><button class="copy" type="button">Copiar</button></div>
+<pre>import "dotenv/config";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import { db } from "./index";
+import { baseVacia, cargarDatosDePrueba } from "./datos-prueba";
+
+async function main() {
+  <span class="c">// En Vercel, los deploys de preview no tocan la base</span>
+  if (process.env.VERCEL &amp;&amp; process.env.VERCEL_ENV !== "production") return;
+  await migrate(db, { migrationsFolder: "drizzle" });
+  if (await baseVacia()) await cargarDatosDePrueba();
+}
+
+main().then(() =&gt; process.exit(0), (e) =&gt; { console.error(e); process.exit(1); });</pre>
+      </div>
+      <p>La versión completa, con los mensajes de error y la recarga con <code>SEED_RESET</code>, está en el proyecto de referencia. Si tu proyecto es distinto, pedíselo a tu agente:</p>
+      <div class="prompt">
+        <div class="block-bar"><span>prompt para Claude Code, Codex u OpenCode</span><button class="copy" type="button">Copiar</button></div>
+<pre>Quiero publicar este proyecto en Vercel sin usar la terminal. Agregá un script src/db/deploy.ts que se ejecute antes de next build (cambiá el script build a "tsx src/db/deploy.ts && next build") y que:
+
+1. Lea la conexión de DATABASE_URL o TURSO_DATABASE_URL, y el token de DATABASE_AUTH_TOKEN o TURSO_AUTH_TOKEN (usá el mismo criterio en src/db/index.ts y drizzle.config.ts).
+2. En Vercel, no haga nada si VERCEL_ENV no es "production".
+3. En producción, corte el build con un mensaje claro si falta la base o si SESSION_SECRET falta, tiene menos de 32 caracteres o es el de .env.example.
+4. Aplique las migraciones con migrate() de drizzle-orm/libsql/migrator sobre la carpeta drizzle.
+5. Si la base no tiene usuarios, cargue los datos de prueba reutilizando la lógica de mi seed (separala en una función exportada para no duplicarla).
+6. Con SEED_RESET=valor, recargue los datos una sola vez por valor, guardando una marca en la base.
+
+Probalo con la base local: base nueva, segunda ejecución y VERCEL=1 VERCEL_ENV=preview. No toques .env ni me pidas secretos. Mostrame el diff antes de commitear.</pre>
+      </div>
+      <div class="note tip"><span>Los alumnos que ya tienen el proyecto funcionando en local solo agregan este script. El resto del deploy no requiere cambios en el código.</span></div>
+    </section>
+
+    <section id="antes" aria-labelledby="t-antes">
+      <h2 id="t-antes">Antes de empezar</h2>
+      <ul class="plain">
+        <li>Cuentas gratuitas en <a href="https://github.com">GitHub</a>, <a href="https://vercel.com">Vercel</a> y <a href="https://turso.tech">Turso</a>. Con la cuenta de GitHub podés entrar a las otras dos.</li>
+        <li>Git y VS Code instalados. En Windows: <a href="https://git-scm.com/download/win">git-scm.com</a> y <a href="https://code.visualstudio.com">code.visualstudio.com</a>.</li>
+        <li>El proyecto funcionando en local, con commits.</li>
+      </ul>
+      <p>No hace falta instalar las CLIs de Turso ni de Vercel, ni WSL.</p>
+      <div class="note tip"><span>Los menús de Vercel y Turso cambian de nombre de vez en cuando. Si no encontrás exactamente el botón que dice la guía, buscá uno equivalente en la misma pantalla.</span></div>
+    </section>
+
+    <section id="paso-1" class="step" aria-labelledby="t-p1">
+      <div class="step-head"><span class="step-num">Paso 1</span><h2 id="t-p1">Subir el repositorio a GitHub</h2></div>
+      <ul class="plain">
+        <li>En VS Code abrí la carpeta del proyecto y andá a <em>Source Control</em> (Ctrl+Shift+G).</li>
+        <li>Si nunca lo subiste: <em>Publish Branch</em> → elegí <em>private repository</em>. Si ya existe en GitHub: <em>Sync Changes</em>.</li>
+        <li>Abrí el repositorio en GitHub y fijate que <strong>no</strong> estén <code>.env</code> ni <code>local.db</code>.</li>
+      </ul>
+      <div class="note warn">
+        <strong>Si ves .env en GitHub, frená acá.</strong>
+        <span>Borralo del repositorio, agregalo a <code>.gitignore</code> y cambiá cualquier secreto que haya tenido: lo que se subió una vez queda en el historial.</span>
+      </div>
+    </section>
+
+    <section id="paso-2" class="step" aria-labelledby="t-p2">
+      <div class="step-head"><span class="step-num">Paso 2</span><h2 id="t-p2">Crear el proyecto en Vercel</h2></div>
+      <ul class="plain">
+        <li>En <a href="https://vercel.com/new">vercel.com/new</a>, conectá tu cuenta de GitHub e importá el repositorio.</li>
+        <li>Vercel detecta Next.js y pnpm. No cambies nada y tocá <em>Deploy</em>.</li>
+        <li>Este primer build va a fallar con «Falta la base de datos». Es lo esperado: todavía no hay base.</li>
+      </ul>
+    </section>
+
+    <section id="paso-3" class="step" aria-labelledby="t-p3">
+      <div class="step-head"><span class="step-num">Paso 3</span><h2 id="t-p3">Crear la base en Turso</h2></div>
+      <p>Elegí una de las dos opciones.</p>
+      <div class="tabs" data-tabs>
+        <div class="tablist" role="tablist" aria-label="Opción para Turso">
+          <button type="button" role="tab" id="tab-int" aria-controls="p-int" aria-selected="true">Integración de Vercel</button>
+          <button type="button" role="tab" id="tab-pan" aria-controls="p-pan" aria-selected="false" tabindex="-1">Panel de Turso</button>
+        </div>
+        <div class="panel" role="tabpanel" id="p-int" aria-labelledby="tab-int">
+          <ul class="plain">
+            <li>En el proyecto de Vercel, andá a <em>Storage</em> (o <em>Integrations</em> → Marketplace) y elegí Turso.</li>
+            <li>Creá una base nueva y conectala a este proyecto, al menos para el entorno <em>Production</em>.</li>
+            <li>La integración carga sola las variables <code>TURSO_DATABASE_URL</code> y <code>TURSO_AUTH_TOKEN</code>. Comprobalo en <em>Settings → Environment Variables</em>.</li>
+          </ul>
+          <p>No copiás ningún token: es la opción más simple.</p>
+        </div>
+        <div class="panel" role="tabpanel" id="p-pan" aria-labelledby="tab-pan" hidden>
+          <ul class="plain">
+            <li>En <a href="https://app.turso.tech">app.turso.tech</a> creá una base llamada <code>mostrador</code>.</li>
+            <li>Copiá su URL, que empieza con <code>libsql://</code>, y generá un token para esa base.</li>
+            <li>En Vercel → <em>Settings → Environment Variables</em> cargá <code>DATABASE_URL</code> con la URL y <code>DATABASE_AUTH_TOKEN</code> con el token, marcando solo <em>Production</em>.</li>
+          </ul>
+          <p>El token se pega directamente de la página de Turso a la de Vercel; no lo guardes en archivos ni lo pegues en un chat.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="paso-4" class="step" aria-labelledby="t-p4">
+      <div class="step-head"><span class="step-num">Paso 4</span><h2 id="t-p4">Cargar el SESSION_SECRET</h2></div>
+      <p>Es la clave con la que la app firma las cookies de sesión: un texto al azar de 32 caracteres o más. Para generarlo sin terminal, abrí la consola del navegador (F12 → <em>Console</em>) y escribí:</p>
+      <div class="block">
+        <div class="block-bar"><span>consola del navegador</span><button class="copy" type="button">Copiar</button></div>
+<pre>crypto.randomUUID() + crypto.randomUUID()</pre>
+      </div>
+      <p>Copiá el resultado sin las comillas y cargalo en Vercel como <code>SESSION_SECRET</code>, solo en <em>Production</em>.</p>
+      <div class="note warn">
+        <strong>No uses el valor de .env.example.</strong>
+        <span>Está en el repositorio, así que cualquiera podría firmar una sesión válida. El build se corta si lo detecta.</span>
+      </div>
+    </section>
+
+    <section id="paso-5" class="step" aria-labelledby="t-p5">
+      <div class="step-head"><span class="step-num">Paso 5</span><h2 id="t-p5">Publicar</h2></div>
+      <p>Las variables se leen en cada deploy, así que hay que volver a publicar: <em>Deployments</em> → el último → menú <em>⋯</em> → <em>Redeploy</em>. En el log del build tenés que ver, antes de la compilación de Next.js:</p>
+      <div class="block">
+        <div class="block-bar"><span>log del build en Vercel</span><button class="copy" type="button">Copiar</button></div>
+<pre>Aplicando migraciones…
+Base vacía: se cargan los datos de prueba…
+  …
+  Invariantes: stock = suma de movimientos ✔ · sin saldos a favor ✔</pre>
+      </div>
+      <p>La primera vez la carga de datos tarda un poco más, porque crea unas 70 facturas en Turso. En los deploys siguientes vas a ver «La base ya tiene datos: no se cargan datos de prueba».</p>
+      <p>Desde ahora, cada <em>Sync Changes</em> en VS Code publica una versión nueva.</p>
+    </section>
+
+    <section id="paso-6" class="step" aria-labelledby="t-p6">
+      <div class="step-head"><span class="step-num">Paso 6</span><h2 id="t-p6">Probar en producción</h2></div>
+      <p>Abrí la URL que muestra Vercel (<code>https://&lt;proyecto&gt;.vercel.app</code>), entrá con los usuarios de prueba del README y recorré el guion de la defensa, verificando stock y saldo después de cada paso:</p>
+      <ul class="plain">
+        <li>Venta a consumidor final con efectivo.</li>
+        <li>Venta a un cliente nuevo, dado de alta en el momento, en cuenta corriente.</li>
+        <li>Pago de ese cliente, con su recibo.</li>
+        <li>Anulación de una factura con el usuario administrador.</li>
+      </ul>
+      <p>Por último, completá la URL pública y los integrantes en el README y sincronizá.</p>
+    </section>
+
+    <section id="recargar" aria-labelledby="t-rec">
+      <h2 id="t-rec">Recargar los datos antes de la defensa</h2>
+      <p>Las facturas de prueba se fechan en los 30 días anteriores a la carga, así que con el tiempo el tablero se queda sin ventas recientes. Para recargarlas:</p>
+      <ul class="plain">
+        <li>En <em>Settings → Environment Variables</em> agregá <code>SEED_RESET</code> con un valor nuevo, por ejemplo <code>defensa-1</code>.</li>
+        <li>Hacé <em>Redeploy</em>. El log dice «SEED_RESET=defensa-1: se vuelven a cargar los datos de prueba…».</li>
+      </ul>
+      <p>Se recarga una sola vez por valor: aunque la variable quede cargada, los deploys siguientes no borran nada. Para recargar de nuevo, cambiá el valor a <code>defensa-2</code>.</p>
+      <div class="note warn">
+        <strong>Recargar borra todo lo que hayas cargado en producción.</strong>
+        <span>Ventas, clientes y usuarios nuevos se pierden y vuelven los datos de prueba.</span>
+      </div>
+    </section>
+
+    <section id="problemas" aria-labelledby="t-prob">
+      <h2 id="t-prob">Problemas frecuentes</h2>
+      <p>Todo se diagnostica desde el log: <em>Deployments</em> → el deploy → <em>Build Logs</em>. Si usás un agente, podés pegarle el log; antes revisá que no tenga ningún token.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mensaje o síntoma</th><th>Causa</th><th>Arreglo</th></tr></thead>
+          <tbody>
+            <tr><td>«Falta la base de datos»</td><td>No hay URL de Turso en Production</td><td>Paso 3 y <em>Redeploy</em></td></tr>
+            <tr><td>«Falta SESSION_SECRET (o es el valor de ejemplo)»</td><td>No está cargado, es corto o es el de <code>.env.example</code></td><td>Paso 4 y <em>Redeploy</em></td></tr>
+            <tr><td><code>401</code> o <code>UNAUTHORIZED</code> al aplicar migraciones</td><td>Token mal copiado, vencido o de otra base</td><td>Generá otro token y reemplazalo en Vercel</td></tr>
+            <tr><td>Cambiaste una variable y la app sigue igual</td><td>Las variables se leen en el deploy</td><td><em>Redeploy</em></td></tr>
+            <tr><td>Un deploy de preview no tiene datos</td><td>Es a propósito: los previews no tocan la base</td><td>Probá sobre la URL de producción</td></tr>
+            <tr><td>El tablero no muestra ventas recientes</td><td>Los datos de prueba envejecieron</td><td>Recargalos con <code>SEED_RESET</code></td></tr>
+            <tr><td>Funciona en local y falla en Vercel</td><td><code>local.db</code> no se sube; producción solo usa Turso</td><td>Revisá los pasos 3 y 5 y el log</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="entrega" aria-labelledby="t-entrega">
+      <h2 id="t-entrega">Lista para la entrega</h2>
+      <ol class="final">
+        <li class="check">El repositorio de GitHub tiene el código y el historial de commits, sin <code>.env</code> ni <code>local.db</code>.</li>
+        <li class="check">La URL pública de Vercel abre <code>/login</code> y se puede entrar con los usuarios de prueba.</li>
+        <li class="check">El log del último deploy muestra las migraciones aplicadas y la app usa la base de Turso.</li>
+        <li class="check">El README tiene integrantes, URL pública, instalación, variables (<code>.env.example</code>), usuarios por rol, requerimientos por código y arquitectura.</li>
+        <li class="check">Podés explicar qué hace <code>deploy.ts</code> y por qué no toca la base en los previews.</li>
+      </ol>
+    </section>
+
+    <footer>Programación IV: Desarrollo Web · Guía de publicación sin terminal para el segundo parcial. Si preferís trabajar con agentes y CLIs, hay una guía aparte con ese camino.</footer>
+  </main>
+</div>
+
+<script>
+document.querySelectorAll("button.copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var box = btn.closest(".block, .prompt");
+    var pre = box && box.querySelector("pre");
+    if (!pre) return;
+    var clone = pre.cloneNode(true);
+    clone.querySelectorAll(".c").forEach(function (c) { c.remove(); });
+    var text = clone.textContent.replace(/[ \t]+$/gm, "");
+    function done(label) { btn.textContent = label; setTimeout(function () { btn.textContent = "Copiar"; }, 1600); }
+    function fallback() {
+      try { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); done("Seleccionado"); } catch (e) {}
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { done("Copiado"); }, fallback);
+    } catch (e) { fallback(); }
+  });
+});
+document.querySelectorAll("[data-tabs]").forEach(function (group) {
+  var tabs = Array.prototype.slice.call(group.querySelectorAll('[role="tab"]'));
+  function select(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { select(t); });
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        var n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+        select(n); n.focus(); e.preventDefault();
+      }
+    });
+  });
+});
+</script>
+
+</body></html>

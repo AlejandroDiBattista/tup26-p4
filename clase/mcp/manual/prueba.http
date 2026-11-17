@@ -1,0 +1,83 @@
+@url = http://127.0.0.1:3000/mcp
+@version = 2025-11-25
+
+# Iniciar el servidor con pnpm start y enviar las solicitudes en orden.
+# Cada solicitud se ejecuta con «Send Request» en un cliente de archivos .http.
+
+### 1. Inicializar la conexión
+POST {{url}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "{{version}}",
+    "capabilities": {},
+    "clientInfo": { "name": "prueba-manual", "version": "1.0.0" }
+  }
+}
+
+### 2. Avisar que el cliente está listo (responde HTTP 202 sin cuerpo)
+POST {{url}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: {{version}}
+
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/initialized"
+}
+
+### 3. Descubrir las herramientas disponibles
+POST {{url}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: {{version}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list"
+}
+
+### 4. Traer el alumno con ID 1
+POST {{url}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: {{version}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": { "name": "traer", "arguments": { "id": 1 } }
+}
+
+### 5. Buscar alumnos por texto
+POST {{url}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: {{version}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": { "name": "listar", "arguments": { "filtro": "Pérez" } }
+}
+
+### 6. Listar todos los alumnos
+POST {{url}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: {{version}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "tools/call",
+  "params": { "name": "listar", "arguments": {} }
+}
