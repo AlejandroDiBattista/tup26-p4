@@ -1,28 +1,25 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/api/facturas/[id]/route.ts
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // GET /api/facturas/{id} (RF-V7).
-// [Línea 2] Importa elementos desde 'next/server'.
+// Acá importamos NextResponse para devolver respuestas HTTP en formato JSON
 import { NextResponse, type NextRequest } from "next/server";
-// [Línea 3] Importa elementos desde '@/lib/adaptadores'.
+// Acá importamos los adaptadores conSesionApi y manejo estándar de errores HTTP
 import { conSesionApi } from "@/lib/adaptadores";
-// [Línea 4] Importa elementos desde '@/servicios/facturas'.
+// Acá importamos funciones de la capa de servicios donde reside la lógica de negocio
 import { obtenerFactura } from "@/servicios/facturas";
 
-// [Línea 6] Define el tipo de datos 'ContextoRuta' en TypeScript.
 type ContextoRuta = { params: Promise<{ id: string }> };
 
-// [Línea 8] Endpoint de la API REST (Route Handler de Next.js) que atiende peticiones HTTP GET.
+// Endpoint API GET: atiende peticiones de consulta y devuelve los datos en JSON
 export async function GET(_pedido: NextRequest, contexto: ContextoRuta) {
-  // [Línea 9] Devuelve el valor: conSesionApi(async (usuario) => {
   return conSesionApi(async (usuario) => {
-    // [Línea 10] Espera el resultado de la consulta/operación asíncrona y lo asigna a '{ id }'.
     const { id } = await contexto.params;
-    // [Línea 11] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'factura'.
     const factura = await obtenerFactura(usuario, Number(id));
-    // [Línea 12] Devuelve el valor: NextResponse.json(factura, { status: 200 });
+    // Retornamos la respuesta HTTP al cliente en formato JSON
     return NextResponse.json(factura, { status: 200 });
-  // [Línea 13] Cierra el bloque o estructura (});).
   });
-// [Línea 14] Cierra el bloque o estructura (}).
 }

@@ -1,30 +1,29 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/login/page.tsx
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // Página pública de inicio de sesión (/login).
 // Queda fuera del layout con panel lateral (sección 4).
-// [Línea 3] Importa elementos desde 'next/navigation'.
+// Acá importamos funciones de navegación de Next.js (como redirect para cambiar de página)
 import { redirect } from "next/navigation";
-// [Línea 4] Importa elementos desde '@/lib/sesion'.
+// Acá importamos las funciones para leer y validar la sesión del usuario conectado
 import { obtenerUsuarioActual } from "@/lib/sesion";
-// [Línea 5] Importa elementos desde '@/componentes/dominio/formulario-login'.
+// Acá importamos componentes visuales de la interfaz de usuario
 import { FormularioLogin } from "@/componentes/dominio/formulario-login";
-// [Línea 6] Importa elementos desde '@/componentes/primitivas/maquetacion'.
+// Acá importamos componentes visuales de la interfaz de usuario
 import { Caja } from "@/componentes/primitivas/maquetacion";
 
-// [Línea 8] Server Component principal 'PaginaLogin': se ejecuta en el servidor, consulta los servicios y devuelve el HTML.
+// Componente principal de página 'PaginaLogin' (Server Component: se ejecuta en el servidor)
 export default async function PaginaLogin() {
-  // [Línea 9] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'usuario'.
   const usuario = await obtenerUsuarioActual();
-  // [Línea 10] Verifica la condición: if (usuario) redirect("/");
   if (usuario) redirect("/");
 
-  // [Línea 12] Devuelve la interfaz JSX que renderiza este componente.
+  // Renderizamos la interfaz visual de este componente:
   return (
-    <Caja className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-teal-50/40 to-slate-200 p-4"> // [Línea 13] Abre o renderiza el componente visual <Caja>.
-      <FormularioLogin /> // [Línea 14] Abre o renderiza el componente visual <FormularioLogin>.
-    </Caja> // [Línea 15] Cierra el componente visual </Caja>.
-  // [Línea 16] Cierra el bloque o estructura ();).
+    <Caja className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-teal-50/40 to-slate-200 p-4">
+      <FormularioLogin />
+    </Caja>
   );
-// [Línea 17] Cierra el bloque o estructura (}).
 }

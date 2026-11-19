@@ -1,28 +1,25 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/api/usuarios/[id]/reset-password/route.ts
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // POST /api/usuarios/{id}/reset-password (RF-U5, solo administrador).
-// [Línea 2] Importa elementos desde 'next/server'.
+// Acá importamos NextResponse para devolver respuestas HTTP en formato JSON
 import { NextResponse, type NextRequest } from "next/server";
-// [Línea 3] Importa elementos desde '@/lib/adaptadores'.
+// Acá importamos los adaptadores conSesionApi y manejo estándar de errores HTTP
 import { conSesionApi } from "@/lib/adaptadores";
-// [Línea 4] Importa elementos desde '@/servicios/usuarios'.
+// Acá importamos funciones de la capa de servicios donde reside la lógica de negocio
 import { restablecerContrasena } from "@/servicios/usuarios";
 
-// [Línea 6] Define el tipo de datos 'ContextoRuta' en TypeScript.
 type ContextoRuta = { params: Promise<{ id: string }> };
 
-// [Línea 8] Endpoint de la API REST (Route Handler de Next.js) que atiende peticiones HTTP POST.
+// Endpoint API POST: recibe datos del formulario y crea un nuevo registro
 export async function POST(_pedido: NextRequest, contexto: ContextoRuta) {
-  // [Línea 9] Devuelve el valor: conSesionApi(async (usuario) => {
   return conSesionApi(async (usuario) => {
-    // [Línea 10] Espera el resultado de la consulta/operación asíncrona y lo asigna a '{ id }'.
     const { id } = await contexto.params;
-    // [Línea 11] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'resultado'.
     const resultado = await restablecerContrasena(usuario, Number(id));
-    // [Línea 12] Devuelve el valor: NextResponse.json(resultado, { status: 200 });
+    // Retornamos la respuesta HTTP al cliente en formato JSON
     return NextResponse.json(resultado, { status: 200 });
-  // [Línea 13] Cierra el bloque o estructura (});).
   });
-// [Línea 14] Cierra el bloque o estructura (}).
 }

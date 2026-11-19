@@ -1,30 +1,26 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/api/facturas/[id]/anulacion/route.ts
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // POST /api/facturas/{id}/anulacion (RF-V9, solo administrador).
-// [Línea 2] Importa elementos desde 'next/server'.
+// Acá importamos NextResponse para devolver respuestas HTTP en formato JSON
 import { NextResponse, type NextRequest } from "next/server";
-// [Línea 3] Importa elementos desde '@/lib/adaptadores'.
+// Acá importamos los adaptadores conSesionApi y manejo estándar de errores HTTP
 import { conSesionApi, leerJsonPedido } from "@/lib/adaptadores";
-// [Línea 4] Importa elementos desde '@/servicios/facturas'.
+// Acá importamos funciones de la capa de servicios donde reside la lógica de negocio
 import { anularFactura } from "@/servicios/facturas";
 
-// [Línea 6] Define el tipo de datos 'ContextoRuta' en TypeScript.
 type ContextoRuta = { params: Promise<{ id: string }> };
 
-// [Línea 8] Endpoint de la API REST (Route Handler de Next.js) que atiende peticiones HTTP POST.
+// Endpoint API POST: recibe datos del formulario y crea un nuevo registro
 export async function POST(pedido: NextRequest, contexto: ContextoRuta) {
-  // [Línea 9] Devuelve el valor: conSesionApi(async (usuario) => {
   return conSesionApi(async (usuario) => {
-    // [Línea 10] Espera el resultado de la consulta/operación asíncrona y lo asigna a '{ id }'.
     const { id } = await contexto.params;
-    // [Línea 11] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'cuerpo'.
     const cuerpo = await leerJsonPedido(pedido);
-    // [Línea 12] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'facturaAnulada'.
     const facturaAnulada = await anularFactura(usuario, Number(id), cuerpo);
-    // [Línea 13] Devuelve el valor: NextResponse.json(facturaAnulada, { status: 200 });
+    // Retornamos la respuesta HTTP al cliente en formato JSON
     return NextResponse.json(facturaAnulada, { status: 200 });
-  // [Línea 14] Cierra el bloque o estructura (});).
   });
-// [Línea 15] Cierra el bloque o estructura (}).
 }

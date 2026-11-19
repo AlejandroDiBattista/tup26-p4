@@ -1,39 +1,33 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/api/auth/login/route.ts
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // POST /api/auth/login (RF-U1, única ruta pública).
 // Inicia sesión, devuelve el usuario conectado y graba la cookie httpOnly firmada.
-// [Línea 3] Importa elementos desde 'next/server'.
+// Acá importamos NextResponse para devolver respuestas HTTP en formato JSON
 import { NextResponse, type NextRequest } from "next/server";
-// [Línea 4] Importa elementos desde '@/lib/adaptadores'.
+// Acá importamos los adaptadores conSesionApi y manejo estándar de errores HTTP
 import { leerJsonPedido, responderErrorApi } from "@/lib/adaptadores";
-// [Línea 5] Importa elementos desde '@/lib/sesion'.
+// Acá importamos las funciones para leer y validar la sesión del usuario conectado
 import { firmarTokenSesion, NOMBRE_COOKIE_SESION, opcionesCookieSesion } from "@/lib/sesion";
-// [Línea 6] Importa elementos desde '@/servicios/autenticacion'.
+// Acá importamos funciones de la capa de servicios donde reside la lógica de negocio
 import { iniciarSesion } from "@/servicios/autenticacion";
 
-// [Línea 8] Endpoint de la API REST (Route Handler de Next.js) que atiende peticiones HTTP POST.
+// Endpoint API POST: recibe datos del formulario y crea un nuevo registro
 export async function POST(pedido: NextRequest) {
-  // [Línea 9] Inicia bloque try para capturar errores durante la operación.
+  // Usamos un bloque try/catch para capturar cualquier error y evitar que la aplicación falle
   try {
-    // [Línea 10] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'cuerpo'.
     const cuerpo = await leerJsonPedido(pedido);
-    // [Línea 11] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'usuario'.
     const usuario = await iniciarSesion(cuerpo);
-    // [Línea 12] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'token'.
     const token = await firmarTokenSesion(usuario.id);
 
-    // [Línea 14] Declara 'respuesta' y le asigna el valor resultante.
     const respuesta = NextResponse.json(usuario, { status: 200 });
-    // [Línea 15] Ejecuta o evalúa: respuesta.cookies.set(NOMBRE_COOKIE_SESION, token, opcionesCookieSesion());
     respuesta.cookies.set(NOMBRE_COOKIE_SESION, token, opcionesCookieSesion());
-    // [Línea 16] Devuelve el valor: respuesta;
     return respuesta;
-  // [Línea 17] Captura cualquier error lanzado dentro del bloque try.
+  // Si ocurrió algún error dentro del try, lo capturamos acá para manejarlo de forma segura
   } catch (errorCapturado) {
-    // [Línea 18] Devuelve el valor: responderErrorApi(errorCapturado);
     return responderErrorApi(errorCapturado);
-  // [Línea 19] Cierra el bloque o estructura (}).
   }
-// [Línea 20] Cierra el bloque o estructura (}).
 }

@@ -1,18 +1,18 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/(sistema)/layout.tsx
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // Layout compartido por todos los módulos autenticados del sistema (sección 4).
 // Segunda barrera de protección (sección 10.5): comprueba el usuario contra la base de datos.
-// [Línea 3] Importa elementos desde '@/lib/sesion'.
+// Acá importamos las funciones para leer y validar la sesión del usuario conectado
 import { exigirUsuarioPagina } from "@/lib/sesion";
-// [Línea 4] Importa elementos desde '@/componentes/estructura/panel-lateral'.
+// Acá importamos componentes visuales de la interfaz de usuario
 import { EstructuraAplicacion } from "@/componentes/estructura/panel-lateral";
 
-// [Línea 6] Server Component principal 'LayoutSistema': se ejecuta en el servidor, consulta los servicios y devuelve el HTML.
+// Componente principal de página 'LayoutSistema' (Server Component: se ejecuta en el servidor)
 export default async function LayoutSistema({ children }: { children: React.ReactNode }) {
-  // [Línea 7] Espera el resultado de la consulta/operación asíncrona y lo asigna a 'usuario'.
   const usuario = await exigirUsuarioPagina();
-  // [Línea 8] Devuelve el valor: <EstructuraAplicacion usuario={usuario}>{children}</EstructuraAplicacion>;
   return <EstructuraAplicacion usuario={usuario}>{children}</EstructuraAplicacion>;
-// [Línea 9] Cierra el bloque o estructura (}).
 }

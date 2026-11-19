@@ -1,16 +1,17 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: app/api/auth/me/route.ts
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
+
 // GET /api/auth/me (RF-U2).
 // Devuelve los datos del usuario conectado o 401 si no hay sesión válida.
-// [Línea 3] Importa elementos desde 'next/server'.
+// Acá importamos NextResponse para devolver respuestas HTTP en formato JSON
 import { NextResponse } from "next/server";
-// [Línea 4] Importa elementos desde '@/lib/adaptadores'.
+// Acá importamos los adaptadores conSesionApi y manejo estándar de errores HTTP
 import { conSesionApi } from "@/lib/adaptadores";
 
-// [Línea 6] Endpoint de la API REST (Route Handler de Next.js) que atiende peticiones HTTP GET.
+// Endpoint API GET: atiende peticiones de consulta y devuelve los datos en JSON
 export async function GET() {
-  // [Línea 7] Devuelve el valor: conSesionApi(async (usuario) => NextResponse.json(usuario, { status: 200 }));
   return conSesionApi(async (usuario) => NextResponse.json(usuario, { status: 200 }));
-// [Línea 8] Cierra el bloque o estructura (}).
 }

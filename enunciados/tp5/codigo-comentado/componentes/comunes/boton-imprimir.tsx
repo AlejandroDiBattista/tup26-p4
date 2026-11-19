@@ -1,24 +1,23 @@
 // ============================================================================
-// ARCHIVO COMENTADO LÍNEA POR LÍNEA PARA ESTUDIO Y DEFENSA DEL SEGUNDO PARCIAL
+// GUÍA DE ESTUDIO - SEGUNDO PARCIAL: PROGRAMACIÓN IV
+// Archivo: componentes/comunes/boton-imprimir.tsx
+// Código comentado con explicaciones sencillas y claras para la defensa oral.
 // ============================================================================
-// [Línea 1] Directiva de Next.js: marca este archivo como Client Component (se ejecuta en el navegador con estado e interactividad).
+
+// Directiva 'use client': indica que este componente tiene interactividad en el navegador
 "use client";
 // Botón para imprimir comprobantes de factura y recibos de pago.
-// [Línea 3] Importa elementos desde 'lucide-react'.
 import { Printer } from "lucide-react";
-// [Línea 4] Importa elementos desde '@/componentes/ui/button'.
+// Acá importamos componentes visuales de la interfaz de usuario
 import { Button } from "@/componentes/ui/button";
 
-// [Línea 6] Declara la función o componente 'BotonImprimir'.
+// Componente o función exportada 'BotonImprimir'
 export function BotonImprimir({ texto = "Imprimir comprobante" }: { texto?: string }) {
-  // [Línea 7] Devuelve la interfaz JSX que renderiza este componente.
+  // Renderizamos la interfaz visual de este componente:
   return (
-    <Button variant="outline" onClick={() => window.print()} className="no-imprimir"> // [Línea 8] Abre o renderiza el componente visual <Button>.
-      <Printer className="size-4" /> // [Línea 9] Abre o renderiza el componente visual <Printer>.
-      // [Línea 10] Ejecuta o evalúa: {texto}
+    <Button variant="outline" onClick={() => window.print()} className="no-imprimir">
+      <Printer className="size-4" />
       {texto}
-    </Button> // [Línea 11] Cierra el componente visual </Button>.
-  // [Línea 12] Cierra el bloque o estructura ();).
+    </Button>
   );
-// [Línea 13] Cierra el bloque o estructura (}).
 }
