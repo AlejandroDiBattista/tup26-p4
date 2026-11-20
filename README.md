@@ -98,4 +98,4 @@ Cada integrante, por separado:
 
 ## Definicion del sistema.
 - [Funcionalidad](./requerimientos.md)
-- [Pantallas](https://alejandrodiBattista.github.io/tup26-p4/)
+- [Pantallas](https://alejandrodibattista.github.io/tup26-p4/pantallas.html)
