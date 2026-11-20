@@ -1,0 +1,12 @@
+import type {Request,Response} from 'express';
+import {Clientes,Actividades,idValido} from '../services/clientes.js';
+const cid=(r:Request)=>idValido(r.params.clienteId), aid=(r:Request)=>idValido(r.params.actividadId);
+export const listar=async(r:Request,s:Response)=>{s.json(await Clientes.listar(typeof r.query.q==='string'?r.query.q:''));};
+export const obtener=async(r:Request,s:Response)=>{s.json(await Clientes.detalle(cid(r)));};
+export const crear=async(r:Request,s:Response)=>{s.status(201).json(await Clientes.crear(r.body));};
+export const editar=async(r:Request,s:Response)=>{s.json(await Clientes.editar(cid(r),r.body));};
+export const eliminar=async(r:Request,s:Response)=>{await Clientes.eliminar(cid(r));s.sendStatus(204);};
+export const crearActividad=async(r:Request,s:Response)=>{s.status(201).json(await Actividades.crear(cid(r),r.body));};
+export const editarActividad=async(r:Request,s:Response)=>{s.json(await Actividades.editar(cid(r),aid(r),r.body));};
+export const eliminarActividad=async(r:Request,s:Response)=>{await Actividades.eliminar(cid(r),aid(r));s.sendStatus(204);};
+export const completarActividad=async(r:Request,s:Response)=>{s.json(await Actividades.completar(cid(r),aid(r)));};

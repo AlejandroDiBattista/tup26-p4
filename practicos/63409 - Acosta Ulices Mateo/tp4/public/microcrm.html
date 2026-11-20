@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MicroCRM</title>
+
+  <style>
+    /* ---------- Tokens ---------- */
+    :root {
+      color-scheme: light;
+      --fondo: #f6f6f4;
+      --superficie: #ffffff;
+      --texto: #1c1c1a;
+      --texto-suave: #6b6b66;
+      --borde: #e4e4df;
+      --acento: #2f5bea;
+      --acento-texto: #ffffff;
+      --hover: #f0f0ec;
+      --verde: #1f7a4d;
+      --rojo: #b42318;
+      --rojo-fondo: #fdecea;
+      --radio: 10px;
+      --sombra: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.04);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --fondo: #141413;
+        --superficie: #1d1d1b;
+        --texto: #ececea;
+        --texto-suave: #9a9a94;
+        --borde: #2e2e2b;
+        --acento: #7a9bff;
+        --acento-texto: #10131c;
+        --hover: #262624;
+        --verde: #6fd3a0;
+        --rojo: #ff8a80;
+        --rojo-fondo: #3a1d1b;
+        --sombra: none;
+      }
+    }
+
+    /* ---------- Base ---------- */
+    * { box-sizing: border-box; }
+    html, body, #raiz { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--fondo);
+      color: var(--texto);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+
+    /* ---------- Layout: ocupa la ventana; solo scrollean las zonas .desplazable ---------- */
+    .layout {
+      display: flex; flex-direction: column;
+      height: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 16px;
+    }
+    .layout-cabecera { flex: none; display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+    .layout-cabecera h1 { font-size: 20px; }
+    .layout-cabecera p { margin: 0; color: var(--texto-suave); }
+    .layout-cuerpo {
+      flex: 1; min-height: 0;
+      display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px;
+    }
+    .layout-cuerpo > * { min-height: 0; min-width: 0; }
+    @media (max-width: 760px) {
+      .layout { padding: 16px; }
+      .layout-cuerpo {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+        gap: 16px;
+      }
+    }
+
+    .panel {
+      display: flex; flex-direction: column;
+      height: 100%; overflow: hidden;
+      background: var(--superficie);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      box-shadow: var(--sombra);
+    }
+    .panel-cabecera {
+      flex: none;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 20px; border-bottom: 1px solid var(--borde);
+    }
+    .panel-cabecera h2 { font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .panel-cabecera .boton { height: 28px; padding: 0 10px; font-size: 13px; }
+    .cabecera-acciones { flex: none; display: flex; align-items: center; gap: 12px; }
+    /* Mide lo que necesita; solo si no entra en el panel (p. ej. el formulario en un celular) scrollea. */
+    .panel-cuerpo { flex: 0 1 auto; overflow-y: auto; padding: 20px; }
+    .panel-cuerpo + .desplazable { border-top: 1px solid var(--borde); }
+    .desplazable { flex: 1; min-height: 0; overflow-y: auto; }
+    .contador, .id { flex: none; color: var(--texto-suave); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .id { font-family: ui-monospace, "SF Mono", Consolas, monospace; }
+
+    /* ---------- Icono y botones ---------- */
+    .icono { flex: none; }
+    .boton {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 34px; padding: 0 14px;
+      border: 1px solid var(--borde); border-radius: 8px;
+      background: var(--superficie); color: var(--texto);
+      font: inherit; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .boton:hover { background: var(--hover); }
+    .boton:focus-visible, .entrada:focus-visible, .lista-boton:focus-visible {
+      outline: 2px solid var(--acento); outline-offset: 2px;
+    }
+    .boton:disabled { opacity: 0.6; cursor: default; }
+    .boton-primario { background: var(--acento); border-color: var(--acento); color: var(--acento-texto); }
+    .boton-primario:hover { background: var(--acento); filter: brightness(1.08); }
+    .boton-fantasma { border-color: transparent; background: transparent; color: var(--texto-suave); }
+
+    /* ---------- Ingreso de datos y formulario ---------- */
+    .entrada {
+      width: 100%; height: 38px; padding: 0 12px;
+      border: 1px solid var(--borde); border-radius: 8px;
+      background: var(--fondo); color: var(--texto);
+      font: inherit; font-size: 14px;
+    }
+    .entrada:focus { border-color: var(--acento); background: var(--superficie); }
+    .campo { display: grid; gap: 6px; font-size: 13px; color: var(--texto-suave); }
+    .formulario { display: grid; gap: 14px; }
+    /* Dos campos por fila: nombre y apellido, email y teléfono, domicilio y localidad. */
+    .formulario-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+    .formulario-acciones { display: flex; gap: 8px; }
+
+    .buscador { flex: none; position: relative; padding: 12px; border-bottom: 1px solid var(--borde); }
+    .buscador .icono { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); }
+    .buscador .entrada { padding-left: 36px; }
+
+    /* ---------- Entidades ---------- */
+    .lista { list-style: none; margin: 0; padding: 6px; }
+    .lista-item { border-radius: 8px; }
+    .lista-item + .lista-item { margin-top: 2px; }
+    .lista-boton {
+      display: block; width: 100%; padding: 10px 12px;
+      border: 0; border-radius: 8px; background: none;
+      color: inherit; font: inherit; text-align: left; cursor: pointer;
+    }
+    .lista-boton:hover { background: var(--hover); }
+    .lista-item.activo .lista-boton { background: var(--hover); box-shadow: inset 3px 0 0 var(--acento); }
+    .lista-vacia { margin: 0; padding: 24px 20px; color: var(--texto-suave); text-align: center; }
+
+    .ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px 24px; margin: 0; }
+    .ficha dt { font-size: 12px; color: var(--texto-suave); text-transform: uppercase; letter-spacing: 0.04em; }
+    .ficha dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+    .ficha .vacio { color: var(--texto-suave); }
+    @media (max-width: 760px) {
+      .panel-cuerpo { padding: 14px 16px; }
+      .ficha { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 14px; }
+      .ficha dt { font-size: 11px; }
+    }
+
+    /* ---------- Piezas del dominio ---------- */
+    .persona { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .avatar {
+      display: grid; place-items: center; flex: none;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--hover); color: var(--texto-suave);
+      font-size: 12px; font-weight: 600;
+    }
+    .persona-texto { min-width: 0; }
+    .persona-nombre { font-weight: 500; }
+    .persona-detalle { color: var(--texto-suave); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Grupo: título fijo al hacer scroll y lista debajo. */
+    .grupo-titulo {
+      position: sticky; top: 0; z-index: 1;
+      display: flex; justify-content: space-between;
+      padding: 8px 20px; border-bottom: 1px solid var(--borde);
+      background: var(--superficie);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave);
+    }
+    .grupo + .grupo .grupo-titulo { border-top: 1px solid var(--borde); }
+    .grupo .lista { padding: 4px 12px; }
+    .grupo .lista-vacia { padding: 4px 20px; text-align: left; font-size: 13px; line-height: 1.4; }
+
+    .actividad { display: flex; align-items: flex-start; gap: 12px; padding: 8px 8px; }
+    .check {
+      display: grid; place-items: center; flex: none;
+      width: 18px; height: 18px; margin-top: 2px;
+      border: 1.5px solid var(--texto-suave); border-radius: 5px;
+    }
+    .check.marcado { background: var(--verde); border-color: var(--verde); color: var(--superficie); }
+    .actividad.completada .actividad-descripcion { color: var(--texto-suave); }
+    .actividad-fecha { display: flex; align-items: center; gap: 4px; color: var(--texto-suave); font-size: 13px; }
+    .actividad-fecha.vencida { color: var(--rojo); }
+    .actividad-texto { flex: 1; min-width: 0; }
+    .actividad-acciones { flex: none; display: flex; gap: 2px; }
+    .actividad.en-edicion { background: var(--hover); border-radius: 8px; }
+    button.check { padding: 0; background: none; color: var(--verde); cursor: pointer; }
+    button.check:hover { border-color: var(--verde); }
+    button.check:hover .icono { opacity: 0.5; }
+    button.check:not(:hover) .icono { visibility: hidden; }
+
+    /* Botón que solo tiene un icono (necesita aria-label). */
+    .boton-solo-icono { width: 30px; height: 30px; padding: 0; justify-content: center; }
+
+    /* Subformulario de compromisos: una sola línea, sin etiquetas visibles. */
+    .subformulario {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 16px; padding: 8px;
+      border: 1.5px dotted var(--texto-suave); border-radius: 12px;
+    }
+    .subformulario .entrada { height: 34px; }
+    .subformulario .entrada[type="text"] { flex: 1; min-width: 0; }
+    .subformulario .entrada[type="date"] { flex: none; width: 150px; }
+    .subformulario + .aviso { margin-top: 8px; }
+    .boton-primario.boton-solo-icono { color: var(--acento-texto); }
+
+    .aviso { margin: 0; padding: 12px 16px; border-radius: 8px; background: var(--rojo-fondo); color: var(--rojo); }
+    .marcador {
+      display: grid; place-content: center; justify-items: center; gap: 8px;
+      height: 100%; padding: 20px; color: var(--texto-suave); text-align: center;
+    }
+    .marcador p { margin: 0; }
+  </style>
+
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script>
+    // Babel configurado explícitamente: el JSX se convierte en React.createElement(...)
+    // usando el React global cargado arriba (runtime "classic", sin imports).
+    Babel.registerPreset("jsx-clasico", {
+      presets: [[Babel.availablePresets.react, { runtime: "classic" }]],
+    });
+  </script>
+</head>
+<body>
+  <div id="raiz"></div>
+
+  <script type="text/babel" data-presets="jsx-clasico">
+    const { useState, useEffect } = React;
+
+    // =====================================================================
+    // Servicios: única parte que conoce la API REST
+    // =====================================================================
+
+    async function pedir(ruta, opciones = {}) {
+      const respuesta = await fetch("/api" + ruta, {
+        headers: { "Content-Type": "application/json" },
+        ...opciones,
+      });
+      if (respuesta.status === 204) return null;
+      const datos = await respuesta.json();
+      if (!respuesta.ok) throw new Error(datos.error || `Error ${respuesta.status}`);
+      return datos;
+    }
+
+    // Opciones de fetch para un método HTTP con cuerpo JSON opcional.
+    const peticion = (method, datos) => ({ method, body: datos && JSON.stringify(datos) });
+
+    const servicioClientes = {
+      listar: () => pedir("/clientes"),
+      obtener: (id) => pedir(`/clientes/${id}`),
+      crear: (datos) => pedir("/clientes", peticion("POST", datos)),
+      actualizar: (id, cambios) =>
+        pedir(`/clientes/${id}`, peticion("PATCH", cambios)),
+    };
+
+    const servicioActividades = {
+      crear: (clienteId, datos) =>
+        pedir(`/clientes/${clienteId}/actividades`, peticion("POST", datos)),
+      actualizar: (clienteId, id, cambios) =>
+        pedir(`/clientes/${clienteId}/actividades/${id}`, peticion("PATCH", cambios)),
+      completar: (clienteId, id) =>
+        pedir(`/clientes/${clienteId}/actividades/${id}/completar`, peticion("POST")),
+      borrar: (clienteId, id) =>
+        pedir(`/clientes/${clienteId}/actividades/${id}`, peticion("DELETE")),
+    };
+
+    // =====================================================================
+    // Componentes base: iconos, botones, ingreso de datos, formulario
+    // =====================================================================
+
+    const trazos = {
+      usuario: "M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
+      buscar: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14M21 21l-4.3-4.3",
+      editar: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z",
+      agregar: "M12 5v14M5 12h14",
+      cerrar: "M18 6 6 18M6 6l12 12",
+      guardar: "M20 6 9 17l-5-5",
+      borrar: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
+      reloj: "M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18",
+    };
+
+    function Icono({ nombre, tamano = 16 }) {
+      return (
+        <svg className="icono" width={tamano} height={tamano} viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+          aria-hidden="true">
+          <path d={trazos[nombre]} />
+        </svg>
+      );
+    }
+
+    // Sin texto, el botón muestra solo el icono: hay que darle un aria-label.
+    function Boton({ variante = "secundario", icono, children, type = "button", ...props }) {
+      const soloIcono = children ? "" : "boton-solo-icono";
+      return (
+        <button type={type} className={`boton boton-${variante} ${soloIcono}`}
+          title={props["aria-label"]} {...props}>
+          {icono && <Icono nombre={icono} />}
+          {children}
+        </button>
+      );
+    }
+
+    function Entrada(props) {
+      return <input className="entrada" {...props} />;
+    }
+
+    function Campo({ etiqueta, requerido, ...props }) {
+      return (
+        <label className="campo">
+          <span>{etiqueta}{requerido && " *"}</span>
+          <Entrada required={requerido} {...props} />
+        </label>
+      );
+    }
+
+    function Buscador({ valor, onCambiar, ...props }) {
+      return (
+        <div className="buscador" role="search">
+          <Icono nombre="buscar" />
+          <Entrada type="search" value={valor} onChange={(e) => onCambiar(e.target.value)} {...props} />
+        </div>
+      );
+    }
+
+    function Formulario({ onEnviar, acciones, children }) {
+      function enviar(evento) {
+        evento.preventDefault();
+        onEnviar();
+      }
+      return (
+        <form className="formulario" onSubmit={enviar}>
+          <div className="formulario-campos">{children}</div>
+          <div className="formulario-acciones">{acciones}</div>
+        </form>
+      );
+    }
+
+    // =====================================================================
+    // Layout: maestro (izquierda) y detalle (derecha) a toda la altura
+    // =====================================================================
+
+    function Layout({ titulo, subtitulo, maestro, detalle }) {
+      return (
+        <div className="layout">
+          <header className="layout-cabecera">
+            <h1>{titulo}</h1>
+            {subtitulo && <p>{subtitulo}</p>}
+          </header>
+          <div className="layout-cuerpo">
+            <aside>{maestro}</aside>
+            <main>{detalle}</main>
+          </div>
+        </div>
+      );
+    }
+
+    // Tarjeta con cabecera fija. Dentro, las zonas con clase "desplazable" tienen scroll propio.
+    function Panel({ titulo, acciones, children }) {
+      return (
+        <section className="panel">
+          {(titulo || acciones) && (
+            <div className="panel-cabecera">
+              <h2>{titulo}</h2>
+              {acciones}
+            </div>
+          )}
+          {children}
+        </section>
+      );
+    }
+
+    // Sección con título (fijo al hacer scroll) y cantidad de elementos.
+    function Grupo({ titulo, cantidad, children }) {
+      return (
+        <section className="grupo">
+          <h3 className="grupo-titulo">
+            <span>{titulo}</span>
+            <span>{cantidad}</span>
+          </h3>
+          {children}
+        </section>
+      );
+    }
+
+    // =====================================================================
+    // Entidades genéricas: listar, mostrar y editar
+    // Los "campos" describen la entidad: [{ clave, etiqueta, tipo?, requerido? }]
+    // =====================================================================
+
+    function Lista({ elementos, render, seleccionado, onSeleccionar, vacio = "Sin elementos" }) {
+      if (elementos.length === 0) return <p className="lista-vacia">{vacio}</p>;
+      return (
+        <ul className="lista">
+          {elementos.map((elemento) => (
+            <li key={elemento.id}
+              className={`lista-item ${elemento.id === seleccionado ? "activo" : ""}`}>
+              {onSeleccionar ? (
+                <button className="lista-boton" onClick={() => onSeleccionar(elemento.id)}>
+                  {render(elemento)}
+                </button>
+              ) : (
+                render(elemento)
+              )}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    function Ficha({ campos, valores }) {
+      return (
+        <dl className="ficha">
+          {campos.map(({ clave, etiqueta }) => (
+            <div key={clave}>
+              <dt>{etiqueta}</dt>
+              <dd className={valores[clave] ? "" : "vacio"}>{valores[clave] || "—"}</dd>
+            </div>
+          ))}
+        </dl>
+      );
+    }
+
+    function Editor({ campos, inicial, onGuardar, onCancelar }) {
+      const [valores, setValores] = useState(() =>
+        Object.fromEntries(campos.map(({ clave }) => [clave, inicial[clave] ?? ""])),
+      );
+      const [guardando, setGuardando] = useState(false);
+      const [error, setError] = useState(null);
+
+      async function guardar() {
+        setGuardando(true);
+        setError(null);
+        try {
+          await onGuardar(valores);
+        } catch (e) {
+          setError(e.message);
+          setGuardando(false);
+        }
+      }
+
+      return (
+        <Formulario
+          onEnviar={guardar}
+          acciones={
+            <>
+              <Boton variante="primario" icono="guardar" type="submit" disabled={guardando}>
+                {guardando ? "Guardando…" : "Guardar"}
+              </Boton>
+              <Boton variante="fantasma" icono="cerrar" onClick={onCancelar}>Cancelar</Boton>
+            </>
+          }
+        >
+          {campos.map(({ clave, etiqueta, tipo = "text", requerido }) => (
+            <Campo key={clave} etiqueta={etiqueta} type={tipo} requerido={requerido}
+              value={valores[clave]}
+              onChange={(e) => setValores({ ...valores, [clave]: e.target.value })} />
+          ))}
+          {error && <p className="aviso" style={{ gridColumn: "1 / -1" }}>{error}</p>}
+        </Formulario>
+      );
+    }
+
+    // Texto en minúsculas y sin acentos, para comparar: "López" -> "lopez".
+    const comparable = (valor) =>
+      String(valor ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+    // ¿Algún campo de la entidad contiene el texto buscado? También acepta "#id".
+    function coincide(entidad, campos, consulta) {
+      const texto = comparable(consulta.trim());
+      if (!texto) return true;
+      if (texto.startsWith("#")) return String(entidad.id) === texto.slice(1);
+      return campos.some(({ clave }) => comparable(entidad[clave]).includes(texto));
+    }
+
+    // =====================================================================
+    // Dominio: clientes y actividades
+    // =====================================================================
+
+    const camposCliente = [
+      { clave: "nombre", etiqueta: "Nombre", requerido: true },
+      { clave: "apellido", etiqueta: "Apellido", requerido: true },
+      { clave: "email", etiqueta: "Email", tipo: "email", requerido: true },
+      { clave: "telefono", etiqueta: "Teléfono", tipo: "tel" },
+      { clave: "domicilio", etiqueta: "Domicilio" },
+      { clave: "localidad", etiqueta: "Localidad" },
+    ];
+
+    const nombreCompleto = (c) => `${c.nombre} ${c.apellido}`;
+    const iniciales = (c) => (c.nombre[0] + c.apellido[0]).toUpperCase();
+
+    function Persona({ cliente }) {
+      return (
+        <div className="persona">
+          <span className="avatar">{iniciales(cliente)}</span>
+          <div className="persona-texto">
+            <div className="persona-nombre">{nombreCompleto(cliente)}</div>
+            <div className="persona-detalle">{cliente.email}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // Texto de la línea de fecha según el estado de la actividad.
+    function fechaActividad({ estado, fechaCompromiso, fechaFinalizacion }) {
+      if (estado === "completada") return `Finalizada el ${fechaFinalizacion}`;
+      if (!fechaCompromiso) return "Sin compromiso";
+      if (estado === "vencida") return `Vencida el ${fechaCompromiso}`;
+      return `Compromiso para el ${fechaCompromiso}`;
+    }
+
+    // Las completadas solo se muestran; las pendientes tienen check para completar, editar y borrar.
+    function Actividad({ actividad, enEdicion, onCompletar, onEditar, onBorrar }) {
+      const completada = actividad.estado === "completada";
+      const { descripcion } = actividad;
+      return (
+        <div className={`actividad ${actividad.estado} ${enEdicion ? "en-edicion" : ""}`}>
+          {completada ? (
+            <span className="check marcado" role="img" aria-label="Completada">
+              <Icono nombre="guardar" tamano={12} />
+            </span>
+          ) : (
+            <button type="button" className="check" onClick={onCompletar}
+              aria-label={`Completar «${descripcion}»`} title="Completar">
+              <Icono nombre="guardar" tamano={12} />
+            </button>
+          )}
+          <div className="actividad-texto">
+            <div className="actividad-descripcion">{descripcion}</div>
+            <div className={`actividad-fecha ${actividad.estado}`}>
+              <Icono nombre="reloj" tamano={13} />
+              {fechaActividad(actividad)}
+            </div>
+          </div>
+          {!completada && (
+            <div className="actividad-acciones">
+              <Boton variante="fantasma" icono="editar" onClick={onEditar}
+                aria-label={`Editar «${descripcion}»`} />
+              <Boton variante="fantasma" icono="borrar" onClick={onBorrar}
+                aria-label={`Borrar «${descripcion}»`} />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Subformulario en una línea para crear o editar un compromiso.
+    // Al montarse toma los datos de "actividad" (o queda vacío para uno nuevo).
+    function SubformularioActividad({ actividad, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? "");
+      const [fecha, setFecha] = useState(actividad?.fechaCompromiso ?? "");
+      const [error, setError] = useState(null);
+
+      function limpiar() {
+        setDescripcion("");
+        setFecha("");
+        setError(null);
+      }
+
+      async function guardar(evento) {
+        evento.preventDefault();
+        try {
+          await onGuardar({ descripcion: descripcion.trim(), fechaCompromiso: fecha || null });
+          limpiar();
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      function cancelar() {
+        limpiar();
+        onCancelar();
+      }
+
+      return (
+        <>
+          <form className="subformulario" onSubmit={guardar}
+            aria-label={actividad ? "Editar compromiso" : "Nuevo compromiso"}>
+            <Entrada type="text" required value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+              placeholder={actividad ? "Descripción" : "Nuevo compromiso…"}
+              aria-label="Descripción del compromiso" />
+            <Entrada type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
+              aria-label="Fecha de compromiso (opcional)" />
+            <Boton variante="primario" icono="guardar" type="submit" aria-label="Guardar compromiso" />
+            <Boton variante="fantasma" icono="cerrar" onClick={cancelar} aria-label="Cancelar" />
+          </form>
+          {error && <p className="aviso">{error}</p>}
+        </>
+      );
+    }
+
+    // Compromisos: primero sin fecha, después vencidos y al final hoy o futuros.
+    // Dentro de cada grupo con fecha, de la más antigua a la más nueva.
+    function ordenarCompromisos(actividades) {
+      const grupo = (a) => (!a.fechaCompromiso ? 0 : a.estado === "vencida" ? 1 : 2);
+      return [...actividades].sort(
+        (a, b) => grupo(a) - grupo(b) || (a.fechaCompromiso ?? "").localeCompare(b.fechaCompromiso ?? ""),
+      );
+    }
+
+    // Maestro: búsqueda fija arriba y lista con scroll propio.
+    function MaestroClientes({ clientes, cargando, error, seleccionado, onSeleccionar, onAgregar }) {
+      const [consulta, setConsulta] = useState("");
+      const visibles = clientes.filter((c) => coincide(c, camposCliente, consulta));
+
+      return (
+        <Panel titulo="Clientes"
+          acciones={
+            <div className="cabecera-acciones">
+              {!cargando && <span className="contador">{visibles.length} de {clientes.length}</span>}
+              <Boton icono="agregar" onClick={onAgregar}>Agregar</Boton>
+            </div>
+          }>
+          <Buscador valor={consulta} onCambiar={setConsulta}
+            placeholder="Buscar por nombre, email, localidad, #id…" aria-label="Buscar clientes" />
+          <div className="desplazable">
+            {error ? (
+              <div className="panel-cuerpo"><p className="aviso">{error}</p></div>
+            ) : (
+              <Lista elementos={visibles} seleccionado={seleccionado} onSeleccionar={onSeleccionar}
+                vacio={cargando ? "Cargando…" : consulta ? "Sin resultados" : "No hay clientes"}
+                render={(c) => <Persona cliente={c} />} />
+            )}
+          </div>
+        </Panel>
+      );
+    }
+
+    // Detalle: ficha (o formulario al editar) y subformulario fijos; actividades con scroll propio.
+    // Tras cada cambio en las actividades se pide a App que recargue el cliente desde la API.
+    function DetalleCliente({ cliente, editando, onEditar, onGuardar, onCancelar, onRecargar }) {
+      const [enEdicion, setEnEdicion] = useState(null); // compromiso cargado en el subformulario
+      const [error, setError] = useState(null);
+
+      const compromisos = ordenarCompromisos(cliente.actividades.filter((a) => a.estado !== "completada"));
+      const completadas = cliente.actividades.filter((a) => a.estado === "completada");
+
+      async function guardarActividad(datos) {
+        if (enEdicion) await servicioActividades.actualizar(cliente.id, enEdicion.id, datos);
+        else await servicioActividades.crear(cliente.id, datos);
+        setEnEdicion(null);
+        await onRecargar();
+      }
+
+      // Completar o borrar: si era el compromiso en edición, se libera el subformulario.
+      async function ejecutar(actividad, accion) {
+        setError(null);
+        if (enEdicion?.id === actividad.id) setEnEdicion(null);
+        try {
+          await accion(cliente.id, actividad.id);
+          await onRecargar();
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      return (
+        <Panel titulo={nombreCompleto(cliente)}
+          acciones={
+            <div className="cabecera-acciones">
+              {!editando && <Boton icono="editar" onClick={onEditar}>Editar</Boton>}
+              <span className="id">#{cliente.id}</span>
+            </div>
+          }>
+          <div className="panel-cuerpo">
+            {editando ? (
+              <Editor campos={camposCliente} inicial={cliente}
+                onGuardar={onGuardar} onCancelar={onCancelar} />
+            ) : (
+              <>
+                <Ficha campos={camposCliente} valores={cliente} />
+                {/* La key cambia al elegir otro compromiso: el subformulario se vuelve a crear con sus datos. */}
+                <SubformularioActividad key={enEdicion?.id ?? "nuevo"} actividad={enEdicion}
+                  onGuardar={guardarActividad} onCancelar={() => setEnEdicion(null)} />
+                {error && <p className="aviso">{error}</p>}
+              </>
+            )}
+          </div>
+          <div className="desplazable">
+            <Grupo titulo="Compromisos" cantidad={compromisos.length}>
+              <Lista elementos={compromisos} vacio="Sin compromisos"
+                render={(a) => (
+                  <Actividad actividad={a} enEdicion={enEdicion?.id === a.id}
+                    onCompletar={() => ejecutar(a, servicioActividades.completar)}
+                    onEditar={() => setEnEdicion(a)}
+                    onBorrar={() => ejecutar(a, servicioActividades.borrar)} />
+                )} />
+            </Grupo>
+            <Grupo titulo="Actividades completadas" cantidad={completadas.length}>
+              <Lista elementos={completadas} vacio="Sin actividades completadas"
+                render={(a) => <Actividad actividad={a} />} />
+            </Grupo>
+          </div>
+        </Panel>
+      );
+    }
+
+    function NuevoCliente({ onGuardar, onCancelar }) {
+      return (
+        <Panel titulo="Nuevo cliente">
+          <div className="panel-cuerpo">
+            <Editor campos={camposCliente} inicial={{}} onGuardar={onGuardar} onCancelar={onCancelar} />
+          </div>
+        </Panel>
+      );
+    }
+
+    // =====================================================================
+    // Aplicación
+    // =====================================================================
+
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [cargando, setCargando] = useState(true);
+      const [error, setError] = useState(null);
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [modo, setModo] = useState("ver"); // "ver" | "editar" | "agregar"
+
+      useEffect(() => {
+        servicioClientes.listar()
+          .then(setClientes)
+          .catch((e) => setError(e.message))
+          .finally(() => setCargando(false));
+      }, []);
+
+      const seleccionado = clientes.find((c) => c.id === seleccionadoId);
+
+      function seleccionar(id) {
+        setSeleccionadoId(id);
+        setModo("ver");
+      }
+
+      function agregar() {
+        setSeleccionadoId(null);
+        setModo("agregar");
+      }
+
+      // Si la API rechaza los datos, el error llega al Editor, que lo muestra.
+      async function guardarNuevo(datos) {
+        const creado = await servicioClientes.crear(datos);
+        setClientes((lista) => [...lista, { ...creado, actividades: [] }]);
+        seleccionar(creado.id);
+      }
+
+      async function guardarCambios(datos) {
+        const actualizado = await servicioClientes.actualizar(seleccionadoId, datos);
+        setClientes((lista) => lista.map((c) => (c.id === actualizado.id ? { ...c, ...actualizado } : c)));
+        setModo("ver");
+      }
+
+      // Vuelve a pedir el cliente a la API (con sus actividades y estados) y lo reemplaza en la lista.
+      async function recargar(id) {
+        const cliente = await servicioClientes.obtener(id);
+        setClientes((lista) => lista.map((c) => (c.id === id ? cliente : c)));
+      }
+
+      return (
+        <Layout
+          titulo="MicroCRM"
+          subtitulo="Clientes y actividades"
+          maestro={
+            <MaestroClientes clientes={clientes} cargando={cargando} error={error}
+              seleccionado={seleccionadoId} onSeleccionar={seleccionar} onAgregar={agregar} />
+          }
+          detalle={
+            modo === "agregar" ? (
+              <NuevoCliente onGuardar={guardarNuevo} onCancelar={() => setModo("ver")} />
+            ) : seleccionado ? (
+              <DetalleCliente key={seleccionado.id} cliente={seleccionado} editando={modo === "editar"}
+                onEditar={() => setModo("editar")} onGuardar={guardarCambios}
+                onCancelar={() => setModo("ver")} onRecargar={() => recargar(seleccionado.id)} />
+            ) : (
+              <Panel>
+                <div className="marcador">
+                  <Icono nombre="usuario" tamano={28} />
+                  <p>Selecciona un cliente para ver su ficha y sus actividades</p>
+                </div>
+              </Panel>
+            )
+          }
+        />
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("raiz")).render(<App />);
+  </script>
+</body>
+</html>

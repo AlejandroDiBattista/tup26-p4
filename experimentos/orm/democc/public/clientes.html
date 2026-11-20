@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clientes · MiniCRM</title>
+  <style>
+    :root {
+      --fondo: #f5f4f0;
+      --superficie: #ffffff;
+      --tinta: #1c1c1a;
+      --tenue: #6d6a63;
+      --borde: #e3e0d8;
+      --acento: #1f6f5c;
+      --acento-suave: #e7f0ec;
+      --peligro: #b3261e;
+      --radio: 10px;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--tinta);
+      background: var(--fondo);
+    }
+
+    * { box-sizing: border-box; }
+
+    /* La aplicación ocupa exactamente la ventana; cada zona hace su propio scroll. */
+    body {
+      margin: 0;
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    #raiz { display: contents; }
+
+    #raiz > header {
+      display: flex;
+      align-items: baseline;
+      gap: .75rem;
+      padding: .9rem 1.5rem;
+      border-bottom: 1px solid var(--borde);
+      background: var(--superficie);
+
+      h1 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
+      p { margin: 0; color: var(--tenue); font-size: .9rem; }
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+      min-height: 0;
+
+      > section {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+    }
+
+    h2 { margin: 0; }
+
+    ul { list-style: none; margin: 0; padding: 0; }
+
+    input, button { font: inherit; color: var(--tinta); }
+
+    input {
+      width: 100%;
+      font-size: 1rem;
+      padding: .5rem .7rem;
+      border: 1px solid #cfccc3;
+      border-radius: 8px;
+      background: var(--superficie);
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .45rem .9rem;
+      border: 1px solid #cfccc3;
+      border-radius: 8px;
+      background: var(--superficie);
+      cursor: pointer;
+
+      &:hover { background: var(--fondo); }
+      &:disabled { opacity: .6; cursor: progress; }
+
+      &[type="submit"] {
+        background: var(--acento);
+        border-color: var(--acento);
+        color: #fff;
+
+        &:hover { background: #185a4a; }
+      }
+
+      /* Botones que solo muestran un icono (su nombre accesible está en aria-label). */
+      &:has(> svg:only-child) { padding: .45rem; }
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--acento);
+      outline-offset: 2px;
+    }
+
+    [role="status"], [role="alert"] {
+      margin: 0;
+      padding: 1.25rem 1rem;
+      color: var(--tenue);
+      text-align: center;
+    }
+
+    [role="alert"] { color: var(--peligro); }
+
+    /* ── Maestro ── */
+
+    main > section:first-child {
+      background: var(--superficie);
+      border-right: 1px solid var(--borde);
+
+      > header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: 1rem 1rem .5rem;
+
+        h2 {
+          font-size: .8rem;
+          font-weight: 600;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: var(--tenue);
+        }
+      }
+
+      search { padding: 0 1rem .75rem; border-bottom: 1px solid var(--borde); }
+
+      ul { flex: 1; overflow-y: auto; padding: .4rem; }
+
+      li button {
+        display: grid;
+        width: 100%;
+        gap: .05rem;
+        padding: .6rem .75rem;
+        border: 0;
+        border-radius: 8px;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover { background: var(--fondo); }
+        &[aria-current="true"] { background: var(--acento-suave); }
+        strong { font-weight: 600; }
+        small { color: var(--tenue); font-size: .85rem; overflow-wrap: anywhere; }
+      }
+    }
+
+    /* ── Detalle ── */
+
+    main > section:last-child {
+      gap: 1rem;
+      padding: 1.5rem;
+
+      > article, > form:first-child {
+        position: relative;
+        padding: 1.25rem 1.5rem;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-radius: var(--radio);
+
+        h2 { font-size: 1.35rem; letter-spacing: -.015em; padding-right: 4rem; }
+
+        > span {
+          position: absolute;
+          top: 1.25rem;
+          right: 1.5rem;
+          color: var(--tenue);
+          font-variant-numeric: tabular-nums;
+        }
+
+        dl {
+          display: flex;
+          flex-wrap: wrap;
+          gap: .5rem 2rem;
+          margin: .75rem 0 0;
+        }
+
+        dt { font-size: .75rem; color: var(--tenue); text-transform: uppercase; letter-spacing: .05em; }
+        dd { margin: 0; overflow-wrap: anywhere; }
+        a { color: inherit; }
+        footer { margin-top: 1rem; }
+      }
+
+      > form:first-child {
+        display: grid;
+        gap: .9rem;
+
+        > div {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: .9rem;
+        }
+
+        label {
+          display: grid;
+          gap: .3rem;
+          font-size: .8rem;
+          color: var(--tenue);
+        }
+
+        [role="alert"] {
+          padding: .5rem .75rem;
+          text-align: left;
+          background: #fbeceb;
+          border-radius: 8px;
+        }
+
+        footer { display: flex; gap: .5rem; }
+      }
+
+      /* Subformulario de actividades: una sola línea, sin etiquetas visibles. */
+      > form:nth-child(2) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem;
+        padding: .5rem;
+        border: 2px dotted #c9c5ba;
+        border-radius: var(--radio);
+
+        input:not([type="date"]) { flex: 1; min-width: 0; }
+        input[type="date"] { width: auto; flex: none; }
+        button { flex: none; }
+        [role="alert"] { flex-basis: 100%; padding: .1rem .25rem; text-align: left; font-size: .85rem; }
+      }
+
+      /* Crece según su contenido y, si no entra, hace scroll. */
+      > section {
+        flex: 0 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        background: var(--superficie);
+        border: 1px solid var(--borde);
+        border-radius: var(--radio);
+
+        section + section { border-top: 1px solid var(--borde); }
+
+        h3 {
+          margin: 0;
+          padding: .9rem 1.25rem .4rem;
+          font-size: .8rem;
+          font-weight: 600;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          color: var(--tenue);
+        }
+
+        /* Mensaje de grupo vacío: una sola línea discreta. */
+        section > p {
+          margin: 0;
+          padding: 0 1.25rem .8rem;
+          font-size: .85rem;
+          color: var(--tenue);
+        }
+
+        > [role="alert"] { padding: .6rem 1.25rem; text-align: left; }
+
+        li {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: start;
+          gap: .75rem;
+          padding: .6rem 1.25rem;
+
+          & + li { border-top: 1px solid var(--borde); }
+
+          input[type="checkbox"] {
+            width: 1.1rem;
+            height: 1.1rem;
+            margin: .15rem 0 0;
+            accent-color: var(--acento);
+          }
+
+          small { display: block; color: var(--tenue); font-size: .85rem; }
+          small[data-vencido] { color: var(--peligro); }
+
+          > span { display: flex; gap: .15rem; margin-top: -.3rem; }
+
+          > span button {
+            border-color: transparent;
+            background: none;
+            color: var(--tenue);
+
+            &:hover { color: var(--tinta); background: var(--fondo); }
+          }
+        }
+
+        section:last-child li > div { color: var(--tenue); }
+      }
+    }
+
+    /* En pantallas chicas el maestro queda arriba y el detalle debajo. */
+    @media (width < 720px) {
+      #raiz > header { padding: .75rem 1rem; }
+
+      main {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      main > section:first-child {
+        max-height: 34dvh;
+        border-right: 0;
+        border-bottom: 1px solid var(--borde);
+      }
+
+      main > section:last-child {
+        gap: .75rem;
+        padding: .75rem;
+
+        > article, > form:first-child { padding: 1rem; }
+        > article h2 { font-size: 1.15rem; }
+        > article footer { margin-top: .75rem; }
+        > article > span, > form:first-child > span { top: 1rem; right: 1rem; }
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="raiz"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@8.0.6/babel.min.js" crossorigin></script>
+  <script>
+    // JSX se transforma en React.createElement y usa el React global (runtime classic).
+    Babel.registerPreset('react-classic', {
+      presets: [[Babel.availablePresets.react, { runtime: 'classic' }]],
+    });
+  </script>
+
+  <script type="text/babel" data-presets="react-classic">
+    const { useEffect, useState } = React;
+
+    // ── Acceso a datos: API REST ──────────────────────────────
+
+    async function pedir(ruta, metodo = 'GET', cuerpo) {
+      const respuesta = await fetch(`/api${ruta}`, {
+        method: metodo,
+        headers: cuerpo ? { 'Content-Type': 'application/json' } : {},
+        body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+      });
+      const datos = await respuesta.json().catch(() => null);
+      if (!respuesta.ok) throw new Error(datos?.error ?? `Error ${respuesta.status}`);
+      return datos;
+    }
+
+    const api = {
+      buscarClientes: (texto) => pedir(`/clientes?q=${encodeURIComponent(texto)}`),
+      crearCliente: (datos) => pedir('/clientes', 'POST', datos),
+      actualizarCliente: (id, datos) => pedir(`/clientes/${id}`, 'PATCH', datos),
+      listarActividades: (clienteId) => pedir(`/clientes/${clienteId}/actividades`),
+      agregarActividad: (clienteId, datos) => pedir(`/clientes/${clienteId}/actividades`, 'POST', datos),
+      actualizarActividad: (clienteId, id, datos) => pedir(`/clientes/${clienteId}/actividades/${id}`, 'PATCH', datos),
+      eliminarActividad: (clienteId, id) => pedir(`/clientes/${clienteId}/actividades/${id}`, 'DELETE'),
+      completarActividad: (clienteId, id) => pedir(`/clientes/${clienteId}/actividades/${id}/completar`, 'POST'),
+    };
+
+    // ── Fechas ────────────────────────────────────────────────
+
+    const formatoFecha = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    const formatoFechaHora = new Intl.DateTimeFormat('es-AR', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Argentina/Tucuman',
+    });
+
+    // Las fechas de calendario (AAAA-MM-DD) se muestran sin conversión de zona horaria.
+    const mostrarFecha = (fecha) => formatoFecha.format(new Date(`${fecha}T00:00:00Z`));
+    const mostrarFechaHora = (fechaHora) => formatoFechaHora.format(new Date(fechaHora));
+
+    const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Tucuman' }).format(new Date());
+
+    // Las fechas AAAA-MM-DD se ordenan como texto. Los compromisos sin fecha ('') van primero;
+    // luego, en orden ascendente, quedan los vencidos (anteriores a hoy) y después los de hoy o futuros.
+    const ordenarCompromisos = (actividades) =>
+      [...actividades].sort((a, b) => (a.compromiso ?? '').localeCompare(b.compromiso ?? '') || a.id - b.id);
+
+    // Las completadas, de la más reciente a la más antigua.
+    const ordenarCompletadas = (actividades) =>
+      [...actividades].sort((a, b) => b.finalizacion.localeCompare(a.finalizacion));
+
+    // ── Datos remotos ─────────────────────────────────────────
+
+    /**
+     * Busca clientes en vivo; espera a que se deje de escribir para consultar.
+     * Cambiar `version` fuerza una nueva consulta (por ejemplo, tras guardar).
+     */
+    function useClientes(texto, version) {
+      const [estado, setEstado] = useState({ clientes: null, error: null });
+
+      useEffect(() => {
+        let vigente = true;
+        const espera = setTimeout(() => {
+          api.buscarClientes(texto)
+            .then((clientes) => vigente && setEstado({ clientes, error: null }))
+            .catch((error) => vigente && setEstado({ clientes: null, error: error.message }));
+        }, texto ? 250 : 0);
+        return () => { vigente = false; clearTimeout(espera); };
+      }, [texto, version]);
+
+      return estado;
+    }
+
+    /** Actividades de un cliente; `recargar` las vuelve a consultar sin perder las actuales. */
+    function useActividades(clienteId) {
+      const [estado, setEstado] = useState({ actividades: null, error: null });
+      const [version, setVersion] = useState(0);
+
+      useEffect(() => {
+        let vigente = true;
+        api.listarActividades(clienteId)
+          .then((actividades) => vigente && setEstado({ actividades, error: null }))
+          .catch((error) => vigente && setEstado({ actividades: null, error: error.message }));
+        return () => { vigente = false; };
+      }, [clienteId, version]);
+
+      return { ...estado, recargar: () => setVersion((v) => v + 1) };
+    }
+
+    // ── Iconos ────────────────────────────────────────────────
+
+    const trazos = {
+      guardar:  'M5 12.5l4.5 4.5L19 7.5',
+      cancelar: 'M6.5 6.5l11 11M17.5 6.5l-11 11',
+      editar:   'M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 8.5l2 2',
+      borrar:   'M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 11v5M14 11v5',
+    };
+
+    // Decorativo: el nombre accesible lo lleva el botón que lo contiene.
+    function Icono({ nombre }) {
+      return (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d={trazos[nombre]} />
+        </svg>
+      );
+    }
+
+    function BotonIcono({ icono, etiqueta, ...propiedades }) {
+      return (
+        <button type="button" aria-label={etiqueta} title={etiqueta} {...propiedades}>
+          <Icono nombre={icono} />
+        </button>
+      );
+    }
+
+    // ── Componentes de layout ─────────────────────────────────
+
+    function Marco({ children }) {
+      return (
+        <>
+          <header>
+            <h1>MiniCRM</h1>
+            <p>Clientes y actividades</p>
+          </header>
+          <main>{children}</main>
+        </>
+      );
+    }
+
+    function Aviso({ error, children }) {
+      return <p role={error ? 'alert' : 'status'}>{children}</p>;
+    }
+
+    /** Muestra carga, error o vacío; si hay datos, delega en children. */
+    function Contenido({ datos, error, vacio, children }) {
+      if (error) return <Aviso error>{error}</Aviso>;
+      if (!datos) return <Aviso>Cargando…</Aviso>;
+      if (!datos.length && vacio) return <Aviso>{vacio}</Aviso>;
+      return children;
+    }
+
+    // ── Maestro ───────────────────────────────────────────────
+
+    function Maestro({ seleccionado, version, onSeleccionar, onAgregar }) {
+      const [texto, setTexto] = useState('');
+      const { clientes, error } = useClientes(texto, version);
+
+      return (
+        <section aria-labelledby="titulo-clientes">
+          <header>
+            <h2 id="titulo-clientes">Clientes</h2>
+            <button type="button" onClick={onAgregar}>Agregar cliente</button>
+          </header>
+          <search>
+            <input
+              type="search"
+              value={texto}
+              onChange={(evento) => setTexto(evento.target.value)}
+              placeholder="Buscar por nombre, email o teléfono"
+              aria-label="Buscar clientes"
+              autoComplete="off"
+              spellCheck="false"
+            />
+          </search>
+          <Contenido datos={clientes} error={error} vacio={texto ? 'Ningún cliente coincide con la búsqueda.' : 'No hay clientes cargados.'}>
+            <ul>
+              {clientes?.map((cliente) => (
+                <FilaCliente
+                  key={cliente.id}
+                  cliente={cliente}
+                  actual={cliente.id === seleccionado?.id}
+                  onSeleccionar={onSeleccionar}
+                />
+              ))}
+            </ul>
+          </Contenido>
+        </section>
+      );
+    }
+
+    function FilaCliente({ cliente, actual, onSeleccionar }) {
+      return (
+        <li>
+          <button type="button" aria-current={actual} onClick={() => onSeleccionar(cliente)}>
+            <strong>{cliente.apellido}, {cliente.nombre}</strong>
+            <small>{cliente.email}</small>
+          </button>
+        </li>
+      );
+    }
+
+    // ── Detalle ───────────────────────────────────────────────
+
+    /** edicion: null (ver ficha), 'nuevo' (alta) o 'editar' (modificar el cliente). */
+    function Detalle({ cliente, edicion, onEditar, onGuardado, onCancelar }) {
+      if (edicion === 'nuevo') {
+        return (
+          <section aria-label="Nuevo cliente">
+            <FormularioCliente onGuardado={onGuardado} onCancelar={onCancelar} />
+          </section>
+        );
+      }
+
+      return (
+        <section aria-label="Detalle del cliente">
+          {cliente ? (
+            <>
+              {edicion === 'editar'
+                ? <FormularioCliente key={cliente.id} cliente={cliente} onGuardado={onGuardado} onCancelar={onCancelar} />
+                : <FichaCliente cliente={cliente} onEditar={onEditar} />}
+              <Actividades key={cliente.id} clienteId={cliente.id} />
+            </>
+          ) : (
+            <Aviso>Seleccioná un cliente para ver su ficha y sus actividades.</Aviso>
+          )}
+        </section>
+      );
+    }
+
+    function FichaCliente({ cliente, onEditar }) {
+      return (
+        <article aria-labelledby="nombre-cliente">
+          <h2 id="nombre-cliente">{cliente.nombre} {cliente.apellido}</h2>
+          <span aria-label={`Cliente número ${cliente.id}`}>#{cliente.id}</span>
+          <dl>
+            <div>
+              <dt>Email</dt>
+              <dd><a href={`mailto:${cliente.email}`}>{cliente.email}</a></dd>
+            </div>
+            <div>
+              <dt>Teléfono</dt>
+              <dd>{cliente.telefono ?? '—'}</dd>
+            </div>
+          </dl>
+          <footer>
+            <button type="button" onClick={onEditar}>Editar</button>
+          </footer>
+        </article>
+      );
+    }
+
+    /** Alta (sin cliente) o edición (con cliente). Si falla, conserva lo ingresado. */
+    function FormularioCliente({ cliente, onGuardado, onCancelar }) {
+      const [valores, setValores] = useState({
+        nombre: cliente?.nombre ?? '',
+        apellido: cliente?.apellido ?? '',
+        email: cliente?.email ?? '',
+        telefono: cliente?.telefono ?? '',
+      });
+      const [error, setError] = useState(null);
+      const [guardando, setGuardando] = useState(false);
+
+      const cambiar = (evento) => setValores({ ...valores, [evento.target.name]: evento.target.value });
+
+      async function guardar(evento) {
+        evento.preventDefault();
+        setGuardando(true);
+        setError(null);
+        try {
+          onGuardado(cliente ? await api.actualizarCliente(cliente.id, valores) : await api.crearCliente(valores));
+        } catch (e) {
+          setError(e.message);
+          setGuardando(false);
+        }
+      }
+
+      return (
+        <form onSubmit={guardar} aria-labelledby="titulo-formulario">
+          <h2 id="titulo-formulario">{cliente ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+          {cliente && <span aria-label={`Cliente número ${cliente.id}`}>#{cliente.id}</span>}
+          <div>
+            <Campo etiqueta="Nombre" name="nombre" value={valores.nombre} onChange={cambiar} required autoComplete="given-name" autoFocus />
+            <Campo etiqueta="Apellido" name="apellido" value={valores.apellido} onChange={cambiar} required autoComplete="family-name" />
+          </div>
+          <div>
+            <Campo etiqueta="Email" name="email" type="email" value={valores.email} onChange={cambiar} required autoComplete="email" spellCheck="false" />
+            <Campo etiqueta="Teléfono (opcional)" name="telefono" type="tel" value={valores.telefono} onChange={cambiar} autoComplete="tel" />
+          </div>
+          {error && <p role="alert">{error}</p>}
+          <footer>
+            <button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+            <button type="button" onClick={onCancelar}>Cancelar</button>
+          </footer>
+        </form>
+      );
+    }
+
+    function Campo({ etiqueta, ...propiedades }) {
+      return (
+        <label>
+          {etiqueta}
+          <input {...propiedades} />
+        </label>
+      );
+    }
+
+    /** Subformulario de carga y edición, seguido de los compromisos y las completadas. */
+    function Actividades({ clienteId }) {
+      const { actividades, error, recargar } = useActividades(clienteId);
+      const [enEdicion, setEnEdicion] = useState(null);
+      const [errorAccion, setErrorAccion] = useState(null);
+
+      const pendientes = actividades?.filter((actividad) => !actividad.finalizacion) ?? [];
+      const completadas = actividades?.filter((actividad) => actividad.finalizacion) ?? [];
+
+      // Completar o borrar; si la actividad estaba en edición, se libera el subformulario.
+      async function ejecutar(accion, actividad) {
+        setErrorAccion(null);
+        try {
+          await accion(clienteId, actividad.id);
+          if (enEdicion?.id === actividad.id) setEnEdicion(null);
+        } catch (e) {
+          setErrorAccion(e.message);
+        }
+        recargar();
+      }
+
+      function guardada() {
+        setEnEdicion(null);
+        recargar();
+      }
+
+      return (
+        <>
+          <FormularioActividad
+            key={enEdicion?.id ?? 'nueva'}
+            clienteId={clienteId}
+            actividad={enEdicion}
+            onGuardada={guardada}
+            onCancelar={() => setEnEdicion(null)}
+          />
+          <section aria-label="Actividades">
+            {errorAccion && <p role="alert">{errorAccion}</p>}
+            <Contenido datos={actividades} error={error}>
+              <GrupoActividades
+                titulo="Compromisos"
+                actividades={ordenarCompromisos(pendientes)}
+                vacio="No hay compromisos pendientes."
+                onCompletar={(actividad) => ejecutar(api.completarActividad, actividad)}
+                onEditar={setEnEdicion}
+                onBorrar={(actividad) => ejecutar(api.eliminarActividad, actividad)}
+              />
+              <GrupoActividades
+                titulo="Actividades completadas"
+                actividades={ordenarCompletadas(completadas)}
+                vacio="Todavía no hay actividades completadas."
+              />
+            </Contenido>
+          </section>
+        </>
+      );
+    }
+
+    /** Sin actividad, agrega un compromiso; con actividad, la edita. */
+    function FormularioActividad({ clienteId, actividad, onGuardada, onCancelar }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? '');
+      const [compromiso, setCompromiso] = useState(actividad?.compromiso ?? '');
+      const [error, setError] = useState(null);
+      const [guardando, setGuardando] = useState(false);
+
+      function limpiar() {
+        setDescripcion('');
+        setCompromiso('');
+        setError(null);
+      }
+
+      async function guardar(evento) {
+        evento.preventDefault();
+        setGuardando(true);
+        setError(null);
+        const datos = { descripcion, compromiso: compromiso || null };
+        try {
+          if (actividad) await api.actualizarActividad(clienteId, actividad.id, datos);
+          else await api.agregarActividad(clienteId, datos);
+          limpiar();
+          onGuardada();
+        } catch (e) {
+          setError(e.message);
+        }
+        setGuardando(false);
+      }
+
+      function cancelar() {
+        limpiar();
+        onCancelar();
+      }
+
+      return (
+        <form onSubmit={guardar} aria-label={actividad ? 'Editar compromiso' : 'Nuevo compromiso'}>
+          <input
+            value={descripcion}
+            onChange={(evento) => setDescripcion(evento.target.value)}
+            placeholder={actividad ? 'Descripción' : 'Nuevo compromiso…'}
+            aria-label="Descripción del compromiso"
+            required
+            autoFocus={Boolean(actividad)}
+          />
+          <input
+            type="date"
+            value={compromiso}
+            onChange={(evento) => setCompromiso(evento.target.value)}
+            aria-label="Fecha de compromiso (opcional)"
+          />
+          <button type="submit" aria-label="Guardar compromiso" title="Guardar compromiso" disabled={guardando}>
+            <Icono nombre="guardar" />
+          </button>
+          <BotonIcono icono="cancelar" etiqueta="Cancelar" onClick={cancelar} />
+          {error && <p role="alert">{error}</p>}
+        </form>
+      );
+    }
+
+    /** Sin callbacks, el grupo es de solo lectura (actividades completadas). */
+    function GrupoActividades({ titulo, actividades, vacio, onCompletar, onEditar, onBorrar }) {
+      return (
+        <section aria-label={titulo}>
+          <h3>{titulo}</h3>
+          {actividades.length ? (
+            <ul>
+              {actividades.map((actividad) => (
+                <FilaActividad
+                  key={actividad.id}
+                  actividad={actividad}
+                  onCompletar={onCompletar}
+                  onEditar={onEditar}
+                  onBorrar={onBorrar}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p>{vacio}</p>
+          )}
+        </section>
+      );
+    }
+
+    function FilaActividad({ actividad, onCompletar, onEditar, onBorrar }) {
+      const completada = Boolean(actividad.finalizacion);
+
+      return (
+        <li>
+          <input
+            type="checkbox"
+            checked={completada}
+            disabled={completada}
+            onChange={() => onCompletar(actividad)}
+            aria-label={`${completada ? 'Completada' : 'Completar'}: ${actividad.descripcion}`}
+          />
+          <div>
+            {actividad.descripcion}
+            <FechaActividad actividad={actividad} />
+          </div>
+          {!completada && (
+            <span>
+              <BotonIcono icono="editar" etiqueta={`Editar: ${actividad.descripcion}`} onClick={() => onEditar(actividad)} />
+              <BotonIcono icono="borrar" etiqueta={`Borrar: ${actividad.descripcion}`} onClick={() => onBorrar(actividad)} />
+            </span>
+          )}
+        </li>
+      );
+    }
+
+    function FechaActividad({ actividad }) {
+      if (actividad.finalizacion) return <small>Completada el {mostrarFechaHora(actividad.finalizacion)}</small>;
+      if (!actividad.compromiso) return <small>Sin compromiso</small>;
+
+      const vencido = actividad.compromiso < hoy();
+      return (
+        <small data-vencido={vencido || undefined}>
+          Compromiso: {mostrarFecha(actividad.compromiso)}{vencido && ' · vencido'}
+        </small>
+      );
+    }
+
+    // ── Aplicación ────────────────────────────────────────────
+
+    function App() {
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [edicion, setEdicion] = useState(null);
+      const [version, setVersion] = useState(0);
+
+      function seleccionar(cliente) {
+        setSeleccionado(cliente);
+        setEdicion(null);
+      }
+
+      // Tras guardar se muestra la ficha actualizada y se vuelve a consultar el maestro.
+      function guardado(cliente) {
+        seleccionar(cliente);
+        setVersion((v) => v + 1);
+      }
+
+      return (
+        <Marco>
+          <Maestro
+            seleccionado={seleccionado}
+            version={version}
+            onSeleccionar={seleccionar}
+            onAgregar={() => setEdicion('nuevo')}
+          />
+          <Detalle
+            cliente={seleccionado}
+            edicion={edicion}
+            onEditar={() => setEdicion('editar')}
+            onGuardado={guardado}
+            onCancelar={() => setEdicion(null)}
+          />
+        </Marco>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('raiz')).render(<App />);
+  </script>
+</body>
+</html>

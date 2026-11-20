@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniCRM</title>
+    <style>
+        /* ══════════════════════════════════════════════════════════
+           ESTILOS CSS — Diseño de la interfaz MiniCRM
+           ══════════════════════════════════════════════════════════ */
+
+        /* ── Reset Global ──────────────────────────────────────────
+           Eliminamos márgenes y paddings por defecto del navegador.
+           box-sizing: border-box hace que el padding y border se
+           incluyan dentro del ancho/alto declarado. */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ── Variables CSS (Custom Properties) ─────────────────────
+           Definimos colores y valores reutilizables en un solo lugar.
+           Así si queremos cambiar un color, lo cambiamos aquí y
+           se actualiza en toda la aplicación. */
+        :root {
+            --fondo:        #f0f2f5;   /* Fondo general de la página */
+            --superficie:   #ffffff;   /* Fondo de tarjetas y paneles */
+            --borde:        #e2e6ea;   /* Color de bordes */
+            --texto:        #1a1a2e;   /* Color de texto principal */
+            --texto-sec:    #6b7280;   /* Color de texto secundario */
+            --primario:     #3b82f6;   /* Color principal (azul) */
+            --primario-h:   #2563eb;   /* Primario al hacer hover */
+            --peligro:      #ef4444;   /* Color de peligro (rojo) */
+            --peligro-h:    #dc2626;   /* Peligro al hacer hover */
+            --exito:        #22c55e;   /* Color de éxito (verde) */
+            --alerta:       #f59e0b;   /* Color de alerta (amarillo) */
+            --radio:        8px;       /* Radio de bordes redondeados */
+            --sombra:       0 1px 3px rgba(0,0,0,.08);  /* Sombra suave */
+            --alto-header:  48px;      /* Altura del encabezado */
+        }
+
+        /* ── Elemento raíz ─────────────────────────────────────────
+           Hacemos que html, body y #root ocupen el 100% de la pantalla.
+           overflow:hidden evita el scroll de la página (requisito). */
+        html, body, #root {
+            height: 100%; width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--fondo);
+            color: var(--texto);
+            overflow: hidden;
+        }
+
+        /* ── Layout Principal ──────────────────────────────────────
+           La app es un flex columna: header arriba, contenido abajo.
+           height:100vh ocupa toda la ventana del navegador. */
+        .aplicacion { display: flex; flex-direction: column; height: 100vh; }
+
+        /* ── Encabezado ────────────────────────────────────────────
+           Barra superior fija con gradiente azul. flex-shrink:0
+           evita que se comprima cuando el contenido crece. */
+        .encabezado {
+            height: var(--alto-header);
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: #fff;
+            display: flex; align-items: center;
+            padding: 0 20px;
+            font-size: 18px; font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* ── Contenido Principal ───────────────────────────────────
+           Flex horizontal: maestro a la izquierda, detalle a la derecha.
+           overflow:hidden evita scroll en el contenedor padre. */
+        .contenido-principal {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            gap: 0;
+        }
+
+        /* ── Panel Maestro (izquierda) ─────────────────────────────
+           Panel lateral con la lista de clientes.
+           flex-shrink:0 evita que se comprima. */
+        .panel-maestro {
+            width: 360px; min-width: 300px;
+            background: var(--superficie);
+            border-right: 1px solid var(--borde);
+            display: flex; flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        /* Cabecera del panel maestro con título y botón agregar */
+        .maestro-cabecera {
+            padding: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--borde);
+        }
+        .maestro-cabecera h2 { font-size: 20px; font-weight: 700; }
+
+        /* Caja de búsqueda con icono de lupa embebido */
+        .caja-busqueda {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--borde);
+        }
+        .caja-busqueda input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid var(--borde);
+            border-radius: var(--radio);
+            font-size: 14px;
+            outline: none;
+            /* Icono de lupa como SVG embebido en el background */
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 24 24'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") 10px center no-repeat;
+            transition: border-color .2s;
+        }
+        .caja-busqueda input:focus { border-color: var(--primario); }
+
+        /* Lista de clientes con scroll vertical interno */
+        .lista-clientes {
+            flex: 1;
+            overflow-y: auto;  /* Scroll vertical cuando hay muchos clientes */
+            padding: 8px 0;
+        }
+
+        /* Cada item de la lista de clientes */
+        .item-cliente {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background .15s;
+            border-left: 3px solid transparent;  /* Borde izquierdo que aparece al seleccionar */
+        }
+        .item-cliente:hover { background: #f8f9fb; }
+        .item-cliente.activo { background: #eff6ff; border-left-color: var(--primario); }
+
+        /* Avatar circular con iniciales del cliente */
+        .avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+
+        /* Información del cliente en la lista (nombre y email) */
+        .item-cliente .info { overflow: hidden; }
+        .item-cliente .info .nombre { font-size: 14px; font-weight: 600; }
+        .item-cliente .info .correo {
+            font-size: 12px; color: var(--texto-sec);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ── Panel Detalle (derecha) ───────────────────────────────
+           Ocupa todo el espacio restante (flex:1).
+           Tiene su propio scroll vertical para la ficha del cliente. */
+        .panel-detalle {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            background: var(--fondo);
+        }
+
+        /* Mensaje cuando no hay cliente seleccionado */
+        .detalle-vacio {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; color: var(--texto-sec); font-size: 16px;
+        }
+
+        /* Tarjeta del detalle (ficha del cliente, actividades) */
+        .tarjeta-detalle {
+            background: var(--superficie);
+            border-radius: 12px;
+            padding: 24px 28px;
+            box-shadow: var(--sombra);
+            margin-bottom: 20px;
+        }
+
+        /* Cabecera del detalle con nombre y botones */
+        .cabecera-detalle {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .cabecera-detalle h1 { font-size: 26px; font-weight: 700; }
+        .cabecera-detalle .insignia-id { color: var(--texto-sec); font-size: 13px; }
+
+        /* Grilla de información del cliente (email, tel, dirección) */
+        .info-detalle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 24px;
+            margin-bottom: 4px;
+        }
+        .info-detalle .campo {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 14px; color: var(--texto-sec);
+        }
+        .info-detalle .campo svg { flex-shrink: 0; }
+
+        /* Grupo de botones alineados */
+        .grupo-botones { display: flex; gap: 8px; }
+
+        /* ── Botones ───────────────────────────────────────────────
+           Sistema de botones con variantes: primario, peligro, outline */
+        .boton {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px;
+            border: none; border-radius: var(--radio);
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+        }
+        .boton:active { transform: scale(.97); }
+
+        .boton-primario   { background: var(--primario); color: #fff; }
+        .boton-primario:hover { background: var(--primario-h); }
+
+        .boton-peligro    { background: transparent; color: var(--peligro); border: 1px solid var(--peligro); }
+        .boton-peligro:hover { background: #fef2f2; }
+
+        .boton-contorno   { background: transparent; color: var(--texto); border: 1px solid var(--borde); }
+        .boton-contorno:hover { background: #f3f4f6; }
+
+        .boton-sm { padding: 5px 10px; font-size: 12px; }
+
+        /* Botón con solo icono (cuadrado) */
+        .boton-icono {
+            width: 32px; height: 32px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: var(--radio); border: 1px solid var(--borde);
+            background: transparent; cursor: pointer; transition: background .2s;
+        }
+        .boton-icono:hover { background: #f3f4f6; }
+        .boton-icono.peligro { color: var(--peligro); border-color: var(--peligro); }
+        .boton-icono.peligro:hover { background: #fef2f2; }
+
+        /* ── Formularios ───────────────────────────────────────────
+           Grilla de formularios con campos de 2 columnas */
+        .grilla-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .grilla-form .completo { grid-column: 1 / -1; }  /* Ocupa ambas columnas */
+
+        .campo-form label {
+            display: block;
+            font-size: 12px; font-weight: 600; color: var(--texto-sec);
+            margin-bottom: 4px;
+        }
+        .campo-form input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--borde);
+            border-radius: var(--radio);
+            font-size: 14px;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .campo-form input:focus { border-color: var(--primario); }
+
+        /* ── Subformulario de actividad ─────────────────────────────
+           Recuadro con borde punteado que contiene el form de actividad */
+        .form-actividad {
+            border: 2px dashed var(--borde);
+            border-radius: var(--radio);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .form-actividad h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+        .form-actividad .fila {
+            display: flex; gap: 12px; align-items: flex-end;
+        }
+        .form-actividad .fila .campo-form { flex: 1; }
+
+        /* ── Lista de actividades ───────────────────────────────────
+           Con scroll vertical interno (max-height + overflow-y) */
+        .titulo-seccion { font-size: 16px; font-weight: 700; margin: 16px 0 8px; }
+
+        .lista-actividades {
+            max-height: 240px;
+            overflow-y: auto;  /* Scroll interno en las actividades */
+        }
+
+        /* Cada item de actividad */
+        .item-actividad {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--borde);
+            border-radius: var(--radio);
+            margin-bottom: 6px;
+            transition: background .15s;
+        }
+        .item-actividad:hover { background: #fafbfc; }
+
+        /* Checkbox visual para completar actividad */
+        .item-actividad .casilla {
+            width: 22px; height: 22px;
+            border: 2px solid var(--borde);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: all .2s;
+        }
+        .item-actividad .casilla:hover { border-color: var(--exito); background: #f0fdf4; }
+
+        /* Información de la actividad (descripción y fecha) */
+        .item-actividad .info-actividad { flex: 1; }
+        .item-actividad .info-actividad .desc-actividad { font-size: 14px; }
+        .item-actividad .info-actividad .fecha-actividad { font-size: 12px; color: var(--texto-sec); }
+        .item-actividad .info-actividad .fecha-actividad.vencida { color: var(--peligro); font-weight: 600; }
+
+        /* Botones de acción por actividad */
+        .item-actividad .acciones-actividad { display: flex; gap: 6px; }
+
+        /* Estilo especial para actividades completadas */
+        .actividad-completada {
+            background: #f0fdf4;       /* Fondo verde claro */
+            border-color: #bbf7d0;
+        }
+        .actividad-completada .check-completado {
+            width: 22px; height: 22px;
+            background: var(--exito);  /* Cuadrado verde con check blanco */
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .actividad-completada .desc-actividad { color: var(--texto-sec); }
+
+        /* ── Modal (ventana emergente) ──────────────────────────────
+           Overlay oscuro que cubre toda la pantalla con el formulario centrado */
+        .fondo-modal {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.35);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        .ventana-modal {
+            background: var(--superficie);
+            border-radius: 12px;
+            padding: 28px;
+            width: 480px;
+            max-width: 95%;
+            box-shadow: 0 20px 60px rgba(0,0,0,.15);
+        }
+        .ventana-modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+        .ventana-modal .acciones-modal {
+            display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor raíz donde React monta la aplicación -->
+    <div id="root"></div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LIBRERÍAS REACT DESDE CDN (versiones fijas)
+         ══════════════════════════════════════════════════════════
+         Cargamos React, ReactDOM y Babel directamente desde unpkg.com
+         con versiones fijas para que no se rompan con actualizaciones.
+         Babel transforma el JSX embebido a JavaScript puro en el navegador. -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+
+    <!-- type="text/babel" le dice a Babel que transforme este bloque.
+         Sin esto, el navegador no entendería JSX (<div>, <App/>, etc.) -->
+    <script type="text/babel">
+        // ══════════════════════════════════════════════════════════
+        // APLICACIÓN REACT — MiniCRM Frontend
+        // ══════════════════════════════════════════════════════════
+
+        // Importamos los hooks de React que vamos a usar:
+        // - useState: para manejar estado (variables reactivas)
+        // - useEffect: para ejecutar código cuando cambia algo (efectos secundarios)
+        // - useCallback: para memorizar funciones y evitar renders innecesarios
+        const { useState, useEffect, useCallback } = React;
+
+        // ── URL base de la API ────────────────────────────────────
+        // Todas las llamadas al backend usan esta URL como prefijo
+        const URL_API = "/api/clientes";
+
+        // ── Función auxiliar para llamadas a la API ───────────────
+        // Centraliza las llamadas fetch al backend.
+        // Recibe la ruta y opciones (método, body).
+        // Siempre envía y recibe JSON.
+        async function llamarApi(ruta, opciones = {}) {
+            const respuesta = await fetch(ruta, {
+                headers: { "Content-Type": "application/json" },
+                ...opciones,
+                // Si hay body, lo convertimos a string JSON
+                body: opciones.body ? JSON.stringify(opciones.body) : undefined,
+            });
+            // Parseamos la respuesta JSON y la devolvemos
+            return respuesta.json();
+        }
+
+        // ── Paleta de colores para los avatares ───────────────────
+        // Cada cliente recibe un color determinístico basado en su nombre
+        const COLORES_AVATAR = [
+            "#3b82f6","#8b5cf6","#ec4899","#f97316",
+            "#22c55e","#06b6d4","#eab308","#ef4444",
+            "#6366f1","#14b8a6","#f43f5e","#a855f7",
+        ];
+
+        // Calcula un color de avatar a partir del nombre del cliente.
+        // Usa un hash simple: suma los códigos de caracteres del nombre
+        // y usa el módulo para elegir un color de la paleta.
+        function colorAvatar(nombre) {
+            let hash = 0;
+            for (let i = 0; i < nombre.length; i++) {
+                hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return COLORES_AVATAR[Math.abs(hash) % COLORES_AVATAR.length];
+        }
+
+        // Obtiene las iniciales de un nombre (hasta 2 letras).
+        // Ej: "Ana García" → "AG", "Bruno" → "B"
+        function obtenerIniciales(nombre) {
+            return nombre.split(" ").map(palabra => palabra[0]).join("").toUpperCase().slice(0, 2);
+        }
+
+        // ── Iconos SVG como componentes React ─────────────────────
+        // En vez de usar una librería de iconos, definimos SVGs inline.
+        // Cada icono es una función que devuelve un elemento <svg>.
+        const Icono = {
+            correo:   (p) => <svg width={p?.s||16} height={p?.s||16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+            telefono: (p) => <svg width={p?.s||16} height={p?.s||16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+            ubicacion:(p) => <svg width={p?.s||16} height={p?.s||16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+            editar:   (p) => <svg width={p?.s||14} height={p?.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+            eliminar: (p) => <svg width={p?.s||14} height={p?.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            agregar:  (p) => <svg width={p?.s||14} height={p?.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            guardar:  (p) => <svg width={p?.s||14} height={p?.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            cerrar:   (p) => <svg width={p?.s||14} height={p?.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            check:    (p) => <svg width={p?.s||14} height={p?.s||14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+        };
+
+        // ── Funciones de formato de fecha ─────────────────────────
+
+        // Convierte una fecha ISO (ej: "2026-10-16") a formato legible
+        // (ej: "16 oct 2026"). Si no hay fecha, muestra "Sin fecha".
+        function formatearFecha(fechaISO) {
+            if (!fechaISO) return "Sin fecha";
+            const fecha = new Date(fechaISO + "T12:00:00");
+            return fecha.toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+        }
+
+        // Verifica si una fecha ya pasó (está vencida).
+        // Compara la fecha con la fecha actual (sin hora).
+        function estaVencida(fechaISO) {
+            if (!fechaISO) return false;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            return new Date(fechaISO + "T00:00:00") < hoy;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  COMPONENTE PRINCIPAL: Aplicacion
+        // ══════════════════════════════════════════════════════════
+        // Este es el único componente de la aplicación.
+        // Maneja todo el estado y renderiza tanto el panel maestro
+        // (lista de clientes) como el panel detalle (ficha + actividades).
+        function Aplicacion() {
+
+            // ── Estado de la aplicación (useState) ────────────────
+            // Cada useState crea una variable reactiva y su función para actualizarla.
+            // Cuando se actualiza, React re-renderiza el componente automáticamente.
+
+            const [listaClientes, setListaClientes]             = useState([]);    // Array de clientes
+            const [clienteSeleccionado, setClienteSeleccionado] = useState(null);  // Cliente actualmente seleccionado
+            const [listaActividades, setListaActividades]       = useState([]);    // Actividades del cliente seleccionado
+            const [terminoBusqueda, setTerminoBusqueda]         = useState("");    // Texto de búsqueda
+            const [modalActivo, setModalActivo]                 = useState(null);  // 'nuevo' | 'editar' | null
+            const [datosFormulario, setDatosFormulario]         = useState({});    // Datos del formulario de cliente
+            const [formActividad, setFormActividad]             = useState(null);  // Datos del subformulario de actividad
+            const [idActividadEditando, setIdActividadEditando] = useState(null);  // ID de la actividad en edición
+
+            // ── Cargar clientes desde la API ──────────────────────
+            // useCallback memoriza la función para que solo se recree
+            // cuando cambia "terminoBusqueda". Esto evita loops infinitos con useEffect.
+            const cargarClientes = useCallback(async () => {
+                // Si hay término de búsqueda, lo enviamos como query param
+                const parametroBusqueda = terminoBusqueda ? `?q=${encodeURIComponent(terminoBusqueda)}` : "";
+                const datos = await llamarApi(`${URL_API}${parametroBusqueda}`);
+                setListaClientes(datos);
+            }, [terminoBusqueda]);
+
+            // useEffect ejecuta cargarClientes cada vez que cambia la función
+            // (o sea, cada vez que cambia terminoBusqueda). Esto da la "búsqueda en vivo".
+            useEffect(() => { cargarClientes(); }, [cargarClientes]);
+
+            // ── Cargar actividades del cliente seleccionado ────────
+            const cargarActividades = useCallback(async () => {
+                if (!clienteSeleccionado) return;
+                const datos = await llamarApi(`${URL_API}/${clienteSeleccionado.id}/actividades`);
+                setListaActividades(datos);
+            }, [clienteSeleccionado]);
+
+            useEffect(() => { cargarActividades(); }, [cargarActividades]);
+
+            // ── Seleccionar un cliente de la lista ────────────────
+            // Al seleccionar, limpiamos el formulario de actividad
+            async function seleccionarCliente(cliente) {
+                setClienteSeleccionado(cliente);
+                setFormActividad(null);
+                setIdActividadEditando(null);
+            }
+
+            // ══════════════════════════════════════════════════════
+            //  OPERACIONES CRUD DE CLIENTES
+            // ══════════════════════════════════════════════════════
+
+            // Abre el modal para crear un nuevo cliente
+            function abrirNuevoCliente() {
+                setDatosFormulario({ nombre: "", email: "", telefono: "", direccion: "", ciudad: "" });
+                setModalActivo("nuevo");
+            }
+
+            // Abre el modal para editar el cliente seleccionado
+            function abrirEditarCliente() {
+                setDatosFormulario({ ...clienteSeleccionado });  // Copia los datos actuales
+                setModalActivo("editar");
+            }
+
+            // Guarda el cliente (nuevo o editado)
+            async function guardarCliente() {
+                if (!datosFormulario.nombre?.trim()) return alert("El nombre es obligatorio");
+
+                if (modalActivo === "nuevo") {
+                    // POST: crear nuevo cliente
+                    const clienteCreado = await llamarApi(URL_API, { method: "POST", body: datosFormulario });
+                    await cargarClientes();
+                    setClienteSeleccionado(clienteCreado);
+                } else {
+                    // PUT: actualizar cliente existente
+                    const clienteActualizado = await llamarApi(
+                        `${URL_API}/${clienteSeleccionado.id}`,
+                        { method: "PUT", body: datosFormulario }
+                    );
+                    setClienteSeleccionado(clienteActualizado);
+                    await cargarClientes();
+                }
+                setModalActivo(null);  // Cerrar modal
+            }
+
+            // Elimina el cliente seleccionado (con confirmación)
+            async function eliminarClienteActual() {
+                if (!confirm(`¿Eliminar a ${clienteSeleccionado.nombre}?`)) return;
+
+                await llamarApi(`${URL_API}/${clienteSeleccionado.id}`, { method: "DELETE" });
+                setClienteSeleccionado(null);
+                setListaActividades([]);
+                await cargarClientes();
+            }
+
+            // ══════════════════════════════════════════════════════
+            //  OPERACIONES CRUD DE ACTIVIDADES
+            // ══════════════════════════════════════════════════════
+
+            // Abre el subformulario para nueva actividad
+            function abrirNuevaActividad() {
+                setIdActividadEditando(null);
+                setFormActividad({ descripcion: "", fecha: "" });
+            }
+
+            // Abre el subformulario para editar una actividad existente
+            function abrirEditarActividad(actividad) {
+                setIdActividadEditando(actividad.id);
+                setFormActividad({ descripcion: actividad.descripcion, fecha: actividad.fecha || "" });
+            }
+
+            // Guarda la actividad (nueva o editada)
+            async function guardarActividad() {
+                if (!formActividad.descripcion?.trim()) return alert("La descripción es obligatoria");
+
+                const cuerpo = {
+                    descripcion: formActividad.descripcion,
+                    fecha: formActividad.fecha || null
+                };
+
+                if (idActividadEditando) {
+                    // PUT: actualizar actividad existente
+                    await llamarApi(
+                        `${URL_API}/${clienteSeleccionado.id}/actividades/${idActividadEditando}`,
+                        { method: "PUT", body: cuerpo }
+                    );
+                } else {
+                    // POST: crear nueva actividad
+                    await llamarApi(
+                        `${URL_API}/${clienteSeleccionado.id}/actividades`,
+                        { method: "POST", body: cuerpo }
+                    );
+                }
+
+                // Cerrar formulario y recargar actividades
+                setFormActividad(null);
+                setIdActividadEditando(null);
+                await cargarActividades();
+            }
+
+            // Marca una actividad como completada
+            async function completarActividad(idActividad) {
+                await llamarApi(
+                    `${URL_API}/${clienteSeleccionado.id}/actividades/${idActividad}/completar`,
+                    { method: "PATCH" }
+                );
+                await cargarActividades();
+            }
+
+            // Elimina una actividad pendiente
+            async function eliminarActividad(idActividad) {
+                await llamarApi(
+                    `${URL_API}/${clienteSeleccionado.id}/actividades/${idActividad}`,
+                    { method: "DELETE" }
+                );
+                await cargarActividades();
+            }
+
+            // ── Separar actividades en pendientes y completadas ───
+            // filter() crea un nuevo array con solo los elementos que cumplen la condición
+            const pendientes   = listaActividades.filter(a => !a.completadaEl);   // Sin fecha de completado
+            const completadas  = listaActividades.filter(a => a.completadaEl);    // Con fecha de completado
+
+            // ══════════════════════════════════════════════════════
+            //  RENDERIZADO (JSX)
+            // ══════════════════════════════════════════════════════
+            // JSX es una sintaxis que parece HTML pero es JavaScript.
+            // Babel lo transforma a llamadas React.createElement().
+            return (
+                <div className="aplicacion">
+                    {/* ── Encabezado de la aplicación ──── */}
+                    <div className="encabezado">MiniCRM</div>
+
+                    <div className="contenido-principal">
+                        {/* ══════════════════════════════════
+                            PANEL MAESTRO (lista de clientes)
+                            ══════════════════════════════════ */}
+                        <div className="panel-maestro">
+                            {/* Cabecera con título y botón agregar */}
+                            <div className="maestro-cabecera">
+                                <h2>Clientes</h2>
+                                <button className="boton boton-primario boton-sm" onClick={abrirNuevoCliente}>
+                                    {Icono.agregar()} Agregar
+                                </button>
+                            </div>
+
+                            {/* Caja de búsqueda en vivo */}
+                            <div className="caja-busqueda">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por cualquier campo..."
+                                    value={terminoBusqueda}
+                                    onChange={e => setTerminoBusqueda(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Lista de clientes con scroll interno */}
+                            <div className="lista-clientes">
+                                {listaClientes.map(cliente => (
+                                    <div
+                                        key={cliente.id}
+                                        className={`item-cliente ${clienteSeleccionado?.id === cliente.id ? "activo" : ""}`}
+                                        onClick={() => seleccionarCliente(cliente)}
+                                    >
+                                        {/* Avatar con color basado en el nombre */}
+                                        <div className="avatar" style={{ background: colorAvatar(cliente.nombre) }}>
+                                            {obtenerIniciales(cliente.nombre)}
+                                        </div>
+                                        <div className="info">
+                                            <div className="nombre">{cliente.nombre}</div>
+                                            <div className="correo">{cliente.email}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {/* Mensaje cuando no hay clientes */}
+                                {listaClientes.length === 0 && (
+                                    <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--texto-sec)" }}>
+                                        No hay clientes
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ══════════════════════════════════
+                            PANEL DETALLE (ficha del cliente)
+                            ══════════════════════════════════ */}
+                        <div className="panel-detalle">
+                            {/* Si no hay cliente seleccionado, mostramos mensaje */}
+                            {!clienteSeleccionado ? (
+                                <div className="detalle-vacio">
+                                    Seleccione un cliente para ver su ficha
+                                </div>
+                            ) : (
+                                <>
+                                    {/* ── Tarjeta con datos del cliente ── */}
+                                    <div className="tarjeta-detalle">
+                                        <div className="cabecera-detalle">
+                                            <div>
+                                                <h1>{clienteSeleccionado.nombre}</h1>
+                                            </div>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                                <span className="insignia-id">#{clienteSeleccionado.id}</span>
+                                                <div className="grupo-botones">
+                                                    <button className="boton boton-contorno" onClick={abrirEditarCliente}>
+                                                        {Icono.editar()} Editar
+                                                    </button>
+                                                    <button className="boton boton-peligro" onClick={eliminarClienteActual}>
+                                                        {Icono.eliminar()} Eliminar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Información de contacto */}
+                                        <div className="info-detalle">
+                                            {clienteSeleccionado.email && (
+                                                <div className="campo">{Icono.correo()} {clienteSeleccionado.email}</div>
+                                            )}
+                                            {(clienteSeleccionado.direccion || clienteSeleccionado.ciudad) && (
+                                                <div className="campo">{Icono.ubicacion()} {[clienteSeleccionado.direccion, clienteSeleccionado.ciudad].filter(Boolean).join(", ")}</div>
+                                            )}
+                                            {clienteSeleccionado.telefono && (
+                                                <div className="campo">{Icono.telefono()} {clienteSeleccionado.telefono}</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* ── Tarjeta de actividades ── */}
+                                    <div className="tarjeta-detalle">
+                                        {/* Subformulario de actividad (se muestra/oculta) */}
+                                        {formActividad ? (
+                                            <div className="form-actividad">
+                                                <h3>{idActividadEditando ? "Editar actividad" : "Agregar actividad"}</h3>
+                                                <div className="fila">
+                                                    <div className="campo-form" style={{ flex: 2 }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Descripción de la actividad"
+                                                            value={formActividad.descripcion}
+                                                            onChange={e => setFormActividad({ ...formActividad, descripcion: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div className="campo-form">
+                                                        <input
+                                                            type="date"
+                                                            value={formActividad.fecha}
+                                                            onChange={e => setFormActividad({ ...formActividad, fecha: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <button className="boton boton-primario" onClick={guardarActividad}>
+                                                        {Icono.guardar()} Guardar
+                                                    </button>
+                                                    <button className="boton boton-contorno" onClick={() => { setFormActividad(null); setIdActividadEditando(null); }}>
+                                                        {Icono.cerrar()} Cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <button className="boton boton-contorno" onClick={abrirNuevaActividad} style={{ marginBottom: 12 }}>
+                                                {Icono.agregar()} Agregar actividad
+                                            </button>
+                                        )}
+
+                                        {/* ── Compromisos (actividades pendientes) ── */}
+                                        <h3 className="titulo-seccion">Compromisos</h3>
+                                        <div className="lista-actividades">
+                                            {pendientes.length === 0 && (
+                                                <div style={{ padding: "8px 0", color: "var(--texto-sec)", fontSize: 13 }}>
+                                                    Sin compromisos pendientes
+                                                </div>
+                                            )}
+                                            {pendientes.map(actividad => (
+                                                <div key={actividad.id} className="item-actividad">
+                                                    {/* Checkbox para completar */}
+                                                    <div className="casilla" onClick={() => completarActividad(actividad.id)} title="Completar">
+                                                    </div>
+                                                    <div className="info-actividad">
+                                                        <div className="desc-actividad">{actividad.descripcion}</div>
+                                                        <div className={`fecha-actividad ${actividad.fecha && estaVencida(actividad.fecha) ? "vencida" : ""}`}>
+                                                            {formatearFecha(actividad.fecha)}
+                                                            {actividad.fecha && estaVencida(actividad.fecha) && " · Vencido"}
+                                                        </div>
+                                                    </div>
+                                                    <div className="acciones-actividad">
+                                                        <button className="boton-icono" onClick={() => abrirEditarActividad(actividad)} title="Editar">
+                                                            {Icono.editar()}
+                                                        </button>
+                                                        <button className="boton-icono peligro" onClick={() => eliminarActividad(actividad.id)} title="Eliminar">
+                                                            {Icono.eliminar()}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* ── Actividades completadas (solo lectura) ── */}
+                                        <h3 className="titulo-seccion">Actividades completadas</h3>
+                                        <div className="lista-actividades">
+                                            {completadas.length === 0 && (
+                                                <div style={{ padding: "8px 0", color: "var(--texto-sec)", fontSize: 13 }}>
+                                                    Sin actividades completadas
+                                                </div>
+                                            )}
+                                            {completadas.map(actividad => (
+                                                <div key={actividad.id} className="item-actividad actividad-completada">
+                                                    <div className="check-completado">
+                                                        {Icono.check()}
+                                                    </div>
+                                                    <div className="info-actividad">
+                                                        <div className="desc-actividad">{actividad.descripcion}</div>
+                                                        <div className="fecha-actividad">
+                                                            Completada el {formatearFecha(actividad.completadaEl)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ══════════════════════════════════════════════
+                        MODAL: Nuevo / Editar Cliente
+                        ══════════════════════════════════════════════
+                        Solo se renderiza si modalActivo no es null.
+                        Click en el fondo oscuro cierra el modal.
+                        stopPropagation() evita que el click dentro del
+                        modal lo cierre. */}
+                    {modalActivo && (
+                        <div className="fondo-modal" onClick={() => setModalActivo(null)}>
+                            <div className="ventana-modal" onClick={e => e.stopPropagation()}>
+                                <h2>{modalActivo === "nuevo" ? "Nuevo cliente" : "Editar cliente"}</h2>
+                                <div className="grilla-form">
+                                    <div className="campo-form completo">
+                                        <label>Nombre *</label>
+                                        <input
+                                            value={datosFormulario.nombre || ""}
+                                            onChange={e => setDatosFormulario({...datosFormulario, nombre: e.target.value})}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="campo-form">
+                                        <label>Email</label>
+                                        <input
+                                            type="email"
+                                            value={datosFormulario.email || ""}
+                                            onChange={e => setDatosFormulario({...datosFormulario, email: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="campo-form">
+                                        <label>Teléfono</label>
+                                        <input
+                                            value={datosFormulario.telefono || ""}
+                                            onChange={e => setDatosFormulario({...datosFormulario, telefono: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="campo-form">
+                                        <label>Dirección</label>
+                                        <input
+                                            value={datosFormulario.direccion || ""}
+                                            onChange={e => setDatosFormulario({...datosFormulario, direccion: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="campo-form">
+                                        <label>Ciudad</label>
+                                        <input
+                                            value={datosFormulario.ciudad || ""}
+                                            onChange={e => setDatosFormulario({...datosFormulario, ciudad: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="acciones-modal">
+                                    <button className="boton boton-contorno" onClick={() => setModalActivo(null)}>
+                                        Cancelar
+                                    </button>
+                                    <button className="boton boton-primario" onClick={guardarCliente}>
+                                        {Icono.guardar()} {modalActivo === "nuevo" ? "Crear" : "Guardar"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ── Montar la aplicación en el DOM ────────────────────────
+        // createRoot es la forma moderna de iniciar React 18.
+        // Busca el <div id="root"> y monta el componente <Aplicacion/> dentro.
+        const raiz = ReactDOM.createRoot(document.getElementById("root"));
+        raiz.render(<Aplicacion />);
+    </script>
+</body>
+</html>

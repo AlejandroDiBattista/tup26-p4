@@ -46,6 +46,18 @@ muestra la ruta que comprobó. Lee los archivos directamente en el servidor,
 sin iniciar otro runtime por alumno. Los fallos se indican junto al total de
 estados actualizados.
 
+Seleccionando TP4, **Acciones → Comprobar TP4** actualiza únicamente los alumnos
+filtrados. Marca presentado si encuentra `public/MiniCRM.html` y código
+TypeScript del servidor, ambos con contenido y en el mismo proyecto dentro de
+`tp4`. También busca proyectos subidos en subcarpetas. El enunciado, la imagen,
+dependencias, carpetas de compilación, pruebas, declaraciones y archivos
+`*.config.ts` no cuentan como código del servidor. Si faltan los archivos o
+están vacíos, marca pendiente y explica qué falta. Es un control de presencia
+de la entrega: no ejecuta ni compila código, no instala dependencias y no
+califica el funcionamiento. Guarda y verifica cada estado; ante fallos técnicos
+conserva el estado anterior. Después de **Bajar TP**, usá **Comprobar TP4** para
+actualizar los presentados desde los archivos descargados.
+
 “Bajar TP” usa el repositorio de `origin` del checkout que contiene el
 sistema. Revisa todos los PR abiertos sin aplicar los filtros de TP o comisión.
 Omite borradores. Solo procesa cuando todos los archivos (incluidas las
@@ -91,6 +103,16 @@ vinculación por QR; informa faltantes o nombres duplicados como errores.
 
 La lectura no envía mensajes ni guarda notas o asistencias: hay que confirmar
 la carga. Cada línea conserva la fecha y hora del mensaje en la zona horaria de Tucumán.
+La carga de asistencia toma las **fechas del texto**, independientemente del día
+visible: una conversación puede cargar varias clases de las comisiones seleccionadas.
+Solo admite **hoy y los seis días anteriores**, según el calendario argentino;
+ignora mensajes de hace siete días o más, futuros o sin fecha. Solo carga alumnos
+del padrón en clases programadas de su comisión. Al traer texto desde WhatsApp,
+también lo recorta a ese período. Cambiar de fecha o comisión conserva el texto
+pegado; después de guardar se muestra la última fecha procesada.
+La importación es **aditiva**: agrega presente o tarde solo si no hay una marca
+previa, conserva todas las existentes (incluidas justificadas) y nunca crea una
+ausencia por falta de mensajes. Las ediciones manuales siguen disponibles.
 Al cargar asistencia se compara el primer registro de cada alumno por fecha con
 el horario de inicio de su comisión. Desde los 20 minutos posteriores al inicio
 (inclusive) se marca **Tarde**. Si no hay hora de mensaje o de inicio, se marca
@@ -114,5 +136,5 @@ Cada operación tiene un límite de unos tres minutos. Solo se conserva la sesi�
 local de cada docente en `.cache/whatsapp`, fuera de Git. El intervalo es fijo.
 No se almacenan mensajes ni códigos QR en SQL.
 La integración requiere Google Chrome instalado en `/Applications` y usa
-`whatsapp-web.js`, un cliente no oficial. Las comprobaciones de archivos TP1/TP2/TP3
+`whatsapp-web.js`, un cliente no oficial. Las comprobaciones de archivos TP1/TP2/TP3/TP4
 siguen usando las entregas locales.

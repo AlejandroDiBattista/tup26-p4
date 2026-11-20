@@ -9,7 +9,9 @@ Crea un proyecto con Node.js, TypeScript, Drizzle y SQLite local en desarrollo y
 
 Prioriza codigo modular minimalista, simple y legible. 
 
-Agrega un README.md con instrucciones de instalación, ejecución y pruebas.
+Agrega un README.md con instrucciones de instalación, ejecución y pruebas.  
+  
+Haz extrictamete lo que te pida, no anticipes funcionalidad. 
 ```
 > Configuramos el proyecto
 

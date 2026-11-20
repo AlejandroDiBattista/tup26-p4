@@ -110,6 +110,11 @@ const messages = {
     checkTp3Hint:
       "Checks filtered students: tp3/agenda.html must contain at least 100 added lines compared to the original assignment template. Details show the added line count.",
     tp3Checked: "TP3: {{count}} statuses updated.",
+    checkTp4: "Check TP4 ({{count}})",
+    checkingTp4: "Checking TP4…",
+    checkTp4Hint:
+      "Checks filtered students: nonempty public/MiniCRM.html and server TypeScript source in the same project within tp4, including subfolders. Only checks submission presence; does not test functionality.",
+    tp4Checked: "TP4: {{count}} statuses updated.",
     checkFailures: "{{count}} checks failed; see the details.",
     checkDetails: "Check details",
     checkingTp1: "Checking TP1…",
@@ -160,14 +165,17 @@ const messages = {
     classUpdated: "Class updated.",
     loadAttendance: "Load attendance",
     loadingAttendance: "Loading attendance…",
-    loadAttendancePlaceholder: "Paste the attendance list here…",
+    loadAttendancePlaceholder: "Paste the conversation including message dates…",
     loadAttendanceHint:
-      "Student IDs with 5 digits between 50000 and 65000 will be read. Dates and times are matched to each class: arrivals 20 minutes or more after the start are marked Late (half attendance). Without a time, students are marked Present.",
+      "Dates come from the text; no day selection is needed. Only today and the previous six days are imported for the selected commissions. Existing marks are preserved; missing messages never mark an absence.",
+    attendanceImportPreview:
+      "{{count}} records detected for: {{dates}}. Only records without an existing mark will be added.",
     attendanceDetected: "{{count}} valid student IDs detected.",
     attendanceDatesDetected: "Dates detected: {{dates}}.",
     attendanceInvalid: "{{count}} numbers ignored because they are not valid student IDs.",
     attendanceUnknown: "{{count}} student IDs do not belong to the selected class.",
-    attendanceNothingDetected: "No valid student IDs from this class were found.",
+    attendanceNothingDetected:
+      "No records to import. The text must include dates from today or the previous six days and student IDs from the selected commissions with a scheduled class.",
     attendanceLoaded: "Attendance loaded: {{count}} present or late records.",
     close: "Close",
     manageClass: "Manage class",

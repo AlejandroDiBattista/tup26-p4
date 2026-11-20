@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <!-- Babel Standalone para JSX embebido -->
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+
+  <style>
+    /* Estilos para asegurar layout app-like sin scroll global */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f1f5f9;
+    }
+    
+    /* Scrollbars elegantes */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800">
+  <div id="root" class="h-full flex flex-col"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Helper de iniciales (avatar)
+    function getInitials(nombre, apellido) {
+      const n = (nombre || '').trim().charAt(0).toUpperCase();
+      const a = (apellido || '').trim().charAt(0).toUpperCase();
+      return (n + a) || 'CL';
+    }
+
+    // Paleta de colores suaves para los avatares
+    const AVATAR_COLORS = [
+      'bg-blue-100 text-blue-700',
+      'bg-emerald-100 text-emerald-700',
+      'bg-purple-100 text-purple-700',
+      'bg-orange-100 text-orange-700',
+      'bg-pink-100 text-pink-700',
+      'bg-teal-100 text-teal-700',
+      'bg-indigo-100 text-indigo-700'
+    ];
+
+    function getAvatarColor(id) {
+      return AVATAR_COLORS[(id || 0) % AVATAR_COLORS.length];
+    }
+
+    // Formateador de fechas al español
+    function formatearFecha(fechaStr) {
+      if (!fechaStr) return '';
+      const partes = fechaStr.split('-');
+      if (partes.length !== 3) return fechaStr;
+      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const dia = parseInt(partes[2], 10);
+      const mes = meses[parseInt(partes[1], 10) - 1] || '';
+      const anio = partes[0];
+      return `${dia} ${mes} ${anio}`;
+    }
+
+    function esFechaVencida(fechaStr) {
+      if (!fechaStr) return false;
+      const hoy = new Date().toISOString().slice(0, 10);
+      return fechaStr < hoy;
+    }
+
+    // Componente Principal
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+      const [busqueda, setBusqueda] = useState('');
+      
+      const [actividades, setActividades] = useState([]);
+      const [cargandoActividades, setCargandoActividades] = useState(false);
+
+      // Estado del formulario de cliente (modo edición o creación)
+      const [modoFormCliente, setModoFormCliente] = useState(null); // 'crear' | 'editar' | null
+      const [datosClienteForm, setDatosClienteForm] = useState({
+        nombre: '',
+        apellido: '',
+        email: '',
+        telefono: '',
+        domicilio: '',
+        localidad: ''
+      });
+
+      // Subformulario de actividad (dentro del detalle)
+      const [actividadEnEdicion, setActividadEnEdicion] = useState(null); // null (nueva) o id
+      const [descActividad, setDescActividad] = useState('');
+      const [fechaActividad, setFechaActividad] = useState('');
+
+      // Cargar clientes
+      const cargarClientes = async (query = '', selectId = null) => {
+        try {
+          const res = await fetch(`/api/clientes${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+          const data = await res.json();
+          setClientes(data);
+
+          if (selectId) {
+            const encontrado = data.find(c => c.id === selectId);
+            if (encontrado) setClienteSeleccionado(encontrado);
+          } else if (data.length > 0 && (!clienteSeleccionado || !data.some(c => c.id === clienteSeleccionado.id))) {
+            setClienteSeleccionado(data[0]);
+          } else if (data.length === 0) {
+            setClienteSeleccionado(null);
+          }
+        } catch (err) {
+          console.error("Error al cargar clientes:", err);
+        }
+      };
+
+      // Cargar actividades de un cliente
+      const cargarActividades = async (clienteId) => {
+        if (!clienteId) {
+          setActividades([]);
+          return;
+        }
+        setCargandoActividades(true);
+        try {
+          const res = await fetch(`/api/clientes/${clienteId}/actividades`);
+          const data = await res.json();
+          setActividades(data);
+        } catch (err) {
+          console.error("Error al cargar actividades:", err);
+        } finally {
+          setCargandoActividades(false);
+        }
+      };
+
+      // Efecto inicial y búsqueda en vivo
+      useEffect(() => {
+        const delayTimer = setTimeout(() => {
+          cargarClientes(busqueda);
+        }, 200);
+        return () => clearTimeout(delayTimer);
+      }, [busqueda]);
+
+      // Efecto al cambiar el cliente seleccionado
+      useEffect(() => {
+        if (clienteSeleccionado) {
+          cargarActividades(clienteSeleccionado.id);
+          cancelarEdicionActividad();
+          if (modoFormCliente === 'editar') {
+            setModoFormCliente(null);
+          }
+        } else {
+          setActividades([]);
+        }
+      }, [clienteSeleccionado?.id]);
+
+      // Guardar Cliente (Crear / Editar)
+      const handleGuardarCliente = async (e) => {
+        e.preventDefault();
+        if (!datosClienteForm.nombre.trim() || !datosClienteForm.apellido.trim() || !datosClienteForm.email.trim()) {
+          alert("Nombre, Apellido y Email son obligatorios");
+          return;
+        }
+
+        try {
+          if (modoFormCliente === 'crear') {
+            const res = await fetch('/api/clientes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(datosClienteForm)
+            });
+            const nuevo = await res.json();
+            setModoFormCliente(null);
+            await cargarClientes(busqueda, nuevo.id);
+            setClienteSeleccionado(nuevo);
+          } else if (modoFormCliente === 'editar' && clienteSeleccionado) {
+            const res = await fetch(`/api/clientes/${clienteSeleccionado.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(datosClienteForm)
+            });
+            const actualizado = await res.json();
+            setModoFormCliente(null);
+            setClienteSeleccionado(actualizado);
+            await cargarClientes(busqueda, actualizado.id);
+          }
+        } catch (err) {
+          console.error("Error al guardar cliente:", err);
+        }
+      };
+
+      // Eliminar Cliente
+      const handleEliminarCliente = async () => {
+        if (!clienteSeleccionado) return;
+        const confirma = confirm(`¿Estás segura de eliminar al cliente ${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}?`);
+        if (!confirma) return;
+
+        try {
+          await fetch(`/api/clientes/${clienteSeleccionado.id}`, { method: 'DELETE' });
+          setClienteSeleccionado(null);
+          setModoFormCliente(null);
+          await cargarClientes(busqueda);
+        } catch (err) {
+          console.error("Error al eliminar cliente:", err);
+        }
+      };
+
+      // Iniciar creación de cliente
+      const iniciarCrearCliente = () => {
+        setDatosClienteForm({
+          nombre: '',
+          apellido: '',
+          email: '',
+          telefono: '',
+          domicilio: '',
+          localidad: ''
+        });
+        setModoFormCliente('crear');
+      };
+
+      // Iniciar edición de cliente
+      const iniciarEditarCliente = () => {
+        if (!clienteSeleccionado) return;
+        setDatosClienteForm({
+          nombre: clienteSeleccionado.nombre || '',
+          apellido: clienteSeleccionado.apellido || '',
+          email: clienteSeleccionado.email || '',
+          telefono: clienteSeleccionado.telefono || '',
+          domicilio: clienteSeleccionado.domicilio || '',
+          localidad: clienteSeleccionado.localidad || ''
+        });
+        setModoFormCliente('editar');
+      };
+
+      // Manejar actividades (Guardar nueva o editar existente)
+      const handleGuardarActividad = async (e) => {
+        e.preventDefault();
+        if (!descActividad.trim()) {
+          alert("Ingresa una descripción para la actividad");
+          return;
+        }
+
+        try {
+          if (actividadEnEdicion) {
+            // Actualizar actividad existente
+            await fetch(`/api/actividades/${actividadEnEdicion}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                descripcion: descActividad,
+                fechaCompromiso: fechaActividad || null
+              })
+            });
+          } else {
+            // Crear nueva actividad
+            await fetch(`/api/clientes/${clienteSeleccionado.id}/actividades`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                descripcion: descActividad,
+                fechaCompromiso: fechaActividad || null
+              })
+            });
+          }
+          cancelarEdicionActividad();
+          await cargarActividades(clienteSeleccionado.id);
+        } catch (err) {
+          console.error("Error al guardar actividad:", err);
+        }
+      };
+
+      const iniciarEdicionActividad = (act) => {
+        setActividadEnEdicion(act.id);
+        setDescActividad(act.descripcion);
+        setFechaActividad(act.fechaCompromiso || '');
+      };
+
+      const cancelarEdicionActividad = () => {
+        setActividadEnEdicion(null);
+        setDescActividad('');
+        setFechaActividad('');
+      };
+
+      // Marcar actividad como completada
+      const handleCompletarActividad = async (actId) => {
+        try {
+          await fetch(`/api/actividades/${actId}/completar`, { method: 'PATCH' });
+          await cargarActividades(clienteSeleccionado.id);
+        } catch (err) {
+          console.error("Error al completar actividad:", err);
+        }
+      };
+
+      // Eliminar actividad pendiente
+      const handleEliminarActividad = async (actId) => {
+        const confirma = confirm("¿Deseas eliminar este compromiso?");
+        if (!confirma) return;
+
+        try {
+          await fetch(`/api/actividades/${actId}`, { method: 'DELETE' });
+          if (actividadEnEdicion === actId) {
+            cancelarEdicionActividad();
+          }
+          await cargarActividades(clienteSeleccionado.id);
+        } catch (err) {
+          console.error("Error al eliminar actividad:", err);
+        }
+      };
+
+      // Separación de actividades: Compromisos (pendientes) vs Completadas
+      const compromisos = useMemo(() => actividades.filter(a => !a.fechaFinalizacion), [actividades]);
+      const completadas = useMemo(() => actividades.filter(a => !!a.fechaFinalizacion), [actividades]);
+
+      return (
+        <div className="h-full flex flex-col bg-slate-100">
+          {/* Header Superior */}
+          <header className="bg-slate-900 text-white px-6 py-3 flex items-center shadow-md shrink-0">
+            <h1 className="text-xl font-bold tracking-wide">MiniCRM</h1>
+          </header>
+
+          {/* Cuerpo Maestro-Detalle sin desplazamiento de ventana */}
+          <div className="flex-1 flex overflow-hidden p-4 gap-4">
+            
+            {/* Panel Izquierdo: Maestro de Clientes */}
+            <aside className="w-80 lg:w-96 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden shrink-0">
+              <div className="p-4 border-b border-slate-100 shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xl font-bold text-slate-800">Clientes</h2>
+                  <button
+                    onClick={iniciarCrearCliente}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition"
+                  >
+                    <span>+</span> Agregar
+                  </button>
+                </div>
+                {/* Input de Búsqueda */}
+                <div className="relative">
+                  <svg className="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Buscar por cualquier campo..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Lista Vertical con Scroll Interno */}
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                {clientes.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 text-sm">
+                    No se encontraron clientes
+                  </div>
+                ) : (
+                  clientes.map((c) => {
+                    const isSelected = clienteSeleccionado?.id === c.id && modoFormCliente !== 'crear';
+                    return (
+                      <div
+                        key={c.id}
+                        onClick={() => {
+                          setClienteSeleccionado(c);
+                          setModoFormCliente(null);
+                        }}
+                        className={`p-3.5 flex items-center gap-3 cursor-pointer transition ${
+                          isSelected ? 'bg-blue-50/80 border-l-4 border-blue-600' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${getAvatarColor(c.id)}`}>
+                          {getInitials(c.nombre, c.apellido)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-slate-800 text-sm truncate">
+                            {c.nombre} {c.apellido}
+                          </div>
+                          <div className="text-xs text-slate-500 truncate">
+                            {c.email}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </aside>
+
+            {/* Panel Derecho: Detalle del Cliente / Formulario */}
+            <main className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+              
+              {/* CASO 1: Formulario de Crear o Editar Cliente en el Detalle */}
+              {modoFormCliente ? (
+                <div className="flex-1 overflow-y-auto p-6 max-w-2xl">
+                  <h2 className="text-xl font-bold text-slate-800 mb-6">
+                    {modoFormCliente === 'crear' ? 'Nuevo Cliente' : 'Editar Cliente'}
+                  </h2>
+                  <form onSubmit={handleGuardarCliente} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre *</label>
+                        <input
+                          type="text"
+                          required
+                          value={datosClienteForm.nombre}
+                          onChange={(e) => setDatosClienteForm({...datosClienteForm, nombre: e.target.value})}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Apellido *</label>
+                        <input
+                          type="text"
+                          required
+                          value={datosClienteForm.apellido}
+                          onChange={(e) => setDatosClienteForm({...datosClienteForm, apellido: e.target.value})}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={datosClienteForm.email}
+                        onChange={(e) => setDatosClienteForm({...datosClienteForm, email: e.target.value})}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
+                      <input
+                        type="text"
+                        value={datosClienteForm.telefono}
+                        onChange={(e) => setDatosClienteForm({...datosClienteForm, telefono: e.target.value})}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Domicilio</label>
+                        <input
+                          type="text"
+                          value={datosClienteForm.domicilio}
+                          onChange={(e) => setDatosClienteForm({...datosClienteForm, domicilio: e.target.value})}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Localidad</label>
+                        <input
+                          type="text"
+                          value={datosClienteForm.localidad}
+                          onChange={(e) => setDatosClienteForm({...datosClienteForm, localidad: e.target.value})}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-4">
+                      <button
+                        type="submit"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
+                      >
+                        Guardar Cliente
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModoFormCliente(null)}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : clienteSeleccionado ? (
+                /* CASO 2: Ficha del Cliente + Actividades */
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  
+                  {/* Encabezado del Detalle */}
+                  <div className="p-6 border-b border-slate-100 shrink-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-2xl font-bold text-slate-900">
+                            {clienteSeleccionado.nombre} {clienteSeleccionado.apellido}
+                          </h2>
+                          <span className="text-sm font-medium text-slate-400">
+                            #{clienteSeleccionado.id}
+                          </span>
+                        </div>
+
+                        {/* Datos de contacto */}
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-6 text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>{clienteSeleccionado.email}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span>
+                              {clienteSeleccionado.domicilio ? clienteSeleccionado.domicilio : 'Sin domicilio'}
+                              {clienteSeleccionado.localidad ? `, ${clienteSeleccionado.localidad}` : ''}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            <span>{clienteSeleccionado.telefono || 'Sin teléfono'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botones de acción del cliente */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={iniciarEditarCliente}
+                          className="px-3 py-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium flex items-center gap-1.5 transition"
+                        >
+                          <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                          </svg>
+                          Editar
+                        </button>
+                        <button
+                          onClick={handleEliminarCliente}
+                          className="px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-sm font-medium flex items-center gap-1.5 transition"
+                        >
+                          <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                          </svg>
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Subformulario de Actividad (Agregar o Editar) */}
+                    <div className="mt-6 pt-5 border-t border-slate-100">
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                        {actividadEnEdicion ? 'Editar actividad' : 'Agregar actividad'}
+                      </h3>
+                      <form onSubmit={handleGuardarActividad} className="flex flex-wrap items-center gap-3">
+                        <input
+                          type="text"
+                          placeholder="Descripción de la actividad"
+                          value={descActividad}
+                          onChange={(e) => setDescActividad(e.target.value)}
+                          className="flex-1 min-w-[200px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                        />
+                        <div className="relative">
+                          <input
+                            type="date"
+                            value={fechaActividad}
+                            onChange={(e) => setFechaActividad(e.target.value)}
+                            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                          </svg>
+                          Guardar
+                        </button>
+                        {actividadEnEdicion && (
+                          <button
+                            type="button"
+                            onClick={cancelarEdicionActividad}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition"
+                          >
+                            ✕ Cancelar
+                          </button>
+                        )}
+                      </form>
+                    </div>
+                  </div>
+
+                  {/* Listas de Actividades con Desplazamiento Vertical Interno */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    
+                    {/* Sección Compromisos */}
+                    <section>
+                      <h3 className="text-base font-bold text-slate-900 mb-3">Compromisos</h3>
+                      {compromisos.length === 0 ? (
+                        <p className="text-sm text-slate-400 italic">No hay compromisos pendientes.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {compromisos.map((act) => {
+                            const vencida = esFechaVencida(act.fechaCompromiso);
+                            return (
+                              <div
+                                key={act.id}
+                                className="group flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-xs transition"
+                              >
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <input
+                                    type="checkbox"
+                                    title="Marcar como completada"
+                                    onChange={() => handleCompletarActividad(act.id)}
+                                    className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-slate-800 break-words">
+                                      {act.descripcion}
+                                    </p>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                      {act.fechaCompromiso ? (
+                                        <>
+                                          {formatearFecha(act.fechaCompromiso)}
+                                          {vencida && <span className="text-rose-600 font-medium ml-1">· Vencido</span>}
+                                        </>
+                                      ) : (
+                                        'Sin fecha'
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
+                                  <button
+                                    onClick={() => iniciarEdicionActividad(act)}
+                                    title="Editar actividad"
+                                    className="p-1.5 text-slate-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleEliminarActividad(act.id)}
+                                    title="Eliminar actividad"
+                                    className="p-1.5 text-slate-500 hover:text-rose-600 rounded-md hover:bg-rose-50 transition"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </section>
+
+                    {/* Sección Actividades Completadas */}
+                    <section>
+                      <h3 className="text-base font-bold text-slate-900 mb-3">Actividades completadas</h3>
+                      {completadas.length === 0 ? (
+                        <p className="text-sm text-slate-400 italic">No hay actividades completadas todavía.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {completadas.map((act) => (
+                            <div
+                              key={act.id}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/30"
+                            >
+                              <div className="w-5 h-5 rounded bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-700">
+                                  {act.descripcion}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  Completada el {formatearFecha(act.fechaFinalizacion)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">
+                  <p>Selecciona un cliente del listado para ver su ficha</p>
+                </div>
+              )}
+            </main>
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+

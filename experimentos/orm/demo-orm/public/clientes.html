@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM · Clientes</title>
+  <style>
+    :root { color-scheme: light; font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif; color: #292d27; background: #f5f4ef; --acento: #9f412a; --borde: #dedfd5; --suave: #666b61; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button, a, input { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; color: inherit; border: 1px solid var(--borde); background: #fcfcf8; border-radius: 6px; padding: 9px 14px; }
+    button:hover { background: #eeeee6; }
+    button:disabled { cursor: wait; opacity: .55; }
+    :focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; }
+    input { min-width: 0; width: 100%; padding: 10px 12px; border: 1px solid #b6baae; border-radius: 5px; color: inherit; background: #fdfdf9; }
+    input:focus { outline: 2px solid var(--acento); outline-offset: 2px; }
+    input[type=checkbox] { width: 18px; height: 18px; flex: 0 0 18px; accent-color: #647859; cursor: pointer; }
+    a { color: inherit; }
+    small { color: var(--suave); }
+    h1, h2, h3, p { margin: 0; }
+    #root > div { height: 100dvh; display: grid; grid-template-rows: 76px minmax(0, 1fr) 34px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; border-bottom: 1px solid var(--borde); }
+    header > div { display: flex; align-items: baseline; gap: 18px; }
+    header strong { font-family: Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -1px; }
+    header small { font-size: 12px; }
+    nav { display: flex; gap: 6px; }
+    nav a { padding: 7px 13px; text-decoration: none; font-size: 12px; border-radius: 4px; }
+    nav a[aria-current=page] { background: #e9e8de; color: var(--acento); font-weight: 700; }
+    main { display: grid; grid-template-columns: 330px minmax(0, 1fr); min-height: 0; }
+    aside { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--borde); background: #f0f1e9; }
+    aside > section { padding: 25px 22px 20px; display: grid; gap: 16px; }
+    aside h1 { font-size: 19px; font-weight: 600; }
+    aside section > div { display: flex; justify-content: space-between; align-items: center; }
+    aside section small { font-size: 12px; }
+    .primario { background: var(--acento); border-color: var(--acento); color: #fffaf3; }
+    .primario:hover { background: #85351f; }
+    .maestro { overflow-y: auto; min-height: 0; padding: 0 10px 16px; list-style: none; margin: 0; }
+    .maestro li > button { width: 100%; text-align: left; display: flex; gap: 12px; align-items: center; border: 1px solid transparent; background: transparent; padding: 13px 11px; }
+    .maestro li > button[aria-current=true] { background: #fcfcf8; border-color: #d5d8c9; }
+    .maestro strong { font-size: 14px; font-weight: 600; }
+    .maestro small { display: block; font-size: 12px; margin-top: 3px; overflow-wrap: anywhere; }
+    .avatar { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border-radius: 50%; background: #e1e5d7; color: #4b5a40; font-size: 12px; font-weight: 600; }
+    article { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 36px clamp(24px, 5vw, 76px) 0; background: #fcfcf8; }
+    .ficha { position: relative; padding: 0 65px 26px 0; border-bottom: 1px solid var(--borde); }
+    .ficha > small:first-child { display: block; text-transform: uppercase; font-size: 10px; letter-spacing: 2px; margin-bottom: 14px; }
+    .ficha h2 { font-family: Georgia, serif; font-weight: 400; font-size: clamp(28px, 3vw, 40px); letter-spacing: -1px; line-height: 1.2; }
+    .ficha .identificador { position: absolute; right: 0; top: 0; font-size: 13px; color: #767c70; }
+    .ficha p { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--suave); overflow-wrap: anywhere; }
+    .ficha button { margin-top: 18px; padding: 6px 12px; font-size: 12px; }
+    .ingreso { margin: 23px 0 15px; padding: 10px; display: flex; gap: 8px; border: 1px dotted #989f8b; border-radius: 9px; }
+    .ingreso input { border-color: transparent; background: transparent; padding: 8px; }
+    .ingreso input[type=date] { flex: 0 1 155px; font-size: 12px; }
+    .ingreso button { flex: 0 0 36px; padding: 7px; }
+    .icono { width: 17px; height: 17px; display: block; }
+    .actividades { overflow-y: auto; min-height: 0; padding-bottom: 30px; }
+    .actividades section { margin-top: 22px; }
+    .actividades h3 { font-size: 13px; display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+    .actividades h3 span { font-size: 11px; font-weight: 400; color: var(--suave); }
+    .actividades ul { list-style: none; padding: 0; margin: 0; }
+    .actividades li { display: flex; align-items: center; gap: 13px; padding: 15px 0; border-bottom: 1px solid #e9eae2; }
+    .actividades li > div { flex: 1; min-width: 0; }
+    .actividades li p { font-size: 14px; overflow-wrap: anywhere; }
+    .actividades li small { display: block; font-size: 11px; margin-top: 5px; }
+    .actividades li small[data-vencido=true] { color: #a03d27; }
+    .actividades li > button { border: 0; background: transparent; padding: 8px; }
+    .completadas li p { color: #747a6d; text-decoration: line-through; text-decoration-color: #b9bdaf; }
+    .vacio { padding: 7px 0; color: var(--suave); font-size: 13px; }
+    .mensaje { margin: 15px 20px; color: var(--suave); font-size: 13px; }
+    .error { color: #9c3024; background: #faeee7; padding: 10px 12px; font-size: 13px; border-radius: 5px; overflow-wrap: anywhere; }
+    article > .error { margin: 8px 0; }
+    .formulario-cliente { max-width: 700px; padding-top: 24px; display: grid; gap: 18px; overflow-y: auto; padding-bottom: 24px; }
+    .formulario-cliente h2 { font-family: Georgia, serif; font-size: 30px; font-weight: 400; }
+    .formulario-cliente > div { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .formulario-cliente label { display: grid; gap: 7px; font-size: 12px; }
+    .formulario-cliente footer { display: flex; gap: 8px; }
+    #root > div > footer { border-top: 1px solid var(--borde); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 10px; color: var(--suave); letter-spacing: .3px; }
+    @media (max-width: 760px) {
+      header { padding: 0 16px; }
+      header small { display: none; }
+      main { grid-template-columns: 240px minmax(0, 1fr); }
+      aside > section { padding: 18px 14px; }
+      article { padding: 25px 18px 0; }
+      .ficha { padding-right: 35px; }
+      .ficha p { display: grid; }
+      .ingreso { gap: 2px; padding: 6px; }
+      .ingreso input[type=date] { flex-basis: 112px; width: 112px; padding: 4px; }
+      .formulario-cliente > div { gap: 10px; }
+    }
+    @media (max-width: 560px) {
+      #root > div { grid-template-rows: 62px minmax(0, 1fr) 30px; }
+      main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 230px minmax(0, 1fr); }
+      aside { border-right: 0; border-bottom: 1px solid var(--borde); }
+      aside > section { padding: 9px 16px; gap: 8px; }
+      aside section > button { padding: 6px; }
+      aside section input { padding: 6px 10px; }
+      .maestro li > button { padding: 6px 10px; }
+      article { padding: 16px 16px 0; }
+      .ficha { padding-bottom: 12px; }
+      .ficha > small:first-child { margin-bottom: 6px; }
+      .ficha h2 { font-size: 26px; }
+      .ficha p { display: flex; font-size: 12px; margin-top: 8px; }
+      .ficha button { margin-top: 10px; }
+      .ingreso { margin: 12px 0 4px; }
+      .actividades section { margin-top: 14px; }
+      .formulario-cliente { padding-top: 0; }
+      #root > div > footer { padding: 0 16px; }
+    }
+  </style>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"><p class="mensaje">Cargando MiniCRM…</p></div>
+  <noscript>Activa JavaScript para usar MiniCRM.</noscript>
+  <script>
+    Babel.registerPreset('react-classic', { presets: [[Babel.availablePresets.react, { runtime: 'classic' }]] });
+  </script>
+  <script type="text/babel" data-presets="react-classic">
+    const { useEffect, useState } = React;
+    const MODO = 'REST';
+
+    async function peticion(ruta, metodo = 'GET', datos) {
+      const respuesta = await fetch('/api/clientes' + ruta, {
+        method: metodo, headers: { 'Content-Type': 'application/json' },
+        body: datos === undefined ? undefined : JSON.stringify(datos),
+      });
+      if (respuesta.status === 204) return null;
+      const resultado = await respuesta.json();
+      if (!respuesta.ok) throw new Error(resultado.error || 'No se pudo completar la operación.');
+      return resultado;
+    }
+    const api = {
+      buscar: texto => peticion('?texto=' + encodeURIComponent(texto)),
+      obtener: id => peticion('/' + id),
+      guardar: (id, datos) => peticion(id ? '/' + id : '', id ? 'PATCH' : 'POST', datos),
+      actividades: id => peticion(`/${id}/actividades`),
+      guardarActividad: (clienteId, id, datos) => peticion(`/${clienteId}/actividades${id ? '/' + id : ''}`, id ? 'PATCH' : 'POST', datos),
+      eliminarActividad: (clienteId, id) => peticion(`/${clienteId}/actividades/${id}`, 'DELETE'),
+      completar: (clienteId, id) => peticion(`/${clienteId}/actividades/${id}/completar`, 'POST'),
+    };
+
+    function Icono({ nombre }) {
+      const trazos = { guardar: 'm4 9 3 3 7-7', cancelar: 'm4 4 10 10 M14 4 4 14', editar: 'm11 3 4 4 M3 15l1-4L12 3l3 3-8 8-4 1Z', borrar: 'M3 5h12 M7 5V3h4v2 M5 5l1 10h6l1-10 M8 8v4 M10 8v4' };
+      return <svg className="icono" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={trazos[nombre]} /></svg>;
+    }
+    const iniciales = cliente => (cliente.nombre[0] + cliente.apellido[0]).toUpperCase();
+    function hoy() {
+      const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Tucuman', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+      return ['year', 'month', 'day'].map(tipo => partes.find(p => p.type === tipo).value).join('-');
+    }
+    function fechaVisible(valor, hora = false) {
+      return new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Tucuman', day: 'numeric', month: 'short', year: 'numeric', ...(hora ? { hour: '2-digit', minute: '2-digit' } : {}) }).format(new Date(hora ? valor : valor + 'T12:00:00Z'));
+    }
+    function FormularioCliente({ cliente, alGuardar, alCancelar }) {
+      const [datos, setDatos] = useState({ nombre: cliente?.nombre || '', apellido: cliente?.apellido || '', email: cliente?.email || '', telefono: cliente?.telefono || '' });
+      const [error, setError] = useState('');
+      const [guardando, setGuardando] = useState(false);
+      function campo(nombre, etiqueta, tipo, autocompletar) {
+        return <label>{etiqueta}<input name={nombre} type={tipo || 'text'} autoComplete={autocompletar} required={nombre !== 'telefono'} maxLength={nombre === 'telefono' ? 40 : nombre === 'email' ? 254 : 100} value={datos[nombre]} onChange={e => setDatos({ ...datos, [nombre]: e.target.value })} /></label>;
+      }
+      async function guardar(e) {
+        e.preventDefault(); setGuardando(true); setError('');
+        try { alGuardar(await api.guardar(cliente?.id, datos)); }
+        catch (e) { setError(e.message); }
+        finally { setGuardando(false); }
+      }
+      return <form className="formulario-cliente" onSubmit={guardar}>
+        <h2>{cliente ? 'Editar cliente' : 'Agregar cliente'}</h2>
+        <div>{campo('nombre', 'Nombre', 'text', 'given-name')}{campo('apellido', 'Apellido', 'text', 'family-name')}</div>
+        <div>{campo('email', 'Email', 'email', 'email')}{campo('telefono', 'Teléfono · opcional', 'tel', 'tel')}</div>
+        {error ? <p className="error" role="alert">{error}</p> : null}
+        <footer><button className="primario" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</button><button type="button" disabled={guardando} onClick={alCancelar}>Cancelar</button></footer>
+      </form>;
+    }
+    function GrupoActividades({ titulo, actividades, completadas, ocupado, alCompletar, alEditar, alBorrar }) {
+      return <section className={completadas ? 'completadas' : ''}>
+        <h3>{titulo} <span>{actividades.length.toString().padStart(2, '0')}</span></h3>
+        {actividades.length ? <ul>{actividades.map(a => <li key={a.id}>
+          <input type="checkbox" checked={Boolean(a.fechaFinalizacion)} disabled={completadas || ocupado} onChange={() => alCompletar(a)} aria-label={(completadas ? 'Completada: ' : 'Completar: ') + a.descripcion} />
+          <div><p>{a.descripcion}</p><small data-vencido={!completadas && Boolean(a.fechaCompromiso) && a.fechaCompromiso < hoy()}>
+            {completadas ? fechaVisible(a.fechaFinalizacion, true) : !a.fechaCompromiso ? 'Sin compromiso' : (a.fechaCompromiso < hoy() ? 'Vencido · ' : '') + fechaVisible(a.fechaCompromiso)}
+          </small></div>
+          {!completadas ? <><button aria-label={'Editar: ' + a.descripcion} title="Editar compromiso" disabled={ocupado} onClick={() => alEditar(a)}><Icono nombre="editar" /></button><button aria-label={'Borrar: ' + a.descripcion} title="Borrar compromiso" disabled={ocupado} onClick={() => alBorrar(a)}><Icono nombre="borrar" /></button></> : null}
+        </li>)}</ul> : <p className="vacio">{completadas ? 'Todavía no hay actividades completadas.' : 'Sin compromisos pendientes.'}</p>}
+      </section>;
+    }
+    function IngresoActividad({ actividad, ocupado, alGuardar, alCancelar }) {
+      const [descripcion, setDescripcion] = useState(actividad?.descripcion || '');
+      const [fechaCompromiso, setFecha] = useState(actividad?.fechaCompromiso || '');
+      const [error, setError] = useState('');
+      async function guardar(e) {
+        e.preventDefault(); setError('');
+        try {
+          await alGuardar({ descripcion, fechaCompromiso: fechaCompromiso || null });
+          setDescripcion(''); setFecha('');
+        } catch (e) { setError(e.message); }
+      }
+      return <><form className="ingreso" onSubmit={guardar} aria-label={actividad ? 'Editar compromiso' : 'Nuevo compromiso'}>
+        <input name="descripcion" aria-label="Descripción del compromiso" placeholder={actividad ? 'Editar compromiso…' : 'Agregar un compromiso…'} required maxLength="1000" value={descripcion} onChange={e => setDescripcion(e.target.value)} disabled={ocupado} />
+        <input name="fechaCompromiso" aria-label="Fecha de compromiso opcional" type="date" value={fechaCompromiso} onInput={e => setFecha(e.currentTarget.value)} onChange={e => setFecha(e.target.value)} disabled={ocupado} />
+        <button className="primario" aria-label="Guardar compromiso" title="Guardar compromiso" disabled={ocupado}><Icono nombre="guardar" /></button>
+        <button type="button" aria-label="Cancelar compromiso" title="Cancelar" disabled={ocupado} onClick={() => { setDescripcion(''); setFecha(''); setError(''); alCancelar(); }}><Icono nombre="cancelar" /></button>
+      </form>{error ? <p className="error" role="alert">{error}</p> : null}</>;
+    }
+    function Detalle({ id, alGuardarCliente }) {
+      const [cliente, setCliente] = useState(null);
+      const [actividades, setActividades] = useState([]);
+      const [editarCliente, setEditarCliente] = useState(false);
+      const [actividad, setActividad] = useState(null);
+      const [error, setError] = useState('');
+      const [ocupado, setOcupado] = useState(false);
+      const [cargando, setCargando] = useState(true);
+      useEffect(() => {
+        let vigente = true;
+        Promise.all([api.obtener(id), api.actividades(id)]).then(([c, a]) => {
+          if (vigente) { setCliente(c); setActividades(a); }
+        }).catch(e => { if (vigente) setError(e.message); }).finally(() => { if (vigente) setCargando(false); });
+        return () => { vigente = false; };
+      }, [id]);
+      async function modificar(ejecutar) {
+        setOcupado(true); setError('');
+        try { await ejecutar(); setActividades(await api.actividades(id)); }
+        finally { setOcupado(false); }
+      }
+      async function accion(ejecutar) {
+        try { await modificar(ejecutar); } catch (e) { setError(e.message); }
+      }
+      if (cargando) return <p className="vacio" role="status">Cargando ficha…</p>;
+      if (!cliente) return <p className="error" role="alert">{error}</p>;
+      if (editarCliente) return <FormularioCliente cliente={cliente} alGuardar={c => { setCliente(c); setEditarCliente(false); alGuardarCliente(c); }} alCancelar={() => setEditarCliente(false)} />;
+      const pendientes = actividades.filter(a => !a.fechaFinalizacion).sort((a, b) => (a.fechaCompromiso || '').localeCompare(b.fechaCompromiso || '') || a.id - b.id);
+      const completadas = actividades.filter(a => a.fechaFinalizacion).sort((a, b) => b.fechaFinalizacion.localeCompare(a.fechaFinalizacion));
+      return <>
+        <section className="ficha"><small>Ficha del cliente</small><span className="identificador">#{cliente.id}</span>
+          <h2>{cliente.nombre} {cliente.apellido}</h2><p><a href={'mailto:' + cliente.email}>{cliente.email}</a>{cliente.telefono ? <a href={'tel:' + cliente.telefono}>{cliente.telefono}</a> : <span>Sin teléfono</span>}</p>
+          <button onClick={() => setEditarCliente(true)} disabled={ocupado}>Editar</button>
+        </section>
+        <IngresoActividad key={actividad?.id || 'nueva'} actividad={actividad} ocupado={ocupado} alCancelar={() => setActividad(null)} alGuardar={async datos => {
+          await modificar(() => api.guardarActividad(id, actividad?.id, datos)); setActividad(null);
+        }} />
+        {error ? <p className="error" role="alert">{error}</p> : null}
+        <div className="actividades">
+          <GrupoActividades titulo="Compromisos" actividades={pendientes} ocupado={ocupado} alEditar={setActividad} alCompletar={a => accion(async () => { await api.completar(id, a.id); if (actividad?.id === a.id) setActividad(null); })} alBorrar={a => accion(async () => { await api.eliminarActividad(id, a.id); if (actividad?.id === a.id) setActividad(null); })} />
+          <GrupoActividades titulo="Actividades completadas" actividades={completadas} completadas />
+        </div>
+      </>;
+    }
+    function App() {
+      const [texto, setTexto] = useState('');
+      const [clientes, setClientes] = useState([]);
+      const [seleccion, setSeleccion] = useState(null);
+      const [cargando, setCargando] = useState(true);
+      const [error, setError] = useState('');
+      const [revision, setRevision] = useState(0);
+      useEffect(() => {
+        let vigente = true; setCargando(true); setError('');
+        api.buscar(texto).then(datos => {
+          if (vigente) { setClientes(datos); setSeleccion(actual => actual === null && datos.length ? datos[0].id : actual); }
+        }).catch(e => { if (vigente) setError(e.message); }).finally(() => { if (vigente) setCargando(false); });
+        return () => { vigente = false; };
+      }, [texto, revision]);
+      function guardado(cliente) { setSeleccion(cliente.id); setRevision(r => r + 1); }
+      return <div>
+        <header><div><strong>MiniCRM<span style={{color:'var(--acento)'}}>.</span></strong><small>Relaciones que avanzan.</small></div><nav aria-label="Transporte"><a href="/clientes.html" aria-current={MODO === 'REST' ? 'page' : undefined}>REST</a><a href="/clientes-mcp.html" aria-current={MODO === 'MCP' ? 'page' : undefined}>MCP</a></nav></header>
+        <main><aside aria-label="Clientes"><section><div><h1>Clientes</h1><small>{cargando ? '…' : clientes.length + ' registros'}</small></div>
+          <input type="search" name="buscar" aria-label="Buscar clientes" placeholder="Buscar por cualquier campo…" value={texto} onChange={e => setTexto(e.target.value)} />
+          <button className="primario" onClick={() => setSeleccion('nuevo')}>+ Agregar cliente</button>
+        </section>
+          {error ? <p className="error" role="alert">{error}</p> : null}
+          {cargando ? <p className="mensaje" role="status">Buscando clientes…</p> : null}
+          {!cargando && !error && !clientes.length ? <p className="mensaje">{texto ? 'No se encontraron clientes.' : 'Todavía no hay clientes. Agrega el primero.'}</p> : null}
+          <ul className="maestro">{clientes.map(c => <li key={c.id}><button aria-current={seleccion === c.id} onClick={() => setSeleccion(c.id)}><span className="avatar" aria-hidden="true">{iniciales(c)}</span><span><strong>{c.nombre} {c.apellido}</strong><small>{c.email}</small></span></button></li>)}</ul>
+        </aside><article aria-label="Detalle del cliente">
+          {seleccion === 'nuevo' ? <FormularioCliente alGuardar={guardado} alCancelar={() => setSeleccion(clientes[0]?.id || null)} /> : seleccion ? <Detalle key={seleccion} id={seleccion} alGuardarCliente={guardado} /> : <p className="vacio">Selecciona un cliente para ver su ficha.</p>}
+        </article></main>
+        <footer><span>MiniCRM · Demostración</span><span>Hora de Tucumán · {MODO}</span></footer>
+      </div>;
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+import express from 'express'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import './db/index.js'
+import { sembrarDatos } from './db/seed.js'
+import { clientesRouter } from './routes/clientes.routes.js'
+import { actividadesRouter } from './routes/actividades.routes.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const app = express()
+const puerto = process.env.PORT || 3000
+
+app.use(express.json())
+app.use(express.static(path.join(__dirname, '../public')))
+
+app.use('/api/clientes', clientesRouter)
+app.use('/api/actividades', actividadesRouter)
+
+app.get('/', (_req, res) => {
+  res.redirect('/MiniCRM.html')
+})
+
+async function iniciar() {
+  await sembrarDatos()
+  app.listen(puerto, () => {
+    console.log(`MiniCRM iniciado en http://localhost:${puerto}`)
+  })
+}
+
+iniciar()

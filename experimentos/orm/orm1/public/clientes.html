@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f4f0" />
+    <title>Clientes · MiniCRM</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #202720;
+        background: #f5f4f0;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        --muted: #72796f;
+        --line: #e3e3dc;
+        --green: #315c43;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; }
+      .page { width: min(100% - 40px, 960px); margin: 0 auto; padding: 38px 0 64px; }
+      header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 54px; }
+      .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 720; letter-spacing: -.02em; }
+      .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; color: #fff; background: var(--green); font-family: Georgia, serif; font-size: 22px; }
+      .api-link { color: var(--muted); font-size: 12px; text-decoration: none; }
+      .api-link:hover { color: var(--green); }
+      .tabs { display: flex; gap: 5px; margin: -31px 0 42px; border-bottom: 1px solid var(--line); }
+      .tab { padding: 0 14px 12px; border: 0; border-bottom: 2px solid transparent; color: #81877e; background: none; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+      .tab:hover { color: #354d3b; }
+      .tab.active { border-bottom-color: var(--green); color: var(--green); }
+      .eyebrow { margin: 0 0 10px; color: var(--green); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+      h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(38px, 7vw, 58px); font-weight: 500; letter-spacing: -.055em; line-height: 1; }
+      .intro { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 31px; }
+      .subheading { margin: 13px 0 0; color: var(--muted); font-size: 14px; }
+      .count { flex: none; padding: 8px 12px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 12px; }
+      .count strong { color: #202720; }
+      .toolbar { display: flex; justify-content: flex-end; margin: -10px 0 14px; }
+      .list-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: -10px 0 14px; }
+      .search { width: min(100%, 310px); height: 40px; padding: 0 13px; border: 1px solid var(--line); border-radius: 9px; outline: none; color: #202720; background: #fff; font: inherit; font-size: 12px; transition: border-color .15s, box-shadow .15s; }
+      .search::placeholder { color: #969b92; }
+      .search:focus { border-color: #819985; box-shadow: 0 0 0 3px #315c4314; }
+      .filter { height: 40px; padding: 0 32px 0 11px; border: 1px solid var(--line); border-radius: 9px; color: #4d584d; background-color: #fff; font: inherit; font-size: 12px; }
+      .list { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+      .list-head, .client { display: grid; grid-template-columns: minmax(220px, 1.35fr) minmax(170px, 1fr) minmax(130px, .8fr); align-items: center; gap: 18px; padding: 0 24px; }
+      .list-head { min-height: 45px; border-bottom: 1px solid var(--line); color: #8a9087; background: #fbfbf9; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+      .client { min-height: 78px; border-bottom: 1px solid #efefe9; }
+      .client-group { border-bottom: 1px solid #efefe9; }
+      .client-group:last-child { border-bottom: 0; }
+      .client { border-bottom: 0; }
+      .client:hover { background: #fafbf8; }
+      .identity { padding: 0; border: 0; color: inherit; background: transparent; text-align: left; font: inherit; cursor: pointer; }
+      .identity:hover .name { color: var(--green); }
+      .identity:focus-visible, .back:focus-visible, .complete:focus-visible { outline: 2px solid #66856d; outline-offset: 3px; }
+      .identity { display: flex; min-width: 0; align-items: center; gap: 12px; }
+      .avatar { display: grid; width: 38px; height: 38px; flex: none; place-items: center; border-radius: 50%; color: #315c43; background: #e9efe8; font-family: Georgia, serif; font-size: 15px; }
+      .name { overflow: hidden; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+      .id { margin-top: 4px; color: #9a9f97; font-size: 10px; }
+      .pending-tasks { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 14px; margin: -5px 24px 15px 74px; padding: 0; list-style: none; }
+      .pending-heading { color: #858b82; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .pending-task { display: inline-flex; align-items: center; gap: 6px; color: #5f685f; font-size: 11px; }
+      .pending-task::before { width: 6px; height: 6px; border: 1.5px solid #b38c43; border-radius: 50%; content: ""; }
+      .pending-task time { color: #969b92; font-size: 10px; }
+      .no-pending { color: #92978f; font-size: 11px; }
+      .task-groups { display: grid; gap: 24px; }
+      .task-group { overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+      .task-group-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); background: #fbfbf9; }
+      .task-group-title { display: flex; align-items: center; gap: 9px; margin: 0; color: #303a31; font-size: 12px; font-weight: 700; }
+      .task-group-count { display: grid; min-width: 23px; height: 23px; place-items: center; border-radius: 50%; color: #667064; background: #eceee8; font-size: 10px; }
+      .task-group.overdue .task-group-count { color: #963d31; background: #f5e8e4; }
+      .task-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #efefe9; }
+      .task-row:last-child { border-bottom: 0; }
+      .task-copy { min-width: 0; }
+      .task-description { margin: 0; color: #303a31; font-size: 12px; font-weight: 620; line-height: 1.45; }
+      .task-context { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; color: #81877e; font-size: 10px; }
+      .task-client { padding: 0; border: 0; color: var(--green); background: none; font: inherit; font-weight: 650; cursor: pointer; }
+      .task-client:hover { text-decoration: underline; }
+      .task-date { color: #70786d; }
+      .task-group-empty { padding: 17px 18px; color: #92978f; font-size: 11px; }
+      .task-create { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(200px, 1.2fr) 210px; gap: 12px; margin: 0 0 26px; padding: 17px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+      .task-create-title { grid-column: 1 / -1; margin: 0; color: #39453a; font-size: 12px; font-weight: 700; }
+      .task-create-field { position: relative; display: grid; align-content: start; gap: 6px; color: #616a60; font-size: 11px; font-weight: 650; }
+      .task-create-field input { width: 100%; min-width: 0; height: 39px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; outline: none; color: #202720; background: #fff; font: inherit; font-size: 12px; }
+      .task-create-field input:focus { border-color: #819985; box-shadow: 0 0 0 3px #315c4314; }
+      .client-options { position: absolute; z-index: 2; top: calc(100% + 4px); right: 0; left: 0; overflow: auto; max-height: 220px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: 0 10px 26px #17251a1a; }
+      .client-option { display: grid; width: 100%; gap: 3px; padding: 9px 10px; border: 0; border-radius: 6px; color: #303a31; background: #fff; text-align: left; font: inherit; cursor: pointer; }
+      .client-option:hover, .client-option:focus-visible { background: #f2f5f0; outline: none; }
+      .client-option strong { font-size: 12px; font-weight: 650; }
+      .client-option span { color: #81877e; font-size: 10px; }
+      .selected-client { display: flex; min-height: 39px; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 9px; border: 1px solid #dce6da; border-radius: 7px; background: #f7faf6; }
+      .selected-client strong, .selected-client span { display: block; }
+      .selected-client strong { color: #315c43; font-size: 11px; }
+      .selected-client span { margin-top: 2px; color: #81877e; font-size: 10px; }
+      .selected-client button { flex: none; padding: 5px; border: 0; color: #526653; background: transparent; font: inherit; font-size: 10px; cursor: pointer; }
+      .task-create-note { grid-column: 1 / -1; margin: -2px 0 0; color: #92978f; font-size: 10px; }
+      .task-create-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+      .task-cancel { height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; color: #626b61; background: #fff; font: inherit; font-size: 11px; cursor: pointer; }
+      .task-cancel:hover { background: #f7f8f5; }
+      .task-create-submit { height: 36px; padding: 0 14px; border: 0; border-radius: 7px; color: #fff; background: var(--green); font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+      .task-create-submit:hover { background: #244a34; }
+      .task-create-submit:disabled { opacity: .55; cursor: wait; }
+      .email, .phone { overflow: hidden; color: #656d64; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+      .phone { color: #7b8178; }
+      .state { padding: 42px 20px; color: var(--muted); text-align: center; font-size: 13px; }
+      .error { color: #9a3e32; }
+      .retry { margin-top: 14px; padding: 9px 14px; border: 1px solid #d7d9d1; border-radius: 8px; color: #283b2e; background: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+      .retry:hover { border-color: #879b89; background: #f8faf7; }
+      .detail-top { display: flex; align-items: center; gap: 15px; margin: 0 0 27px; }
+      .back { flex: none; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; color: #4b594d; background: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+      .back:hover { background: #f9faf7; }
+      .detail-title { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(26px, 5vw, 36px); font-weight: 500; letter-spacing: -.04em; }
+      .detail-contact { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+      .activity-form { display: grid; grid-template-columns: minmax(0, 1fr) 210px auto; align-items: end; gap: 12px; margin: 0 0 20px; padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+      .field { display: grid; gap: 6px; color: #616a60; font-size: 11px; font-weight: 650; }
+      .field input { width: 100%; min-width: 0; height: 39px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; outline: none; color: #202720; background: #fff; font: inherit; font-size: 12px; }
+      .field input:focus { border-color: #819985; box-shadow: 0 0 0 3px #315c4314; }
+      .submit { height: 39px; padding: 0 14px; border: 0; border-radius: 7px; color: #fff; background: var(--green); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+      .submit:hover { background: #244a34; }
+      .submit:disabled { opacity: .55; cursor: wait; }
+      .activity-list { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+      .activity { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 17px 19px; border-bottom: 1px solid #efefe9; }
+      .activity:last-child { border-bottom: 0; }
+      .activity-description { margin: 0; color: #283129; font-size: 13px; font-weight: 600; line-height: 1.45; }
+      .activity-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; color: #81877e; font-size: 11px; }
+      .badge { padding: 4px 8px; border-radius: 99px; color: #725d2b; background: #f6f0df; font-size: 10px; font-weight: 700; }
+      .badge.complete { color: #315c43; background: #e9efe8; }
+      .complete { flex: none; padding: 7px 10px; border: 1px solid #d7e1d6; border-radius: 7px; color: #315c43; background: #f8fbf7; font: inherit; font-size: 11px; cursor: pointer; }
+      .complete:hover { background: #edf4ec; }
+      footer { margin-top: 17px; color: #92978f; font-size: 11px; }
+      @media (max-width: 620px) {
+        .page { width: min(100% - 28px, 960px); padding-top: 22px; }
+        header { padding-bottom: 39px; }
+        .tabs { margin: -20px 0 32px; }
+        .intro { align-items: start; }
+        .list-controls { align-items: stretch; flex-direction: column; margin-top: -3px; }
+        .search { width: 100%; }
+        .filter { width: 100%; }
+        .activity-form { grid-template-columns: 1fr; }
+        .task-create { grid-template-columns: 1fr; }
+        .task-create-title, .task-create-note { grid-column: auto; }
+        .activity { padding: 14px; }
+        .complete { white-space: nowrap; }
+        .pending-tasks { gap: 7px; margin: -2px 14px 14px 64px; }
+        .pending-tasks li:not(.pending-heading) { flex-basis: 100%; }
+        .list-head { display: none; }
+        .client { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; padding: 14px; }
+        .identity { grid-column: 1 / -1; }
+        .email { grid-column: 1; padding-left: 50px; }
+        .phone { grid-column: 2; grid-row: 2; max-width: 120px; text-align: right; }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .client { animation: arrive .35s both; }
+        @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+      }
+    </style>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useEffect, useState } = React;
+
+      function Cabecera({ vista, cambiarVista }) {
+        return (
+          <>
+            <header>
+              <div className="brand"><span className="brand-mark" aria-hidden="true">m</span><span>MINICRM</span></div>
+              <a className="api-link" href="/api-docs/">Documentación API ↗</a>
+            </header>
+            <nav className="tabs" aria-label="Vistas del MiniCRM">
+              <button className={`tab ${vista === "clientes" ? "active" : ""}`} aria-current={vista === "clientes" ? "page" : undefined} onClick={() => cambiarVista("clientes")}>Clientes</button>
+              <button className={`tab ${vista === "tareas" ? "active" : ""}`} aria-current={vista === "tareas" ? "page" : undefined} onClick={() => cambiarVista("tareas")}>Tareas</button>
+            </nav>
+          </>
+        );
+      }
+
+      function LayoutAplicacion({ vista, cambiarVista, children }) {
+        return (
+          <main className="page">
+            <Cabecera vista={vista} cambiarVista={cambiarVista} />
+            <section aria-labelledby="titulo">{children}</section>
+          </main>
+        );
+      }
+
+      function EncabezadoSeccion({ categoria, titulo, descripcion, contador, etiquetaContador }) {
+        return (
+          <>
+            <p className="eyebrow">{categoria}</p>
+            <div className="intro">
+              <div>
+                <h1 id="titulo">{titulo}</h1>
+                <p className="subheading">{descripcion}</p>
+              </div>
+              {contador !== undefined && (
+                <span className="count"><strong>{contador}</strong> {etiquetaContador}</span>
+              )}
+            </div>
+          </>
+        );
+      }
+
+      function CampoFormulario({ id, etiqueta, tipo = "text", valor, alCambiar, requerido = false, placeholder, onKeyDown, className = "field" }) {
+        return (
+          <label className={className} htmlFor={id}>
+            {etiqueta}
+            <input
+              id={id}
+              type={tipo}
+              required={requerido}
+              value={valor}
+              onChange={(evento) => alCambiar(evento.target.value)}
+              placeholder={placeholder}
+              onKeyDown={onKeyDown}
+            />
+          </label>
+        );
+      }
+
+      function BotonFormulario({ tipo = "button", variante, disabled, onClick, children }) {
+        return <button className={variante} type={tipo} disabled={disabled} onClick={onClick}>{children}</button>;
+      }
+
+      function SelectorCliente({
+        cliente,
+        busqueda,
+        abierto,
+        sugerencias,
+        alBuscar,
+        alElegir,
+        alCambiar,
+        alCerrar,
+      }) {
+        return (
+          <div className="task-create-field">
+            <label htmlFor="cliente-tarea">Cliente</label>
+            {cliente ? (
+              <div className="selected-client">
+                <div><strong>{cliente.nombre} {cliente.apellido}</strong><span>{cliente.email}</span></div>
+                <BotonFormulario onClick={alCambiar}>Cambiar</BotonFormulario>
+              </div>
+            ) : (
+              <>
+                <input
+                  id="cliente-tarea"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={abierto}
+                  aria-controls="opciones-clientes-tarea"
+                  autoComplete="off"
+                  placeholder="Buscar por nombre o email…"
+                  value={busqueda}
+                  onFocus={() => alBuscar(busqueda, true)}
+                  onChange={(evento) => alBuscar(evento.target.value, true)}
+                  onKeyDown={(evento) => {
+                    if (evento.key === "Escape") alCerrar();
+                    if (evento.key === "Enter" && abierto && sugerencias.length) {
+                      evento.preventDefault();
+                      alElegir(sugerencias[0]);
+                    }
+                  }}
+                />
+                {abierto && (
+                  <div className="client-options" id="opciones-clientes-tarea" role="listbox" aria-label="Clientes">
+                    {sugerencias.slice(0, 8).map((opcion) => (
+                      <button className="client-option" type="button" role="option" aria-selected="false" key={opcion.id} onClick={() => alElegir(opcion)}>
+                        <strong>{opcion.nombre} {opcion.apellido}</strong><span>{opcion.email}</span>
+                      </button>
+                    ))}
+                    {sugerencias.length === 0 && <div className="task-group-empty">No hay clientes coincidentes.</div>}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      }
+
+      function FormularioActividad({ descripcion, fecha, guardando, alEnviar, alCambiarDescripcion, alCambiarFecha }) {
+        return (
+          <form className="activity-form" onSubmit={alEnviar}>
+            <CampoFormulario id="descripcion-actividad" etiqueta="Nueva actividad" valor={descripcion} alCambiar={alCambiarDescripcion} requerido placeholder="Describe el seguimiento…" />
+            <CampoFormulario id="fecha-actividad" etiqueta="Fecha (opcional)" tipo="datetime-local" valor={fecha} alCambiar={alCambiarFecha} />
+            <BotonFormulario tipo="submit" variante="submit" disabled={guardando || !descripcion.trim()}>
+              {guardando ? "Guardando…" : "Registrar"}
+            </BotonFormulario>
+          </form>
+        );
+      }
+
+      function InsigniaEstado({ estado }) {
+        const completa = estado === "completa";
+        return <span className={`badge ${completa ? "complete" : ""}`}>{completa ? "Completada" : "Pendiente"}</span>;
+      }
+
+      function FilaActividad({ actividad, alCompletar }) {
+        return (
+          <article className="activity" key={actividad.id}>
+            <div>
+              <p className="activity-description">{actividad.descripcion}</p>
+              <div className="activity-meta">
+                <InsigniaEstado estado={actividad.estado} />
+                {actividad.fecha && <time dateTime={actividad.fecha}>{new Date(actividad.fecha).toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short" })}</time>}
+                {actividad.fechaCompletada && <span>Completada el {new Date(actividad.fechaCompletada).toLocaleDateString("es-AR")}</span>}
+              </div>
+            </div>
+            {actividad.estado !== "completa" && <button className="complete" onClick={() => alCompletar(actividad.id)}>Completar</button>}
+          </article>
+        );
+      }
+
+      function ListaActividades({ actividades, cargando, error, alCompletar }) {
+        if (cargando) return <div className="state" role="status">Cargando actividades…</div>;
+        if (error && actividades.length === 0) return null;
+        if (actividades.length === 0) return <div className="activity-list"><div className="state">Este cliente todavía no tiene actividades.</div></div>;
+
+        return (
+          <div className="activity-list" aria-live="polite">
+            {actividades.map((actividad) => <FilaActividad key={actividad.id} actividad={actividad} alCompletar={alCompletar} />)}
+          </div>
+        );
+      }
+
+      function TarjetaCliente({ cliente, actividadesPendientes, errorPendientes, alSeleccionar }) {
+        const pendientes = actividadesPendientes.filter((actividad) => actividad.clienteId === cliente.id);
+        return (
+          <div className="client-group">
+            <article className="client">
+              <button className="identity" type="button" onClick={() => alSeleccionar(cliente)} aria-label={`Ver ficha de ${cliente.nombre} ${cliente.apellido}`}>
+                <span className="avatar" aria-hidden="true">{`${cliente.nombre?.[0] ?? ""}${cliente.apellido?.[0] ?? ""}`}</span>
+                <span>
+                  <span className="name">{cliente.nombre} {cliente.apellido}</span>
+                  <span className="id" style={{ display: "block" }}>CLIENTE · {String(cliente.id).padStart(3, "0")}</span>
+                </span>
+              </button>
+              <span className="email">{cliente.email}</span>
+              <span className="phone">{cliente.telefono || "Sin teléfono"}</span>
+            </article>
+            <ul className="pending-tasks" aria-label={`Tareas pendientes de ${cliente.nombre} ${cliente.apellido}`}>
+              <li className="pending-heading">Pendientes</li>
+              {errorPendientes ? <li className="no-pending">No disponibles</li> : pendientes.length === 0 ? (
+                <li className="no-pending">Sin tareas pendientes</li>
+              ) : pendientes.map((actividad) => (
+                <li className="pending-task" key={actividad.id}>
+                  <span>{actividad.descripcion}</span>
+                  {actividad.fecha && <time dateTime={actividad.fecha}>{new Date(actividad.fecha).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}</time>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      }
+
+      function GrupoTareas({ titulo, tareas, clase = "", sinTareas, clientes, alSeleccionar, alCompletar }) {
+        return (
+          <section className={`task-group ${clase}`} aria-label={titulo}>
+            <div className="task-group-header">
+              <h2 className="task-group-title">{titulo}</h2>
+              <span className="task-group-count">{tareas.length}</span>
+            </div>
+            {tareas.length === 0 ? <div className="task-group-empty">{sinTareas}</div> : tareas.map((actividad) => {
+              const cliente = clientes.find((item) => item.id === actividad.clienteId);
+              return (
+                <article className="task-row" key={actividad.id}>
+                  <div className="task-copy">
+                    <p className="task-description">{actividad.descripcion}</p>
+                    <div className="task-context">
+                      {cliente && <button className="task-client" onClick={() => alSeleccionar(cliente)}>{cliente.nombre} {cliente.apellido}</button>}
+                      {actividad.fecha && <time className="task-date" dateTime={actividad.fecha}>{new Date(actividad.fecha).toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short" })}</time>}
+                    </div>
+                  </div>
+                  <button className="complete" onClick={() => alCompletar(actividad.id)}>Completar</button>
+                </article>
+              );
+            })}
+          </section>
+        );
+      }
+
+      function FormularioTarea({
+        cliente,
+        busqueda,
+        selectorAbierto,
+        clientesSugeridos,
+        descripcion,
+        vencimiento,
+        guardando,
+        mensaje,
+        alEnviar,
+        alCancelar,
+        alCambiarCliente,
+        alBuscarCliente,
+        alElegirCliente,
+        alCambiarDescripcion,
+        alCambiarVencimiento,
+        alCerrarSelector,
+      }) {
+        return (
+          <form className="task-create" onSubmit={alEnviar}>
+            <h2 className="task-create-title">Registrar tarea</h2>
+            <SelectorCliente
+              cliente={cliente}
+              busqueda={busqueda}
+              abierto={selectorAbierto}
+              sugerencias={clientesSugeridos}
+              alBuscar={alBuscarCliente}
+              alElegir={alElegirCliente}
+              alCambiar={alCambiarCliente}
+              alCerrar={alCerrarSelector}
+            />
+            <CampoFormulario
+              id="descripcion-tarea"
+              etiqueta="Tarea"
+              valor={descripcion}
+              alCambiar={alCambiarDescripcion}
+              requerido
+              placeholder="Describe la tarea…"
+              className="task-create-field"
+              onKeyDown={(evento) => {
+                if (evento.key === "Enter" && !evento.nativeEvent.isComposing) {
+                  evento.preventDefault();
+                  evento.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <CampoFormulario id="vencimiento-tarea" etiqueta="Vencimiento (opcional)" tipo="datetime-local" valor={vencimiento} alCambiar={alCambiarVencimiento} className="task-create-field" />
+            <div className="task-create-actions">
+              <BotonFormulario variante="task-cancel" onClick={alCancelar} disabled={guardando}>Cancelar</BotonFormulario>
+              <BotonFormulario tipo="submit" variante="task-create-submit" disabled={guardando || !cliente || !descripcion.trim()}>{guardando ? "Guardando…" : "Registrar tarea"}</BotonFormulario>
+            </div>
+            {mensaje && <p className="task-create-note" role="status">{mensaje}</p>}
+          </form>
+        );
+      }
+
+      function VistaTareas({
+        cantidad,
+        cargando,
+        error,
+        grupos,
+        clientes,
+        alSeleccionar,
+        alCompletar,
+        formulario,
+      }) {
+        return (
+          <>
+            <EncabezadoSeccion categoria="Seguimiento · Pendientes" titulo="Tareas" descripcion="Vencimientos y próximos compromisos, por fecha." contador={cantidad} etiquetaContador={cantidad === 1 ? "pendiente" : "pendientes"} />
+            {formulario}
+            {cargando ? <div className="state" role="status">Cargando tareas…</div> : error ? (
+              <div className="state error" role="alert">{error}</div>
+            ) : (
+              <div className="task-groups">
+                {grupos.map((grupo) => (
+                  <GrupoTareas key={grupo.titulo} {...grupo} clientes={clientes} alSeleccionar={alSeleccionar} alCompletar={alCompletar} />
+                ))}
+              </div>
+            )}
+          </>
+        );
+      }
+
+      function VistaFichaCliente({ cliente, actividades, cargando, error, children, alVolver, alCompletar }) {
+        return (
+          <>
+            <p className="eyebrow">Relaciones · Ficha de cliente</p>
+            <div className="detail-top">
+              <button className="back" onClick={alVolver}>← Clientes</button>
+              <div>
+                <h1 className="detail-title">{cliente.nombre} {cliente.apellido}</h1>
+                <p className="detail-contact">{cliente.email}{cliente.telefono ? ` · ${cliente.telefono}` : ""}</p>
+              </div>
+            </div>
+            {children}
+            {error && <div className="state error" role="alert">{error}</div>}
+            <ListaActividades actividades={actividades} cargando={cargando} error={error} alCompletar={alCompletar} />
+          </>
+        );
+      }
+
+      function VistaClientes({
+        estado,
+        error,
+        buscando,
+        termino,
+        alBuscar,
+        filtro,
+        alFiltrar,
+        clientes,
+        actividadesPendientes,
+        errorPendientes,
+        alSeleccionar,
+        reintentar,
+      }) {
+        return (
+          <>
+            <EncabezadoSeccion
+              categoria="Relaciones · Directorio"
+              titulo="Clientes"
+              descripcion="Personas con las que construimos relaciones."
+              contador={estado === "listo" ? clientes.length : undefined}
+              etiquetaContador={clientes.length === 1 ? "cliente" : "clientes"}
+            />
+            {estado === "listo" && (
+              <div className="list-controls">
+                <input className="search" type="search" aria-label="Buscar clientes" placeholder="Buscar por nombre, email o teléfono…" value={termino} onChange={(evento) => alBuscar(evento.target.value)} />
+                <select className="filter" aria-label="Filtrar clientes por tareas pendientes" value={filtro} onChange={(evento) => alFiltrar(evento.target.value)}>
+                  <option value="todos">Todos los clientes</option>
+                  <option value="pendientes">Con tareas pendientes</option>
+                </select>
+              </div>
+            )}
+            <div className="list" aria-live="polite">
+              <div className="list-head"><span>Cliente</span><span>Correo electrónico</span><span>Teléfono</span></div>
+              {estado === "cargando" && <div className="state" role="status">Cargando clientes…</div>}
+              {estado === "listo" && errorPendientes && <div className="state error" role="status">{errorPendientes}</div>}
+              {estado === "listo" && buscando && <div className="state" role="status">Buscando…</div>}
+              {estado !== "cargando" && estado !== "listo" && (
+                <div className="state error" role="alert">
+                  <div>No pudimos cargar los clientes. {estado}</div>
+                  <button className="retry" onClick={reintentar}>Intentar de nuevo</button>
+                </div>
+              )}
+              {estado === "listo" && !buscando && clientes.length === 0 && <div className="state">{termino ? "No hay clientes que coincidan con la búsqueda." : "Todavía no hay clientes registrados."}</div>}
+              {estado === "listo" && !buscando && clientes.map((cliente) => (
+                <TarjetaCliente key={cliente.id} cliente={cliente} actividadesPendientes={actividadesPendientes} errorPendientes={errorPendientes} alSeleccionar={alSeleccionar} />
+              ))}
+            </div>
+            <footer>Los datos se cargan en vivo desde la API del MiniCRM.</footer>
+          </>
+        );
+      }
+
+      function ClientesApp() {
+        const [clientes, setClientes] = useState([]);
+        const [estado, setEstado] = useState("cargando");
+        const [termino, setTermino] = useState("");
+        const [coincidencias, setCoincidencias] = useState(null);
+        const [buscando, setBuscando] = useState(false);
+        const [clienteActivo, setClienteActivo] = useState(null);
+        const [actividades, setActividades] = useState([]);
+        const [cargandoActividades, setCargandoActividades] = useState(false);
+        const [errorActividades, setErrorActividades] = useState("");
+        const [descripcion, setDescripcion] = useState("");
+        const [fecha, setFecha] = useState("");
+        const [guardando, setGuardando] = useState(false);
+        const [actividadesPendientes, setActividadesPendientes] = useState([]);
+        const [errorPendientes, setErrorPendientes] = useState("");
+        const [filtroClientes, setFiltroClientes] = useState("todos");
+        const [vista, setVista] = useState("clientes");
+        const [clienteTarea, setClienteTarea] = useState(null);
+        const [busquedaClienteTarea, setBusquedaClienteTarea] = useState("");
+        const [selectorAbierto, setSelectorAbierto] = useState(false);
+        const [descripcionTarea, setDescripcionTarea] = useState("");
+        const [vencimientoTarea, setVencimientoTarea] = useState("");
+        const [guardandoTarea, setGuardandoTarea] = useState(false);
+        const [mensajeTarea, setMensajeTarea] = useState("");
+
+        async function cargarClientes() {
+          setEstado("cargando");
+          try {
+            const [respuesta, respuestaPendientes] = await Promise.all([
+              fetch("/api/clientes", { headers: { Accept: "application/json" } }),
+              fetch("/api/actividades?estado=pendiente", { headers: { Accept: "application/json" } }),
+            ]);
+            if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}.`);
+            const datos = await respuesta.json();
+            if (!Array.isArray(datos)) throw new Error("La respuesta de la API no tiene el formato esperado.");
+            setClientes(datos);
+            if (respuestaPendientes.ok) {
+              const pendientes = await respuestaPendientes.json();
+              setActividadesPendientes(Array.isArray(pendientes) ? pendientes : []);
+              setErrorPendientes("");
+            } else {
+              setErrorPendientes(`No se pudieron cargar las tareas pendientes (HTTP ${respuestaPendientes.status}).`);
+            }
+            setEstado("listo");
+          } catch (error) {
+            setEstado(error instanceof Error ? error.message : "No se pudo conectar con la API.");
+          }
+        }
+
+        async function cargarPendientes() {
+          try {
+            const respuesta = await fetch("/api/actividades?estado=pendiente", { headers: { Accept: "application/json" } });
+            if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+            setActividadesPendientes(await respuesta.json());
+            setErrorPendientes("");
+          } catch (error) {
+            setErrorPendientes(error instanceof Error ? `No se pudieron actualizar las tareas pendientes (${error.message}).` : "No se pudieron actualizar las tareas pendientes.");
+          }
+        }
+
+        useEffect(() => { cargarClientes(); }, []);
+
+        useEffect(() => {
+          const consulta = termino.trim();
+          if (!consulta) {
+            setCoincidencias(null);
+            setBuscando(false);
+            return;
+          }
+
+          const controlador = new AbortController();
+          const temporizador = setTimeout(async () => {
+            setBuscando(true);
+            try {
+              const respuesta = await fetch(`/api/clientes/buscar?termino=${encodeURIComponent(consulta)}`, {
+                headers: { Accept: "application/json" },
+                signal: controlador.signal,
+              });
+              if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}.`);
+              setCoincidencias(await respuesta.json());
+            } catch (error) {
+              if (error.name !== "AbortError") setCoincidencias([]);
+            } finally {
+              if (!controlador.signal.aborted) setBuscando(false);
+            }
+          }, 220);
+
+          return () => {
+            clearTimeout(temporizador);
+            controlador.abort();
+          };
+        }, [termino]);
+
+        const clientesCoincidentes = coincidencias ?? clientes;
+        const clientesVisibles = filtroClientes === "pendientes"
+          ? clientesCoincidentes.filter((cliente) => actividadesPendientes.some((actividad) => actividad.clienteId === cliente.id))
+          : clientesCoincidentes;
+        const ahora = Date.now();
+        const tareasVencidas = actividadesPendientes
+          .filter((actividad) => actividad.fecha && new Date(actividad.fecha).getTime() < ahora)
+          .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        const tareasAbiertas = actividadesPendientes.filter((actividad) => !actividad.fecha);
+        const tareasAgendadas = actividadesPendientes
+          .filter((actividad) => actividad.fecha && new Date(actividad.fecha).getTime() >= ahora)
+          .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        const clientesParaTarea = clientes.filter((cliente) =>
+          `${cliente.nombre} ${cliente.apellido} ${cliente.email}`
+            .toLocaleLowerCase("es")
+            .includes(busquedaClienteTarea.trim().toLocaleLowerCase("es")),
+        );
+
+        async function cargarActividades(clienteId) {
+          setCargandoActividades(true);
+          setErrorActividades("");
+          try {
+            const respuesta = await fetch(`/api/actividades?clienteId=${clienteId}`, { headers: { Accept: "application/json" } });
+            if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}.`);
+            setActividades(await respuesta.json());
+          } catch (error) {
+            setErrorActividades(error instanceof Error ? error.message : "No se pudieron cargar las actividades.");
+          } finally {
+            setCargandoActividades(false);
+          }
+        }
+
+        function seleccionarCliente(cliente) {
+          setVista("clientes");
+          setClienteActivo(cliente);
+          setActividades([]);
+          setDescripcion("");
+          setFecha("");
+          cargarActividades(cliente.id);
+        }
+
+        async function crearActividad(evento) {
+          evento.preventDefault();
+          if (!descripcion.trim() || !clienteActivo) return;
+          setGuardando(true);
+          setErrorActividades("");
+          try {
+            const respuesta = await fetch("/api/actividades", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({
+                clienteId: clienteActivo.id,
+                descripcion: descripcion.trim(),
+                ...(fecha ? { fecha: new Date(fecha).toISOString() } : {}),
+              }),
+            });
+            if (!respuesta.ok) throw new Error(`No se pudo registrar la actividad (HTTP ${respuesta.status}).`);
+            setDescripcion("");
+            setFecha("");
+            await cargarPendientes();
+            if (clienteActivo) await cargarActividades(clienteActivo.id);
+          } catch (error) {
+            setErrorActividades(error instanceof Error ? error.message : "No se pudo registrar la actividad.");
+          } finally {
+            setGuardando(false);
+          }
+        }
+
+        async function completarActividad(actividadId) {
+          setErrorActividades("");
+          try {
+            const respuesta = await fetch(`/api/actividades/${actividadId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ estado: "completa", fechaCompletada: new Date().toISOString() }),
+            });
+            if (!respuesta.ok) throw new Error(`No se pudo completar la actividad (HTTP ${respuesta.status}).`);
+            await cargarPendientes();
+            if (clienteActivo) await cargarActividades(clienteActivo.id);
+          } catch (error) {
+            setErrorActividades(error instanceof Error ? error.message : "No se pudo completar la actividad.");
+          }
+        }
+
+        async function registrarTarea(evento) {
+          evento.preventDefault();
+          if (!clienteTarea || !descripcionTarea.trim() || guardandoTarea) return;
+          setGuardandoTarea(true);
+          setMensajeTarea("");
+          try {
+            const respuesta = await fetch("/api/actividades", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({
+                clienteId: clienteTarea.id,
+                descripcion: descripcionTarea.trim(),
+                ...(vencimientoTarea ? { fecha: new Date(vencimientoTarea).toISOString() } : {}),
+              }),
+            });
+            if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}.`);
+            setDescripcionTarea("");
+            setVencimientoTarea("");
+            setMensajeTarea("Tarea registrada.");
+            await cargarPendientes();
+          } catch (error) {
+            setMensajeTarea(error instanceof Error ? `No se pudo registrar la tarea: ${error.message}` : "No se pudo registrar la tarea.");
+          } finally {
+            setGuardandoTarea(false);
+          }
+        }
+
+        function cancelarTarea() {
+          setClienteTarea(null);
+          setBusquedaClienteTarea("");
+          setSelectorAbierto(false);
+          setDescripcionTarea("");
+          setVencimientoTarea("");
+          setMensajeTarea("");
+        }
+
+        function volverAClientes() {
+          setClienteActivo(null);
+          setErrorActividades("");
+        }
+
+        const gruposTareas = [
+          { titulo: "Vencidas", tareas: tareasVencidas, clase: "overdue", sinTareas: "No hay tareas vencidas." },
+          { titulo: "Abiertas · sin fecha", tareas: tareasAbiertas, clase: "", sinTareas: "No hay tareas abiertas sin fecha." },
+          { titulo: "Agendadas · próximas", tareas: tareasAgendadas, clase: "", sinTareas: "No hay tareas agendadas a futuro." },
+        ];
+
+        const formularioTarea = (
+          <FormularioTarea
+            cliente={clienteTarea}
+            busqueda={busquedaClienteTarea}
+            selectorAbierto={selectorAbierto}
+            clientesSugeridos={clientesParaTarea}
+            descripcion={descripcionTarea}
+            vencimiento={vencimientoTarea}
+            guardando={guardandoTarea}
+            mensaje={mensajeTarea}
+            alEnviar={registrarTarea}
+            alCancelar={cancelarTarea}
+            alCambiarCliente={() => { setClienteTarea(null); setBusquedaClienteTarea(""); setSelectorAbierto(true); }}
+            alBuscarCliente={(valor, abierto) => { setBusquedaClienteTarea(valor); setSelectorAbierto(abierto); }}
+            alElegirCliente={(cliente) => { setClienteTarea(cliente); setBusquedaClienteTarea(""); setSelectorAbierto(false); }}
+            alCambiarDescripcion={setDescripcionTarea}
+            alCambiarVencimiento={setVencimientoTarea}
+            alCerrarSelector={() => setSelectorAbierto(false)}
+          />
+        );
+
+        return (
+          <LayoutAplicacion vista={vista} cambiarVista={setVista}>
+              {vista === "tareas" ? (
+                <VistaTareas
+                  cantidad={actividadesPendientes.length}
+                  cargando={estado === "cargando"}
+                  error={errorPendientes}
+                  grupos={gruposTareas}
+                  clientes={clientes}
+                  alSeleccionar={seleccionarCliente}
+                  alCompletar={completarActividad}
+                  formulario={formularioTarea}
+                />
+              ) : clienteActivo ? (
+                <VistaFichaCliente
+                  cliente={clienteActivo}
+                  actividades={actividades}
+                  cargando={cargandoActividades}
+                  error={errorActividades}
+                  alVolver={volverAClientes}
+                  alCompletar={completarActividad}
+                >
+                  <FormularioActividad
+                    descripcion={descripcion}
+                    fecha={fecha}
+                    guardando={guardando}
+                    alEnviar={crearActividad}
+                    alCambiarDescripcion={setDescripcion}
+                    alCambiarFecha={setFecha}
+                  />
+                </VistaFichaCliente>
+              ) : (
+                <VistaClientes
+                  estado={estado}
+                  error={estado === "listo" ? "" : estado}
+                  buscando={buscando}
+                  termino={termino}
+                  alBuscar={setTermino}
+                  filtro={filtroClientes}
+                  alFiltrar={setFiltroClientes}
+                  clientes={clientesVisibles}
+                  actividadesPendientes={actividadesPendientes}
+                  errorPendientes={errorPendientes}
+                  alSeleccionar={seleccionarCliente}
+                  reintentar={cargarClientes}
+                />
+              )}
+          </LayoutAplicacion>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<ClientesApp />);
+    </script>
+  </body>
+</html>

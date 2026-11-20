@@ -9,6 +9,7 @@ export default defineAction({
     "Registrar asistencia como presente, tarde, ausente o justificada. Tarde corresponde a llegar desde 20 minutos después del inicio y cuenta como media asistencia. Acepta varios alumnos de una sola vez.",
   schema: z.object({
     classId: z.string().min(1).describe("Id de la clase, según list-classes"),
+    onlyUnmarked: z.boolean().optional().describe("Conservar cualquier asistencia ya registrada"),
     entries: z
       .array(
         z.object({
@@ -32,6 +33,7 @@ export default defineAction({
     return setAttendance(ownerEmail, {
       sessionId: args.classId,
       entries: args.entries,
+      onlyUnmarked: args.onlyUnmarked,
     });
   },
 });

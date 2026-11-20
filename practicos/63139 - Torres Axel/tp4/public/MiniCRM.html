@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173c38">
+  <title>MiniCRM · Clientes y actividades</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; color: #203c38; background: #f4f6f3; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled, input:disabled { cursor: default; opacity: .55; }
+    button, input { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 3px solid #e5a946; outline-offset: 3px; }
+    h1, h2, h3, p { margin: 0; }
+    a { color: #22695b; overflow-wrap: anywhere; }
+    svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+    .topbar { background: #173c38; color: white; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-shrink: 0; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 22px; letter-spacing: -.7px; font-weight: 750; }
+    .brand-icon { display: grid; place-items: center; width: 33px; height: 33px; border: 1px solid #ffffff45; border-radius: 10px; }
+    .topbar small { color: #b9cec5; font-size: 12px; }
+    main { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 18px; padding: 22px; max-width: 1440px; width: 100%; margin: auto; }
+    .panel { background: #fff; border: 1px solid #dfe5de; border-radius: 15px; overflow: hidden; min-height: 0; min-width: 0; }
+    .master { display: flex; flex-direction: column; }
+    .master-header { padding: 22px 18px 18px; flex-shrink: 0; border-bottom: 1px solid #edf0eb; }
+    .heading-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .master h1 { font-size: 21px; letter-spacing: -.5px; }
+    .muted { color: #728079; font-size: 13px; }
+    .master-subtitle { margin: 7px 0 20px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #dce3db; background: white; color: #33554b; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 650; min-height: 37px; }
+    .button:hover:not(:disabled) { background: #edf3ed; }
+    .button.primary { color: white; background: #236d5b; border-color: #236d5b; }
+    .button.primary:hover:not(:disabled) { background: #195442; }
+    .button.danger { color: #a23d32; }
+    .button.danger:hover:not(:disabled) { background: #fff0ed; }
+    .button.icon-only { padding: 8px; width: 36px; min-height: 36px; }
+    .search { display: flex; align-items: center; background: #f5f7f3; border: 1px solid #e5e9e2; border-radius: 8px; padding: 0 10px; color: #839087; }
+    .search:focus-within { border-color: #518775; }
+    .search input { background: transparent; border: 0; outline: none; width: 100%; padding: 11px 8px; font-size: 13px; min-width: 0; }
+    .client-list { flex: 1; overflow-y: auto; min-height: 0; padding: 8px; scrollbar-width: thin; }
+    .client { width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; padding: 15px 10px; border: 1px solid transparent; background: transparent; border-radius: 10px; color: inherit; }
+    .client:hover:not(:disabled) { background: #f7f9f5; }
+    .client.selected { background: #edf5ee; border-color: #d4e5d5; }
+    .avatar { display: grid; place-items: center; border-radius: 50%; background: #edf0e6; color: #576849; width: 39px; height: 39px; flex-shrink: 0; font-size: 12px; font-weight: 750; }
+    .client.selected .avatar { background: #d5e7d9; color: #236d5b; }
+    .client-text { min-width: 0; }
+    .client strong { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .client small { display: block; color: #78847c; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .master-footer { border-top: 1px solid #edf0eb; padding: 12px 19px; color: #849087; font-size: 11px; }
+    .detail { display: flex; flex-direction: column; position: relative; }
+    .profile { padding: 27px 28px 24px; border-bottom: 1px solid #e8ece5; flex-shrink: 0; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 1.4px; color: #7c8980; font-size: 10px; font-weight: 700; margin-bottom: 10px; }
+    .profile h2 { font-size: 28px; font-weight: 700; letter-spacing: -.8px; overflow-wrap: anywhere; }
+    .profile-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .customer-id { color: #9aa399; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-top: 22px; color: #57695d; font-size: 13px; }
+    .contact p { display: flex; gap: 10px; align-items: flex-start; min-width: 0; overflow-wrap: anywhere; }
+    .contact svg { width: 16px; color: #8e9c8e; }
+    .contact span { min-width: 0; }
+    .contact small { display: block; margin-top: 5px; font-size: 12px; }
+    .activities { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 28px 0; }
+    .activity-editor { flex-shrink: 0; border: 1px dashed #c7d5c5; border-radius: 10px; background: #fafcf8; padding: 13px; margin-bottom: 23px; }
+    .activity-editor h3 { font-size: 12px; margin-bottom: 10px; color: #62745f; }
+    .activity-fields { display: flex; gap: 8px; align-items: center; }
+    input { color: #263e34; }
+    .input { border: 1px solid #dfe5dc; border-radius: 7px; padding: 10px 11px; background: white; min-width: 0; width: 100%; font-size: 13px; }
+    .input:focus { border-color: #548b73; outline: 2px solid #cce3ce; }
+    .activity-fields .description { flex: 1; }
+    .activity-fields .date { width: 155px; }
+    .activity-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 5px 25px 0; scrollbar-width: thin; }
+    .section-heading { display: flex; align-items: center; gap: 9px; font-size: 14px; margin: 2px 0 12px; }
+    .count { display: inline-flex; align-items: center; justify-content: center; color: #6f816c; background: #f0f3eb; border-radius: 5px; padding: 2px 6px; font-size: 10px; }
+    .activity-group + .activity-group { margin-top: 27px; }
+    .activity-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #edf0e9; padding: 14px 0; }
+    .activity-copy { flex: 1; min-width: 0; }
+    .activity-copy p { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+    .activity-copy small { display: block; font-size: 11px; color: #84907f; margin-top: 5px; }
+    .activity-copy small.overdue { color: #b15f3c; }
+    .activity-tools { display: flex; gap: 3px; }
+    .activity-tools .button { border-color: transparent; color: #7b8b78; }
+    .activity-tools .danger { color: #ac7364; }
+    .check { appearance: none; width: 19px; height: 19px; border: 1.5px solid #bbccba; border-radius: 5px; cursor: pointer; flex-shrink: 0; margin: 0; }
+    .check:checked { background: #468971; border-color: #468971; }
+    .check:checked::after { content: '✓'; display: block; color: white; font-size: 13px; text-align: center; }
+    .completed .activity-copy p { color: #81917c; }
+    .completed .check { opacity: .8; cursor: default; }
+    .empty { padding: 18px 10px; color: #82907d; font-size: 13px; line-height: 1.6; }
+    .empty.big { margin: auto; text-align: center; padding: 35px; max-width: 370px; }
+    .empty.big h2 { color: #4c6656; margin-bottom: 10px; font-size: 20px; }
+    .group-empty { color: #8c9786; font-size: 12px; padding: 2px 0; }
+    .client-form { padding: 28px; overflow: auto; }
+    .client-form h2 { font-size: 24px; margin-bottom: 8px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; margin: 25px 0; }
+    label.field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 600; color: #5b715f; }
+    .form-actions { display: flex; gap: 8px; }
+    .notice { margin: 12px 18px 0; padding: 10px 12px; border-radius: 7px; font-size: 12px; flex-shrink: 0; }
+    .notice.error { background: #fff0e9; color: #9b4a30; }
+    .notice.success { background: #eaf5ed; color: #3c7552; }
+    .mobile-back { display: none; }
+    @media (max-width: 1050px) {
+      main { grid-template-columns: 280px minmax(0, 1fr); padding: 14px; gap: 12px; }
+      .profile, .client-form { padding: 22px; }
+      .activities { padding: 18px 22px 0; }
+      .profile h2 { font-size: 24px; }
+      .profile .heading-row { flex-wrap: wrap; }
+      .activity-fields { flex-wrap: wrap; }
+      .activity-fields .description { flex-basis: 100%; }
+    }
+    @media (max-width: 700px) {
+      .topbar { padding: 12px 16px; }
+      .brand { font-size: 20px; }
+      .topbar small { font-size: 10px; }
+      main { display: flex; padding: 10px; }
+      .master, .detail { width: 100%; }
+      main.has-selection .master { display: none; }
+      main:not(.has-selection) .detail { display: none; }
+      .profile { padding: 16px; }
+      .profile h2 { font-size: 22px; }
+      .activities { padding: 16px 16px 0; }
+      .contact { gap: 10px; font-size: 12px; margin-top: 15px; }
+      .mobile-back { display: inline-flex; margin-bottom: 12px; }
+      .client-form { padding: 18px; }
+      .form-grid { gap: 14px 10px; }
+      .activity-editor { margin-bottom: 16px; }
+    }
+    @media (max-height: 640px) {
+      .topbar { padding-top: 8px; padding-bottom: 8px; }
+      .profile { padding-top: 10px; padding-bottom: 10px; }
+      .contact { margin-top: 10px; }
+      .activities { padding-top: 10px; }
+      .activity-editor { margin-bottom: 10px; }
+    }
+  </style>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"><p style="padding:24px">Cargando MiniCRM… Se necesita conexión a Internet para cargar React.</p></div>
+  <noscript>Activá JavaScript para usar MiniCRM.</noscript>
+  <script id="app-code" type="text/plain">
+    const { useEffect, useState } = React;
+    const emptyClient = { nombre: '', apellido: '', email: '', telefono: '', domicilio: '', localidad: '' };
+    const emptyActivity = { descripcion: '', fechaCompromiso: '' };
+
+    // Todas las operaciones pasan por la API REST; el navegador no almacena los datos.
+    const api = {
+      async request(path = '', options = {}) {
+        const response = await fetch('/api/clientes' + path, {
+          ...options, headers: { 'Content-Type': 'application/json', ...options.headers },
+        });
+        if (response.status === 204) return null;
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'No se pudo completar la operación.');
+        return data;
+      },
+      list: (query, signal) => api.request('?q=' + encodeURIComponent(query), { signal }),
+      detail: (id, signal) => api.request('/' + id, { signal }),
+      save: (id, data) => api.request(id ? '/' + id : '', { method: id ? 'PUT' : 'POST', body: JSON.stringify(data) }),
+      remove: (id) => api.request('/' + id, { method: 'DELETE' }),
+      saveActivity: (clientId, id, data) => api.request(`/${clientId}/actividades${id ? '/' + id : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(data) }),
+      removeActivity: (clientId, id) => api.request(`/${clientId}/actividades/${id}`, { method: 'DELETE' }),
+      complete: (clientId, id) => api.request(`/${clientId}/actividades/${id}/completar`, { method: 'PATCH' }),
+    };
+
+    function Icon({ name }) {
+      const paths = {
+        plus: 'M12 5v14M5 12h14', search: 'm21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+        edit: 'm16 3 5 5-12 12-6 1 1-6L16 3ZM13 6l5 5',
+        trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
+        close: 'm6 6 12 12M18 6 6 18', save: 'M5 3h12l4 4v14H3V3h2ZM7 3v6h10V3M7 21v-8h10v8',
+        mail: 'M3 5h18v14H3V5Zm0 1 9 7 9-7', phone: 'M5 3h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4c0 2-3 3-5 2A22 22 0 0 1 3 8C2 6 3 3 5 3Z',
+        pin: 'M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+        back: 'm12 5-7 7 7 7M5 12h15', users: 'M16 21v-3a5 5 0 0 0-5-5H7a5 5 0 0 0-5 5v3M13 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0M17 3a4 4 0 0 1 0 8M18 14a5 5 0 0 1 4 5v2',
+      };
+      return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]} /></svg>;
+    }
+
+    function Button({ icon, children, variant = '', label, ...props }) {
+      return <button type="button" className={`button ${variant} ${!children ? 'icon-only' : ''}`} aria-label={label} title={label} {...props}>{icon && <Icon name={icon} />}{children}</button>;
+    }
+    function Notice({ error, message }) {
+      return error ? <div className="notice error" role="alert">{error}</div> : message ? <div className="notice success" role="status">{message}</div> : null;
+    }
+    function dateText(value) {
+      const date = new Date(value.length === 10 ? value + 'T12:00:00' : value);
+      return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    function today() {
+      const date = new Date();
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function ClientForm({ initial, busy, onSave, onCancel, onDirty }) {
+      const [form, setForm] = useState({ ...emptyClient, ...Object.fromEntries(Object.entries(initial || {}).map(([key, value]) => [key, value ?? ''])) });
+      const fields = [['nombre', 'Nombre', 'text', 80], ['apellido', 'Apellido', 'text', 80], ['email', 'Email', 'email', 254], ['telefono', 'Teléfono', 'tel', 40], ['domicilio', 'Domicilio', 'text', 200], ['localidad', 'Localidad', 'text', 100]];
+      return <form className="client-form" onSubmit={event => { event.preventDefault(); onSave(form); }}>
+        <p className="eyebrow">Ficha del cliente</p>
+        <h2>{initial ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+        <p className="muted">Nombre, apellido y email son obligatorios.</p>
+        <div className="form-grid">{fields.map(([key, label, type, max]) => <label className="field" key={key}>{label}{['nombre', 'apellido', 'email'].includes(key) ? ' *' : ''}
+          <input className="input" type={type} value={form[key]} required={['nombre', 'apellido', 'email'].includes(key)} maxLength={max} disabled={busy} autoFocus={key === 'nombre'} onChange={event => { setForm({ ...form, [key]: event.target.value }); onDirty(true); }} />
+        </label>)}</div>
+        <div className="form-actions"><Button type="submit" icon="save" variant="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar cliente'}</Button><Button icon="close" disabled={busy} onClick={onCancel}>Cancelar</Button></div>
+      </form>;
+    }
+
+    function ActivityGroup({ title, items, busy, onComplete, onEdit, onDelete, completed = false }) {
+      return <section className={`activity-group ${completed ? 'completed' : ''}`} aria-label={title}>
+        <h3 className="section-heading">{title} <span className="count">{items.length}</span></h3>
+        {!items.length && <p className="group-empty">{completed ? 'Todavía no hay actividades completadas.' : 'Sin compromisos pendientes.'}</p>}
+        {items.map(activity => <div className="activity-row" key={activity.id}>
+          <input className="check" type="checkbox" checked={completed} disabled={busy || completed} aria-label={completed ? `Completada: ${activity.descripcion}` : `Completar: ${activity.descripcion}`} onChange={() => onComplete(activity)} />
+          <div className="activity-copy"><p>{activity.descripcion}</p>
+            <small className={!completed && activity.fechaCompromiso && activity.fechaCompromiso < today() ? 'overdue' : ''}>{completed ? 'Completada el ' + dateText(activity.fechaFinalizacion) : activity.fechaCompromiso ? dateText(activity.fechaCompromiso) + (activity.fechaCompromiso < today() ? ' · Vencido' : '') : 'Sin fecha de compromiso'}</small>
+          </div>
+          {!completed && <div className="activity-tools"><Button icon="edit" label={`Editar: ${activity.descripcion}`} disabled={busy} onClick={() => onEdit(activity)} /><Button icon="trash" variant="danger" label={`Eliminar: ${activity.descripcion}`} disabled={busy} onClick={() => onDelete(activity)} /></div>}
+        </div>)}
+      </section>;
+    }
+
+    function Detail({ id, onSelect, onRefresh, onDirty, onBusy }) {
+      const isNew = id === 'new';
+      const [client, setClient] = useState(null);
+      const [editing, setEditing] = useState(isNew);
+      const [activity, setActivity] = useState(emptyActivity);
+      const [busy, setBusy] = useState(false);
+      const [error, setError] = useState('');
+      const [message, setMessage] = useState('');
+      const [retry, setRetry] = useState(0);
+      useEffect(() => {
+        if (isNew) return;
+        const controller = new AbortController();
+        setError('');
+        api.detail(id, controller.signal).then(setClient).catch(error => { if (error.name !== 'AbortError') setError(error.message); });
+        return () => controller.abort();
+      }, [id, retry]);
+
+      async function mutate(action, success) {
+        setBusy(true); onBusy(true); setError(''); setMessage('');
+        try { await action(); setMessage(success); }
+        catch (error) { setError(error.message || 'No se pudo conectar con el servidor.'); }
+        finally { setBusy(false); onBusy(false); }
+      }
+      const resetActivity = () => { setActivity(emptyActivity); onDirty(false); };
+      async function refreshDetail() { setClient(await api.detail(id)); }
+      function saveClient(form) {
+        mutate(async () => {
+          const saved = await api.save(isNew ? null : id, form);
+          onDirty(false); onRefresh();
+          if (isNew) onSelect(saved.id, true);
+          else { setClient({ ...saved, actividades: client.actividades }); setEditing(false); }
+        }, 'Cliente guardado.');
+      }
+      function deleteClient() {
+        if (!window.confirm(`¿Eliminar a ${client.nombre} ${client.apellido} y todas sus actividades?`)) return;
+        mutate(async () => { await api.remove(id); onDirty(false); onSelect(null, true); onRefresh(); }, 'Cliente eliminado.');
+      }
+      function saveActivity(event) {
+        event.preventDefault();
+        mutate(async () => {
+          await api.saveActivity(id, activity.id, { descripcion: activity.descripcion, fechaCompromiso: activity.fechaCompromiso || null });
+          resetActivity(); await refreshDetail();
+        }, 'Actividad guardada.');
+      }
+      function editActivity(item) {
+        if (activity.descripcion && activity.id !== item.id && !window.confirm('¿Descartar los cambios del subformulario?')) return;
+        setActivity({ id: item.id, descripcion: item.descripcion, fechaCompromiso: item.fechaCompromiso || '' }); onDirty(true);
+        document.getElementById('activity-description')?.focus();
+      }
+      function completeActivity(item) {
+        mutate(async () => { await api.complete(id, item.id); if (activity.id === item.id) resetActivity(); await refreshDetail(); }, 'Actividad completada.');
+      }
+      function deleteActivity(item) {
+        if (!window.confirm(`¿Eliminar la actividad «${item.descripcion}»?`)) return;
+        mutate(async () => { await api.removeActivity(id, item.id); if (activity.id === item.id) resetActivity(); await refreshDetail(); }, 'Actividad eliminada.');
+      }
+
+      return <section className="panel detail" aria-label="Detalle del cliente" aria-busy={busy}>
+        <Notice error={error} message={message} />
+        {editing ? <ClientForm initial={isNew ? null : client} busy={busy} onSave={saveClient} onDirty={onDirty} onCancel={() => { onDirty(false); isNew ? onSelect(null, true) : setEditing(false); }} /> : !client ? <div className="empty big">{error ? <Button onClick={() => setRetry(retry + 1)}>Reintentar</Button> : 'Cargando cliente…'}</div> : <>
+          <div className="profile">
+            <Button icon="back" className="button mobile-back" disabled={busy} onClick={() => onSelect(null)}>Clientes</Button>
+            <div className="heading-row"><p className="eyebrow">Detalle del cliente</p><span className="customer-id">#{client.id}</span></div>
+            <div className="heading-row"><h2>{client.nombre} {client.apellido}</h2><div className="profile-actions"><Button icon="edit" disabled={busy} onClick={() => {
+              if (activity.descripcion && !window.confirm('¿Descartar la actividad sin guardar?')) return;
+              resetActivity(); setEditing(true);
+            }}>Editar</Button><Button icon="trash" variant="danger" disabled={busy} onClick={deleteClient}>Eliminar</Button></div></div>
+            <div className="contact">
+              <p><Icon name="mail" /><a href={'mailto:' + client.email}>{client.email}</a></p>
+              <p><Icon name="pin" /><span>{client.domicilio || 'Sin domicilio'}<small>{client.localidad || 'Sin localidad'}</small></span></p>
+              <p><Icon name="phone" />{client.telefono ? <a href={'tel:' + client.telefono}>{client.telefono}</a> : 'Sin teléfono'}</p>
+            </div>
+          </div>
+          <div className="activities">
+            <form className="activity-editor" onSubmit={saveActivity}>
+              <h3>{activity.id ? 'Editar actividad' : 'Agregar actividad'}</h3>
+              <div className="activity-fields">
+                <input id="activity-description" className="input description" aria-label="Descripción de la actividad" placeholder="¿Cuál es el próximo paso?" value={activity.descripcion} required maxLength={500} disabled={busy} onChange={event => { setActivity({ ...activity, descripcion: event.target.value }); onDirty(true); }} />
+                <input className="input date" type="date" aria-label="Fecha de compromiso (opcional)" title="Fecha de compromiso (opcional)" min="0001-01-01" max="9999-12-31" value={activity.fechaCompromiso} disabled={busy} onChange={event => { setActivity({ ...activity, fechaCompromiso: event.target.value }); onDirty(true); }} />
+                <Button icon="save" type="submit" variant="primary" label="Guardar actividad" disabled={busy} /><Button icon="close" label="Cancelar actividad" disabled={busy} onClick={resetActivity} />
+              </div>
+            </form>
+            <div className="activity-scroll" tabIndex="0" aria-label="Actividades del cliente">
+              <ActivityGroup title="Compromisos" items={client.actividades.filter(a => !a.fechaFinalizacion)} busy={busy} onComplete={completeActivity} onEdit={editActivity} onDelete={deleteActivity} />
+              <ActivityGroup title="Actividades completadas" items={client.actividades.filter(a => a.fechaFinalizacion)} busy={busy} completed />
+            </div>
+          </div>
+        </>}
+      </section>;
+    }
+
+    function App() {
+      const [clients, setClients] = useState([]);
+      const [query, setQuery] = useState('');
+      const [selected, setSelected] = useState(null);
+      const [version, setVersion] = useState(0);
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(true);
+      const [busy, setBusy] = useState(false);
+      const [dirty, setDirty] = useState(false);
+      useEffect(() => {
+        const controller = new AbortController();
+        setLoading(true); setError('');
+        const timer = setTimeout(() => api.list(query, controller.signal).then(data => {
+          setClients(data); setLoading(false);
+        }).catch(error => { if (error.name !== 'AbortError') { setError(error.message || 'No se pudo conectar con el servidor.'); setLoading(false); } }), 200);
+        return () => { clearTimeout(timer); controller.abort(); };
+      }, [query, version]);
+      useEffect(() => {
+        const warn = event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+      }, [dirty]);
+      function select(id, force = false) {
+        if (id === selected && !force) return;
+        if (!force && dirty && !window.confirm('Tenés cambios sin guardar. ¿Querés descartarlos?')) return;
+        setDirty(false); setSelected(id);
+      }
+      return <div className="app">
+        <header className="topbar"><div className="brand"><span className="brand-icon"><Icon name="users" /></span>MiniCRM</div><small>CLIENTES & ACTIVIDADES</small></header>
+        <main className={selected !== null ? 'has-selection' : ''}>
+          <aside className="panel master" aria-label="Clientes">
+            <div className="master-header"><div className="heading-row"><h1>Clientes</h1><Button icon="plus" variant="primary" disabled={busy} onClick={() => select('new')}>Agregar</Button></div>
+              <p className="muted master-subtitle">Cada contacto, un próximo paso.</p>
+              <div className="search"><Icon name="search" /><input type="search" aria-label="Buscar clientes por cualquier campo" placeholder="Buscar por cualquier campo…" value={query} disabled={busy} onChange={event => setQuery(event.target.value)} /></div>
+            </div>
+            <Notice error={error} />
+            <div className="client-list" aria-busy={loading}>
+              {error ? <div className="empty"><Button onClick={() => setVersion(version + 1)}>Reintentar búsqueda</Button></div> : loading ? <p className="empty" role="status">Buscando clientes…</p> : clients.length ? clients.map(client => <button className={`client ${selected === client.id ? 'selected' : ''}`} key={client.id} disabled={busy} aria-pressed={selected === client.id} onClick={() => select(client.id)}>
+                <span className="avatar" aria-hidden="true">{client.nombre[0]}{client.apellido[0]}</span><span className="client-text"><strong>{client.nombre} {client.apellido}</strong><small>{client.email}</small></span>
+              </button>) : <p className="empty">{query ? 'No hay clientes que coincidan con tu búsqueda.' : 'Tu agenda está vacía. Agregá tu primer cliente.'}</p>}
+            </div>
+            <footer className="master-footer" aria-live="polite">{loading ? 'Actualizando…' : `${clients.length} cliente${clients.length === 1 ? '' : 's'}${query ? ' encontrados' : ''}`} · TP 4 / Axel Torres</footer>
+          </aside>
+          {selected !== null ? <Detail key={selected} id={selected} onSelect={select} onRefresh={() => setVersion(v => v + 1)} onDirty={setDirty} onBusy={setBusy} /> : <section className="panel detail"><div className="empty big"><p className="eyebrow">Todo en un lugar</p><h2>El próximo paso empieza acá.</h2><p>Seleccioná un cliente para ver su ficha, organizar sus compromisos y consultar las actividades completadas.</p></div></section>}
+        </main>
+      </div>;
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+  <script>
+    try {
+      // Runtime classic: el JSX usa React global, sin importaciones de módulos.
+      const compiled = Babel.transform(document.getElementById('app-code').textContent, {
+        presets: [['react', { runtime: 'classic' }]], filename: 'MiniCRM.jsx'
+      }).code;
+      const script = document.createElement('script');
+      script.textContent = compiled;
+      document.body.appendChild(script);
+    } catch (error) {
+      document.getElementById('root').textContent = 'No se pudo cargar MiniCRM. Revisá tu conexión a Internet y recargá la página.';
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

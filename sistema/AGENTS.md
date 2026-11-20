@@ -84,6 +84,7 @@ commission. All rows are owner-scoped — a teacher only sees their own data.
 | `comprobar-tp1`              | `assessmentId`, `legajos`                                 | Runs `tools/probar-tp1.js` for selected roster students, saves TP1 statuses and verifies them. The UI uses the currently filtered students. |
 | `comprobar-tp2`              | `assessmentId`, `legajos`                                 | Checks filtered students' `tp2/edit.jsx`: missing or fewer than 100 physical lines → pending; JSX compilation errors → error; otherwise presented. Compiles in memory without executing submissions or installing dependencies. Returns per-student details and verifies saved statuses. |
 | `comprobar-tp3`              | `assessmentId`, `legajos`                                 | Reads filtered students' `tp3/agenda.html` directly against `enunciados/tp3/agenda.html`: missing or fewer than 100 added diff lines → pending; otherwise presented. Also checks the accidental upload path `tp3/tp3/agenda.html` and reports the path with the most added lines. Counts additions without executing submissions or spawning a runtime per student. Returns counts/details and verifies saved statuses. Technical errors leave existing statuses untouched and are reported in the UI. |
+| `comprobar-tp4`              | `assessmentId`, `legajos`                                 | Checks filtered roster students for nonempty `public/MiniCRM.html` and server TypeScript source in the same project under `tp4`, including nested uploads. Excludes dependencies, build folders, declarations, configuration and test files. Both found → presented; missing/empty → pending. Presence check only, without executing or compiling submissions. Returns file details, saves and verifies statuses; technical errors preserve previous statuses. Run after `bajar-tp` to update TP4 submissions. |
 | `list-classes`               | `course`                                                 | GET. Includes generated and cancelled dates.                                                                    |
 | `generate-classes`           | `course`, `startDate`, `endDate`                         | Adds matching weekly dates without duplicates.                                                                  |
 | `create-class`               | `course`, `date`, `topic?`                               | Creates one date matching the schedule.                                                                         |
@@ -118,6 +119,14 @@ call over one call per student.
 - Late attendance (`tarde`) counts as half attendance: `(presentes + tardes / 2) / (presentes + tardes + ausentes)`. Imported messages use each student's earliest message time per date and the start time of their commission's class: at least 20 minutes after the start means `tarde`. Without a message or class start time, use `presente`; manual status selection remains explicit.
 - Attendance can only be recorded for scheduled classes and students belonging
   to that class's commission.
+- Pasted attendance uses each message's date, independently of the selected UI
+  date, and may load multiple classes in the selected commissions. Only today
+  and the previous six calendar days in Argentina are eligible; ignore dates
+  seven or more days old, future dates and undated text. The import is additive:
+  use `set-attendance` with `onlyUnmarked=true`, preserve all existing marks and
+  never infer absence from missing messages. Manual attendance remains explicit.
+  `Traer de WApp` trims attendance text to that same period; changing the visible
+  date or commission preserves the draft, and saving shows the latest processed date.
 - Classes may be cancelled for `feriado`, `asueto`, `examen`, `paro` or `otro`.
 - Deleting a student, practical or class destroys dependent records. Confirm.
 - Practical statements live in `../enunciados`. A folder is matched to the

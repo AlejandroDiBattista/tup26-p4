@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM · Estructura de datos</title>
+  <style>
+    :root { color-scheme: light; --papel: #f5f2ea; --tinta: #24332d; --linea: #c9cec3; --verde: #245d46; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--papel); color: var(--tinta); font-family: 'Avenir Next', 'Segoe UI', sans-serif; line-height: 1.5; }
+    main { max-width: 1250px; margin: auto; padding: clamp(24px, 4vw, 64px); }
+    header > p:first-child { color: var(--verde); font-size: .8rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+    h1 { font-family: Georgia, serif; font-weight: 400; font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.1; margin: 16px 0; }
+    header > p:last-child { max-width: 650px; font-size: 1.1rem; }
+    figure { margin: 40px 0; }
+    .modelo { display: grid; grid-template-columns: minmax(0, 1fr) 130px minmax(0, 1.15fr); align-items: start; }
+    article { background: #fcfbf7; border: 1px solid var(--linea); }
+    article > header { padding: 20px 24px; background: var(--verde); color: #f8f6ee; }
+    article:last-child > header { background: #394b63; }
+    h2 { margin: 0; font-size: 1.6rem; font-weight: 600; }
+    article > header p { margin: 4px 0 0; font-size: .9rem; }
+    .tabla { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th, td { padding: 13px 16px; text-align: left; border-bottom: 1px solid var(--linea); vertical-align: top; }
+    thead th { color: var(--verde); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+    tbody th { font-weight: 600; white-space: nowrap; }
+    tbody tr:last-child > * { border-bottom: 0; }
+    code { font-size: .9em; }
+    .relacion { align-self: center; text-align: center; color: var(--verde); font-size: .85rem; }
+    .relacion svg { display: block; width: 100%; height: 50px; }
+    .relacion strong { display: block; }
+    figcaption { margin-top: 20px; font-size: .95rem; }
+    .notas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; border-top: 2px solid var(--tinta); padding-top: 24px; }
+    h3 { margin: 0 0 10px; font-size: 1.1rem; }
+    .notas p { margin: 8px 0; }
+    .notas dl { margin: 0; }
+    .notas dt { color: var(--verde); font-weight: 700; margin-top: 12px; }
+    .notas dd { margin: 2px 0 0; }
+    footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--linea); font-size: .8rem; }
+    @media (max-width: 850px) {
+      .modelo { grid-template-columns: 1fr; }
+      .relacion { padding: 16px 0; }
+      .relacion svg { width: 120px; margin: auto; }
+      .notas { grid-template-columns: 1fr; gap: 24px; }
+      th, td { padding: 12px 10px; }
+    }
+    @media print { body { background: #fff; } main { padding: 16px; } article { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p>Programación · Node.js + Drizzle + SQLite</p>
+      <h1>La estructura del MiniCRM</h1>
+      <p>El cliente es el dueño de sus actividades. La relación es de composición: sus actividades dependen de él para existir.</p>
+    </header>
+    <figure aria-label="Relación de composición de uno a muchos entre clientes y actividades">
+      <div class="modelo">
+        <article aria-labelledby="clientes">
+          <header><h2 id="clientes">Clientes</h2><p>Datos de contacto</p></header>
+          <div class="tabla">
+            <table aria-label="Campos de clientes">
+              <thead><tr><th scope="col">Campo</th><th scope="col">SQLite</th><th scope="col">Regla</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">id</th><td>INTEGER</td><td>Clave primaria · autoincremental</td></tr>
+                <tr><th scope="row">nombre</th><td>TEXT</td><td>Obligatorio</td></tr>
+                <tr><th scope="row">apellido</th><td>TEXT</td><td>Obligatorio</td></tr>
+                <tr><th scope="row">telefono</th><td>TEXT</td><td>Opcional · formato argentino</td></tr>
+                <tr><th scope="row">email</th><td>TEXT</td><td>Obligatorio · único · minúsculas</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <div class="relacion">
+          <strong>1 → 0..muchas</strong>
+          <svg viewBox="0 0 130 50" aria-hidden="true">
+            <path d="M8 25 L20 17 L32 25 L20 33 Z" fill="currentColor"/>
+            <path d="M32 25 H120 M108 17 L120 25 L108 33" fill="none" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span>Composición</span>
+        </div>
+        <article aria-labelledby="actividades">
+          <header><h2 id="actividades">Actividades</h2><p>Tareas de un cliente</p></header>
+          <div class="tabla">
+            <table aria-label="Campos de actividades">
+              <thead><tr><th scope="col">Campo</th><th scope="col">SQLite</th><th scope="col">Regla</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">id</th><td>INTEGER</td><td>Clave primaria · autoincremental</td></tr>
+                <tr><th scope="row">clienteId</th><td>INTEGER</td><td>Obligatorio · referencia a Clientes.id</td></tr>
+                <tr><th scope="row">descripcion</th><td>TEXT</td><td>Obligatoria</td></tr>
+                <tr><th scope="row">fecha</th><td>TEXT</td><td>Opcional · AAAA-MM-DD</td></tr>
+                <tr><th scope="row">fechaCompromiso</th><td>TEXT</td><td>Opcional · AAAA-MM-DD</td></tr>
+                <tr><th scope="row">completadaEn</th><td>INTEGER</td><td>Fecha y hora de finalización · null si pendiente</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+      <figcaption><strong>El rombo marca al dueño.</strong> Un cliente puede tener cero o muchas actividades; cada actividad pertenece a un solo cliente. Al eliminar al cliente, se eliminan sus actividades: <code>ON DELETE CASCADE</code>.</figcaption>
+    </figure>
+    <section class="notas" aria-label="Reglas del modelo">
+      <div>
+        <h3>Las fechas tienen distintos propósitos</h3>
+        <dl>
+          <dt>fecha</dt><dd>Fecha indicada para la actividad; puede no conocerse.</dd>
+          <dt>fechaCompromiso</dt><dd>Día previsto para realizar la tarea.</dd>
+          <dt>completadaEn</dt><dd>Instante en que se marca como completada. Drizzle lo maneja como <code>Date</code> y SQLite guarda milisegundos.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>El estado se deduce de las fechas</h3>
+        <p><strong>Pendiente:</strong> <code>completadaEn = null</code>.</p>
+        <p><strong>Completada:</strong> tiene fecha y hora en <code>completadaEn</code>.</p>
+        <p><strong>Vencida:</strong> pendiente con compromiso anterior a hoy.</p>
+        <p><strong>Sin compromiso:</strong> pendiente con <code>fechaCompromiso = null</code>.</p>
+        <p>Todos los listados de actividades requieren el <code>clienteId</code>.</p>
+      </div>
+    </section>
+    <footer>Modelo definido en schema.ts · Validaciones de clientes en repositorios/clientes.ts · Diagrama estático para la clase.</footer>
+  </main>
+</body>
+</html>

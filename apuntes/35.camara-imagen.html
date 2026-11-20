@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Foto carnet</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 32px 18px; background: radial-gradient(ellipse at 50% 35%, #f8f8f7, #dedfdf); color: #282a2b; font: 15px/1.5 system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    main { width: min(100%, 410px); padding: 25px; border: 1px solid #b9bab8; border-radius: 30px; background: linear-gradient(155deg, #f7f7f4 0%, #e7e7e3 48%, #d2d3d0 100%); box-shadow: inset 0 2px 1px #fff, inset 0 -2px 2px #bfc0bd, 0 25px 48px rgb(38 39 38 / .22), 0 5px 12px rgb(38 39 38 / .12); }
+    .cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 2px 20px; }
+    .marca { font-size: 21px; font-weight: 800; font-style: italic; letter-spacing: -.055em; line-height: 1; }
+    .marca span { color: #d84e43; }
+    .pantalla { padding: 9px; border: 1px solid #292b2c; border-radius: 18px; background: linear-gradient(145deg, #5c5d5e, #303233); box-shadow: inset 0 2px 5px rgb(0 0 0 / .55), 0 1px 0 rgb(255 255 255 / .9); }
+    video, img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: contain; background: #1b1e1e; border: 1px solid #1b1c1b; border-radius: 10px; box-shadow: inset 0 2px 8px rgb(0 0 0 / .55); }
+    video { object-fit: cover; }
+    .controles { display: flex; align-items: center; gap: 16px; margin-top: 19px; }
+    #luz { flex: 0 0 auto; width: 12px; height: 12px; margin-right: 4px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c5c6bf, #777a72); box-shadow: 0 1px 1px #fff, inset 0 1px 2px rgb(0 0 0 / .35); }
+    #luz.encendida { background: radial-gradient(circle at 35% 30%, #a5ed9b, #299c47 65%, #14622e); box-shadow: 0 0 7px rgb(48 153 71 / .4), inset 0 1px 2px rgb(0 50 15 / .45); }
+    #luz.procesando { background: radial-gradient(circle at 35% 30%, #fc8b7a, #c94135 65%, #8d2924); box-shadow: 0 0 7px rgb(201 65 53 / .4), inset 0 1px 2px rgb(60 0 0 / .5); }
+    @media (prefers-reduced-motion: no-preference) { #luz.procesando { animation: parpadear 1s ease-in-out infinite; } }
+    @keyframes parpadear { 50% { opacity: .25; } }
+    button { flex: 1; min-width: 0; min-height: 58px; padding: 10px 16px; border: 1px solid #b3b1aa; border-radius: 13px; background: linear-gradient(#fffdf7, #e5e0d5); color: #292929; box-shadow: inset 0 2px 1px #fff, 0 4px 0 #a8a69f, 0 6px 7px rgb(0 0 0 / .18); font: inherit; font-weight: 750; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+    button:hover:not(:disabled) { background: linear-gradient(#fff, #eee9de); }
+    button:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 1px 3px rgb(0 0 0 / .12), 0 1px 0 #a8a69f; }
+    button:focus-visible { outline: 3px solid #244f7c; outline-offset: 4px; }
+    button:disabled { color: #686966; background: linear-gradient(#e2e1dc, #d4d3ce); box-shadow: inset 0 1px 3px rgb(0 0 0 / .14), 0 1px 0 #f7f7f4; cursor: wait; font-variant-numeric: tabular-nums; }
+    .controles { justify-content: space-between; gap: 10px; }
+    .controles button { flex: 0 1 96px; aspect-ratio: 1; min-height: 0; padding: 12px; border-radius: 50%; line-height: 1; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+    .controles svg { width: min(100%, 56px); height: auto; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    [hidden] { display: none; }
+    @media (max-width: 360px) { main { padding: 18px; border-radius: 24px; } .cabecera { margin-bottom: 16px; } }
+    @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="cabecera">
+      <div class="marca">foto<span>·</span>carnet</div>
+      <span id="luz" aria-hidden="true"></span>
+    </div>
+    <div class="pantalla">
+      <video id="camara" autoplay playsinline muted></video>
+      <img id="foto" alt="" hidden>
+    </div>
+    <div class="controles">
+      <button id="subir" type="button" aria-label="Subir foto" title="Subir foto">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 20V5m-5 5 5-5 5 5M6 20v5a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-5"/></svg>
+      </button>
+      <button id="boton" type="button" aria-label="Sacar foto" title="Sacar foto">
+        <svg id="icono-camara" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11a3 3 0 0 1 3-3h3l2-3h8l2 3h3a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/><circle cx="16" cy="17.5" r="5.5"/><path d="M24 12h.01"/></svg>
+        <svg id="icono-espera" viewBox="0 0 32 32" aria-hidden="true" hidden><path d="M9 4h14M9 28h14M11 4v4c0 4 2 6 5 8-3 2-5 4-5 8v4M21 4v4c0 4-2 6-5 8 3 2 5 4 5 8v4M13 25h6"/></svg>
+      </button>
+      <button id="descargar" type="button" aria-label="Descargar foto" title="Descargar foto" disabled>
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v15m-5-5 5 5 5-5M6 20v5a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-5"/></svg>
+      </button>
+      <input id="archivo" type="file" accept="image/*" hidden>
+    </div>
+  </main>
+
+  <script>
+    // Configuración: servicio, modelo, tamaño de entrada y tamaño de salida.
+    const DIRECCION = 'https://api.openai.com/v1/images/edits'
+    const MODELO = 'gpt-image-2.6-flare'
+    const LADO   = 1024
+    const SALIDA = '1024x1024'
+    const INSTRUCCION = `
+      Convertí esta foto en un retrato fotográfico tipo carnet, natural y profesional.
+      Conservá fielmente la identidad de la persona: sus facciones, edad, tono y textura de piel,
+      peinado y rasgos particulares. No embellezcas ni alteres su rostro.
+      Componé una foto carnet de frente, con la cabeza centrada y ambos hombros visibles.
+      Mostrá la cabeza completa, incluido todo el cabello, con un margen sobre ella y a los costados.
+      La cabeza debe ocupar aproximadamente la mitad de la altura de la imagen; evitá primeros planos
+      y cortes en el pelo o en la cara. Mirada a cámara y expresión natural.
+      Usá iluminación de estudio suave y equilibrada, con colores reales y sombras sutiles que den volumen
+      al rostro. Lográ buena nitidez en los ojos y un acabado fotográfico limpio, sin suavizado artificial.
+      Reemplazá el fondo por uno neutro en tonos gris cálido, suave y ligeramente degradado,
+      sin objetos ni distracciones. Conservá la ropa original si es visible;
+      si hace falta completarla, usá una prenda sencilla y sobria.
+      Evitá efectos dramáticos, poses publicitarias, filtros, texto y marcos.
+    `
+
+    // Elementos de la pantalla y sus controles.
+    const camara      = document.querySelector('#camara')
+    const foto        = document.querySelector('#foto')
+    const boton       = document.querySelector('#boton')
+    const subir       = document.querySelector('#subir')
+    const descargar   = document.querySelector('#descargar')
+    const archivo     = document.querySelector('#archivo')
+    const iconoCamara = document.querySelector('#icono-camara')
+    const iconoEspera = document.querySelector('#icono-espera')
+    const luz   = document.querySelector('#luz')
+
+    // 1. La clave se pide al enviar la primera imagen y se guarda en este navegador.
+    //    Es una simplificación para la clase: en una aplicación real va en el servidor.
+    function clave() {
+      let valor = localStorage.getItem('openai_key')
+      if (!valor) {
+        valor = prompt('Pegá tu clave de OpenAI')
+        localStorage.setItem('openai_key', valor)
+      }
+      return valor
+    }
+
+    // 2. La cámara: se pide la frontal y se conecta al <video> para verla.
+    //    Se apaga deteniendo cada pista del flujo.
+    async function iniciarCamara() {
+      camara.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, })
+      mostrarLuzCamara(true)
+    }
+
+    function apagarCamara() {
+      camara.srcObject?.getTracks().forEach((pista) => pista.stop())
+      camara.srcObject = null
+      mostrarLuzCamara(false)
+    }
+
+    // 3. Preparar la imagen: la cámara se recorta al cuadrado visible;
+    //    un archivo elegido se conserva completo y se reduce si supera 1024 píxeles.
+    function prepararImagen(origen, ancho, alto) {
+      const lienzo = document.createElement('canvas') // Se dibuja en memoria, no se muestra en pantalla.
+      if (origen === camara) { 
+        // Crop: Tomar el cuadrado central que se ve en la pantalla de la cámara.
+        const lado = Math.min(ancho, alto)
+        const x = (ancho - lado) / 2
+        const y = (alto  - lado) / 2
+        lienzo.width  = LADO
+        lienzo.height = LADO
+        lienzo.getContext('2d').drawImage(origen, x, y, lado, lado, 0, 0, LADO, LADO)
+        //drawImage(origen, x_origen, y_origen, ancho_origen, alto_origen, x_destino, y_destino, ancho_destino, alto_destino)
+      } else {
+        // Scale: Mantener las proporciones del archivo sin agrandarlo ni recortarlo.
+        const escala  = Math.min(1, LADO / Math.max(ancho, alto))
+        lienzo.width  = Math.round(ancho * escala)
+        lienzo.height = Math.round(alto  * escala)
+        lienzo.getContext('2d').drawImage(origen, 0, 0, lienzo.width, lienzo.height)
+      }
+
+      // Convertir el dibujo a una dirección de datos JPEG en base64.
+      return lienzo.toDataURL('image/jpeg', 0.9)
+    }
+
+    // 4. El modelo: enviar la imagen y la instrucción; recibir una imagen en base64.
+    async function procesar(captura) {
+      const respuesta = await fetch(DIRECCION, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${clave()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODELO,
+          images: [{ image_url: captura }],
+          prompt: INSTRUCCION,
+          size: SALIDA,
+          quality: 'low',
+        }),
+      })
+
+      const json = await respuesta.json()
+      return `data:image/png;base64,${json.data[0].b64_json}`
+    }
+
+    // 5. Funciones de interfaz: actualizan la pantalla y los controles.
+    function mostrarLuzCamara(encendida) {
+      luz.classList.toggle('encendida', encendida)
+    }
+
+    function mostrarImagen(direccion) {
+      foto.src = direccion
+      foto.hidden = false
+      camara.hidden = true
+    }
+
+    function mostrarVistaCamara() {
+      descargar.disabled = true
+      foto.hidden = true
+      camara.hidden = false
+      mostrarBotonCamara('Sacar foto')
+    }
+
+    function mostrarBotonCamara(descripcion) {
+      iconoCamara.removeAttribute('hidden')
+      iconoEspera.setAttribute('hidden', '')
+      boton.setAttribute('aria-label', descripcion)
+      boton.title = descripcion
+    }
+
+    function mostrarProcesando(direccion) {
+      mostrarImagen(direccion)
+      luz.classList.add('procesando')
+      boton.disabled = true
+      subir.disabled = true
+      descargar.disabled = true
+      iconoCamara.setAttribute('hidden', '')
+      iconoEspera.removeAttribute('hidden')
+      boton.setAttribute('aria-label', 'Procesando imagen')
+      boton.title = 'Procesando imagen'
+    }
+
+    function terminarProcesamiento() {
+      luz.classList.remove('procesando')
+      mostrarBotonCamara('Sacar otra foto')
+      boton.disabled = false
+      subir.disabled = false
+    }
+
+    function mostrarResultado(direccion) {
+      mostrarImagen(direccion)
+      descargar.disabled = false
+    }
+
+    // 6. Las mismas operaciones sirven para una captura y un archivo elegido.
+    async function mostrarCamara() {
+      mostrarVistaCamara()
+      try {
+        await iniciarCamara()
+      } catch {}
+    }
+
+    async function generarFoto(captura) {
+      apagarCamara()
+      mostrarProcesando(captura)
+
+      try {
+        const resultado = await procesar(captura)
+        mostrarResultado(resultado)
+      } catch {}
+
+      terminarProcesamiento()
+    }
+
+    // 7. Capturar el video; si se muestra una imagen, volver a encender la cámara.
+    boton.onclick = async () => {
+      if (camara.hidden || !camara.srcObject) return mostrarCamara()
+      const captura = prepararImagen(camara, camara.videoWidth, camara.videoHeight)
+      await generarFoto(captura)
+    }
+
+    // 8. Abrir el selector de archivos y descargar la foto generada.
+    subir.onclick = () => archivo.click()
+    descargar.onclick = () => {
+      const enlace = document.createElement('a')
+      enlace.href = foto.src
+      enlace.download = 'foto-carnet.png'
+      enlace.click()
+    }
+    
+    // Al elegir un archivo, cargarlo como imagen antes de prepararlo y enviarlo.
+    archivo.onchange = async () => {
+      const elegido = archivo.files[0]
+      if (!elegido) return
+      archivo.value = '' // Permite volver a elegir el mismo archivo.
+
+      const direccion = URL.createObjectURL(elegido)
+      const imagen  = new Image()
+      imagen.onload = async () => {
+        URL.revokeObjectURL(direccion)
+        const captura = prepararImagen(imagen, imagen.naturalWidth, imagen.naturalHeight)
+        await generarFoto(captura)
+      }
+      imagen.onerror = () => {
+        URL.revokeObjectURL(direccion)
+      }
+      imagen.src = direccion
+    }
+
+    // Al abrir la página se solicita acceso a la cámara.
+    mostrarCamara()
+  </script>
+</body>
+</html>

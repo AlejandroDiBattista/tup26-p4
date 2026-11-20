@@ -1,35 +1,101 @@
-# TP4: MiniCRM.
+# Segundo parcial: Sistema de Gestión Comercial
 
-> Fecha de entrega: *24-Oct-2026 23:59 hs*
+## Consigna
 
-## Objetivo: Desarrollar un mini CRM con Node.js, TypeScript, Drizzle y SQLite, implementando una API REST y una interfaz web básica usando React.
+El segundo parcial consiste en desarrollar un sistema comercial completo: facturación, control de stock y cuenta corriente de clientes. El sistema debe cumplir el documento de requerimientos del parcial.
 
-## Requisitos:
+El trabajo se desarrolla en grupos de 3 integrantes, con ayuda de un agente de inteligencia artificial, y se defiende en forma individual. Usar IA está permitido, pero cada integrante tiene que poder explicar y modificar cualquier parte del código entregado.
 
-Debe hacer un MiniCRM (Customer Relationship Management) que permita gestionar clientes y sus actividades. El proyecto debe ser modular, minimalista y legible.
+## Pasos
 
-Debe usar como base de datos SQLite mediante Drizzle.
+1. **Formar el grupo.** Armen un grupo de 3 integrantes.
+2. **Informar el grupo.** Avisen por WhatsApp quiénes lo forman, con su número de legajo. Por ejemplo: `El grupo 1 lo formamos 55555, 55556 y 55557`.
+3. **Desarrollar.** Creen un repositorio en GitHub y desarrollen el sistema con un agente de IA (Claude Code, Codex, OpenCode u otro). Hagan commits a lo largo del desarrollo, no uno solo al final.
+4. **Probar en local.** Verifiquen que el sistema funcione en sus computadoras siguiendo los pasos de instalación del README.
+5. **Publicar.** Publiquen el sistema en la web con Vercel y la base de datos en Turso, con datos de prueba cargados.
+6. **Probar en línea.** Verifiquen el funcionamiento completo sobre la URL pública.
+7. **Entregar.** Un representante del grupo envía por WhatsApp la dirección del repositorio de GitHub y la del sitio publicado.
 
-La funcionalidad debe implementarse en un módulo de servicio con una clase Clientes y métodos estáticos para CRUD, incluyendo búsqueda flexible por cualquier campo.
+## Defensa
 
-La misma debe exponerse mediante una API REST usando Express, separando controladores y routers, dejando las reglas de negocio en el servicio.
+A cada grupo se le asigna un día y una hora. El grupo se presenta completo, con una computadora con el sistema funcionando y en condiciones de modificarlo en el momento.
 
-Debe implementarse una interfaz web básica en public/MiniCRM.html usando React, JSX embebido y CSS, cargando las bibliotecas desde CDN con versiones fijas. La debe implementar toda la funcionalidad usando el API REST.
+Cada integrante, por separado:
 
-La página debe organizarse como maestro y detalle, con búsqueda en vivo por cualquier campo; seleccionar un cliente muestra su ficha y sus actividades de solo lectura. El layout debe ser minimalista cuidando que se comporte como una app sin desplazamiento de página. El maestro debe tener desplazamiento vertical interno asi como las actividades del cliente. 
+- responde preguntas sobre el sistema, mostrando en el código dónde está lo que se le pregunta;
+- realiza un cambio pequeño pedido en el momento y muestra que funciona.
 
-Debe poder agregar clientes y actividades, completar actividades y eliminar clientes. Las actividades completadas no se pueden editar ni borrar individualmente.
+### Ejemplos de preguntas
 
-La edicion del formulario debe ser en el detalle. La alta y edicion de las actividades se deben hacer en un subformulario dentro del detalle del cliente.
+**Base de datos**
 
-## Referencia visual
+- ¿Dónde se definen las tablas de la base de datos?
+- ¿Dónde se conecta la aplicación con la base de datos? ¿Cómo sabe si usar la base local o la de Turso?
+- ¿Cómo se crea una tabla nueva o se agrega un campo? ¿Qué es una migración y dónde están?
+- ¿Dónde se cargan los datos de prueba?
+- ¿Cómo se guardan los importes? ¿Por qué no se usan números con coma flotante?
+- ¿La existencia de un producto se guarda o se calcula? ¿Y el saldo de un cliente?
+- ¿Qué tablas se modifican cuando se confirma una factura?
 
-Ejemplo ilustrativo de la interfaz. El diseño puede variar siempre que cumpla los requisitos.
+**API REST**
 
-![MiniCRM con listado de clientes, ficha del cliente seleccionado, subformulario de actividades y listas de compromisos y actividades completadas.](minicrm.jpg)
+- ¿Dónde se expone la API REST para agregar un producto?
+- ¿Qué responde la API si se carga un producto con un código que ya existe?
+- ¿Dónde se verifica que el usuario haya iniciado sesión antes de atender un pedido?
+- ¿Qué pasa si un vendedor llama directamente a una ruta de administrador? Muéstrenlo.
+- ¿Dónde se arma la respuesta de error que devuelve la API?
+- ¿Por qué el cliente no envía el precio ni el total al crear una factura?
 
-## Ayudas...
+**Reglas de negocio**
 
-> En [Prompts Demo](./clase/prompts-demo.md) se encuentra un ejemplo usado en clase para generar una app parecida a la solicitada. Se puede usar como referencia para la implementación de la API REST y la interfaz web.
+- ¿Dónde se verifica que el stock no quede negativo?
+- ¿Qué pasa si dos vendedores venden la última unidad al mismo tiempo?
+- ¿Dónde se asegura que una factura se grabe completa o no se grabe nada?
+- ¿Dónde se asigna el número de factura? ¿Cómo se evita que queden números salteados?
+- Si se cambia el precio de un producto, ¿qué pasa con las facturas ya emitidas? ¿Por qué?
+- ¿Dónde se impide vender en cuenta corriente a un consumidor final?
+- ¿Dónde se controla el límite de crédito de un cliente?
+- ¿Dónde se impide registrar un pago mayor que la deuda?
+- ¿Qué hace el sistema cuando se anula una factura?
+- ¿Dónde queda registrado cada movimiento de stock?
 
-> En [Alumnos](./alumnos.md) se encuentran los datos con notas, practicos y asistencia.
+**Seguridad y permisos**
+
+- ¿En qué parte se ingresa el número de tarjeta de crédito? (Pista: revisen qué datos de la tarjeta se guardan).
+- ¿Cómo se guardan las contraseñas?
+- ¿Dónde se verifica el rol del usuario? ¿Alcanza con ocultar el botón?
+- ¿Dónde está el secreto que firma la sesión? ¿Por qué no está en el repositorio?
+- Si se desactiva a un usuario que tiene la sesión abierta, ¿qué pasa?
+
+**Interfaz**
+
+- ¿Dónde se define el panel lateral que comparten todas las pantallas?
+- ¿Dónde se da formato a los importes y a las fechas?
+- ¿Dónde se validan los datos de un formulario? ¿Se usan las mismas reglas en el servidor?
+- ¿Cómo se agrega un producto a la venta usando solo el teclado?
+- ¿Qué muestra un listado mientras carga, cuando está vacío o cuando falla?
+
+**Publicación**
+
+- ¿Qué variables de entorno necesita el sistema en producción y dónde se cargan?
+- ¿Cómo se crearon las tablas en Turso?
+- ¿Cómo se comprueba que el sitio publicado usa la base de Turso y no una local?
+
+**Uso de inteligencia artificial**
+
+- ¿Qué agente usaron y para qué partes del sistema?
+- Muestren algo que el agente hizo mal y cómo lo corrigieron.
+
+### Ejemplos de cambios pequeños
+
+- Agregar el campo «marca» a los productos y mostrarlo en el catálogo.
+- Agregar «Mercado Pago» como medio de pago de la cuenta corriente.
+- Impedir que una venta tenga más de 50 unidades de un mismo producto.
+- Exigir que el teléfono de un cliente tenga al menos 8 dígitos, en el formulario y en el servidor.
+- Agregar una columna al listado de facturas.
+- Cambiar el punto de venta de la numeración a `0002`.
+
+
+## Definicion del sistema.
+- [Funcionalidad](./requerimientos.md)
+- [Pantallas](https://alejandrodiBattista.github.io/tup26-p4/)

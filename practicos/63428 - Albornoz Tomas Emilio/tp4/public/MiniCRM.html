@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniCRM</title>
+<style>
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { overflow: hidden; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; background: #f1f5f9; color: #0f172a; }
+.app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+.barra { flex: none; background: #1e3a5f; color: #fff; padding: 10px 16px; font-size: 16px; font-weight: 600; }
+.contenido { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; }
+.maestro, .detalle { min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+.maestro { padding: 12px; gap: 10px; }
+.maestro-cabecera, .titulo-fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+h2 { margin: 0; font-size: 18px; }
+h3 { margin: 0 0 6px; font-size: 14px; }
+input { width: 100%; padding: 8px 10px; font: inherit; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: inherit; }
+input:focus { outline: 2px solid #93c5fd; border-color: #3b82f6; }
+input[type="checkbox"] { width: 16px; height: 16px; flex: none; }
+.boton { padding: 6px 12px; font: inherit; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #0f172a; cursor: pointer; }
+.boton:hover { background: #f1f5f9; }
+.primario { background: #2563eb; border-color: #2563eb; color: #fff; }
+.primario:hover { background: #1d4ed8; }
+.peligro { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.peligro:hover { background: #fee2e2; }
+.icono { flex: none; width: 28px; height: 28px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; cursor: pointer; }
+.icono:hover { background: #f1f5f9; }
+.lista-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.fila { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; }
+.fila:hover { background: #f1f5f9; }
+.fila.activa { background: #dbeafe; }
+.fila-texto { min-width: 0; }
+.fila-texto strong, .fila-texto small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+small { color: #64748b; }
+.avatar { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 700; }
+.vacio { margin: 12px 8px; color: #64748b; text-align: center; }
+.detalle { padding: 16px; gap: 12px; }
+.detalle-vacio { align-items: center; justify-content: center; color: #64748b; }
+.codigo { color: #64748b; font-size: 12px; }
+.acciones { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.datos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 10px; color: #334155; }
+.subformulario { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; }
+.subformulario-campos { display: flex; flex-wrap: wrap; gap: 8px; }
+.campo-texto { flex: 2 1 160px; }
+.campo-fecha { flex: 1 1 130px; }
+.secciones { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.seccion { min-height: 80px; display: flex; flex-direction: column; }
+.pendientes { flex: 3 1 0; }
+.completadas { flex: 2 1 0; }
+.seccion .lista-scroll { border: 1px solid #e2e8f0; border-radius: 8px; }
+.completadas .lista-scroll { background: #f0fdf4; }
+.actividad { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+.actividad:last-child { border-bottom: none; }
+.actividad-texto { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.actividad-texto small { display: block; }
+.vencida { color: #dc2626; font-weight: 600; }
+.formulario-cliente label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.formulario-cliente .acciones { margin-top: 4px; }
+.aviso { position: fixed; top: 52px; left: 50%; transform: translateX(-50%); z-index: 10; max-width: 90%; padding: 8px 14px; border-radius: 8px; background: #b91c1c; color: #fff; cursor: pointer; }
+@media (max-width: 760px) {
+  .contenido { grid-template-columns: 1fr; grid-template-rows: 38% 1fr; }
+  .datos { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js" crossorigin></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const COLORES = [
+  ['#dbeafe', '#1d4ed8'],
+  ['#dcfce7', '#15803d'],
+  ['#ede9fe', '#6d28d9'],
+  ['#ffedd5', '#c2410c'],
+  ['#fee2e2', '#b91c1c'],
+  ['#ccfbf1', '#0f766e']
+];
+
+function hoy() {
+  const ahora = new Date();
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  return ahora.getFullYear() + '-' + mes + '-' + dia;
+}
+
+function formatearFecha(fecha) {
+  const partes = fecha.split('-');
+  return Number(partes[2]) + ' ' + MESES[Number(partes[1]) - 1] + ' ' + partes[0];
+}
+
+function iniciales(nombre) {
+  const partes = nombre.trim().split(/\s+/);
+  const primera = partes[0] ? partes[0][0] : '';
+  const segunda = partes.length > 1 ? partes[1][0] : '';
+  return (primera + segunda).toUpperCase();
+}
+
+async function pedir(url, opciones = {}) {
+  const respuesta = await fetch(url, {
+    ...opciones,
+    headers: { 'Content-Type': 'application/json' },
+    body: opciones.body ? JSON.stringify(opciones.body) : undefined
+  });
+  if (respuesta.status === 204) return null;
+  const datos = await respuesta.json().catch(() => null);
+  if (!respuesta.ok) throw new Error((datos && datos.error) || 'Ocurrió un error');
+  return datos;
+}
+
+function Avatar({ cliente }) {
+  const colores = COLORES[cliente.id % COLORES.length];
+  return (
+    <div className="avatar" style={{ background: colores[0], color: colores[1] }}>
+      {iniciales(cliente.nombre)}
+    </div>
+  );
+}
+
+function FormularioCliente({ inicial, onGuardar, onCancelar }) {
+  const [datos, setDatos] = useState({
+    nombre: inicial ? inicial.nombre : '',
+    email: inicial ? inicial.email : '',
+    telefono: inicial ? inicial.telefono : '',
+    direccion: inicial ? inicial.direccion : ''
+  });
+
+  function cambiar(campo) {
+    return (evento) => setDatos({ ...datos, [campo]: evento.target.value });
+  }
+
+  function enviar(evento) {
+    evento.preventDefault();
+    onGuardar(datos);
+  }
+
+  return (
+    <form className="detalle formulario-cliente" onSubmit={enviar}>
+      <h2>{inicial ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+      <label>
+        Nombre
+        <input type="text" value={datos.nombre} onChange={cambiar('nombre')} autoFocus />
+      </label>
+      <label>
+        Email
+        <input type="email" value={datos.email} onChange={cambiar('email')} />
+      </label>
+      <label>
+        Teléfono
+        <input type="text" value={datos.telefono} onChange={cambiar('telefono')} />
+      </label>
+      <label>
+        Dirección
+        <input type="text" value={datos.direccion} onChange={cambiar('direccion')} />
+      </label>
+      <div className="acciones">
+        <button type="submit" className="boton primario">Guardar</button>
+        <button type="button" className="boton" onClick={onCancelar}>Cancelar</button>
+      </div>
+    </form>
+  );
+}
+
+function Detalle({ cliente, onEditar, onEliminar, onError }) {
+  const [actividades, setActividades] = useState([]);
+  const [editando, setEditando] = useState(null);
+  const [descripcion, setDescripcion] = useState('');
+  const [fecha, setFecha] = useState('');
+
+  async function cargar() {
+    try {
+      setActividades(await pedir('/api/clientes/' + cliente.id + '/actividades'));
+    } catch (error) {
+      onError(error.message);
+    }
+  }
+
+  useEffect(() => {
+    cargar();
+  }, [cliente.id]);
+
+  function limpiar() {
+    setEditando(null);
+    setDescripcion('');
+    setFecha('');
+  }
+
+  function empezarEdicion(actividad) {
+    setEditando(actividad.id);
+    setDescripcion(actividad.descripcion);
+    setFecha(actividad.fecha || '');
+  }
+
+  async function guardar(evento) {
+    evento.preventDefault();
+    try {
+      const cuerpo = { descripcion: descripcion, fecha: fecha || null };
+      if (editando) {
+        await pedir('/api/actividades/' + editando, { method: 'PUT', body: cuerpo });
+      } else {
+        await pedir('/api/clientes/' + cliente.id + '/actividades', { method: 'POST', body: cuerpo });
+      }
+      limpiar();
+      await cargar();
+    } catch (error) {
+      onError(error.message);
+    }
+  }
+
+  async function completar(actividad) {
+    try {
+      await pedir('/api/actividades/' + actividad.id + '/completar', { method: 'PATCH' });
+      if (editando === actividad.id) limpiar();
+      await cargar();
+    } catch (error) {
+      onError(error.message);
+    }
+  }
+
+  async function borrar(actividad) {
+    if (!window.confirm('¿Eliminar esta actividad?')) return;
+    try {
+      await pedir('/api/actividades/' + actividad.id, { method: 'DELETE' });
+      if (editando === actividad.id) limpiar();
+      await cargar();
+    } catch (error) {
+      onError(error.message);
+    }
+  }
+
+  const pendientes = actividades.filter((actividad) => !actividad.completada);
+  const completadas = actividades.filter((actividad) => actividad.completada);
+
+  return (
+    <div className="detalle">
+      <div>
+        <div className="titulo-fila">
+          <div>
+            <h2>{cliente.nombre}</h2>
+            <span className="codigo">#{cliente.id}</span>
+          </div>
+          <div className="acciones">
+            <button className="boton" onClick={onEditar}>Editar</button>
+            <button className="boton peligro" onClick={onEliminar}>Eliminar</button>
+          </div>
+        </div>
+        <div className="datos">
+          <div>✉ {cliente.email || 'Sin email'}</div>
+          <div>⌂ {cliente.direccion || 'Sin dirección'}</div>
+          <div>☎ {cliente.telefono || 'Sin teléfono'}</div>
+        </div>
+      </div>
+
+      <form className="subformulario" onSubmit={guardar}>
+        <strong>{editando ? 'Editar actividad' : 'Agregar actividad'}</strong>
+        <div className="subformulario-campos">
+          <input
+            type="text"
+            className="campo-texto"
+            placeholder="Descripción de la actividad"
+            value={descripcion}
+            onChange={(evento) => setDescripcion(evento.target.value)}
+          />
+          <input
+            type="date"
+            className="campo-fecha"
+            value={fecha}
+            onChange={(evento) => setFecha(evento.target.value)}
+          />
+          <button type="submit" className="boton primario">Guardar</button>
+          <button type="button" className="boton" onClick={limpiar}>Cancelar</button>
+        </div>
+      </form>
+
+      <div className="secciones">
+        <div className="seccion pendientes">
+          <h3>Compromisos</h3>
+          <div className="lista-scroll">
+            {pendientes.length === 0 && <p className="vacio">No hay compromisos pendientes</p>}
+            {pendientes.map((actividad) => {
+              const vencida = actividad.fecha && actividad.fecha < hoy();
+              return (
+                <div className="actividad" key={actividad.id}>
+                  <input type="checkbox" checked={false} onChange={() => completar(actividad)} />
+                  <div className="actividad-texto">
+                    <div>{actividad.descripcion}</div>
+                    <small className={vencida ? 'vencida' : ''}>
+                      {actividad.fecha
+                        ? formatearFecha(actividad.fecha) + (vencida ? ' · Vencido' : '')
+                        : 'Sin fecha'}
+                    </small>
+                  </div>
+                  <button className="icono" title="Editar" onClick={() => empezarEdicion(actividad)}>✎</button>
+                  <button className="icono" title="Eliminar" onClick={() => borrar(actividad)}>🗑</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="seccion completadas">
+          <h3>Actividades completadas</h3>
+          <div className="lista-scroll">
+            {completadas.length === 0 && <p className="vacio">Todavía no hay actividades completadas</p>}
+            {completadas.map((actividad) => (
+              <div className="actividad" key={actividad.id}>
+                <input type="checkbox" checked={true} disabled readOnly />
+                <div className="actividad-texto">
+                  <div>{actividad.descripcion}</div>
+                  <small>Completada el {formatearFecha(actividad.fechaCompletada)}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [clientes, setClientes] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
+  const [version, setVersion] = useState(0);
+  const [cliente, setCliente] = useState(null);
+  const [modo, setModo] = useState('ver');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelado = false;
+    pedir('/api/clientes?q=' + encodeURIComponent(busqueda))
+      .then((datos) => {
+        if (!cancelado) setClientes(datos);
+      })
+      .catch((e) => {
+        if (!cancelado) setError(e.message);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [busqueda, version]);
+
+  useEffect(() => {
+    if (!error) return;
+    const temporizador = setTimeout(() => setError(''), 4000);
+    return () => clearTimeout(temporizador);
+  }, [error]);
+
+  function refrescar() {
+    setVersion((valor) => valor + 1);
+  }
+
+  function seleccionar(elegido) {
+    setCliente(elegido);
+    setModo('ver');
+  }
+
+  function nuevo() {
+    setCliente(null);
+    setModo('nuevo');
+  }
+
+  async function guardarCliente(datos) {
+    try {
+      let guardado;
+      if (modo === 'nuevo') {
+        guardado = await pedir('/api/clientes', { method: 'POST', body: datos });
+      } else {
+        guardado = await pedir('/api/clientes/' + cliente.id, { method: 'PUT', body: datos });
+      }
+      setCliente(guardado);
+      setModo('ver');
+      refrescar();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function eliminarCliente() {
+    if (!window.confirm('¿Eliminar a ' + cliente.nombre + ' y todas sus actividades?')) return;
+    try {
+      await pedir('/api/clientes/' + cliente.id, { method: 'DELETE' });
+      setCliente(null);
+      setModo('ver');
+      refrescar();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  let panel;
+  if (modo === 'nuevo') {
+    panel = (
+      <FormularioCliente
+        key="nuevo"
+        inicial={null}
+        onGuardar={guardarCliente}
+        onCancelar={() => setModo('ver')}
+      />
+    );
+  } else if (modo === 'editar' && cliente) {
+    panel = (
+      <FormularioCliente
+        key={'editar-' + cliente.id}
+        inicial={cliente}
+        onGuardar={guardarCliente}
+        onCancelar={() => setModo('ver')}
+      />
+    );
+  } else if (cliente) {
+    panel = (
+      <Detalle
+        key={cliente.id}
+        cliente={cliente}
+        onEditar={() => setModo('editar')}
+        onEliminar={eliminarCliente}
+        onError={setError}
+      />
+    );
+  } else {
+    panel = (
+      <div className="detalle detalle-vacio">
+        Seleccioná un cliente o agregá uno nuevo
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <div className="barra">MiniCRM</div>
+      {error && <div className="aviso" onClick={() => setError('')}>{error} ✕</div>}
+      <div className="contenido">
+        <aside className="maestro">
+          <div className="maestro-cabecera">
+            <h2>Clientes</h2>
+            <button className="boton primario" onClick={nuevo}>+ Agregar</button>
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar por cualquier campo..."
+            value={busqueda}
+            onChange={(evento) => setBusqueda(evento.target.value)}
+          />
+          <div className="lista-scroll">
+            {clientes.length === 0 && (
+              <p className="vacio">{busqueda ? 'No se encontraron clientes' : 'Todavía no hay clientes'}</p>
+            )}
+            {clientes.map((item) => (
+              <div
+                key={item.id}
+                className={'fila' + (cliente && cliente.id === item.id && modo !== 'nuevo' ? ' activa' : '')}
+                onClick={() => seleccionar(item)}
+              >
+                <Avatar cliente={item} />
+                <div className="fila-texto">
+                  <strong>{item.nombre}</strong>
+                  <small>{item.email}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+        {panel}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

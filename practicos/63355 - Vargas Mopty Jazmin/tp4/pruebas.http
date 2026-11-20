@@ -1,0 +1,114 @@
+@baseUrl = http://localhost:3000
+@clienteId = {{crearCliente.response.body.$.id}}
+@actividadId = {{crearActividad.response.body.$.id}}
+@actividadCompletarId = {{crearActividadCompletar.response.body.$.id}}
+
+### 01 - Listar clientes: debe devolver 200
+GET http://localhost:3000/api/clientes
+
+### Buscar clientes
+GET {{baseUrl}}/api/clientes?q=ana
+
+### Crear cliente: 201
+# @name crearCliente
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+
+{
+  "nombre": " Lucía ",
+  "apellido": "Prueba",
+  "email": " LUCIA.PRUEBA@EXAMPLE.COM ",
+  "telefono": "381 555 4567",
+  "domicilio": "",
+  "localidad": "San Miguel de Tucumán"
+}
+
+### Obtener cliente con actividades
+GET {{baseUrl}}/api/clientes/{{clienteId}}
+
+### Actualizar cliente
+PUT {{baseUrl}}/api/clientes/{{clienteId}}
+Content-Type: application/json
+
+{
+  "nombre": "Lucía",
+  "apellido": "Prueba",
+  "email": "lucia.prueba@example.com",
+  "telefono": "381 555 9876",
+  "domicilio": "San Martín 800",
+  "localidad": "Yerba Buena"
+}
+
+### Crear actividad pendiente: 201
+# @name crearActividad
+POST {{baseUrl}}/api/clientes/{{clienteId}}/actividades
+Content-Type: application/json
+
+{
+  "descripcion": " Preparar propuesta ",
+  "fechaCompromiso": null
+}
+
+### Editar actividad pendiente
+PUT {{baseUrl}}/api/clientes/{{clienteId}}/actividades/{{actividadId}}
+Content-Type: application/json
+
+{
+  "descripcion": "Enviar propuesta actualizada",
+  "fechaCompromiso": "2026-11-10"
+}
+
+### Eliminar actividad pendiente
+DELETE {{baseUrl}}/api/clientes/{{clienteId}}/actividades/{{actividadId}}
+
+### Crear otra actividad para completar: 201
+# @name crearActividadCompletar
+POST {{baseUrl}}/api/clientes/{{clienteId}}/actividades
+Content-Type: application/json
+
+{
+  "descripcion": "Confirmar recepción de propuesta"
+}
+
+### Completar actividad
+PATCH {{baseUrl}}/api/clientes/{{clienteId}}/actividades/{{actividadCompletarId}}/completar
+
+### Intentar editar actividad completada: 400
+PUT {{baseUrl}}/api/clientes/{{clienteId}}/actividades/{{actividadCompletarId}}
+Content-Type: application/json
+
+{
+  "descripcion": "Cambio no permitido"
+}
+
+### Intentar eliminar actividad completada: 400
+DELETE {{baseUrl}}/api/clientes/{{clienteId}}/actividades/{{actividadCompletarId}}
+
+### Crear cliente inválido: 400
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+
+{
+  "nombre": " "
+}
+
+### Crear actividad con fecha inválida: 400
+POST {{baseUrl}}/api/clientes/{{clienteId}}/actividades
+Content-Type: application/json
+
+{
+  "descripcion": "Actividad de prueba",
+  "fechaCompromiso": "2026-02-30"
+}
+
+### Identificador inválido: 400
+GET {{baseUrl}}/api/clientes/abc
+
+### Cliente inexistente: 404
+GET {{baseUrl}}/api/clientes/9007199254740991
+
+### Eliminar el cliente de prueba y sus actividades
+DELETE {{baseUrl}}/api/clientes/{{clienteId}}
+
+### Consultar cliente eliminado: 404
+GET {{baseUrl}}/api/clientes/{{clienteId}}

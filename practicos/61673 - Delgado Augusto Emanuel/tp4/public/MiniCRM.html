@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniCRM - Gestión de Clientes</title>
+  
+  <!-- Bibliotecas CDN con versiones fijas -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+
+  <!-- Fuentes de Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reset y layout base app-like sin desplazamiento de página */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f1f5f9;
+      color: #1e293b;
+      height: 100vh;
+      overflow: hidden; /* App sin desplazamiento de página */
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Barra superior */
+    .top-header {
+      background-color: #1e3a5f;
+      color: #ffffff;
+      height: 52px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      z-index: 10;
+    }
+
+    .top-header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Contenedor principal Maestro - Detalle */
+    .main-container {
+      display: flex;
+      height: calc(100vh - 52px);
+      padding: 16px;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    /* Panel Maestro (Izquierda) */
+    .master-panel {
+      width: 360px;
+      min-width: 300px;
+      max-width: 400px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .master-header {
+      padding: 16px 20px 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .master-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .btn-agregar {
+      background-color: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+    }
+
+    .btn-agregar:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-agregar:active {
+      transform: scale(0.98);
+    }
+
+    /* Búsqueda en vivo */
+    .search-box {
+      padding: 12px 20px;
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 12px 9px 38px;
+      font-size: 0.875rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background-color: #ffffff;
+    }
+
+    .search-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Lista desplazable del maestro */
+    .client-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .client-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      gap: 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #f8fafc;
+      transition: background-color 0.15s ease;
+    }
+
+    .client-item:hover {
+      background-color: #f8fafc;
+    }
+
+    .client-item.active {
+      background-color: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding-left: 16px;
+    }
+
+    /* Avatar con iniciales */
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .client-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .client-name {
+      font-size: 0.938rem;
+      font-weight: 600;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-email {
+      font-size: 0.813rem;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .empty-list {
+      padding: 32px 20px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.875rem;
+    }
+
+    /* Panel Detalle (Derecha) */
+    .detail-panel {
+      flex: 1;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      padding: 24px 28px;
+    }
+
+    /* Encabezado del detalle */
+    .detail-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .detail-title-group h2 {
+      font-size: 1.625rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .detail-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .client-badge-id {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-right: 4px;
+    }
+
+    .btn-action-outline {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.813rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-outline:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    .btn-action-danger {
+      background: #ffffff;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.813rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-danger:hover {
+      background: #fef2f2;
+      border-color: #f87171;
+    }
+
+    /* Datos de contacto del cliente */
+    .contact-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px 24px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.875rem;
+      color: #334155;
+    }
+
+    .contact-icon {
+      color: #64748b;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Subformulario de actividad */
+    .subform-actividad {
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .subform-title {
+      font-size: 0.938rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+
+    .subform-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .subform-input-desc {
+      flex: 3;
+      min-width: 200px;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .subform-input-desc:focus {
+      border-color: #3b82f6;
+    }
+
+    .subform-input-date {
+      flex: 2;
+      min-width: 140px;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      outline: none;
+      color: #475569;
+    }
+
+    .subform-input-date:focus {
+      border-color: #3b82f6;
+    }
+
+    .btn-subform-guardar {
+      background-color: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-subform-guardar:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-subform-cancelar {
+      background: transparent;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-subform-cancelar:hover {
+      background: #f8fafc;
+    }
+
+    /* Listas de Actividades con Desplazamiento Vertical Interno */
+    .activities-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 12px;
+      margin-top: 10px;
+    }
+
+    .activity-list {
+      list-style: none;
+      margin-bottom: 22px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 6px;
+      transition: background-color 0.15s ease;
+      margin-bottom: 4px;
+    }
+
+    .activity-item:hover {
+      background-color: #f8fafc;
+    }
+
+    .activity-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .custom-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #94a3b8;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #ffffff;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .custom-checkbox:hover {
+      border-color: #2563eb;
+    }
+
+    .custom-checkbox-completed {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background-color: #10b981;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #ffffff;
+    }
+
+    .activity-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .activity-desc {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    .activity-meta {
+      font-size: 0.775rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .activity-meta.vencido {
+      color: #dc2626;
+      font-weight: 500;
+    }
+
+    .activity-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.85;
+    }
+
+    .activity-item:hover .activity-actions {
+      opacity: 1;
+    }
+
+    .btn-icon-subtle {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      padding: 4px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.15s, background-color 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon-subtle:hover {
+      color: #0f172a;
+      background: #e2e8f0;
+    }
+
+    .btn-icon-subtle.delete:hover {
+      color: #dc2626;
+      background: #fee2e2;
+    }
+
+    .empty-activities {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-style: italic;
+      padding: 8px 12px;
+    }
+
+    /* Formulario de Cliente (Alta / Edición en el detalle) */
+    .client-form-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 4px;
+    }
+
+    .client-form-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      max-width: 500px;
+      padding: 9px 12px;
+      font-size: 0.875rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .form-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Mensajes de error o aviso */
+    .alert-banner {
+      padding: 10px 14px;
+      background-color: #fee2e2;
+      border-left: 4px solid #ef4444;
+      color: #b91c1c;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+
+    /* Scrollbars personalizados */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Paleta de colores para los avatares según iniciales
+    const AVATAR_COLORS = [
+      { bg: '#dbeafe', text: '#1d4ed8' }, // azul
+      { bg: '#dcfce7', text: '#15803d' }, // verde
+      { bg: '#ede9fe', text: '#6d28d9' }, // violeta
+      { bg: '#ffedd5', text: '#c2410c' }, // naranja
+      { bg: '#fce7f3', text: '#be185d' }, // rosa
+      { bg: '#ccfbf1', text: '#0f766e' }, // turquesa
+      { bg: '#e0e7ff', text: '#4338ca' }, // índigo
+    ];
+
+    function obtenerColorAvatar(nombre) {
+      let hash = 0;
+      for (let i = 0; i < nombre.length; i++) {
+        hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const index = Math.abs(hash) % AVATAR_COLORS.length;
+      return AVATAR_COLORS[index];
+    }
+
+    function obtenerIniciales(nombre) {
+      if (!nombre) return '??';
+      const partes = nombre.trim().split(/\s+/);
+      if (partes.length >= 2) {
+        return (partes[0][0] + partes[1][0]).toUpperCase();
+      }
+      return nombre.substring(0, 2).toUpperCase();
+    }
+
+    // Formateador de fechas al español: ej. "16 oct 2026"
+    function formatearFecha(fechaStr) {
+      if (!fechaStr) return 'Sin fecha';
+      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      
+      const partes = fechaStr.split('-');
+      if (partes.length === 3) {
+        const anio = parseInt(partes[0], 10);
+        const mesIndex = parseInt(partes[1], 10) - 1;
+        const dia = parseInt(partes[2], 10);
+        return `${dia} ${meses[mesIndex] || ''} ${anio}`;
+      }
+      return fechaStr;
+    }
+
+    // Comprueba si una fecha está vencida respecto a hoy
+    function estaVencida(fechaStr) {
+      if (!fechaStr) return false;
+      const partes = fechaStr.split('-');
+      if (partes.length !== 3) return false;
+      
+      const fecha = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      return fecha < hoy;
+    }
+
+    // Componentes de Íconos SVG
+    const IconSearch = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    );
+
+    const IconPlus = () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    );
+
+    const IconEdit = () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+      </svg>
+    );
+
+    const IconTrash = () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    );
+
+    const IconMail = () => (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+        <polyline points="22,6 12,13 2,6"></polyline>
+      </svg>
+    );
+
+    const IconPhone = () => (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+      </svg>
+    );
+
+    const IconMapPin = () => (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
+    );
+
+    const IconSave = () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+      </svg>
+    );
+
+    const IconClose = () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    );
+
+    const IconCheck = () => (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    );
+
+    // ==========================================
+    // COMPONENTE PRINCIPAL: App
+    // ==========================================
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [terminoBusqueda, setTerminoBusqueda] = useState('');
+      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+      const [clienteDetalle, setClienteDetalle] = useState(null);
+      const [cargandoDetalle, setCargandoDetalle] = useState(false);
+      const [error, setError] = useState(null);
+
+      // Estado para la edición/alta del cliente en el detalle
+      // modoDetalle: 'ficha' | 'nuevoCliente' | 'editarCliente'
+      const [modoDetalle, setModoDetalle] = useState('ficha');
+      const [clienteForm, setClienteForm] = useState({
+        nombre: '',
+        email: '',
+        telefono: '',
+        direccion: '',
+        ciudad: ''
+      });
+
+      // Estado para el subformulario de actividades
+      const [actividadForm, setActividadForm] = useState({
+        id: null, // null para agregar, id numérico para editar
+        descripcion: '',
+        fecha: ''
+      });
+
+      // Cargar lista de clientes
+      const cargarClientes = async (buscar = '') => {
+        try {
+          setError(null);
+          const url = buscar.trim() 
+            ? `/api/clientes?q=${encodeURIComponent(buscar.trim())}` 
+            : '/api/clientes';
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('Error al listar clientes');
+          const data = await resp.json();
+          setClientes(data);
+
+          // Si no hay cliente seleccionado o fue borrado, seleccionar el primero si hay
+          if (data.length > 0) {
+            setClienteSeleccionadoId((prevId) => {
+              const existe = data.some(c => c.id === prevId);
+              return existe ? prevId : data[0].id;
+            });
+          } else {
+            setClienteSeleccionadoId(null);
+            setClienteDetalle(null);
+          }
+        } catch (err) {
+          console.error(err);
+          setError(err.message);
+        }
+      };
+
+      // Cargar detalle y actividades del cliente seleccionado
+      const cargarDetalleCliente = async (id) => {
+        if (!id) {
+          setClienteDetalle(null);
+          return;
+        }
+        try {
+          setCargandoDetalle(true);
+          const resp = await fetch(`/api/clientes/${id}`);
+          if (!resp.ok) throw new Error('Error al obtener datos del cliente');
+          const data = await resp.json();
+          setClienteDetalle(data);
+        } catch (err) {
+          console.error(err);
+          setError(err.message);
+        } finally {
+          setCargandoDetalle(false);
+        }
+      };
+
+      // Inicialización
+      useEffect(() => {
+        cargarClientes();
+      }, []);
+
+      // Búsqueda en vivo al escribir
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          cargarClientes(terminoBusqueda);
+        }, 200);
+        return () => clearTimeout(timer);
+      }, [terminoBusqueda]);
+
+      // Al cambiar el cliente seleccionado, cargamos su detalle
+      useEffect(() => {
+        if (clienteSeleccionadoId) {
+          cargarDetalleCliente(clienteSeleccionadoId);
+          // Reiniciamos el subformulario de actividad al cambiar de cliente
+          setActividadForm({ id: null, descripcion: '', fecha: '' });
+          if (modoDetalle === 'nuevoCliente') {
+            setModoDetalle('ficha');
+          }
+        }
+      }, [clienteSeleccionadoId]);
+
+      // ==========================================
+      // Handlers para Clientes (Alta, Edición, Eliminación)
+      // ==========================================
+      const handleIniciarNuevoCliente = () => {
+        setClienteForm({
+          nombre: '',
+          email: '',
+          telefono: '',
+          direccion: '',
+          ciudad: ''
+        });
+        setModoDetalle('nuevoCliente');
+      };
+
+      const handleIniciarEditarCliente = () => {
+        if (!clienteDetalle) return;
+        setClienteForm({
+          nombre: clienteDetalle.nombre || '',
+          email: clienteDetalle.email || '',
+          telefono: clienteDetalle.telefono || '',
+          direccion: clienteDetalle.direccion || '',
+          ciudad: clienteDetalle.ciudad || ''
+        });
+        setModoDetalle('editarCliente');
+      };
+
+      const handleCancelarFormCliente = () => {
+        setModoDetalle('ficha');
+      };
+
+      const handleGuardarCliente = async (e) => {
+        e.preventDefault();
+        if (!clienteForm.nombre.trim()) {
+          alert('El nombre del cliente es obligatorio');
+          return;
+        }
+
+        try {
+          let resp;
+          if (modoDetalle === 'nuevoCliente') {
+            resp = await fetch('/api/clientes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(clienteForm)
+            });
+          } else {
+            resp = await fetch(`/api/clientes/${clienteSeleccionadoId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(clienteForm)
+            });
+          }
+
+          if (!resp.ok) {
+            const errData = await resp.json();
+            throw new Error(errData.error || 'Error al guardar cliente');
+          }
+
+          const clienteGuardado = await resp.json();
+          await cargarClientes(terminoBusqueda);
+          setClienteSeleccionadoId(clienteGuardado.id);
+          setModoDetalle('ficha');
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const handleEliminarCliente = async () => {
+        if (!clienteDetalle) return;
+        const confirmar = window.confirm(
+          `¿Está seguro de que desea eliminar a "${clienteDetalle.nombre}" y todas sus actividades?`
+        );
+        if (!confirmar) return;
+
+        try {
+          const resp = await fetch(`/api/clientes/${clienteDetalle.id}`, {
+            method: 'DELETE'
+          });
+          if (!resp.ok) throw new Error('Error al eliminar cliente');
+          
+          await cargarClientes(terminoBusqueda);
+          setModoDetalle('ficha');
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      // ==========================================
+      // Handlers para Actividades
+      // ==========================================
+      const handleGuardarActividad = async (e) => {
+        e.preventDefault();
+        if (!actividadForm.descripcion.trim()) {
+          alert('La descripción de la actividad es requerida');
+          return;
+        }
+
+        try {
+          if (actividadForm.id) {
+            // Edición de actividad no completada
+            const resp = await fetch(`/api/actividades/${actividadForm.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                descripcion: actividadForm.descripcion,
+                fecha: actividadForm.fecha || null
+              })
+            });
+            if (!resp.ok) {
+              const errData = await resp.json();
+              throw new Error(errData.error || 'Error al actualizar actividad');
+            }
+          } else {
+            // Alta de actividad
+            const resp = await fetch(`/api/clientes/${clienteSeleccionadoId}/actividades`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                descripcion: actividadForm.descripcion,
+                fecha: actividadForm.fecha || null
+              })
+            });
+            if (!resp.ok) {
+              const errData = await resp.json();
+              throw new Error(errData.error || 'Error al agregar actividad');
+            }
+          }
+
+          // Reiniciar subformulario y recargar detalle
+          setActividadForm({ id: null, descripcion: '', fecha: '' });
+          await cargarDetalleCliente(clienteSeleccionadoId);
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const handleIniciarEditarActividad = (act) => {
+        setActividadForm({
+          id: act.id,
+          descripcion: act.descripcion,
+          fecha: act.fecha || ''
+        });
+      };
+
+      const handleCancelarEditarActividad = () => {
+        setActividadForm({ id: null, descripcion: '', fecha: '' });
+      };
+
+      const handleCompletarActividad = async (actId) => {
+        try {
+          const resp = await fetch(`/api/actividades/${actId}/completar`, {
+            method: 'PATCH'
+          });
+          if (!resp.ok) throw new Error('Error al completar actividad');
+          await cargarDetalleCliente(clienteSeleccionadoId);
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const handleEliminarActividad = async (actId) => {
+        const confirmar = window.confirm('¿Desea eliminar esta actividad?');
+        if (!confirmar) return;
+
+        try {
+          const resp = await fetch(`/api/actividades/${actId}`, {
+            method: 'DELETE'
+          });
+          if (!resp.ok) {
+            const errData = await resp.json();
+            throw new Error(errData.error || 'Error al borrar actividad');
+          }
+          await cargarDetalleCliente(clienteSeleccionadoId);
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      // Separación de compromisos (pendientes) y completadas
+      const compromisos = useMemo(() => {
+        if (!clienteDetalle?.actividades) return [];
+        return clienteDetalle.actividades.filter(a => a.completada === 0);
+      }, [clienteDetalle]);
+
+      const actividadesCompletadas = useMemo(() => {
+        if (!clienteDetalle?.actividades) return [];
+        return clienteDetalle.actividades.filter(a => a.completada === 1);
+      }, [clienteDetalle]);
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+          {/* Header Superior */}
+          <header className="top-header">
+            <h1>MiniCRM</h1>
+          </header>
+
+          {/* Área Principal Maestro-Detalle */}
+          <div className="main-container">
+            {/* PANEL MAESTRO (Izquierda) */}
+            <aside className="master-panel">
+              <div className="master-header">
+                <h2>Clientes</h2>
+                <button 
+                  className="btn-agregar" 
+                  onClick={handleIniciarNuevoCliente}
+                  title="Agregar nuevo cliente"
+                >
+                  <IconPlus /> Agregar
+                </button>
+              </div>
+
+              {/* Búsqueda en vivo */}
+              <div className="search-box">
+                <span className="search-icon"><IconSearch /></span>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar por cualquier campo..."
+                  value={terminoBusqueda}
+                  onChange={(e) => setTerminoBusqueda(e.target.value)}
+                />
+              </div>
+
+              {/* Lista interna desplazable */}
+              <ul className="client-list">
+                {clientes.map((c) => {
+                  const { bg, text } = obtenerColorAvatar(c.nombre);
+                  const isSelected = c.id === clienteSeleccionadoId && modoDetalle !== 'nuevoCliente';
+
+                  return (
+                    <li
+                      key={c.id}
+                      className={`client-item ${isSelected ? 'active' : ''}`}
+                      onClick={() => {
+                        setClienteSeleccionadoId(c.id);
+                        setModoDetalle('ficha');
+                      }}
+                    >
+                      <div className="avatar" style={{ backgroundColor: bg, color: text }}>
+                        {obtenerIniciales(c.nombre)}
+                      </div>
+                      <div className="client-info">
+                        <div className="client-name">{c.nombre}</div>
+                        <div className="client-email">{c.email || 'Sin correo electrónico'}</div>
+                      </div>
+                    </li>
+                  );
+                })}
+
+                {clientes.length === 0 && (
+                  <li className="empty-list">No se encontraron clientes</li>
+                )}
+              </ul>
+            </aside>
+
+            {/* PANEL DETALLE (Derecha) */}
+            <main className="detail-panel">
+              {error && <div className="alert-banner">{error}</div>}
+
+              {/* VISTA 1: Formulario de Alta o Edición de Cliente en el detalle */}
+              {(modoDetalle === 'nuevoCliente' || modoDetalle === 'editarCliente') ? (
+                <div className="client-form-container">
+                  <h2 className="client-form-title">
+                    {modoDetalle === 'nuevoCliente' ? 'Nuevo Cliente' : 'Editar Cliente'}
+                  </h2>
+                  <form onSubmit={handleGuardarCliente}>
+                    <div className="form-group">
+                      <label className="form-label">Nombre completo *</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Ej. Ana García"
+                        required
+                        value={clienteForm.nombre}
+                        onChange={(e) => setClienteForm({ ...clienteForm, nombre: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Correo electrónico</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        placeholder="Ej. ana.garcia@example.com"
+                        value={clienteForm.email}
+                        onChange={(e) => setClienteForm({ ...clienteForm, email: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Teléfono</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Ej. 381 555 0123"
+                        value={clienteForm.telefono}
+                        onChange={(e) => setClienteForm({ ...clienteForm, telefono: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Dirección</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Ej. San Martín 450"
+                        value={clienteForm.direccion}
+                        onChange={(e) => setClienteForm({ ...clienteForm, direccion: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Ciudad</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Ej. Yerba Buena"
+                        value={clienteForm.ciudad}
+                        onChange={(e) => setClienteForm({ ...clienteForm, ciudad: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-buttons">
+                      <button type="submit" className="btn-subform-guardar">
+                        <IconSave /> Guardar Cliente
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn-subform-cancelar"
+                        onClick={handleCancelarFormCliente}
+                      >
+                        <IconClose /> Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : clienteDetalle ? (
+                /* VISTA 2: Ficha del cliente seleccionado y sus actividades */
+                <>
+                  {/* Encabezado del Detalle */}
+                  <div className="detail-top">
+                    <div className="detail-title-group">
+                      <h2>{clienteDetalle.nombre}</h2>
+                    </div>
+                    <div className="detail-actions">
+                      <span className="client-badge-id">#{clienteDetalle.id}</span>
+                      <button 
+                        className="btn-action-outline" 
+                        onClick={handleIniciarEditarCliente}
+                        title="Editar datos del cliente"
+                      >
+                        <IconEdit /> Editar
+                      </button>
+                      <button 
+                        className="btn-action-danger" 
+                        onClick={handleEliminarCliente}
+                        title="Eliminar este cliente"
+                      >
+                        <IconTrash /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Ficha de contacto de solo lectura */}
+                  <div className="contact-info-grid">
+                    <div className="contact-item">
+                      <span className="contact-icon"><IconMail /></span>
+                      <span>{clienteDetalle.email || 'Sin correo electrónico'}</span>
+                    </div>
+
+                    <div className="contact-item">
+                      <span className="contact-icon"><IconPhone /></span>
+                      <span>{clienteDetalle.telefono || 'Sin teléfono'}</span>
+                    </div>
+
+                    <div className="contact-item">
+                      <span className="contact-icon"><IconMapPin /></span>
+                      <div>
+                        <div>{clienteDetalle.direccion || 'Sin dirección'}</div>
+                        {clienteDetalle.ciudad && (
+                          <div style={{ color: '#64748b', fontSize: '0.813rem' }}>{clienteDetalle.ciudad}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subformulario de Actividades en el Detalle (Alta y Edición) */}
+                  <div className="subform-actividad">
+                    <div className="subform-title">
+                      {actividadForm.id ? 'Editar actividad' : 'Agregar actividad'}
+                    </div>
+                    <form onSubmit={handleGuardarActividad} className="subform-row">
+                      <input
+                        type="text"
+                        className="subform-input-desc"
+                        placeholder="Descripción de la actividad"
+                        required
+                        value={actividadForm.descripcion}
+                        onChange={(e) => setActividadForm({ ...actividadForm, descripcion: e.target.value })}
+                      />
+                      <input
+                        type="date"
+                        className="subform-input-date"
+                        title="Fecha opcional"
+                        value={actividadForm.fecha}
+                        onChange={(e) => setActividadForm({ ...actividadForm, fecha: e.target.value })}
+                      />
+                      <button type="submit" className="btn-subform-guardar">
+                        <IconSave /> Guardar
+                      </button>
+                      {(actividadForm.id || actividadForm.descripcion || actividadForm.fecha) && (
+                        <button
+                          type="button"
+                          className="btn-subform-cancelar"
+                          onClick={handleCancelarEditarActividad}
+                        >
+                          <IconClose /> Cancelar
+                        </button>
+                      )}
+                    </form>
+                  </div>
+
+                  {/* Contenedor desplazable interno para las actividades */}
+                  <div className="activities-scroll-area">
+                    {/* Sección Compromisos */}
+                    <div className="section-title">Compromisos</div>
+                    <ul className="activity-list">
+                      {compromisos.map((act) => {
+                        const vencido = estaVencida(act.fecha);
+                        return (
+                          <li key={act.id} className="activity-item">
+                            <div className="activity-left">
+                              <div
+                                className="custom-checkbox"
+                                onClick={() => handleCompletarActividad(act.id)}
+                                title="Marcar como completada"
+                              />
+                              <div className="activity-details">
+                                <span className="activity-desc">{act.descripcion}</span>
+                                <span className={`activity-meta ${vencido ? 'vencido' : ''}`}>
+                                  {act.fecha ? (
+                                    <>
+                                      {formatearFecha(act.fecha)}
+                                      {vencido ? ' · Vencido' : ''}
+                                    </>
+                                  ) : (
+                                    'Sin fecha'
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="activity-actions">
+                              <button
+                                className="btn-icon-subtle"
+                                onClick={() => handleIniciarEditarActividad(act)}
+                                title="Editar actividad"
+                              >
+                                <IconEdit />
+                              </button>
+                              <button
+                                className="btn-icon-subtle delete"
+                                onClick={() => handleEliminarActividad(act.id)}
+                                title="Eliminar actividad"
+                              >
+                                <IconTrash />
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+
+                      {compromisos.length === 0 && (
+                        <li className="empty-activities">No hay compromisos pendientes</li>
+                      )}
+                    </ul>
+
+                    {/* Sección Actividades Completadas (Solo Lectura, sin edición ni borrado individual) */}
+                    <div className="section-title">Actividades completadas</div>
+                    <ul className="activity-list">
+                      {actividadesCompletadas.map((act) => (
+                        <li key={act.id} className="activity-item">
+                          <div className="activity-left">
+                            <div className="custom-checkbox-completed" title="Actividad completada">
+                              <IconCheck />
+                            </div>
+                            <div className="activity-details">
+                              <span className="activity-desc">{act.descripcion}</span>
+                              <span className="activity-meta">
+                                {act.fechaCompletada 
+                                  ? `Completada el ${formatearFecha(act.fechaCompletada)}` 
+                                  : 'Completada'}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Nota: Las actividades completadas no muestran botones de edición ni borrado */}
+                        </li>
+                      ))}
+
+                      {actividadesCompletadas.length === 0 && (
+                        <li className="empty-activities">No hay actividades completadas</li>
+                      )}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
+                  Seleccione un cliente para ver su información
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f2f5f9; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; height: 100vh; overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { height: 100vh; display: flex; flex-direction: column; }
+    header { height: 64px; flex: none; display: flex; align-items: center; padding: 0 28px; color: white; background: #294768; font-size: 25px; font-weight: 750; letter-spacing: -.5px; }
+    main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 32%) 1fr; gap: 12px; padding: 12px; }
+    .panel { min-height: 0; overflow: hidden; border: 1px solid #dce3ec; border-radius: 12px; background: white; box-shadow: 0 2px 8px #17203308; }
+    .master { display: flex; flex-direction: column; }
+    .master-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 18px 14px; }
+    h1, h2, h3, p { margin: 0; }
+    .master-head h1 { font-size: 25px; }
+    .search { margin: 0 16px 14px; width: calc(100% - 32px); padding: 12px 14px; border: 1px solid #d4dbe5; border-radius: 7px; outline: none; }
+    .search:focus, input:focus { border-color: #3478db; box-shadow: 0 0 0 3px #3478db20; }
+    .client-list { overflow-y: auto; min-height: 0; }
+    .client { display: flex; align-items: center; gap: 13px; width: 100%; padding: 14px 18px; text-align: left; border: 0; border-top: 1px solid #edf0f4; background: white; }
+    .client:hover { background: #f6f9fd; }
+    .client.selected { background: #e8f2ff; }
+    .avatar { width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%; color: #2466b7; background: #d8eaff; font-weight: 700; }
+    .client-name { font-weight: 700; margin-bottom: 4px; }
+    .muted { color: #68758a; font-size: 14px; }
+    .detail { overflow-y: auto; padding: 28px; }
+    .empty { height: 100%; display: grid; place-items: center; color: #68758a; text-align: center; }
+    .profile-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .customer-profile { min-width: 0; }
+    .customer-profile > div:first-child { min-width: 0; }
+    .customer-actions { flex: none; text-align: right; }
+    .profile-top h2 { font-size: 32px; margin-bottom: 24px; }
+    .profile-data { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 30px; color: #303b4d; }
+    .profile-data div { overflow-wrap: anywhere; }
+    .eyebrow { display: block; margin-bottom: 5px; color: #78849a; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .divider { border: 0; border-top: 1px solid #e8ecf1; margin: 28px 0; }
+    .section-title { font-size: 20px; margin-bottom: 12px; }
+    .notice { padding: 14px; color: #68758a; border: 1px dashed #d7dee8; border-radius: 8px; }
+    .primary { border: 0; border-radius: 7px; padding: 10px 15px; color: white; background: #2874d4; font-weight: 650; }
+    .primary:hover { background: #1c62bb; }
+    .actions { display: flex; gap: 8px; }
+    .secondary, .danger { border: 1px solid #d4dbe5; border-radius: 7px; padding: 9px 13px; background: white; color: #273448; font-weight: 600; }
+    .secondary:hover { background: #f3f6fa; }
+    .danger { color: #a52f35; border-color: #e3b9bc; }
+    .danger:hover { background: #fff4f4; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 760px; }
+    .field { display: flex; flex-direction: column; gap: 7px; color: #526076; font-size: 14px; }
+    .field input { width: 100%; padding: 11px 12px; border: 1px solid #d4dbe5; border-radius: 7px; outline: none; color: #172033; }
+    .field.full { grid-column: 1 / -1; }
+    .form-actions { display: flex; gap: 9px; margin-top: 18px; }
+    .activity-form { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(150px, 220px) auto auto; align-items: end; gap: 10px; padding: 14px; margin: 16px 0 22px; border: 1px dashed #d4dbe5; border-radius: 9px; }
+    .activity-list { max-height: 230px; overflow-y: auto; border: 1px solid #e3e8ef; border-radius: 9px; margin-bottom: 18px; }
+    .activity-row { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-bottom: 1px solid #edf0f4; }
+    .activity-row:last-child { border-bottom: 0; }
+    .activity-row.done { background: #f0faf5; }
+    .activity-date.overdue { color: #b43f43; font-weight: 650; }
+    .activity-info { flex: 1; min-width: 0; }
+    .activity-description { overflow-wrap: anywhere; }
+    .activity-buttons { display: flex; gap: 6px; }
+    .activity-buttons button { padding: 7px 9px; }
+    .error { margin: 12px 16px; color: #a52f35; font-size: 14px; }
+    .loading { padding: 18px; color: #68758a; text-align: center; }
+    @media (max-width: 900px) and (min-width: 641px) {
+      main { grid-template-columns: minmax(240px, 38%) minmax(0, 1fr); }
+      .detail { padding: 20px; }
+      .customer-profile { flex-direction: column; gap: 10px; }
+      .customer-actions { display: flex; align-items: center; gap: 12px; text-align: left; }
+      .customer-actions .actions { margin-top: 0 !important; }
+      .activity-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      body { overflow: hidden; height: 100vh; height: 100dvh; min-height: 0; }
+      .app { height: 100vh; height: 100dvh; min-height: 0; }
+      main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 38%) minmax(0, 1fr); }
+      .detail { padding: 20px; }
+      .detail { overflow-y: auto; }
+      .customer-profile { flex-direction: column; gap: 10px; }
+      .customer-actions { display: flex; align-items: center; gap: 12px; text-align: left; }
+      .customer-actions .actions { margin-top: 0 !important; }
+      .profile-data { grid-template-columns: 1fr; }
+      .activity-form { grid-template-columns: 1fr; }
+      .activity-buttons button { padding: 7px 6px; font-size: 12px; }
+      .activity-row { flex-wrap: wrap; gap: 10px; }
+      .activity-info { flex: 1 1 calc(100% - 42px); }
+      .activity-buttons { margin-left: 34px; }
+      .master-head { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useEffect, useState } = React;
+
+    function fechaLocalISO() {
+      const hoy = new Date();
+      return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+    }
+
+    function mostrarFecha(fecha) {
+      const [anio, mes, dia] = fecha.split("-").map(Number);
+      return new Date(anio, mes - 1, dia).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+    }
+
+    function MiniCRM() {
+      const [clientes, setClientes] = useState([]);
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [busqueda, setBusqueda] = useState("");
+      const [error, setError] = useState("");
+      const [editando, setEditando] = useState(false);
+      const [nuevo, setNuevo] = useState(false);
+      const [version, setVersion] = useState(0);
+      const [formulario, setFormulario] = useState({ nombre: "", email: "", telefono: "", direccion: "" });
+      const [actividadEditando, setActividadEditando] = useState(null);
+      const [formActividad, setFormActividad] = useState({ descripcion: "", fecha: "" });
+      const [cargando, setCargando] = useState(true);
+
+      useEffect(() => {
+        const controlador = new AbortController();
+        const demora = setTimeout(async () => {
+          setCargando(true);
+          try {
+            const respuesta = await fetch(`/api/clientes?q=${encodeURIComponent(busqueda)}`, { signal: controlador.signal });
+            if (!respuesta.ok) throw new Error("No se pudo cargar la lista de clientes.");
+            const lista = await respuesta.json();
+            setClientes(lista);
+            setCargando(false);
+            setError("");
+            if (seleccionado && !lista.some(cliente => cliente.id === seleccionado.id)) setSeleccionado(null);
+          } catch (e) {
+            if (e.name !== "AbortError") {
+              setError(e.message || "No se pudo conectar con el servidor.");
+              setCargando(false);
+            }
+          }
+        }, 180);
+        return () => { clearTimeout(demora); controlador.abort(); };
+      }, [busqueda, version]);
+
+      async function elegir(cliente) {
+        try {
+          const respuesta = await fetch(`/api/clientes/${cliente.id}`);
+          if (!respuesta.ok) throw new Error("No se pudo abrir la ficha del cliente.");
+          setSeleccionado(await respuesta.json());
+          setError("");
+        } catch (e) { setError(e.message); }
+      }
+
+      function iniciarAlta() {
+        setSeleccionado(null);
+        setEditando(true);
+        setNuevo(true);
+        setError("");
+        setFormulario({ nombre: "", email: "", telefono: "", direccion: "" });
+      }
+
+      function iniciarEdicion() {
+        setFormulario({ nombre: seleccionado.nombre, email: seleccionado.email, telefono: seleccionado.telefono || "", direccion: seleccionado.direccion || "" });
+        setNuevo(false);
+        setEditando(true);
+        setError("");
+      }
+
+      async function guardarCliente(evento) {
+        evento.preventDefault();
+        try {
+          const respuesta = await fetch(nuevo ? "/api/clientes" : `/api/clientes/${seleccionado.id}`, {
+            method: nuevo ? "POST" : "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formulario)
+          });
+          const datos = await respuesta.json();
+          if (!respuesta.ok) throw new Error(datos.error || "No se pudo guardar el cliente.");
+          setEditando(false);
+          setNuevo(false);
+          setError("");
+          setVersion(v => v + 1);
+          const detalle = await fetch(`/api/clientes/${datos.id}`);
+          if (detalle.ok) setSeleccionado(await detalle.json());
+        } catch (e) { setError(e.message || "No se pudo guardar el cliente."); }
+      }
+
+      async function borrarCliente() {
+        if (!window.confirm(`¿Eliminar a ${seleccionado.nombre}? También se eliminarán sus actividades.`)) return;
+        try {
+          const respuesta = await fetch(`/api/clientes/${seleccionado.id}`, { method: "DELETE" });
+          if (!respuesta.ok) {
+            const datos = await respuesta.json();
+            throw new Error(datos.error || "No se pudo eliminar el cliente.");
+          }
+          setSeleccionado(null);
+          setEditando(false);
+          setError("");
+          setVersion(v => v + 1);
+        } catch (e) { setError(e.message); }
+      }
+
+      async function actualizarFicha() {
+        if (!seleccionado) return;
+        const respuesta = await fetch(`/api/clientes/${seleccionado.id}`);
+        if (respuesta.ok) setSeleccionado(await respuesta.json());
+      }
+
+      function nuevaActividad() {
+        setActividadEditando("nueva");
+        setFormActividad({ descripcion: "", fecha: "" });
+        setError("");
+      }
+
+      function editarActividad(actividad) {
+        setActividadEditando(actividad.id);
+        setFormActividad({ descripcion: actividad.descripcion, fecha: actividad.fecha || "" });
+        setError("");
+      }
+
+      async function guardarActividad(evento) {
+        evento.preventDefault();
+        const esNueva = actividadEditando === "nueva";
+        const url = esNueva
+          ? `/api/clientes/${seleccionado.id}/actividades`
+          : `/api/clientes/${seleccionado.id}/actividades/${actividadEditando}`;
+        try {
+          const respuesta = await fetch(url, {
+            method: esNueva ? "POST" : "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ descripcion: formActividad.descripcion, fecha: formActividad.fecha || null })
+          });
+          const datos = await respuesta.json();
+          if (!respuesta.ok) throw new Error(datos.error || "No se pudo guardar la actividad.");
+          setActividadEditando(null);
+          setError("");
+          await actualizarFicha();
+        } catch (e) { setError(e.message || "No se pudo guardar la actividad."); }
+      }
+
+      async function cambiarActividad(id, accion) {
+        try {
+          const opciones = accion === "completar"
+            ? { method: "PATCH" }
+            : { method: "DELETE" };
+          const respuesta = await fetch(`/api/clientes/${seleccionado.id}/actividades/${id}${accion === "completar" ? "/completar" : ""}`, opciones);
+          if (!respuesta.ok) {
+            const datos = await respuesta.json();
+            throw new Error(datos.error || "No se pudo actualizar la actividad.");
+          }
+          setError("");
+          await actualizarFicha();
+        } catch (e) { setError(e.message); }
+      }
+
+      const pendientes = seleccionado?.actividades?.filter(a => !a.completada) || [];
+      const completadas = seleccionado?.actividades?.filter(a => a.completada) || [];
+
+      return <div className="app">
+        <header>MiniCRM</header>
+        <main>
+          <section className="panel master">
+            <div className="master-head"><h1>Clientes</h1><button className="primary" type="button" onClick={iniciarAlta}>＋ Agregar</button></div>
+            <input className="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar por cualquier campo..." aria-label="Buscar clientes" />
+            {error && <p className="error" role="alert">{error}</p>}
+            <div className="client-list">
+              {cargando && <p className="loading" role="status">Cargando clientes...</p>}
+              {clientes.map(cliente => <button key={cliente.id} type="button" className={`client ${seleccionado?.id === cliente.id ? "selected" : ""}`} onClick={() => elegir(cliente)}>
+                <span className="avatar">{cliente.nombre.split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase()}</span>
+                <span><span className="client-name">{cliente.nombre}</span><br /><span className="muted">{cliente.email}</span></span>
+              </button>)}
+              {!cargando && !clientes.length && !error && <p className="muted" style={{padding: 18}}>No hay clientes para mostrar.</p>}
+            </div>
+          </section>
+          <section className="panel detail">
+            {editando ? <>
+              <h2 style={{marginBottom:24}}>{nuevo ? "Agregar cliente" : "Editar cliente"}</h2>
+              <form onSubmit={guardarCliente}>
+                <div className="form-grid">
+                  <label className="field">Nombre<input required maxLength="120" value={formulario.nombre} onChange={e => setFormulario({...formulario, nombre: e.target.value})} /></label>
+                  <label className="field">Email<input required type="email" maxLength="180" value={formulario.email} onChange={e => setFormulario({...formulario, email: e.target.value})} /></label>
+                  <label className="field">Teléfono<input maxLength="40" value={formulario.telefono} onChange={e => setFormulario({...formulario, telefono: e.target.value})} /></label>
+                  <label className="field">Dirección<input maxLength="180" value={formulario.direccion} onChange={e => setFormulario({...formulario, direccion: e.target.value})} /></label>
+                </div>
+                <div className="form-actions"><button className="primary" type="submit">Guardar</button><button className="secondary" type="button" onClick={() => { setEditando(false); setNuevo(false); setError(""); }}>Cancelar</button></div>
+              </form>
+            </> : seleccionado ? <>
+              <div className="profile-top customer-profile"><div><h2>{seleccionado.nombre}</h2>
+                <div className="profile-data">
+                  <div><span className="eyebrow">Email</span>{seleccionado.email}</div>
+                  <div><span className="eyebrow">Teléfono</span>{seleccionado.telefono || "Sin teléfono"}</div>
+                  <div><span className="eyebrow">Dirección</span>{seleccionado.direccion || "Sin dirección"}</div>
+                </div></div><div className="customer-actions"><span className="muted">#{seleccionado.id}</span><div className="actions" style={{marginTop:14}}><button className="secondary" type="button" onClick={iniciarEdicion}>Editar</button><button className="danger" type="button" onClick={borrarCliente}>Eliminar</button></div></div></div>
+              <hr className="divider" />
+              <div className="profile-top"><h3 className="section-title">Compromisos</h3><button className="primary" type="button" onClick={nuevaActividad}>＋ Agregar actividad</button></div>
+              {actividadEditando !== null && <form className="activity-form" onSubmit={guardarActividad}>
+                <label className="field">Descripción<input required maxLength="240" autoFocus value={formActividad.descripcion} onChange={e => setFormActividad({...formActividad, descripcion: e.target.value})} placeholder="Descripción de la actividad" /></label>
+                <label className="field">Fecha opcional<input type="date" value={formActividad.fecha} onInput={e => { const fecha = e.currentTarget.value; setFormActividad(actual => ({...actual, fecha})); }} onChange={e => { const fecha = e.currentTarget.value; setFormActividad(actual => ({...actual, fecha})); }} /></label>
+                <button className="primary" type="submit">Guardar</button>
+                <button className="secondary" type="button" onClick={() => { setActividadEditando(null); setError(""); }}>Cancelar</button>
+              </form>}
+              <div className="activity-list">
+                {pendientes.map(actividad => <div className="activity-row" key={actividad.id}>
+                  <input type="checkbox" aria-label={`Completar ${actividad.descripcion}`} checked={false} onChange={() => cambiarActividad(actividad.id, "completar")} />
+                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div>{actividad.fecha
+                    ? <time className={`activity-date ${actividad.fecha < fechaLocalISO() ? "overdue" : "muted"}`} dateTime={actividad.fecha}>{mostrarFecha(actividad.fecha)}{actividad.fecha < fechaLocalISO() ? " · Vencido" : ""}</time>
+                    : <span className="muted">Sin fecha</span>}</div>
+                  <div className="activity-buttons"><button className="secondary" type="button" onClick={() => editarActividad(actividad)}>Editar</button><button className="danger" type="button" onClick={() => cambiarActividad(actividad.id, "eliminar")}>Eliminar</button></div>
+                </div>)}
+                {!pendientes.length && <p className="muted" style={{padding:14}}>No hay compromisos pendientes.</p>}
+              </div>
+              <h3 className="section-title">Actividades completadas</h3>
+              <div className="activity-list">
+                {completadas.map(actividad => <div className="activity-row done" key={actividad.id}>
+                  <input type="checkbox" aria-label={`${actividad.descripcion}, completada`} checked readOnly />
+                  <div className="activity-info"><div className="activity-description">{actividad.descripcion}</div><span className="muted">{actividad.completadaEn ? `Completada el ${mostrarFecha(actividad.completadaEn)}` : "Completada"}</span>{actividad.fecha && <span className="muted"> · Fecha prevista: {mostrarFecha(actividad.fecha)}</span>}</div>
+                </div>)}
+                {!completadas.length && <p className="muted" style={{padding:14}}>Todavía no hay actividades completadas.</p>}
+              </div>
+            </> : <div className="empty">Seleccioná un cliente para ver su ficha.</div>}
+          </section>
+        </main>
+      </div>;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<MiniCRM />);
+  </script>
+</body>
+</html>

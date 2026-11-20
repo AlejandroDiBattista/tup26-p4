@@ -19,9 +19,24 @@
       margin: auto;
     }
 
-    h1 {
-      margin: 0 0 24px;
+    header.pagina {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
     }
+
+    header.pagina h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    header.pagina .controles {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
 
     .lista-alumnos {
       display: grid;
@@ -250,18 +265,20 @@
     }
 
     html`
-      <h1>Alumnos</h1>
-
-      <button @click="${abrirDialogoAgregar}">
-        Agregar
-      </button>
-
-      <input
-        type="search"
-        placeholder="Buscar..."
-        @input="${evento =>
-          estado.busqueda = evento.target.value}"
+      <header class="pagina">
+      <h1>Agenda</h1>
+      <div class="controles">
+     <input
+      type="search"
+      placeholder="Buscar alumno..."
+      @input="${evento =>
+        estado.busqueda = evento.target.value}"
       >
+      <button @click="${abrirDialogoAgregar}">
+        + Agregar
+      </button>
+    </div>
+  </header>
 
       <section class="lista-alumnos">
         ${() => [...estado.alumnos]

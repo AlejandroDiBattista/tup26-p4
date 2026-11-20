@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+    <title>Mi CRM</title>
+</head>
+<body>
+    <main id="root"></main>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+function useDebounce(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  let body = null;
+  try { body = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const msg = (body && body.error) ? body.error : `Error ${res.status}`;
+    throw new Error(msg);
+  }
+  return body;
+}
+function ErrorBanner({message, onClose}) {
+  if (!message) return null;
+  return (
+    <aside className="error-banner" role="alert">
+      <span>alerta!!!{message}</span>
+      <button onClick={onClose}>✕</button>
+    </aside>
+  );
+}
+function ClienteForm({cliente, onSave, onCancel, onDelete, isNew}) {
+  const [form, setForm] = useState({
+    nombre: cliente?.nombre || "",
+    email: cliente?.email || "",
+    telefono: cliente?.telefono || "",
+    empresa: cliente?.empresa || "",
+  });
+  useEffect(() => {
+    setForm({
+      nombre: cliente?.nombre || "",
+      email: cliente?.email || "",
+      telefono: cliente?.telefono || "",
+      empresa: cliente?.empresa || "",
+    });
+  }, [cliente]);
+  const handleChange = (field) => (e) =>
+    setForm({ ...form, [field]: e.target.value });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form);
+  };
+  return (
+    <form onSubmit={handleSubmit}>
+      <p className="form-group">
+        <label>Nombre *</label>
+        <input value={form.nombre} onChange={handleChange("nombre")} required />
+      </p>
+      <p className="form-group">
+        <label>Email</label>
+        <input value={form.email} onChange={handleChange("email")} />
+      </p>
+      <p className="form-group">
+        <label>Teléfono</label>
+        <input value={form.telefono} onChange={handleChange("telefono")} />
+      </p>
+      <p className="form-group">
+        <label>Empresa</label>
+        <input value={form.empresa} onChange={handleChange("empresa")} />
+      </p>
+      <footer className="form-actions">
+        <button type="submit" className="btn-primary">
+          {isNew ? "Crear cliente" : "Guardar cambios"}
+        </button>
+        {!isNew && (
+          <button type="button" className="btn-danger" onClick={onDelete}>
+            Eliminar cliente
+          </button>
+        )}
+         {isNew && (
+          <button type="button" className="btn-secondary" onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
+      </footer>
+    </form>
+  );
+}
+function ActividadSubform({actividad, onSave, onCancel}) {
+  const [descripcion, setDescripcion] = useState(actividad?.descripcion || "");
+  const [fecha, setFecha] = useState(actividad?.fecha || "");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({ descripcion, fecha});
+  };
+  return (
+    <form className="subform" onSubmit={handleSubmit}>
+      <p className="form-group">
+        <label>Descripción *</label>
+        <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required />
+        </p>
+      <p className="form-group">
+        <label>Fecha *</label>
+        <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
+      </p>
+      <footer className="form-actions">
+        <button type="submit" className="btn-primary">
+          {actividad ? "Guardar" : "Agregar"}
+        </button>
+        <button type="button" className="btn-secondary" onClick={onCancel}>
+          Cancelar
+        </button>
+      </footer>
+    </form>
+  );
+}
+function App() {
+  const [clientes, setClientes] = useState([]);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 300);
+
+  const [selectedId, setSelectedId] = useState(null);
+  const [clienteDetail, setClienteDetail] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const [editingActividad, setEditingActividad] = useState(null); // objeto, "new" o null
+  const [error, setError] = useState(null);
+
+  const cargarClientes = useCallback(async (q) => {
+    try {
+      const url = q ? `/api/clientes?q=${encodeURIComponent(q)}` : "/api/clientes";
+      const data = await apiFetch(url);
+      setClientes(data);
+    } catch (err) {
+      setError(err.message);
+    }
+}, []);
+useEffect(() => {
+    cargarClientes(debouncedQuery);
+  }, [debouncedQuery, cargarClientes]);
+
+  const cargarDetalle = useCallback(async (id) => {
+    try {
+      const data = await apiFetch(`/api/clientes/${id}`);
+      setClienteDetail(data);
+    } catch (err) {
+      setError(err.message);
+      setClienteDetail(null);
+    }
+  }, []);
+  const handleSelectCliente = (id) => {
+    setSelectedId(id);
+    setIsCreating(false);
+    setEditingActividad(null);
+    cargarDetalle(id);
+  };
+
+  const handleNuevoCliente = () => {
+    setSelectedId(null);
+    setClienteDetail(null);
+    setIsCreating(true);
+    setEditingActividad(null);
+  };
+  const handleGuardarCliente = async (form) => {
+    try {
+      if (isCreating) {
+        const nuevo = await apiFetch("/api/clientes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        setIsCreating(false);
+        await cargarClientes(debouncedQuery);
+        handleSelectCliente(nuevo.id);
+      } else {
+        await apiFetch(`/api/clientes/${selectedId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        await cargarClientes(debouncedQuery);
+        await cargarDetalle(selectedId);
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const handleEliminarCliente = async () => {
+    try {
+      await apiFetch(`/api/clientes/${selectedId}`, { method: "DELETE" });
+      setSelectedId(null);
+      setClienteDetail(null);
+      await cargarClientes(debouncedQuery);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const handleGuardarActividad = async (form) => {
+    try {
+      if (editingActividad === "new") {
+        await apiFetch(`/api/clientes/${selectedId}/actividades`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+      } else {
+        await apiFetch(`/api/actividades/${editingActividad.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+      }
+      setEditingActividad(null);
+      await cargarDetalle(selectedId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const handleCompletarActividad = async (actividad) => {
+    try {
+      await apiFetch(`/api/actividades/${actividad.id}/completar`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completada: true }),
+      });
+      await cargarDetalle(selectedId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleEliminarActividad = async (actividad) => {
+    try {
+      await apiFetch(`/api/actividades/${actividad.id}`, { method: "DELETE" });
+      await cargarDetalle(selectedId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  return (
+    <React.Fragment>
+      <ErrorBanner message={error} onClose={() => setError(null)} />
+      <section className="layout">
+        <aside className="master">
+          <header className="master-header">
+            <button className="btn-nuevo" onClick={handleNuevoCliente}>
+              + Nuevo cliente
+            </button>
+            <input
+              placeholder="Buscar..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </header>
+          <ul className="master-list">
+            {clientes.map((c) => (
+              <li
+                key={c.id}
+                className={"cliente-item" + (c.id === selectedId ? " selected" : "")}
+                onClick={() => handleSelectCliente(c.id)}
+              >
+                <span className="nombre">{c.nombre}</span>
+                <span className="sub">{c.email || c.empresa || ""}</span>
+              </li>
+            ))}
+            {clientes.length === 0 && (
+              <li className="sub" style={{ padding: "12px" }}>
+                Sin resultados
+              </li>
+            )}
+          </ul>
+        </aside>
+        <section className="detail">
+          {!isCreating && !clienteDetail && (
+            <p className="detail-empty">
+              Seleccioná un cliente o creá uno nuevo.
+            </p>
+          )}
+          {isCreating && (
+            <ClienteForm
+              cliente={null}
+              isNew={true}
+              onSave={handleGuardarCliente}
+              onCancel={() => setIsCreating(false)}
+            />
+          )}
+           {!isCreating && clienteDetail && (
+            <React.Fragment>
+              <ClienteForm
+                cliente={clienteDetail}
+                isNew={false}
+                onSave={handleGuardarCliente}
+                onDelete={handleEliminarCliente}
+              />
+              <hr className="sep" />
+              <section className="actividades">
+                <header className="actividades-header">
+                  <strong>Actividades</strong>
+                  <button
+                    className="btn-primary"
+                    onClick={() => setEditingActividad("new")}
+                  >
+                    + Nueva actividad
+                  </button>
+                </header>
+
+                {editingActividad === "new" && (
+                  <ActividadSubform
+                    actividad={null}
+                    onSave={handleGuardarActividad}
+                    onCancel={() => setEditingActividad(null)}
+                  />
+                )}
+                {editingActividad && editingActividad !== "new" && (
+                  <ActividadSubform
+                    actividad={editingActividad}
+                    onSave={handleGuardarActividad}
+                    onCancel={() => setEditingActividad(null)}
+                  />
+                )}
+                <ul className="actividades-list">
+                  {(clienteDetail.actividades || []).map((a) => (
+                    <li
+                      key={a.id}
+                      className={"actividad-item" + (a.completada ? " completada" : "")}
+                    >
+                    <span className="actividad-info">
+                        {a.fecha} — {a.descripcion}
+                      </span>
+                      {!a.completada && (
+                        <menu className="actividad-acciones">
+                          <button
+                            className="btn-mini-ok"
+                            onClick={() => handleCompletarActividad(a)}
+                          >
+                            ✓
+                          </button>
+                          <button
+                            className="btn-mini-edit"
+                            onClick={() => setEditingActividad(a)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="btn-mini-del"
+                            onClick={() => handleEliminarActividad(a)}
+                          >
+                            Borrar
+                          </button>
+                        </menu>
+                      )}
+                    </li>
+                  ))}
+                   {(!clienteDetail.actividades || clienteDetail.actividades.length === 0) && (
+                    <li className="sub" style={{ padding: "10px" }}>
+                      Sin actividades
+                    </li>
+                  )}
+                </ul>
+              </section>
+            </React.Fragment>
+          )}
+        </section>
+      </section>
+    </React.Fragment>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

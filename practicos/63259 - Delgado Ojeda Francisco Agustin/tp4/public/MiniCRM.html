@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM</title>
+  
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.2/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      color-scheme: dark;
+      --bg-app: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1e293b;
+      --bg-input: #0b111e;
+      --bg-hover: #1e293b;
+      --border-color: #1e293b;
+      --border-subtle: #334155;
+      --border-focus: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-light: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #f87171;
+      --danger-hover: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.14);
+      --success: #34d399;
+      --success-bg: rgba(52, 211, 153, 0.14);
+      --card-selected: #172554;
+      --card-selected-border: #3b82f6;
+      --card-selected-glow: rgba(59, 130, 246, 0.25);
+      --avatar-bg: #1e293b;
+      --avatar-color: #60a5fa;
+      --avatar-border: #334155;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+    }
+
+    body.tema-claro {
+      color-scheme: light;
+      --bg-app: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-input: #ffffff;
+      --bg-hover: #f1f5f9;
+      --border-color: #e2e8f0;
+      --border-subtle: #cbd5e1;
+      --border-focus: #3b82f6;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --danger-bg: #fef2f2;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --card-selected: #eff6ff;
+      --card-selected-border: #93c5fd;
+      --card-selected-glow: rgba(59, 130, 246, 0.12);
+      --avatar-bg: #e2e8f0;
+      --avatar-color: #334155;
+      --avatar-border: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-contenedor {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    header.app-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .brand .logo-badge {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-derecha {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .header-info {
+        display: none;
+      }
+    }
+
+    .btn-toggle-tema {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-toggle-tema:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .app-cuerpo {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      flex: 1;
+      overflow: hidden;
+      background: var(--bg-app);
+    }
+
+    @media (max-width: 900px) {
+      .app-cuerpo {
+        grid-template-columns: 300px 1fr;
+      }
+    }
+
+    .panel-maestro {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .maestro-cabecera {
+      padding: 16px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .maestro-cabecera h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .btn-nuevo {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-nuevo:hover {
+      background: var(--primary-hover);
+    }
+
+    .maestro-buscador {
+      padding: 0 20px 14px;
+      flex-shrink: 0;
+    }
+
+    .input-busqueda-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-busqueda-wrap svg {
+      position: absolute;
+      left: 12px;
+      color: var(--text-light);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .input-busqueda {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .input-busqueda:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-busqueda::placeholder {
+      color: var(--text-light);
+    }
+
+    .maestro-lista {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cliente-tarjeta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .cliente-tarjeta:hover {
+      background: var(--bg-hover);
+    }
+
+    .cliente-tarjeta.activa {
+      background: var(--card-selected);
+      border-color: var(--card-selected-border);
+      box-shadow: 0 0 12px var(--card-selected-glow);
+    }
+
+    .avatar-circulo {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: var(--avatar-bg);
+      color: var(--avatar-color);
+      border: 1px solid var(--avatar-border);
+      font-weight: 700;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: 0.03em;
+    }
+
+    .cliente-tarjeta.activa .avatar-circulo {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    .cliente-info-corta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cliente-nombre-fila {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .cliente-email-fila {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-metricas {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .cliente-tarjeta.activa .badge-metricas {
+      background: var(--bg-surface-elevated);
+      border-color: var(--card-selected-border);
+      color: #93c5fd;
+    }
+
+    .sin-resultados-maestro {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .panel-detalle {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-app);
+    }
+
+    .detalle-vacio {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--text-muted);
+      padding: 40px;
+      text-align: center;
+    }
+
+    .detalle-vacio svg {
+      width: 56px;
+      height: 56px;
+      color: var(--text-light);
+    }
+
+    .detalle-scrollable {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .detalle-layout {
+      height: 100%;
+      overflow: hidden;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .actividades-scrollable {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-right: 6px;
+    }
+
+    .ficha-cliente-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
+    }
+
+    .ficha-cabecera {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    .ficha-titulos {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ficha-titulos h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .ficha-id-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: var(--bg-input);
+      color: var(--text-muted);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+    }
+
+    .ficha-acciones {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-secundario {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secundario:hover {
+      background: var(--border-subtle);
+      border-color: var(--text-muted);
+    }
+
+    .btn-peligro {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-peligro:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: var(--danger);
+    }
+
+    .ficha-datos-grilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .dato-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .dato-icono {
+      color: var(--text-light);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .dato-texto-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dato-etiqueta {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-light);
+      margin-bottom: 2px;
+    }
+
+    .dato-valor {
+      font-size: 0.95rem;
+      color: var(--text-main);
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .subformulario-card {
+      background: var(--bg-surface);
+      border: 1.5px dashed var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
+    }
+
+    .subformulario-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subform-fila-unica {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .subform-fila-unica .campo-desc {
+      flex: 2;
+      min-width: 220px;
+    }
+
+    .subform-fila-unica .campo-fecha {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .subform-fila-unica .subform-botones-inline {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .form-fila-doble {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-fila-doble {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-control {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .input-control:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-control::placeholder {
+      color: var(--text-light);
+    }
+
+    .seccion-actividades {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .seccion-titulo-fila {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .seccion-titulo {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .contador-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--bg-input);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+    }
+
+    .lista-actividades-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .actividad-fila {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .actividad-fila:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-subtle);
+    }
+
+    .actividad-cuerpo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-completar-check {
+      background: var(--bg-input);
+      border: 1.5px solid var(--border-subtle);
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      font-size: 12px;
+      font-weight: bold;
+      flex-shrink: 0;
+      padding: 0;
+      transition: all 0.15s ease;
+    }
+
+    .btn-completar-check:hover {
+      border-color: var(--success);
+      color: var(--success);
+      background: var(--success-bg);
+    }
+
+    .icono-check-completa {
+      background: var(--success);
+      color: #ffffff;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .actividad-textos {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .actividad-desc {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .actividad-desc.completada-texto {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .actividad-fecha-tag {
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+    }
+
+    .actividad-fecha-tag.vencida {
+      color: var(--danger);
+      background: var(--danger-bg);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+      width: fit-content;
+      border: 1px solid rgba(248, 113, 113, 0.25);
+    }
+
+    .actividad-acciones {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-icono {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icono:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+    }
+
+    .btn-icono.icono-peligro:hover {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .sin-actividades-aviso {
+      padding: 16px;
+      text-align: center;
+      background: var(--bg-input);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .formulario-cliente-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      max-width: 680px;
+    }
+
+    .formulario-cliente-card h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text-main);
+    }
+
+    .form-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-grupo label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-grupo label .requerido {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    .form-acciones-pie {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .alerta-error {
+      background: var(--danger-bg);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: var(--danger);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: var(--radius-full);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const MESES = [
+      "ene", "feb", "mar", "abr", "may", "jun",
+      "jul", "ago", "sep", "oct", "nov", "dic"
+    ];
+
+    function formatearFecha(cadenaFecha) {
+      if (!cadenaFecha) return "Sin fecha";
+      const partes = cadenaFecha.split("-");
+      if (partes.length === 3) {
+        const dia = parseInt(partes[2], 10);
+        const mesIdx = parseInt(partes[1], 10) - 1;
+        const anio = partes[0];
+        if (mesIdx >= 0 && mesIdx < 12) {
+          return `${dia} ${MESES[mesIdx]} ${anio}`;
+        }
+      }
+      return cadenaFecha;
+    }
+
+    function esFechaVencida(cadenaFecha) {
+      if (!cadenaFecha) return false;
+      const partes = cadenaFecha.split("-");
+      if (partes.length !== 3) return false;
+      
+      const hoy = new Date();
+      const anioHoy = hoy.getFullYear();
+      const mesHoy = String(hoy.getMonth() + 1).padStart(2, "0");
+      const diaHoy = String(hoy.getDate()).padStart(2, "0");
+      return cadenaFecha < `${anioHoy}-${mesHoy}-${diaHoy}`;
+    }
+
+    function obtenerIniciales(nombre) {
+      if (!nombre) return "??";
+      const palabras = nombre.trim().split(/\s+/);
+      if (palabras.length === 1) {
+        return palabras[0].substring(0, 2).toUpperCase();
+      }
+      return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+    }
+
+    const PALETAS_AVATAR = {
+      claro: [
+        { bg: "#dbeafe", color: "#1d4ed8", border: "#bfdbfe" },
+        { bg: "#dcfce7", color: "#15803d", border: "#bbf7d0" },
+        { bg: "#f3e8ff", color: "#7e22ce", border: "#e9d5ff" },
+        { bg: "#ffedd5", color: "#c2410c", border: "#fed7aa" },
+        { bg: "#fce7f3", color: "#be185d", border: "#fbcfe8" },
+        { bg: "#ccfbf1", color: "#0f766e", border: "#99f6e4" },
+        { bg: "#e0e7ff", color: "#4338ca", border: "#c7d2fe" },
+      ],
+      oscuro: [
+        { bg: "rgba(59, 130, 246, 0.2)", color: "#93c5fd", border: "rgba(59, 130, 246, 0.4)" },
+        { bg: "rgba(34, 197, 94, 0.2)", color: "#86efac", border: "rgba(34, 197, 94, 0.4)" },
+        { bg: "rgba(168, 85, 247, 0.2)", color: "#d8b4fe", border: "rgba(168, 85, 247, 0.4)" },
+        { bg: "rgba(249, 115, 22, 0.2)", color: "#fed7aa", border: "rgba(249, 115, 22, 0.4)" },
+        { bg: "rgba(236, 72, 153, 0.2)", color: "#fbcfe8", border: "rgba(236, 72, 153, 0.4)" },
+        { bg: "rgba(20, 184, 166, 0.2)", color: "#99f6e4", border: "rgba(20, 184, 166, 0.4)" },
+        { bg: "rgba(99, 102, 241, 0.2)", color: "#c7d2fe", border: "rgba(99, 102, 241, 0.4)" },
+      ],
+    };
+
+    function obtenerColorAvatar(id, nombre, temaOscuro) {
+      const lista = temaOscuro ? PALETAS_AVATAR.oscuro : PALETAS_AVATAR.claro;
+      const idx = Math.abs((id || 0) + (nombre ? nombre.charCodeAt(0) : 0)) % lista.length;
+      return lista[idx];
+    }
+
+    function MiniCRMApp() {
+      const [temaOscuro, setTemaOscuro] = useState(true);
+
+      useEffect(() => {
+        if (temaOscuro) {
+          document.body.classList.remove("tema-claro");
+        } else {
+          document.body.classList.add("tema-claro");
+        }
+      }, [temaOscuro]);
+
+      const [clientes, setClientes] = useState([]);
+      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+      const [clienteDetalle, setClienteDetalle] = useState(null);
+      const [terminoBusqueda, setTerminoBusqueda] = useState("");
+      const [modoDetalle, setModoDetalle] = useState("ver");
+
+      const [formCliente, setFormCliente] = useState({
+        nombre: "",
+        email: "",
+        telefono: "",
+        domicilio: "",
+      });
+      const [errorCliente, setErrorCliente] = useState("");
+
+      const [formActividad, setFormActividad] = useState({
+        descripcion: "",
+        fecha: "",
+      });
+      const [actividadEnEdicionId, setActividadEnEdicionId] = useState(null);
+      const [errorActividad, setErrorActividad] = useState("");
+
+      async function cargarClientes(termino = terminoBusqueda) {
+        try {
+          const url = termino.trim()
+            ? `/api/clientes?buscar=${encodeURIComponent(termino.trim())}`
+            : "/api/clientes";
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("Error al consultar clientes");
+          const datos = await res.json();
+          setClientes(datos);
+
+          if (datos.length > 0 && !clienteSeleccionadoId && modoDetalle === "ver") {
+            setClienteSeleccionadoId(datos[0].id);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      async function cargarDetalleCliente(id) {
+        if (!id) {
+          setClienteDetalle(null);
+          return;
+        }
+        try {
+          const res = await fetch(`/api/clientes/${id}`);
+          if (!res.ok) throw new Error("Error al obtener cliente");
+          const datos = await res.json();
+          setClienteDetalle(datos);
+        } catch (err) {
+          console.error(err);
+          setClienteDetalle(null);
+        }
+      }
+
+      useEffect(() => {
+        cargarClientes();
+      }, []);
+
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          cargarClientes(terminoBusqueda);
+        }, 200);
+        return () => clearTimeout(timer);
+      }, [terminoBusqueda]);
+
+      useEffect(() => {
+        if (clienteSeleccionadoId) {
+          cargarDetalleCliente(clienteSeleccionadoId);
+        }
+      }, [clienteSeleccionadoId]);
+
+      function iniciarCrearCliente() {
+        setModoDetalle("crear");
+        setFormCliente({ nombre: "", email: "", telefono: "", domicilio: "" });
+        setErrorCliente("");
+      }
+
+      function iniciarEditarCliente() {
+        if (!clienteDetalle) return;
+        setModoDetalle("editar");
+        setFormCliente({
+          nombre: clienteDetalle.nombre || "",
+          email: clienteDetalle.email || "",
+          telefono: clienteDetalle.telefono || "",
+          domicilio: clienteDetalle.domicilio || "",
+        });
+        setErrorCliente("");
+      }
+
+      function cancelarEdicionCliente() {
+        setModoDetalle("ver");
+        setErrorCliente("");
+      }
+
+      async function guardarCliente(e) {
+        e.preventDefault();
+        setErrorCliente("");
+
+        if (!formCliente.nombre.trim() || !formCliente.email.trim()) {
+          setErrorCliente("Nombre y correo electrónico son obligatorios.");
+          return;
+        }
+
+        try {
+          if (modoDetalle === "crear") {
+            const res = await fetch("/api/clientes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formCliente),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al crear cliente");
+
+            await cargarClientes();
+            setClienteSeleccionadoId(data.id);
+            setModoDetalle("ver");
+          } else if (modoDetalle === "editar") {
+            const res = await fetch(`/api/clientes/${clienteSeleccionadoId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formCliente),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al actualizar");
+
+            await cargarClientes();
+            await cargarDetalleCliente(clienteSeleccionadoId);
+            setModoDetalle("ver");
+          }
+        } catch (err) {
+          setErrorCliente(err.message);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (!clienteDetalle) return;
+        if (!window.confirm(`¿Eliminar al cliente "${clienteDetalle.nombre}"?`)) return;
+
+        try {
+          const res = await fetch(`/api/clientes/${clienteDetalle.id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("Error al eliminar cliente");
+
+          setClienteSeleccionadoId(null);
+          setClienteDetalle(null);
+          setModoDetalle("ver");
+          await cargarClientes();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      function iniciarEditarActividad(act) {
+        if (act.completada) return;
+        setActividadEnEdicionId(act.id);
+        setFormActividad({
+          descripcion: act.descripcion || "",
+          fecha: act.fecha || "",
+        });
+        setErrorActividad("");
+      }
+
+      function cancelarEdicionActividad() {
+        setActividadEnEdicionId(null);
+        setFormActividad({ descripcion: "", fecha: "" });
+        setErrorActividad("");
+      }
+
+      async function guardarActividad(e) {
+        e.preventDefault();
+        setErrorActividad("");
+
+        if (!formActividad.descripcion.trim()) {
+          setErrorActividad("La descripción es obligatoria.");
+          return;
+        }
+
+        try {
+          const payload = {
+            descripcion: formActividad.descripcion.trim(),
+            fecha: formActividad.fecha || null,
+          };
+
+          const url = actividadEnEdicionId
+            ? `/api/clientes/${clienteSeleccionadoId}/actividades/${actividadEnEdicionId}`
+            : `/api/clientes/${clienteSeleccionadoId}/actividades`;
+
+          const res = await fetch(url, {
+            method: actividadEnEdicionId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Error al guardar actividad");
+
+          cancelarEdicionActividad();
+          await cargarDetalleCliente(clienteSeleccionadoId);
+          await cargarClientes();
+        } catch (err) {
+          setErrorActividad(err.message);
+        }
+      }
+
+      async function completarActividad(actividadId) {
+        try {
+          const res = await fetch(
+            `/api/clientes/${clienteSeleccionadoId}/actividades/${actividadId}/completar`,
+            { method: "PATCH" }
+          );
+          if (!res.ok) throw new Error("Error al completar actividad");
+
+          if (actividadEnEdicionId === actividadId) cancelarEdicionActividad();
+          await cargarDetalleCliente(clienteSeleccionadoId);
+          await cargarClientes();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      async function eliminarActividad(actividadId) {
+        if (!window.confirm("¿Deseas eliminar este compromiso?")) return;
+
+        try {
+          const res = await fetch(
+            `/api/clientes/${clienteSeleccionadoId}/actividades/${actividadId}`,
+            { method: "DELETE" }
+          );
+          if (!res.ok) throw new Error("Error al eliminar");
+
+          if (actividadEnEdicionId === actividadId) cancelarEdicionActividad();
+          await cargarDetalleCliente(clienteSeleccionadoId);
+          await cargarClientes();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+
+      return (
+        <div className="app-contenedor">
+          <header className="app-header">
+            <div className="brand">
+              <span className="logo-badge">CRM</span>
+              <span>MiniCRM</span>
+            </div>
+            <div className="header-derecha">
+              <span className="header-info">Gestión de clientes y actividades</span>
+              <button
+                type="button"
+                className="btn-toggle-tema"
+                onClick={() => setTemaOscuro(!temaOscuro)}
+              >
+                {temaOscuro ? "☀️ Claro" : "🌙 Oscuro"}
+              </button>
+            </div>
+          </header>
+
+          <div className="app-cuerpo">
+            <aside className="panel-maestro">
+              <div className="maestro-cabecera">
+                <h2>Clientes</h2>
+                <button
+                  type="button"
+                  className="btn-nuevo"
+                  onClick={iniciarCrearCliente}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Agregar</span>
+                </button>
+              </div>
+
+              <div className="maestro-buscador">
+                <div className="input-busqueda-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input
+                    type="text"
+                    className="input-busqueda"
+                    placeholder="Buscar por cualquier campo..."
+                    value={terminoBusqueda}
+                    onChange={(e) => setTerminoBusqueda(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="maestro-lista">
+                {clientes.length === 0 && (
+                  <div className="sin-resultados-maestro">
+                    No se encontraron clientes.
+                  </div>
+                )}
+                {clientes.map((c) => {
+                  const activa = c.id === clienteSeleccionadoId && modoDetalle === "ver";
+                  const estiloAvatar = obtenerColorAvatar(c.id, c.nombre, temaOscuro);
+                  return (
+                    <div
+                      key={c.id}
+                      className={`cliente-tarjeta ${activa ? "activa" : ""}`}
+                      onClick={() => {
+                        setClienteSeleccionadoId(c.id);
+                        setModoDetalle("ver");
+                        cancelarEdicionActividad();
+                      }}
+                    >
+                      <div
+                        className="avatar-circulo"
+                        style={
+                          activa
+                            ? {}
+                            : {
+                                backgroundColor: estiloAvatar.bg,
+                                color: estiloAvatar.color,
+                                borderColor: estiloAvatar.border,
+                              }
+                        }
+                      >
+                        {obtenerIniciales(c.nombre)}
+                      </div>
+                      <div className="cliente-info-corta">
+                        <div className="cliente-nombre-fila">{c.nombre}</div>
+                        <div className="cliente-email-fila">{c.email}</div>
+                      </div>
+                      <div className="badge-metricas">
+                        {c.pendientes} | {c.completadas}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
+
+            <main className="panel-detalle">
+              {modoDetalle === "crear" || modoDetalle === "editar" ? (
+                <div className="detalle-scrollable">
+                  <div className="formulario-cliente-card">
+                    <h2>{modoDetalle === "crear" ? "Nuevo Cliente" : "Editar Ficha de Cliente"}</h2>
+                    {errorCliente && <div className="alerta-error">{errorCliente}</div>}
+
+                    <form onSubmit={guardarCliente}>
+                      <div className="form-grupo">
+                        <label>Nombre y Apellido <span className="requerido">*</span></label>
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Ej: Ana Garcia"
+                          value={formCliente.nombre}
+                          onChange={(e) => setFormCliente({ ...formCliente, nombre: e.target.value })}
+                          autoFocus
+                          required
+                        />
+                      </div>
+
+                      <div className="form-fila-doble">
+                        <div className="form-grupo">
+                          <label>Correo electrónico <span className="requerido">*</span></label>
+                          <input
+                            type="email"
+                            className="input-control"
+                            placeholder="Ej: ana.garcia@example.com"
+                            value={formCliente.email}
+                            onChange={(e) => setFormCliente({ ...formCliente, email: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div className="form-grupo">
+                          <label>Teléfono</label>
+                          <input
+                            type="text"
+                            className="input-control"
+                            placeholder="Ej: 381 555 0123"
+                            value={formCliente.telefono}
+                            onChange={(e) => setFormCliente({ ...formCliente, telefono: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-grupo">
+                        <label>Domicilio / Dirección</label>
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Ej: San Martin 450, Yerba Buena"
+                          value={formCliente.domicilio}
+                          onChange={(e) => setFormCliente({ ...formCliente, domicilio: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-acciones-pie">
+                        <button
+                          type="button"
+                          className="btn-secundario"
+                          onClick={cancelarEdicionCliente}
+                        >
+                          Cancelar
+                        </button>
+                        <button type="submit" className="btn-nuevo">
+                          Guardar
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              ) : clienteDetalle ? (
+                <div className="detalle-layout">
+                  <article className="ficha-cliente-card">
+                    <header className="ficha-cabecera">
+                      <div className="ficha-titulos">
+                        <h2>{clienteDetalle.nombre}</h2>
+                        <span className="ficha-id-badge">#{clienteDetalle.id}</span>
+                      </div>
+                      <div className="ficha-acciones">
+                        <button
+                          type="button"
+                          className="btn-secundario"
+                          onClick={iniciarEditarCliente}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-peligro"
+                          onClick={eliminarCliente}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
+                    </header>
+
+                    <div className="ficha-datos-grilla">
+                      <div className="dato-item">
+                        <div className="dato-icono">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                          </svg>
+                        </div>
+                        <div className="dato-texto-wrap">
+                          <span className="dato-etiqueta">Email</span>
+                          <span className="dato-valor">{clienteDetalle.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="dato-item">
+                        <div className="dato-icono">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                          </svg>
+                        </div>
+                        <div className="dato-texto-wrap">
+                          <span className="dato-etiqueta">Teléfono</span>
+                          <span className="dato-valor">{clienteDetalle.telefono || "—"}</span>
+                        </div>
+                      </div>
+
+                      <div className="dato-item">
+                        <div className="dato-icono">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                          </svg>
+                        </div>
+                        <div className="dato-texto-wrap">
+                          <span className="dato-etiqueta">Domicilio</span>
+                          <span className="dato-valor">{clienteDetalle.domicilio || "—"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <div className="subformulario-card">
+                    <h3>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      <span>{actividadEnEdicionId ? "Editar actividad" : "Agregar actividad"}</span>
+                    </h3>
+
+                    {errorActividad && <div className="alerta-error">{errorActividad}</div>}
+
+                    <form onSubmit={guardarActividad} className="subform-fila-unica">
+                      <div className="campo-desc">
+                        <input
+                          type="text"
+                          className="input-control"
+                          placeholder="Descripción de la actividad"
+                          value={formActividad.descripcion}
+                          onChange={(e) => setFormActividad({ ...formActividad, descripcion: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="campo-fecha">
+                        <input
+                          type="date"
+                          className="input-control"
+                          title="Fecha opcional"
+                          value={formActividad.fecha}
+                          onChange={(e) => setFormActividad({ ...formActividad, fecha: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="subform-botones-inline">
+                        <button type="submit" className="btn-nuevo">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                          </svg>
+                          <span>Guardar</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secundario"
+                          onClick={cancelarEdicionActividad}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                          <span>Cancelar</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="actividades-scrollable">
+                    <section className="seccion-actividades">
+                      <div className="seccion-titulo-fila">
+                        <h3 className="seccion-titulo">
+                          <span>Compromisos</span>
+                          <span className="contador-pill">{clienteDetalle.compromisos?.length || 0}</span>
+                        </h3>
+                      </div>
+
+                      <div className="lista-actividades-grupo">
+                        {(!clienteDetalle.compromisos || clienteDetalle.compromisos.length === 0) && (
+                          <div className="sin-actividades-aviso">
+                            No hay compromisos pendientes.
+                          </div>
+                        )}
+                        {clienteDetalle.compromisos?.map((act) => {
+                          const vencida = esFechaVencida(act.fecha);
+                          return (
+                            <div key={act.id} className="actividad-fila">
+                              <div className="actividad-cuerpo">
+                                <button
+                                  type="button"
+                                  className="btn-completar-check"
+                                  title="Marcar como completada"
+                                  onClick={() => completarActividad(act.id)}
+                                >
+                                  ✓
+                                </button>
+                                <div className="actividad-textos">
+                                  <span className="actividad-desc">{act.descripcion}</span>
+                                  <span className={`actividad-fecha-tag ${vencida ? "vencida" : ""}`}>
+                                    {act.fecha ? (
+                                      <>
+                                        {formatearFecha(act.fecha)}
+                                        {vencida && " · Vencido"}
+                                      </>
+                                    ) : (
+                                      "Sin fecha"
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="actividad-acciones">
+                                <button
+                                  type="button"
+                                  className="btn-icono"
+                                  title="Editar compromiso"
+                                  onClick={() => iniciarEditarActividad(act)}
+                                >
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-icono icono-peligro"
+                                  title="Eliminar compromiso"
+                                  onClick={() => eliminarActividad(act.id)}
+                                >
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+
+                    <section className="seccion-actividades">
+                      <div className="seccion-titulo-fila">
+                        <h3 className="seccion-titulo">
+                          <span>Actividades completadas</span>
+                          <span className="contador-pill">{clienteDetalle.completadas?.length || 0}</span>
+                        </h3>
+                      </div>
+
+                      <div className="lista-actividades-grupo">
+                        {(!clienteDetalle.completadas || clienteDetalle.completadas.length === 0) && (
+                          <div className="sin-actividades-aviso">
+                            No hay actividades completadas.
+                          </div>
+                        )}
+                        {clienteDetalle.completadas?.map((act) => (
+                          <div key={act.id} className="actividad-fila">
+                            <div className="actividad-cuerpo">
+                              <div className="icono-check-completa" title="Completada">✓</div>
+                              <div className="actividad-textos">
+                                <span className="actividad-desc">{act.descripcion}</span>
+                                <span className="actividad-fecha-tag">
+                                  {act.fechaCompletada
+                                    ? `Completada el ${formatearFecha(act.fechaCompletada)}`
+                                    : "Completada"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              ) : (
+                <div className="detalle-vacio">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <h3>Ningún cliente seleccionado</h3>
+                  <p>Selecciona un cliente de la lista de la izquierda o crea uno nuevo.</p>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    const raiz = ReactDOM.createRoot(document.getElementById("root"));
+    raiz.render(<MiniCRMApp />);
+  </script>
+</body>
+</html>

@@ -1035,6 +1035,7 @@ export async function setAttendance(
   ownerEmail: string,
   input: {
     sessionId: string;
+    onlyUnmarked?: boolean;
     entries: Array<{
       legajo: string;
       status?: string | null;
@@ -1051,6 +1052,7 @@ export async function setAttendance(
   }
   const db = getDb();
   const updated: Array<{ legajo: string; status: AttendanceStatus | null }> = [];
+  const skipped: string[] = [];
   for (const entry of input.entries) {
     const student = await requireStudent(ownerEmail, entry.legajo);
     const [membership] = await db
@@ -1078,6 +1080,26 @@ export async function setAttendance(
               ? "presente"
               : "ausente"
             : null;
+    if (input.onlyUnmarked) {
+      if (status !== "presente" && status !== "tarde") {
+        throw new UserInputError("La importación aditiva solo admite presente o tarde.");
+      }
+      const inserted = await db.insert(attendance).values({
+        id: randomUUID(), sessionId: input.sessionId, studentId: student.id, status,
+        present: status === "presente", ownerEmail, createdAt: stamp(), updatedAt: stamp(),
+      }).onConflictDoNothing().returning({ id: attendance.id });
+      const [saved] = await db.select({ status: attendance.status }).from(attendance).where(
+        and(eq(attendance.ownerEmail, ownerEmail), eq(attendance.sessionId, input.sessionId), eq(attendance.studentId, student.id)),
+      );
+      if (!saved) throw new Error(`No se pudo verificar la asistencia del alumno ${entry.legajo}.`);
+      if (inserted.length) {
+        if (saved.status !== status) throw new Error(`No se pudo verificar la asistencia del alumno ${entry.legajo}.`);
+        updated.push({ legajo: entry.legajo, status });
+      } else {
+        skipped.push(entry.legajo);
+      }
+      continue;
+    }
     const [existing] = await db
       .select()
       .from(attendance)
@@ -1126,7 +1148,7 @@ export async function setAttendance(
     }
     updated.push({ legajo: entry.legajo, status });
   }
-  return { sessionId: input.sessionId, updated };
+  return { sessionId: input.sessionId, updated, skipped };
 }
 
 export async function attendanceGrid(ownerEmail: string, courseId?: string) {

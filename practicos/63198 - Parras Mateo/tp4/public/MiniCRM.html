@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniCRM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+    <style>
+        :root {
+            --fondo: #0f172a;
+            --panel: #1e293b;
+            --panel2: #273449;
+            --borde: #334155;
+            --texto: #e2e8f0;
+            --suave: #94a3b8;
+            --azul: #3b82f6;
+            --rojo: #ef4444;
+            --verde: #22c55e;
+            color-scheme: dark;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--fondo);
+            color: var(--texto);
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: #1e3a5f;
+            padding: 12px 20px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 12px;
+            padding: 12px;
+            min-height: 0;
+        }
+
+        .maestro, .detalle {
+            background: var(--panel);
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .encabezado {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        h2 { margin: 0; font-size: 22px; }
+        h3 { margin: 14px 0 6px; font-size: 16px; }
+
+        input[type="text"], input[type="date"] {
+            background: var(--fondo);
+            border: 1px solid var(--borde);
+            color: var(--texto);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font: inherit;
+            width: 100%;
+        }
+
+        .btn {
+            background: var(--panel2);
+            border: 1px solid var(--borde);
+            color: var(--texto);
+            border-radius: 6px;
+            padding: 7px 12px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .btn:hover { filter: brightness(1.2); }
+        .btn.azul { background: var(--azul); border-color: var(--azul); }
+        .btn.rojo { color: var(--rojo); border-color: var(--rojo); }
+
+        .botones { display: flex; gap: 8px; }
+
+        .lista {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 10px;
+            min-height: 0;
+        }
+
+        .item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .item:hover { background: var(--panel2); }
+        .item.activo { background: #1d3557; }
+        .item .texto { min-width: 0; }
+
+        .item .texto div {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--azul);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .suave { color: var(--suave); font-size: 12px; }
+
+        .datos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .formulario {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .formulario .botones { grid-column: 1 / -1; }
+
+        .subformulario {
+            border: 1px dashed var(--borde);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .actividades {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            margin-top: 6px;
+        }
+
+        .fila {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid var(--borde);
+        }
+
+        .fila .texto { flex: 1; }
+        .fila.hecha { background: rgba(34, 197, 94, 0.12); }
+        .vencido { color: var(--rojo); }
+        .fila input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--verde); }
+
+        .error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--rojo);
+            color: var(--rojo);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+        }
+
+        .vacio { color: var(--suave); margin: auto; }
+    </style>
+</head>
+<body>
+    <div id="raiz"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        async function pedir(url, metodo = "GET", datos) {
+            const opciones = {
+                method: metodo,
+                headers: { "Content-Type": "application/json" },
+            };
+            if (datos) {
+                opciones.body = JSON.stringify(datos);
+            }
+            const respuesta = await fetch(url, opciones);
+            if (respuesta.status === 204) {
+                return null;
+            }
+            const json = await respuesta.json();
+            if (!respuesta.ok) {
+                throw new Error(json.error);
+            }
+            return json;
+        }
+
+        function formatearFecha(fecha) {
+            if (!fecha) {
+                return "Sin fecha";
+            }
+            const [anio, mes, dia] = fecha.split("-");
+            return dia + "/" + mes + "/" + anio;
+        }
+
+        function iniciales(nombre) {
+            return nombre
+                .split(" ")
+                .map((palabra) => palabra[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase();
+        }
+
+        function FormCliente({ inicial, alGuardar, alCancelar }) {
+            const [datos, setDatos] = useState(inicial);
+
+            function cambiar(campo, valor) {
+                setDatos({ ...datos, [campo]: valor });
+            }
+
+            return (
+                <div className="formulario">
+                    <input type="text" placeholder="Nombre" value={datos.nombre}
+                        onChange={(e) => cambiar("nombre", e.target.value)} />
+                    <input type="text" placeholder="Email" value={datos.email}
+                        onChange={(e) => cambiar("email", e.target.value)} />
+                    <input type="text" placeholder="Teléfono" value={datos.telefono}
+                        onChange={(e) => cambiar("telefono", e.target.value)} />
+                    <input type="text" placeholder="Dirección" value={datos.direccion}
+                        onChange={(e) => cambiar("direccion", e.target.value)} />
+                    <div className="botones">
+                        <button className="btn azul" onClick={() => alGuardar(datos)}>Guardar</button>
+                        <button className="btn" onClick={alCancelar}>Cancelar</button>
+                    </div>
+                </div>
+            );
+        }
+
+        function Ficha({ cliente, alEditar, alEliminar }) {
+            return (
+                <div>
+                    <div className="encabezado">
+                        <h2>{cliente.nombre}</h2>
+                        <div className="botones">
+                            <button className="btn" onClick={alEditar}>Editar</button>
+                            <button className="btn rojo" onClick={alEliminar}>Eliminar</button>
+                        </div>
+                    </div>
+                    <div className="datos">
+                        <div>Email: {cliente.email}</div>
+                        <div>Dirección: {cliente.direccion}</div>
+                        <div>Teléfono: {cliente.telefono}</div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Actividades({ cliente, alCambiar, alError }) {
+            const [formulario, setFormulario] = useState(null);
+
+            const pendientes = cliente.actividades.filter((a) => !a.completada);
+            const completadas = cliente.actividades.filter((a) => a.completada);
+            const hoy = new Date().toISOString().slice(0, 10);
+
+            async function ejecutar(url, metodo, datos) {
+                try {
+                    await pedir(url, metodo, datos);
+                    alCambiar();
+                    return true;
+                } catch (error) {
+                    alError(error.message);
+                    return false;
+                }
+            }
+
+            async function guardar() {
+                const datos = {
+                    descripcion: formulario.descripcion,
+                    fecha: formulario.fecha || null,
+                };
+                let salioBien;
+                if (formulario.id) {
+                    salioBien = await ejecutar("/api/actividades/" + formulario.id, "PUT", datos);
+                } else {
+                    salioBien = await ejecutar("/api/clientes/" + cliente.id + "/actividades", "POST", datos);
+                }
+                if (salioBien) {
+                    setFormulario(null);
+                }
+            }
+
+            return (
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+                    {formulario ? (
+                        <div className="subformulario">
+                            <input type="text" placeholder="Descripción de la actividad"
+                                value={formulario.descripcion}
+                                onChange={(e) => setFormulario({ ...formulario, descripcion: e.target.value })} />
+                            <input type="date" value={formulario.fecha}
+                                onChange={(e) => setFormulario({ ...formulario, fecha: e.target.value })} />
+                            <button className="btn azul" onClick={guardar}>Guardar</button>
+                            <button className="btn" onClick={() => setFormulario(null)}>Cancelar</button>
+                        </div>
+                    ) : (
+                        <div>
+                            <button className="btn"
+                                onClick={() => setFormulario({ descripcion: "", fecha: "" })}>
+                                + Agregar actividad
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="actividades">
+                        <h3>Compromisos</h3>
+                        {pendientes.length === 0 && <div className="suave">No hay compromisos pendientes</div>}
+                        {pendientes.map((a) => (
+                            <div className="fila" key={a.id}>
+                                <input type="checkbox" checked={false}
+                                    onChange={() => ejecutar("/api/actividades/" + a.id + "/completar", "PATCH")} />
+                                <div className="texto">
+                                    <div>{a.descripcion}</div>
+                                    <div className={a.fecha && a.fecha < hoy ? "suave vencido" : "suave"}>
+                                        {formatearFecha(a.fecha)}
+                                        {a.fecha && a.fecha < hoy ? " · Vencido" : ""}
+                                    </div>
+                                </div>
+                                <button className="btn"
+                                    onClick={() => setFormulario({ id: a.id, descripcion: a.descripcion, fecha: a.fecha || "" })}>
+                                    Editar
+                                </button>
+                                <button className="btn rojo"
+                                    onClick={() => ejecutar("/api/actividades/" + a.id, "DELETE")}>
+                                    Borrar
+                                </button>
+                            </div>
+                        ))}
+
+                        <h3>Actividades completadas</h3>
+                        {completadas.length === 0 && <div className="suave">Todavía no completaste ninguna</div>}
+                        {completadas.map((a) => (
+                            <div className="fila hecha" key={a.id}>
+                                <input type="checkbox" checked={true} disabled />
+                                <div className="texto">
+                                    <div>{a.descripcion}</div>
+                                    <div className="suave">Completada el {formatearFecha(a.fechaCompletada)}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function App() {
+            const [clientes, setClientes] = useState([]);
+            const [busqueda, setBusqueda] = useState("");
+            const [cliente, setCliente] = useState(null);
+            const [modo, setModo] = useState("ver");
+            const [error, setError] = useState("");
+
+            async function cargarLista() {
+                try {
+                    setClientes(await pedir("/api/clientes?q=" + encodeURIComponent(busqueda)));
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            useEffect(() => {
+                cargarLista();
+            }, [busqueda]);
+
+            async function abrir(id) {
+                try {
+                    setCliente(await pedir("/api/clientes/" + id));
+                    setModo("ver");
+                    setError("");
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            function nuevo() {
+                setCliente(null);
+                setModo("nuevo");
+                setError("");
+            }
+
+            async function guardarCliente(datos) {
+                try {
+                    if (modo === "nuevo") {
+                        const creado = await pedir("/api/clientes", "POST", datos);
+                        await abrir(creado.id);
+                    } else {
+                        await pedir("/api/clientes/" + cliente.id, "PUT", datos);
+                        await abrir(cliente.id);
+                    }
+                    cargarLista();
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            async function eliminarCliente() {
+                if (!confirm("¿Eliminar a " + cliente.nombre + "?")) {
+                    return;
+                }
+                try {
+                    await pedir("/api/clientes/" + cliente.id, "DELETE");
+                    setCliente(null);
+                    cargarLista();
+                } catch (e) {
+                    setError(e.message);
+                }
+            }
+
+            const vacio = { nombre: "", email: "", telefono: "", direccion: "" };
+
+            return (
+                <div className="app">
+                    <header>MiniCRM</header>
+                    <main>
+                        <section className="maestro">
+                            <div className="encabezado">
+                                <h2>Clientes</h2>
+                                <button className="btn azul" onClick={nuevo}>+ Agregar</button>
+                            </div>
+                            <input type="text" placeholder="Buscar por cualquier campo..."
+                                value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+                            <div className="lista">
+                                {clientes.map((c) => (
+                                    <div key={c.id} onClick={() => abrir(c.id)}
+                                        className={cliente && cliente.id === c.id ? "item activo" : "item"}>
+                                        <div className="avatar">{iniciales(c.nombre)}</div>
+                                        <div className="texto">
+                                            <div>{c.nombre}</div>
+                                            <div className="suave">{c.email}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="detalle">
+                            {error && <div className="error">{error}</div>}
+
+                            {modo === "nuevo" && (
+                                <div>
+                                    <h2>Nuevo cliente</h2>
+                                    <FormCliente key="nuevo" inicial={vacio}
+                                        alGuardar={guardarCliente} alCancelar={() => setModo("ver")} />
+                                </div>
+                            )}
+
+                            {modo !== "nuevo" && !cliente && (
+                                <div className="vacio">Seleccioná un cliente para ver su ficha</div>
+                            )}
+
+                            {modo === "ver" && cliente && (
+                                <Ficha cliente={cliente} alEditar={() => setModo("editar")}
+                                    alEliminar={eliminarCliente} />
+                            )}
+
+                            {modo === "editar" && cliente && (
+                                <div>
+                                    <h2>Editar cliente</h2>
+                                    <FormCliente key={cliente.id}
+                                        inicial={{
+                                            nombre: cliente.nombre,
+                                            email: cliente.email,
+                                            telefono: cliente.telefono || "",
+                                            direccion: cliente.direccion || "",
+                                        }}
+                                        alGuardar={guardarCliente} alCancelar={() => setModo("ver")} />
+                                </div>
+                            )}
+
+                            {modo !== "nuevo" && cliente && (
+                                <Actividades key={cliente.id} cliente={cliente}
+                                    alCambiar={() => abrir(cliente.id)} alError={setError} />
+                            )}
+                        </section>
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById("raiz")).render(<App />);
+    </script>
+</body>
+</html>

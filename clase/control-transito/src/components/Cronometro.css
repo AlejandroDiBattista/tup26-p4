@@ -1,0 +1,156 @@
+.cronometro {
+  display: grid;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 1rem 1.15rem;
+  box-sizing: border-box;
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-surface);
+  background: var(--glass-surface-solid);
+  box-shadow: var(--glass-inset), var(--shadow-card);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .cronometro {
+    background: var(--glass-surface);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
+  }
+}
+
+.cronometro-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tiempo-cronometro {
+  margin: 0;
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.controles-cronometro {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+.controles-cronometro button {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-control);
+  color: var(--text-h);
+  background: var(--glass-surface-solid);
+  box-shadow: var(--glass-inset), var(--shadow-control);
+  font: 1.25rem/1 var(--sans);
+  cursor: pointer;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out, background-color 160ms ease-out;
+}
+
+.controles-cronometro button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.controles-cronometro button:first-child {
+  border-color: color-mix(in oklch, var(--accent) 48%, var(--glass-stroke));
+  color: var(--bg);
+  background: var(--accent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 32%), 0 7px 18px color-mix(in oklch, var(--accent) 24%, transparent);
+}
+
+.controles-cronometro button:last-child {
+  background: var(--glass-surface);
+}
+
+.controles-cronometro button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.controles-cronometro button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.progreso-observacion {
+  position: relative;
+  height: 0.8rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklch, var(--text-h) 9%, transparent);
+  box-shadow: var(--shadow-track);
+}
+
+.progreso-observacion-valor {
+  position: relative;
+  z-index: 1;
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
+.segundos-observacion {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -0.6rem;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.marcas-tiempo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marca-tiempo {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.marca-diez-segundos {
+  width: 2px;
+  background: var(--text);
+  opacity: 0.7;
+}
+
+.marca-minuto {
+  width: 3px;
+  background: var(--text-h);
+}
+
+.aviso-cronometro-completo {
+  width: fit-content;
+  margin: 0;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.45rem;
+  color: var(--text-h);
+  background: var(--accent-bg);
+  font-size: 0.88rem;
+  font-weight: 600;
+  animation: aparecer-completo 180ms ease-out both;
+}
+
+@keyframes aparecer-completo {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso-cronometro-completo { animation: none; }
+  .controles-cronometro button,
+  .controles-cronometro button:not(:disabled):hover,
+  .controles-cronometro button:not(:disabled):active { transition: none; transform: none; }
+}

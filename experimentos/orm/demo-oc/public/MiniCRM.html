@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MiniCRM</title>
+    <meta name="description" content="CRM mínimo: maestro de clientes y detalle con sus actividades, sobre la API REST." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%231f5f4a'/><path d='M9 22V11l7 5 7-5v11' fill='none' stroke='%23f4faf7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+
+    <!--
+      MiniCRM: una sola página, sin build. React y Babel llegan desde CDN con
+      versión fija (React 18.3.1 es la última con build UMD; React 19 la eliminó)
+      y el JSX se transforma en el navegador con el runtime clásico, que emite
+      React.createElement y usa el React global. Sin librerías de UI ni CSS.
+
+      Es un maestro y detalle: la página ocupa la altura de la ventana y nunca
+      scrollea; scrollean la lista de clientes y la lista de actividades.
+    -->
+    <style>
+      /* ── Tokens ─────────────────────────────────────────────────────── */
+      :root {
+        color-scheme: light dark;
+
+        --papel: #f6f6f3;
+        --papel-2: #edede7;
+        --superficie: #ffffff;
+        --tinta: #14171c;
+        --tinta-2: #5a616e;
+        --tinta-3: #8d93a0;
+        --linea: #e5e5de;
+        --linea-2: #d5d5cb;
+        --acento: #1f5f4a;
+        --acento-fuerte: #184b3a;
+        --acento-suave: #e7f1ed;
+        --acento-tinta: #12463a;
+        --sobre-acento: #f2f9f6;
+        --alerta: #92590a;
+        --alerta-suave: #fbf1e0;
+        --peligro: #a13729;
+        --peligro-suave: #faeeec;
+        --sombra: 0 1px 2px rgb(20 23 28 / 6%), 0 10px 30px -14px rgb(20 23 28 / 22%);
+        --sombra-suave: 0 1px 2px rgb(20 23 28 / 5%);
+        --radio: 12px;
+        --radio-sm: 8px;
+        --transicion: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+        --lateral: 330px;
+        --detalle: 980px;
+        --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --papel: #111318;
+          --papel-2: #1a1d23;
+          --superficie: #171a20;
+          --tinta: #ecedf0;
+          --tinta-2: #a3aab6;
+          --tinta-3: #767d8a;
+          --linea: #262a31;
+          --linea-2: #333843;
+          --acento: #6cc9a5;
+          --acento-fuerte: #86d8b6;
+          --acento-suave: #1b2a26;
+          --acento-tinta: #a9e6cc;
+          --sobre-acento: #0f1a16;
+          --alerta: #dda75c;
+          --alerta-suave: #2a2317;
+          --peligro: #e08c7e;
+          --peligro-suave: #2b1d1b;
+          --sombra: 0 1px 2px rgb(0 0 0 / 40%), 0 12px 32px -16px rgb(0 0 0 / 60%);
+          --sombra-suave: 0 1px 2px rgb(0 0 0 / 30%);
+        }
+      }
+
+      /* ── Base ───────────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body,
+      #raiz {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font: 15px/1.55 var(--fuente);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      dl,
+      dt,
+      dd,
+      ul {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        list-style: none;
+      }
+
+      a {
+        color: var(--acento);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--acento);
+        outline-offset: 2px;
+      }
+
+      /* ── Estructura: app de altura completa, sin scroll de página ───── */
+      .app {
+        height: 100dvh;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .cabecera {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        height: 62px;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--linea);
+        background: color-mix(in srgb, var(--superficie) 82%, transparent);
+        z-index: 20;
+      }
+
+      .marca {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+
+      .marca__logo {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: var(--acento);
+        color: var(--sobre-acento);
+      }
+
+      .marca__nombre {
+        font-size: 15px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .marca__lema {
+        font-size: 12px;
+        color: var(--tinta-3);
+      }
+
+      /* Cuerpo: maestro (ancho fijo) + detalle (resto). */
+      .cuerpo {
+        display: grid;
+        grid-template-columns: var(--lateral) minmax(0, 1fr);
+        min-height: 0;
+      }
+
+      /* Maestro: búsqueda fija arriba, lista con scroll propio. */
+      .lateral {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: 0;
+        border-right: 1px solid var(--linea);
+        background: color-mix(in srgb, var(--superficie) 45%, var(--papel));
+      }
+
+      .lateral__cabecera {
+        display: grid;
+        gap: 8px;
+        padding: 14px 14px 10px;
+      }
+
+      .lateral__conteo {
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--tinta-3);
+        padding-left: 2px;
+      }
+
+      .principal {
+        min-height: 0;
+        display: grid;
+      }
+
+      /*
+       * Detalle: la cabecera con el identificador, el subformulario y las
+       * actividades nunca se achican; los datos son los que ceden y, si no
+       * entran, scrollean solos. Así la ficha y el filtro se ven siempre,
+       * también en ventanas bajas.
+       */
+      .ficha {
+        min-height: 0;
+        min-width: 0;
+        width: 100%;
+        max-width: var(--detalle);
+        display: grid;
+        grid-template-rows: auto minmax(0, auto) auto minmax(150px, 1fr);
+      }
+
+      .ficha__cabecera {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 20px 30px 16px;
+      }
+
+      .ficha__identidad {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        min-width: 0;
+      }
+
+      .ficha__nombre {
+        font-size: 19px;
+        font-weight: 650;
+        letter-spacing: -0.015em;
+      }
+
+      .ficha__meta {
+        font-size: 12.5px;
+        color: var(--tinta-3);
+      }
+
+      .ficha__acciones {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      /* El identificador, arriba a la derecha del detalle. */
+      .ficha__id {
+        align-self: center;
+        margin-left: 4px;
+        padding-left: 12px;
+        border-left: 1px solid var(--linea);
+        font-size: 12.5px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
+        color: var(--tinta-3);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Estados que reemplazan al detalle (sin cliente, cargando, error). */
+      .pantalla {
+        padding: 26px 30px;
+      }
+
+      .datos {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0 20px;
+        padding: 6px 30px;
+        overflow-y: auto;
+        border-top: 1px solid var(--linea);
+        border-bottom: 1px solid var(--linea);
+      }
+
+      .dato {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 8px 0;
+        min-width: 0;
+      }
+
+      .dato__icono {
+        color: var(--tinta-3);
+        margin-top: 3px;
+      }
+
+      .dato__etiqueta {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--tinta-3);
+      }
+
+      .dato__valor {
+        font-size: 14px;
+        word-break: break-word;
+      }
+
+      .dato__vacio {
+        color: var(--tinta-3);
+      }
+
+      /* ── Sección de actividades ──────────────────────────────────────── */
+      .seccion {
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 10px;
+        padding: 14px 30px 20px;
+      }
+
+      .seccion__cabecera {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .seccion__titulo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--tinta-2);
+      }
+
+      .seccion__cuerpo {
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+      }
+
+      /* Compromisos y, después, actividades completadas. */
+      .grupos {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grupo {
+        display: grid;
+        gap: 7px;
+      }
+
+      .grupo__titulo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--tinta-3);
+      }
+
+      .grupo__cuenta {
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--papel-2);
+        font-size: 11px;
+        letter-spacing: 0;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* El grupo vacío se resuelve con una línea. */
+      .grupo__nota {
+        padding: 9px 14px;
+        border: 1px dashed var(--linea-2);
+        border-radius: var(--radio);
+        font-size: 13px;
+        color: var(--tinta-3);
+      }
+
+      .actividades {
+        display: grid;
+        gap: 1px;
+        border: 1px solid var(--linea);
+        border-radius: var(--radio);
+        background: var(--superficie);
+        overflow: hidden;
+      }
+
+      .actividad {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 12px;
+        padding: 12px 14px;
+        border-top: 1px solid var(--linea);
+      }
+
+      .actividad:first-child {
+        border-top: 0;
+      }
+
+      /* La fila que se está editando en el subformulario. */
+      .actividad--enEdicion {
+        background: var(--acento-suave);
+      }
+
+      .actividad__marca {
+        display: grid;
+        place-items: center;
+        width: 19px;
+        height: 19px;
+        margin-top: 1px;
+        border: 1.5px solid var(--linea-2);
+        border-radius: 50%;
+        color: transparent;
+      }
+
+      /* Pendiente: el check es un botón y se insinúa al pasar por encima. */
+      .actividad__marca--accion {
+        padding: 0;
+        background: transparent;
+        font: inherit;
+        cursor: pointer;
+        transition: color var(--transicion), border-color var(--transicion);
+      }
+
+      .actividad__marca--accion:hover {
+        border-color: var(--acento);
+        color: var(--acento);
+      }
+
+      .actividad__marca--accion:focus-visible {
+        outline: 2px solid var(--acento);
+        outline-offset: 2px;
+      }
+
+      .actividad__acciones {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .actividad--completada .actividad__marca {
+        border-color: var(--acento);
+        background: var(--acento);
+        color: var(--sobre-acento);
+      }
+
+      .actividad--vencida .actividad__marca {
+        border-color: var(--alerta);
+      }
+
+      .actividad__cuerpo {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+
+      .actividad__descripcion {
+        font-size: 14.5px;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+      }
+
+      .actividad--completada .actividad__descripcion {
+        color: var(--tinta-2);
+        text-decoration: line-through;
+        text-decoration-color: var(--tinta-3);
+        text-decoration-thickness: 1px;
+      }
+
+      .actividad__fechas {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        font-size: 12.5px;
+        color: var(--tinta-2);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .actividad__fechas .icono {
+        color: var(--tinta-3);
+      }
+
+      .actividad--vencida .actividad__fechas,
+      .actividad--vencida .actividad__fechas .icono {
+        color: var(--alerta);
+      }
+
+      .actividad__aviso {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .separador {
+        color: var(--tinta-3);
+      }
+
+      .tenue {
+        color: var(--tinta-3);
+      }
+
+      /* ── Lista de clientes (maestro) ────────────────────────────────── */
+      .lista {
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+        padding: 4px 8px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .cliente {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px 10px;
+        border: 0;
+        border-radius: var(--radio-sm);
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        transition: background var(--transicion);
+      }
+
+      .cliente:hover {
+        background: var(--papel-2);
+      }
+
+      .cliente[aria-current="true"] {
+        background: var(--acento-suave);
+      }
+
+      .cliente[aria-current="true"]::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 9px;
+        bottom: 9px;
+        width: 2px;
+        border-radius: 2px;
+        background: var(--acento);
+      }
+
+      .cliente__texto {
+        display: grid;
+        gap: 1px;
+        min-width: 0;
+      }
+
+      .cliente__nombre {
+        font-weight: 550;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .cliente__meta {
+        font-size: 12.5px;
+        color: var(--tinta-3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .avatar {
+        --tono: 150;
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: hsl(var(--tono) 38% 92%);
+        color: hsl(var(--tono) 42% 30%);
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        flex: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .avatar {
+          background: hsl(var(--tono) 24% 20%);
+          color: hsl(var(--tono) 52% 76%);
+        }
+      }
+
+      /* ── Buscador ───────────────────────────────────────────────────── */
+      .buscador {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid var(--linea-2);
+        border-radius: var(--radio-sm);
+        background: var(--superficie);
+        color: var(--tinta-3);
+        transition: border-color var(--transicion), box-shadow var(--transicion);
+      }
+
+      .buscador:focus-within {
+        border-color: var(--acento);
+        box-shadow: 0 0 0 3px var(--acento-suave);
+      }
+
+      .buscador input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: var(--tinta);
+        outline: none;
+      }
+
+      .buscador input::placeholder {
+        color: var(--tinta-3);
+      }
+
+      .buscador input::-webkit-search-cancel-button {
+        display: none;
+      }
+
+      .buscador__limpiar {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--tinta-3);
+        cursor: pointer;
+      }
+
+      .buscador__limpiar:hover {
+        background: var(--papel-2);
+        color: var(--tinta);
+      }
+
+      /* ── Botones ────────────────────────────────────────────────────── */
+      .boton {
+        --alto: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        height: var(--alto);
+        padding: 0 13px;
+        border: 1px solid transparent;
+        border-radius: var(--radio-sm);
+        background: transparent;
+        font-size: 13.5px;
+        font-weight: 550;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background var(--transicion), border-color var(--transicion), color var(--transicion);
+      }
+
+      .boton:active:not(:disabled) {
+        transform: translateY(0.5px);
+      }
+
+      .boton:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .boton--primario {
+        background: var(--acento);
+        border-color: var(--acento);
+        color: var(--sobre-acento);
+      }
+
+      .boton--primario:hover:not(:disabled) {
+        background: var(--acento-fuerte);
+        border-color: var(--acento-fuerte);
+      }
+
+      .boton--secundario {
+        background: var(--superficie);
+        border-color: var(--linea-2);
+        color: var(--tinta);
+      }
+
+      .boton--secundario:hover:not(:disabled) {
+        background: var(--papel-2);
+      }
+
+      .boton--fantasma {
+        color: var(--tinta-2);
+      }
+
+      .boton--fantasma:hover:not(:disabled) {
+        background: var(--papel-2);
+        color: var(--tinta);
+      }
+
+      .boton--peligro {
+        background: var(--peligro);
+        border-color: var(--peligro);
+        color: #fff;
+      }
+
+      .boton--peligro:hover:not(:disabled) {
+        filter: brightness(1.07);
+      }
+
+      .boton--sm {
+        --alto: 29px;
+        padding: 0 10px;
+        font-size: 12.5px;
+      }
+
+      .boton--solo-icono {
+        width: var(--alto);
+        padding: 0;
+      }
+
+      .icono {
+        flex: none;
+      }
+
+      .girador {
+        width: 13px;
+        height: 13px;
+        border: 1.8px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: girar 700ms linear infinite;
+      }
+
+      @keyframes girar {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Segmentado (filtros con conteo) ────────────────────────────── */
+      .segmentado {
+        display: inline-flex;
+        flex-wrap: wrap;
+        min-width: 0;
+        gap: 2px;
+        padding: 2px;
+        border-radius: 999px;
+        background: var(--papel-2);
+      }
+
+      .segmentado__opcion {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 0;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--tinta-2);
+        font-size: 12.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background var(--transicion), color var(--transicion);
+      }
+
+      .segmentado__opcion:hover {
+        color: var(--tinta);
+      }
+
+      .segmentado__opcion[aria-pressed="true"] {
+        background: var(--superficie);
+        color: var(--tinta);
+        box-shadow: var(--sombra-suave);
+      }
+
+      .segmentado__cuenta {
+        font-size: 11.5px;
+        color: var(--tinta-3);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .segmentado__opcion[aria-pressed="true"] .segmentado__cuenta {
+        color: var(--acento);
+        font-weight: 600;
+      }
+
+      /* ── Estados: vacío, carga, error ───────────────────────────────── */
+      .vacio {
+        display: grid;
+        justify-items: center;
+        gap: 7px;
+        padding: 46px 24px;
+        text-align: center;
+        border: 1px dashed var(--linea-2);
+        border-radius: var(--radio);
+        color: var(--tinta-2);
+      }
+
+      .vacio--compacto {
+        padding: 28px 20px;
+      }
+
+      .vacio__icono {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--papel-2);
+        color: var(--tinta-3);
+        margin-bottom: 3px;
+      }
+
+      .vacio__titulo {
+        font-weight: 600;
+        color: var(--tinta);
+      }
+
+      .vacio__texto {
+        font-size: 13.5px;
+        max-width: 46ch;
+      }
+
+      .siluetas {
+        display: grid;
+        gap: 9px;
+        padding: 4px 0;
+      }
+
+      .silueta {
+        display: block;
+        height: 44px;
+        border-radius: var(--radio-sm);
+        background: linear-gradient(90deg, var(--papel-2), color-mix(in srgb, var(--papel-2) 55%, var(--superficie)), var(--papel-2));
+        background-size: 200% 100%;
+        animation: brillo 1.4s ease-in-out infinite;
+      }
+
+      @keyframes brillo {
+        to {
+          background-position: -200% 0;
+        }
+      }
+
+      .aviso {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 13px;
+        border-radius: var(--radio-sm);
+        font-size: 13.5px;
+        border: 1px solid transparent;
+      }
+
+      .aviso--error {
+        background: var(--peligro-suave);
+        border-color: color-mix(in srgb, var(--peligro) 30%, transparent);
+        color: var(--peligro);
+      }
+
+      .aviso--info {
+        background: var(--acento-suave);
+        border-color: color-mix(in srgb, var(--acento) 25%, transparent);
+        color: var(--acento-tinta);
+      }
+
+      .enlace {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        font: inherit;
+        font-weight: 600;
+        color: inherit;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+
+      /* ── Subformulario de compromisos ───────────────────────────────── */
+      .subformulario-caja {
+        padding: 14px 30px 2px;
+      }
+
+      /* Borde punteado, una sola línea y sin etiquetas visibles. */
+      .subformulario {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        border: 1px dotted var(--linea-2);
+        border-radius: var(--radio);
+      }
+
+      .subformulario .campo__control {
+        height: 34px;
+      }
+
+      /*
+       * El ancho va en `flex-basis` (no en `width`) para no pelear con el
+       * `width: 100%` de `.campo__control`. La fecha nunca baja de su mínimo
+       * (así no se recorta) y los botones jamás se comprimen: cede la
+       * descripción.
+       */
+      .subformulario__descripcion {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .subformulario__fecha {
+        flex: 0 1 148px;
+      }
+
+      .subformulario .boton {
+        flex: none;
+      }
+
+      /* Editando un compromiso, el borde se marca. */
+      .subformulario--edicion {
+        border-color: var(--acento);
+      }
+
+      /* ── Formulario (en el detalle, sin modal) ──────────────────────── */
+      .ficha--formulario {
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .formulario {
+        display: grid;
+        align-content: start;
+        gap: 20px;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 4px 30px 0;
+      }
+
+      .formulario__campos {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      /* Guardar y Cancelar debajo de los campos, y a mano si la ventana es baja. */
+      .formulario__pie {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 16px 0 24px;
+        border-top: 1px solid var(--linea);
+        background: var(--papel);
+      }
+
+      @media (max-width: 880px) {
+        .formulario {
+          padding: 4px 16px 0;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .formulario__campos {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .campo {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .campo__etiqueta {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--tinta-2);
+      }
+
+      .campo__requerido {
+        color: var(--peligro);
+      }
+
+      .campo__control {
+        width: 100%;
+        height: 37px;
+        padding: 0 11px;
+        border: 1px solid var(--linea-2);
+        border-radius: var(--radio-sm);
+        background: var(--superficie);
+        transition: border-color var(--transicion), box-shadow var(--transicion);
+      }
+
+      .campo__control:hover {
+        border-color: var(--tinta-3);
+      }
+
+      .campo__control:focus {
+        outline: none;
+        border-color: var(--acento);
+        box-shadow: 0 0 0 3px var(--acento-suave);
+      }
+
+      .campo__ayuda {
+        font-size: 12px;
+        color: var(--tinta-3);
+      }
+
+      /* ── Aviso flotante ─────────────────────────────────────────────── */
+      .flotante {
+        position: fixed;
+        left: 50%;
+        bottom: 22px;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 15px;
+        border-radius: 999px;
+        background: var(--tinta);
+        color: var(--papel);
+        font-size: 13.5px;
+        font-weight: 500;
+        box-shadow: var(--sombra);
+        transform: translateX(-50%);
+        animation: subir-centrado 170ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .flotante--error {
+        background: var(--peligro);
+        color: #fff;
+      }
+
+      @keyframes subir-centrado {
+        from {
+          opacity: 0;
+          transform: translate(-50%, 8px);
+        }
+      }
+
+      /* ── Pantallas chicas: el maestro arriba, el detalle abajo ──────── */
+      @media (max-width: 880px) {
+        .cuerpo {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(0, 34dvh) minmax(0, 1fr);
+        }
+
+        .lateral {
+          border-right: 0;
+          border-bottom: 1px solid var(--linea);
+        }
+
+        .cabecera {
+          padding: 0 14px;
+        }
+
+        .ficha__cabecera {
+          padding: 14px 16px 12px;
+        }
+
+        /* Al envolverse, la fila de acciones ocupa su línea: el id sigue a la derecha. */
+        .ficha__acciones {
+          flex: 1 1 100%;
+          justify-content: flex-end;
+        }
+
+        .datos {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 0 16px;
+          padding: 4px 16px;
+        }
+
+        .subformulario-caja {
+          padding: 10px 16px 0;
+        }
+
+        .seccion {
+          grid-template-rows: auto minmax(0, 1fr);
+          gap: 8px;
+          padding: 10px 16px 14px;
+        }
+
+        /* En pantallas chicas, la lista de actividades nunca queda sin alto. */
+        .ficha {
+          grid-template-rows: auto minmax(0, auto) auto minmax(150px, 1fr);
+        }
+
+        /* El formulario sólo tiene dos filas: cabecera y campos. */
+        .ficha--formulario {
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+
+        .pantalla {
+          padding: 18px 16px;
+        }
+      }
+
+      /* Pantallas muy angostas: las acciones de la ficha entran en una línea. */
+      @media (max-width: 430px) {
+        .ficha__acciones {
+          gap: 4px;
+        }
+
+        .ficha__acciones .boton {
+          padding: 0 9px;
+        }
+
+        .ficha__id {
+          margin-left: 2px;
+          padding-left: 10px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="raiz"></div>
+    <noscript>Esta interfaz necesita JavaScript para consultar la API REST.</noscript>
+
+    <!-- Bibliotecas: versiones fijas, sin bundler. -->
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js" crossorigin></script>
+
+    <script>
+      /*
+       * Babel, explícito: un preset propio que fija `runtime: "classic"`, así el
+       * JSX se convierte en React.createElement(...) y necesita el React global
+       * (build UMD). Sin `runtime: "automatic"` no hace falta el jsx-runtime.
+       */
+      Babel.registerPreset("react-clasico", {
+        presets: [[Babel.availablePresets.react, { runtime: "classic", development: false }]],
+      });
+    </script>
+
+    <script type="text/babel" data-presets="react-clasico">
+      /*
+       * MiniCRM · una sola página, cuatro secciones:
+       *   1. utilidades          2. servicios (única puerta a la API REST)
+       *   3. primitivas de UI    4. componentes de entidad y composición
+       * Todo lo que se ve pasa por la API REST: acá no hay datos de prueba ni
+       * estado duplicado. El maestro lista y busca; el detalle muestra la ficha
+       * del cliente, escribe sus compromisos y lista sus actividades.
+       */
+
+      /* ══ 1. Utilidades ═════════════════════════════════════════════════ */
+
+      const { useState, useEffect, useCallback } = React;
+
+      // Las fechas son calendario en UTC, igual que las guarda la API.
+      const hoyISO = () => new Date().toISOString().slice(0, 10);
+      const soloFecha = (iso) => (iso ? String(iso).slice(0, 10) : "");
+
+      const FORMATO_FECHA = new Intl.DateTimeFormat("es-AR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+
+      /** "2026-11-01T00:00:00.000Z" → "01 nov 2026". */
+      function fechaCorta(iso) {
+        return iso ? FORMATO_FECHA.format(new Date(iso)) : null;
+      }
+
+      const nombreCompleto = (cliente) => `${cliente.nombre} ${cliente.apellido}`.trim();
+      const iniciales = (cliente) => `${cliente.nombre.charAt(0)}${cliente.apellido.charAt(0)}`.toUpperCase();
+
+      /** Tono de color estable por cliente, para el avatar. */
+      const tonoDe = (id) => (id * 47) % 360;
+
+      const plural = (cantidad, singular, muchos) => `${cantidad} ${cantidad === 1 ? singular : muchos}`;
+
+      /**
+       * Misma regla que el servicio: completada si tiene fecha de finalización;
+       * vencida si sigue pendiente y su compromiso ya pasó.
+       */
+      function estadoDe(actividad) {
+        if (actividad.fechaFinalizacion) return "completada";
+        if (actividad.fechaCompromiso && soloFecha(actividad.fechaCompromiso) < hoyISO()) return "vencida";
+        return "pendiente";
+      }
+
+      const fechaDelCompromiso = (actividad) => (actividad.fechaCompromiso ? soloFecha(actividad.fechaCompromiso) : "");
+
+      /**
+       * Compromisos: primero los que no tienen fecha, después los vencidos y al
+       * final los que vencen hoy o más adelante; dentro de cada grupo con fecha,
+       * de menor a mayor. Es el orden pedido, no el que devuelve la API.
+       */
+      function ordenarCompromisos(actividades) {
+        const hoy = hoyISO();
+        const rango = (actividad) => {
+          const fecha = fechaDelCompromiso(actividad);
+          if (!fecha) return 0;
+          return fecha < hoy ? 1 : 2;
+        };
+
+        return [...actividades].sort(
+          (uno, otro) => rango(uno) - rango(otro) || fechaDelCompromiso(uno).localeCompare(fechaDelCompromiso(otro)),
+        );
+      }
+
+      /**
+       * Dos grupos para el detalle: los compromisos pendientes (con el orden de
+       * arriba) y las completadas, de la más reciente a la más vieja.
+       */
+      function agruparActividades(actividades) {
+        const completada = (actividad) => estadoDe(actividad) === "completada";
+
+        return {
+          compromisos: ordenarCompromisos(actividades.filter((actividad) => !completada(actividad))),
+          completadas: actividades
+            .filter(completada)
+            .sort((uno, otro) =>
+              (otro.fechaFinalizacion || "").localeCompare(uno.fechaFinalizacion || ""),
+            ),
+        };
+      }
+
+      const FILTROS = [
+        { valor: "todas", texto: "Todas" },
+        { valor: "pendiente", texto: "Pendientes", ayuda: "Pendientes (incluye las vencidas)" },
+        { valor: "vencida", texto: "Vencidas" },
+        { valor: "completada", texto: "Completadas" },
+      ];
+
+      /* ══ 2. Servicios: la única puerta a la API REST ═══════════════════ */
+
+      class ErrorDeApi extends Error {
+        constructor(mensaje, estado) {
+          super(mensaje);
+          this.name = "ErrorDeApi";
+          this.estado = estado;
+        }
+      }
+
+      /** Arma el query string salteando los valores vacíos. */
+      function query(filtros) {
+        const partes = Object.entries(filtros || {}).filter(
+          ([, valor]) => valor !== undefined && valor !== null && valor !== "" && valor !== false,
+        );
+        if (partes.length === 0) return "";
+        return "?" + partes.map(([clave, valor]) => `${clave}=${encodeURIComponent(valor)}`).join("&");
+      }
+
+      /** Petición a la API: devuelve JSON, `null` en 204 y ErrorDeApi en fallas. */
+      async function pedir(ruta, opciones) {
+        const { metodo = "GET", cuerpo } = opciones || {};
+        let respuesta;
+
+        try {
+          respuesta = await fetch(ruta, {
+            method: metodo,
+            headers: cuerpo === undefined ? undefined : { "Content-Type": "application/json" },
+            body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+          });
+        } catch (error) {
+          throw new ErrorDeApi("No se pudo conectar con la API. ¿Está corriendo el servidor?", 0);
+        }
+
+        if (respuesta.status === 204) return null;
+
+        const datos = await respuesta.json().catch(() => null);
+        if (!respuesta.ok) {
+          const mensaje = (datos && datos.error) || `La API respondió ${respuesta.status}`;
+          throw new ErrorDeApi(mensaje, respuesta.status);
+        }
+        return datos;
+      }
+
+      const Clientes = {
+        listar: (buscar) => pedir(`/api/clientes${query({ buscar })}`),
+        obtener: (id)    => pedir(`/api/clientes/${id}`),
+        crear: (datos)   => pedir("/api/clientes", { metodo: "POST", cuerpo: datos }),
+        actualizar: (id, cambios) => pedir(`/api/clientes/${id}`, { metodo: "PATCH", cuerpo: cambios }),
+        eliminar: (id)   => pedir(`/api/clientes/${id}`, { metodo: "DELETE" }),
+      };
+
+      const Actividades = {
+        listar: (clienteId, filtros) => pedir(`/api/clientes/${clienteId}/actividades${query(filtros)}`),
+        crear: (clienteId, datos) => pedir(`/api/clientes/${clienteId}/actividades`, { metodo: "POST", cuerpo: datos }),
+        actualizar: (clienteId, id, cambios) =>
+          pedir(`/api/clientes/${clienteId}/actividades/${id}`, { metodo: "PATCH", cuerpo: cambios }),
+        eliminar: (clienteId, id) => pedir(`/api/clientes/${clienteId}/actividades/${id}`, { metodo: "DELETE" }),
+        completar: (clienteId, id) => pedir(`/api/clientes/${clienteId}/actividades/${id}/completar`, { metodo: "POST" }),
+      };
+
+      /**
+       * Actividades visibles + conteo por estado. El conteo sale de pedirle a la
+       * API los tres cortes, así la interfaz no recalcula las reglas de estado
+       * (vencida = pendiente con la fecha de compromiso pasada).
+       */
+      async function cargarActividades(clienteId, filtro) {
+        const [visibles, pendientes, vencidas, completadas] = await Promise.all([
+          Actividades.listar(clienteId, filtro === "todas" ? {} : { estado: filtro }),
+          Actividades.listar(clienteId, { estado: "pendiente" }),
+          Actividades.listar(clienteId, { estado: "vencida" }),
+          Actividades.listar(clienteId, { estado: "completada" }),
+        ]);
+
+        return {
+          visibles,
+          conteo: {
+            todas: pendientes.length + completadas.length,
+            pendiente: pendientes.length,
+            vencida: vencidas.length,
+            completada: completadas.length,
+          },
+        };
+      }
+
+      /**
+       * Estado de un recurso remoto. `cargar` se vuelve a ejecutar cuando
+       * cambia alguna dependencia o cuando se llama a `recargar()`.
+       */
+      function useRecurso(cargar, depende) {
+        const [estado, setEstado] = useState({ datos: null, cargando: true, error: null });
+        const [version, setVersion] = useState(0);
+
+        useEffect(() => {
+          let vigente = true;
+          setEstado((previo) => ({ ...previo, cargando: true, error: null }));
+
+          Promise.resolve()
+            .then(cargar)
+            .then((datos) => {
+              if (vigente) setEstado({ datos, cargando: false, error: null });
+            })
+            .catch((error) => {
+              if (vigente) setEstado({ datos: null, cargando: false, error: error.message });
+            });
+
+          return () => {
+            vigente = false;
+          };
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, depende.concat(version));
+
+        const recargar = useCallback(() => setVersion((valor) => valor + 1), []);
+        return { datos: estado.datos, cargando: estado.cargando, error: estado.error, recargar };
+      }
+
+      /* ══ 3. Primitivas de interfaz ═════════════════════════════════════ */
+
+      const TRAZOS = {
+        buscar: ["M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Z", "m20 20-4.7-4.7"],
+        mas: "M12 5v14M5 12h14",
+        editar: ["M4 20h4L20 8l-4-4L4 16v4Z", "m14.5 5.5 4 4"],
+        papelera: ["M4 7h16", "M9.5 7V4.5h5V7", "m6.5 7 1 13h9l1-13"],
+        check: "m5 12.5 4.5 4.5L19 7",
+        alerta: ["M12 4 2.6 20h18.8L12 4Z", "M12 10v4.2", "M12 17.2v.01"],
+        cerrar: "M6 6l12 12M18 6 6 18",
+        correo: ["M3.5 6h17v12h-17z", "m3.5 7 8.5 6 8.5-6"],
+        telefono: "M5 4h3.5l1.8 4.4-2.3 1.4a12.5 12.5 0 0 0 5.2 5.2l1.4-2.3L19 14.5V18a1 1 0 0 1-1 1A15 15 0 0 1 4 5a1 1 0 0 1 1-1Z",
+        casa: "M4 11l8-7 8 7v9h-5.5v-5h-5v5H4v-9Z",
+        lugar: ["M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z", "M12 12.2a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8Z"],
+        calendario: ["M4 6h16v14H4z", "M8 4v4M16 4v4", "M4 10.5h16"],
+        usuario: ["M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z", "M4.5 20c1.4-3.4 4.2-5 7.5-5s6.1 1.6 7.5 5"],
+        lista: ["M8.5 6.5H20M8.5 12H20M8.5 17.5H20", "M4 6.5h.01M4 12h.01M4 17.5h.01"],
+        rayo: "M13 3 5.5 14H11l-1 7 7.5-11H12l1-7Z",
+        info: ["M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z", "M12 11.2V16", "M12 8.2v.01"],
+      };
+
+      function Icono({ nombre, tamano = 16 }) {
+        const trazados = [].concat(TRAZOS[nombre] || []);
+        return (
+          <svg
+            className="icono"
+            width={tamano}
+            height={tamano}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            {trazados.map((d, i) => (
+              <path key={i} d={d} />
+            ))}
+          </svg>
+        );
+      }
+
+      function Boton({ tipo = "button", variante = "secundario", tamano = "md", icono, cargando, children, ...resto }) {
+        const clases = ["boton", `boton--${variante}`, tamano !== "md" ? `boton--${tamano}` : "", !children ? "boton--solo-icono" : ""]
+          .filter(Boolean)
+          .join(" ");
+
+        return (
+          <button type={tipo} className={clases} {...resto}>
+            {cargando ? <span className="girador" aria-hidden="true" /> : icono ? <Icono nombre={icono} /> : null}
+            {children ? <span>{children}</span> : null}
+          </button>
+        );
+      }
+
+      /**
+       * Acción irreversible en dos toques: el primero arma, el segundo ejecuta.
+       * Se desarma solo a los 4 segundos.
+       */
+      function ConfirmarBoton({ etiqueta, confirmacion, icono, variante = "fantasma", tamano = "sm", alConfirmar, ...resto }) {
+        const [armado, setArmado] = useState(false);
+
+        useEffect(() => {
+          if (!armado) return undefined;
+          const reloj = setTimeout(() => setArmado(false), 4000);
+          return () => clearTimeout(reloj);
+        }, [armado]);
+
+        return (
+          <Boton
+            variante={armado ? "peligro" : variante}
+            tamano={tamano}
+            icono={armado ? "check" : icono}
+            onClick={() => {
+              setArmado(false);
+              if (armado) alConfirmar();
+              else setArmado(true);
+            }}
+            {...resto}
+          >
+            {armado ? confirmacion || "¿Confirmar?" : etiqueta}
+          </Boton>
+        );
+      }
+
+      function Campo({ nombre, etiqueta, valor, alCambiar, tipo = "text", requerido, ayuda, autoFocus }) {
+        const id = `campo-${nombre}`;
+        const comunes = {
+          id,
+          name: nombre,
+          className: "campo__control",
+          value: valor === undefined || valor === null ? "" : valor,
+          required: Boolean(requerido),
+          onChange: (evento) => alCambiar(evento.target.value),
+        };
+
+        return (
+          <div className="campo">
+            <label className="campo__etiqueta" htmlFor={id}>
+              {etiqueta}
+              {requerido ? (
+                <span className="campo__requerido" aria-hidden="true">
+                  *
+                </span>
+              ) : null}
+            </label>
+            <input {...comunes} type={tipo} autoFocus={autoFocus} />
+            {ayuda ? <p className="campo__ayuda">{ayuda}</p> : null}
+          </div>
+        );
+      }
+
+      function Formulario({ alEnviar, alCancelar, enviando, error, etiquetaGuardar = "Guardar", children }) {
+        return (
+          <form
+            className="formulario"
+            onSubmit={(evento) => {
+              evento.preventDefault();
+              alEnviar();
+            }}
+          >
+            {error ? <Aviso>{error}</Aviso> : null}
+            <div className="formulario__campos">{children}</div>
+            <footer className="formulario__pie">
+              <Boton variante="fantasma" onClick={alCancelar} disabled={enviando}>
+                Cancelar
+              </Boton>
+              <Boton tipo="submit" variante="primario" cargando={enviando} disabled={enviando}>
+                {etiquetaGuardar}
+              </Boton>
+            </footer>
+          </form>
+        );
+      }
+
+      function Aviso({ tono = "error", children }) {
+        return (
+          <p className={`aviso aviso--${tono}`} role="alert">
+            <span>{children}</span>
+          </p>
+        );
+      }
+
+      function AvisoFlotante({ aviso }) {
+        if (!aviso) return null;
+        return (
+          <div className={`flotante${aviso.tono === "error" ? " flotante--error" : ""}`} role="status" aria-live="polite">
+            <Icono nombre={aviso.tono === "error" ? "alerta" : "check"} tamano={15} />
+            <span>{aviso.texto}</span>
+          </div>
+        );
+      }
+
+      function Segmentado({ valor, opciones, conteo, alCambiar, etiqueta }) {
+        return (
+          <div className="segmentado" role="group" aria-label={etiqueta}>
+            {opciones.map((opcion) => (
+              <button
+                key={opcion.valor}
+                type="button"
+                className="segmentado__opcion"
+                aria-pressed={valor === opcion.valor}
+                title={opcion.ayuda}
+                onClick={() => alCambiar(opcion.valor)}
+              >
+                {opcion.texto}
+                {conteo ? <span className="segmentado__cuenta">{conteo[opcion.valor]}</span> : null}
+              </button>
+            ))}
+          </div>
+        );
+      }
+
+      function Vacio({ icono = "lista", titulo, texto, accion, compacto }) {
+        return (
+          <div className={`vacio${compacto ? " vacio--compacto" : ""}`}>
+            <span className="vacio__icono">
+              <Icono nombre={icono} tamano={18} />
+            </span>
+            <p className="vacio__titulo">{titulo}</p>
+            {texto ? <p className="vacio__texto">{texto}</p> : null}
+            {accion}
+          </div>
+        );
+      }
+
+      function Cargando({ filas = 3 }) {
+        return (
+          <div className="siluetas" role="status" aria-label="Cargando">
+            {Array.from({ length: filas }, (_, i) => (
+              <span key={i} className="silueta" />
+            ))}
+          </div>
+        );
+      }
+
+      function MensajeError({ error, alReintentar }) {
+        return (
+          <Aviso>
+            {error}
+            {alReintentar ? (
+              <>
+                {" "}
+                <button type="button" className="enlace" onClick={alReintentar}>
+                  Reintentar
+                </button>
+              </>
+            ) : null}
+          </Aviso>
+        );
+      }
+
+      /** Atrapa errores de render para no dejar la página en blanco. */
+      class LimiteDeErrores extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = { error: null };
+        }
+
+        static getDerivedStateFromError(error) {
+          return { error };
+        }
+
+        render() {
+          if (this.state.error) {
+            return (
+              <div className="pantalla">
+                <Aviso>La interfaz falló: {String(this.state.error.message)}</Aviso>
+              </div>
+            );
+          }
+          return this.props.children;
+        }
+      }
+
+      /* ══ 4. Componentes de entidad ═════════════════════════════════════ */
+
+      function Avatar({ cliente, tamano = 34 }) {
+        return (
+          <span
+            className="avatar"
+            style={{ "--tono": String(tonoDe(cliente.id)), width: tamano, height: tamano, fontSize: Math.round(tamano * 0.36) }}
+          >
+            {iniciales(cliente)}
+          </span>
+        );
+      }
+
+      /** Maestro · ítem: para listar clientes. */
+      function TarjetaCliente({ cliente, activo, alElegir }) {
+        return (
+          <button
+            type="button"
+            className="cliente"
+            aria-current={activo ? "true" : undefined}
+            onClick={() => alElegir(cliente.id)}
+          >
+            <Avatar cliente={cliente} />
+            <span className="cliente__texto">
+              <span className="cliente__nombre">{nombreCompleto(cliente)}</span>
+              <span className="cliente__meta">{cliente.localidad || cliente.email}</span>
+            </span>
+          </button>
+        );
+      }
+
+      /** Maestro · lista: con su búsqueda, sus estados y su scroll interno. */
+      function ListaClientes({ recurso, clienteId, alElegir, alNuevo, hayBusqueda }) {
+        if (recurso.error) {
+          return (
+            <div className="lista">
+              <MensajeError error={recurso.error} alReintentar={recurso.recargar} />
+            </div>
+          );
+        }
+        if (!recurso.datos && recurso.cargando) {
+          return (
+            <div className="lista">
+              <Cargando filas={6} />
+            </div>
+          );
+        }
+        if (recurso.datos && recurso.datos.length === 0) {
+          return (
+            <div className="lista">
+              <Vacio
+                compacto
+                icono={hayBusqueda ? "buscar" : "usuario"}
+                titulo={hayBusqueda ? "Sin coincidencias" : "Todavía no hay clientes"}
+                texto={
+                  hayBusqueda
+                    ? "Probá con otro texto: la búsqueda recorre nombre, apellido, email, domicilio, localidad y teléfono."
+                    : "Cargá el primero para empezar."
+                }
+                accion={
+                  hayBusqueda ? null : (
+                    <Boton variante="primario" tamano="sm" icono="mas" onClick={alNuevo}>
+                      Agregar
+                    </Boton>
+                  )
+                }
+              />
+            </div>
+          );
+        }
+        return (
+          <div className="lista">
+            {recurso.datos.map((cliente) => (
+              <TarjetaCliente key={cliente.id} cliente={cliente} activo={cliente.id === clienteId} alElegir={alElegir} />
+            ))}
+          </div>
+        );
+      }
+
+      /** Detalle · dato suelto: para mostrar una entidad. */
+      function Dato({ icono, etiqueta, valor, enlace }) {
+        return (
+          <div className="dato">
+            <span className="dato__icono">
+              <Icono nombre={icono} tamano={15} />
+            </span>
+            <div>
+              <dt className="dato__etiqueta">{etiqueta}</dt>
+              <dd className="dato__valor">
+                {valor ? enlace ? <a href={enlace}>{valor}</a> : valor : <span className="dato__vacio">Sin datos</span>}
+              </dd>
+            </div>
+          </div>
+        );
+      }
+
+      /**
+       * Detalle · ficha: cabecera con el identificador y las acciones del
+       * cliente, datos fijos y, debajo, lo que se le pase (las actividades).
+       */
+      function FichaCliente({ cliente, resumen, alAgregar, alEditar, alEliminar, children }) {
+        return (
+          <article className="ficha">
+            <header className="ficha__cabecera">
+              <div className="ficha__identidad">
+                <Avatar cliente={cliente} tamano={44} />
+                <div>
+                  <h2 className="ficha__nombre">{nombreCompleto(cliente)}</h2>
+                  <p className="ficha__meta">
+                    {cliente.localidad || "Sin localidad"}
+                    {resumen ? ` · ${resumen}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="ficha__acciones">
+                <Boton icono="mas" onClick={alAgregar}>
+                  Agregar
+                </Boton>
+                <Boton icono="editar" onClick={alEditar}>
+                  Editar
+                </Boton>
+                <ConfirmarBoton
+                  icono="papelera"
+                  etiqueta="Eliminar"
+                  confirmacion="¿Eliminar cliente?"
+                  alConfirmar={alEliminar}
+                />
+                <span className="ficha__id" title="Identificador del cliente">
+                  #{cliente.id}
+                </span>
+              </div>
+            </header>
+
+            <dl className="datos">
+              <Dato icono="correo" etiqueta="Email" valor={cliente.email} enlace={`mailto:${cliente.email}`} />
+              <Dato
+                icono="telefono"
+                etiqueta="Teléfono"
+                valor={cliente.telefono}
+                enlace={cliente.telefono ? `tel:${cliente.telefono}` : null}
+              />
+              <Dato icono="casa" etiqueta="Domicilio" valor={cliente.domicilio} />
+              <Dato icono="lugar" etiqueta="Localidad" valor={cliente.localidad} />
+            </dl>
+
+            {children}
+          </article>
+        );
+      }
+
+      /**
+       * Detalle · ítem: check a la izquierda (que completa el compromiso),
+       * descripción, la fecha que corresponde y, en los pendientes, los iconos
+       * para editarlos o borrarlos. Las completadas son inalterables.
+       */
+      function ItemActividad({ actividad, alCompletar, alEditar, alEliminar, enEdicionId }) {
+        const estado = estadoDe(actividad);
+        const completada = estado === "completada";
+        const enEdicion = enEdicionId === actividad.id;
+        const fecha = completada ? actividad.fechaFinalizacion : actividad.fechaCompromiso;
+
+        return (
+          <li className={`actividad actividad--${estado}${enEdicion ? " actividad--enEdicion" : ""}`}>
+            {completada ? (
+              <span className="actividad__marca" aria-hidden="true">
+                <Icono nombre="check" tamano={12} />
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="actividad__marca actividad__marca--accion"
+                onClick={() => alCompletar(actividad)}
+                aria-label={`Marcar como completada: ${actividad.descripcion}`}
+                title="Marcar como completada"
+              >
+                <Icono nombre="check" tamano={12} />
+              </button>
+            )}
+
+            <div className="actividad__cuerpo">
+              <p className="actividad__descripcion">{actividad.descripcion}</p>
+              <p className="actividad__fechas">
+                {fecha ? (
+                  <>
+                    <Icono nombre="calendario" tamano={13} />
+                    <span>
+                      {completada ? "Finalizada" : "Compromiso"} {fechaCorta(fecha)}
+                    </span>
+                    {estado === "vencida" ? (
+                      <>
+                        <span className="separador">·</span>
+                        <span className="actividad__aviso">vencida</span>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  <span className="tenue">Sin fecha de compromiso</span>
+                )}
+              </p>
+            </div>
+
+            {completada ? null : (
+              <div className="actividad__acciones">
+                <Boton
+                  variante="fantasma"
+                  tamano="sm"
+                  icono="editar"
+                  onClick={() => alEditar(actividad)}
+                  aria-label={`Editar: ${actividad.descripcion}`}
+                  title="Editar"
+                />
+                <ConfirmarBoton
+                  etiqueta=""
+                  confirmacion="¿Eliminar?"
+                  icono="papelera"
+                  tamano="sm"
+                  alConfirmar={() => alEliminar(actividad)}
+                  aria-label={`Eliminar: ${actividad.descripcion}`}
+                  title="Eliminar"
+                />
+              </div>
+            )}
+          </li>
+        );
+      }
+
+      /** Detalle · grupo: título con la cuenta y la lista, o su línea si está vacío. */
+      function GrupoActividades({ titulo, actividades, vacio, acciones }) {
+        return (
+          <section className="grupo">
+            <h4 className="grupo__titulo">
+              {titulo}
+              <span className="grupo__cuenta">{actividades.length}</span>
+            </h4>
+            {actividades.length === 0 ? (
+              <p className="grupo__nota">{vacio}</p>
+            ) : (
+              <ul className="actividades">
+                {actividades.map((actividad) => (
+                  <ItemActividad key={actividad.id} actividad={actividad} {...acciones} />
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      }
+
+      /**
+       * Detalle · subformulario de compromisos: alta y edición en una sola
+       * línea, sin etiquetas visibles (los nombres accesibles van en cada
+       * control). El estado vive acá; la lista la refresca `alGuardado`.
+       */
+      function FormularioActividad({ clienteId, actividad, alCancelar, alGuardado, alError }) {
+        const edicion = Boolean(actividad);
+        const [descripcion, setDescripcion] = useState(edicion ? actividad.descripcion : "");
+        const [fecha, setFecha] = useState(edicion && actividad.fechaCompromiso ? soloFecha(actividad.fechaCompromiso) : "");
+        const [enviando, setEnviando] = useState(false);
+
+        async function guardar(evento) {
+          evento.preventDefault();
+          setEnviando(true);
+          const datos = { descripcion: descripcion.trim(), fechaCompromiso: fecha || null };
+
+          try {
+            const guardada = edicion
+              ? await Actividades.actualizar(clienteId, actividad.id, datos)
+              : await Actividades.crear(clienteId, datos);
+            alGuardado(guardada, edicion);
+          } catch (falla) {
+            alError(falla.message);
+            setEnviando(false);
+          }
+        }
+
+        return (
+          <div className="subformulario-caja">
+            <form
+              className={`subformulario${edicion ? " subformulario--edicion" : ""}`}
+              aria-label={edicion ? "Editar compromiso" : "Nuevo compromiso"}
+              onSubmit={guardar}
+            >
+              <input
+                className="campo__control subformulario__descripcion"
+                type="text"
+                value={descripcion}
+                onChange={(evento) => setDescripcion(evento.target.value)}
+                placeholder="Descripción"
+                aria-label="Descripción del compromiso"
+                autoComplete="off"
+                required
+              />
+              <input
+                className="campo__control subformulario__fecha"
+                type="date"
+                value={fecha}
+                onChange={(evento) => setFecha(evento.target.value)}
+                aria-label="Fecha de compromiso (opcional)"
+                title="Fecha de compromiso (opcional)"
+              />
+              <Boton
+                tipo="submit"
+                icono="check"
+                variante="primario"
+                cargando={enviando}
+                disabled={enviando}
+                aria-label={edicion ? "Guardar cambios del compromiso" : "Agregar compromiso"}
+                title="Guardar"
+              />
+              <Boton
+                icono="cerrar"
+                variante="fantasma"
+                onClick={alCancelar}
+                disabled={enviando}
+                aria-label="Cancelar y limpiar el formulario"
+                title="Cancelar"
+              />
+            </form>
+          </div>
+        );
+      }
+
+      /** Detalle · lista: compromisos y completadas, con filtro por estado y scroll interno. */
+      function ListaActividades({ recurso, filtro, alCambiarFiltro, acciones }) {
+        const visibles = recurso.datos ? recurso.datos.visibles : null;
+        const conteo = recurso.datos ? recurso.datos.conteo : null;
+        const grupos = visibles ? agruparActividades(visibles) : null;
+
+        return (
+          <section className="seccion">
+            <header className="seccion__cabecera">
+              <h3 className="seccion__titulo">
+                <Icono nombre="lista" tamano={15} />
+                Actividades
+              </h3>
+              <Segmentado
+                valor={filtro}
+                opciones={FILTROS}
+                conteo={conteo}
+                alCambiar={alCambiarFiltro}
+                etiqueta="Filtrar actividades por estado"
+              />
+            </header>
+
+            <div className="seccion__cuerpo">
+              {recurso.error ? (
+                <MensajeError error={recurso.error} alReintentar={recurso.recargar} />
+              ) : !visibles && recurso.cargando ? (
+                <Cargando filas={3} />
+              ) : visibles.length === 0 ? (
+                <Vacio
+                  compacto
+                  icono={filtro === "todas" ? "lista" : "buscar"}
+                  titulo={filtro === "todas" ? "Sin actividades" : "Nada por acá"}
+                  texto={
+                    filtro === "todas"
+                      ? "Este cliente todavía no tiene actividades registradas."
+                      : "No hay actividades en este estado. Probá con otro filtro."
+                  }
+                />
+              ) : (
+                <div className="grupos">
+                  <GrupoActividades
+                    titulo="Compromisos"
+                    actividades={grupos.compromisos}
+                    vacio={filtro === "todas" ? "No hay compromisos pendientes." : "Nada en este filtro."}
+                    acciones={acciones}
+                  />
+                  <GrupoActividades
+                    titulo="Actividades completadas"
+                    actividades={grupos.completadas}
+                    vacio={filtro === "todas" ? "Todavía no hay actividades completadas." : "Nada en este filtro."}
+                    acciones={acciones}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
+
+      /**
+       * Formulario · alta y edición de clientes, en el detalle (POST y PATCH de
+       * la API). Las filas son las del pedido: nombre y apellido, email y
+       * teléfono, domicilio y localidad, y los botones debajo.
+       */
+      function FormularioCliente({ cliente, alCancelar, alGuardado }) {
+        const edicion = Boolean(cliente);
+        const [datos, setDatos] = useState({
+          nombre: cliente ? cliente.nombre : "",
+          apellido: cliente ? cliente.apellido : "",
+          email: cliente ? cliente.email : "",
+          telefono: cliente ? cliente.telefono || "" : "",
+          domicilio: cliente ? cliente.domicilio || "" : "",
+          localidad: cliente ? cliente.localidad || "" : "",
+        });
+        const [enviando, setEnviando] = useState(false);
+        const [error, setError] = useState(null);
+
+        const cambiar = (clave) => (valor) => setDatos((previo) => ({ ...previo, [clave]: valor }));
+
+        async function guardar() {
+          setEnviando(true);
+          setError(null);
+          try {
+            const guardado = edicion ? await Clientes.actualizar(cliente.id, datos) : await Clientes.crear(datos);
+            alGuardado(guardado, edicion);
+          } catch (falla) {
+            setError(falla.message);
+            setEnviando(false);
+          }
+        }
+
+        return (
+          <div className="ficha ficha--formulario">
+            <header className="ficha__cabecera">
+              <div className="ficha__identidad">
+                {edicion ? <Avatar cliente={cliente} tamano={44} /> : null}
+                <div>
+                  <h2 className="ficha__nombre">{edicion ? "Editar cliente" : "Agregar cliente"}</h2>
+                  <p className="ficha__meta">
+                    {edicion ? nombreCompleto(cliente) : "Nombre, apellido y email son obligatorios."}
+                  </p>
+                </div>
+              </div>
+              {edicion ? (
+                <div className="ficha__acciones">
+                  <span className="ficha__id" title="Identificador del cliente">
+                    #{cliente.id}
+                  </span>
+                </div>
+              ) : null}
+            </header>
+
+            <Formulario alEnviar={guardar} alCancelar={alCancelar} enviando={enviando} error={error} etiquetaGuardar="Guardar">
+              <Campo nombre="nombre" etiqueta="Nombre" valor={datos.nombre} alCambiar={cambiar("nombre")} requerido autoFocus />
+              <Campo nombre="apellido" etiqueta="Apellido" valor={datos.apellido} alCambiar={cambiar("apellido")} requerido />
+              <Campo nombre="email" etiqueta="Email" tipo="email" valor={datos.email} alCambiar={cambiar("email")} requerido />
+              <Campo
+                nombre="telefono"
+                etiqueta="Teléfono"
+                tipo="tel"
+                valor={datos.telefono}
+                alCambiar={cambiar("telefono")}
+                ayuda="Se guarda solo con dígitos."
+              />
+              <Campo nombre="domicilio" etiqueta="Domicilio" valor={datos.domicilio} alCambiar={cambiar("domicilio")} />
+              <Campo nombre="localidad" etiqueta="Localidad" valor={datos.localidad} alCambiar={cambiar("localidad")} />
+            </Formulario>
+          </div>
+        );
+      }
+
+      /**
+       * Layout de la app: cabecera fija, maestro con scroll propio a la
+       * izquierda y detalle a la derecha. La página no scrollea nunca.
+       */
+      function Marco({ cabecera, lateral, children }) {
+        return (
+          <div className="app">
+            <header className="cabecera">{cabecera}</header>
+            <div className="cuerpo">
+              <aside className="lateral">{lateral}</aside>
+              <main className="principal">{children}</main>
+            </div>
+          </div>
+        );
+      }
+
+      /* ══ 5. Composición ════════════════════════════════════════════════ */
+
+      function App() {
+        const [texto, setTexto] = useState("");
+        const [busqueda, setBusqueda] = useState("");
+        const [clienteId, setClienteId] = useState(null);
+        const [filtro, setFiltro] = useState("todas");
+        // null | "crear" | "editar": el formulario de cliente vive en el detalle.
+        const [modo, setModo] = useState(null);
+        // Compromiso que se está editando en el subformulario (null = alta).
+        const [enEdicion, setEnEdicion] = useState(null);
+        // Cambia la clave del subformulario: lo vacía tras guardar o cancelar.
+        const [version, setVersion] = useState(0);
+        const [aviso, setAviso] = useState(null);
+
+        const avisar = useCallback((texto, tono = "ok") => setAviso({ texto, tono, id: Date.now() }), []);
+
+        // Búsqueda en vivo: espera 250 ms para no golpear la API en cada tecla.
+        useEffect(() => {
+          const reloj = setTimeout(() => setBusqueda(texto.trim()), 250);
+          return () => clearTimeout(reloj);
+        }, [texto]);
+
+        // Los avisos se van solos.
+        useEffect(() => {
+          if (!aviso) return undefined;
+          const reloj = setTimeout(() => setAviso(null), 4000);
+          return () => clearTimeout(reloj);
+        }, [aviso]);
+
+        // Un recurso por panel: el maestro, la ficha y las actividades.
+        const clientes = useRecurso(() => Clientes.listar(busqueda), [busqueda]);
+        const ficha = useRecurso(
+          () => (clienteId === null ? Promise.resolve(null) : Clientes.obtener(clienteId)),
+          [clienteId],
+        );
+        const actividades = useRecurso(
+          () => (clienteId === null ? Promise.resolve(null) : cargarActividades(clienteId, filtro)),
+          [clienteId, filtro],
+        );
+
+        const seleccionado = ficha.datos;
+
+        // Sin elección, se abre el primero de la lista.
+        useEffect(() => {
+          if (clienteId === null && clientes.datos && clientes.datos.length > 0) setClienteId(clientes.datos[0].id);
+        }, [clientes.datos, clienteId]);
+
+        useEffect(() => {
+          document.title = seleccionado ? `${nombreCompleto(seleccionado)} · MiniCRM` : "MiniCRM";
+        }, [seleccionado]);
+
+        const cerrarFormulario = useCallback(() => setModo(null), []);
+
+        /** Abrir el formulario de cliente deja el subformulario en blanco. */
+        const abrirFormularioCliente = useCallback((cual) => {
+          setEnEdicion(null);
+          setModo(cual);
+        }, []);
+
+        // Elegir en el maestro lleva a la ficha de ese cliente: cierra los formularios.
+        const elegirCliente = useCallback((id) => {
+          setClienteId(id);
+          setModo(null);
+          setEnEdicion(null);
+        }, []);
+
+        /** Guardar (alta o edición) y volver a pedir el maestro y la ficha. */
+        function alGuardarCliente(guardado, edicion) {
+          setModo(null);
+          setClienteId(guardado.id);
+
+          // Un alta se muestra: se limpia la búsqueda para que aparezca en el maestro.
+          if (!edicion) {
+            setTexto("");
+            setBusqueda("");
+          }
+
+          clientes.recargar();
+          ficha.recargar();
+          avisar(edicion ? "Cliente actualizado" : "Cliente creado");
+        }
+
+        /** Vaciar el subformulario y volver a pedir la lista de compromisos. */
+        function limpiarSubformulario() {
+          setEnEdicion(null);
+          setVersion((previa) => previa + 1);
+          actividades.recargar();
+        }
+
+        function alGuardarActividad(_guardada, eraEdicion) {
+          limpiarSubformulario();
+          avisar(eraEdicion ? "Actividad actualizada" : "Actividad agregada");
+        }
+
+        function editarActividad(actividad) {
+          setEnEdicion(actividad);
+          setVersion((previa) => previa + 1);
+        }
+
+        async function completarActividad(actividad) {
+          try {
+            await Actividades.completar(clienteId, actividad.id);
+            actividades.recargar();
+            avisar("Actividad completada");
+          } catch (falla) {
+            avisar(falla.message, "error");
+          }
+        }
+
+        async function eliminarActividad(actividad) {
+          try {
+            await Actividades.eliminar(clienteId, actividad.id);
+            if (enEdicion && enEdicion.id === actividad.id) setEnEdicion(null);
+            setVersion((previa) => previa + 1);
+            actividades.recargar();
+            avisar("Actividad eliminada");
+          } catch (falla) {
+            avisar(falla.message, "error");
+          }
+        }
+
+        const avisarError = useCallback((mensaje) => avisar(mensaje, "error"), [avisar]);
+
+        async function eliminarCliente() {
+          if (clienteId === null) return;
+          try {
+            await Clientes.eliminar(clienteId);
+            setClienteId(null);
+            setFiltro("todas");
+            clientes.recargar();
+            avisar("Cliente eliminado");
+          } catch (falla) {
+            avisar(falla.message, "error");
+          }
+        }
+
+        const conteo = actividades.datos ? actividades.datos.conteo : null;
+
+        const resumen = !conteo
+          ? null
+          : conteo.todas === 0
+            ? "sin actividades"
+            : [plural(conteo.todas, "actividad", "actividades"), conteo.vencida ? plural(conteo.vencida, "vencida", "vencidas") : null]
+                .filter(Boolean)
+                .join(" · ");
+
+        const conteoClientes = !clientes.datos
+          ? "…"
+          : busqueda
+            ? `${plural(clientes.datos.length, "coincidencia", "coincidencias")} de “${busqueda}”`
+            : plural(clientes.datos.length, "cliente", "clientes");
+
+        // Lo que puede hacer cada compromiso desde su fila.
+        const accionesActividad = {
+          alCompletar: completarActividad,
+          alEditar: editarActividad,
+          alEliminar: eliminarActividad,
+          enEdicionId: enEdicion ? enEdicion.id : null,
+        };
+
+        let contenido;
+        if (modo === "crear") {
+          contenido = <FormularioCliente key="nuevo" cliente={null} alCancelar={cerrarFormulario} alGuardado={alGuardarCliente} />;
+        } else if (clienteId === null) {
+          contenido = (
+            <div className="pantalla">
+              <Vacio
+                icono="usuario"
+                titulo="Elegí un cliente"
+                texto="Seleccioná un cliente del maestro para ver su ficha y sus actividades."
+                accion={
+                  <Boton variante="primario" icono="mas" onClick={() => abrirFormularioCliente("crear")}>
+                    Agregar
+                  </Boton>
+                }
+              />
+            </div>
+          );
+        } else if (ficha.error) {
+          contenido = (
+            <div className="pantalla">
+              <MensajeError error={ficha.error} alReintentar={ficha.recargar} />
+            </div>
+          );
+        } else if (!seleccionado) {
+          contenido = (
+            <div className="pantalla">
+              <Cargando filas={4} />
+            </div>
+          );
+        } else if (modo === "editar") {
+          contenido = (
+            <FormularioCliente
+              key={seleccionado.id}
+              cliente={seleccionado}
+              alCancelar={cerrarFormulario}
+              alGuardado={alGuardarCliente}
+            />
+          );
+        } else {
+          contenido = (
+            <FichaCliente
+              cliente={seleccionado}
+              resumen={resumen}
+              alAgregar={() => abrirFormularioCliente("crear")}
+              alEditar={() => abrirFormularioCliente("editar")}
+              alEliminar={eliminarCliente}
+            >
+              <FormularioActividad
+                key={`actividad-${seleccionado.id}-${version}`}
+                clienteId={seleccionado.id}
+                actividad={enEdicion}
+                alCancelar={limpiarSubformulario}
+                alGuardado={alGuardarActividad}
+                alError={avisarError}
+              />
+              <ListaActividades
+                recurso={actividades}
+                filtro={filtro}
+                alCambiarFiltro={setFiltro}
+                acciones={accionesActividad}
+              />
+            </FichaCliente>
+          );
+        }
+
+        return (
+          <React.Fragment>
+            <Marco
+              cabecera={
+                <div className="marca">
+                  <span className="marca__logo">
+                    <Icono nombre="rayo" tamano={16} />
+                  </span>
+                  <div>
+                    <h1 className="marca__nombre">MiniCRM</h1>
+                    <p className="marca__lema">Clientes y actividades</p>
+                  </div>
+                </div>
+              }
+              lateral={
+                <React.Fragment>
+                  <div className="lateral__cabecera">
+                    <div className="buscador">
+                      <Icono nombre="buscar" tamano={15} />
+                      <input
+                        type="search"
+                        value={texto}
+                        onChange={(evento) => setTexto(evento.target.value)}
+                        placeholder="Buscar en cualquier campo…"
+                        aria-label="Buscar cliente por nombre, apellido, email, domicilio, localidad o teléfono"
+                      />
+                      {texto ? (
+                        <button type="button" className="buscador__limpiar" onClick={() => setTexto("")} aria-label="Limpiar búsqueda">
+                          <Icono nombre="cerrar" tamano={13} />
+                        </button>
+                      ) : null}
+                    </div>
+                    <p className="lateral__conteo">{conteoClientes}</p>
+                  </div>
+                  <ListaClientes
+                    recurso={clientes}
+                    clienteId={clienteId}
+                    alElegir={elegirCliente}
+                    alNuevo={() => abrirFormularioCliente("crear")}
+                    hayBusqueda={Boolean(busqueda)}
+                  />
+                </React.Fragment>
+              }
+            >
+              {contenido}
+            </Marco>
+
+            <AvisoFlotante aviso={aviso} />
+          </React.Fragment>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("raiz")).render(
+        <LimiteDeErrores>
+          <App />
+        </LimiteDeErrores>,
+      );
+    </script>
+  </body>
+</html>

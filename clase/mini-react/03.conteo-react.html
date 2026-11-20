@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conteo de tránsito</title>
+<style>
+:root { --fondo: #f4f5f8; --panel: #ffffff; --texto: #1c2230; --suave: #5a6375; --borde: #d7dbe3; --acento: #2254d1; --acento-suave: #e7edfc; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; padding: 24px 16px; background: var(--fondo); color: var(--texto); font: 18px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .4; }
+.app { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding: 20px; background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; }
+.app h1 { margin: 0; font-size: 1.6rem; }
+.control { display: flex; align-items: center; gap: 16px; }
+.principal { width: 64px; height: 64px; flex: none; border: none; border-radius: 50%; background: var(--acento); color: #fff; font-size: 1.6rem; line-height: 1; }
+.cronometro { flex: 1; text-align: center; font: 700 2rem/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .02em; }
+.contadores { display: flex; flex-direction: column; gap: 12px; }
+.contador { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: var(--panel); color: var(--texto); border: 2px solid var(--acento); border-radius: 12px; text-align: left; }
+.contador:not(:disabled):hover { background: var(--acento-suave); }
+.contador:not(:disabled):active { transform: scale(.98); }
+.nombre { font-size: 1.4rem; font-weight: 600; }
+.cantidad { font-size: 2.4rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.resumen { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 14px; background: var(--acento-suave); border-radius: 12px; }
+.dato { text-align: center; }
+.titulo { margin: 0; color: var(--suave); font-size: .95rem; }
+.valor { margin: 0; font-size: 2rem; font-weight: 700; white-space: nowrap; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+</head>
+<body>
+<div id="raiz"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+function formatearDuracion(segundos) {
+  const horas = String(Math.floor(segundos / 3600)).padStart(2, "0");
+  const minutos = String(Math.floor((segundos % 3600) / 60)).padStart(2, "0");
+  const resto = String(segundos % 60).padStart(2, "0");
+  return `${horas}:${minutos}:${resto}`;
+}
+
+// Flujo: cuántos vehículos pasarían en una hora al ritmo observado.
+function calcularFlujo(cantidad, segundos) {
+  if (segundos === 0) return "—";
+  return `${Math.round((cantidad * 3600) / segundos)} v/h`;
+}
+
+// ---------- Componentes de presentación: no tienen estado ----------
+function Dato({ titulo, valor }) {
+  return (
+    <div className="dato">
+      <p className="titulo">{titulo}</p>
+      <p className="valor">{valor}</p>
+    </div>
+  );
+}
+
+function Cronometro({ segundos }) {
+  return <div className="cronometro">{formatearDuracion(segundos)}</div>;
+}
+
+function Resumen({ total, segundos }) {
+  const flujo = calcularFlujo(total, segundos);
+  return (
+    <section className="resumen">
+      <Dato titulo="Total de vehículos" valor={total} />
+      <Dato titulo="Flujo total" valor={flujo} />
+    </section>
+  );
+}
+
+// ---------- El contador: cuenta por su cuenta y avisa al padre ----------
+function Contador({ nombre, habilitado, alRegistrar }) {
+  const [cantidad, setCantidad] = useState(0);
+
+  // Al empezar una medición, el contador arranca de cero.
+  useEffect(() => {
+    if (habilitado) setCantidad(0);
+  }, [habilitado]);
+
+  function registrar() {
+    setCantidad((c) => c + 1);   // el contador interno
+    alRegistrar();               // el aviso al padre
+  }
+
+  // Todo el contador es el botón.
+  return (
+    <button className="contador" disabled={!habilitado} onClick={registrar}>
+      <span className="nombre">{nombre}</span>
+      <span className="cantidad">{cantidad}</span>
+    </button>
+  );
+}
+
+// ---------- La aplicación: lleva el reloj y el contador global ----------
+function App() {
+  const [inicio, setInicio] = useState(null);       // null: detenido
+  const [ahora, setAhora] = useState(Date.now());
+  const [total, setTotal] = useState(0);            // el contador global
+
+  const corriendo = inicio !== null;
+  const segundos = corriendo ? Math.floor((ahora - inicio) / 1000) : 0;
+
+  // Mientras se cuenta, el reloj avanza una vez por segundo.
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [corriendo]);
+
+  function iniciar() {
+    const instante = Date.now();
+    setInicio(instante);
+    setAhora(instante);
+    setTotal(0);
+  }
+
+  function detener() {
+    setInicio(null);
+  }
+
+  function registrarVehiculo() {
+    setTotal((t) => t + 1);
+  }
+
+  // Las props que reciben los tres contadores.
+  const comunes = { habilitado: corriendo, alRegistrar: registrarVehiculo };
+
+  return (
+    <main className="app">
+      <h1>Conteo de tránsito</h1>
+      <div className="control">
+        <button
+          className="principal"
+          title={corriendo ? "Detener" : "Iniciar"}
+          onClick={corriendo ? detener : iniciar}
+        >
+          {corriendo ? "⏹" : "▶"}
+        </button>
+        <Cronometro segundos={segundos} />
+      </div>
+      <div className="contadores">
+        <Contador nombre="🏍️ Motos" {...comunes} />
+        <Contador nombre="🚗 Autos" {...comunes} />
+        <Contador nombre="🛻 Camionetas" {...comunes} />
+      </div>
+      <Resumen total={total} segundos={segundos} />
+    </main>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("raiz")).render(<App />);
+</script>
+</body>
+</html>

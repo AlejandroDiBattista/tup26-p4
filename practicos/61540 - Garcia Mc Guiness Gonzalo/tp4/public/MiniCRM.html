@@ -1,0 +1,1392 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1e3554" />
+    <title>MiniCRM</title>
+    <style>
+      :root {
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        color: #172334;
+        background: #eef2f7;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --blue: #2875d0;
+        --blue-dark: #1e3554;
+        --blue-soft: #e7f1ff;
+        --line: #e1e7ee;
+        --muted: #718096;
+        --green: #3f9976;
+        --green-soft: #edf8f3;
+        --danger: #bd4b52;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-rows: 62px minmax(0, 1fr);
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        padding: 0 26px;
+        color: white;
+        background: var(--blue-dark);
+        box-shadow: 0 2px 8px rgb(20 35 55 / 18%);
+      }
+
+      .brand {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 720;
+        letter-spacing: -0.6px;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(280px, 31%) minmax(0, 1fr);
+        gap: 12px;
+        min-height: 0;
+        padding: 12px;
+      }
+
+      .panel {
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid #dce3eb;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgb(25 45 70 / 5%);
+      }
+
+      .master-panel {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .master-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 19px 18px 14px;
+      }
+
+      .master-heading h2 {
+        margin: 0;
+        font-size: 21px;
+      }
+
+      .search-box {
+        position: relative;
+        padding: 0 16px 14px;
+      }
+
+      .search-box input {
+        width: 100%;
+        height: 42px;
+        padding: 0 12px 0 38px;
+        border: 1px solid #cfd8e3;
+        border-radius: 7px;
+        outline: none;
+      }
+
+      .search-box input:focus,
+      .field input:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgb(40 117 208 / 12%);
+      }
+
+      .search-icon {
+        position: absolute;
+        top: 12px;
+        left: 29px;
+        color: #7b8796;
+        font-size: 17px;
+        pointer-events: none;
+      }
+
+      .client-list {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        border-top: 1px solid var(--line);
+      }
+
+      .client-row {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 16px;
+        border: 0;
+        border-bottom: 1px solid #edf0f4;
+        background: #fff;
+        text-align: left;
+        transition: background 120ms ease;
+      }
+
+      .client-row:hover {
+        background: #f6f9fc;
+      }
+
+      .client-row.selected {
+        background: var(--blue-soft);
+      }
+
+      .avatar {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        place-items: center;
+        border-radius: 50%;
+        color: #2868ab;
+        background: #d7e9ff;
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .client-summary {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .client-summary strong,
+      .client-summary span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .client-summary strong {
+        font-size: 14px;
+      }
+
+      .client-summary span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .detail-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding: 21px;
+      }
+
+      .detail-heading {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .detail-title {
+        min-width: 0;
+      }
+
+      .detail-title h2 {
+        margin: 0 0 4px;
+        overflow-wrap: anywhere;
+        font-size: 23px;
+        letter-spacing: -0.4px;
+      }
+
+      .record-id {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border: 1px solid #d7dfe8;
+        border-radius: 6px;
+        color: #28384a;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 620;
+        white-space: nowrap;
+      }
+
+      .button:hover:not(:disabled) {
+        background: #f5f8fb;
+      }
+
+      .button.primary {
+        border-color: var(--blue);
+        color: #fff;
+        background: var(--blue);
+      }
+
+      .button.primary:hover:not(:disabled) {
+        background: #1d67bc;
+      }
+
+      .button.danger {
+        border-color: #e3b6b8;
+        color: var(--danger);
+      }
+
+      .button.compact {
+        min-height: 32px;
+        padding: 5px 9px;
+        font-size: 12px;
+      }
+
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 24px;
+        flex: 0 0 auto;
+        padding: 10px 2px 15px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .contact-item {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        color: #3d4a59;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .contact-item .label {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .client-form {
+        flex: 0 0 auto;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfe;
+      }
+
+      .client-form h3,
+      .activity-form h3 {
+        margin: 0 0 11px;
+        font-size: 15px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .field {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .field label {
+        color: #526173;
+        font-size: 12px;
+        font-weight: 620;
+      }
+
+      .field input {
+        width: 100%;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid #cfd8e3;
+        border-radius: 6px;
+        outline: none;
+        background: #fff;
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .activity-editor {
+        flex: 0 0 auto;
+        padding: 13px;
+        border: 1px dashed #c7d4e2;
+        border-radius: 8px;
+        background: #f9fbfe;
+      }
+
+      .activity-form-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(150px, 220px) auto auto;
+        align-items: end;
+        gap: 8px;
+      }
+
+      .activity-board {
+        display: grid;
+        flex: 1;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+        min-height: 0;
+      }
+
+      .activity-column {
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .activity-column.completed {
+        border-color: #d5eadf;
+        background: var(--green-soft);
+      }
+
+      .column-heading {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+        background: rgb(255 255 255 / 72%);
+      }
+
+      .completed .column-heading {
+        border-color: #d5eadf;
+        background: rgb(255 255 255 / 45%);
+      }
+
+      .column-heading h3 {
+        margin: 0;
+        font-size: 14px;
+      }
+
+      .count {
+        display: inline-grid;
+        min-width: 22px;
+        height: 22px;
+        place-items: center;
+        border-radius: 99px;
+        color: #526173;
+        background: #eef2f6;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .activity-list {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .activity-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 11px 12px;
+        border-bottom: 1px solid rgb(220 228 236 / 75%);
+      }
+
+      .completed .activity-row {
+        border-color: #dceee4;
+      }
+
+      .checkmark {
+        display: grid;
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+        place-items: center;
+        margin-top: 1px;
+        border: 1px solid #bac6d3;
+        border-radius: 5px;
+        color: #fff;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .completed .checkmark {
+        border-color: var(--green);
+        background: var(--green);
+      }
+
+      .activity-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .activity-description {
+        overflow-wrap: anywhere;
+        color: #273546;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .activity-date {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .activity-actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 5px;
+      }
+
+      .empty-state,
+      .list-state {
+        display: grid;
+        min-height: 100px;
+        place-items: center;
+        padding: 16px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .detail-empty {
+        display: grid;
+        flex: 1;
+        place-items: center;
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+      }
+
+      .notice {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 12px;
+        border: 1px solid #e8c7a6;
+        border-radius: 7px;
+        color: #704d24;
+        background: #fff8ed;
+        font-size: 12px;
+      }
+
+      .notice.success {
+        border-color: #c7e3d4;
+        color: #27664e;
+        background: #f0faf4;
+      }
+
+      .notice button {
+        border: 0;
+        color: inherit;
+        background: transparent;
+        font-weight: 700;
+      }
+
+      @media (max-width: 900px) {
+        .workspace {
+          grid-template-columns: minmax(240px, 34%) minmax(0, 1fr);
+        }
+
+        .detail-panel {
+          gap: 11px;
+          padding: 15px;
+        }
+
+        .activity-form-row {
+          grid-template-columns: minmax(0, 1fr) minmax(120px, 170px);
+        }
+
+        .activity-form-row .button {
+          justify-self: start;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .app-shell {
+          grid-template-rows: 54px minmax(0, 1fr);
+        }
+
+        .topbar {
+          padding: 0 16px;
+        }
+
+        .brand {
+          font-size: 21px;
+        }
+
+        .workspace {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(150px, 30%) minmax(0, 1fr);
+          gap: 8px;
+          padding: 8px;
+        }
+
+        .master-heading {
+          padding: 11px 13px 8px;
+        }
+
+        .master-heading h2 {
+          font-size: 17px;
+        }
+
+        .search-box {
+          padding: 0 12px 10px;
+        }
+
+        .search-icon {
+          top: 11px;
+          left: 24px;
+        }
+
+        .client-row {
+          padding: 8px 12px;
+        }
+
+        .avatar {
+          width: 36px;
+          height: 36px;
+          flex-basis: 36px;
+        }
+
+        .detail-panel {
+          overflow-y: auto;
+          padding: 13px;
+        }
+
+        .detail-heading {
+          gap: 10px;
+        }
+
+        .detail-title h2 {
+          font-size: 19px;
+        }
+
+        .actions {
+          gap: 5px;
+        }
+
+        .button {
+          min-height: 33px;
+          padding: 6px 8px;
+          font-size: 12px;
+        }
+
+        .contact-grid {
+          gap: 8px 12px;
+          padding: 6px 1px 11px;
+        }
+
+        .activity-board {
+          min-height: 340px;
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(150px, 1fr) minmax(120px, 0.8fr);
+        }
+      }
+
+      @media (max-width: 420px) {
+        .detail-heading {
+          flex-direction: column;
+        }
+
+        .actions {
+          justify-content: flex-start;
+        }
+
+        .form-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .activity-form-row {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .activity-actions {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+    <script type="text/babel" data-presets="env,react">
+      const { useEffect, useRef, useState } = React;
+
+      const clienteVacio = {
+        nombre: "",
+        email: "",
+        telefono: "",
+        direccion: "",
+      };
+
+      async function solicitar(ruta, opciones = {}) {
+        const respuesta = await fetch(ruta, {
+          ...opciones,
+          headers: {
+            "Content-Type": "application/json",
+            ...opciones.headers,
+          },
+        });
+
+        if (respuesta.status === 204) {
+          return null;
+        }
+
+        let resultado;
+        try {
+          resultado = await respuesta.json();
+        } catch {
+          throw new Error("El servidor devolvió una respuesta inválida.");
+        }
+
+        if (!respuesta.ok) {
+          throw new Error(resultado.error || "No se pudo completar la operación.");
+        }
+        return resultado;
+      }
+
+      function iniciales(nombre) {
+        return nombre
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((parte) => parte[0])
+          .join("")
+          .toLocaleUpperCase("es");
+      }
+
+      function fechaVisible(valor) {
+        if (!valor) {
+          return "Sin fecha";
+        }
+
+        const fecha = /^\d{4}-\d{2}-\d{2}$/.test(valor)
+          ? (() => {
+              const [anio, mes, dia] = valor.split("-").map(Number);
+              return new Date(anio, mes - 1, dia, 12);
+            })()
+          : new Date(valor);
+
+        if (Number.isNaN(fecha.getTime())) {
+          return valor;
+        }
+        return new Intl.DateTimeFormat("es-AR", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }).format(fecha);
+      }
+
+      function Campo({ etiqueta, nombre, valor, alCambiar, tipo = "text", requerido = false, maxLength }) {
+        const id = `campo-${nombre}`;
+        return (
+          <div className="field">
+            <label htmlFor={id}>{etiqueta}</label>
+            <input
+              id={id}
+              name={nombre}
+              type={tipo}
+              value={valor}
+              onChange={alCambiar}
+              required={requerido}
+              maxLength={maxLength}
+            />
+          </div>
+        );
+      }
+
+      function App() {
+        const [clientes, setClientes] = useState([]);
+        const [busqueda, setBusqueda] = useState("");
+        const [seleccionado, setSeleccionado] = useState(null);
+        const [detalle, setDetalle] = useState(null);
+        const [actividades, setActividades] = useState([]);
+        const [modoCliente, setModoCliente] = useState("view");
+        const [formCliente, setFormCliente] = useState(clienteVacio);
+        const [editorActividad, setEditorActividad] = useState(null);
+        const [revision, setRevision] = useState(0);
+        const [cargandoClientes, setCargandoClientes] = useState(true);
+        const [cargandoDetalle, setCargandoDetalle] = useState(false);
+        const [ocupado, setOcupado] = useState(false);
+        const [aviso, setAviso] = useState(null);
+        const creandoCliente = useRef(false);
+
+        useEffect(() => {
+          const controller = new AbortController();
+          const timer = window.setTimeout(async () => {
+            setCargandoClientes(true);
+            try {
+              const resultados = await solicitar(
+                `/api/clientes?busqueda=${encodeURIComponent(busqueda)}`,
+                { signal: controller.signal },
+              );
+              setClientes(resultados);
+              setSeleccionado((actual) => {
+                if (creandoCliente.current) {
+                  return null;
+                }
+                if (resultados.some((cliente) => cliente.id === actual)) {
+                  return actual;
+                }
+                return resultados[0]?.id ?? null;
+              });
+            } catch (error) {
+              if (!controller.signal.aborted) {
+                setAviso({ tipo: "error", texto: error.message });
+              }
+            } finally {
+              if (!controller.signal.aborted) {
+                setCargandoClientes(false);
+              }
+            }
+          }, 220);
+
+          return () => {
+            window.clearTimeout(timer);
+            controller.abort();
+          };
+        }, [busqueda, revision]);
+
+        useEffect(() => {
+          if (seleccionado === null) {
+            setDetalle(null);
+            setActividades([]);
+            setCargandoDetalle(false);
+            return undefined;
+          }
+
+          const controller = new AbortController();
+          setCargandoDetalle(true);
+          Promise.all([
+            solicitar(`/api/clientes/${seleccionado}`, {
+              signal: controller.signal,
+            }),
+            solicitar(`/api/clientes/${seleccionado}/actividades`, {
+              signal: controller.signal,
+            }),
+          ])
+            .then(([cliente, lista]) => {
+              setDetalle(cliente);
+              setActividades(lista);
+            })
+            .catch((error) => {
+              if (!controller.signal.aborted) {
+                setAviso({ tipo: "error", texto: error.message });
+                setDetalle(null);
+                setActividades([]);
+              }
+            })
+            .finally(() => {
+              if (!controller.signal.aborted) {
+                setCargandoDetalle(false);
+              }
+            });
+
+          return () => controller.abort();
+        }, [seleccionado, revision]);
+
+        function mostrarAviso(texto, tipo = "error") {
+          setAviso({ texto, tipo });
+        }
+
+        function iniciarAltaCliente() {
+          creandoCliente.current = true;
+          setSeleccionado(null);
+          setFormCliente(clienteVacio);
+          setEditorActividad(null);
+          setModoCliente("new");
+          setAviso(null);
+        }
+
+        function seleccionarCliente(id) {
+          creandoCliente.current = false;
+          setSeleccionado(id);
+          setModoCliente("view");
+          setEditorActividad(null);
+          setAviso(null);
+        }
+
+        function editarCliente() {
+          if (!detalle) {
+            return;
+          }
+          setFormCliente({
+            nombre: detalle.nombre || "",
+            email: detalle.email || "",
+            telefono: detalle.telefono || "",
+            direccion: detalle.direccion || "",
+          });
+          setModoCliente("edit");
+          setEditorActividad(null);
+        }
+
+        function cancelarCliente() {
+          creandoCliente.current = false;
+          setModoCliente("view");
+          setFormCliente(clienteVacio);
+          if (seleccionado === null) {
+            setSeleccionado(clientes[0]?.id ?? null);
+          }
+        }
+
+        async function guardarCliente(evento) {
+          evento.preventDefault();
+          setOcupado(true);
+          try {
+            const esNuevo = modoCliente === "new";
+            const url = esNuevo ? "/api/clientes" : `/api/clientes/${seleccionado}`;
+            const cliente = await solicitar(url, {
+              method: esNuevo ? "POST" : "PUT",
+              body: JSON.stringify({
+                nombre: formCliente.nombre.trim(),
+                email: formCliente.email.trim() || null,
+                telefono: formCliente.telefono.trim() || null,
+                direccion: formCliente.direccion.trim() || null,
+              }),
+            });
+            creandoCliente.current = false;
+            setBusqueda("");
+            setSeleccionado(cliente.id);
+            setModoCliente("view");
+            setRevision((actual) => actual + 1);
+            mostrarAviso(
+              esNuevo ? "Cliente creado correctamente." : "Cambios guardados.",
+              "success",
+            );
+          } catch (error) {
+            mostrarAviso(error.message);
+          } finally {
+            setOcupado(false);
+          }
+        }
+
+        async function eliminarCliente() {
+          if (!detalle || !window.confirm(`¿Eliminar a ${detalle.nombre} y sus actividades?`)) {
+            return;
+          }
+
+          setOcupado(true);
+          try {
+            await solicitar(`/api/clientes/${detalle.id}`, { method: "DELETE" });
+            setModoCliente("view");
+            setSeleccionado(null);
+            setRevision((actual) => actual + 1);
+            mostrarAviso("Cliente eliminado correctamente.", "success");
+          } catch (error) {
+            mostrarAviso(error.message);
+          } finally {
+            setOcupado(false);
+          }
+        }
+
+        function iniciarActividad(actividad = null) {
+          setEditorActividad(
+            actividad
+              ? {
+                  id: actividad.id,
+                  descripcion: actividad.descripcion,
+                  fecha: actividad.fecha || "",
+                }
+              : { id: null, descripcion: "", fecha: "" },
+          );
+          setAviso(null);
+        }
+
+        function cancelarActividad() {
+          setEditorActividad(null);
+        }
+
+        async function guardarActividad(evento) {
+          evento.preventDefault();
+          if (!editorActividad || seleccionado === null) {
+            return;
+          }
+
+          setOcupado(true);
+          try {
+            const esNueva = editorActividad.id === null;
+            const url = esNueva
+              ? `/api/clientes/${seleccionado}/actividades`
+              : `/api/actividades/${editorActividad.id}`;
+            await solicitar(url, {
+              method: esNueva ? "POST" : "PUT",
+              body: JSON.stringify({
+                descripcion: editorActividad.descripcion.trim(),
+                fecha: editorActividad.fecha || null,
+              }),
+            });
+            setEditorActividad(null);
+            setRevision((actual) => actual + 1);
+            mostrarAviso(
+              esNueva ? "Actividad agregada." : "Actividad actualizada.",
+              "success",
+            );
+          } catch (error) {
+            mostrarAviso(error.message);
+          } finally {
+            setOcupado(false);
+          }
+        }
+
+        async function completarActividad(actividad) {
+          setOcupado(true);
+          try {
+            await solicitar(`/api/actividades/${actividad.id}/completar`, {
+              method: "PATCH",
+            });
+            setRevision((actual) => actual + 1);
+            mostrarAviso("Actividad marcada como completada.", "success");
+          } catch (error) {
+            mostrarAviso(error.message);
+          } finally {
+            setOcupado(false);
+          }
+        }
+
+        async function eliminarActividad(actividad) {
+          if (
+            !window.confirm(
+              `¿Eliminar la actividad "${actividad.descripcion}"?`,
+            )
+          ) {
+            return;
+          }
+
+          setOcupado(true);
+          try {
+            await solicitar(`/api/actividades/${actividad.id}`, {
+              method: "DELETE",
+            });
+            setRevision((actual) => actual + 1);
+            mostrarAviso("Actividad eliminada.", "success");
+          } catch (error) {
+            mostrarAviso(error.message);
+          } finally {
+            setOcupado(false);
+          }
+        }
+
+        function cambiarCampoCliente(evento) {
+          const { name, value } = evento.target;
+          setFormCliente((actual) => ({ ...actual, [name]: value }));
+        }
+
+        function cambiarCampoActividad(evento) {
+          const { name, value } = evento.target;
+          setEditorActividad((actual) => ({ ...actual, [name]: value }));
+        }
+
+        const pendientes = actividades.filter((actividad) => !actividad.completada);
+        const completadas = actividades.filter((actividad) => actividad.completada);
+        const formularioCliente = modoCliente === "new" || modoCliente === "edit";
+
+        return (
+          <main className="app-shell">
+            <header className="topbar">
+              <h1 className="brand">MiniCRM</h1>
+            </header>
+
+            <div className="workspace">
+              <aside className="panel master-panel" aria-label="Listado de clientes">
+                <div className="master-heading">
+                  <h2>Clientes</h2>
+                  <button
+                    className="button primary"
+                    type="button"
+                    onClick={iniciarAltaCliente}
+                    disabled={ocupado}
+                  >
+                    <span aria-hidden="true">＋</span> Agregar
+                  </button>
+                </div>
+                <div className="search-box">
+                  <span className="search-icon" aria-hidden="true">⌕</span>
+                  <input
+                    aria-label="Buscar clientes por cualquier campo"
+                    type="search"
+                    placeholder="Buscar por cualquier campo..."
+                    value={busqueda}
+                    onChange={(evento) => setBusqueda(evento.target.value)}
+                  />
+                </div>
+                <div className="client-list" aria-live="polite">
+                  {cargandoClientes ? (
+                    <div className="list-state">Cargando clientes...</div>
+                  ) : clientes.length === 0 ? (
+                    <div className="list-state">
+                      {busqueda
+                        ? "No hay clientes que coincidan con la búsqueda."
+                        : "Todavía no hay clientes. Usa Agregar para crear el primero."}
+                    </div>
+                  ) : (
+                    clientes.map((cliente) => (
+                      <button
+                        key={cliente.id}
+                        className={`client-row ${seleccionado === cliente.id ? "selected" : ""}`}
+                        type="button"
+                        aria-current={seleccionado === cliente.id ? "true" : undefined}
+                        onClick={() => seleccionarCliente(cliente.id)}
+                      >
+                        <span className="avatar" aria-hidden="true">
+                          {iniciales(cliente.nombre)}
+                        </span>
+                        <span className="client-summary">
+                          <strong>{cliente.nombre}</strong>
+                          <span>{cliente.email || "Sin correo electrónico"}</span>
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </aside>
+
+              <section className="panel detail-panel" aria-label="Detalle del cliente">
+                {aviso && (
+                  <div
+                    className={`notice ${aviso.tipo === "success" ? "success" : ""}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span>{aviso.texto}</span>
+                    <button
+                      type="button"
+                      aria-label="Cerrar mensaje"
+                      onClick={() => setAviso(null)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                {formularioCliente ? (
+                  <>
+                    <div className="detail-heading">
+                      <div className="detail-title">
+                        <h2>{modoCliente === "new" ? "Nuevo cliente" : detalle?.nombre || "Editar cliente"}</h2>
+                        {modoCliente === "edit" && detalle && (
+                          <span className="record-id">ID #{detalle.id}</span>
+                        )}
+                      </div>
+                    </div>
+                    <form className="client-form" onSubmit={guardarCliente}>
+                      <h3>{modoCliente === "new" ? "Datos del cliente" : "Editar datos"}</h3>
+                      <div className="form-grid">
+                        <Campo
+                          etiqueta="Nombre *"
+                          nombre="nombre"
+                          valor={formCliente.nombre}
+                          alCambiar={cambiarCampoCliente}
+                          requerido
+                          maxLength={120}
+                        />
+                        <Campo
+                          etiqueta="Correo electrónico"
+                          nombre="email"
+                          valor={formCliente.email}
+                          alCambiar={cambiarCampoCliente}
+                          tipo="email"
+                          maxLength={254}
+                        />
+                        <Campo
+                          etiqueta="Teléfono"
+                          nombre="telefono"
+                          valor={formCliente.telefono}
+                          alCambiar={cambiarCampoCliente}
+                          maxLength={40}
+                        />
+                        <Campo
+                          etiqueta="Dirección"
+                          nombre="direccion"
+                          valor={formCliente.direccion}
+                          alCambiar={cambiarCampoCliente}
+                          maxLength={250}
+                        />
+                      </div>
+                      <div className="form-actions">
+                        <button className="button" type="button" onClick={cancelarCliente} disabled={ocupado}>
+                          Cancelar
+                        </button>
+                        <button className="button primary" type="submit" disabled={ocupado}>
+                          {ocupado ? "Guardando..." : "Guardar cliente"}
+                        </button>
+                      </div>
+                    </form>
+                    {modoCliente === "edit" && detalle && (
+                      <div className="contact-grid">
+                        <div className="contact-item">
+                          <span className="label">Cliente seleccionado</span>
+                          {detalle.nombre}
+                        </div>
+                        <div className="contact-item">
+                          <span className="label">Actividades</span>
+                          {actividades.length}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : detalle ? (
+                  <>
+                    <div className="detail-heading">
+                      <div className="detail-title">
+                        <h2>{detalle.nombre}</h2>
+                        <span className="record-id">ID #{detalle.id}</span>
+                      </div>
+                      <div className="actions">
+                        <button className="button" type="button" onClick={editarCliente} disabled={ocupado}>
+                          Editar
+                        </button>
+                        <button className="button danger" type="button" onClick={eliminarCliente} disabled={ocupado}>
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="contact-grid">
+                      <div className="contact-item">
+                        <span className="label">Correo electrónico</span>
+                        {detalle.email || "No informado"}
+                      </div>
+                      <div className="contact-item">
+                        <span className="label">Teléfono</span>
+                        {detalle.telefono || "No informado"}
+                      </div>
+                      <div className="contact-item">
+                        <span className="label">Dirección</span>
+                        {detalle.direccion || "No informada"}
+                      </div>
+                      <div className="contact-item">
+                        <span className="label">Cliente desde</span>
+                        {fechaVisible(detalle.createdAt)}
+                      </div>
+                    </div>
+
+                    <div className="column-heading">
+                      <h3>Actividades</h3>
+                      <button
+                        className="button primary compact"
+                        type="button"
+                        onClick={() => iniciarActividad()}
+                        disabled={ocupado || editorActividad !== null}
+                      >
+                        ＋ Nueva actividad
+                      </button>
+                    </div>
+
+                    {editorActividad && (
+                      <form className="activity-editor" onSubmit={guardarActividad}>
+                        <h3>
+                          {editorActividad.id === null
+                            ? "Agregar actividad"
+                            : "Editar actividad pendiente"}
+                        </h3>
+                        <div className="activity-form-row">
+                          <Campo
+                            etiqueta="Descripción *"
+                            nombre="descripcion"
+                            valor={editorActividad.descripcion}
+                            alCambiar={cambiarCampoActividad}
+                            requerido
+                            maxLength={500}
+                          />
+                          <Campo
+                            etiqueta="Fecha opcional"
+                            nombre="fecha"
+                            valor={editorActividad.fecha}
+                            alCambiar={cambiarCampoActividad}
+                            tipo="date"
+                          />
+                          <button className="button primary" type="submit" disabled={ocupado}>
+                            {ocupado ? "Guardando..." : "Guardar"}
+                          </button>
+                          <button className="button" type="button" onClick={cancelarActividad} disabled={ocupado}>
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {cargandoDetalle ? (
+                      <div className="detail-empty">Actualizando actividades...</div>
+                    ) : (
+                      <div className="activity-board">
+                        <ActivityColumn
+                          titulo="Compromisos"
+                          actividades={pendientes}
+                          ocupado={ocupado}
+                          onCompletar={completarActividad}
+                          onEditar={iniciarActividad}
+                          onEliminar={eliminarActividad}
+                        />
+                        <ActivityColumn
+                          titulo="Actividades completadas"
+                          actividades={completadas}
+                          completada
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : cargandoDetalle ? (
+                  <div className="detail-empty">Cargando ficha del cliente...</div>
+                ) : (
+                  <div className="detail-empty">
+                    {clientes.length === 0
+                      ? "Crea un cliente para comenzar a organizar sus actividades."
+                      : "Selecciona un cliente para ver sus datos y actividades."}
+                  </div>
+                )}
+              </section>
+            </div>
+          </main>
+        );
+      }
+
+      function ActivityColumn({
+        titulo,
+        actividades: lista,
+        completada = false,
+        ocupado = false,
+        onCompletar,
+        onEditar,
+        onEliminar,
+      }) {
+        return (
+          <section className={`activity-column ${completada ? "completed" : ""}`}>
+            <div className="column-heading">
+              <h3>{titulo}</h3>
+              <span className="count">{lista.length}</span>
+            </div>
+            <div className="activity-list">
+              {lista.length === 0 ? (
+                <div className="empty-state">
+                  {completada
+                    ? "Todavía no hay actividades completadas."
+                    : "No hay compromisos pendientes."}
+                </div>
+              ) : (
+                lista.map((actividad) => (
+                  <article className="activity-row" key={actividad.id}>
+                    <span className="checkmark" aria-label={completada ? "Completada" : "Pendiente"}>
+                      {completada ? "✓" : ""}
+                    </span>
+                    <div className="activity-content">
+                      <div className="activity-description">{actividad.descripcion}</div>
+                      <div className="activity-date">
+                        {completada
+                          ? `Completada el ${fechaVisible(actividad.fechaCompletada)}`
+                          : fechaVisible(actividad.fecha)}
+                      </div>
+                    </div>
+                    {!completada && (
+                      <div className="activity-actions">
+                        <button
+                          className="button compact"
+                          type="button"
+                          onClick={() => onCompletar(actividad)}
+                          disabled={ocupado}
+                          aria-label={`Completar: ${actividad.descripcion}`}
+                          title="Marcar como completada"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          className="button compact"
+                          type="button"
+                          onClick={() => onEditar(actividad)}
+                          disabled={ocupado}
+                          aria-label={`Editar: ${actividad.descripcion}`}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="button compact danger"
+                          type="button"
+                          onClick={() => onEliminar(actividad)}
+                          disabled={ocupado}
+                          aria-label={`Eliminar: ${actividad.descripcion}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

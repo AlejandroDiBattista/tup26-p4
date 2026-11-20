@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clientes</title>
+  <style>
+    :root {
+      --bg: #fafaf9; --surface: #ffffff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4; --hover: #f5f5f4;
+      --accent: #1c1917; --accent-ink: #fafaf9; --focus: #2563eb;
+      --ok: #166534; --ok-bg: #dcfce7; --late: #991b1b; --late-bg: #fee2e2; --wait: #57534e; --wait-bg: #f5f5f4;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #131211; --surface: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #2e2a27; --hover: #24201e;
+        --accent: #f5f5f4; --accent-ink: #1c1917; --focus: #60a5fa;
+        --ok: #86efac; --ok-bg: #14301f; --late: #fca5a5; --late-bg: #3a1717; --wait: #d6d3d1; --wait-bg: #292524;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; overflow: hidden; background: var(--bg); color: var(--ink); font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button, input { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+    #root { height: 100%; }
+
+    /* Layout maestro / detalle: ocupa la ventana; solo hacen scroll las zonas .scroll */
+    .app { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; height: 100dvh; }
+    .panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .panel--maestro { background: var(--surface); border-right: 1px solid var(--line); }
+    .panel__fijo { flex: none; padding: 20px 20px 12px; }
+    .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .cabecera h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+    .cabecera p { margin: 0; color: var(--muted); font-size: 13px; }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      .app--detalle .panel--maestro, .app:not(.app--detalle) .panel--detalle { display: none; }
+    }
+    @media (min-width: 721px) { .boton.volver { display: none; } }
+
+    .icono { flex: none; }
+    .boton { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; transition: background .15s, border-color .15s; }
+    .boton:hover:not(:disabled) { border-color: var(--muted); }
+    .boton:disabled { opacity: .5; cursor: default; }
+    .boton--primario { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .boton--primario:hover:not(:disabled) { opacity: .88; border-color: var(--accent); }
+    .boton--fantasma { border-color: transparent; background: transparent; color: var(--muted); }
+    .boton--fantasma:hover:not(:disabled) { color: var(--ink); background: var(--hover); border-color: transparent; }
+    .boton--solo-icono { padding: 6px; }
+
+    .segmentado { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+    .segmentado button { padding: 4px 8px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 13px; cursor: pointer; }
+    .segmentado button:hover { color: var(--ink); }
+    .segmentado button[aria-checked="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+
+    .busqueda { position: relative; }
+    .busqueda .icono { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .busqueda input { padding-left: 36px; }
+
+    .campo { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+    .entrada { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+    .entrada:hover { border-color: var(--muted); }
+
+    .formulario { display: grid; gap: 14px; }
+    .formulario__campos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .formulario__campos .ancho { grid-column: 1 / -1; }
+    .formulario__acciones { display: flex; gap: 8px; }
+    @media (max-width: 520px) { .formulario__campos { grid-template-columns: 1fr; } }
+
+    .aviso { margin: 0 20px 12px; padding: 8px 12px; border-radius: 8px; font-size: 13px; background: var(--late-bg); color: var(--late); }
+    .vacio { padding: 40px 20px; text-align: center; color: var(--muted); }
+
+    /* Maestro */
+    .cliente-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 20px; border: 0; border-left: 2px solid transparent; background: none; text-align: left; cursor: pointer; }
+    .cliente-item:hover { background: var(--hover); }
+    .cliente-item--activo { background: var(--hover); border-left-color: var(--accent); }
+    .avatar { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--wait-bg); color: var(--muted); font-size: 13px; font-weight: 600; flex: none; }
+    .cliente-item__texto { flex: 1; min-width: 0; }
+    .cliente-item__nombre { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sub { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Detalle */
+    .ficha { flex: none; padding: 24px 32px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 14px; }
+    .ficha__titulo { display: flex; align-items: center; gap: 14px; }
+    .ficha__titulo h2 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+    .ficha__id { margin-left: auto; align-self: flex-start; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .avatar--grande { width: 48px; height: 48px; font-size: 16px; }
+    .datos { display: flex; flex-wrap: wrap; gap: 4px 24px; color: var(--muted); font-size: 14px; }
+    .dato { display: inline-flex; align-items: center; gap: 6px; }
+    .acciones { display: flex; gap: 4px; margin-left: -8px; }
+    .detalle__form { padding: 24px 32px; overflow-y: auto; }
+
+    .seccion-titulo { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+    .grupo-titulo { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; margin: 0; padding: 14px 32px 6px; background: var(--bg); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+    .grupo-titulo span { font-weight: 400; }
+    .grupo-vacio { margin: 0; padding: 0 32px 4px; font-size: 13px; color: var(--muted); }
+    .actividad { display: flex; align-items: center; gap: 12px; padding: 8px 32px; border-bottom: 1px solid var(--line); }
+    .actividad__marca { display: grid; place-items: center; padding: 6px; }
+    .actividad__marca .icono { color: var(--ok); }
+    .actividad__check:hover:not(:disabled) { color: var(--ok); }
+    .actividad__acciones { display: flex; }
+    .subform { flex: none; margin: 16px 32px 4px; padding: 8px; border: 1.5px dotted var(--muted); border-radius: 12px; }
+    .subform__linea { display: flex; gap: 8px; align-items: center; }
+    .subform__linea > .entrada:first-child { flex: 1; min-width: 0; }
+    .subform__fecha { width: auto; flex: none; }
+    .subform__error { margin-top: 6px; font-size: 13px; color: var(--late); }
+    .actividad--hecha .actividad__texto > :first-child { color: var(--muted); }
+    .actividad__texto { flex: 1; min-width: 0; }
+    .actividad__fecha { color: var(--muted); font-size: 12px; }
+    .actividad__fecha--sin { font-style: italic; }
+    @media (max-width: 720px) { .ficha, .detalle__form, .grupo-titulo, .grupo-vacio, .actividad { padding-left: 20px; padding-right: 20px; }
+      .subform { margin-left: 20px; margin-right: 20px; }
+      .subform__fecha { width: 130px; } }
+
+    .insignia { padding: 1px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+    .insignia--completada { background: var(--ok-bg); color: var(--ok); }
+    .insignia--vencida { background: var(--late-bg); color: var(--late); }
+    .insignia--pendiente { background: var(--wait-bg); color: var(--wait); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js" crossorigin></script>
+
+  <!-- Preset "react" con runtime classic explícito: el JSX compila a React.createElement (React global). -->
+  <script>
+    Babel.registerPreset("react-classic", {
+      presets: [[Babel.availablePresets["react"], { runtime: "classic" }]],
+    });
+  </script>
+
+  <!-- Módulo MCP embebido: cliente mínimo de MCP (Streamable HTTP, JSON-RPC 2.0) contra /mcp.
+       Expone las mismas funciones de servicio que REST, traducidas a herramientas MCP. -->
+  <script>
+    window.McpModulo = (() => {
+      const URL_MCP = "/mcp";
+      const PROTOCOLO = "2025-06-18";
+      let version = null;   // versión negociada; null hasta completar "initialize"
+      let inicio = null;    // promesa del handshake, compartida entre llamadas
+      let seq = 0;
+
+      // Envía un mensaje JSON-RPC. Acepta respuesta JSON o un flujo SSE con el resultado.
+      async function enviar(method, params, { notificacion = false } = {}) {
+        const res = await fetch(URL_MCP, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json, text/event-stream",
+            ...(version ? { "MCP-Protocol-Version": version } : {}),
+          },
+          body: JSON.stringify({ jsonrpc: "2.0", ...(notificacion ? {} : { id: ++seq }), method, params }),
+        });
+        const cuerpo = await res.text();
+        if (notificacion) return null; // el servidor responde 202 sin contenido
+        const datos = (res.headers.get("content-type") || "").includes("text/event-stream")
+          ? JSON.parse(cuerpo.split("\n").filter((l) => l.startsWith("data:")).pop().slice(5))
+          : JSON.parse(cuerpo || "{}");
+        if (datos.error) throw new Error(datos.error.message);
+        return datos.result;
+      }
+
+      // Handshake MCP: initialize + notifications/initialized (una sola vez; se reintenta si falla).
+      function iniciar() {
+        inicio ??= (async () => {
+          const r = await enviar("initialize", {
+            protocolVersion: PROTOCOLO, capabilities: {}, clientInfo: { name: "clientes-web", version: "1.0.0" },
+          });
+          version = r.protocolVersion;
+          await enviar("notifications/initialized", {}, { notificacion: true });
+        })().catch((e) => { inicio = null; version = null; throw e; });
+        return inicio;
+      }
+
+      // Invoca una herramienta; los errores de negocio (isError) se lanzan como Error con su mensaje.
+      async function herramienta(nombre, argumentos = {}) {
+        await iniciar();
+        const r = await enviar("tools/call", { name: nombre, arguments: argumentos });
+        const texto = r.content?.[0]?.text ?? "";
+        if (r.isError) throw new Error(texto.replace(/^(No encontrado|Datos inválidos|Operación no permitida): /, ""));
+        return texto ? JSON.parse(texto) : null;
+      }
+
+      // Misma interfaz que los servicios REST de la página.
+      const servicios = {
+        clientes: {
+          listar:     (q) => herramienta("buscar_clientes", q ? { q } : {}),
+          obtener:    (id) => herramienta("obtener_cliente", { id }),
+          crear:      (datos) => herramienta("crear_cliente", datos),
+          actualizar: (id, datos) => herramienta("actualizar_cliente", { id, ...datos }),
+          eliminar:   (id) => herramienta("eliminar_cliente", { id }),
+        },
+        actividades: {
+          crear:      (clienteId, datos) => herramienta("crear_actividad", { clienteId, ...datos }),
+          actualizar: (clienteId, id, datos) => herramienta("actualizar_actividad", { clienteId, id, ...datos }),
+          completar:  (clienteId, id) => herramienta("completar_actividad", { clienteId, id }),
+          eliminar:   (clienteId, id) => herramienta("eliminar_actividad", { clienteId, id }),
+        },
+      };
+
+      return { servicios };
+    })();
+  </script>
+
+  <script type="text/babel" data-presets="react-classic">
+    const { useState, useEffect } = React;
+
+    /* ============ Servicios (acceso a la API REST) ============ */
+    async function pedir(ruta, { method = "GET", cuerpo } = {}) {
+      const res = await fetch("/api/clientes" + ruta, {
+        method,
+        headers: cuerpo ? { "Content-Type": "application/json" } : undefined,
+        body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+      });
+      if (res.status === 204) return null;
+      const datos = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(datos.error || `Error ${res.status}`);
+      return datos;
+    }
+
+    const serviciosRest = {
+      clientes: {
+        listar:     (q) => pedir(q ? `?q=${encodeURIComponent(q)}` : ""),
+        obtener:    (id) => pedir(`/${id}`),
+        crear:      (datos) => pedir("", { method: "POST", cuerpo: datos }),
+        actualizar: (id, datos) => pedir(`/${id}`, { method: "PATCH", cuerpo: datos }),
+        eliminar:   (id) => pedir(`/${id}`, { method: "DELETE" }),
+      },
+      actividades: {
+        crear:      (clienteId, datos) => pedir(`/${clienteId}/actividades`, { method: "POST", cuerpo: datos }),
+        actualizar: (clienteId, id, datos) => pedir(`/${clienteId}/actividades/${id}`, { method: "PATCH", cuerpo: datos }),
+        completar:  (clienteId, id) => pedir(`/${clienteId}/actividades/${id}/completar`, { method: "POST" }),
+        eliminar:   (clienteId, id) => pedir(`/${clienteId}/actividades/${id}`, { method: "DELETE" }),
+      },
+    };
+
+    // Ambos transportes exponen la misma interfaz; la aplicación elige uno.
+    const TRANSPORTES = { rest: serviciosRest, mcp: McpModulo.servicios };
+
+    const leerTransporte = () => {
+      try { return localStorage.getItem("transporte") === "mcp" ? "mcp" : "rest"; } catch { return "rest"; }
+    };
+    const guardarTransporte = (t) => { try { localStorage.setItem("transporte", t); } catch {} };
+
+    /* ============ Utilidades ============ */
+    const fechaCorta = (iso) => {
+      const [a, m, d] = iso.split("-").map(Number);
+      return new Date(a, m - 1, d).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+    };
+    const iniciales  = (c) => (c.nombre[0] + c.apellido[0]).toUpperCase();
+    const vacioANull = (v) => (v.trim() === "" ? null : v);
+
+    /* ============ Iconos ============ */
+    const TRAZOS = {
+      plus:   <path d="M12 5v14M5 12h14" />,
+      edit:   <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />,
+      trash:  <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3" />,
+      search: <path d="M11 18a7 7 0 100-14 7 7 0 000 14zM20 20l-4-4" />,
+      mail:   <path d="M4 6h16v12H4zM4 7l8 6 8-6" />,
+      phone:  <path d="M6 4h3l2 5-2 1a11 11 0 005 5l1-2 5 2v3a2 2 0 01-2 2A15 15 0 014 6a2 2 0 012-2z" />,
+      pin:    <path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11zM12 12a2 2 0 100-4 2 2 0 000 4z" />,
+      back:   <path d="M15 6l-6 6 6 6" />,
+      x:      <path d="M6 6l12 12M18 6L6 18" />,
+      check:  <path d="M5 13l4 4L19 7" />,
+      circle: <circle cx="12" cy="12" r="8.5" />,
+      checkCircle: <><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></>,
+    };
+
+    function Icono({ nombre, tamano = 16 }) {
+      return (
+        <svg className="icono" width={tamano} height={tamano} viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {TRAZOS[nombre]}
+        </svg>
+      );
+    }
+
+    /* ============ UI básica: botones, avisos, insignias ============ */
+    function Boton({ variante = "secundario", icono, children, className = "", ...props }) {
+      const clases = ["boton", `boton--${variante}`, !children && "boton--solo-icono", className].filter(Boolean).join(" ");
+      return (
+        <button type="button" className={clases} {...props}>
+          {icono && <Icono nombre={icono} />}
+          {children}
+        </button>
+      );
+    }
+
+    const Aviso = ({ children }) => (children ? <div className="aviso" role="alert">{children}</div> : null);
+
+    const ETIQUETAS = { completada: "Completada", vencida: "Vencida", pendiente: "Pendiente" };
+    const Insignia = ({ estado }) => <span className={`insignia insignia--${estado}`}>{ETIQUETAS[estado]}</span>;
+
+    // Selector de una opción entre pocas (radiogroup accesible).
+    function Segmentado({ etiqueta, opciones, valor, onChange }) {
+      return (
+        <div className="segmentado" role="radiogroup" aria-label={etiqueta}>
+          {opciones.map((o) => (
+            <button key={o.valor} type="button" role="radio" aria-checked={o.valor === valor}
+              title={o.ayuda} onClick={() => onChange(o.valor)}>{o.texto}</button>
+          ))}
+        </div>
+      );
+    }
+
+    /* ============ Layout maestro / detalle ============ */
+    function Layout({ detalleActivo, maestro, detalle }) {
+      return (
+        <div className={`app${detalleActivo ? " app--detalle" : ""}`}>
+          <section className="panel panel--maestro" aria-label="Clientes">{maestro}</section>
+          <section className="panel panel--detalle" aria-label="Detalle">{detalle}</section>
+        </div>
+      );
+    }
+
+    /* ============ Formularios e ingreso de datos ============ */
+    function Entrada({ etiqueta, ancho, ...props }) {
+      return (
+        <label className={`campo${ancho ? " ancho" : ""}`}>
+          {etiqueta}
+          <input className="entrada" {...props} />
+        </label>
+      );
+    }
+
+    // Guarda los valores y devuelve las props de cada campo: <Entrada {...campo("nombre")} />
+    function useForm(inicial) {
+      const [valores, setValores] = useState(inicial);
+      const campo = (nombre) => ({
+        name:     nombre,
+        value:    valores[nombre] ?? "",
+        onChange: (e) => setValores((v) => ({ ...v, [nombre]: e.target.value })),
+      });
+      return [valores, campo, setValores];
+    }
+
+    // Maneja envío asíncrono: deshabilita mientras guarda y muestra el error del servidor.
+    function Formulario({ onSubmit, onCancelar, etiqueta = "Guardar", children }) {
+      const [enviando, setEnviando] = useState(false);
+      const [error, setError] = useState(null);
+
+      const enviar = async (e) => {
+        e.preventDefault();
+        setEnviando(true);
+        setError(null);
+        try {
+          await onSubmit();
+        } catch (err) {
+          setError(err.message);
+          setEnviando(false);
+        }
+      };
+
+      return (
+        <form className="formulario" onSubmit={enviar}>
+          <div className="formulario__campos">{children}</div>
+          {error && <div className="aviso" style={{ margin: 0 }} role="alert">{error}</div>}
+          <div className="formulario__acciones">
+            <Boton type="submit" variante="primario" disabled={enviando}>{etiqueta}</Boton>
+            <Boton onClick={onCancelar} disabled={enviando}>Cancelar</Boton>
+          </div>
+        </form>
+      );
+    }
+
+    /* ============ Entidad: Actividad ============ */
+    function ActividadItem({ actividad, onCompletar, onEditar, onEliminar }) {
+      const hecha = actividad.estado === "completada";
+      const fecha = hecha
+        ? `Finalizada el ${fechaCorta(actividad.fechaFinalizacion)}`
+        : actividad.fechaCompromiso ? `Compromiso: ${fechaCorta(actividad.fechaCompromiso)}` : "Sin compromiso";
+      return (
+        <div className={`actividad${hecha ? " actividad--hecha" : ""}`}>
+          {hecha ? (
+            <span className="actividad__marca" role="img" aria-label="Completada"><Icono nombre="checkCircle" /></span>
+          ) : (
+            <Boton variante="fantasma" icono="circle" className="actividad__check" title="Marcar como completada"
+              aria-label={`Completar: ${actividad.descripcion}`} onClick={() => onCompletar(actividad)} />
+          )}
+          <div className="actividad__texto">
+            <div>{actividad.descripcion}</div>
+            <div className={`actividad__fecha${!hecha && !actividad.fechaCompromiso ? " actividad__fecha--sin" : ""}`}>{fecha}</div>
+          </div>
+          {actividad.estado === "vencida" && <Insignia estado="vencida" />}
+          {/* Las completadas permanecen inalterables: sin editar ni borrar */}
+          {!hecha && (
+            <div className="actividad__acciones">
+              <Boton variante="fantasma" icono="edit" title="Editar" aria-label={`Editar: ${actividad.descripcion}`} onClick={() => onEditar(actividad)} />
+              <Boton variante="fantasma" icono="trash" title="Eliminar" aria-label={`Eliminar: ${actividad.descripcion}`} onClick={() => onEliminar(actividad)} />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Subformulario en una línea, sin etiquetas visibles. Sirve para agregar y para editar.
+    function ActividadForm({ actividad, onGuardar, onCancelar }) {
+      const vacio = { descripcion: "", fechaCompromiso: "" };
+      const [valores, campo, setValores] = useForm(actividad
+        ? { descripcion: actividad.descripcion, fechaCompromiso: actividad.fechaCompromiso ?? "" }
+        : vacio);
+      const [enviando, setEnviando] = useState(false);
+      const [error, setError] = useState(null);
+
+      const limpiar = () => { setValores(vacio); setError(null); };
+
+      const guardar = async (e) => {
+        e.preventDefault();
+        setEnviando(true);
+        setError(null);
+        try {
+          await onGuardar({ descripcion: valores.descripcion, fechaCompromiso: vacioANull(valores.fechaCompromiso) });
+          limpiar();
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setEnviando(false);
+        }
+      };
+      const cancelar = () => { limpiar(); onCancelar(); };
+
+      return (
+        <form className="subform" onSubmit={guardar} aria-label={actividad ? "Editar actividad" : "Agregar actividad"}>
+          <div className="subform__linea">
+            <input className="entrada" required name="descripcion" placeholder="Nueva actividad…" autoFocus={!!actividad}
+              aria-label="Descripción de la actividad" {...campo("descripcion")} />
+            <input className="entrada subform__fecha" type="date" aria-label="Fecha de compromiso (opcional)" {...campo("fechaCompromiso")} />
+            <Boton type="submit" variante="primario" icono="check" title="Guardar" aria-label="Guardar actividad" disabled={enviando} />
+            <Boton icono="x" title="Cancelar" aria-label="Cancelar" onClick={cancelar} disabled={enviando} />
+          </div>
+          {error && <div className="subform__error" role="alert">{error}</div>}
+        </form>
+      );
+    }
+
+    // Grupo con título fijo; si está vacío, muestra una sola línea mínima.
+    function ActividadGrupo({ titulo, vacio, actividades, ...acciones }) {
+      return (
+        <section>
+          <h3 className="grupo-titulo">{titulo}<span>{actividades.length}</span></h3>
+          {actividades.length === 0
+            ? <p className="grupo-vacio">{vacio}</p>
+            : actividades.map((a) => <ActividadItem key={a.id} actividad={a} {...acciones} />)}
+        </section>
+      );
+    }
+
+    // Compromisos: sin fecha, luego vencidos y luego de hoy o futuros; con fecha, de menor a mayor.
+    const rango = (a) => (!a.fechaCompromiso ? 0 : a.estado === "vencida" ? 1 : 2);
+    const porCompromiso   = (a, b) => rango(a) - rango(b) || (a.fechaCompromiso ?? "").localeCompare(b.fechaCompromiso ?? "");
+    const porFinalizacion = (a, b) => a.fechaFinalizacion.localeCompare(b.fechaFinalizacion);
+
+    function ActividadList({ actividades, ...acciones }) {
+      const compromisos = actividades.filter((a) => a.estado !== "completada").sort(porCompromiso);
+      const completadas = actividades.filter((a) => a.estado === "completada").sort(porFinalizacion);
+      return (
+        <div className="scroll">
+          <ActividadGrupo titulo="Compromisos" vacio="Sin compromisos pendientes." actividades={compromisos} {...acciones} />
+          <ActividadGrupo titulo="Actividades completadas" vacio="Ninguna completada." actividades={completadas} />
+        </div>
+      );
+    }
+
+    /* ============ Entidad: Cliente (maestro, ficha, formulario) ============ */
+    const CAMPOS_OPCIONALES = ["domicilio", "localidad", "telefono"];
+
+    function ClienteForm({ cliente, onGuardar, onCancelar }) {
+      const [valores, campo] = useForm({
+        nombre: cliente?.nombre ?? "", apellido: cliente?.apellido ?? "", email: cliente?.email ?? "",
+        domicilio: cliente?.domicilio ?? "", localidad: cliente?.localidad ?? "", telefono: cliente?.telefono ?? "",
+      });
+      const guardar = () => {
+        const datos = { ...valores };
+        CAMPOS_OPCIONALES.forEach((k) => { datos[k] = vacioANull(datos[k]); });
+        return onGuardar(datos);
+      };
+      return (
+        <Formulario onSubmit={guardar} onCancelar={onCancelar} etiqueta="Guardar">
+          <Entrada etiqueta="Nombre"    required autoFocus {...campo("nombre")} />
+          <Entrada etiqueta="Apellido"  required {...campo("apellido")} />
+          <Entrada etiqueta="Email"     type="email" required {...campo("email")} />
+          <Entrada etiqueta="Teléfono"  type="tel" {...campo("telefono")} />
+          <Entrada etiqueta="Domicilio" {...campo("domicilio")} />
+          <Entrada etiqueta="Localidad" {...campo("localidad")} />
+        </Formulario>
+      );
+    }
+
+    function ClienteItem({ cliente, activo, onSelect }) {
+      const vencidas = cliente.actividades.filter((a) => a.estado === "vencida").length;
+      return (
+        <button className={`cliente-item${activo ? " cliente-item--activo" : ""}`} onClick={onSelect} aria-current={activo}>
+          <span className="avatar">{iniciales(cliente)}</span>
+          <span className="cliente-item__texto">
+            <div className="cliente-item__nombre">{cliente.apellido}, {cliente.nombre}</div>
+            <div className="sub">{[cliente.localidad, cliente.email].filter(Boolean).join(" · ")}</div>
+          </span>
+          {vencidas > 0 && <Insignia estado="vencida" />}
+        </button>
+      );
+    }
+
+    function ClienteList({ clientes, seleccionadoId, onSelect }) {
+      if (clientes.length === 0) return <p className="vacio">Sin resultados.</p>;
+      return clientes.map((c) => (
+        <ClienteItem key={c.id} cliente={c} activo={c.id === seleccionadoId} onSelect={() => onSelect(c.id)} />
+      ));
+    }
+
+    function Dato({ icono, valor }) {
+      return valor ? <span className="dato"><Icono nombre={icono} size={14} />{valor}</span> : null;
+    }
+
+    function ClienteFicha({ cliente, onVolver, onEditar, onEliminar }) {
+      return (
+        <header className="ficha">
+          <div className="ficha__titulo">
+            <Boton variante="fantasma" icono="back" className="volver" aria-label="Volver a la lista" onClick={onVolver} />
+            <span className="avatar avatar--grande">{iniciales(cliente)}</span>
+            <h2>{cliente.nombre} {cliente.apellido}</h2>
+            <span className="ficha__id">#{cliente.id}</span>
+          </div>
+          <div className="datos">
+            <Dato icono="mail"  valor={cliente.email} />
+            <Dato icono="phone" valor={cliente.telefono} />
+            <Dato icono="pin"   valor={[cliente.domicilio, cliente.localidad].filter(Boolean).join(", ")} />
+          </div>
+          <div className="acciones">
+            <Boton variante="fantasma" icono="edit" onClick={onEditar}>Editar</Boton>
+            <Boton variante="fantasma" icono="trash" onClick={onEliminar}>Eliminar</Boton>
+          </div>
+        </header>
+      );
+    }
+
+    /* ============ Aplicación ============ */
+    function App() {
+      const [transporte, setTransporte] = useState(leerTransporte);
+      const { clientes: clientesService, actividades: actividadesService } = TRANSPORTES[transporte];
+      const [busqueda, setBusqueda] = useState("");
+      const [clientes, setClientes] = useState(null);
+      const [ficha, setFicha] = useState(null);           // cliente seleccionado (independiente del filtro)
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [modo, setModo] = useState("ver");            // "ver" | "editar" | "crear"
+      const [actividadEditando, setActividadEditando] = useState(null);
+      const [errorActividad, setErrorActividad] = useState(null);
+      const [error, setError] = useState(null);
+      const [version, setVersion] = useState(0);          // se incrementa para recargar tras cambios
+
+      // Búsqueda en vivo; el indicador evita que una respuesta lenta pise a una más reciente.
+      useEffect(() => {
+        let vigente = true;
+        const t = setTimeout(() => {
+          clientesService.listar(busqueda.trim())
+            .then((lista) => vigente && (setClientes(lista), setError(null)))
+            .catch((err) => vigente && setError(err.message));
+        }, 150);
+        return () => { vigente = false; clearTimeout(t); };
+      }, [busqueda, version, transporte]);
+
+      useEffect(() => {
+        if (seleccionadoId === null) return setFicha(null);
+        let vigente = true;
+        clientesService.obtener(seleccionadoId)
+          .then((c) => vigente && setFicha(c))
+          .catch((err) => vigente && (setError(err.message), setSeleccionadoId(null)));
+        return () => { vigente = false; };
+      }, [seleccionadoId, version, transporte]);
+
+      const recargar = () => setVersion((v) => v + 1);
+      const cambiarTransporte = (t) => { guardarTransporte(t); setTransporte(t); setError(null); setErrorActividad(null); };
+      const seleccionar = (id) => {
+        setSeleccionadoId(id); setModo("ver"); setActividadEditando(null); setErrorActividad(null);
+      };
+
+      const crear = async (datos) => {
+        const nuevo = await clientesService.crear(datos);
+        seleccionar(nuevo.id);
+        recargar();
+      };
+      const guardar = async (datos) => { await clientesService.actualizar(ficha.id, datos); setModo("ver"); recargar(); };
+      const eliminar = async () => {
+        if (!confirm(`¿Eliminar a ${ficha.nombre} ${ficha.apellido} y todas sus actividades?`)) return;
+        try { await clientesService.eliminar(ficha.id); seleccionar(null); recargar(); } catch (err) { setError(err.message); }
+      };
+
+      // Acciones sobre actividades: llaman a la API y recargan ficha y lista.
+      const ejecutarActividad = async (accion) => {
+        setErrorActividad(null);
+        try { await accion(); recargar(); } catch (err) { setErrorActividad(err.message); }
+      };
+      const completarActividad = (a) => {
+        if (actividadEditando?.id === a.id) setActividadEditando(null);
+        return ejecutarActividad(() => actividadesService.completar(ficha.id, a.id));
+      };
+      const eliminarActividad = (a) => {
+        if (!confirm(`¿Eliminar "${a.descripcion}"?`)) return;
+        if (actividadEditando?.id === a.id) setActividadEditando(null);
+        return ejecutarActividad(() => actividadesService.eliminar(ficha.id, a.id));
+      };
+      const guardarActividad = async (datos) => {
+        if (actividadEditando) await actividadesService.actualizar(ficha.id, actividadEditando.id, datos);
+        else await actividadesService.crear(ficha.id, datos);
+        setActividadEditando(null);
+        setErrorActividad(null);
+        recargar();
+      };
+
+      const maestro = (
+        <>
+          <div className="panel__fijo">
+            <div className="cabecera">
+              <div>
+                <h1>Clientes</h1>
+                <p>{clientes ? `${clientes.length} ${clientes.length === 1 ? "cliente" : "clientes"}` : "Cargando…"}</p>
+              </div>
+              <Boton variante="primario" icono="plus" onClick={() => { setSeleccionadoId(null); setModo("crear"); }}>Agregar</Boton>
+            </div>
+            <Segmentado etiqueta="Conexión con el servidor" valor={transporte} onChange={cambiarTransporte}
+              opciones={[
+                { valor: "rest", texto: "REST", ayuda: "API REST en /api/clientes" },
+                { valor: "mcp",  texto: "MCP",  ayuda: "Servidor MCP en /mcp (herramientas)" },
+              ]} />
+            <div className="busqueda">
+              <Icono nombre="search" />
+              <input className="entrada" type="search" placeholder="Buscar por cualquier dato…" autoFocus
+                aria-label="Buscar clientes" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+            </div>
+          </div>
+          <Aviso>{error}</Aviso>
+          <div className="scroll">
+            {clientes && <ClienteList clientes={clientes} seleccionadoId={seleccionadoId} onSelect={seleccionar} />}
+          </div>
+        </>
+      );
+
+      let detalle;
+      if (modo === "crear") {
+        detalle = (
+          <div className="detalle__form">
+            <h2 className="seccion-titulo" style={{ marginBottom: 16 }}>Agregar cliente</h2>
+            <ClienteForm onGuardar={crear} onCancelar={() => setModo("ver")} />
+          </div>
+        );
+      } else if (!ficha) {
+        detalle = <p className="vacio" style={{ margin: "auto" }}>Selecciona un cliente para ver su ficha.</p>;
+      } else if (modo === "editar") {
+        detalle = (
+          <div className="detalle__form">
+            <h2 className="seccion-titulo" style={{ marginBottom: 16 }}>Editar cliente #{ficha.id}</h2>
+            <ClienteForm cliente={ficha} onGuardar={guardar} onCancelar={() => setModo("ver")} />
+          </div>
+        );
+      } else {
+        detalle = (
+          <>
+            <ClienteFicha cliente={ficha} onVolver={() => seleccionar(null)} onEditar={() => setModo("editar")} onEliminar={eliminar} />
+            <ActividadForm key={actividadEditando?.id ?? "nueva"} actividad={actividadEditando}
+              onGuardar={guardarActividad} onCancelar={() => setActividadEditando(null)} />
+            <Aviso>{errorActividad}</Aviso>
+            <ActividadList actividades={ficha.actividades} onCompletar={completarActividad}
+              onEditar={setActividadEditando} onEliminar={eliminarActividad} />
+          </>
+        );
+      }
+
+      return <Layout detalleActivo={modo !== "ver" || ficha !== null} maestro={maestro} detalle={detalle} />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

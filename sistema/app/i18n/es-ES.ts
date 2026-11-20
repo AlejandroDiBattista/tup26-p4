@@ -106,6 +106,11 @@ const messages = {
     checkTp3Hint:
       "Comprueba los alumnos filtrados: tp3/agenda.html debe tener al menos 100 líneas agregadas respecto del enunciado original. El detalle muestra cuántas líneas se agregaron.",
     tp3Checked: "TP3: {{count}} estados actualizados.",
+    checkTp4: "Comprobar TP4 ({{count}})",
+    checkingTp4: "Comprobando TP4…",
+    checkTp4Hint:
+      "Comprueba los alumnos filtrados: public/MiniCRM.html y código TypeScript del servidor con contenido en el mismo proyecto dentro de tp4, incluidas subcarpetas. Solo controla presencia de la entrega; no verifica funcionamiento.",
+    tp4Checked: "TP4: {{count}} estados actualizados.",
     checkFailures: "{{count}} comprobaciones fallaron; revisá el detalle.",
     checkDetails: "Detalle de la comprobación",
     checkingTp1: "Comprobando TP1…",
@@ -160,14 +165,17 @@ const messages = {
     classUpdated: "Clase actualizada.",
     loadAttendance: "Cargar asistencia",
     loadingAttendance: "Cargando asistencia…",
-    loadAttendancePlaceholder: "Pegá aquí el listado de asistencia…",
+    loadAttendancePlaceholder: "Pegá la conversación con las fechas de los mensajes…",
     loadAttendanceHint:
-      "Se leerán los legajos de 5 dígitos entre 50000 y 65000. Si el texto trae fecha y hora, se usará la clase correspondiente: desde 20 minutos después del inicio se marca Tarde (media asistencia). Sin hora se marca Presente.",
+      "Se usan las fechas del texto, sin elegir un día. Solo se cargan clases de hoy y de los seis días anteriores, para las comisiones seleccionadas. Se conservan las marcas existentes; sin mensajes no se marca ausencia.",
+    attendanceImportPreview:
+      "{{count}} registros detectados para: {{dates}}. Se agregarán solo los que todavía no tengan una marca.",
     attendanceDetected: "{{count}} legajos válidos detectados.",
     attendanceDatesDetected: "Fechas detectadas: {{dates}}.",
     attendanceInvalid: "{{count}} números ignorados por no ser legajos válidos.",
     attendanceUnknown: "{{count}} legajos no pertenecen a la clase seleccionada.",
-    attendanceNothingDetected: "No se encontraron legajos válidos de esta clase.",
+    attendanceNothingDetected:
+      "No hay registros para cargar. El texto debe tener fechas de hoy o de los seis días anteriores y legajos de las comisiones seleccionadas con clase programada.",
     attendanceLoaded: "Asistencia cargada: {{count}} registros de presentes o tardes.",
     close: "Cerrar",
     manageClass: "Gestionar clase",

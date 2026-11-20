@@ -1,0 +1,88 @@
+@baseUrl = http://localhost:3000/api
+@clienteId = 1
+@actividadId = 1
+
+### Listar clientes
+GET {{baseUrl}}/clientes
+
+### Buscar clientes por nombre, apellido, teléfono o email
+GET {{baseUrl}}/clientes/buscar?termino=ana
+
+### Obtener un cliente por ID
+GET {{baseUrl}}/clientes/{{clienteId}}
+
+### Crear un cliente
+# Copiar el id de la respuesta y actualizar @clienteId para las solicitudes siguientes.
+POST {{baseUrl}}/clientes
+Content-Type: application/json
+
+{
+  "nombre": "Elena",
+  "apellido": "Quiroga",
+  "telefono": "+54 11 5555-0199",
+  "email": "elena.quiroga@ejemplo.com"
+}
+
+### Actualizar un cliente
+PUT {{baseUrl}}/clientes/{{clienteId}}
+Content-Type: application/json
+
+{
+  "telefono": "+54 11 5555-0200"
+}
+
+### Eliminar un cliente (también elimina sus actividades)
+DELETE {{baseUrl}}/clientes/{{clienteId}}
+
+### Listar todas las actividades
+GET {{baseUrl}}/actividades
+
+### Listar actividades de un cliente
+GET {{baseUrl}}/actividades?clienteId={{clienteId}}
+
+### Listar actividades pendientes
+GET {{baseUrl}}/actividades?estado=pendiente
+
+### Listar actividades vencidas
+GET {{baseUrl}}/actividades?estado=vencida
+
+### Listar actividades completadas
+GET {{baseUrl}}/actividades?estado=completa
+
+### Obtener una actividad por ID
+GET {{baseUrl}}/actividades/{{actividadId}}
+
+### Crear una actividad pendiente para un cliente
+# La fecha es opcional; formato ISO 8601.
+POST {{baseUrl}}/actividades
+Content-Type: application/json
+
+{
+  "clienteId": {{clienteId}},
+  "descripcion": "Coordinar una llamada de seguimiento",
+  "fecha": "2026-10-20T15:00:00.000Z"
+}
+
+### Crear una actividad completada
+POST {{baseUrl}}/actividades
+Content-Type: application/json
+
+{
+  "clienteId": {{clienteId}},
+  "descripcion": "Enviar información del servicio",
+  "estado": "completa",
+  "fechaCompletada": "2026-10-12T12:00:00.000Z"
+}
+
+### Actualizar una actividad
+PUT {{baseUrl}}/actividades/{{actividadId}}
+Content-Type: application/json
+
+{
+  "descripcion": "Coordinar una llamada de seguimiento actualizada",
+  "estado": "completa",
+  "fechaCompletada": "2026-10-12T12:00:00.000Z"
+}
+
+### Eliminar una actividad
+DELETE {{baseUrl}}/actividades/{{actividadId}}

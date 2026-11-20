@@ -7,6 +7,7 @@ import * as a_cargar_codigos_aprobacion from "../actions/cargar-codigos-aprobaci
 import * as a_comprobar_tp1 from "../actions/comprobar-tp1";
 import * as a_comprobar_tp2 from "../actions/comprobar-tp2";
 import * as a_comprobar_tp3 from "../actions/comprobar-tp3";
+import * as a_comprobar_tp4 from "../actions/comprobar-tp4";
 import * as a_course_grid from "../actions/course-grid";
 import * as a_course_summary from "../actions/course-summary";
 import * as a_create_assessment from "../actions/create-assessment";
@@ -73,6 +74,7 @@ const modules: Record<string, unknown> = {
   "comprobar-tp1": a_comprobar_tp1,
   "comprobar-tp2": a_comprobar_tp2,
   "comprobar-tp3": a_comprobar_tp3,
+  "comprobar-tp4": a_comprobar_tp4,
   "course-grid": a_course_grid,
   "course-summary": a_course_summary,
   "create-assessment": a_create_assessment,

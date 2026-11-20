@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniCRM</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
+  
+  <style>
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f5f6f8;
+  color: #222;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 350px 1fr;
+}
+
+aside {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid #ccc;
+}
+
+aside ul {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detalle {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+li {
+  cursor: pointer;
+  padding: 10px 12px;
+}
+
+li:hover {
+  background: #eee;
+}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [textoBusqueda, setTextoBusqueda] = useState('');
+      const [clientes, setClientes] = useState([]);
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [actividades, setActividades] = useState([]);
+      const [nuevaDescripcion, setNuevaDescripcion] = useState('');
+      const [nuevaFecha, setNuevaFecha] = useState('');
+      const [form, setForm] = useState({ nombre: '', email: '', telefono: '', direccion: '' });
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+              fetch('/api/clientes?buscar=' + encodeURIComponent(textoBusqueda))
+          .then(response => response.json())
+          .then(data => setClientes(data));
+      }, [textoBusqueda]);
+
+      useEffect(() => {
+        if (!seleccionado) {
+          setActividades([]);
+          return;
+        }
+        fetch('/api/clientes/' + seleccionado.id + '/actividades')
+          .then(response => response.json())
+          .then(data => setActividades(data));
+      }, [seleccionado]);
+
+      async function agregar(event) {
+        event.preventDefault();
+        const respuesta = await fetch('/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+          setError(datos.message);
+          return;
+        }
+        setClientes([...clientes, datos]);
+        setSeleccionado(datos);
+        setForm({ nombre: '', email: '', telefono: '', direccion: '' });
+        setError('');
+      }
+
+      async function eliminar() {
+        if (!confirm('¿Eliminar a ' + seleccionado.nombre + '?')) return;
+
+        const respuesta = await fetch('/api/clientes/' + seleccionado.id, {
+          method: 'DELETE'
+        });
+        if (respuesta.ok) {
+          setClientes(clientes.filter(cliente => cliente.id !== seleccionado.id));
+          setSeleccionado(null);
+        }
+      }
+
+      async function agregarActividad(event) {
+        event.preventEvent();
+        const respuesta = await fetch('/api/clientes/' + seleccionado.id + '/actividades', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ descripcion: nuevaDescripcion, fecha: nuevaFecha || undefined })
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+          return;
+        }
+        setActividades([...actividades, datos]);
+        setNuevaDescripcion('');
+        setNuevaFecha('');
+      }
+
+      async function completar(id) {
+        const respuesta = await fetch('/api/clientes/' + seleccionado.id + '/actividades/' + id + '/completar', {
+          method: 'PATCH'
+        });
+        if (respuesta.ok) {
+          const datos = await respuesta.json();
+          setActividades(actividades.map(x => x.id === id ? datos : x));
+        }
+      }
+
+      return (
+        <>
+          <header>
+            <h1>MiniCRM</h1>
+          </header>
+          <main>
+            <aside>
+              <form onSubmit={agregar}>
+                <input
+                  type="text"
+                  placeholder="Nombre"
+                  value={form.nombre}
+                  onChange={event => setForm({ ...form, nombre: event.target.value })}
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={form.email}
+                  onChange={event => setForm({ ...form, email: event.target.value })}
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Teléfono"
+                  value={form.telefono}
+                  onChange={event => setForm({ ...form, telefono: event.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Dirección"
+                  value={form.direccion}
+                  onChange={event => setForm({ ...form, direccion: event.target.value })}
+                />
+                <button type="submit">Agregar</button>
+              </form>
+              {error && <p>{error}</p>}
+              <input
+                type="text"
+                placeholder="Buscar por cualquier campo..."
+                value={textoBusqueda}
+                onChange={event => setTextoBusqueda(event.target.value)}
+              />
+              <ul>
+                {clientes.map(cliente => (
+                  <li key={cliente.id} onClick={() => setSeleccionado(cliente)}>
+                    {cliente.nombre} - {cliente.email}
+                  </li>
+                ))}
+              </ul>
+            </aside>
+            <section className="detalle">
+              {seleccionado ? (
+                <section>
+                  <h2>{seleccionado.nombre}</h2>
+                  <p>Email: {seleccionado.email}</p>
+                  <p>Teléfono: {seleccionado.telefono}</p>
+                  <p>Dirección: {seleccionado.direccion}</p>
+                  <button onClick={eliminar}>Eliminar</button>
+                  <form onSubmit={agregarActividad}>
+                    <input
+                      type="text"
+                      value={nuevaDescripcion}
+                      onChange={event => setNuevaDescripcion(event.target.value)}
+                      required
+                    />
+                    <input
+                      type="date"
+                      value={nuevaFecha}
+                      onChange={event => setNuevaFecha(event.target.value)}
+                    />
+                    <button type="submit">Guardar</button>
+                  </form>
+                  <h3>Compromisos</h3>
+                  <ul>
+                    {actividades.filter(a => !a.completada).map(a => (
+                      <li key={a.id}><input type="checkbox" onChange={() => completar(a.id)} />{a.descripcion} - {a.fecha || 'Sin fecha'}</li>
+                    ))}
+                  </ul>
+                  <h3>Completadas</h3>
+                  <ul>
+                    {actividades.filter(a => a.completada).map(a => (
+                      <li key={a.id}>{a.descripcion} - {a.fecha || 'Sin fecha'}</li>
+                    ))}
+                  </ul>
+                </section>
+              ) : (
+                <p>Elegí un cliente</p>
+              )}
+            </section>
+          </main>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="refresh" content="15" />
+    <title>Seguimiento · Trama</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f5f6f8;
+        color: #1c1c20;
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1320px;
+        margin: auto;
+        padding: 36px 28px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 20px;
+        border-bottom: 1px solid #dfe1e6;
+        padding-bottom: 24px;
+      }
+      h1 {
+        font-size: 30px;
+        letter-spacing: -0.04em;
+        margin: 0;
+      }
+      header p,
+      .subtitle {
+        color: #626976;
+        margin: 5px 0 0;
+      }
+      .live {
+        background: #e8f5ed;
+        color: #17603b;
+        border-radius: 99px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .summary {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 23px 0;
+      }
+      .summary div {
+        background: white;
+        border: 1px solid #e0e3e8;
+        border-radius: 9px;
+        padding: 12px 16px;
+        min-width: 120px;
+      }
+      .summary strong {
+        font-size: 22px;
+        margin-right: 6px;
+      }
+      .summary span {
+        color: #626976;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 15px;
+        align-items: start;
+      }
+      .col {
+        background: #ebeef2;
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .col h2 {
+        font-size: 14px;
+        margin: 3px 4px 14px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .count {
+        color: #717987;
+      }
+      .item {
+        background: white;
+        border: 1px solid #e0e3e8;
+        border-radius: 8px;
+        padding: 13px;
+        margin-bottom: 9px;
+      }
+      .item strong {
+        display: block;
+        line-height: 1.35;
+      }
+      .item p {
+        font-size: 12px;
+        color: #626976;
+        margin: 5px 0 10px;
+      }
+      .meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: 650;
+        border-radius: 5px;
+        padding: 3px 6px;
+        background: #f0f1f4;
+        color: #424a57;
+      }
+      .work .tag.state {
+        background: #eaf0ff;
+        color: #244e9c;
+      }
+      .review .tag.state {
+        background: #fff4dd;
+        color: #855400;
+      }
+      .done .tag.state {
+        background: #e5f5eb;
+        color: #17603b;
+      }
+      .foot {
+        margin-top: 18px;
+        color: #737b88;
+        font-size: 12px;
+      }
+      @media (max-width: 850px) {
+        .columns {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 24px 16px;
+        }
+        header {
+          align-items: start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Desarrollo de Trama</h1>
+          <p>Seguimiento de tareas y agentes · React, JSON Server y tablero Kanban</p>
+        </div>
+        <span class="live">● Actualización cada 15 segundos</span>
+      </header>
+      <div class="summary" id="summary"></div>
+      <div class="columns" id="board"></div>
+      <p class="foot">
+        La implementación está terminada. Las tarjetas en revisión parcial no representan una prueba
+        exhaustiva de todos los casos; queda pendiente la comprobación visual en móvil.
+      </p>
+    </main>
+    <script>
+      const items = [
+        {
+          ids: 'Configuración',
+          title: 'Estados configurables',
+          desc: 'Alta, nombres, orden y validación de tareas; probados con una base aislada.',
+          owner: 'Codex · Integración',
+          state: 'done',
+        },
+        {
+          ids: 'Ajuste de interfaz',
+          title: 'Selectores shadcn',
+          desc: 'Filtros del tablero y formulario de tareas comprobados en navegador.',
+          owner: 'Codex · Integración',
+          state: 'done',
+        },
+        {
+          ids: 'T01 · T32',
+          title: 'Base React, Vite, Tailwind y shadcn',
+          desc: 'Configuración, componentes base y estilo del mockup.',
+          owner: 'Codex · Integración',
+          state: 'done',
+        },
+        {
+          ids: 'T02–T04 · T30–T31',
+          title: 'Modelos y conexión a JSON Server',
+          desc: 'Tipos, CRUD, persistencia, validaciones y errores de conexión.',
+          owner: 'Agente Datos · revisión independiente',
+          state: 'done',
+        },
+        {
+          ids: 'T05–T08',
+          title: 'Administración de proyectos',
+          desc: 'Listado, alta, edición y eliminación con sus tareas.',
+          owner: 'Agente Administración',
+          state: 'review',
+        },
+        {
+          ids: 'T09–T13',
+          title: 'Administración de responsables',
+          desc: 'ABM, bloqueo por asignaciones y consulta de tareas.',
+          owner: 'Agente Administración',
+          state: 'review',
+        },
+        {
+          ids: 'T14–T19',
+          title: 'Administración de tareas',
+          desc: 'Alta, edición, asignación, eliminación y estados.',
+          owner: 'Agentes Administración y Kanban',
+          state: 'review',
+        },
+        {
+          ids: 'T20–T22 · T27–T29',
+          title: 'Panel y tablero Kanban',
+          desc: 'Búsqueda, filtros combinados, flechas y arrastrar y soltar.',
+          owner: 'Agente Kanban · revisión independiente',
+          state: 'done',
+        },
+        {
+          ids: 'T01 · T20',
+          title: 'Navegación e integración',
+          desc: 'Navegación por proyectos y detalle comprobada en navegador.',
+          owner: 'Codex · Integración',
+          state: 'done',
+        },
+        {
+          ids: 'T23–T24',
+          title: 'Mensajes, accesibilidad y adaptación',
+          desc: 'Se revisaron mensajes; falta comprobar visualmente el uso en pantalla móvil.',
+          owner: 'Codex · Integración',
+          state: 'pending',
+        },
+        {
+          ids: 'T25',
+          title: 'Revisión independiente',
+          desc: 'API con base temporal, formularios con DOM simulado y arrastre comprobado en navegador de escritorio.',
+          owner: 'Agente Revisión',
+          state: 'done',
+        },
+        {
+          ids: 'T26',
+          title: 'Documentación y puesta en marcha',
+          desc: 'Instrucciones para iniciar la app y JSON Server.',
+          owner: 'Codex · Integración',
+          state: 'done',
+        },
+      ]
+      const states = [
+        ['work', 'En desarrollo'],
+        ['review', 'Implementado · revisión parcial'],
+        ['pending', 'Pendiente'],
+        ['done', 'Verificado'],
+      ]
+      const total = items.length
+      document.querySelector('#summary').innerHTML = states
+        .map(
+          ([s, label]) =>
+            `<div><strong>${items.filter((i) => i.state === s).length}</strong><span>${label}</span></div>`,
+        )
+        .join('')
+      document.querySelector('#board').innerHTML = [
+        ['work', 'En desarrollo'],
+        ['review', 'Revisión parcial'],
+        ['pending', 'Pendiente'],
+        ['done', 'Verificado'],
+      ]
+        .map(
+          ([s, label]) =>
+            `<section class="col ${s}"><h2>${label}<span class="count">${items.filter((i) => i.state === s).length}</span></h2>${
+              items
+                .filter((i) => i.state === s)
+                .map(
+                  (i) =>
+                    `<article class="item"><strong>${i.title}</strong><p>${i.desc}</p><div class="meta"><span class="tag">${i.ids}</span><span class="tag state">${i.owner}</span></div></article>`,
+                )
+                .join('') || '<p class="subtitle">Sin tareas</p>'
+            }</section>`,
+        )
+        .join('')
+    </script>
+  </body>
+</html>

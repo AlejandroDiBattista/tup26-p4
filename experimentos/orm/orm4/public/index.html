@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clientes | MiniCRM</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202a35; background: #f4f6f5; font-synthesis: none; }
+      * { box-sizing: border-box; }
+      body { min-width: 320px; height: 100vh; height: 100dvh; margin: 0; padding: 24px; overflow: hidden; background: radial-gradient(ellipse at 12% 0%, #e7f0ed 0, transparent 34%), #f4f6f5; }
+      #root { height: 100%; }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      main { display: flex; width: min(1120px, 100%); height: 100%; min-height: 0; margin: 0 auto; flex-direction: column; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { margin-bottom: 8px; color: #172632; font-size: clamp(30px, 4vw, 40px); letter-spacing: -1.5px; line-height: 1.1; }
+      h2 { color: #20303b; }
+      .page-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
+      .page-header p:last-child { margin: 0; color: #6d7b83; }
+      .eyebrow { margin-bottom: 10px; color: #367766; font-size: 12px; font-weight: 750; letter-spacing: 1.5px; text-transform: uppercase; }
+      .boton-principal { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; margin: 0; padding: 0 18px; border: 0; border-radius: 10px; background: #216b59; box-shadow: 0 4px 10px #216b5926; color: white; font-weight: 650; transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+      .boton-principal:hover { transform: translateY(-1px); background: #195746; box-shadow: 0 7px 16px #216b5933; }
+      .boton-principal span { font-size: 20px; font-weight: 400; line-height: 1; }
+      .buscador { flex: 0 0 auto; margin-bottom: 16px; }
+      .buscador label { display: block; color: #53616a; font-size: 13px; font-weight: 650; }
+      input { display: block; width: 100%; height: 48px; margin-top: 8px; padding: 0 15px; border: 1px solid #d6dfdc; border-radius: 10px; outline: none; background: #fff; color: #202a35; box-shadow: 0 2px 5px #263b3510; transition: border-color 160ms ease, box-shadow 160ms ease; }
+      input::placeholder { color: #9aa5a7; }
+      input:focus { border-color: #5d9b88; box-shadow: 0 0 0 3px #5d9b8822; }
+      .maestro-detalle { display: grid; min-height: 0; flex: 1 1 auto; grid-template-columns: minmax(245px, .82fr) minmax(0, 1.7fr); grid-template-rows: minmax(0, 1fr); gap: 20px; }
+      .panel { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #e1e7e4; border-radius: 15px; background: #fff; box-shadow: 0 8px 28px #263b3508; }
+      .panel-clientes { display: flex; flex-direction: column; }
+      .panel-encabezado { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 20px 13px; }
+      .panel-encabezado h2 { margin: 0; font-size: 16px; letter-spacing: -.2px; }
+      .contador-clientes { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 8px; background: #edf4f1; color: #367766; font-size: 12px; font-weight: 700; }
+      .panel-buscador { flex: 0 0 auto; padding: 0 20px 14px; }
+      .panel-buscador .buscador { margin: 0; }
+      .panel-buscador label { font-size: 12px; }
+      .panel-buscador input { height: 42px; margin-top: 6px; padding: 0 11px; font-size: 13px; }
+      ul { margin: 0; padding: 0; list-style: none; }
+      .lista-clientes { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 0 10px 10px; }
+      .lista-clientes li { margin: 2px 0; }
+      .lista-clientes button { display: block; width: 100%; margin: 0; padding: 13px 12px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #33424b; text-align: left; transition: background 150ms ease, border-color 150ms ease; }
+      .lista-clientes button:hover { background: #f6f8f7; }
+      .lista-clientes button.seleccionado { border-color: #dceae4; background: #eff6f2; }
+      .cliente-nombre { display: block; margin-bottom: 4px; color: #24343d; font-weight: 680; }
+      .cliente-email { display: block; overflow: hidden; color: #78868b; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+      .detalle-cliente { display: flex; height: 100%; min-height: 0; max-height: none; flex-direction: column; overflow: hidden; padding: 20px; }
+      .datos-cliente { flex: 0 0 auto; padding: 20px; border: 1px solid #e3eae7; border-radius: 12px; background: linear-gradient(135deg, #f8fbf9, #f4f8f6); }
+      .datos-cliente h2 { margin: 0 0 18px; color: #1c3431; font-size: 23px; letter-spacing: -.6px; }
+      .datos-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; margin: 0; }
+      .dato-cliente dt, .actividad-fecha span { margin-bottom: 3px; color: #87938f; font-size: 11px; font-weight: 700; letter-spacing: .75px; text-transform: uppercase; }
+      .dato-cliente dd { margin: 0; overflow-wrap: anywhere; color: #354640; font-size: 14px; }
+      .dato-cliente a { color: #286d5c; text-decoration-color: #a9c8bc; text-underline-offset: 3px; }
+      .actividades-titulo { flex: 0 0 auto; margin: 18px 0 8px; color: #263840; font-size: 16px; letter-spacing: -.2px; }
+      .lista-actividades { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border-top: 1px solid #edf0ee; }
+      .actividad-fila { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 4px 12px; padding: 15px 4px; border-bottom: 1px solid #edf0ee; }
+      .actividad-check { grid-column: 1; grid-row: 1 / span 2; display: grid; width: 23px; height: 23px; margin: 0; padding: 0; place-items: center; border: 1.5px solid #bac7c1; border-radius: 7px; background: #fff; color: white; transition: border-color 150ms ease, background 150ms ease, transform 150ms ease; }
+      .actividad-check:hover:not(:disabled) { transform: scale(1.07); border-color: #43816f; }
+      .actividad-check.completa { border-color: #2b765f; background: #2b765f; }
+      .actividad-check:disabled { cursor: default; opacity: .85; }
+      .actividad-check svg { width: 15px; height: 15px; }
+      .actividad-descripcion { grid-column: 2; grid-row: 1; color: #354640; font-size: 14px; font-weight: 650; line-height: 1.4; }
+      .actividad-fechas { grid-column: 2; grid-row: 2; display: flex; flex-wrap: wrap; gap: 5px 18px; padding-top: 3px; }
+      .actividad-fecha span { display: inline; margin-right: 5px; font-size: 10px; letter-spacing: .45px; }
+      .actividad-fecha time, .actividad-fecha > span:last-child { color: #77847f; font-size: 12px; }
+      .estado, [role="alert"] { margin: 0; padding: 18px 20px; color: #73817c; font-size: 14px; }
+      [role="alert"] { color: #a43d39; }
+      .formulario-cliente { display: grid; gap: 16px; padding: 4px; }
+      .formulario-cliente h2 { margin: 0; color: #1c3431; font-size: 22px; letter-spacing: -.5px; }
+      .formulario-cliente > p { margin: -8px 0 0; color: #73817c; font-size: 14px; }
+      .formulario-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .formulario-cliente label { display: block; color: #53616a; font-size: 13px; font-weight: 650; }
+      .acciones-formulario, .detalle-acciones { display: flex; justify-content: flex-end; gap: 8px; }
+      .acciones-formulario button, .detalle-acciones button { min-height: 40px; margin: 0; padding: 0 14px; border: 1px solid #d6dfdc; border-radius: 9px; background: white; color: #43534d; }
+      .acciones-formulario button[type="submit"] { border-color: #216b59; background: #216b59; color: white; font-weight: 650; }
+      .detalle-acciones { margin: 0 0 12px; }
+      .detalle-acciones button { color: #286d5c; font-weight: 650; }
+      .formulario-actividad { display: grid; flex: 0 0 auto; gap: 12px; margin: 14px 0 0; padding: 16px; border: 1px dashed #a9c5b9; border-radius: 12px; background: #f7faf8; }
+      .formulario-actividad h3 { margin: 0; color: #263840; font-size: 14px; }
+      .fila-formulario-actividad { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, .65fr) auto; gap: 12px; align-items: end; }
+      .formulario-actividad label { display: block; color: #53616a; font-size: 12px; font-weight: 650; }
+      .formulario-actividad input { height: 42px; margin-top: 6px; padding: 0 11px; font-size: 13px; }
+      .formulario-actividad button { justify-self: end; min-height: 42px; margin: 0; padding: 0 14px; border: 0; border-radius: 9px; background: #216b59; color: white; font-size: 13px; font-weight: 650; }
+      button:focus-visible { outline: 3px solid #75a999; outline-offset: 2px; }
+      @media (max-width: 700px) {
+        body { padding: 16px; }
+        .maestro-detalle { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, .75fr) minmax(0, 1.25fr); gap: 12px; }
+        .detalle-cliente { padding: 16px; }
+        .fila-formulario-actividad { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .formulario-actividad button { grid-column: 1 / -1; justify-self: end; }
+        .datos-grid, .formulario-campos { grid-template-columns: minmax(0, 1fr); }
+      }
+      @media (max-width: 440px) {
+        .page-header { align-items: flex-start; flex-direction: column; gap: 16px; margin-bottom: 22px; }
+        .boton-principal { width: 100%; }
+        .actividad-fechas { gap: 6px 12px; }
+        .fila-formulario-actividad { grid-template-columns: minmax(0, 1fr); }
+        .formulario-actividad button { justify-self: stretch; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      function Boton({ children, tipo = 'button', deshabilitado = false, onClick, clase, presionado }) {
+        return (
+          <button
+            type={tipo}
+            disabled={deshabilitado}
+            onClick={onClick}
+            className={`${clase || ''} ${presionado ? 'seleccionado' : ''}`}
+          >
+            {children}
+          </button>
+        );
+      }
+
+      function Campo({ etiqueta, id, nombre, tipo = 'text', valor, alCambiar, requerido = false, placeholder }) {
+        return (
+          <label htmlFor={id}>
+            {etiqueta}
+            <input
+              id={id}
+              name={nombre}
+              type={tipo}
+              value={alCambiar ? valor : undefined}
+              defaultValue={alCambiar ? undefined : valor}
+              onChange={alCambiar ? (evento) => alCambiar(evento.target.value) : undefined}
+              required={requerido}
+              placeholder={placeholder}
+            />
+          </label>
+        );
+      }
+
+      function Layout({ children }) {
+        return <main>{children}</main>;
+      }
+
+      function EncabezadoClientes({ onAgregar }) {
+        return (
+          <header className="page-header">
+            <div>
+              <p className="eyebrow">MiniCRM · Gestión de contactos</p>
+              <h1>Clientes</h1>
+              <p>Consulta tus contactos y su actividad reciente.</p>
+            </div>
+            <Boton clase="boton-principal" onClick={onAgregar}><span>＋</span>Agregar cliente</Boton>
+          </header>
+        );
+      }
+
+      function BuscadorClientes({ valor, onCambiar }) {
+        return (
+          <div className="buscador">
+            <Campo
+              etiqueta="Buscar clientes"
+              id="busqueda"
+              nombre="busqueda"
+              tipo="search"
+              valor={valor}
+              alCambiar={onCambiar}
+              placeholder="Nombre, email o actividad"
+            />
+          </div>
+        );
+      }
+
+      function ListaClientes({ clientes, cargando, error, seleccionadoId, alSeleccionar, valorBusqueda, alBuscar }) {
+        return (
+          <section className="panel panel-clientes">
+            <header className="panel-encabezado">
+              <h2>Todos los clientes</h2>
+              <span className="contador-clientes">{clientes.length}</span>
+            </header>
+            <div className="panel-buscador">
+              <BuscadorClientes valor={valorBusqueda} onCambiar={alBuscar} />
+            </div>
+            {cargando && <p className="estado">Cargando clientes...</p>}
+            {error && <p role="alert">{error}</p>}
+            {!cargando && !error && clientes.length === 0 && <p>No se encontraron clientes.</p>}
+            <ul className="lista-clientes">
+              {clientes.map((cliente) => (
+                <li key={cliente.id}>
+                  <Boton
+                    clase="cliente-opcion"
+                    presionado={cliente.id === seleccionadoId}
+                    onClick={() => alSeleccionar(cliente.id)}
+                  >
+                    <strong className="cliente-nombre">{cliente.nombre} {cliente.apellido}</strong>
+                    <span className="cliente-email">{cliente.email}</span>
+                  </Boton>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      }
+
+      function DatoCliente({ etiqueta, children }) {
+        return (
+          <div className="dato-cliente">
+            <dt>{etiqueta}</dt>
+            <dd>{children}</dd>
+          </div>
+        );
+      }
+
+      function DatosCliente({ cliente }) {
+        return (
+          <section className="datos-cliente">
+            <h2>{cliente.nombre} {cliente.apellido}</h2>
+            <dl className="datos-grid">
+              <DatoCliente etiqueta="Nombre">{cliente.nombre}</DatoCliente>
+              <DatoCliente etiqueta="Apellido">{cliente.apellido}</DatoCliente>
+              <DatoCliente etiqueta="Email"><a href={`mailto:${cliente.email}`}>{cliente.email}</a></DatoCliente>
+              <DatoCliente etiqueta="Teléfono">
+                {cliente.telefono
+                  ? <a href={`tel:${cliente.telefono}`}>{cliente.telefono}</a>
+                  : 'Sin teléfono'}
+              </DatoCliente>
+            </dl>
+          </section>
+        );
+      }
+
+      function mostrarFecha(fecha) {
+        if (!fecha) return 'Sin fecha';
+        return new Intl.DateTimeFormat('es-AR', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        }).format(new Date(fecha));
+      }
+
+      function FechaActividad({ fecha, sinFecha }) {
+        if (!fecha) return <span>{sinFecha}</span>;
+        return <time dateTime={new Date(fecha).toISOString()}>{mostrarFecha(fecha)}</time>;
+      }
+
+      function FilaActividad({ actividad, alCompletar, guardando }) {
+        return (
+          <li className="actividad-fila">
+            <button
+              type="button"
+              className={`actividad-check ${actividad.completa ? 'completa' : ''}`}
+              disabled={(actividad.completa && actividad.fechaRealizacion) || guardando}
+              onClick={() => alCompletar(actividad)}
+            >
+              {actividad.completa && (
+                  <svg viewBox="0 0 20 20">
+                  <path d="m4 10 4 4 8-8" fill="none" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              )}
+            </button>
+            <span className="actividad-descripcion">{actividad.descripcion}</span>
+            <div className="actividad-fechas">
+            <div className="actividad-fecha">
+              <span>Realizada</span>
+              <FechaActividad fecha={actividad.fechaRealizacion} sinFecha="Sin fecha" />
+            </div>
+            <div className="actividad-fecha">
+              <span>Comprometida</span>
+              <FechaActividad fecha={actividad.fechaComprometida} sinFecha="Sin plazo" />
+            </div>
+            </div>
+          </li>
+        );
+      }
+
+      function DetalleCliente({ cliente, cargando, error, modoFormulario, alEditar, alCancelarFormulario, alGuardarCliente, alAgregarActividad, alCompletarActividad, actividadGuardandoseId }) {
+        if (modoFormulario) {
+          return (
+            <section className="detalle-cliente panel">
+              <FormularioCliente
+                key={`${modoFormulario}-${cliente?.id ?? 'nuevo'}`}
+                cliente={modoFormulario === 'editar' ? cliente : null}
+                modo={modoFormulario}
+                onCancelar={alCancelarFormulario}
+                onGuardado={alGuardarCliente}
+              />
+            </section>
+          );
+        }
+        if (cargando) return <section className="detalle-cliente panel"><p className="estado">Cargando detalle...</p></section>;
+        if (error) return <section className="detalle-cliente panel"><p role="alert">{error}</p></section>;
+        if (!cliente) return <section className="detalle-cliente panel"><p>Selecciona un cliente para ver sus datos.</p></section>;
+
+        const actividades = cliente.actividades ?? [];
+
+        return (
+          <section className="detalle-cliente panel">
+            <div className="detalle-acciones">
+              <Boton onClick={alEditar}>Editar cliente</Boton>
+            </div>
+            <DatosCliente cliente={cliente} />
+            <FormularioActividad clienteId={cliente.id} onActividadCreada={alAgregarActividad} />
+            <h3 className="actividades-titulo">Actividades</h3>
+            {actividades.length === 0 ? (
+              <p>Este cliente no tiene actividades.</p>
+            ) : (
+              <ul className="lista-actividades">
+                {actividades.map((actividad) => (
+                  <FilaActividad
+                    key={actividad.id}
+                    actividad={actividad}
+                    alCompletar={alCompletarActividad}
+                    guardando={actividadGuardandoseId === actividad.id}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      }
+
+      function FormularioActividad({ clienteId, onActividadCreada }) {
+        const [guardando, setGuardando] = React.useState(false);
+        const [error, setError] = React.useState('');
+
+        async function agregarActividad(evento) {
+          evento.preventDefault();
+          const formulario = evento.currentTarget;
+          const datos = Object.fromEntries(new FormData(formulario).entries());
+          const fechaComprometida = datos.fechaComprometida
+            ? new Date(datos.fechaComprometida).toISOString()
+            : undefined;
+
+          setGuardando(true);
+          setError('');
+          try {
+            const respuesta = await fetch('/api/actividades', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                clienteId,
+                descripcion: datos.descripcion,
+                ...(fechaComprometida && { fechaComprometida }),
+              }),
+            });
+            if (!respuesta.ok) {
+              const resultado = await respuesta.json();
+              throw new Error(resultado.error || 'No se pudo agregar la actividad.');
+            }
+            onActividadCreada(await respuesta.json());
+            formulario.reset();
+          } catch (error) {
+            setError(error.message);
+          } finally {
+            setGuardando(false);
+          }
+        }
+
+        return (
+          <form className="formulario-actividad" onSubmit={agregarActividad}>
+            <h3>Agregar tarea</h3>
+            <div className="fila-formulario-actividad">
+              <Campo etiqueta="Tarea" id="descripcion-actividad" nombre="descripcion" requerido placeholder="Descripción" />
+              <Campo etiqueta="Fecha límite" id="fecha-comprometida" nombre="fechaComprometida" tipo="datetime-local" />
+              <button type="submit" disabled={guardando}>
+                {guardando ? 'Agregando...' : 'Agregar'}
+              </button>
+            </div>
+            {error && <p role="alert">{error}</p>}
+          </form>
+        );
+      }
+
+      function FormularioCliente({ cliente, modo, onCancelar, onGuardado }) {
+        const [guardando, setGuardando] = React.useState(false);
+        const [error, setError] = React.useState('');
+
+        async function guardarCliente(evento) {
+          evento.preventDefault();
+          const formulario = evento.currentTarget;
+          const datos = Object.fromEntries(new FormData(formulario).entries());
+          if (!datos.telefono) delete datos.telefono;
+
+          setGuardando(true);
+          setError('');
+
+          try {
+            const respuesta = await fetch(modo === 'editar' ? `/api/clientes/${cliente.id}` : '/api/clientes', {
+              method: modo === 'editar' ? 'PUT' : 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(datos),
+            });
+
+            if (!respuesta.ok) {
+              const resultado = await respuesta.json();
+              throw new Error(resultado.error || 'No se pudo guardar el cliente.');
+            }
+
+            onGuardado(await respuesta.json(), modo);
+          } catch (error) {
+            setError(error.message);
+          } finally {
+            setGuardando(false);
+          }
+        }
+
+        return (
+          <form className="formulario-cliente" onSubmit={guardarCliente}>
+            <h2>{modo === 'editar' ? 'Editar cliente' : 'Nuevo cliente'}</h2>
+            <p>{modo === 'editar' ? 'Actualiza los datos de contacto.' : 'Completa los datos para agregar un contacto.'}</p>
+            <div className="formulario-campos">
+              <Campo etiqueta="Nombre" id="nombre" nombre="nombre" valor={cliente?.nombre ?? ''} requerido />
+              <Campo etiqueta="Apellido" id="apellido" nombre="apellido" valor={cliente?.apellido ?? ''} requerido />
+              <Campo etiqueta="Email" id="email" nombre="email" tipo="email" valor={cliente?.email ?? ''} requerido />
+              <Campo etiqueta="Teléfono (opcional)" id="telefono" nombre="telefono" tipo="tel" valor={cliente?.telefono ?? ''} />
+            </div>
+            {error && <p role="alert">{error}</p>}
+            <div className="acciones-formulario">
+              <Boton onClick={onCancelar} deshabilitado={guardando}>Cancelar</Boton>
+              <Boton tipo="submit" clase="boton-guardar" deshabilitado={guardando}>
+                {guardando ? 'Guardando...' : modo === 'editar' ? 'Guardar cambios' : 'Agregar cliente'}
+              </Boton>
+            </div>
+          </form>
+        );
+      }
+
+      function App() {
+        const [clientes, setClientes] = React.useState([]);
+        const [clienteSeleccionadoId, setClienteSeleccionadoId] = React.useState(null);
+        const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
+        const [cargandoDetalle, setCargandoDetalle] = React.useState(false);
+        const [errorDetalle, setErrorDetalle] = React.useState('');
+        const [busqueda, setBusqueda] = React.useState('');
+        const [cargando, setCargando] = React.useState(true);
+        const [error, setError] = React.useState('');
+        const [modoFormularioCliente, setModoFormularioCliente] = React.useState(null);
+        const [actividadGuardandoseId, setActividadGuardandoseId] = React.useState(null);
+
+        async function completarActividad(actividad) {
+          setActividadGuardandoseId(actividad.id);
+          try {
+            const respuesta = await fetch(`/api/actividades/${actividad.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ completa: true }),
+            });
+            if (!respuesta.ok) throw new Error('No se pudo completar la actividad.');
+            const actividadActualizada = await respuesta.json();
+            setClienteSeleccionado((clienteActual) => ({
+              ...clienteActual,
+              actividades: clienteActual.actividades.map((item) =>
+                item.id === actividadActualizada.id ? actividadActualizada : item,
+              ),
+            }));
+          } catch (error) {
+            window.alert(error.message);
+          } finally {
+            setActividadGuardandoseId(null);
+          }
+        }
+
+        function incorporarActividad(actividad) {
+          setClienteSeleccionado((clienteActual) => ({
+            ...clienteActual,
+            actividades: [...(clienteActual.actividades ?? []), actividad],
+          }));
+        }
+
+        React.useEffect(() => {
+          const controlador = new AbortController();
+          const consulta = busqueda.trim()
+            ? `?q=${encodeURIComponent(busqueda.trim())}`
+            : '';
+
+          setCargando(true);
+          setError('');
+
+          fetch(`/api/clientes${consulta}`, { signal: controlador.signal })
+            .then((respuesta) => {
+              if (!respuesta.ok) throw new Error('No se pudieron cargar los clientes.');
+              return respuesta.json();
+            })
+            .then((resultado) => {
+              setClientes(resultado);
+              setClienteSeleccionadoId((idActual) =>
+                resultado.some((cliente) => cliente.id === idActual)
+                  ? idActual
+                  : resultado[0]?.id ?? null,
+              );
+            })
+            .catch((error) => {
+              if (error.name !== 'AbortError') setError(error.message);
+            })
+            .finally(() => {
+              if (!controlador.signal.aborted) setCargando(false);
+            });
+
+          return () => controlador.abort();
+        }, [busqueda]);
+
+        React.useEffect(() => {
+          if (!clienteSeleccionadoId) {
+            setClienteSeleccionado(null);
+            return;
+          }
+
+          const controlador = new AbortController();
+          setCargandoDetalle(true);
+          setErrorDetalle('');
+
+          fetch(`/api/clientes/${clienteSeleccionadoId}`, { signal: controlador.signal })
+            .then((respuesta) => {
+              if (!respuesta.ok) throw new Error('No se pudo cargar el detalle del cliente.');
+              return respuesta.json();
+            })
+            .then(setClienteSeleccionado)
+            .catch((error) => {
+              if (error.name !== 'AbortError') setErrorDetalle(error.message);
+            })
+            .finally(() => {
+              if (!controlador.signal.aborted) setCargandoDetalle(false);
+            });
+
+          return () => controlador.abort();
+        }, [clienteSeleccionadoId]);
+
+        function iniciarAltaCliente() {
+          setClienteSeleccionadoId(null);
+          setModoFormularioCliente('crear');
+        }
+
+        function guardarCliente(clienteGuardado, modo) {
+          if (modo === 'crear') {
+            setClientes((clientesActuales) => [clienteGuardado, ...clientesActuales]);
+            setClienteSeleccionadoId(clienteGuardado.id);
+            setBusqueda('');
+          } else {
+            setClientes((clientesActuales) => clientesActuales.map((cliente) =>
+              cliente.id === clienteGuardado.id ? { ...cliente, ...clienteGuardado } : cliente,
+            ));
+            setClienteSeleccionado((clienteActual) => ({ ...clienteActual, ...clienteGuardado }));
+          }
+          setModoFormularioCliente(null);
+        }
+
+        return (
+          <Layout>
+            <EncabezadoClientes onAgregar={iniciarAltaCliente} />
+            <div className="maestro-detalle">
+              <ListaClientes
+                clientes={clientes}
+                cargando={cargando}
+                error={error}
+                seleccionadoId={clienteSeleccionadoId}
+                alSeleccionar={setClienteSeleccionadoId}
+                valorBusqueda={busqueda}
+                alBuscar={setBusqueda}
+              />
+              <DetalleCliente
+                cliente={clienteSeleccionado}
+                cargando={cargandoDetalle}
+                error={errorDetalle}
+                modoFormulario={modoFormularioCliente}
+                alEditar={() => setModoFormularioCliente('editar')}
+                alCancelarFormulario={() => setModoFormularioCliente(null)}
+                alGuardarCliente={guardarCliente}
+                alAgregarActividad={incorporarActividad}
+                alCompletarActividad={completarActividad}
+                actividadGuardandoseId={actividadGuardandoseId}
+              />
+            </div>
+          </Layout>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
