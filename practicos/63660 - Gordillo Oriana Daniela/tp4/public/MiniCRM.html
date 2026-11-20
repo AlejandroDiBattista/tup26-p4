@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM - Gestión de Clientes y Actividades</title>
+  
+  <!-- Tipografía Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- React 18 & ReactDOM 18 CDN versiones fijas -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
+  
+  <!-- Babel Standalone con runtime clásico para React global -->
+  <script src="https://unpkg.com/@babel/standalone@7.24.4/babel.min.js"></script>
+
+  <style>
+    /* ========================================================
+       VARIABLES & RESET
+       ======================================================== */
+    :root {
+      --bg-app: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --danger-light: #fef2f2;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden; /* App sin desplazamiento de página global */
+      font-family: var(--font-family);
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #root {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========================================================
+       LAYOUT PRINCIPAL MAESTRO-DETALLE
+       ======================================================== */
+    .app-container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* PANEL MAESTRO (IZQUIERDA) */
+    .master-pane {
+      width: 360px;
+      min-width: 320px;
+      max-width: 420px;
+      background-color: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      z-index: 10;
+    }
+
+    .master-header {
+      padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      background-color: #ffffff;
+    }
+
+    .master-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    /* Buscador */
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      width: 16px;
+      height: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+      font-size: 0.875rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: #f8fafc;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    }
+
+    /* Lista Maestro con scroll vertical interno */
+    .client-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.6rem;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .client-item {
+      padding: 0.75rem 0.9rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .client-item:hover {
+      background-color: #f1f5f9;
+    }
+
+    .client-item.selected {
+      background-color: var(--primary-light);
+      border-color: #bfdbfe;
+    }
+
+    .client-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .client-name {
+      font-weight: 600;
+      font-size: 0.925rem;
+      color: var(--text-main);
+    }
+
+    .client-item.selected .client-name {
+      color: var(--primary);
+    }
+
+    .client-email {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .client-submeta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--text-subtle);
+    }
+
+    /* PANEL DETALLE (DERECHA) */
+    .detail-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-app);
+      position: relative;
+    }
+
+    /* Estado vacío cuando no hay selección */
+    .empty-detail {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      gap: 0.75rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* Encabezado Ficha del Cliente */
+    .client-card {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.5rem 2rem;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-client-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+    }
+
+    .card-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .client-id-badge {
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: #f1f5f9;
+      padding: 0.25rem 0.55rem;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Grilla de atributos del cliente */
+    .client-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .info-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--text-subtle);
+      letter-spacing: 0.04em;
+    }
+
+    .info-value {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    /* Subformulario para agregar/editar actividades */
+    .activity-subform-wrapper {
+      padding: 1.15rem 2rem 0.75rem 2rem;
+      background-color: var(--bg-app);
+      flex-shrink: 0;
+    }
+
+    .activity-subform {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 0.6rem 0.85rem;
+      background-color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .activity-subform:focus-within {
+      border-color: var(--primary);
+    }
+
+    .activity-input-desc {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 0.875rem;
+      font-family: inherit;
+      color: var(--text-main);
+      background: transparent;
+    }
+
+    .activity-input-date {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.5rem;
+      font-size: 0.8rem;
+      font-family: inherit;
+      color: var(--text-muted);
+      outline: none;
+      background-color: #f8fafc;
+    }
+
+    .activity-input-date:focus {
+      border-color: var(--primary);
+      background-color: #fff;
+    }
+
+    /* Contenedor scrolleable de actividades */
+    .activities-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 2rem 2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Secciones de Actividades */
+    .activity-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .activity-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.4rem;
+    }
+
+    .activity-section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .activity-count {
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: var(--text-main);
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+    }
+
+    /* Filas de Actividades */
+    .activity-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .activity-item {
+      background-color: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.15s ease;
+    }
+
+    .activity-item:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .activity-item.vencida {
+      border-left: 3px solid var(--danger);
+    }
+
+    .activity-checkbox-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: var(--text-subtle);
+      transition: color 0.15s ease, transform 0.1s ease;
+    }
+
+    .activity-checkbox-btn:hover:not(:disabled) {
+      color: var(--primary);
+      transform: scale(1.1);
+    }
+
+    .activity-checkbox-btn:disabled {
+      cursor: default;
+      color: var(--success);
+    }
+
+    .activity-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+
+    .activity-desc {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .activity-item.completed .activity-desc {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .activity-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge-vencido {
+      color: var(--danger);
+      background-color: var(--danger-light);
+      padding: 0.05rem 0.35rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+
+    .activity-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      opacity: 0.85;
+      transition: opacity 0.15s ease;
+    }
+
+    .activity-item:hover .activity-actions {
+      opacity: 1;
+    }
+
+    /* Mensajes de grupos vacíos mínimos */
+    .empty-group-text {
+      font-size: 0.8rem;
+      color: var(--text-subtle);
+      padding: 0.4rem 0.2rem;
+      font-style: italic;
+    }
+
+    /* ========================================================
+       FORMULARIO DE ALTA Y EDICIÓN DE CLIENTE EN DETALLE
+       ======================================================== */
+    .client-form-container {
+      background-color: #ffffff;
+      padding: 2rem;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .form-header-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-main);
+    }
+
+    .client-form {
+      max-width: 650px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-field label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-input {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-family: inherit;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    }
+
+    .form-buttons-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    /* ========================================================
+       BOTONES E ICONOS
+       ======================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.55rem 0.95rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #f1f5f9;
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+    .btn-danger-outline:hover {
+      background-color: var(--danger-light);
+      border-color: var(--danger);
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background-color: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .icon-btn.danger:hover {
+      background-color: var(--danger-light);
+      color: var(--danger);
+    }
+
+    .icon-btn.save {
+      background-color: var(--primary);
+      color: #ffffff;
+    }
+    .icon-btn.save:hover {
+      background-color: var(--primary-hover);
+    }
+
+    /* Scrollbars elegantes */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- CÓDIGO REACT CON JSX EMBEBIDO -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // ========================================================
+    // ICONOS SVG REUTILIZABLES
+    // ========================================================
+    function IconSearch() {
+      return (
+        <svg className="search-icon" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+      );
+    }
+
+    function IconPlus() {
+      return (
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      );
+    }
+
+    function IconEdit() {
+      return (
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+        </svg>
+      );
+    }
+
+    function IconTrash() {
+      return (
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+        </svg>
+      );
+    }
+
+    function IconCheckCircle() {
+      return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.74-5.25Z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+
+    function IconCircle() {
+      return (
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      );
+    }
+
+    function IconSave() {
+      return (
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+        </svg>
+      );
+    }
+
+    function IconCancel() {
+      return (
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      );
+    }
+
+    // ========================================================
+    // CLIENTE API SERVICE (FETCH)
+    // ========================================================
+    const ApiService = {
+      async getClientes(query = '') {
+        const url = query ? `/api/clientes?q=${encodeURIComponent(query)}` : '/api/clientes';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Error al obtener clientes');
+        return await res.json();
+      },
+
+      async getCliente(id) {
+        const res = await fetch(`/api/clientes/${id}`);
+        if (!res.ok) throw new Error('Error al obtener detalle del cliente');
+        return await res.json();
+      },
+
+      async crearCliente(datos) {
+        const res = await fetch('/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al crear cliente');
+        }
+        return await res.json();
+      },
+
+      async actualizarCliente(id, datos) {
+        const res = await fetch(`/api/clientes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al actualizar cliente');
+        }
+        return await res.json();
+      },
+
+      async eliminarCliente(id) {
+        const res = await fetch(`/api/clientes/${id}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Error al eliminar cliente');
+        return await res.json();
+      },
+
+      async crearActividad(clienteId, datos) {
+        const res = await fetch(`/api/clientes/${clienteId}/actividades`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al crear actividad');
+        }
+        return await res.json();
+      },
+
+      async actualizarActividad(clienteId, actividadId, datos) {
+        const res = await fetch(`/api/clientes/${clienteId}/actividades/${actividadId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al editar actividad');
+        }
+        return await res.json();
+      },
+
+      async borrarActividad(clienteId, actividadId) {
+        const res = await fetch(`/api/clientes/${clienteId}/actividades/${actividadId}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al borrar actividad');
+        }
+        return await res.json();
+      },
+
+      async completarActividad(clienteId, actividadId) {
+        const res = await fetch(`/api/clientes/${clienteId}/actividades/${actividadId}/completar`, {
+          method: 'POST'
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al completar actividad');
+        }
+        return await res.json();
+      }
+    };
+
+    // ========================================================
+    // COMPONENTE: FORMULARIO CLIENTE (ALTA Y EDICIÓN)
+    // ========================================================
+    function ClienteForm({ initialData, onGuardar, onCancelar }) {
+      const [formData, setFormData] = useState({
+        nombre: initialData ? initialData.nombre : '',
+        apellido: initialData ? initialData.apellido : '',
+        email: initialData ? initialData.email : '',
+        telefono: initialData ? (initialData.telefono || '') : '',
+        domicilio: initialData ? (initialData.domicilio || '') : '',
+        localidad: initialData ? (initialData.localidad || '') : '',
+      });
+      const [error, setError] = useState('');
+
+      const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.nombre.trim() || !formData.apellido.trim() || !formData.email.trim()) {
+          setError('Nombre, Apellido y Email son obligatorios.');
+          return;
+        }
+        setError('');
+        onGuardar(formData);
+      };
+
+      return (
+        <div className="client-form-container">
+          <h2 className="form-header-title">
+            {initialData ? 'Editar Cliente' : 'Nuevo Cliente'}
+          </h2>
+
+          {error && (
+            <div style={{ color: 'var(--danger)', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="client-form">
+            {/* Primera fila: Nombre y Apellido */}
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="nombre">Nombre *</label>
+                <input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  required
+                  className="form-input"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  placeholder="Ej. Lucas"
+                  autoFocus
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="apellido">Apellido *</label>
+                <input
+                  id="apellido"
+                  name="apellido"
+                  type="text"
+                  required
+                  className="form-input"
+                  value={formData.apellido}
+                  onChange={handleChange}
+                  placeholder="Ej. Rossi"
+                />
+              </div>
+            </div>
+
+            {/* Segunda fila: Email y Teléfono */}
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="email">Email *</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="form-input"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="ejemplo@correo.com"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="telefono">Teléfono</label>
+                <input
+                  id="telefono"
+                  name="telefono"
+                  type="tel"
+                  className="form-input"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  placeholder="Ej. 381-4567890"
+                />
+              </div>
+            </div>
+
+            {/* Tercera fila: Domicilio y Localidad */}
+            <div className="form-row">
+              <div className="form-field">
+                <label htmlFor="domicilio">Domicilio</label>
+                <input
+                  id="domicilio"
+                  name="domicilio"
+                  type="text"
+                  className="form-input"
+                  value={formData.domicilio}
+                  onChange={handleChange}
+                  placeholder="Ej. San Martín 450"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="localidad">Localidad</label>
+                <input
+                  id="localidad"
+                  name="localidad"
+                  type="text"
+                  className="form-input"
+                  value={formData.localidad}
+                  onChange={handleChange}
+                  placeholder="Ej. San Miguel de Tucumán"
+                />
+              </div>
+            </div>
+
+            {/* Botones debajo */}
+            <div className="form-buttons-row">
+              <button type="submit" className="btn btn-primary">
+                Guardar
+              </button>
+              <button type="button" onClick={onCancelar} className="btn btn-secondary">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    // ========================================================
+    // COMPONENTE: SUBFORMULARIO DE ACTIVIDADES (DETALLE)
+    // ========================================================
+    function ActividadSubform({ actividadEditando, onGuardar, onCancelar }) {
+      const [descripcion, setDescripcion] = useState('');
+      const [fechaCompromiso, setFechaCompromiso] = useState('');
+      const inputRef = useRef(null);
+
+      useEffect(() => {
+        if (actividadEditando) {
+          setDescripcion(actividadEditando.descripcion || '');
+          setFechaCompromiso(actividadEditando.fechaCompromiso || '');
+          if (inputRef.current) inputRef.current.focus();
+        } else {
+          setDescripcion('');
+          setFechaCompromiso('');
+        }
+      }, [actividadEditando]);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!descripcion.trim()) return;
+        onGuardar({
+          descripcion: descripcion.trim(),
+          fechaCompromiso: fechaCompromiso || null
+        });
+        setDescripcion('');
+        setFechaCompromiso('');
+      };
+
+      const handleCancelar = () => {
+        setDescripcion('');
+        setFechaCompromiso('');
+        onCancelar();
+      };
+
+      return (
+        <div className="activity-subform-wrapper">
+          <form onSubmit={handleSubmit} className="activity-subform" aria-label="Formulario de actividad">
+            <input
+              ref={inputRef}
+              type="text"
+              className="activity-input-desc"
+              placeholder={actividadEditando ? "Modificar descripción del compromiso..." : "Nuevo compromiso o tarea para este cliente..."}
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              aria-label="Descripción de la actividad"
+              required
+            />
+            <input
+              type="date"
+              className="activity-input-date"
+              value={fechaCompromiso}
+              onChange={(e) => setFechaCompromiso(e.target.value)}
+              aria-label="Fecha de compromiso opcional"
+              title="Fecha de compromiso opcional"
+            />
+            <button
+              type="submit"
+              className="icon-btn save"
+              title={actividadEditando ? "Actualizar actividad" : "Guardar compromiso"}
+              aria-label="Guardar"
+            >
+              <IconSave />
+            </button>
+            {(actividadEditando || descripcion || fechaCompromiso) && (
+              <button
+                type="button"
+                onClick={handleCancelar}
+                className="icon-btn"
+                title="Cancelar"
+                aria-label="Cancelar"
+              >
+                <IconCancel />
+              </button>
+            )}
+          </form>
+        </div>
+      );
+    }
+
+    // ========================================================
+    // APLICACIÓN PRINCIPAL (MINICRM)
+    // ========================================================
+    function MiniCRMApp() {
+      const [clientes, setClientes] = useState([]);
+      const [busqueda, setBusqueda] = useState('');
+      const [clienteSeleccionadoId, setClienteSeleccionadoId] = useState(null);
+      const [clienteDetalle, setClienteDetalle] = useState(null);
+      const [modoFormCliente, setModoFormCliente] = useState(null); // null | 'crear' | 'editar'
+      const [actividadEnEdicion, setActividadEnEdicion] = useState(null);
+      const [cargando, setCargando] = useState(true);
+
+      // Cargar lista de clientes
+      const cargarClientes = async (filtro = busqueda) => {
+        try {
+          const lista = await ApiService.getClientes(filtro);
+          setClientes(lista);
+          
+          // Si hay cliente seleccionado y no se encuentra o no hay ninguno, seleccionar el primero
+          if (!clienteSeleccionadoId && lista.length > 0 && modoFormCliente === null) {
+            setClienteSeleccionadoId(lista[0].id);
+          }
+        } catch (err) {
+          console.error('Error cargando clientes:', err);
+        } finally {
+          setCargando(false);
+        }
+      };
+
+      // Cargar detalle completo del cliente seleccionado
+      const cargarDetalleCliente = async (id) => {
+        if (!id) {
+          setClienteDetalle(null);
+          return;
+        }
+        try {
+          const detalle = await ApiService.getCliente(id);
+          setClienteDetalle(detalle);
+        } catch (err) {
+          console.error('Error cargando detalle de cliente:', err);
+        }
+      };
+
+      // Efecto inicial para cargar clientes
+      useEffect(() => {
+        cargarClientes();
+      }, []);
+
+      // Búsqueda en vivo
+      useEffect(() => {
+        const timeout = setTimeout(() => {
+          cargarClientes(busqueda);
+        }, 150);
+        return () => clearTimeout(timeout);
+      }, [busqueda]);
+
+      // Efecto al cambiar el cliente seleccionado
+      useEffect(() => {
+        if (clienteSeleccionadoId) {
+          cargarDetalleCliente(clienteSeleccionadoId);
+          setActividadEnEdicion(null);
+        }
+      }, [clienteSeleccionadoId]);
+
+      // Handlers de Clientes
+      const handleNuevoCliente = () => {
+        setModoFormCliente('crear');
+        setActividadEnEdicion(null);
+      };
+
+      const handleEditarCliente = () => {
+        setModoFormCliente('editar');
+        setActividadEnEdicion(null);
+      };
+
+      const handleGuardarCliente = async (datos) => {
+        try {
+          if (modoFormCliente === 'crear') {
+            const nuevo = await ApiService.crearCliente(datos);
+            setModoFormCliente(null);
+            await cargarClientes();
+            setClienteSeleccionadoId(nuevo.id);
+          } else if (modoFormCliente === 'editar' && clienteDetalle) {
+            const actualizado = await ApiService.actualizarCliente(clienteDetalle.id, datos);
+            setModoFormCliente(null);
+            await cargarClientes();
+            await cargarDetalleCliente(actualizado.id);
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const handleEliminarCliente = async () => {
+        if (!clienteDetalle) return;
+        const confirmacion = confirm(`¿Estás seguro de eliminar a ${clienteDetalle.nombre} ${clienteDetalle.apellido} y todas sus actividades?`);
+        if (!confirmacion) return;
+
+        try {
+          await ApiService.eliminarCliente(clienteDetalle.id);
+          const siguienteId = clientes.find(c => c.id !== clienteDetalle.id)?.id || null;
+          setClienteSeleccionadoId(siguienteId);
+          await cargarClientes();
+        } catch (err) {
+          alert('Error al eliminar cliente: ' + err.message);
+        }
+      };
+
+      // Handlers de Actividades
+      const handleGuardarActividad = async (datos) => {
+        if (!clienteDetalle) return;
+        try {
+          if (actividadEnEdicion) {
+            await ApiService.actualizarActividad(clienteDetalle.id, actividadEnEdicion.id, datos);
+            setActividadEnEdicion(null);
+          } else {
+            await ApiService.crearActividad(clienteDetalle.id, datos);
+          }
+          await cargarDetalleCliente(clienteDetalle.id);
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const handleCompletarActividad = async (actividadId) => {
+        if (!clienteDetalle) return;
+        try {
+          await ApiService.completarActividad(clienteDetalle.id, actividadId);
+          await cargarDetalleCliente(clienteDetalle.id);
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      const handleBorrarActividad = async (actividadId) => {
+        if (!clienteDetalle) return;
+        const confirmacion = confirm('¿Eliminar esta actividad?');
+        if (!confirmacion) return;
+
+        try {
+          await ApiService.borrarActividad(clienteDetalle.id, actividadId);
+          if (actividadEnEdicion && actividadEnEdicion.id === actividadId) {
+            setActividadEnEdicion(null);
+          }
+          await cargarDetalleCliente(clienteDetalle.id);
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      // Separación de actividades
+      const { compromisos, completadas } = useMemo(() => {
+        if (!clienteDetalle || !clienteDetalle.actividades) {
+          return { compromisos: [], completadas: [] };
+        }
+        return {
+          compromisos: clienteDetalle.actividades.filter(a => !a.estaCompletada),
+          completadas: clienteDetalle.actividades.filter(a => a.estaCompletada)
+        };
+      }, [clienteDetalle]);
+
+      return (
+        <div className="app-container">
+          {/* ==========================================
+              PANEL MAESTRO (IZQUIERDA)
+              ========================================== */}
+          <aside className="master-pane">
+            <header className="master-header">
+              <div className="master-title-bar">
+                <div className="brand-title">
+                  MiniCRM <span className="brand-badge">PRO</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleNuevoCliente}
+                  title="Agregar nuevo cliente"
+                >
+                  <IconPlus /> Agregar
+                </button>
+              </div>
+
+              {/* Búsqueda en vivo */}
+              <div className="search-box">
+                <IconSearch />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar por cualquier campo..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  aria-label="Buscar clientes"
+                />
+              </div>
+            </header>
+
+            {/* Listado con scroll vertical interno */}
+            <ul className="client-list">
+              {cargando && clientes.length === 0 ? (
+                <div className="empty-group-text" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+                  Cargando clientes...
+                </div>
+              ) : clientes.length === 0 ? (
+                <div className="empty-group-text" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+                  No se encontraron clientes con "{busqueda}"
+                </div>
+              ) : (
+                clientes.map((c) => {
+                  const isSelected = clienteSeleccionadoId === c.id && modoFormCliente === null;
+                  return (
+                    <li
+                      key={c.id}
+                      className={`client-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        setClienteSeleccionadoId(c.id);
+                        setModoFormCliente(null);
+                      }}
+                    >
+                      <div className="client-item-header">
+                        <span className="client-name">{c.nombre} {c.apellido}</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', fontWeight: 600 }}>
+                          #{c.id}
+                        </span>
+                      </div>
+                      <div className="client-email">{c.email}</div>
+                      <div className="client-submeta">
+                        {c.telefono && <span>📞 {c.telefono}</span>}
+                        {c.localidad && <span>📍 {c.localidad}</span>}
+                      </div>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          </aside>
+
+          {/* ==========================================
+              PANEL DETALLE (DERECHA)
+              ========================================== */}
+          <main className="detail-pane">
+            {modoFormCliente !== null ? (
+              /* FORMULARIO DE ALTA O EDICIÓN DE CLIENTE */
+              <ClienteForm
+                initialData={modoFormCliente === 'editar' ? clienteDetalle : null}
+                onGuardar={handleGuardarCliente}
+                onCancelar={() => setModoFormCliente(null)}
+              />
+            ) : clienteDetalle ? (
+              /* VISTA DE FICHA Y ACTIVIDADES DEL CLIENTE */
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                {/* FICHA DEL CLIENTE */}
+                <section className="client-card">
+                  <div className="card-top">
+                    <div className="card-title-group">
+                      <h1 className="card-client-name">
+                        {clienteDetalle.nombre} {clienteDetalle.apellido}
+                      </h1>
+                    </div>
+
+                    <div className="card-actions-right">
+                      <span className="client-id-badge">#{clienteDetalle.id}</span>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={handleEditarCliente}
+                        title="Editar cliente"
+                      >
+                        <IconEdit /> Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        onClick={handleEliminarCliente}
+                        title="Eliminar cliente"
+                      >
+                        <IconTrash /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="client-info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Email</span>
+                      <span className="info-value">{clienteDetalle.email}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Teléfono</span>
+                      <span className="info-value">{clienteDetalle.telefono || '—'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Domicilio</span>
+                      <span className="info-value">{clienteDetalle.domicilio || '—'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Localidad</span>
+                      <span className="info-value">{clienteDetalle.localidad || '—'}</span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* SUBFORMULARIO DE ACTIVIDADES EN EL DETALLE */}
+                <ActividadSubform
+                  actividadEditando={actividadEnEdicion}
+                  onGuardar={handleGuardarActividad}
+                  onCancelar={() => setActividadEnEdicion(null)}
+                />
+
+                {/* SCROLL INTERNO DE ACTIVIDADES */}
+                <div className="activities-scroll-area">
+                  {/* SECCIÓN 1: COMPROMISOS (PENDIENTES) */}
+                  <section className="activity-section">
+                    <div className="activity-section-header">
+                      <span className="activity-section-title">Compromisos Pendientes</span>
+                      <span className="activity-count">{compromisos.length}</span>
+                    </div>
+
+                    {compromisos.length === 0 ? (
+                      <div className="empty-group-text">No hay compromisos pendientes.</div>
+                    ) : (
+                      <ul className="activity-list">
+                        {compromisos.map((act) => (
+                          <li
+                            key={act.id}
+                            className={`activity-item ${act.estaVencida ? 'vencida' : ''}`}
+                          >
+                            <button
+                              type="button"
+                              className="activity-checkbox-btn"
+                              onClick={() => handleCompletarActividad(act.id)}
+                              title="Marcar como completada"
+                              aria-label={`Completar actividad: ${act.descripcion}`}
+                            >
+                              <IconCircle />
+                            </button>
+
+                            <div className="activity-body">
+                              <span className="activity-desc">{act.descripcion}</span>
+                              <div className="activity-meta">
+                                {act.fechaCompromiso ? (
+                                  <span>Compromiso: {act.fechaCompromiso}</span>
+                                ) : (
+                                  <span>Sin fecha asignada</span>
+                                )}
+                                {act.estaVencida && (
+                                  <span className="badge-vencido">Vencido</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="activity-actions">
+                              <button
+                                type="button"
+                                className="icon-btn"
+                                onClick={() => setActividadEnEdicion(act)}
+                                title="Editar compromiso"
+                                aria-label="Editar"
+                              >
+                                <IconEdit />
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-btn danger"
+                                onClick={() => handleBorrarActividad(act.id)}
+                                title="Borrar compromiso"
+                                aria-label="Borrar"
+                              >
+                                <IconTrash />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+
+                  {/* SECCIÓN 2: ACTIVIDADES COMPLETADAS */}
+                  <section className="activity-section">
+                    <div className="activity-section-header">
+                      <span className="activity-section-title">Actividades Completadas</span>
+                      <span className="activity-count">{completadas.length}</span>
+                    </div>
+
+                    {completadas.length === 0 ? (
+                      <div className="empty-group-text">No hay actividades completadas todavía.</div>
+                    ) : (
+                      <ul className="activity-list">
+                        {completadas.map((act) => (
+                          <li key={act.id} className="activity-item completed">
+                            <button
+                              type="button"
+                              className="activity-checkbox-btn"
+                              disabled
+                              title="Actividad completada"
+                              aria-label="Completada"
+                            >
+                              <IconCheckCircle />
+                            </button>
+
+                            <div className="activity-body">
+                              <span className="activity-desc">{act.descripcion}</span>
+                              <div className="activity-meta">
+                                <span>Finalizada el {act.fechaFinalizacion}</span>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </div>
+              </div>
+            ) : (
+              <div className="empty-detail">
+                <h3>Selecciona un cliente</h3>
+                <p>O haz clic en "+ Agregar" para registrar un nuevo cliente en el sistema.</p>
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    // Renderizado en el elemento root de React 18
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<MiniCRMApp />);
+  </script>
+</body>
+</html>
