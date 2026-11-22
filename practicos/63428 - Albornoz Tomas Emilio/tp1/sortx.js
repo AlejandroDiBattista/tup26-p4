@@ -120,3 +120,13 @@ function sortRows({ width, header, rows }, { sortFields }) {
   });
   return { header, rows: prepared.map(({ row }) => row) };
 }
+
+import { writeFileSync } from 'node:fs';
+
+function serialize({ header, rows }, delimiter) {
+  return (header ? [header, ...rows] : rows).map(row => row.join(delimiter)).join('\n') + '\n';
+}
+
+function writeOutput(path, text) {
+  writeFileSync(path, text, 'utf8');
+}
