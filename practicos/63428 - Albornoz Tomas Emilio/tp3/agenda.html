@@ -1,33 +1,217 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenda de alumnos</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 20px; background: #f5f6f4; color: #253228; font: 16px system-ui, sans-serif; }
+    main { max-width: 1104px; margin: auto; }
+    button, input { font: inherit; }
+    button { cursor: pointer; border: 1px solid #b9c7bc; border-radius: 8px; background: white; color: inherit; padding: .55rem .85rem; }
+    :focus-visible { outline: 3px solid #407848; outline-offset: 3px; }
+    .principal { color: white; background: #315f39; border-color: #315f39; }
+    main > header {
+      margin-bottom: 20px;
+      & h1 { margin: 0 0 16px; }
+      & > div { display: flex; gap: 12px; }
+      & input { flex: 1; min-width: 0; }
+    }
+    input { width: 100%; padding: .6rem .75rem; border: 1px solid #b9c7bc; border-radius: 8px; background: white; }
+    #tarjetas {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+      & > p { grid-column: 1 / -1; }
+      & article {
+        position: relative; min-width: 0; padding: 24px 16px 16px; border: 1px solid #d9ded9;
+        border-radius: 16px; background: white; text-align: center; cursor: pointer; overflow-wrap: anywhere;
+        & h2 { margin: 0 28px 8px; font-size: 1.12rem; }
+        & address { font-style: normal; line-height: 1.55; }
+        & footer { color: #506256; margin-top: 12px; }
+        & button { position: absolute; top: 8px; right: 8px; padding: .2rem .45rem; font-size: 1.3rem; }
+      }
+    }
+    dialog {
+      width: min(480px, calc(100% - 32px)); border: 1px solid #d9ded9; border-radius: 16px; padding: 24px;
+      &::backdrop { background: #14221780; }
+      & h2 { margin-top: 0; }
+      & form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      & label { display: grid; gap: 4px; }
+      & footer { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+      & #error { grid-column: 1 / -1; margin: 0; color: #a22222; }
+      & #eliminar { color: #a22222; margin-right: auto; }
+    }
+    @media (max-width: 870px) { #tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 570px) { #tarjetas { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <main id="app"></main>
+  <main>
+    <header>
+      <h1>Agenda de alumnos</h1>
+      <div>
+        <input id="buscar" type="search" aria-label="Buscar alumnos" placeholder="Buscar alumnos…">
+        <button id="agregar" class="principal" type="button" disabled>Agregar</button>
+      </div>
+    </header>
+    <section id="tarjetas" aria-label="Alumnos"></section>
+  </main>
+  <dialog aria-labelledby="titulo-formulario">
+    <h2 id="titulo-formulario"></h2>
+    <form>
+      <label>Apellido <input name="apellido" required autofocus></label>
+      <label>Nombre <input name="nombre" required></label>
+      <label>Legajo <input name="legajo" inputmode="numeric" pattern="[0-9]+" required></label>
+      <label>Comisión <input name="comision" required></label>
+      <label>Teléfono <input name="telefono" type="tel" required></label>
+      <label>Usuario de GitHub <input name="github" required></label>
+      <p id="error" role="alert" hidden></p>
+      <footer>
+        <button id="eliminar" type="button">Eliminar</button>
+        <button id="cancelar" type="button">Cancelar</button>
+        <button class="principal" type="submit">Guardar</button>
+      </footer>
+    </form>
+  </dialog>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core';
 
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+    const clave = 'tp3-agenda-63428';
+    const estado = reactive({ alumnos: [], busqueda: '', estadoCarga: 'Cargando alumnos…' });
+    const dialogo = document.querySelector('dialog');
+    const formulario = dialogo.querySelector('form');
+    const error = document.querySelector('#error');
+    const agregar = document.querySelector('#agregar');
+    const eliminar = document.querySelector('#eliminar');
+    let alumnoEnEdicion = null;
+    let tarjetaAnterior = null;
+
+    const comparar = new Intl.Collator('es', { sensitivity: 'base' });
+    const normalizar = valor => String(valor ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+    function guardar(alumnos) {
+      localStorage.setItem(clave, JSON.stringify(alumnos));
+      estado.alumnos = alumnos;
+    }
+
+    async function cargar() {
+      try {
+        const guardados = localStorage.getItem(clave);
+        if (guardados === null) {
+          const respuesta = await fetch('./alumnos.json');
+          if (!respuesta.ok) throw new Error('No se pudo leer alumnos.json');
+          guardar(await respuesta.json());
+        } else {
+          estado.alumnos = JSON.parse(guardados);
+        }
+        estado.estadoCarga = '';
+        agregar.disabled = false;
+      } catch {
+        estado.estadoCarga = 'No se pudo cargar la agenda. Abrí la carpeta desde un servidor HTTP local.';
+      }
+    }
+
+    function visibles() {
+      const terminos = normalizar(estado.busqueda).trim().split(/\s+/);
+      return estado.alumnos.filter(alumno => {
+        const texto = normalizar([alumno.apellido, alumno.nombre, alumno.legajo, alumno.comision, alumno.telefono, alumno.github].join(' '));
+        return terminos.every(termino => texto.includes(termino));
+      }).sort((a, b) => Number(b.favorito) - Number(a.favorito)
+        || comparar.compare(a.apellido, b.apellido) || comparar.compare(a.nombre, b.nombre));
+    }
+
+    function alternarFavorito(id, enfocarBoton = false) {
+      guardar(estado.alumnos.map(alumno => alumno.id === id ? { ...alumno, favorito: !alumno.favorito } : alumno));
+      requestAnimationFrame(() => {
+        const tarjeta = document.getElementById('alumno-' + id);
+        (enfocarBoton ? tarjeta?.querySelector('button') : tarjeta)?.focus();
+      });
+    }
+
+    function abrirFormulario(alumno = null) {
+      alumnoEnEdicion = alumno;
+      tarjetaAnterior = alumno?.id ?? null;
+      formulario.reset();
+      error.hidden = true;
+      eliminar.hidden = alumno === null;
+      document.querySelector('#titulo-formulario').textContent = alumno ? 'Editar alumno' : 'Agregar alumno';
+      for (const campo of formulario.querySelectorAll('input')) campo.value = alumno?.[campo.name] ?? '';
+      dialogo.showModal();
+    }
+
+    function mostrarError(mensaje) {
+      error.textContent = mensaje;
+      error.hidden = false;
+    }
+
+    formulario.addEventListener('submit', evento => {
+      evento.preventDefault();
+      const datos = Object.fromEntries([...new FormData(formulario)].map(([campo, valor]) => [campo, valor.trim()]));
+      if (Object.values(datos).some(valor => !valor)) return mostrarError('Completá todos los campos.');
+      if (estado.alumnos.some(alumno => String(alumno.legajo) === datos.legajo && alumno.id !== alumnoEnEdicion?.id)) {
+        return mostrarError('Ya existe un alumno con ese legajo.');
+      }
+      try {
+        if (alumnoEnEdicion) {
+          guardar(estado.alumnos.map(alumno => alumno.id === alumnoEnEdicion.id ? { ...alumno, ...datos } : alumno));
+        } else {
+          const id = crypto.randomUUID();
+          guardar([...estado.alumnos, { ...datos, id, favorito: false }]);
+          tarjetaAnterior = id;
+        }
+        dialogo.close();
+      } catch {
+        mostrarError('No se pudieron guardar los cambios.');
+      }
+    });
+
+    eliminar.addEventListener('click', () => {
+      try {
+        guardar(estado.alumnos.filter(alumno => alumno.id !== alumnoEnEdicion.id));
+        dialogo.close();
+      } catch {
+        mostrarError('No se pudo eliminar el alumno.');
+      }
+    });
+    document.querySelector('#cancelar').addEventListener('click', () => dialogo.close());
+    dialogo.addEventListener('close', () => {
+      requestAnimationFrame(() => (document.getElementById('alumno-' + tarjetaAnterior) ?? agregar).focus());
+    });
+    agregar.addEventListener('click', () => abrirFormulario());
+    document.querySelector('#buscar').addEventListener('input', evento => estado.busqueda = evento.target.value);
+
+    function tarjeta(alumno) {
+      return html`
+        <article id="${'alumno-' + alumno.id}" tabindex="0" aria-label="${alumno.apellido + ', ' + alumno.nombre}"
+          @click="${() => abrirFormulario(alumno)}"
+          @keydown="${evento => {
+            if (evento.target !== evento.currentTarget) return;
+            if (evento.key === 'Enter') abrirFormulario(alumno);
+            if (evento.key === ' ') {
+              evento.preventDefault();
+              alternarFavorito(alumno.id);
+            }
+          }}">
+          <h2>${alumno.apellido}, ${alumno.nombre}</h2>
+          <address><div>${alumno.telefono}</div><div>${'GitHub: ' + alumno.github}</div></address>
+          <footer>${alumno.comision} · Legajo ${alumno.legajo}</footer>
+          <button type="button" aria-label="Favorito" aria-pressed="${String(alumno.favorito)}"
+            @click="${evento => {
+              evento.stopPropagation();
+              alternarFavorito(alumno.id, true);
+            }}">${alumno.favorito ? '★' : '☆'}</button>
+        </article>
+      `;
+    }
+
+    html`${() => {
+      if (estado.estadoCarga) return html`<p role="status">${estado.estadoCarga}</p>`;
+      const alumnos = visibles();
+      return alumnos.length ? alumnos.map(tarjeta) : html`<p role="status">No hay alumnos para mostrar.</p>`;
+    }}`(document.querySelector('#tarjetas'));
+
+    cargar();
   </script>
 </body>
 </html>
