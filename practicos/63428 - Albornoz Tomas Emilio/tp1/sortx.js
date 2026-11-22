@@ -36,3 +36,39 @@ EJEMPLOS:
 
 // Escribir aqui la solución al enunciado.
 console.log(HELP)
+function parseArgs(args) {
+  const config = { delimiter: ',', noHeader: false, sortFields: [] };
+  const files = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '-h' || arg === '--help') return { help: true };
+    if (arg === '-nh' || arg === '--no-header') {
+      config.noHeader = true;
+    } else if (['-b', '--by', '-d', '--delimiter'].includes(arg)) {
+      const value = args[++i];
+      if (value === undefined || value.startsWith('-')) {
+        if (value !== '-' || arg === '-b' || arg === '--by') {
+          throw new Error('Falta el valor de ' + arg);
+        }
+      }
+      if (arg === '-d' || arg === '--delimiter') {
+        config.delimiter = value === '\\t' ? '\u0009' : value;
+      } else {
+        const [name, type = 'alpha', order = 'asc', extra] = value.split(':');
+        if (!name || !['alpha', 'num'].includes(type) || !['asc', 'desc'].includes(order) || extra !== undefined) {
+          throw new Error('Criterio invÃ¡lido: ' + value);
+        }
+        config.sortFields.push({ name, numeric: type === 'num', descending: order === 'desc' });
+      }
+    } else if (arg.startsWith('-')) {
+      throw new Error('OpciÃ³n desconocida: ' + arg);
+    } else {
+      files.push(arg);
+    }
+  }
+  if (files.length !== 2) throw new Error('IndicÃ¡ exactamente un archivo de origen y uno de destino');
+  if (config.sortFields.length === 0) throw new Error('IndicÃ¡ al menos un criterio con --by');
+  if ([...config.delimiter].length !== 1 || /["\r\n]/.test(config.delimiter)) throw new Error('Delimitador invÃ¡lido');
+  [config.inputFile, config.outputFile] = files;
+  return config;
+}
