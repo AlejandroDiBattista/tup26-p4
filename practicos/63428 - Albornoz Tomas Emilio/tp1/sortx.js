@@ -72,3 +72,24 @@ function parseArgs(args) {
   [config.inputFile, config.outputFile] = files;
   return config;
 }
+
+import { readFileSync } from 'node:fs';
+
+function readInput(path) {
+  return readFileSync(path, 'utf8');
+}
+
+function parseDelimited(text, { delimiter, noHeader }) {
+  if (text.includes('"')) throw new Error('La entrada contiene comillas dobles');
+  const lines = text.replace(/^\uFEFF/, '').split(/\r\n|\n|\r/);
+  if (lines.at(-1) === '') lines.pop();
+  if (lines.length === 0) throw new Error('El archivo de origen estÃ¡ vacÃ­o');
+  const rows = lines.map((line, index) => {
+    const fields = line.split(delimiter);
+    if (fields.length !== lines[0].split(delimiter).length) {
+      throw new Error('Cantidad de campos incorrecta en la fila ' + (index + 1));
+    }
+    return fields;
+  });
+  return { width: rows[0].length, header: noHeader ? null : rows.shift(), rows };
+}
