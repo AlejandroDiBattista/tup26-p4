@@ -93,3 +93,30 @@ function parseDelimited(text, { delimiter, noHeader }) {
   });
   return { width: rows[0].length, header: noHeader ? null : rows.shift(), rows };
 }
+
+function sortRows({ width, header, rows }, { sortFields }) {
+  const criteria = sortFields.map(field => {
+    const index = header ? header.indexOf(field.name) : /^\d+$/.test(field.name) ? Number(field.name) : -1;
+    if (index < 0 || index >= width) throw new Error('Campo inexistente: ' + field.name);
+    return { ...field, index };
+  });
+  const collator = new Intl.Collator('es');
+  const prepared = rows.map(row => ({
+    row,
+    keys: criteria.map(({ index, numeric, name }) => {
+      const value = row[index];
+      if (!numeric) return value;
+      const number = Number(value);
+      if (!value.trim() || !Number.isFinite(number)) throw new Error('Valor no numÃ©rico en ' + name + ': ' + value);
+      return number;
+    }),
+  }));
+  prepared.sort((a, b) => {
+    for (const [i, field] of criteria.entries()) {
+      const order = field.numeric ? Math.sign(a.keys[i] - b.keys[i]) : collator.compare(a.keys[i], b.keys[i]);
+      if (order !== 0) return field.descending ? -order : order;
+    }
+    return 0;
+  });
+  return { header, rows: prepared.map(({ row }) => row) };
+}
