@@ -1,40 +1,86 @@
-// Único módulo de formatos (sección 10.6): moneda, fechas, documentos y numeración.
-// Los componentes NO formatean por su cuenta: siempre usan estas funciones.
+/* ==========================================================================
+   MÓDULO CENTRAL DE FORMATOS Y TRANSFORMACIONES (LIB/FORMATO.TS)
+   Este archivo es la fuente única de verdad para el formateo de datos en el sistema:
+   - Moneda ($ 12.345,50) y conversión segura entre pesos y centavos enteros.
+   - Fechas y horas en la zona horaria oficial de Argentina (America/Argentina/Buenos_Aires).
+   - Numeración legal correlativa de facturas (0001-00000045) y recibos (R 0001-00000045).
+   - Formateo de documentos con puntos (DNI 28.456.123) y guiones (CUIT 20-28456123-9).
+   - Diccionarios de etiquetas legibles para medios de pago y tipos de movimientos.
+   ========================================================================== */
 
+/* zona horaria estándar de la República Argentina (UTC-3) */
 export const ZONA_HORARIA = "America/Argentina/Buenos_Aires";
+
+/* punto de venta oficial del local comercial de la ferretería */
 export const PUNTO_DE_VENTA = 1;
 
+/* formateador nativo de JavaScript para moneda argentina:
+   - es-AR: configuración regional de Argentina (usa puntos para miles y comas para decimales)
+   - ARS: pesos argentinos
+   - minimumFractionDigits: 2 decimales obligatorios siempre */
 const formatoMoneda = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
   minimumFractionDigits: 2,
 });
 
-// 1234550 (centavos) -> "$ 12.345,50"
+/* ==========================================================================
+   FUNCIÓN: formatearMoneda
+   ¿Para qué sirve? Convierte una cantidad entera de centavos guardada en la base de datos
+   en un texto amigable para mostrar en pantalla o comprobantes impresos.
+   Ejemplo: 1234550 centavos -> "$ 12.345,50"
+   ========================================================================== */
 export function formatearMoneda(centavos: number | null | undefined): string {
+  /* si el valor es nulo o indefinido mostramos un guión de no disponible */
   if (centavos === null || centavos === undefined) return "—";
-  // Intl usa un espacio especial después del "$": lo cambiamos por uno común.
+  
+  /* dividimos por 100 para convertir de centavos a pesos y reemplazamos espacios especiales */
   return formatoMoneda.format(centavos / 100).replace(/\s/g, " ");
 }
 
-// "12.345,50" o "12345.5" (pesos escritos por el usuario) -> 1234550 centavos. null si no es número.
+/* ==========================================================================
+   FUNCIÓN: pesosACentavos
+   ¿Para qué sirve? Convierte lo que el usuario tipea en un input (ej: "$ 12.345,50" o "12345.5")
+   en el número entero de centavos exacto para guardar en la base de datos (1234550).
+   Maneja formatos argentinos (coma decimal) y formatos de punto decimal.
+   ========================================================================== */
 export function pesosACentavos(textoPesos: string): number | null {
+  /* limpiamos el signo de pesos y los espacios en blanco */
   const limpio = textoPesos.trim().replace(/\$/g, "").replace(/\s/g, "");
   if (limpio === "") return null;
-  // Si tiene coma, la coma es el decimal y los puntos son de miles (formato argentino).
-  const normalizado = limpio.includes(",") ? limpio.replace(/\./g, "").replace(",", ".") : limpio;
+
+  /* normalizamos el formato numérico soportando separador de miles argentino y decimales */
+  let normalizado: string;
+  if (limpio.includes(",")) {
+    normalizado = limpio.replace(/\./g, "").replace(",", ".");
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(limpio)) {
+    normalizado = limpio.replace(/\./g, "");
+  } else {
+    normalizado = limpio;
+  }
   const pesos = Number(normalizado);
+
+  /* si no es un número válido devolvemos null */
   if (Number.isNaN(pesos)) return null;
+
+  /* multiplicamos por 100 y redondeamos con Math.round() para evitar decimales flotantes */
   return Math.round(pesos * 100);
 }
 
-// 1234550 -> "12345,50" (para mostrar un importe dentro de un campo editable)
+/* ==========================================================================
+   FUNCIÓN: centavosATextoPesos
+   ¿Para qué sirve? Convierte centavos en una cadena simple con coma para rellenar
+   valores iniciales de inputs editables (ej: 1234550 -> "12345,50").
+   ========================================================================== */
 export function centavosATextoPesos(centavos: number | null | undefined): string {
   if (centavos === null || centavos === undefined) return "";
   return (centavos / 100).toFixed(2).replace(".", ",");
 }
 
-// Fecha -> "29/10/2026" en hora de Argentina
+/* ==========================================================================
+   FUNCIÓN: formatearFecha
+   ¿Para qué sirve? Convierte una fecha a formato local de Argentina "DD/MM/AAAA".
+   ========================================================================== */
 export function formatearFecha(fecha: Date | string | number): string {
   return new Date(fecha).toLocaleDateString("es-AR", {
     timeZone: ZONA_HORARIA,
@@ -44,7 +90,10 @@ export function formatearFecha(fecha: Date | string | number): string {
   });
 }
 
-// Fecha -> "29/10/2026 15:24"
+/* ==========================================================================
+   FUNCIÓN: formatearFechaHora
+   ¿Para qué sirve? Convierte una fecha a "DD/MM/AAAA HH:MM" en hora de 24 hs.
+   ========================================================================== */
 export function formatearFechaHora(fecha: Date | string | number): string {
   const dia = formatearFecha(fecha);
   const hora = new Date(fecha).toLocaleTimeString("es-AR", {
@@ -56,33 +105,59 @@ export function formatearFechaHora(fecha: Date | string | number): string {
   return `${dia} ${hora}`;
 }
 
-// Fecha -> "2026-10-29" (el día según la hora de Argentina). Sirve para agrupar por día.
+/* ==========================================================================
+   FUNCIÓN: diaArgentino
+   ¿Para qué sirve? Devuelve la fecha en formato estricto "AAAA-MM-DD" según
+   el calendario de Argentina, ideal para agrupar ventas o armar listas temporales.
+   ========================================================================== */
 export function diaArgentino(fecha: Date): string {
-  // "en-CA" formatea como AAAA-MM-DD
   return fecha.toLocaleDateString("en-CA", { timeZone: ZONA_HORARIA });
 }
 
-// "2026-10-29" -> Date del comienzo de ese día en Argentina (UTC-3, sin horario de verano).
+/* ==========================================================================
+   FUNCIÓN: inicioDelDia
+   ¿Para qué sirve? Toma un texto "AAAA-MM-DD" y devuelve el objeto Date
+   correspondiente al primer milisegundo de ese día (00:00:00.000 en UTC-3).
+   ========================================================================== */
 export function inicioDelDia(diaTexto: string): Date {
   return new Date(`${diaTexto}T00:00:00-03:00`);
 }
 
-// "2026-10-29" -> Date del final de ese día en Argentina.
+/* ==========================================================================
+   FUNCIÓN: finDelDia
+   ¿Para qué sirve? Toma un texto "AAAA-MM-DD" y devuelve el objeto Date
+   correspondiente al último milisegundo de ese día (23:59:59.999 en UTC-3).
+   ========================================================================== */
 export function finDelDia(diaTexto: string): Date {
   return new Date(`${diaTexto}T23:59:59.999-03:00`);
 }
 
-// (1, 1233) -> "0001-00001233"
+/* ==========================================================================
+   FUNCIÓN: formatearNumeroFactura
+   ¿Para qué sirve? Formatea el número legal de la factura con ceros a la izquierda:
+   - punto de venta: 4 dígitos (padStart(4, "0"))
+   - número de comprobante: 8 dígitos (padStart(8, "0"))
+   Ejemplo: puntoVenta 1, número 45 -> "0001-00000045"
+   ========================================================================== */
 export function formatearNumeroFactura(puntoVenta: number, numero: number): string {
   return `${String(puntoVenta).padStart(4, "0")}-${String(numero).padStart(8, "0")}`;
 }
 
-// (1, 341) -> "R 0001-00000341"
+/* ==========================================================================
+   FUNCIÓN: formatearNumeroRecibo
+   ¿Para qué sirve? Formatea el número oficial de recibo anteponiendo la letra 'R '.
+   Ejemplo: puntoVenta 1, número 12 -> "R 0001-00000012"
+   ========================================================================== */
 export function formatearNumeroRecibo(puntoVenta: number, numero: number): string {
   return `R ${formatearNumeroFactura(puntoVenta, numero)}`;
 }
 
-// ("DNI", "28456123") -> "28.456.123"   ("CUIT", "20284561239") -> "20-28456123-9"
+/* ==========================================================================
+   FUNCIÓN: formatearDocumento
+   ¿Para qué sirve? Aplica el formato visual correspondiente al tipo de documento:
+   - CUIT: formato "XX-XXXXXXXX-X" (ej: "20-28456123-9")
+   - DNI: formato con puntos de miles (ej: "28.456.123")
+   ========================================================================== */
 export function formatearDocumento(tipoDoc: string, nroDoc: string): string {
   const digitos = nroDoc.replace(/\D/g, "");
   if (tipoDoc === "CUIT" && digitos.length === 11) {
@@ -91,7 +166,10 @@ export function formatearDocumento(tipoDoc: string, nroDoc: string): string {
   return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// Nombres legibles de las formas y medios de pago.
+/* ==========================================================================
+   DICCIONARIOS DE ETIQUETAS LEGIBLES
+   Mapean los valores internos de la base de datos a títulos en español para la vista.
+   ========================================================================== */
 export const NOMBRES_FORMA_PAGO: Record<string, string> = {
   contado: "Contado",
   tarjeta: "Tarjeta",

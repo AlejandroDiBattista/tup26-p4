@@ -226,6 +226,7 @@ export function BotonRegistrarPago({ cliente }: { cliente: ClientePublico }) {
     alTerminar: (recibo) => {
       setAbierto(false);
       router.push(`/clientes/recibos/${recibo.id}`);
+      router.refresh();
     },
   });
 

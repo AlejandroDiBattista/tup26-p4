@@ -1,5 +1,22 @@
-// Pantalla de INICIO · Tablero de control (/). RF-T1, RF-T2, RF-T3.
-// Server Component que llama directamente a los servicios (sección 10.6).
+/* ==========================================================================
+   PANTALLA PRINCIPAL · TABLERO DE CONTROL (DASHBOARD - /)
+   Cumple con los requisitos funcionales RF-T1, RF-T2 y RF-T3 del sistema:
+   
+   - RF-T1: Tarjetas con indicadores del día (ventas de hoy, ventas del mes, deuda en cta. cte. y stock crítico).
+   - RF-T2: Gráficos de tendencias (evolución temporal de los últimos 30 días y distribución por medio de pago).
+   - RF-T3: Ranking de los 5 productos más vendidos del mes y tabla de alertas de reposición de stock.
+   
+   Es un Server Component de Next.js que consulta la capa de servicios directamente en el servidor.
+   ========================================================================== */
+
+/* los import traen enlaces de navegación, iconos visuales, funciones de sesión, servicios y componentes UI:
+   - Link: navegación entre páginas sin recarga completa
+   - Iconos de lucide-react (ShoppingCart, AlertTriangle, TrendingUp, Wallet, PackageCheck)
+   - exigirUsuarioPagina: verifica que haya una sesión abierta o redirige a /login
+   - obtenerTablero: servicio que calcula todos los totales del dashboard
+   - listarProductos: servicio que busca los productos con stock crítico (bajoMinimo=true)
+   - formatearMoneda: convierte los centavos enteros en texto monetario ($ 12.345,50)
+   - componentes visuales de shadcn/ui y primitivas de maquetación */
 import Link from "next/link";
 import { ShoppingCart, AlertTriangle, TrendingUp, Wallet, PackageCheck } from "lucide-react";
 import { exigirUsuarioPagina } from "@/lib/sesion";
@@ -22,16 +39,24 @@ import { EstadoVacio } from "@/componentes/comunes/estados";
 import { GraficosTablero } from "@/componentes/dominio/tablero-graficos";
 import { Alinear, Apilar, Grilla, Pagina, Texto } from "@/componentes/primitivas/maquetacion";
 
+/* exportamos la función asíncrona PaginaTablero que se ejecuta en el servidor */
 export default async function PaginaTablero() {
+  /* 1. Atrapamos el usuario en sesión activa; si no está logueado redirige a /login */
   const usuario = await exigirUsuarioPagina();
+
+  /* 2. Obtenemos todas las métricas, sumatorias y series temporales llamando a obtenerTablero */
   const datosTablero = await obtenerTablero(usuario);
+
+  /* 3. Consultamos los primeros 6 productos cuya existencia sea menor a su stock mínimo */
   const productosBajoMinimo = await listarProductos(usuario, {
     bajoMinimo: "true",
     pageSize: "6",
   });
 
   return (
+    /* componente envoltorio base con márgenes consistentes */
     <Pagina>
+      {/* encabezado del tablero con botón directo al mostrador de nueva venta */}
       <EncabezadoPagina
         titulo="Tablero comercial"
         subtitulo="Resumen en tiempo real de ventas, cuentas corrientes y existencias críticas"
@@ -45,8 +70,10 @@ export default async function PaginaTablero() {
         }
       />
 
-      {/* RF-T1: 4 tarjetas de indicadores principales */}
+      {/* RF-T1: Grilla responsiva de 4 tarjetas con los indicadores numéricos principales */}
       <Grilla className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        
+        {/* Tarjeta 1: Recaudación del día de hoy */}
         <Card>
           <CardHeader>
             <Alinear className="justify-between">
@@ -64,6 +91,7 @@ export default async function PaginaTablero() {
           </CardContent>
         </Card>
 
+        {/* Tarjeta 2: Recaudación acumulada del mes y ticket promedio */}
         <Card>
           <CardHeader>
             <Alinear className="justify-between">
@@ -82,6 +110,7 @@ export default async function PaginaTablero() {
           </CardContent>
         </Card>
 
+        {/* Tarjeta 3: Deuda total en cuenta corriente de clientes */}
         <Card>
           <CardHeader>
             <Alinear className="justify-between">
@@ -106,6 +135,7 @@ export default async function PaginaTablero() {
           </CardContent>
         </Card>
 
+        {/* Tarjeta 4: Cantidad de artículos por debajo del stock mínimo */}
         <Card>
           <CardHeader>
             <Alinear className="justify-between">
@@ -131,14 +161,16 @@ export default async function PaginaTablero() {
         </Card>
       </Grilla>
 
-      {/* RF-T2: Gráficos de ventas de los últimos 30 días y ventas por forma de pago */}
+      {/* RF-T2: Gráficos interactivos de Chart.js (evolución de 30 días y torta de formas de pago) */}
       <GraficosTablero
         ventasDiarias={datosTablero.ventasDiarias}
         porFormaDePago={datosTablero.porFormaDePago}
       />
 
-      {/* RF-T3: Los 5 productos más vendidos del mes + Productos para reponer */}
+      {/* RF-T3: Grilla inferior de 2 columnas con tablas de los más vendidos y alertas de stock */}
       <Grilla className="grid-cols-1 lg:grid-cols-2">
+        
+        {/* Columna Izquierda: Los 5 productos más vendidos del mes */}
         <Card>
           <CardHeader>
             <CardTitle>5 productos más vendidos del mes</CardTitle>
@@ -158,6 +190,7 @@ export default async function PaginaTablero() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* recorremos el ranking de los 5 artículos más vendidos */}
                   {datosTablero.masVendidos.map((item) => (
                     <TableRow key={item.productoId}>
                       <TableCell className="font-mono text-xs">{item.codigo}</TableCell>
@@ -183,6 +216,7 @@ export default async function PaginaTablero() {
           </CardContent>
         </Card>
 
+        {/* Columna Derecha: Artículos con stock crítico para reponer */}
         <Card>
           <CardHeader>
             <Alinear className="justify-between">
@@ -216,6 +250,7 @@ export default async function PaginaTablero() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* listamos los productos que están bajo mínimo con una insignia de advertencia */}
                   {productosBajoMinimo.data.map((prod) => (
                     <TableRow key={prod.id}>
                       <TableCell className="font-mono text-xs">{prod.codigo}</TableCell>
