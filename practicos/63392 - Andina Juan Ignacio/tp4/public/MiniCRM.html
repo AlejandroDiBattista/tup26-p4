@@ -6,26 +6,27 @@
   <title>MiniCRM</title>
   <style>
     :root {
-      --azul-oscuro: #1e3a5f;
-      --azul: #2563eb;
-      --azul-hover: #1d4ed8;
-      --azul-suave: #eff6ff;
-      --azul-borde: #bfdbfe;
-      --rojo: #dc2626;
-      --rojo-hover: #b91c1c;
-      --rojo-suave: #fef2f2;
-      --verde-suave: #ecfdf5;
-      --verde-borde: #a7f3d0;
-      --verde: #059669;
-      --texto: #1f2937;
-      --texto-sec: #475569;
-      --texto-muted: #64748b;
-      --borde: #e2e8f0;
-      --borde-fuerte: #cbd5e1;
+      --azul-header: #163a63;
+      --azul: #1d6fd8;
+      --azul-hover: #185fb8;
+      --azul-suave: #edf5ff;
+      --azul-borde: #cfe0f5;
+      --azul-activo: #e8f1fc;
+      --rojo: #dc3545;
+      --rojo-hover: #c82333;
+      --rojo-suave: #fff1f2;
+      --verde: #28a745;
+      --verde-suave: #edf7f0;
+      --verde-borde: #cce5d4;
+      --texto: #212529;
+      --texto-sec: #495057;
+      --texto-muted: #6c757d;
+      --borde: #dee2e6;
+      --borde-suave: #e9ecef;
       --fondo: #ffffff;
-      --fondo-suave: #f8fafc;
+      --fondo-app: #f4f6f8;
       --radio: 8px;
-      --sombra: 0 1px 2px rgba(0,0,0,0.04);
+      --sombra: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     * { box-sizing: border-box; }
@@ -35,19 +36,20 @@
       overflow: hidden;
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       font-size: 14px;
+      line-height: 1.4;
       color: var(--texto);
-      background: var(--fondo);
+      background: var(--fondo-app);
     }
 
     button {
       font: inherit;
       cursor: pointer;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 6px;
       padding: 8px 14px;
       background: var(--azul);
       color: #fff;
-      transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -60,43 +62,50 @@
     button:focus-visible,
     .cliente-btn:focus-visible,
     input:focus-visible,
-    textarea:focus-visible {
-      outline: 3px solid #93c5fd;
-      outline-offset: 2px;
+    textarea:focus-visible,
+    .chk-completar:focus-visible {
+      outline: 3px solid rgba(29, 111, 216, 0.35);
+      outline-offset: 1px;
     }
 
     button.secundario {
-      background: #f1f5f9;
-      color: var(--texto);
-      border: 1px solid var(--borde-fuerte);
+      background: #fff;
+      color: var(--texto-sec);
+      border-color: var(--borde);
     }
-    button.secundario:hover { background: #e2e8f0; }
+    button.secundario:hover { background: #f8f9fa; color: var(--texto); }
 
-    button.peligro { background: var(--rojo); color: #fff; }
-    button.peligro:hover { background: var(--rojo-hover); }
+    button.peligro { background: var(--rojo); color: #fff; border-color: var(--rojo); }
+    button.peligro:hover { background: var(--rojo-hover); border-color: var(--rojo-hover); }
 
-    button.mini {
-      padding: 6px 10px;
-      font-size: 12px;
-      min-height: 32px;
+    button.btn-icono {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--texto-muted);
+      border-color: transparent;
     }
+    button.btn-icono:hover { background: #f1f3f5; color: var(--texto); }
+    button.btn-icono.peligro-icono:hover { background: var(--rojo-suave); color: var(--rojo); }
 
-    .icono { width: 16px; height: 16px; flex-shrink: 0; }
-    .icono-sm { width: 14px; height: 14px; flex-shrink: 0; }
+    .icono { width: 16px; height: 16px; flex-shrink: 0; display: block; }
+    .icono-sm { width: 15px; height: 15px; flex-shrink: 0; display: block; }
 
     input, textarea {
       font: inherit;
       width: 100%;
-      padding: 8px 10px;
-      border: 1px solid var(--borde-fuerte);
+      padding: 9px 12px;
+      border: 1px solid var(--borde);
       border-radius: 6px;
       background: #fff;
       color: inherit;
     }
     input:focus, textarea:focus {
-      outline: 2px solid #93c5fd;
-      outline-offset: 0;
-      border-color: var(--azul);
+      border-color: #86b7fe;
+      outline: 0;
+      box-shadow: 0 0 0 3px rgba(29,111,216,0.15);
     }
 
     .app-shell {
@@ -109,23 +118,18 @@
     .topbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 0 20px;
-      height: 56px;
-      min-height: 56px;
-      background: var(--azul-oscuro);
+      padding: 0 24px;
+      height: 52px;
+      min-height: 52px;
+      background: var(--azul-header);
       color: #fff;
+      flex-shrink: 0;
     }
     .topbar h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: 0.2px;
-    }
-    .topbar-sub {
-      font-size: 13px;
-      color: #cbd5e1;
     }
 
     .app {
@@ -134,6 +138,7 @@
       flex: 1;
       min-height: 0;
       overflow: hidden;
+      background: #fff;
     }
 
     /* ---------- Maestro ---------- */
@@ -149,28 +154,43 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      padding: 16px;
-      border-bottom: 1px solid var(--borde);
+      gap: 12px;
+      padding: 20px 20px 14px;
     }
-
     .maestro-cabecera h2 {
       margin: 0;
-      font-size: 20px;
+      font-size: 28px;
       font-weight: 700;
-      color: var(--texto);
+      color: #1a1a1a;
+    }
+    .btn-agregar {
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 500;
     }
 
     .buscador {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--borde);
+      padding: 0 20px 16px;
+      border-bottom: 1px solid var(--borde-suave);
     }
-    .buscador label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--texto-sec);
-      margin-bottom: 6px;
+    .buscador-wrap {
+      position: relative;
+    }
+    .buscador-wrap .icono-buscar {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8a949e;
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+    .buscador input {
+      padding-left: 38px;
+      background: #fff;
+      border-color: #ced4da;
+      height: 40px;
     }
 
     .maestro-lista {
@@ -179,10 +199,10 @@
       overflow-y: auto;
       list-style: none;
       margin: 0;
-      padding: 8px;
+      padding: 8px 12px;
     }
 
-    .cliente-item { margin: 0; padding: 0; }
+    .cliente-item { margin: 0 0 2px; padding: 0; }
 
     .cliente-btn {
       width: 100%;
@@ -198,44 +218,41 @@
       text-align: left;
       font: inherit;
     }
-    .cliente-btn:hover { background: #f8fafc; }
+    .cliente-btn:hover { background: #f8f9fa; }
     .cliente-btn.activo {
-      background: var(--azul-suave);
-      border-color: var(--azul-borde);
-      box-shadow: inset 3px 0 0 var(--azul);
+      background: var(--azul-activo);
+      border-color: #d6e6f7;
     }
 
     .avatar {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: #dbeafe;
-      color: #1d4ed8;
+      background: #e3edf7;
+      color: #2c5f8a;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 14px;
       flex-shrink: 0;
-    }
-    .cliente-btn.activo .avatar {
-      background: #2563eb;
-      color: #fff;
+      letter-spacing: 0.2px;
     }
 
     .cliente-texto { min-width: 0; flex: 1; }
     .cliente-texto strong {
       display: block;
-      font-size: 14px;
-      color: var(--texto);
+      font-size: 15px;
+      font-weight: 600;
+      color: #1f2937;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .cliente-texto span {
       display: block;
-      font-size: 12px;
-      color: var(--texto-sec);
+      font-size: 13px;
+      color: var(--texto-muted);
       margin-top: 2px;
       white-space: nowrap;
       overflow: hidden;
@@ -248,8 +265,8 @@
       flex-direction: column;
       min-height: 0;
       min-width: 0;
-      padding: 20px 24px;
-      gap: 16px;
+      padding: 24px 28px;
+      gap: 20px;
       overflow: hidden;
       background: #fff;
     }
@@ -260,38 +277,39 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: var(--texto-sec);
+      color: var(--texto-muted);
       text-align: center;
       gap: 8px;
     }
-    .vacio h2 { margin: 0; font-size: 28px; color: var(--azul-oscuro); }
+    .vacio h2 { margin: 0; font-size: 28px; color: #495057; font-weight: 600; }
     .vacio p { margin: 0; font-size: 15px; }
 
-    .panel {
-      background: #fff;
-      border: 1px solid var(--borde);
-      border-radius: 10px;
-      box-shadow: var(--sombra);
+    .ficha {
+      padding-bottom: 4px;
     }
-
-    .ficha { padding: 20px; }
 
     .ficha-cabecera {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
+      margin-bottom: 14px;
     }
 
     .ficha-identidad { min-width: 0; }
-    .ficha h2 { margin: 0; font-size: 28px; font-weight: 700; color: #111827; }
-    .ficha-ciudad { margin-top: 4px; font-size: 14px; color: var(--texto-sec); }
+    .ficha h2 { margin: 0; font-size: 32px; font-weight: 700; color: #1a1a1a; line-height: 1.2; }
+    .ficha-ciudad {
+      margin-top: 4px;
+      font-size: 15px;
+      color: var(--texto-muted);
+    }
+
+    .acciones { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
 
     .ficha-datos {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px 24px;
-      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .dato {
@@ -300,40 +318,44 @@
       gap: 10px;
       min-width: 0;
       font-size: 14px;
-      color: #334155;
+      color: #495057;
     }
-    .dato .icono { color: #64748b; }
+    .dato .icono { color: #6c757d; }
     .dato-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-    .dato-texto b { color: var(--texto); font-weight: 600; }
 
-    .acciones { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+    .panel { background: #fff; }
 
-    .formulario { padding: 20px; }
-    .formulario h3 { margin: 0 0 14px; font-size: 18px; font-weight: 700; color: #111827; }
+    .formulario {
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      padding: 20px;
+      background: #fff;
+    }
+    .formulario h3 { margin: 0 0 16px; font-size: 20px; font-weight: 700; color: #1a1a1a; }
 
     .grilla {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
+      gap: 14px;
     }
 
-    .campo { display: flex; flex-direction: column; gap: 5px; }
-    .campo label { font-size: 13px; font-weight: 600; color: #334155; }
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    .campo label { font-size: 13px; font-weight: 600; color: #495057; }
 
     .form-acciones {
       display: flex;
       gap: 8px;
       justify-content: flex-end;
-      margin-top: 14px;
+      margin-top: 16px;
       flex-wrap: wrap;
     }
 
     .alerta {
       background: var(--rojo-suave);
-      border: 1px solid #fecaca;
-      color: #991b1b;
+      border: 1px solid #f5c2c7;
+      color: #842029;
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 13px;
     }
 
@@ -343,7 +365,7 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 24px;
       overflow: hidden;
     }
 
@@ -359,26 +381,23 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--borde);
+      gap: 12px;
+      padding: 0 0 12px;
     }
 
-    .bloque-cabecera h3 { margin: 0; font-size: 17px; font-weight: 700; color: #111827; }
-    .contador { color: var(--texto-sec); font-weight: 500; font-size: 14px; }
+    .bloque-cabecera h3 { margin: 0; font-size: 22px; font-weight: 700; color: #1a1a1a; }
+    .contador { color: var(--texto-muted); font-weight: 500; font-size: 18px; margin-left: 2px; }
 
     .subformulario {
-      border-bottom: 1px solid var(--borde);
-      padding: 16px;
-      background: #fbfdff;
+      padding: 0 0 16px;
     }
     .subform-panel {
-      border: 1px dashed #93c5fd;
+      border: 1px solid var(--borde);
       border-radius: 8px;
-      padding: 14px;
-      background: #fff;
+      padding: 16px;
+      background: #fbfcfd;
     }
-    .subform-panel h4 { margin: 0 0 12px; font-size: 14px; color: #1e40af; }
+    .subform-panel h4 { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #495057; }
 
     .subformulario .grilla { grid-template-columns: 1fr 180px; align-items: end; }
     .subformulario textarea { resize: vertical; min-height: 42px; }
@@ -388,8 +407,9 @@
       min-height: 0;
       overflow-y: auto;
       margin: 0;
-      padding: 8px;
+      padding: 0;
       list-style: none;
+      border-top: 1px solid var(--borde-suave);
     }
 
     .actividad {
@@ -397,58 +417,91 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid transparent;
+      padding: 12px 4px;
+      border-bottom: 1px solid var(--borde-suave);
     }
-    .actividad + .actividad { margin-top: 4px; }
-    .actividad:hover { background: #f8fafc; }
 
     .actividad-info { min-width: 0; flex: 1; }
-    .actividad-top { display: flex; align-items: flex-start; gap: 10px; }
-    .actividad-descripcion { word-break: break-word; color: var(--texto); font-size: 14px; line-height: 1.4; }
+    .actividad-row { display: flex; align-items: flex-start; gap: 12px; }
+    .actividad-descripcion { word-break: break-word; color: #212529; font-size: 14px; line-height: 1.45; }
 
     .actividad-fecha {
       display: block;
+      font-size: 13px;
+      color: var(--texto-muted);
+      margin-top: 2px;
+    }
+    .chip-vencida {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 8px;
+      border-radius: 12px;
+      background: var(--rojo-suave);
+      color: #c82333;
       font-size: 12px;
-      color: var(--texto-sec);
-      margin-top: 3px;
+      font-weight: 600;
+      vertical-align: baseline;
     }
-    .vencida { color: var(--rojo); font-weight: 600; }
 
-    .actividad.hecha {
-      background: var(--verde-suave);
-      border-color: var(--verde-borde);
+    .chk-completar {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      margin: 1px 0 0;
+      border: 2px solid #adb5bd;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: grid;
+      place-content: center;
     }
-    .actividad.hecha:hover { background: #e6f7f1; }
-    .actividad.hecha .actividad-descripcion { color: #065f46; }
+    .chk-completar::before {
+      content: "";
+      width: 10px;
+      height: 6px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) scale(0);
+      margin-top: -2px;
+      transition: transform 0.1s ease-in-out;
+    }
+    .chk-completar:hover { border-color: var(--azul); }
+    .chk-completar:checked {
+      background: var(--verde);
+      border-color: var(--verde);
+    }
+    .chk-completar:checked::before { transform: rotate(-45deg) scale(1); }
+
+    .actividad.hecha .actividad-descripcion { color: #495057; }
+    .actividad.hecha .actividad-fecha { color: #5f7a66; }
 
     .check-verde {
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: #d1fae5;
-      color: var(--verde);
+      background: var(--verde);
+      color: #fff;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       margin-top: 1px;
     }
+    .check-verde .icono-sm { width: 12px; height: 12px; }
 
     .vacio-lista {
-      padding: 20px;
-      text-align: center;
-      color: var(--texto-sec);
+      padding: 20px 4px;
+      color: var(--texto-muted);
       font-size: 13px;
     }
 
     .cargando-linea {
-      padding: 10px 16px;
+      padding: 10px 4px;
       font-size: 13px;
-      color: var(--texto-sec);
-      border-bottom: 1px solid var(--borde);
-      background: #f8fafc;
+      color: var(--texto-muted);
+      border-bottom: 1px solid var(--borde-suave);
     }
 
     @media (max-width: 900px) {
@@ -460,19 +513,23 @@
         border-right: 0;
         border-bottom: 1px solid var(--borde);
       }
-      .detalle { padding: 16px; }
-      .ficha h2 { font-size: 24px; }
+      .detalle { padding: 20px; }
+      .ficha h2 { font-size: 28px; }
     }
 
     @media (max-width: 640px) {
-      .topbar { padding: 0 14px; height: 52px; min-height: 52px; }
-      .topbar h1 { font-size: 20px; }
-      .maestro-cabecera, .buscador, .ficha, .formulario, .bloque-cabecera, .subformulario { padding-left: 14px; padding-right: 14px; }
+      .topbar { padding: 0 16px; height: 52px; min-height: 52px; }
+      .topbar h1 { font-size: 22px; }
+      .maestro-cabecera { padding: 16px 16px 12px; }
+      .maestro-cabecera h2 { font-size: 24px; }
+      .buscador { padding: 0 16px 14px; }
+      .detalle { padding: 16px; gap: 16px; }
       .subformulario .grilla { grid-template-columns: 1fr; }
       .ficha-cabecera { flex-direction: column; align-items: stretch; }
       .acciones { justify-content: flex-start; }
       .form-acciones { justify-content: stretch; }
       .form-acciones button { flex: 1; }
+      .bloque-cabecera h3 { font-size: 20px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -492,6 +549,9 @@
 
     const IconoMas = () => (
       <svg className="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    );
+    const IconoBuscar = () => (
+      <svg className="icono-buscar" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     );
     const IconoEditar = () => (
       <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
@@ -768,28 +828,29 @@
         <div className="app-shell">
           <header className="topbar">
             <h1>MiniCRM</h1>
-            <span className="topbar-sub">Gestión de clientes y actividades</span>
           </header>
 
           <div className="app">
             <aside className="maestro" aria-label="Lista de clientes">
               <div className="maestro-cabecera">
                 <h2>Clientes</h2>
-                <button type="button" onClick={agregarCliente}>
+                <button type="button" className="btn-agregar" onClick={agregarCliente}>
                   <IconoMas /> Agregar
                 </button>
               </div>
 
               <div className="buscador">
-                <label htmlFor="buscar-clientes">Buscar cliente</label>
-                <input
-                  id="buscar-clientes"
-                  type="search"
-                  placeholder="Buscar por cualquier campo…"
-                  aria-label="Buscar clientes por cualquier campo"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                />
+                <div className="buscador-wrap">
+                  <IconoBuscar />
+                  <input
+                    id="buscar-clientes"
+                    type="search"
+                    placeholder="Buscar por cualquier campo…"
+                    aria-label="Buscar clientes por cualquier campo"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                  />
+                </div>
               </div>
 
               <ul className="maestro-lista">
@@ -830,7 +891,7 @@
               {error && <div className="alerta" role="alert" aria-live="polite">{error}</div>}
 
               {modoCliente === "alta" || modoCliente === "editar" ? (
-                <form className="panel formulario" onSubmit={guardarCliente}>
+                <form className="formulario" onSubmit={guardarCliente}>
                   <h3>{modoCliente === "alta" ? "Nuevo cliente" : "Editar cliente"}</h3>
                   <div className="grilla">
                     <div className="campo">
@@ -901,7 +962,7 @@
                 </form>
               ) : seleccionado ? (
                 <>
-                  <section className="panel ficha" aria-label="Ficha del cliente">
+                  <section className="ficha" aria-label="Ficha del cliente">
                     <div className="ficha-cabecera">
                       <div className="ficha-identidad">
                         <h2>{seleccionado.nombre}</h2>
@@ -920,30 +981,28 @@
                     <div className="ficha-datos">
                       <div className="dato">
                         <IconoMail />
-                        <span className="dato-texto"><b>Email:</b> {seleccionado.email || "—"}</span>
+                        <span className="dato-texto">{seleccionado.email || "—"}</span>
                       </div>
                       <div className="dato">
                         <IconoTel />
-                        <span className="dato-texto"><b>Teléfono:</b> {seleccionado.telefono || "—"}</span>
+                        <span className="dato-texto">{seleccionado.telefono || "—"}</span>
                       </div>
                       <div className="dato">
                         <IconoPin />
-                        <span className="dato-texto"><b>Dirección:</b> {seleccionado.direccion || "—"}</span>
-                      </div>
-                      <div className="dato">
-                        <IconoPin />
-                        <span className="dato-texto"><b>Ciudad:</b> {seleccionado.ciudad || "—"}</span>
+                        <span className="dato-texto">
+                          {[seleccionado.direccion, seleccionado.ciudad].filter(Boolean).join(", ") || "—"}
+                        </span>
                       </div>
                     </div>
                   </section>
 
                   <div className="actividades">
-                    <section className="panel bloque" aria-label="Compromisos pendientes">
+                    <section className="bloque" aria-label="Compromisos pendientes">
                       <div className="bloque-cabecera">
                         <h3>
                           Compromisos <span className="contador">({pendientes.length})</span>
                         </h3>
-                        <button type="button" className="mini" onClick={agregarActividad}>
+                        <button type="button" className="btn-agregar" onClick={agregarActividad}>
                           <IconoMas /> Agregar actividad
                         </button>
                       </div>
@@ -1007,36 +1066,41 @@
                           return (
                             <li key={actividad.id} className="actividad">
                               <div className="actividad-info">
-                                <div className="actividad-descripcion">{actividad.descripcion}</div>
-                                <span className="actividad-fecha">
-                                  {actividad.fecha ? formatearFecha(actividad.fecha) : "Sin fecha"}
-                                  {vencida && <span className="vencida"> · Vencido</span>}
-                                </span>
+                                <div className="actividad-row">
+                                  <input
+                                    type="checkbox"
+                                    className="chk-completar"
+                                    checked={false}
+                                    aria-label={`Completar actividad: ${actividad.descripcion}`}
+                                    onChange={() => completarActividad(actividad)}
+                                  />
+                                  <div>
+                                    <div className="actividad-descripcion">{actividad.descripcion}</div>
+                                    <span className="actividad-fecha">
+                                      {actividad.fecha ? formatearFecha(actividad.fecha) : "Sin fecha"}
+                                      {vencida && <span className="chip-vencida">Vencido</span>}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                               <div className="acciones">
                                 <button
                                   type="button"
-                                  className="mini secundario"
-                                  aria-label={`Completar actividad: ${actividad.descripcion}`}
-                                  onClick={() => completarActividad(actividad)}
-                                >
-                                  <IconoCheck /> Completar
-                                </button>
-                                <button
-                                  type="button"
-                                  className="mini secundario"
+                                  className="btn-icono"
                                   aria-label={`Editar actividad: ${actividad.descripcion}`}
+                                  title="Editar"
                                   onClick={() => editarActividad(actividad)}
                                 >
-                                  <IconoEditar /> Editar
+                                  <IconoEditar />
                                 </button>
                                 <button
                                   type="button"
-                                  className="mini peligro"
+                                  className="btn-icono peligro-icono"
                                   aria-label={`Borrar actividad: ${actividad.descripcion}`}
+                                  title="Borrar"
                                   onClick={() => eliminarActividad(actividad)}
                                 >
-                                  <IconoBorrar /> Borrar
+                                  <IconoBorrar />
                                 </button>
                               </div>
                             </li>
@@ -1045,7 +1109,7 @@
                       </ul>
                     </section>
 
-                    <section className="panel bloque" aria-label="Actividades completadas">
+                    <section className="bloque" aria-label="Actividades completadas">
                       <div className="bloque-cabecera">
                         <h3>
                           Actividades completadas <span className="contador">({completadas.length})</span>
@@ -1061,7 +1125,7 @@
                         {completadas.map((actividad) => (
                           <li key={actividad.id} className="actividad hecha">
                             <div className="actividad-info">
-                              <div className="actividad-top">
+                              <div className="actividad-row">
                                 <span className="check-verde" aria-hidden="true"><IconoCheck /></span>
                                 <div>
                                   <div className="actividad-descripcion">{actividad.descripcion}</div>
