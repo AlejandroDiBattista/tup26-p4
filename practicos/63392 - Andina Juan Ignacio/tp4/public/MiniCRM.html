@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM</title>
+  <style>
+    :root {
+      --azul-oscuro: #1e3a5f;
+      --azul: #2563eb;
+      --azul-hover: #1d4ed8;
+      --azul-suave: #eff6ff;
+      --azul-borde: #bfdbfe;
+      --rojo: #dc2626;
+      --rojo-hover: #b91c1c;
+      --rojo-suave: #fef2f2;
+      --verde-suave: #ecfdf5;
+      --verde-borde: #a7f3d0;
+      --verde: #059669;
+      --texto: #1f2937;
+      --texto-sec: #475569;
+      --texto-muted: #64748b;
+      --borde: #e2e8f0;
+      --borde-fuerte: #cbd5e1;
+      --fondo: #ffffff;
+      --fondo-suave: #f8fafc;
+      --radio: 8px;
+      --sombra: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; margin: 0; }
+
+    body {
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      color: var(--texto);
+      background: var(--fondo);
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      background: var(--azul);
+      color: #fff;
+      transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--azul-hover); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    button:focus-visible,
+    .cliente-btn:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    button.secundario {
+      background: #f1f5f9;
+      color: var(--texto);
+      border: 1px solid var(--borde-fuerte);
+    }
+    button.secundario:hover { background: #e2e8f0; }
+
+    button.peligro { background: var(--rojo); color: #fff; }
+    button.peligro:hover { background: var(--rojo-hover); }
+
+    button.mini {
+      padding: 6px 10px;
+      font-size: 12px;
+      min-height: 32px;
+    }
+
+    .icono { width: 16px; height: 16px; flex-shrink: 0; }
+    .icono-sm { width: 14px; height: 14px; flex-shrink: 0; }
+
+    input, textarea {
+      font: inherit;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--borde-fuerte);
+      border-radius: 6px;
+      background: #fff;
+      color: inherit;
+    }
+    input:focus, textarea:focus {
+      outline: 2px solid #93c5fd;
+      outline-offset: 0;
+      border-color: var(--azul);
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 20px;
+      height: 56px;
+      min-height: 56px;
+      background: var(--azul-oscuro);
+      color: #fff;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .topbar-sub {
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ---------- Maestro ---------- */
+    .maestro {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #fff;
+      border-right: 1px solid var(--borde);
+    }
+
+    .maestro-cabecera {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 16px;
+      border-bottom: 1px solid var(--borde);
+    }
+
+    .maestro-cabecera h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--texto);
+    }
+
+    .buscador {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--borde);
+    }
+    .buscador label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--texto-sec);
+      margin-bottom: 6px;
+    }
+
+    .maestro-lista {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      list-style: none;
+      margin: 0;
+      padding: 8px;
+    }
+
+    .cliente-item { margin: 0; padding: 0; }
+
+    .cliente-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      font: inherit;
+    }
+    .cliente-btn:hover { background: #f8fafc; }
+    .cliente-btn.activo {
+      background: var(--azul-suave);
+      border-color: var(--azul-borde);
+      box-shadow: inset 3px 0 0 var(--azul);
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #dbeafe;
+      color: #1d4ed8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .cliente-btn.activo .avatar {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .cliente-texto { min-width: 0; flex: 1; }
+    .cliente-texto strong {
+      display: block;
+      font-size: 14px;
+      color: var(--texto);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cliente-texto span {
+      display: block;
+      font-size: 12px;
+      color: var(--texto-sec);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---------- Detalle ---------- */
+    .detalle {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      padding: 20px 24px;
+      gap: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .vacio {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--texto-sec);
+      text-align: center;
+      gap: 8px;
+    }
+    .vacio h2 { margin: 0; font-size: 28px; color: var(--azul-oscuro); }
+    .vacio p { margin: 0; font-size: 15px; }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      box-shadow: var(--sombra);
+    }
+
+    .ficha { padding: 20px; }
+
+    .ficha-cabecera {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .ficha-identidad { min-width: 0; }
+    .ficha h2 { margin: 0; font-size: 28px; font-weight: 700; color: #111827; }
+    .ficha-ciudad { margin-top: 4px; font-size: 14px; color: var(--texto-sec); }
+
+    .ficha-datos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px 24px;
+      margin-top: 16px;
+    }
+
+    .dato {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    .dato .icono { color: #64748b; }
+    .dato-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .dato-texto b { color: var(--texto); font-weight: 600; }
+
+    .acciones { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+
+    .formulario { padding: 20px; }
+    .formulario h3 { margin: 0 0 14px; font-size: 18px; font-weight: 700; color: #111827; }
+
+    .grilla {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .campo { display: flex; flex-direction: column; gap: 5px; }
+    .campo label { font-size: 13px; font-weight: 600; color: #334155; }
+
+    .form-acciones {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .alerta {
+      background: var(--rojo-suave);
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    /* ---------- Actividades ---------- */
+    .actividades {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .bloque {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .bloque-cabecera {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--borde);
+    }
+
+    .bloque-cabecera h3 { margin: 0; font-size: 17px; font-weight: 700; color: #111827; }
+    .contador { color: var(--texto-sec); font-weight: 500; font-size: 14px; }
+
+    .subformulario {
+      border-bottom: 1px solid var(--borde);
+      padding: 16px;
+      background: #fbfdff;
+    }
+    .subform-panel {
+      border: 1px dashed #93c5fd;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+    }
+    .subform-panel h4 { margin: 0 0 12px; font-size: 14px; color: #1e40af; }
+
+    .subformulario .grilla { grid-template-columns: 1fr 180px; align-items: end; }
+    .subformulario textarea { resize: vertical; min-height: 42px; }
+
+    .lista-actividades {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      margin: 0;
+      padding: 8px;
+      list-style: none;
+    }
+
+    .actividad {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+    }
+    .actividad + .actividad { margin-top: 4px; }
+    .actividad:hover { background: #f8fafc; }
+
+    .actividad-info { min-width: 0; flex: 1; }
+    .actividad-top { display: flex; align-items: flex-start; gap: 10px; }
+    .actividad-descripcion { word-break: break-word; color: var(--texto); font-size: 14px; line-height: 1.4; }
+
+    .actividad-fecha {
+      display: block;
+      font-size: 12px;
+      color: var(--texto-sec);
+      margin-top: 3px;
+    }
+    .vencida { color: var(--rojo); font-weight: 600; }
+
+    .actividad.hecha {
+      background: var(--verde-suave);
+      border-color: var(--verde-borde);
+    }
+    .actividad.hecha:hover { background: #e6f7f1; }
+    .actividad.hecha .actividad-descripcion { color: #065f46; }
+
+    .check-verde {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #d1fae5;
+      color: var(--verde);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .vacio-lista {
+      padding: 20px;
+      text-align: center;
+      color: var(--texto-sec);
+      font-size: 13px;
+    }
+
+    .cargando-linea {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--texto-sec);
+      border-bottom: 1px solid var(--borde);
+      background: #f8fafc;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(220px, 38vh) minmax(0, 1fr);
+      }
+      .maestro {
+        border-right: 0;
+        border-bottom: 1px solid var(--borde);
+      }
+      .detalle { padding: 16px; }
+      .ficha h2 { font-size: 24px; }
+    }
+
+    @media (max-width: 640px) {
+      .topbar { padding: 0 14px; height: 52px; min-height: 52px; }
+      .topbar h1 { font-size: 20px; }
+      .maestro-cabecera, .buscador, .ficha, .formulario, .bloque-cabecera, .subformulario { padding-left: 14px; padding-right: 14px; }
+      .subformulario .grilla { grid-template-columns: 1fr; }
+      .ficha-cabecera { flex-direction: column; align-items: stretch; }
+      .acciones { justify-content: flex-start; }
+      .form-acciones { justify-content: stretch; }
+      .form-acciones button { flex: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="react">
+    const { useEffect, useMemo, useState } = React;
+
+    const IconoMas = () => (
+      <svg className="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    );
+    const IconoEditar = () => (
+      <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+    );
+    const IconoBorrar = () => (
+      <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
+    );
+    const IconoGuardar = () => (
+      <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+    );
+    const IconoX = () => (
+      <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    );
+    const IconoCheck = () => (
+      <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+    );
+    const IconoMail = () => (
+      <svg className="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    );
+    const IconoTel = () => (
+      <svg className="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07A19.5 19.5 0 0 1 3.69 12.8a19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 2.6 2h3a2 2 0 0 1 2 1.72c.13 1 .37 1.99.72 2.93a2 2 0 0 1-.45 2.11L6.91 9.91a16 16 0 0 0 7.18 7.18l1.15-1.15a2 2 0 0 1 2.11-.45c.94.35 1.93.59 2.93.72A2 2 0 0 1 22 16.92z"/></svg>
+    );
+    const IconoPin = () => (
+      <svg className="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    );
+
+    async function pedir(url, opciones = {}) {
+      const respuesta = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...opciones,
+      });
+
+      if (respuesta.status === 204) return null;
+
+      const cuerpo = await respuesta.json().catch(() => null);
+
+      if (!respuesta.ok) {
+        throw new Error((cuerpo && cuerpo.error) || "No se pudo completar la operación");
+      }
+
+      return cuerpo;
+    }
+
+    function formatearFecha(fecha) {
+      if (!fecha) return "";
+      const partes = String(fecha).slice(0, 10).split("-");
+      if (partes.length !== 3) return fecha;
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    function hoyISO() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function estaVencida(fecha, completada) {
+      if (completada || !fecha) return false;
+      return String(fecha).slice(0, 10) < hoyISO();
+    }
+
+    function iniciales(nombre) {
+      const partes = String(nombre || "").trim().split(/\s+/).filter(Boolean);
+      if (partes.length === 0) return "?";
+      const primera = partes[0][0] || "";
+      const segunda = partes.length > 1 ? partes[partes.length - 1][0] || "" : (partes[0][1] || "");
+      return (primera + segunda).toUpperCase();
+    }
+
+    function clienteVacio() {
+      return { nombre: "", email: "", telefono: "", direccion: "", ciudad: "" };
+    }
+
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [busqueda, setBusqueda] = useState("");
+      const [seleccionado, setSeleccionado] = useState(null);
+      const [actividades, setActividades] = useState([]);
+      const [modoCliente, setModoCliente] = useState("ver");
+      const [formCliente, setFormCliente] = useState(clienteVacio());
+      const [formActividad, setFormActividad] = useState(null);
+      const [error, setError] = useState("");
+      const [cargandoLista, setCargandoLista] = useState(false);
+      const [cargandoActividades, setCargandoActividades] = useState(false);
+      const [guardando, setGuardando] = useState(false);
+
+      async function cargarClientes(texto = busqueda) {
+        setCargandoLista(true);
+        try {
+          const datos = await pedir(`/api/clientes?buscar=${encodeURIComponent(texto)}`);
+          setClientes(datos);
+          setError("");
+          return datos;
+        } catch (e) {
+          setError(e.message);
+          return [];
+        } finally {
+          setCargandoLista(false);
+        }
+      }
+
+      async function cargarActividades(cliente) {
+        if (!cliente) return [];
+        setCargandoActividades(true);
+        try {
+          const datos = await pedir(`/api/clientes/${cliente.id}/actividades`);
+          setActividades(datos);
+          return datos;
+        } catch (e) {
+          setError(e.message);
+          return [];
+        } finally {
+          setCargandoActividades(false);
+        }
+      }
+
+      async function seleccionar(cliente) {
+        setSeleccionado(cliente);
+        setModoCliente("ver");
+        setFormActividad(null);
+        setError("");
+        await cargarActividades(cliente);
+      }
+
+      useEffect(() => {
+        cargarClientes(busqueda);
+      }, [busqueda]);
+
+      useEffect(() => {
+        if (seleccionado) {
+          const actualizado = clientes.find((c) => c.id === seleccionado.id);
+          if (actualizado && actualizado !== seleccionado) {
+            setSeleccionado(actualizado);
+          }
+        }
+      }, [clientes, seleccionado]);
+
+      function agregarCliente() {
+        setModoCliente("alta");
+        setFormCliente(clienteVacio());
+        setFormActividad(null);
+        setError("");
+      }
+
+      function editarCliente() {
+        if (!seleccionado) return;
+        setModoCliente("editar");
+        setFormCliente({
+          nombre: seleccionado.nombre ?? "",
+          email: seleccionado.email ?? "",
+          telefono: seleccionado.telefono ?? "",
+          direccion: seleccionado.direccion ?? "",
+          ciudad: seleccionado.ciudad ?? "",
+        });
+        setError("");
+      }
+
+      async function guardarCliente(evento) {
+        evento.preventDefault();
+        setGuardando(true);
+        try {
+          const datos = { ...formCliente };
+          const guardado =
+            modoCliente === "editar" && seleccionado
+              ? await pedir(`/api/clientes/${seleccionado.id}`, {
+                  method: "PUT",
+                  body: JSON.stringify(datos),
+                })
+              : await pedir("/api/clientes", {
+                  method: "POST",
+                  body: JSON.stringify(datos),
+                });
+
+          const lista = await cargarClientes();
+          const encontrado = lista.find((c) => c.id === guardado.id) || guardado;
+          setSeleccionado(encontrado);
+          setModoCliente("ver");
+          setError("");
+          await cargarActividades(encontrado);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setGuardando(false);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (!seleccionado) return;
+        if (!confirm(`¿Eliminar a ${seleccionado.nombre} y sus actividades?`)) return;
+
+        try {
+          await pedir(`/api/clientes/${seleccionado.id}`, { method: "DELETE" });
+          setSeleccionado(null);
+          setActividades([]);
+          setModoCliente("ver");
+          await cargarClientes();
+          setError("");
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      function agregarActividad() {
+        setFormActividad({ id: null, descripcion: "", fecha: "" });
+      }
+
+      function editarActividad(actividad) {
+        setFormActividad({
+          id: actividad.id,
+          descripcion: actividad.descripcion ?? "",
+          fecha: actividad.fecha ?? "",
+        });
+      }
+
+      async function guardarActividad(evento) {
+        evento.preventDefault();
+        if (!seleccionado || !formActividad) return;
+        setGuardando(true);
+        try {
+          const cuerpo = {
+            descripcion: formActividad.descripcion,
+            fecha: formActividad.fecha || null,
+          };
+
+          if (formActividad.id) {
+            await pedir(`/api/actividades/${formActividad.id}`, {
+              method: "PUT",
+              body: JSON.stringify(cuerpo),
+            });
+          } else {
+            await pedir(`/api/clientes/${seleccionado.id}/actividades`, {
+              method: "POST",
+              body: JSON.stringify(cuerpo),
+            });
+          }
+
+          setFormActividad(null);
+          setError("");
+          await cargarActividades(seleccionado);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setGuardando(false);
+        }
+      }
+
+      async function completarActividad(actividad) {
+        try {
+          await pedir(`/api/actividades/${actividad.id}/completar`, { method: "PATCH" });
+          setError("");
+          await cargarActividades(seleccionado);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function eliminarActividad(actividad) {
+        if (!confirm("¿Eliminar esta actividad?")) return;
+        try {
+          await pedir(`/api/actividades/${actividad.id}`, { method: "DELETE" });
+          setError("");
+          await cargarActividades(seleccionado);
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      const pendientes = useMemo(() => actividades.filter((a) => !a.completada), [actividades]);
+      const completadas = useMemo(() => actividades.filter((a) => a.completada), [actividades]);
+
+      return (
+        <div className="app-shell">
+          <header className="topbar">
+            <h1>MiniCRM</h1>
+            <span className="topbar-sub">Gestión de clientes y actividades</span>
+          </header>
+
+          <div className="app">
+            <aside className="maestro" aria-label="Lista de clientes">
+              <div className="maestro-cabecera">
+                <h2>Clientes</h2>
+                <button type="button" onClick={agregarCliente}>
+                  <IconoMas /> Agregar
+                </button>
+              </div>
+
+              <div className="buscador">
+                <label htmlFor="buscar-clientes">Buscar cliente</label>
+                <input
+                  id="buscar-clientes"
+                  type="search"
+                  placeholder="Buscar por cualquier campo…"
+                  aria-label="Buscar clientes por cualquier campo"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                />
+              </div>
+
+              <ul className="maestro-lista">
+                {cargandoLista && clientes.length === 0 && (
+                  <li className="vacio-lista">Cargando clientes…</li>
+                )}
+
+                {!cargandoLista && clientes.length === 0 && (
+                  <li className="vacio-lista">No hay clientes que coincidan.</li>
+                )}
+
+                {clientes.map((cliente) => {
+                  const activo = seleccionado && seleccionado.id === cliente.id;
+                  return (
+                    <li key={cliente.id} className="cliente-item">
+                      <button
+                        type="button"
+                        className={"cliente-btn" + (activo ? " activo" : "")}
+                        aria-current={activo ? "true" : undefined}
+                        onClick={() => seleccionar(cliente)}
+                      >
+                        <span className="avatar" aria-hidden="true">{iniciales(cliente.nombre)}</span>
+                        <span className="cliente-texto">
+                          <strong>{cliente.nombre}</strong>
+                          <span>
+                            {[cliente.ciudad, cliente.email].filter(Boolean).join(" · ") ||
+                              "Sin datos de contacto"}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </aside>
+
+            <main className="detalle">
+              {error && <div className="alerta" role="alert" aria-live="polite">{error}</div>}
+
+              {modoCliente === "alta" || modoCliente === "editar" ? (
+                <form className="panel formulario" onSubmit={guardarCliente}>
+                  <h3>{modoCliente === "alta" ? "Nuevo cliente" : "Editar cliente"}</h3>
+                  <div className="grilla">
+                    <div className="campo">
+                      <label htmlFor="cliente-nombre">Nombre</label>
+                      <input
+                        id="cliente-nombre"
+                        value={formCliente.nombre}
+                        onChange={(e) =>
+                          setFormCliente({ ...formCliente, nombre: e.target.value })
+                        }
+                        autoFocus
+                      />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="cliente-email">Email</label>
+                      <input
+                        id="cliente-email"
+                        type="email"
+                        value={formCliente.email}
+                        onChange={(e) =>
+                          setFormCliente({ ...formCliente, email: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="cliente-telefono">Teléfono</label>
+                      <input
+                        id="cliente-telefono"
+                        value={formCliente.telefono}
+                        onChange={(e) =>
+                          setFormCliente({ ...formCliente, telefono: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="cliente-direccion">Dirección</label>
+                      <input
+                        id="cliente-direccion"
+                        value={formCliente.direccion}
+                        onChange={(e) =>
+                          setFormCliente({ ...formCliente, direccion: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="cliente-ciudad">Ciudad</label>
+                      <input
+                        id="cliente-ciudad"
+                        value={formCliente.ciudad}
+                        onChange={(e) =>
+                          setFormCliente({ ...formCliente, ciudad: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="form-acciones">
+                    <button
+                      type="button"
+                      className="secundario"
+                      onClick={() => setModoCliente("ver")}
+                    >
+                      <IconoX /> Cancelar
+                    </button>
+                    <button type="submit" disabled={guardando}>
+                      <IconoGuardar /> {guardando ? "Guardando…" : "Guardar"}
+                    </button>
+                  </div>
+                </form>
+              ) : seleccionado ? (
+                <>
+                  <section className="panel ficha" aria-label="Ficha del cliente">
+                    <div className="ficha-cabecera">
+                      <div className="ficha-identidad">
+                        <h2>{seleccionado.nombre}</h2>
+                        <div className="ficha-ciudad">{seleccionado.ciudad || "Sin ciudad"}</div>
+                      </div>
+                      <div className="acciones">
+                        <button type="button" className="secundario" onClick={editarCliente}>
+                          <IconoEditar /> Editar
+                        </button>
+                        <button type="button" className="peligro" onClick={eliminarCliente}>
+                          <IconoBorrar /> Eliminar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ficha-datos">
+                      <div className="dato">
+                        <IconoMail />
+                        <span className="dato-texto"><b>Email:</b> {seleccionado.email || "—"}</span>
+                      </div>
+                      <div className="dato">
+                        <IconoTel />
+                        <span className="dato-texto"><b>Teléfono:</b> {seleccionado.telefono || "—"}</span>
+                      </div>
+                      <div className="dato">
+                        <IconoPin />
+                        <span className="dato-texto"><b>Dirección:</b> {seleccionado.direccion || "—"}</span>
+                      </div>
+                      <div className="dato">
+                        <IconoPin />
+                        <span className="dato-texto"><b>Ciudad:</b> {seleccionado.ciudad || "—"}</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="actividades">
+                    <section className="panel bloque" aria-label="Compromisos pendientes">
+                      <div className="bloque-cabecera">
+                        <h3>
+                          Compromisos <span className="contador">({pendientes.length})</span>
+                        </h3>
+                        <button type="button" className="mini" onClick={agregarActividad}>
+                          <IconoMas /> Agregar actividad
+                        </button>
+                      </div>
+
+                      {formActividad && (
+                        <form className="subformulario" onSubmit={guardarActividad}>
+                          <div className="subform-panel">
+                            <h4>{formActividad.id ? "Editar actividad" : "Nueva actividad"}</h4>
+                            <div className="grilla">
+                              <div className="campo">
+                                <label htmlFor="actividad-descripcion">Descripción</label>
+                                <textarea
+                                  id="actividad-descripcion"
+                                  placeholder="Descripción de la actividad"
+                                  value={formActividad.descripcion}
+                                  onChange={(e) =>
+                                    setFormActividad({
+                                      ...formActividad,
+                                      descripcion: e.target.value,
+                                    })
+                                  }
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="campo">
+                                <label htmlFor="actividad-fecha">Fecha opcional</label>
+                                <input
+                                  id="actividad-fecha"
+                                  type="date"
+                                  value={formActividad.fecha || ""}
+                                  onChange={(e) =>
+                                    setFormActividad({ ...formActividad, fecha: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="form-acciones">
+                              <button
+                                type="button"
+                                className="secundario"
+                                onClick={() => setFormActividad(null)}
+                              >
+                                <IconoX /> Cancelar
+                              </button>
+                              <button type="submit" disabled={guardando}>
+                                <IconoGuardar /> {guardando ? "Guardando…" : "Guardar"}
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
+
+                      {cargandoActividades && <div className="cargando-linea">Cargando actividades…</div>}
+
+                      <ul className="lista-actividades">
+                        {!cargandoActividades && pendientes.length === 0 && (
+                          <li className="vacio-lista">No hay actividades pendientes.</li>
+                        )}
+                        {pendientes.map((actividad) => {
+                          const vencida = estaVencida(actividad.fecha, actividad.completada);
+                          return (
+                            <li key={actividad.id} className="actividad">
+                              <div className="actividad-info">
+                                <div className="actividad-descripcion">{actividad.descripcion}</div>
+                                <span className="actividad-fecha">
+                                  {actividad.fecha ? formatearFecha(actividad.fecha) : "Sin fecha"}
+                                  {vencida && <span className="vencida"> · Vencido</span>}
+                                </span>
+                              </div>
+                              <div className="acciones">
+                                <button
+                                  type="button"
+                                  className="mini secundario"
+                                  aria-label={`Completar actividad: ${actividad.descripcion}`}
+                                  onClick={() => completarActividad(actividad)}
+                                >
+                                  <IconoCheck /> Completar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="mini secundario"
+                                  aria-label={`Editar actividad: ${actividad.descripcion}`}
+                                  onClick={() => editarActividad(actividad)}
+                                >
+                                  <IconoEditar /> Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="mini peligro"
+                                  aria-label={`Borrar actividad: ${actividad.descripcion}`}
+                                  onClick={() => eliminarActividad(actividad)}
+                                >
+                                  <IconoBorrar /> Borrar
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+
+                    <section className="panel bloque" aria-label="Actividades completadas">
+                      <div className="bloque-cabecera">
+                        <h3>
+                          Actividades completadas <span className="contador">({completadas.length})</span>
+                        </h3>
+                      </div>
+                      {cargandoActividades && completadas.length === 0 && (
+                        <div className="cargando-linea">Cargando actividades…</div>
+                      )}
+                      <ul className="lista-actividades">
+                        {!cargandoActividades && completadas.length === 0 && (
+                          <li className="vacio-lista">Todavía no hay actividades completadas.</li>
+                        )}
+                        {completadas.map((actividad) => (
+                          <li key={actividad.id} className="actividad hecha">
+                            <div className="actividad-info">
+                              <div className="actividad-top">
+                                <span className="check-verde" aria-hidden="true"><IconoCheck /></span>
+                                <div>
+                                  <div className="actividad-descripcion">{actividad.descripcion}</div>
+                                  <span className="actividad-fecha">
+                                    Completada el{" "}
+                                    {actividad.completadaEn
+                                      ? formatearFecha(actividad.completadaEn)
+                                      : "—"}
+                                    {actividad.fecha
+                                      ? ` · Fecha: ${formatearFecha(actividad.fecha)}`
+                                      : ""}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  </div>
+                </>
+              ) : (
+                <div className="vacio">
+                  <h2>MiniCRM</h2>
+                  <p>Elegí un cliente de la lista o agregá uno nuevo.</p>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
