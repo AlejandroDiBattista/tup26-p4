@@ -225,8 +225,8 @@
     }
 
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
       background: #e3edf7;
       color: #2c5f8a;
@@ -234,7 +234,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 16px;
       flex-shrink: 0;
       letter-spacing: 0.2px;
     }
@@ -297,7 +297,25 @@
     }
 
     .ficha-identidad { min-width: 0; }
+    .ficha-nombre {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
     .ficha h2 { margin: 0; font-size: 32px; font-weight: 700; color: #1a1a1a; line-height: 1.2; }
+    .badge-id {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #eef2f7;
+      color: #495057;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
     .ficha-ciudad {
       margin-top: 4px;
       font-size: 15px;
@@ -307,9 +325,10 @@
     .acciones { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
 
     .ficha-datos {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+      gap: 10px 40px;
+      max-width: 760px;
     }
 
     .dato {
@@ -386,21 +405,36 @@
     }
 
     .bloque-cabecera h3 { margin: 0; font-size: 22px; font-weight: 700; color: #1a1a1a; }
-    .contador { color: var(--texto-muted); font-weight: 500; font-size: 18px; margin-left: 2px; }
 
     .subformulario {
       padding: 0 0 16px;
     }
     .subform-panel {
-      border: 1px solid var(--borde);
+      border: 1px solid var(--borde-suave);
       border-radius: 8px;
       padding: 16px;
-      background: #fbfcfd;
+      background: #fff;
     }
-    .subform-panel h4 { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #495057; }
+    .subform-titulo { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #495057; }
 
-    .subformulario .grilla { grid-template-columns: 1fr 180px; align-items: end; }
+    .subformulario .grilla { grid-template-columns: 1fr 220px; align-items: end; }
     .subformulario textarea { resize: vertical; min-height: 42px; }
+    .fecha-wrap { position: relative; }
+    .fecha-wrap input { padding-right: 40px; }
+    .btn-calendario {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--texto-muted);
+      border-radius: 4px;
+    }
+    .btn-calendario:hover { background: #f1f3f5; color: var(--texto); }
 
     .lista-actividades {
       flex: 1;
@@ -577,6 +611,9 @@
     const IconoPin = () => (
       <svg className="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
     );
+    const IconoCalendario = () => (
+      <svg className="icono-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    );
 
     async function pedir(url, opciones = {}) {
       const respuesta = await fetch(url, {
@@ -621,6 +658,34 @@
       const primera = partes[0][0] || "";
       const segunda = partes.length > 1 ? partes[partes.length - 1][0] || "" : (partes[0][1] || "");
       return (primera + segunda).toUpperCase();
+    }
+
+    const PALETA_AVATAR = ["#dbeafe", "#dcfce7", "#ede9fe", "#ffedd5", "#fce7f3", "#ccfbf1", "#e0e7ff"];
+    const COLOR_TEXTO_AVATAR = ["#1d4ed8", "#15803d", "#7c3aed", "#c2410c", "#be185d", "#0f766e", "#4338ca"];
+    function colorAvatar(nombre) {
+      const txt = String(nombre || "");
+      let hash = 0;
+      for (let i = 0; i < txt.length; i++) hash = (hash * 31 + txt.charCodeAt(i)) >>> 0;
+      const idx = hash % PALETA_AVATAR.length;
+      return { bg: PALETA_AVATAR[idx], fg: COLOR_TEXTO_AVATAR[idx] };
+    }
+
+    function fechaISOaTexto(fecha) {
+      if (!fecha) return "";
+      const p = String(fecha).slice(0, 10).split("-");
+      if (p.length !== 3) return String(fecha);
+      return `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    function fechaTextoAISO(texto) {
+      const m = String(texto || "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!m) return null;
+      const [, dd, mm, yyyy] = m;
+      const iso = `${yyyy}-${mm}-${dd}`;
+      const d = new Date(`${iso}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return null;
+      if (d.getUTCFullYear() !== Number(yyyy) || d.getUTCMonth() + 1 !== Number(mm) || d.getUTCDate() !== Number(dd)) return null;
+      return iso;
     }
 
     function clienteVacio() {
@@ -764,18 +829,27 @@
         setFormActividad({
           id: actividad.id,
           descripcion: actividad.descripcion ?? "",
-          fecha: actividad.fecha ?? "",
+          fecha: fechaISOaTexto(actividad.fecha) ?? "",
         });
       }
 
       async function guardarActividad(evento) {
         evento.preventDefault();
         if (!seleccionado || !formActividad) return;
+        const fechaTexto = String(formActividad.fecha || "").trim();
+        let fechaISO = null;
+        if (fechaTexto) {
+          fechaISO = /^\d{4}-\d{2}-\d{2}$/.test(fechaTexto) ? fechaTexto : fechaTextoAISO(fechaTexto);
+          if (!fechaISO) {
+            setError("La fecha debe tener formato dd/mm/aaaa");
+            return;
+          }
+        }
         setGuardando(true);
         try {
           const cuerpo = {
             descripcion: formActividad.descripcion,
-            fecha: formActividad.fecha || null,
+            fecha: fechaISO,
           };
 
           if (formActividad.id) {
@@ -864,6 +938,7 @@
 
                 {clientes.map((cliente) => {
                   const activo = seleccionado && seleccionado.id === cliente.id;
+                  const avatar = colorAvatar(cliente.nombre);
                   return (
                     <li key={cliente.id} className="cliente-item">
                       <button
@@ -872,7 +947,7 @@
                         aria-current={activo ? "true" : undefined}
                         onClick={() => seleccionar(cliente)}
                       >
-                        <span className="avatar" aria-hidden="true">{iniciales(cliente.nombre)}</span>
+                        <span className="avatar" aria-hidden="true" style={{ backgroundColor: avatar.bg, color: avatar.fg }}>{iniciales(cliente.nombre)}</span>
                         <span className="cliente-texto">
                           <strong>{cliente.nombre}</strong>
                           <span>
@@ -965,7 +1040,10 @@
                   <section className="ficha" aria-label="Ficha del cliente">
                     <div className="ficha-cabecera">
                       <div className="ficha-identidad">
-                        <h2>{seleccionado.nombre}</h2>
+                        <div className="ficha-nombre">
+                          <h2>{seleccionado.nombre}</h2>
+                          <span className="badge-id">#{seleccionado.id}</span>
+                        </div>
                         <div className="ficha-ciudad">{seleccionado.ciudad || "Sin ciudad"}</div>
                       </div>
                       <div className="acciones">
@@ -984,14 +1062,16 @@
                         <span className="dato-texto">{seleccionado.email || "—"}</span>
                       </div>
                       <div className="dato">
+                        <IconoPin />
+                        <span className="dato-texto">{seleccionado.direccion || "—"}</span>
+                      </div>
+                      <div className="dato">
                         <IconoTel />
                         <span className="dato-texto">{seleccionado.telefono || "—"}</span>
                       </div>
                       <div className="dato">
                         <IconoPin />
-                        <span className="dato-texto">
-                          {[seleccionado.direccion, seleccionado.ciudad].filter(Boolean).join(", ") || "—"}
-                        </span>
+                        <span className="dato-texto">{seleccionado.ciudad || "—"}</span>
                       </div>
                     </div>
                   </section>
@@ -999,9 +1079,7 @@
                   <div className="actividades">
                     <section className="bloque" aria-label="Compromisos pendientes">
                       <div className="bloque-cabecera">
-                        <h3>
-                          Compromisos <span className="contador">({pendientes.length})</span>
-                        </h3>
+                        <h3>Compromisos</h3>
                         <button type="button" className="btn-agregar" onClick={agregarActividad}>
                           <IconoMas /> Agregar actividad
                         </button>
@@ -1010,7 +1088,7 @@
                       {formActividad && (
                         <form className="subformulario" onSubmit={guardarActividad}>
                           <div className="subform-panel">
-                            <h4>{formActividad.id ? "Editar actividad" : "Nueva actividad"}</h4>
+                            <div className="subform-titulo">{formActividad.id ? "Editar actividad" : "Agregar actividad"}</div>
                             <div className="grilla">
                               <div className="campo">
                                 <label htmlFor="actividad-descripcion">Descripción</label>
@@ -1029,14 +1107,27 @@
                               </div>
                               <div className="campo">
                                 <label htmlFor="actividad-fecha">Fecha opcional</label>
-                                <input
-                                  id="actividad-fecha"
-                                  type="date"
-                                  value={formActividad.fecha || ""}
-                                  onChange={(e) =>
-                                    setFormActividad({ ...formActividad, fecha: e.target.value })
-                                  }
-                                />
+                                <div className="fecha-wrap">
+                                  <input
+                                    id="actividad-fecha"
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="dd/mm/aaaa"
+                                    value={formActividad.fecha || ""}
+                                    onChange={(e) =>
+                                      setFormActividad({ ...formActividad, fecha: e.target.value })
+                                    }
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn-calendario"
+                                    aria-label="Formato de fecha dd/mm/aaaa"
+                                    title="dd/mm/aaaa"
+                                    onClick={() => document.getElementById("actividad-fecha")?.focus()}
+                                  >
+                                    <IconoCalendario />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                             <div className="form-acciones">
@@ -1111,9 +1202,7 @@
 
                     <section className="bloque" aria-label="Actividades completadas">
                       <div className="bloque-cabecera">
-                        <h3>
-                          Actividades completadas <span className="contador">({completadas.length})</span>
-                        </h3>
+                        <h3>Actividades completadas</h3>
                       </div>
                       {cargandoActividades && completadas.length === 0 && (
                         <div className="cargando-linea">Cargando actividades…</div>
