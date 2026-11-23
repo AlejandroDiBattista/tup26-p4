@@ -9,9 +9,11 @@
 /* los import son declaraciones que traen codigos externos, como librerías de Next.js, iconos visuales, 
    funciones de sesión y formato, componentes visuales de UI y servicios de base de datos para armar la página */
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Ban, Store } from "lucide-react";
 import { exigirUsuarioPagina } from "@/lib/sesion";
 import { obtenerFactura } from "@/servicios/facturas";
+import { ApiError } from "@/servicios/errores";
 import { formatearFechaHora, formatearMoneda, NOMBRES_FORMA_PAGO } from "@/lib/formato";
 import { Button } from "@/componentes/ui/button";
 import { Card } from "@/componentes/ui/card";
@@ -45,9 +47,15 @@ export default async function PaginaDetalleFactura({ params }: Props) {
   /* esperamos a que se resuelva la promesa de params para extraer el 'id' de la factura que viene en la url del navegador */
   const { id } = await params;
 
-  /* llamamos a la función de negocio obtenerFactura pasándole el usuario logueado y el id convertido de texto a número (Number).
-     esta función busca en la base de datos la factura con todos sus ítems, datos del cliente, vendedor y forma de pago */
-  const factura = await obtenerFactura(usuario, Number(id));
+  let factura;
+  try {
+    factura = await obtenerFactura(usuario, Number(id));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      notFound();
+    }
+    throw error;
+  }
 
   return (
     /* componente base que envuelve la pantalla con márgenes estandarizados */

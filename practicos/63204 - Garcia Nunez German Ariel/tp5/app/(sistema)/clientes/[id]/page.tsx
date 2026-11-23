@@ -3,9 +3,11 @@
 // - Pestaña "Cuenta corriente": movimientos en orden cronológico con saldo acumulado renglón a renglón.
 // - Pestaña "Últimas facturas": las últimas facturas emitidas al cliente.
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Eye } from "lucide-react";
 import { exigirUsuarioPagina } from "@/lib/sesion";
 import { obtenerCliente, obtenerCuentaCorriente } from "@/servicios/clientes";
+import { ApiError } from "@/servicios/errores";
 import { formatearFechaHora, formatearMoneda } from "@/lib/formato";
 import { Button } from "@/componentes/ui/button";
 import { Badge } from "@/componentes/ui/badge";
@@ -44,13 +46,23 @@ export default async function PaginaFichaCliente({ params, searchParams }: Props
   const idCliente = Number(id);
   const pestana = parametros.vista === "facturas" ? "facturas" : "cuenta";
 
-  const [cliente, cuenta] = await Promise.all([
-    obtenerCliente(usuario, idCliente),
-    obtenerCuentaCorriente(usuario, idCliente, {
-      desde: parametros.desde,
-      hasta: parametros.hasta,
-    }),
-  ]);
+  let cliente;
+  let cuenta;
+
+  try {
+    [cliente, cuenta] = await Promise.all([
+      obtenerCliente(usuario, idCliente),
+      obtenerCuentaCorriente(usuario, idCliente, {
+        desde: parametros.desde,
+        hasta: parametros.hasta,
+      }),
+    ]);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      notFound();
+    }
+    throw error;
+  }
 
   return (
     <Pagina>

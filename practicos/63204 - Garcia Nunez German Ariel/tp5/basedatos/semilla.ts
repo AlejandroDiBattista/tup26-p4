@@ -27,7 +27,7 @@ import { emitirFactura, anularFactura } from "@/servicios/facturas";
 import { registrarPago } from "@/servicios/pagos";
 import type { UsuarioSesion } from "@/servicios/comunes";
 
-async function sembrarBaseDatos() {
+export async function sembrarBaseDatos() {
   console.log("Limpiando tablas existentes...");
   await db.delete(movimientosCuenta);
   await db.delete(movimientosStock);

@@ -2,7 +2,15 @@
 import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 
-const urlBaseDatos = process.env.DATABASE_URL ?? "file:./local.db";
+const urlBaseDatos =
+  process.env.DATABASE_URL ||
+  process.env.TURSO_DATABASE_URL ||
+  "file:./local.db";
+
+const tokenBaseDatos =
+  process.env.DATABASE_AUTH_TOKEN ||
+  process.env.TURSO_AUTH_TOKEN;
+
 const esTurso = urlBaseDatos.startsWith("libsql://");
 
 export default defineConfig({
@@ -10,6 +18,6 @@ export default defineConfig({
   out: "./basedatos/migraciones",
   dialect: esTurso ? "turso" : "sqlite",
   dbCredentials: esTurso
-    ? { url: urlBaseDatos, authToken: process.env.DATABASE_AUTH_TOKEN }
+    ? { url: urlBaseDatos, authToken: tokenBaseDatos }
     : { url: urlBaseDatos },
 });

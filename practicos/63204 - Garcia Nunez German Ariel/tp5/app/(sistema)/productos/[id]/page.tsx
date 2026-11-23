@@ -1,10 +1,12 @@
 // Pantalla de FICHA DEL PRODUCTO con sus movimientos (/productos/[id]). RF-P4, RF-P5, RF-P6.
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { exigirUsuarioPagina } from "@/lib/sesion";
 import { obtenerProducto } from "@/servicios/productos";
 import { listarMovimientosDeProducto } from "@/servicios/stock";
 import { listarCategorias } from "@/servicios/categorias";
+import { ApiError } from "@/servicios/errores";
 import { formatearFechaHora, formatearMoneda } from "@/lib/formato";
 import { Button } from "@/componentes/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/componentes/ui/card";
@@ -42,11 +44,22 @@ export default async function PaginaFichaProducto({ params, searchParams }: Prop
   const idProducto = Number(id);
   const esAdmin = usuario.rol === "admin";
 
-  const [producto, movimientos, categorias] = await Promise.all([
-    obtenerProducto(usuario, idProducto),
-    listarMovimientosDeProducto(usuario, idProducto, parametros),
-    listarCategorias(usuario),
-  ]);
+  let producto;
+  let movimientos;
+  let categorias;
+
+  try {
+    [producto, movimientos, categorias] = await Promise.all([
+      obtenerProducto(usuario, idProducto),
+      listarMovimientosDeProducto(usuario, idProducto, parametros),
+      listarCategorias(usuario),
+    ]);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      notFound();
+    }
+    throw error;
+  }
 
   return (
     <Pagina>
