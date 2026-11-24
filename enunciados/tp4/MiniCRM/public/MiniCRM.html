@@ -1,0 +1,282 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MiniCRM</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font: 15px system-ui, sans-serif; color: #172b2b; background: #edf2ef; }
+        button, input, textarea { font: inherit; }
+        button { cursor: pointer; padding: .55rem .75rem; border: 1px solid #b9ccc6; border-radius: .45rem; background: white; color: inherit; }
+        button:disabled { cursor: default; opacity: .6; }
+        .primary { background: #17634e; border-color: #17634e; color: white; }
+        .danger, [role="alert"] { color: #982a2a; }
+        .app { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+        header { padding: .8rem 1.25rem; background: #123c33; color: white; }
+        h1, h2, h3, p { margin: 0; }
+        h1 { font-size: 1.35rem; }
+        h2 { font-size: 1.2rem; }
+        h3 { font-size: 1rem; }
+        main { display: grid; grid-template-columns: minmax(210px, 26%) minmax(0, 1fr); min-height: 0; }
+        aside, .detail { display: flex; flex-direction: column; gap: .85rem; padding: 1rem; min-height: 0; }
+        aside { border-right: 1px solid #c9d7d2; background: #f7faf8; }
+        .detail { overflow: auto; }
+        .bar, .actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+        .bar { justify-content: space-between; }
+        .list, .activity-list { overflow-y: auto; min-height: 0; }
+        .list { flex: 1; }
+        .client { width: 100%; text-align: left; display: grid; gap: .2rem; margin-bottom: .35rem; overflow-wrap: anywhere; }
+        .client[aria-current="true"] { border-color: #17634e; background: #dceee6; }
+        small, .muted { color: #455f57; }
+        label { display: grid; gap: .25rem; min-width: 0; }
+        input, textarea { width: 100%; min-width: 0; padding: .45rem .55rem; border: 1px solid #acbfb8; border-radius: .35rem; background: white; color: inherit; }
+        textarea { resize: vertical; min-height: 3rem; }
+        .card { background: white; border: 1px solid #c9d7d2; border-radius: .55rem; padding: .8rem; display: grid; gap: .65rem; }
+        .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+        .wide { grid-column: 1 / -1; }
+        .activity-list { max-height: 30vh; display: grid; gap: .45rem; align-content: start; }
+        article { border: 1px solid #dbe6e1; border-radius: .4rem; padding: .55rem; display: grid; gap: .3rem; overflow-wrap: anywhere; }
+        article p { white-space: pre-wrap; }
+        @media (max-width: 700px) { .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 520px) {
+            main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 34%) minmax(0, 1fr); }
+            aside { border-right: 0; border-bottom: 1px solid #c9d7d2; padding: .5rem; gap: .35rem; }
+            .detail { padding: .6rem; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.10/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useEffect, useState } = React;
+        const clienteVacio = { nombre: '', apellido: '', email: '', telefono: '', empresa: '', notas: '' };
+        const actividadVacia = { titulo: '', descripcion: '', fecha: '' };
+
+        async function api(ruta, { method = 'GET', data, signal } = {}) {
+            const respuesta = await fetch('/api' + ruta, {
+                method, signal,
+                ...(data && { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+            });
+            if (respuesta.status === 204) return;
+            const resultado = await respuesta.json();
+            if (!respuesta.ok) throw new Error(resultado.error || 'No se pudo completar la operación.');
+            return resultado;
+        }
+
+        function Campo({ etiqueta, nombre, datos, cambiar, tipo = 'text', requerido = false }) {
+            const props = {
+                name: nombre, value: datos[nombre] ?? '', required: requerido,
+                onChange: event => cambiar({ ...datos, [nombre]: event.target.value }),
+            };
+            return <label className={tipo === 'textarea' ? 'wide' : undefined}>
+                {etiqueta}
+                {tipo === 'textarea' ? <textarea {...props} /> : <input type={tipo} {...props} />}
+            </label>;
+        }
+
+        function ListaActividades({ titulo, actividades, acciones }) {
+            return <section className="card">
+                <h3>{titulo}</h3>
+                <div className="activity-list">
+                    {actividades.length === 0 && <p className="muted">Sin actividades.</p>}
+                    {actividades.map(actividad => <article key={actividad.id}>
+                        <strong>{actividad.titulo}</strong>
+                        {actividad.fecha && <small>Fecha {actividad.fecha}</small>}
+                        {actividad.descripcion && <p>{actividad.descripcion}</p>}
+                        {acciones && <div className="actions">{acciones(actividad)}</div>}
+                    </article>)}
+                </div>
+            </section>;
+        }
+
+        function Detalle({ seleccionado, seleccionar, refrescar }) {
+            const nuevo = seleccionado === 'nuevo';
+            const ruta = '/clientes/' + seleccionado;
+            const [cliente, cambiarCliente] = useState(nuevo ? clienteVacio : null);
+            const [actividades, cambiarActividades] = useState([]);
+            const [actividad, cambiarActividad] = useState(null);
+            const [error, cambiarError] = useState('');
+            const [ocupado, cambiarOcupado] = useState(false);
+
+            useEffect(() => {
+                if (nuevo) return;
+                const control = new AbortController();
+                const opciones = { signal: control.signal };
+                Promise.all([api(ruta, opciones), api(ruta + '/actividades', opciones)])
+                    .then(([ficha, lista]) => {
+                        cambiarCliente(ficha);
+                        cambiarActividades(lista);
+                    })
+                    .catch(error => {
+                        if (!control.signal.aborted) cambiarError(error.message);
+                    });
+                return () => control.abort();
+            }, [ruta, nuevo]);
+
+            async function ejecutar(operacion) {
+                cambiarOcupado(true);
+                cambiarError('');
+                try {
+                    await operacion();
+                } catch (error) {
+                    cambiarError(error.message);
+                } finally {
+                    cambiarOcupado(false);
+                }
+            }
+
+            function guardarCliente(event) {
+                event.preventDefault();
+                ejecutar(async () => {
+                    const datos = Object.fromEntries(Object.keys(clienteVacio).map(campo => [campo, cliente[campo]]));
+                    const guardado = await api(nuevo ? '/clientes' : ruta, { method: nuevo ? 'POST' : 'PATCH', data: datos });
+                    cambiarCliente(guardado);
+                    refrescar();
+                    if (nuevo) seleccionar(actual => actual === 'nuevo' ? guardado.id : actual);
+                });
+            }
+
+            function eliminarCliente() {
+                if (!confirm('¿Eliminar este cliente y todas sus actividades?')) return;
+                ejecutar(async () => {
+                    await api(ruta, { method: 'DELETE' });
+                    seleccionar(actual => actual === seleccionado ? null : actual);
+                    refrescar();
+                });
+            }
+
+            function guardarActividad(event) {
+                event.preventDefault();
+                ejecutar(async () => {
+                    const { id, titulo, descripcion, fecha } = actividad;
+                    const guardada = await api(id ? '/actividades/' + id : ruta + '/actividades', {
+                        method: id ? 'PATCH' : 'POST', data: { titulo, descripcion, fecha },
+                    });
+                    cambiarActividades(lista => id ? lista.map(item => item.id === id ? guardada : item) : [guardada, ...lista]);
+                    cambiarActividad(null);
+                });
+            }
+
+            function modificarActividad(item, eliminar) {
+                if (eliminar && !confirm('¿Eliminar esta actividad pendiente?')) return;
+                ejecutar(async () => {
+                    const base = '/actividades/' + item.id;
+                    const resultado = await api(eliminar ? base : base + '/completar', { method: eliminar ? 'DELETE' : 'PATCH' });
+                    cambiarActividades(lista => eliminar ? lista.filter(a => a.id !== item.id) : lista.map(a => a.id === item.id ? resultado : a));
+                    if (actividad?.id === item.id) cambiarActividad(null);
+                });
+            }
+
+            if (!cliente) return <section className="detail">
+                {error ? <p role="alert">{error}</p> : <p role="status">Cargando ficha…</p>}
+            </section>;
+
+            return <section className="detail">
+                <form className="card" onSubmit={guardarCliente}>
+                    <h2>{nuevo ? 'Nuevo cliente' : 'Ficha del cliente'}</h2>
+                    <div className="fields">
+                        <Campo etiqueta="Nombre" nombre="nombre" datos={cliente} cambiar={cambiarCliente} requerido />
+                        <Campo etiqueta="Apellido" nombre="apellido" datos={cliente} cambiar={cambiarCliente} requerido />
+                        <Campo etiqueta="Correo" nombre="email" tipo="email" datos={cliente} cambiar={cambiarCliente} requerido />
+                        <Campo etiqueta="Teléfono" nombre="telefono" tipo="tel" datos={cliente} cambiar={cambiarCliente} />
+                        <Campo etiqueta="Empresa" nombre="empresa" datos={cliente} cambiar={cambiarCliente} />
+                        <Campo etiqueta="Notas" nombre="notas" tipo="textarea" datos={cliente} cambiar={cambiarCliente} />
+                    </div>
+                    <div className="actions">
+                        <button className="primary" disabled={ocupado}>Guardar cliente</button>
+                        {nuevo
+                            ? <button type="button" disabled={ocupado} onClick={() => seleccionar(null)}>Cancelar</button>
+                            : <button type="button" className="danger" disabled={ocupado} onClick={eliminarCliente}>Eliminar cliente</button>}
+                    </div>
+                </form>
+                {error && <p role="alert">{error}</p>}
+                {!nuevo && <>
+                    <div className="bar">
+                        <h2>Actividades</h2>
+                        <button disabled={ocupado || !!actividad} onClick={() => cambiarActividad(actividadVacia)}>Nueva actividad</button>
+                    </div>
+                    {actividad && <form className="card" onSubmit={guardarActividad}>
+                        <h3>{actividad.id ? 'Editar actividad' : 'Nueva actividad'}</h3>
+                        <div className="fields">
+                            <Campo etiqueta="Título" nombre="titulo" datos={actividad} cambiar={cambiarActividad} requerido />
+                            <Campo etiqueta="Fecha" nombre="fecha" tipo="date" datos={actividad} cambiar={cambiarActividad} />
+                            <Campo etiqueta="Descripción" nombre="descripcion" tipo="textarea" datos={actividad} cambiar={cambiarActividad} />
+                        </div>
+                        <div className="actions">
+                            <button className="primary" disabled={ocupado}>Guardar actividad</button>
+                            <button type="button" disabled={ocupado} onClick={() => cambiarActividad(null)}>Cancelar</button>
+                        </div>
+                    </form>}
+                    <ListaActividades titulo="Pendientes" actividades={actividades.filter(a => !a.completada)}
+                        acciones={item => <>
+                            <button disabled={ocupado} onClick={() => cambiarActividad(item)}>Editar</button>
+                            <button disabled={ocupado} onClick={() => modificarActividad(item, false)}>Completar</button>
+                            <button className="danger" disabled={ocupado} onClick={() => modificarActividad(item, true)}>Eliminar</button>
+                        </>} />
+                    <ListaActividades titulo="Completadas" actividades={actividades.filter(a => a.completada)} />
+                </>}
+            </section>;
+        }
+
+        function App() {
+            const [busqueda, buscar] = useState('');
+            const [clientes, cambiarClientes] = useState([]);
+            const [seleccionado, seleccionar] = useState(null);
+            const [version, cambiarVersion] = useState(0);
+            const [error, cambiarError] = useState('');
+            const [cargando, cambiarCargando] = useState(true);
+
+            useEffect(() => {
+                const control = new AbortController();
+                cambiarError('');
+                cambiarCargando(true);
+                const temporizador = setTimeout(async () => {
+                    try {
+                        const query = new URLSearchParams({ q: busqueda });
+                        cambiarClientes(await api('/clientes?' + query, { signal: control.signal }));
+                    } catch (error) {
+                        if (!control.signal.aborted) cambiarError(error.message);
+                    } finally {
+                        if (!control.signal.aborted) cambiarCargando(false);
+                    }
+                }, 180);
+                return () => { clearTimeout(temporizador); control.abort(); };
+            }, [busqueda, version]);
+
+            return <div className="app">
+                <header><h1>MiniCRM</h1></header>
+                <main>
+                    <aside aria-label="Clientes">
+                        <div className="bar">
+                            <h2>Clientes</h2>
+                            <button className="primary" onClick={() => seleccionar('nuevo')}>Nuevo cliente</button>
+                        </div>
+                        <input type="search" aria-label="Buscar clientes" placeholder="Buscar clientes…" value={busqueda}
+                            onChange={event => buscar(event.target.value)} />
+                        {error && <p role="alert">{error}</p>}
+                        <div className="list" aria-busy={cargando}>
+                            {clientes.map(cliente => <button className="client" key={cliente.id}
+                                aria-current={seleccionado === cliente.id}
+                                onClick={() => seleccionar(cliente.id)}>
+                                <strong>{cliente.nombre} {cliente.apellido}</strong>
+                                <small>{cliente.empresa || cliente.email}</small>
+                            </button>)}
+                            {!cargando && !error && clientes.length === 0 && <p className="muted">Sin clientes para mostrar.</p>}
+                        </div>
+                    </aside>
+                    {seleccionado === null
+                        ? <section className="detail"><p className="muted">Seleccioná un cliente o creá uno nuevo.</p></section>
+                        : <Detalle key={seleccionado} seleccionado={seleccionado} seleccionar={seleccionar}
+                            refrescar={() => cambiarVersion(valor => valor + 1)} />}
+                </main>
+            </div>;
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { db } from '../db/index.js';
+﻿import { db } from '../db/index.js';
 import { clientes } from '../db/schema.js';
 
 import {
@@ -74,6 +74,8 @@ export class Clientes {
             like(clientes.telefono, patron),
             like(clientes.empresa, patron),
             like(clientes.notas, patron),
+            like(clientes.createdAt, patron),
+            sql`${clientes.nombre} || ' ' || ${clientes.apellido} LIKE ${patron}`,
         ];
         if (/^\d+$/.test(busqueda)) {
             condiciones.push(
