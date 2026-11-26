@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCRM</title>
+
+  <!-- Bibliotecas desde CDN con versiones fijas -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+
+  <style>
+    :root {
+      --header: #1e3a5f;
+      --lienzo: #f1f5f9;
+      --tarjeta: #ffffff;
+      --borde: #e2e8f0;
+      --borde-input: #cbd5e1;
+      --texto: #0f172a;
+      --texto-secundario: #64748b;
+      --texto-tenue: #94a3b8;
+      --primario: #1d68bd;
+      --primario-hover: #18559d;
+      --peligro: #dc2626;
+      --exito: #10b981;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body, #root { height: 100%; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--lienzo);
+      color: var(--texto);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button { font-family: inherit; }
+
+    /* ---------- Estructura general ---------- */
+    .app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    .header {
+      flex: 0 0 54px;
+      height: 54px;
+      width: 100%;
+      background: var(--header);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.2px;
+    }
+
+    .contenido {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      height: calc(100vh - 54px);
+      overflow: hidden;
+    }
+
+    .panel {
+      background: var(--tarjeta);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ---------- Botones ---------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-primario { background: var(--primario); color: #ffffff; }
+    .btn-primario:hover:not(:disabled) { background: var(--primario-hover); }
+
+    .btn-secundario { background: #ffffff; border-color: var(--borde-input); color: #334155; }
+    .btn-secundario:hover:not(:disabled) { background: #f8fafc; }
+
+    .btn-peligro { background: #ffffff; border-color: #fecaca; color: var(--peligro); }
+    .btn-peligro:hover:not(:disabled) { background: #fef2f2; border-color: #fca5a5; }
+
+    /* ---------- Panel maestro ---------- */
+    .maestro {
+      flex: 0 0 340px;
+      width: 340px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .maestro-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 20px 0 20px;
+    }
+
+    .maestro-cabecera h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--texto);
+    }
+
+    .btn-agregar { height: 34px; padding: 0 14px; font-size: 13.5px; font-weight: 600; }
+
+    .buscador { padding: 14px 20px 10px 20px; }
+    .buscador-caja { position: relative; width: 100%; }
+
+    .buscador-caja > svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--texto-tenue);
+      pointer-events: none;
+    }
+
+    .buscador input {
+      width: 100%;
+      height: 38px;
+      padding: 8px 12px 8px 36px;
+      border: 1px solid var(--borde-input);
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: var(--texto);
+      font-family: inherit;
+      outline: none;
+      background: #ffffff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .buscador input::placeholder { color: var(--texto-tenue); }
+    .buscador input:focus {
+      border-color: var(--primario);
+      box-shadow: 0 0 0 2px rgba(29, 104, 189, 0.15);
+    }
+
+    .lista-clientes {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 6px 12px 16px 16px;
+    }
+
+    .cliente-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      border: 0;
+      width: 100%;
+      background: transparent;
+      text-align: left;
+      transition: background-color 0.15s ease;
+    }
+
+    .cliente-item:hover { background: #f8fafc; }
+    .cliente-item.activo { background: #e8f2fc; }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .cliente-datos { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    .cliente-nombre {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--texto);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cliente-email {
+      font-size: 12.5px;
+      color: var(--texto-secundario);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lista-vacio {
+      margin: 18px 4px;
+      font-size: 13px;
+      color: var(--texto-tenue);
+      text-align: center;
+    }
+
+    /* ---------- Panel detalle ---------- */
+    .detalle {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 28px;
+      overflow: hidden;
+    }
+
+    .ficha { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+
+    .ficha-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .ficha-nombre {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--texto);
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .ficha-derecha { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .ficha-id { color: var(--texto-tenue); font-size: 14px; font-weight: 500; }
+    .ficha-acciones { display: flex; gap: 8px; }
+    .btn-accion { height: 32px; padding: 0 12px; font-size: 13px; font-weight: 500; }
+
+    .contacto {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 32px;
+      margin-top: 14px;
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+
+    .contacto-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #334155;
+      min-width: 0;
+    }
+
+    .contacto-item > svg { flex-shrink: 0; color: var(--texto-secundario); }
+    .contacto-item .texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .contacto-item.sin-dato .texto { color: var(--texto-tenue); }
+
+    .contacto-item.direccion { align-items: flex-start; grid-row: span 2; }
+    .contacto-item.direccion .lineas { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .contacto-item.direccion .lineas .texto { white-space: normal; }
+
+    /* ---------- Subformulario de actividad ---------- */
+    .form-actividad {
+      flex-shrink: 0;
+      border: 1px dashed var(--borde-input);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    /* Cuando se edita un compromiso, el subformulario se destaca. */
+    .form-actividad.editando {
+      border-style: solid;
+      border-color: var(--primario);
+      box-shadow: 0 0 0 2px rgba(29, 104, 189, 0.12);
+    }
+
+    .form-actividad h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--texto);
+    }
+
+    .form-actividad-fila {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .input {
+      height: 38px;
+      border: 1px solid var(--borde-input);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      color: var(--texto);
+      font-family: inherit;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input::placeholder { color: var(--texto-tenue); }
+    .input:focus {
+      border-color: var(--primario);
+      box-shadow: 0 0 0 2px rgba(29, 104, 189, 0.15);
+    }
+
+    .input-descripcion { flex: 2; min-width: 180px; }
+
+    .input-fecha-wrap { position: relative; flex: 1; min-width: 160px; }
+    .input-fecha-wrap .input { width: 100%; padding-right: 34px; }
+    .input-fecha-wrap > svg {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--texto-tenue);
+      pointer-events: none;
+    }
+    .input-fecha-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      position: absolute;
+      right: 0;
+      width: 34px;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .btn-guardar { height: 38px; padding: 0 16px; font-size: 13.5px; }
+    .btn-cancelar { height: 38px; padding: 0 14px; font-size: 13.5px; }
+
+    /* ---------- Listas de actividades ---------- */
+    .actividades { flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px; }
+
+    .seccion-titulo { margin: 0 0 10px; font-size: 16.5px; font-weight: 700; color: var(--texto); }
+    .seccion-titulo.completadas { margin-top: 20px; }
+
+    .tarjeta-actividad {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #ffffff;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .tarjeta-izq { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+    .check {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--texto-tenue);
+      border-radius: 4px;
+      background: #ffffff;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: #ffffff;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .check:hover:not(:disabled) { background: #f8fafc; border-color: var(--texto-secundario); }
+    .check:disabled { cursor: not-allowed; opacity: 0.6; }
+
+    .check.completa {
+      background: var(--exito);
+      border-color: var(--exito);
+      cursor: default;
+    }
+
+    /* El checkbox de una completada permite volver a compromisos. */
+    .check.reabrible { cursor: pointer; }
+    .check.reabrible:hover:not(:disabled) { background: #059669; border-color: #059669; }
+
+    .actividad-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+    .actividad-titulo {
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--texto);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .actividad-meta {
+      font-size: 12.5px;
+      color: var(--texto-secundario);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .actividad-meta .sin-fecha { color: var(--texto-tenue); }
+    .actividad-meta .sep { color: var(--texto-tenue); }
+    .actividad-meta .vencido { color: var(--peligro); font-weight: 600; }
+
+    .tarjeta-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .btn-icono {
+      background: #ffffff;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      padding: 5px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--texto-secundario);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-icono:hover:not(:disabled) { border-color: var(--borde-input); background: #f8fafc; }
+    .btn-icono:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-icono.peligro { border-color: #fecaca; color: var(--peligro); }
+    .btn-icono.peligro:hover:not(:disabled) { background: #fef2f2; border-color: #fca5a5; }
+
+    .actividad-vacio { margin: 0 0 8px; font-size: 13px; color: var(--texto-tenue); }
+
+    /* ---------- Formulario de cliente ---------- */
+    .form-cliente {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      height: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .form-cliente h2 { margin: 0; font-size: 24px; font-weight: 700; color: var(--texto); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    .campo.ancho { grid-column: 1 / -1; }
+    .campo label { font-size: 12.5px; font-weight: 600; color: #475569; }
+    .campo .input { width: 100%; }
+
+    .form-error { margin: 0; font-size: 13px; color: var(--peligro); }
+    .form-acciones { display: flex; gap: 10px; margin-top: 4px; }
+
+    /* ---------- Estados vacíos ---------- */
+    .vacio {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--texto-tenue);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .vacio svg { color: #cbd5e1; }
+
+    /* ---------- Aviso de error ---------- */
+    .toast {
+      position: fixed;
+      top: 70px;
+      right: 24px;
+      z-index: 50;
+      max-width: 380px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ---------- Barras de scroll internas ---------- */
+    .lista-clientes, .actividades, .form-cliente { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+    .lista-clientes::-webkit-scrollbar,
+    .actividades::-webkit-scrollbar,
+    .form-cliente::-webkit-scrollbar { width: 6px; }
+
+    .lista-clientes::-webkit-scrollbar-track,
+    .actividades::-webkit-scrollbar-track,
+    .form-cliente::-webkit-scrollbar-track { background: transparent; }
+
+    .lista-clientes::-webkit-scrollbar-thumb,
+    .actividades::-webkit-scrollbar-thumb,
+    .form-cliente::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useCallback, useEffect, useRef, useState } = React;
+
+    /* ============================ Utilidades ============================ */
+
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    const PALETA_AVATARES = [
+      { fondo: '#dbeafe', texto: '#1d4ed8' },
+      { fondo: '#dcfce7', texto: '#15803d' },
+      { fondo: '#ede9fe', texto: '#6d28d9' },
+      { fondo: '#ffedd5', texto: '#c2410c' },
+      { fondo: '#ffe4e6', texto: '#be123c' },
+      { fondo: '#ccfbf1', texto: '#0f766e' },
+      { fondo: '#e0e7ff', texto: '#4338ca' },
+    ];
+
+    /** Llama a la API REST y devuelve el JSON (o null en 204). */
+    async function api(ruta, opciones = {}) {
+      const config = { method: opciones.method || 'GET', headers: {} };
+      if (opciones.body !== undefined) {
+        config.headers['Content-Type'] = 'application/json';
+        config.body = JSON.stringify(opciones.body);
+      }
+      const respuesta = await fetch('/api' + ruta, config);
+      if (respuesta.status === 204) return null;
+
+      let datos = null;
+      try {
+        datos = await respuesta.json();
+      } catch (_) {
+        datos = null;
+      }
+
+      if (!respuesta.ok) {
+        throw new Error((datos && datos.error) || 'Error ' + respuesta.status);
+      }
+      return datos;
+    }
+
+    /** Fecha ISO corta -> "22 oct 2026". */
+    function formatearFecha(iso) {
+      if (!iso) return null;
+      const partes = iso.split('-').map(Number);
+      if (partes.length !== 3 || partes.some(Number.isNaN)) return null;
+      const [anio, mes, dia] = partes;
+      return dia + ' ' + MESES[mes - 1] + ' ' + anio;
+    }
+
+    /** Fecha local de hoy como YYYY-MM-DD. */
+    function hoyISO() {
+      const ahora = new Date();
+      const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+      const dia = String(ahora.getDate()).padStart(2, '0');
+      return ahora.getFullYear() + '-' + mes + '-' + dia;
+    }
+
+    function iniciales(nombre) {
+      const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+      if (partes.length === 0) return '?';
+      if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+      return (partes[0][0] + partes[1][0]).toUpperCase();
+    }
+
+    function colorAvatar(id) {
+      // El primer cliente usa el primer color de la paleta (id 1 -> índice 0).
+      return PALETA_AVATARES[(id - 1) % PALETA_AVATARES.length];
+    }
+
+    /* ============================== Iconos ============================== */
+
+    function Icono({ size = 16, children, ...props }) {
+      return (
+        <svg
+          width={size}
+          height={size}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          {...props}
+        >
+          {children}
+        </svg>
+      );
+    }
+
+    const IcoLupa = (p) => (
+      <Icono {...p}>
+        <circle cx="11" cy="11" r="7" />
+        <path d="m21 21-4.3-4.3" />
+      </Icono>
+    );
+
+    const IcoMas = (p) => (
+      <Icono {...p}>
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+      </Icono>
+    );
+
+    const IcoLapiz = (p) => (
+      <Icono {...p}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </Icono>
+    );
+
+    const IcoPapelera = (p) => (
+      <Icono {...p}>
+        <path d="M3 6h18" />
+        <path d="M8 6V4h8v2" />
+        <path d="M19 6l-1 14H6L5 6" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+      </Icono>
+    );
+
+    const IcoSobre = (p) => (
+      <Icono {...p}>
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <path d="m22 7-10 6L2 7" />
+      </Icono>
+    );
+
+    const IcoTelefono = (p) => (
+      <Icono {...p}>
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
+      </Icono>
+    );
+
+    const IcoPin = (p) => (
+      <Icono {...p}>
+        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0Z" />
+        <circle cx="12" cy="10" r="3" />
+      </Icono>
+    );
+
+    const IcoCalendario = (p) => (
+      <Icono {...p}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4" />
+        <path d="M8 2v4" />
+        <path d="M3 10h18" />
+      </Icono>
+    );
+
+    const IcoDisquete = (p) => (
+      <Icono {...p}>
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </Icono>
+    );
+
+    const IcoCruz = (p) => (
+      <Icono {...p}>
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </Icono>
+    );
+
+    const IcoTilde = (p) => (
+      <Icono {...p}>
+        <path d="M20 6 9 17l-5-5" />
+      </Icono>
+    );
+
+    /* ============================ Componentes ============================ */
+
+    function FilaCliente({ cliente, activo, onClick }) {
+      const color = colorAvatar(cliente.id);
+      return (
+        <button
+          type="button"
+          className={'cliente-item' + (activo ? ' activo' : '')}
+          onClick={onClick}
+          title={cliente.nombre}
+        >
+          <span
+            className="avatar"
+            style={{ backgroundColor: color.fondo, color: color.texto }}
+          >
+            {iniciales(cliente.nombre)}
+          </span>
+          <span className="cliente-datos">
+            <span className="cliente-nombre">{cliente.nombre}</span>
+            <span className="cliente-email">{cliente.email}</span>
+          </span>
+        </button>
+      );
+    }
+
+    function FormularioActividad({ actividad, onGuardar, onCancelar, ocupado }) {
+      const [descripcion, setDescripcion] = useState('');
+      const [fecha, setFecha] = useState('');
+      const [focoFecha, setFocoFecha] = useState(false);
+      const descripcionRef = useRef(null);
+
+      useEffect(() => {
+        setDescripcion(actividad ? actividad.descripcion : '');
+        setFecha(actividad && actividad.fecha ? actividad.fecha : '');
+        setFocoFecha(false);
+        // Al editar, el foco pasa al campo para que el cambio sea evidente.
+        if (actividad && descripcionRef.current) descripcionRef.current.focus();
+      }, [actividad]);
+
+      const tipoFecha = focoFecha || fecha ? 'date' : 'text';
+
+      function enviar(evento) {
+        evento.preventDefault();
+        if (!descripcion.trim() || ocupado) return;
+        onGuardar({ descripcion: descripcion.trim(), fecha: fecha || null });
+      }
+
+      function cancelar() {
+        setDescripcion('');
+        setFecha('');
+        onCancelar();
+      }
+
+      return (
+        <form
+          className={'form-actividad' + (actividad ? ' editando' : '')}
+          onSubmit={enviar}
+        >
+          <h3>{actividad ? 'Editar actividad' : 'Agregar actividad'}</h3>
+          <div className="form-actividad-fila">
+            <input
+              ref={descripcionRef}
+              className="input input-descripcion"
+              placeholder="Descripción de la actividad"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              maxLength={200}
+              autoComplete="off"
+              required
+            />
+
+            <div className="input-fecha-wrap">
+              <input
+                className="input"
+                type={tipoFecha}
+                placeholder="Fecha opcional"
+                value={fecha}
+                onFocus={() => setFocoFecha(true)}
+                onBlur={() => setFocoFecha(false)}
+                onChange={(e) => setFecha(e.target.value)}
+              />
+              <IcoCalendario size={16} />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primario btn-guardar"
+              disabled={ocupado}
+            >
+              <IcoDisquete size={15} />
+              Guardar
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secundario btn-cancelar"
+              onClick={cancelar}
+              disabled={ocupado}
+            >
+              <IcoCruz size={14} />
+              Cancelar
+            </button>
+          </div>
+        </form>
+      );
+    }
+
+    function TarjetaActividad({
+      actividad,
+      completada,
+      onCompletar,
+      onReabrir,
+      onEditar,
+      onEliminar,
+      ocupado,
+    }) {
+      const fechaTexto = formatearFecha(actividad.fecha);
+      const vencida = !completada && actividad.fecha && actividad.fecha < hoyISO();
+
+      return (
+        <div className="tarjeta-actividad">
+          <div className="tarjeta-izq">
+            {completada ? (
+              <button
+                type="button"
+                className="check completa reabrible"
+                title="Volver a compromisos"
+                aria-label="Volver a compromisos"
+                onClick={() => onReabrir(actividad.id)}
+                disabled={ocupado}
+              >
+                <IcoTilde size={12} strokeWidth={3} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="check"
+                title="Marcar como completada"
+                aria-label="Marcar como completada"
+                onClick={() => onCompletar(actividad.id)}
+                disabled={ocupado}
+              />
+            )}
+
+            <div className="actividad-info">
+              <span className="actividad-titulo" title={actividad.descripcion}>
+                {actividad.descripcion}
+              </span>
+
+              {completada ? (
+                <span className="actividad-meta">
+                  Completada el {formatearFecha(actividad.fechaCompletada) || 'sin fecha'}
+                </span>
+              ) : fechaTexto ? (
+                <span className="actividad-meta">
+                  <span>{fechaTexto}</span>
+                  {vencida && <span className="sep">·</span>}
+                  {vencida && <span className="vencido">Vencido</span>}
+                </span>
+              ) : (
+                <span className="actividad-meta">
+                  <span className="sin-fecha">Sin fecha</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {!completada && (
+            <div className="tarjeta-acciones">
+              <button
+                type="button"
+                className="btn-icono"
+                title="Editar actividad"
+                aria-label="Editar actividad"
+                onClick={() => onEditar(actividad)}
+                disabled={ocupado}
+              >
+                <IcoLapiz size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-icono peligro"
+                title="Eliminar actividad"
+                aria-label="Eliminar actividad"
+                onClick={() => onEliminar(actividad)}
+                disabled={ocupado}
+              >
+                <IcoPapelera size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function FichaCliente({
+      cliente,
+      actividadEditando,
+      ocupado,
+      onEditar,
+      onEliminar,
+      onGuardarActividad,
+      onEditarActividad,
+      onCancelarActividad,
+      onCompletar,
+      onReabrir,
+      onEliminarActividad,
+    }) {
+      return (
+        <div className="ficha">
+          <div className="ficha-cabecera">
+            <h2 className="ficha-nombre">{cliente.nombre}</h2>
+
+            <div className="ficha-derecha">
+              <span className="ficha-id">#{cliente.id}</span>
+              <div className="ficha-acciones">
+                <button
+                  type="button"
+                  className="btn btn-secundario btn-accion"
+                  onClick={onEditar}
+                  disabled={ocupado}
+                >
+                  <IcoLapiz size={14} />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-peligro btn-accion"
+                  onClick={onEliminar}
+                  disabled={ocupado}
+                >
+                  <IcoPapelera size={14} />
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="contacto">
+            <div className="contacto-item">
+              <IcoSobre size={16} />
+              <span className="texto">{cliente.email}</span>
+            </div>
+
+            <div className={'contacto-item direccion' + (cliente.direccion ? '' : ' sin-dato')}>
+              <IcoPin size={16} />
+              <span className="lineas">
+                <span className="texto">{cliente.direccion || 'Sin dirección'}</span>
+                {cliente.ciudad && <span className="texto">{cliente.ciudad}</span>}
+              </span>
+            </div>
+
+            <div className={'contacto-item' + (cliente.telefono ? '' : ' sin-dato')}>
+              <IcoTelefono size={16} />
+              <span className="texto">{cliente.telefono || 'Sin teléfono'}</span>
+            </div>
+          </div>
+
+          <FormularioActividad
+            actividad={actividadEditando}
+            onGuardar={onGuardarActividad}
+            onCancelar={onCancelarActividad}
+            ocupado={ocupado}
+          />
+
+          <div className="actividades">
+            <h3 className="seccion-titulo">Compromisos</h3>
+
+            {cliente.compromisos.length === 0 && (
+              <p className="actividad-vacio">No hay compromisos pendientes.</p>
+            )}
+
+            {cliente.compromisos.map((actividad) => (
+              <TarjetaActividad
+                key={actividad.id}
+                actividad={actividad}
+                completada={false}
+                onCompletar={onCompletar}
+                onReabrir={onReabrir}
+                onEditar={onEditarActividad}
+                onEliminar={onEliminarActividad}
+                ocupado={ocupado}
+              />
+            ))}
+
+            <h3 className="seccion-titulo completadas">Actividades completadas</h3>
+
+            {cliente.completadas.length === 0 && (
+              <p className="actividad-vacio">Todavía no hay actividades completadas.</p>
+            )}
+
+            {cliente.completadas.map((actividad) => (
+              <TarjetaActividad
+                key={actividad.id}
+                actividad={actividad}
+                completada={true}
+                onCompletar={onCompletar}
+                onReabrir={onReabrir}
+                onEditar={onEditarActividad}
+                onEliminar={onEliminarActividad}
+                ocupado={ocupado}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function FormularioCliente({ cliente, onGuardar, onCancelar, ocupado }) {
+      const vacio = { nombre: '', email: '', telefono: '', direccion: '', ciudad: '' };
+      const [datos, setDatos] = useState(vacio);
+      const [errorLocal, setErrorLocal] = useState('');
+
+      useEffect(() => {
+        if (cliente) {
+          setDatos({
+            nombre: cliente.nombre || '',
+            email: cliente.email || '',
+            telefono: cliente.telefono || '',
+            direccion: cliente.direccion || '',
+            ciudad: cliente.ciudad || '',
+          });
+        } else {
+          setDatos(vacio);
+        }
+        setErrorLocal('');
+      }, [cliente]);
+
+      function cambiar(campo) {
+        return (evento) => setDatos((previos) => ({ ...previos, [campo]: evento.target.value }));
+      }
+
+      function enviar(evento) {
+        evento.preventDefault();
+        if (!datos.nombre.trim() || !datos.email.trim()) {
+          setErrorLocal('El nombre y el email son obligatorios.');
+          return;
+        }
+        onGuardar({
+          nombre: datos.nombre.trim(),
+          email: datos.email.trim(),
+          telefono: datos.telefono.trim() || null,
+          direccion: datos.direccion.trim() || null,
+          ciudad: datos.ciudad.trim() || null,
+        });
+      }
+
+      return (
+        <form className="form-cliente" onSubmit={enviar}>
+          <h2>{cliente ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
+
+          <div className="form-grid">
+            <div className="campo ancho">
+              <label htmlFor="campo-nombre">Nombre *</label>
+              <input
+                id="campo-nombre"
+                className="input"
+                placeholder="Nombre completo"
+                value={datos.nombre}
+                onChange={cambiar('nombre')}
+                maxLength={120}
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
+
+            <div className="campo ancho">
+              <label htmlFor="campo-email">Email *</label>
+              <input
+                id="campo-email"
+                className="input"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                value={datos.email}
+                onChange={cambiar('email')}
+                maxLength={160}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="campo">
+              <label htmlFor="campo-telefono">Teléfono</label>
+              <input
+                id="campo-telefono"
+                className="input"
+                placeholder="381 555 0123"
+                value={datos.telefono}
+                onChange={cambiar('telefono')}
+                maxLength={40}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="campo">
+              <label htmlFor="campo-ciudad">Ciudad</label>
+              <input
+                id="campo-ciudad"
+                className="input"
+                placeholder="Ciudad"
+                value={datos.ciudad}
+                onChange={cambiar('ciudad')}
+                maxLength={80}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="campo ancho">
+              <label htmlFor="campo-direccion">Dirección</label>
+              <input
+                id="campo-direccion"
+                className="input"
+                placeholder="Calle y número"
+                value={datos.direccion}
+                onChange={cambiar('direccion')}
+                maxLength={160}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          {errorLocal && <p className="form-error">{errorLocal}</p>}
+
+          <div className="form-acciones">
+            <button type="submit" className="btn btn-primario btn-guardar" disabled={ocupado}>
+              <IcoDisquete size={15} />
+              Guardar
+            </button>
+            <button
+              type="button"
+              className="btn btn-secundario btn-guardar"
+              onClick={onCancelar}
+              disabled={ocupado}
+            >
+              <IcoCruz size={14} />
+              Cancelar
+            </button>
+          </div>
+        </form>
+      );
+    }
+
+    /* =============================== App =============================== */
+
+    function App() {
+      const [clientes, setClientes] = useState([]);
+      const [busqueda, setBusqueda] = useState('');
+      const [cargandoLista, setCargandoLista] = useState(true);
+      const [seleccionadoId, setSeleccionadoId] = useState(null);
+      const [detalle, setDetalle] = useState(null);
+      const [modo, setModo] = useState('ficha'); // 'ficha' | 'nuevo' | 'editar'
+      const [actividadEditando, setActividadEditando] = useState(null);
+      const [ocupado, setOcupado] = useState(false);
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+        if (!error) return undefined;
+        const temporizador = setTimeout(() => setError(''), 4500);
+        return () => clearTimeout(temporizador);
+      }, [error]);
+
+      const cargarLista = useCallback(async (termino) => {
+        try {
+          setCargandoLista(true);
+          const limpio = termino.trim();
+          const datos = await api(
+            '/clientes' + (limpio ? '?busqueda=' + encodeURIComponent(limpio) : ''),
+          );
+          setClientes(datos);
+          return datos;
+        } catch (e) {
+          setError(e.message);
+          return [];
+        } finally {
+          setCargandoLista(false);
+        }
+      }, []);
+
+      useEffect(() => {
+        const temporizador = setTimeout(() => cargarLista(busqueda), 250);
+        return () => clearTimeout(temporizador);
+      }, [busqueda, cargarLista]);
+
+      const cargarDetalle = useCallback(async (id) => {
+        const datos = await api('/clientes/' + id);
+        setDetalle(datos);
+        return datos;
+      }, []);
+
+      const seleccionar = useCallback(
+        async (id) => {
+          setSeleccionadoId(id);
+          setModo('ficha');
+          setActividadEditando(null);
+          try {
+            await cargarDetalle(id);
+          } catch (e) {
+            setError(e.message);
+          }
+        },
+        [cargarDetalle],
+      );
+
+      // Si no hay cliente seleccionado, se elige el primero de la lista.
+      useEffect(() => {
+        if (modo !== 'ficha' || detalle || cargandoLista || clientes.length === 0) return;
+        seleccionar(clientes[0].id);
+      }, [modo, detalle, cargandoLista, clientes, seleccionar]);
+
+      function abrirNuevo() {
+        setModo('nuevo');
+        setActividadEditando(null);
+      }
+
+      async function guardarCliente(datos) {
+        setOcupado(true);
+        try {
+          const esEdicion = modo === 'editar' && seleccionadoId;
+          const guardado = esEdicion
+            ? await api('/clientes/' + seleccionadoId, { method: 'PUT', body: datos })
+            : await api('/clientes', { method: 'POST', body: datos });
+
+          setSeleccionadoId(guardado.id);
+          setActividadEditando(null);
+          await cargarDetalle(guardado.id);
+          setModo('ficha');
+
+          if (!esEdicion && busqueda.trim()) {
+            setBusqueda('');
+          } else {
+            await cargarLista(busqueda);
+          }
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      async function eliminarCliente() {
+        if (!detalle) return;
+        const confirmado = window.confirm(
+          '¿Eliminar a ' + detalle.nombre + '? Se borrarán también todas sus actividades.',
+        );
+        if (!confirmado) return;
+
+        setOcupado(true);
+        try {
+          await api('/clientes/' + seleccionadoId, { method: 'DELETE' });
+          setDetalle(null);
+          setSeleccionadoId(null);
+          await cargarLista(busqueda);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      async function guardarActividad(datos) {
+        setOcupado(true);
+        try {
+          if (actividadEditando) {
+            await api('/actividades/' + actividadEditando.id, {
+              method: 'PUT',
+              body: datos,
+            });
+          } else {
+            await api('/actividades', {
+              method: 'POST',
+              body: { clienteId: seleccionadoId, ...datos },
+            });
+          }
+          setActividadEditando(null);
+          await cargarDetalle(seleccionadoId);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      async function completarActividad(id) {
+        setOcupado(true);
+        try {
+          await api('/actividades/' + id + '/completar', { method: 'PATCH' });
+          if (actividadEditando && actividadEditando.id === id) {
+            setActividadEditando(null);
+          }
+          await cargarDetalle(seleccionadoId);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      async function reabrirActividad(id) {
+        setOcupado(true);
+        try {
+          await api('/actividades/' + id + '/reabrir', { method: 'PATCH' });
+          if (actividadEditando && actividadEditando.id === id) {
+            setActividadEditando(null);
+          }
+          await cargarDetalle(seleccionadoId);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      async function eliminarActividad(actividad) {
+        const confirmado = window.confirm(
+          '¿Eliminar la actividad "' + actividad.descripcion + '"?',
+        );
+        if (!confirmado) return;
+
+        setOcupado(true);
+        try {
+          await api('/actividades/' + actividad.id, { method: 'DELETE' });
+          if (actividadEditando && actividadEditando.id === actividad.id) {
+            setActividadEditando(null);
+          }
+          await cargarDetalle(seleccionadoId);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setOcupado(false);
+        }
+      }
+
+      return (
+        <div className="app">
+          <header className="header">
+            <h1>MiniCRM</h1>
+          </header>
+
+          <main className="contenido">
+            <aside className="panel maestro">
+              <div className="maestro-cabecera">
+                <h2>Clientes</h2>
+                <button type="button" className="btn btn-primario btn-agregar" onClick={abrirNuevo}>
+                  <IcoMas size={14} />
+                  Agregar
+                </button>
+              </div>
+
+              <div className="buscador">
+                <div className="buscador-caja">
+                  <IcoLupa size={16} />
+                  <input
+                    type="search"
+                    placeholder="Buscar por cualquier campo..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    autoComplete="off"
+                    aria-label="Buscar clientes"
+                  />
+                </div>
+              </div>
+
+              <div className="lista-clientes">
+                {cargandoLista && clientes.length === 0 && (
+                  <p className="lista-vacio">Cargando clientes...</p>
+                )}
+
+                {!cargandoLista && clientes.length === 0 && (
+                  <p className="lista-vacio">
+                    {busqueda.trim()
+                      ? 'No se encontraron clientes para esa búsqueda.'
+                      : 'Todavía no hay clientes cargados.'}
+                  </p>
+                )}
+
+                {clientes.map((cliente) => (
+                  <FilaCliente
+                    key={cliente.id}
+                    cliente={cliente}
+                    activo={cliente.id === seleccionadoId}
+                    onClick={() => seleccionar(cliente.id)}
+                  />
+                ))}
+              </div>
+            </aside>
+
+            <section className="panel detalle">
+              {modo === 'ficha' && detalle && (
+                <FichaCliente
+                  cliente={detalle}
+                  actividadEditando={actividadEditando}
+                  ocupado={ocupado}
+                  onEditar={() => setModo('editar')}
+                  onEliminar={eliminarCliente}
+                  onGuardarActividad={guardarActividad}
+                  onEditarActividad={(actividad) => setActividadEditando(actividad)}
+                  onCancelarActividad={() => setActividadEditando(null)}
+                  onCompletar={completarActividad}
+                  onReabrir={reabrirActividad}
+                  onEliminarActividad={eliminarActividad}
+                />
+              )}
+
+              {modo === 'ficha' && !detalle && (
+                <div className="vacio">
+                  <IcoSobre size={40} />
+                  <span>Seleccioná un cliente para ver su ficha y sus actividades.</span>
+                </div>
+              )}
+
+              {modo !== 'ficha' && (
+                <FormularioCliente
+                  cliente={modo === 'editar' ? detalle : null}
+                  onGuardar={guardarCliente}
+                  onCancelar={() => setModo('ficha')}
+                  ocupado={ocupado}
+                />
+              )}
+            </section>
+          </main>
+
+          {error && <div className="toast" role="alert">{error}</div>}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
