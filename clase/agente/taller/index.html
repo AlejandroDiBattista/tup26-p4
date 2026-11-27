@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Reloj analógico</title>
+  <style>
+    * { box-sizing: border-box }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at top, #26334d, #101827 65%); color: #f4f5f8; font-family: system-ui, sans-serif }
+    main { padding: 2rem; text-align: center }
+    h1 { margin: 0 0 0.5rem; font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 600 }
+    .subtitle { margin: 0 0 2rem; color: #adb9cd }
+    .clock { display: block; width: min(78vw, 340px); height: auto; filter: drop-shadow(0 20px 35px #0007) }
+    .face { fill: #f8f7f2; stroke: #d8dde6; stroke-width: 4 }
+    .marker { stroke: #25334b; stroke-width: 3; stroke-linecap: round }
+    .hand { stroke: #25334b; stroke-linecap: round }
+    .hour { stroke-width: 7 }
+    .minute { stroke-width: 5 }
+    .second { stroke: #df625b; stroke-width: 2 }
+    .digital { margin: 1.5rem 0 0; font-size: 1.6rem; font-variant-numeric: tabular-nums; letter-spacing: 0.08em }
+    .date { margin: 0.4rem 0 0; color: #adb9cd; text-transform: capitalize }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Reloj analógico</h1>
+    <p class="subtitle">Tu hora local, en tiempo real</p>
+    <svg class="clock" viewBox="0 0 240 240" role="img" aria-label="Reloj analógico">
+      <circle class="face" cx="120" cy="120" r="115" />
+      <g class="marker">
+        <line x1="120" y1="18" x2="120" y2="31" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(30 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(60 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(90 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(120 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(150 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(180 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(210 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(240 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(270 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(300 120 120)" />
+        <line x1="120" y1="18" x2="120" y2="31" transform="rotate(330 120 120)" />
+      </g>
+      <line id="hour" class="hand hour" x1="120" y1="128" x2="120" y2="69" />
+      <line id="minute" class="hand minute" x1="120" y1="130" x2="120" y2="42" />
+      <line id="second" class="hand second" x1="120" y1="140" x2="120" y2="35" />
+      <circle cx="120" cy="120" r="5" fill="#df625b" />
+    </svg>
+    <p id="time" class="digital" aria-label="Hora actual"></p>
+    <p id="date" class="date"></p>
+    <noscript>Activá JavaScript para ver la hora actual</noscript>
+  </main>
+  <script>
+    const hourHand = document.getElementById('hour')
+    const minuteHand = document.getElementById('minute')
+    const secondHand = document.getElementById('second')
+    const time = document.getElementById('time')
+    const date = document.getElementById('date')
+    const clock = document.querySelector('.clock')
+    const timeFormat = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    const dateFormat = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    let lastSecond = -1
+
+    function updateClock() {
+      const now = new Date()
+      const seconds = now.getSeconds() + now.getMilliseconds() / 1000
+      const minutes = now.getMinutes() + seconds / 60
+      const hours = now.getHours() % 12 + minutes / 60
+      hourHand.setAttribute('transform', `rotate(${hours * 30} 120 120)`)
+      minuteHand.setAttribute('transform', `rotate(${minutes * 6} 120 120)`)
+      secondHand.setAttribute('transform', `rotate(${seconds * 6} 120 120)`)
+
+      if (now.getSeconds() !== lastSecond) {
+        const formattedTime = timeFormat.format(now)
+        time.textContent = formattedTime
+        date.textContent = dateFormat.format(now)
+        clock.setAttribute('aria-label', `Reloj analógico, ${formattedTime}`)
+        lastSecond = now.getSeconds()
+      }
+
+      requestAnimationFrame(updateClock)
+    }
+
+    updateClock()
+  </script>
+</body>
+</html>

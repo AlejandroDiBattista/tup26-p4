@@ -17,7 +17,7 @@ beforeEach(async () => {
   db.$client.exec(`
     CREATE TABLE subjects (id TEXT PRIMARY KEY, name TEXT, academic_year INTEGER, term TEXT, owner_email TEXT, created_at TEXT, updated_at TEXT);
     CREATE TABLE courses (id TEXT PRIMARY KEY, subject_id TEXT, name TEXT, commission TEXT, classroom TEXT, term TEXT, owner_email TEXT, created_at TEXT, updated_at TEXT);
-    CREATE TABLE students (id TEXT PRIMARY KEY, legajo TEXT, apellido TEXT, nombre TEXT, telefono TEXT, github TEXT, es_colaborador INTEGER, owner_email TEXT, created_at TEXT, updated_at TEXT);
+    CREATE TABLE students (id TEXT PRIMARY KEY, legajo TEXT, apellido TEXT, nombre TEXT, telefono TEXT, github TEXT, es_colaborador INTEGER, grupo INTEGER, owner_email TEXT, created_at TEXT, updated_at TEXT);
     CREATE TABLE enrollments (id TEXT PRIMARY KEY, course_id TEXT, student_id TEXT, owner_email TEXT, created_at TEXT);
     CREATE TABLE class_sessions (id TEXT PRIMARY KEY, course_id TEXT, date TEXT, start_time TEXT, end_time TEXT, status TEXT, cancellation_reason TEXT, cancellation_note TEXT, topic TEXT, owner_email TEXT, created_at TEXT, updated_at TEXT);
     CREATE TABLE attendance (id TEXT PRIMARY KEY, session_id TEXT, student_id TEXT, status TEXT, present INTEGER, owner_email TEXT, created_at TEXT, updated_at TEXT,
@@ -27,7 +27,7 @@ beforeEach(async () => {
     INSERT INTO courses VALUES
       ('c1', 'subject', 'C1', 'C1', '', '', 'teacher@example.test', '', ''),
       ('c3', 'subject', 'C3', 'C3', '', '', 'teacher@example.test', '', '');
-    INSERT INTO students VALUES
+    INSERT INTO students (id, legajo, apellido, nombre, telefono, github, es_colaborador, owner_email, created_at, updated_at) VALUES
       ('s1', '60001', 'Uno', 'Alumno', NULL, NULL, 0, 'teacher@example.test', '', ''),
       ('s2', '60002', 'Dos', 'Alumno', NULL, NULL, 0, 'teacher@example.test', '', '');
     INSERT INTO enrollments VALUES

@@ -85,6 +85,8 @@ const messages = {
     deleteClass: "Borrar la clase del {{date}}",
     confirmDeleteClass: "¿Borrar la clase del {{date}} y su asistencia?",
     attendancePercent: "Asistencia",
+    studentGroup: "Grupo",
+    noStudentGroup: "Sin grupo",
     classesAttended: "Clases asistidas",
     presentBy: "{{name}} presente",
     studentsTitle: "Alumnos",

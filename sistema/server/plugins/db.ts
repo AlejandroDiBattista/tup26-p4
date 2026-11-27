@@ -156,6 +156,11 @@ const runAgendaBaseMigrations = runMigrations(
       name: "agenda-students-github-collaborator",
       sql: "ALTER TABLE students ADD COLUMN IF NOT EXISTS es_colaborador INTEGER NOT NULL DEFAULT 0",
     },
+    {
+      version: 14,
+      name: "agenda-students-group",
+      sql: "ALTER TABLE students ADD COLUMN IF NOT EXISTS grupo INTEGER",
+    },
   ],
   { table: "agenda_migrations" },
 );

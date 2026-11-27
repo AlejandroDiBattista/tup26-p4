@@ -12,10 +12,10 @@ beforeEach(async () => {
   db.$client.exec(`
     CREATE TABLE students (
       id TEXT PRIMARY KEY, legajo TEXT NOT NULL, apellido TEXT NOT NULL,
-      nombre TEXT NOT NULL, telefono TEXT, github TEXT, es_colaborador INTEGER,
+      nombre TEXT NOT NULL, telefono TEXT, github TEXT, es_colaborador INTEGER, grupo INTEGER,
       owner_email TEXT NOT NULL, created_at TEXT, updated_at TEXT
     );
-    INSERT INTO students VALUES
+    INSERT INTO students (id, legajo, apellido, nombre, telefono, github, es_colaborador, owner_email, created_at, updated_at) VALUES
       ('a', '100', 'Apellido', 'Nombre', NULL, 'example-user', 1,
        'teacher@example.test', '', ''),
       ('b', '100', 'Otro', 'Alumno', NULL, 'another-user', 1,

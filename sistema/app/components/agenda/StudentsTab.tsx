@@ -44,6 +44,7 @@ interface Student {
   telefono: string | null;
   github: string | null;
   esColaborador: boolean;
+  grupo: number | null;
   clasesPresentes: number;
   course: Course;
 }
@@ -194,9 +195,10 @@ export function StudentsTab({
         student.telefono ?? "",
         student.github ?? "",
         student.course.commission ?? "",
+        student.grupo == null ? t("agenda.noStudentGroup") : `${t("agenda.studentGroup")} ${student.grupo}`,
       ].some((value) => value.toLocaleLowerCase("es").includes(needle));
     });
-  }, [courseFilter, query, students]);
+  }, [courseFilter, query, students, t]);
 
   const studentFilterCounts = useMemo(
     () => ({
@@ -533,6 +535,8 @@ export function StudentsTab({
                     </span>
                   </div>
                   <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">
+                    <dt className="text-muted-foreground">{t("agenda.studentGroup")}</dt>
+                    <dd>{student.grupo ?? t("agenda.noStudentGroup")}</dd>
                     <dt className="text-muted-foreground">{t("agenda.classesAttended")}</dt>
                     <dd className="tabular-nums">{student.clasesPresentes}</dd>
                     <dt className="text-muted-foreground">{t("agenda.practicos")}</dt>
@@ -618,6 +622,9 @@ export function StudentsTab({
                   <th scope="col" className="px-3 py-2.5 font-medium">
                     {t("agenda.course")}
                   </th>
+                  <th scope="col" className="px-3 py-2.5 font-medium">
+                    {t("agenda.studentGroup")}
+                  </th>
                   <th scope="col" className="px-3 py-2.5 text-center font-medium">
                     {t("agenda.classesAttended")}
                   </th>
@@ -686,6 +693,7 @@ export function StudentsTab({
                           {student.course.commission ?? student.course.name}
                         </span>
                       </td>
+                      <td className="px-3 py-2">{student.grupo ?? t("agenda.noStudentGroup")}</td>
                       <td className="px-3 py-2 text-center tabular-nums">
                         {student.clasesPresentes}
                       </td>

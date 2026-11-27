@@ -1,0 +1,84 @@
+# TUP26-P4
+## Resultados 2º parcial
+
+```
+- 50793  Peralta, Lucas                       ⚪️
+- 52133  Sosa Villagra, José Lautaro          ⚪️
+- 54273  Menéndez, Valentín José              ⚪️ | 
+- 54652  Cabrera, Fernando Sebastián          ⚪️ | 
+- 54865  Cequi, Sofí                          🟢 | 
+- 55546  Thomás, Santiago                     ⚪️ | 
+- 55656  Lombardo Ríos, Benjamín              ⚪️ | 
+- 55956  Blanca, Leandro Ezequiel             🟢 | claude/codex
+- 58755  Cuéllar, Elías Eduardo               🟢 | 
+- 61024  Palacios, Francisco Miguel           🟢 | 
+- 61077  Vittar, Jazmín                       ⚪️ | 
+- 61087  Pérez, Joaquín                       ⚪️ | 
+- 61124  Medina Rodríguez, José Agustín       ⚪️ | 
+- 61175  Risso, Aaron Ezequiel                ⚪️ | 
+- 61246  Palacios, Mateo                      ⚪️ | 
+- 61324  Ruiz, Pablo Emanuel                  ⚪️ | 
+- 61343  Gómez Asat, Tomás                    ⚪️ | 
+- 61441  Carrizo, Gonzalo                     ⚪️ | 
+- 61540  García Mc Guiness, Gonzalo           ⚪️ | 
+- 61543  Andrada, María José                  ⚪️ | 
+- 61595  González Patti, Valentín             🟢 | claude
+- 61673  Delgado, Augusto Emanuel             ⚪️ | 
+- 61732  Paz, Mikael                          ⚪️ | 
+- 61744  Díaz Rossini, Juan José              ⚪️ | 
+- 61851  Gaiser, Lorenzo                      ⚪️ | 
+- 61984  Álvarez, Martín                      ⚪️ | 
+- 62088  Rojas Sosa, Álvaro Tomás             ⚪️ | 
+- 62523  Ledesma, Cristian Germán             🟢 | 
+- 63119  Montes, Luis Esteban                 ⚪️ | 
+- 63137  Díaz, José Simón                     🟢 | 
+- 63139  Torres, Axel                         ⚪️ | 
+- 63140  Manca, Mariano                       ⚪️ | 
+- 63142  Galarze Albornoz, Alejandro Gabriel  🟢 | 
+- 63143  Collante, Pablo Augusto              ⚪️ | 
+- 63146  Ibañez, Lucas Gabriel                🟢 | 
+- 63171  Chocobar, Morena Agustina            ⚪️ | 
+- 63195  Sustaita Fuentes, Federico           ⚪️ | 
+- 63197  Uehara Martorell, Ramiro             🟢 | claude/codex
+- 63198  Parras, Mateo                        🟢 | claude/codex
+- 63200  Rojas, Gael Mauricio                 ⚪️ | 
+- 63204  García Núñez, Germán Ariel           ⚪️ | 
+- 63209  Valdez del Pino, Valentín            ⚪️ | 
+- 63232  Roldán, Enzo Joaquín                 ⚪️ | 
+- 63243  Civili de la Vega, Lisandro          ⚪️
+- 63259  Delgado Ojeda, Francisco Agustín     🟢 | 
+- 63284  Molina Basso, Matías Francisco       ⚪️ | 
+- 63286  Murillo, Facundo Maximiliano         ⚪️ | 
+- 63292  Peralta, María Victoria              🟢 | 
+- 63307  Román, Santiago Francisco            ⚪️ | 
+- 63310  Carobbio Bestani, Leonidas Tiziano   ⚪️ | 
+- 63321  Zottola Caram, Ignacio               🟢 | open code,ds|Geminis
+- 63322  Veliz Herrera, Mayra Candela         ⚪️
+- 63324  Cedrón, Agustina Julieta             ⚪️ | claude/opus
+- 63326  Carrizo Silva, Yaqueline Ailen       ⚪️ | claude/opus
+- 63352  Cordero, Leonel Rodrigo              🟢 | open code,ds|Geminis
+- 63355  Vargas Mopty, Jazmín                 ⚪️ | 
+- 63357  Konevky, David                       🟢 | 
+- 63358  Argañaráz, Leonardo                  ⚪️ | 
+- 63361  Pastrana, Lucila Hainen              🟢 | 
+- 63392  Andina, Juan Ignacio                 ⚪️ | 
+- 63403  Ruiz, Marcos Benjamín                ⚪️ | 
+- 63404  Echavarría Pacios, Facundo           ⚪️ | 
+- 63407  Chirieleison Bonkosky, Rocco         ⚪️
+- 63408  Medina Oliva, Hernán Matías          ⚪️ | 
+- 63409  Acosta, Ulices Mateo                 ⚪️ | 
+- 63426  Osores, Matías                       ⚪️ | 
+- 63428  Albornoz, Tomás Emilio               ⚪️ | 
+- 63434  Martín, Francisco Augusto            ⚪️
+- 63448  López Avila, Eduardo Benjamín        ⚪️ | 
+- 63459  Méndez, Carlos Samuel                ⚪️ | 
+- 63581  Ríos, Tomás Enrique                  ⚪️
+- 63586  Flores, Pablo Ignacio                🟢 | claude
+- 63624  Andrada Romero, Lourdes Micaela      🔴 | claude
+- 63627  Caro, Marcos Daniel                  ⚪️ | 
+- 63630  González, Pablo Hernán               ⚪️ | 
+- 63633  Barroca, Nahu                        ⚪️ | 
+- 63660  Gordillo, Oriana Daniela             🟢 | 
+- 63717  González, Octavio                    🟢 | open code,ds|Geminis
+- 64052  Romano, Máximo Isaías                ⚪️ | 
+```

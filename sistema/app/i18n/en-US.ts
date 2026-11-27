@@ -83,6 +83,8 @@ const messages = {
     deleteClass: "Delete the class on {{date}}",
     confirmDeleteClass: "Delete the class on {{date}} and its attendance?",
     attendancePercent: "Attendance",
+    studentGroup: "Group",
+    noStudentGroup: "No group",
     classesAttended: "Classes attended",
     presentBy: "{{name}} present",
     studentsTitle: "Students",

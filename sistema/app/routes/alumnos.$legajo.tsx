@@ -38,6 +38,7 @@ interface StudentSummary {
     nombre: string;
     telefono: string | null;
     github: string | null;
+    grupo: number | null;
   };
   courses: Course[];
   course: Course | null;
@@ -233,6 +234,10 @@ export default function AlumnoDetalle() {
           }
           details={
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="mb-1 text-xs text-muted-foreground">{t("agenda.studentGroup")}</p>
+                <p>{student.grupo ?? t("agenda.noStudentGroup")}</p>
+              </div>
               <div>
                 <p className="mb-1 text-xs text-muted-foreground">{t("agenda.telefono")}</p>
                 <InlineEdit
