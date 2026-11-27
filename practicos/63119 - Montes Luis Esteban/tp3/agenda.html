@@ -1,33 +1,45 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda</title>
-  <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
-  </style>
-</head>
-<body>
-  <main id="app"></main>
-
-  <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
-
-    const app = document.getElementById('app')
-    html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
-  </script>
-</body>
-</html>
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agenda de alumnos</title>
+<style>
+*{box-sizing:border-box}body{font:16px system-ui;background:#f2f5f4;color:#213b32;margin:0}main{max-width:1100px;margin:auto;padding:24px}header,footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap}header input{flex:1}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}article,dialog{background:white;border:1px solid #cbd8d1;border-radius:14px;padding:20px}article{cursor:pointer;& button{float:right}& h2{font-size:20px}& address{font-style:normal}}button,input{font:inherit;padding:8px}button{cursor:pointer}dialog{max-width:min(420px,95vw);& label{display:grid;margin:8px 0}& footer{margin-top:16px}}dialog::backdrop{background:#14291f80}
+</style><main id="app"></main><script type="module">
+import {html,reactive} from 'https://esm.sh/@arrow-js/core'
+import iniciales from './alumnos.json' with {type:'json'}
+const clave='agenda-63119'
+const guardados=localStorage.getItem(clave)
+const estado=reactive({alumnos:guardados===null?iniciales:JSON.parse(guardados),busqueda:''})
+function guardar(lista){
+  localStorage.setItem(clave,JSON.stringify(lista))
+  estado.alumnos=lista
+}
+if(guardados===null) guardar(iniciales)
+const limpiar=valor=>String(valor).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase()
+function visibles(){
+  const texto=limpiar(estado.busqueda.trim())
+  return estado.alumnos.filter(a=>Object.values(a).some(v=>limpiar(v).includes(texto)))
+    .sort((a,b)=>Number(b.favorito)-Number(a.favorito)||a.apellido.localeCompare(b.apellido,'es',{sensitivity:'base'})||a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}))
+}
+function favorito(a){guardar(estado.alumnos.map(x=>x.id===a.id?{...x,favorito:!x.favorito}:x))}
+const campos=['apellido','nombre','legajo','comision','telefono','github']
+function abrir(alumno){
+  const dialogo=document.createElement('dialog')
+  document.body.append(dialogo)
+  dialogo.addEventListener('close',()=>dialogo.remove(),{once:true})
+  function enviar(e){
+    e.preventDefault()
+    const datos=Object.fromEntries(campos.map(c=>[c,e.target.elements[c].value.trim()]))
+    for(const campo of campos){
+      if(!datos[campo]){e.target.elements[campo].focus();return}
+    }
+    if(alumno) guardar(estado.alumnos.map(x=>x.id===alumno.id?{...x,...datos}:x))
+    else guardar([...estado.alumnos,{...datos,id:crypto.randomUUID(),favorito:false}])
+    dialogo.close()
+  }
+  html`<form @submit=${enviar}><h2>${alumno?'Editar alumno':'Agregar alumno'}</h2>${campos.map(c=>html`<label>${c}<input required name=${c} value=${alumno?.[c]??''}></label>`)}<footer><button>Guardar</button><button type="button" @click=${()=>dialogo.close()}>Cancelar</button>${alumno?html`<button type="button" @click=${()=>{guardar(estado.alumnos.filter(x=>x.id!==alumno.id));dialogo.close()}}>Eliminar</button>`:''}</footer></form>`(dialogo)
+  dialogo.showModal()
+}
+function tarjeta(a){
+  return html`<article tabindex="0" @click=${()=>abrir(a)} @keydown=${e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();favorito(a)}if(e.key==='Enter')abrir(a)}}><button aria-label="Favorito" aria-pressed=${a.favorito} @click=${e=>{e.stopPropagation();favorito(a)}}>${a.favorito?'★':'☆'}</button><h2>${a.apellido}, ${a.nombre}</h2><address>${a.telefono} · ${a.github}</address><footer>Comisión ${a.comision} · Legajo ${a.legajo}</footer></article>`
+}
+html`<header><h1>Agenda</h1><input aria-label="Buscar alumnos" placeholder="Buscar alumnos" @input=${e=>estado.busqueda=e.target.value}><button @click=${()=>abrir()}>Agregar</button></header>
+<section>${()=>visibles().length?visibles().map(tarjeta):'No hay alumnos para mostrar.'}</section>`(document.querySelector('#app'))
+</script></html>
