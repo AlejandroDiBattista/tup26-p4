@@ -19,9 +19,26 @@ function visibles(){
     .sort((a,b)=>Number(b.favorito)-Number(a.favorito)||a.apellido.localeCompare(b.apellido,'es',{sensitivity:'base'})||a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}))
 }
 function favorito(a){guardar(estado.alumnos.map(x=>x.id===a.id?{...x,favorito:!x.favorito}:x))}
+const campos=['apellido','nombre','legajo','comision','telefono','github']
+function abrir(alumno){
+  const dialogo=document.createElement('dialog')
+  document.body.append(dialogo)
+  dialogo.addEventListener('close',()=>dialogo.remove(),{once:true})
+  function enviar(e){
+    e.preventDefault()
+    const datos=Object.fromEntries(campos.map(c=>[c,e.target.elements[c].value.trim()]))
+    for(const campo of campos){
+      if(!datos[campo]){e.target.elements[campo].focus();return}
+    }
+    guardar([...estado.alumnos,{...datos,id:crypto.randomUUID(),favorito:false}])
+    dialogo.close()
+  }
+  html`<form @submit=${enviar}><h2>${alumno?'Editar alumno':'Agregar alumno'}</h2>${campos.map(c=>html`<label>${c}<input required name=${c} value=${alumno?.[c]??''}></label>`)}<footer><button>Guardar</button><button type="button" @click=${()=>dialogo.close()}>Cancelar</button></footer></form>`(dialogo)
+  dialogo.showModal()
+}
 function tarjeta(a){
   return html`<article tabindex="0" @keydown=${e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();favorito(a)}}}><button aria-label="Favorito" aria-pressed=${a.favorito} @click=${e=>{e.stopPropagation();favorito(a)}}>${a.favorito?'★':'☆'}</button><h2>${a.apellido}, ${a.nombre}</h2><address>${a.telefono} · ${a.github}</address><footer>Comisión ${a.comision} · Legajo ${a.legajo}</footer></article>`
 }
-html`<header><h1>Agenda</h1><input aria-label="Buscar alumnos" placeholder="Buscar alumnos" @input=${e=>estado.busqueda=e.target.value}></header>
+html`<header><h1>Agenda</h1><input aria-label="Buscar alumnos" placeholder="Buscar alumnos" @input=${e=>estado.busqueda=e.target.value}><button @click=${()=>abrir()}>Agregar</button></header>
 <section>${()=>visibles().length?visibles().map(tarjeta):'No hay alumnos para mostrar.'}</section>`(document.querySelector('#app'))
 </script></html>
