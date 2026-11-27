@@ -1,0 +1,51 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MiniCRM</title>
+<style>*{box-sizing:border-box}body{margin:0;font:16px system-ui;color:#21353b;background:#f3f5f6}main{height:100dvh;display:grid;grid-template-columns:minmax(180px,30%) 1fr;gap:12px;padding:12px}aside,section{background:white;border-radius:10px;padding:16px;overflow:auto}aside,section{display:flex;flex-direction:column;gap:10px}nav,.actividades{overflow:auto;min-height:0}nav button{display:block;width:100%;text-align:left}button,input{font:inherit;padding:7px;margin:2px}button{cursor:pointer}label{display:block}article{border-bottom:1px solid #ddd;padding:8px}h1,h2,h3{margin:4px 0}@media(max-width:620px){main{grid-template-columns:1fr;grid-template-rows:30% 1fr}}</style>
+<div id="app"></div><script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script><script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect}=React
+async function pedir(ruta,metodo='GET',datos){
+  const r=await fetch('/api/clientes'+ruta,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)})
+  if(!r.ok)throw Error((await r.json()).error)
+  return r.status===204?null:r.json()
+}
+function Formulario({campos,datos,guardar,cancelar}){
+  async function enviar(e){
+    e.preventDefault()
+    await guardar(Object.fromEntries(new FormData(e.currentTarget)))
+  }
+  return <form onSubmit={enviar}>{campos.map(c=><label key={c}>{c}<input name={c} required type={c==='fecha'?'date':c==='correo'?'email':'text'} defaultValue={datos?.[c]??''}/></label>)}<button>Guardar</button><button type="button" onClick={cancelar}>Cancelar</button></form>
+}
+function Agenda(){
+  const [lista,ponerLista]=useState([]),[buscar,ponerBuscar]=useState('')
+  const [id,elegir]=useState(null),[ficha,ponerFicha]=useState(null)
+  const [modo,ponerModo]=useState(''),[actividad,ponerActividad]=useState(null)
+  const [version,recargar]=useState(0),[error,ponerError]=useState('')
+  useEffect(()=>{
+    let activa=true
+    pedir('?buscar='+encodeURIComponent(buscar)).then(datos=>activa&&ponerLista(datos)).catch(e=>activa&&ponerError(e.message))
+    return ()=>{activa=false}
+  },[buscar,version])
+  useEffect(()=>{
+    let activa=true
+    ponerFicha(null)
+    if(id!==null)pedir('/'+id).then(datos=>activa&&ponerFicha(datos)).catch(e=>activa&&ponerError(e.message))
+    return ()=>{activa=false}
+  },[id,version])
+  function seleccionar(valor){elegir(valor);ponerModo('');ponerActividad(null);ponerError('')}
+  async function cambiar(ruta,metodo,datos,nuevo=false){
+    try{
+      const resultado=await pedir(ruta,metodo,datos)
+      seleccionar(nuevo?resultado.id:metodo==='DELETE'&&ruta==='/'+id?null:id)
+      recargar(v=>v+1)
+    }catch(e){ponerError(e.message)}
+  }
+  const ruta='/'+id+'/actividades'
+  return <main><aside><h1>Clientes</h1><input aria-label="Buscar" placeholder="Buscar cliente" value={buscar} onChange={e=>ponerBuscar(e.target.value)}/><button onClick={()=>{seleccionar(null);ponerModo('nuevo')}}>Agregar cliente</button><nav>{lista.map(c=><button key={c.id} onClick={()=>seleccionar(c.id)}>{c.nombre}</button>)}</nav></aside>
+  <section>{error&&<p role="alert">{error}</p>}
+  {modo==='nuevo'||modo==='editar'?<><h2>{modo==='nuevo'?'Nuevo cliente':'Editar cliente'}</h2><Formulario key={modo} campos={['nombre','correo','telefono']} datos={modo==='editar'?ficha:null} guardar={d=>modo==='nuevo'?cambiar('','POST',d,true):cambiar('/'+id,'PUT',d)} cancelar={()=>ponerModo('')}/></>:ficha?<><h2>{ficha.nombre}</h2><div>{ficha.correo} · {ficha.telefono}</div><div><button onClick={()=>ponerModo('editar')}>Editar cliente</button><button onClick={()=>confirm('¿Eliminar cliente y sus actividades?')&&cambiar('/'+id,'DELETE')}>Eliminar cliente</button></div>
+  <h3>Actividades</h3><button onClick={()=>ponerActividad({})}>Agregar actividad</button>
+  {actividad&&<Formulario key={actividad.id??'nueva'} campos={['detalle','fecha']} datos={actividad} cancelar={()=>ponerActividad(null)} guardar={d=>actividad.id?cambiar(ruta+'/'+actividad.id,'PUT',d):cambiar(ruta,'POST',d)}/>}
+  <div className="actividades">{ficha.actividades.map(a=><article key={a.id}><strong>{a.detalle}</strong> · {a.fecha} {a.completa?'· Completa':<div><button onClick={()=>ponerActividad(a)}>Editar</button><button onClick={()=>cambiar(ruta+'/'+a.id+'/completar','PATCH')}>Completar</button><button onClick={()=>cambiar(ruta+'/'+a.id,'DELETE')}>Eliminar</button></div>}</article>)}</div></>:<p>Seleccioná un cliente.</p>}</section></main>
+}
+ReactDOM.createRoot(document.querySelector('#app')).render(<Agenda/>)
+</script></html>
