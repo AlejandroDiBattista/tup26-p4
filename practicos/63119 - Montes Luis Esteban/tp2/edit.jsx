@@ -18,6 +18,24 @@ function separar(texto) {
     return {columnas, filas};
 }
 
+function Tabla({tabla, fila, columna, ancho, alto}) {
+    const anchoCelda = Math.max(5, Math.min(18, ancho - 9));
+    const cantidad = Math.max(1, Math.floor((ancho - 9) / anchoCelda));
+    const inicio = Math.max(0, columna - cantidad + 1);
+    const desde = Math.max(0, fila - alto + 1);
+    function linea(datos, numero) {
+        return <Box key={numero}><Text>{String(numero || '#').padStart(4)} </Text>
+            {datos.slice(inicio, inicio + cantidad).map((valor, i) =>
+                <Text key={i} bold={!numero} inverse={numero === fila + 1 && i + inicio === columna}>
+                    {valor.slice(0, anchoCelda - 1).padEnd(anchoCelda)}
+                </Text>)}</Box>;
+    }
+    return <Box flexDirection="column">
+        {linea(tabla.columnas, 0)}
+        {tabla.filas.slice(desde, desde + alto).map((datos, i) => linea(datos, desde + i + 1))}
+    </Box>;
+}
+
 function App() {
     const {exit} = useApp();
     const {stdout} = useStdout();
@@ -64,7 +82,7 @@ function App() {
     });
     return <Box flexDirection="column" borderStyle="round" paddingX={1}>
         <Text bold>{archivo ? basename(archivo) : 'Editor CSV'} · {tabla.filas.length} filas · {tabla.columnas.length} columnas</Text>
-
+        <Tabla tabla={tabla} fila={fila} columna={columna} ancho={stdout.columns || 80} alto={Math.max(1, (stdout.rows || 24) - 9)}/>
         {error && <Text color="red">{error}</Text>}
         {modo === 'tabla' ? <Text>A abrir · Esc salir</Text> :
             <Box><Text>{'Abrir:'} </Text><TextInput key={modo}  onSubmit={abrir}/></Box>}
