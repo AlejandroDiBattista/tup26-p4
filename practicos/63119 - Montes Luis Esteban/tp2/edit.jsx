@@ -78,13 +78,17 @@ function App() {
         }
         if (modo !== 'tabla') return;
         if (tecla.toLowerCase() === 'a') cambiarModo('abrir');
-
+        if (boton.upArrow) elegirFila(Math.max(0, fila - 1));
+        if (boton.downArrow && fila + 1 < tabla.filas.length) elegirFila(fila + 1);
+        if (boton.leftArrow) elegirColumna(Math.max(0, columna - 1));
+        if (boton.rightArrow && columna + 1 < tabla.columnas.length) elegirColumna(columna + 1);
     });
     return <Box flexDirection="column" borderStyle="round" paddingX={1}>
         <Text bold>{archivo ? basename(archivo) : 'Editor CSV'} · {tabla.filas.length} filas · {tabla.columnas.length} columnas</Text>
         <Tabla tabla={tabla} fila={fila} columna={columna} ancho={stdout.columns || 80} alto={Math.max(1, (stdout.rows || 24) - 9)}/>
+        {tabla.filas[fila] && <Text>Fila {fila + 1} · Columna {columna + 1} · Valor: {tabla.filas[fila][columna]}</Text>}
         {error && <Text color="red">{error}</Text>}
-        {modo === 'tabla' ? <Text>A abrir · Esc salir</Text> :
+        {modo === 'tabla' ? <Text>Flechas mover · A abrir · Esc salir</Text> :
             <Box><Text>{'Abrir:'} </Text><TextInput key={modo}  onSubmit={abrir}/></Box>}
     </Box>;
 }
