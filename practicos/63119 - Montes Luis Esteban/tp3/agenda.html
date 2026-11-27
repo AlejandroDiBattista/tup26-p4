@@ -18,8 +18,9 @@ function visibles(){
   return estado.alumnos.filter(a=>Object.values(a).some(v=>limpiar(v).includes(texto)))
     .sort((a,b)=>Number(b.favorito)-Number(a.favorito)||a.apellido.localeCompare(b.apellido,'es',{sensitivity:'base'})||a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}))
 }
+function favorito(a){guardar(estado.alumnos.map(x=>x.id===a.id?{...x,favorito:!x.favorito}:x))}
 function tarjeta(a){
-  return html`<article tabindex="0" ><h2>${a.apellido}, ${a.nombre}</h2><address>${a.telefono} · ${a.github}</address><footer>Comisión ${a.comision} · Legajo ${a.legajo}</footer></article>`
+  return html`<article tabindex="0" @keydown=${e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();favorito(a)}}}><button aria-label="Favorito" aria-pressed=${a.favorito} @click=${e=>{e.stopPropagation();favorito(a)}}>${a.favorito?'★':'☆'}</button><h2>${a.apellido}, ${a.nombre}</h2><address>${a.telefono} · ${a.github}</address><footer>Comisión ${a.comision} · Legajo ${a.legajo}</footer></article>`
 }
 html`<header><h1>Agenda</h1><input aria-label="Buscar alumnos" placeholder="Buscar alumnos" @input=${e=>estado.busqueda=e.target.value}></header>
 <section>${()=>visibles().length?visibles().map(tarjeta):'No hay alumnos para mostrar.'}</section>`(document.querySelector('#app'))
