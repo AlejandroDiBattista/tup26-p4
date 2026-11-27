@@ -86,6 +86,21 @@ function App() {
         ponerTabla({...tabla, filas});
     }
 
+    async function guardar(nombre) {
+        ocupar(true);
+        try {
+            const texto = [tabla.columnas, ...tabla.filas].map(datos => datos.join(',')).join('\n');
+            await writeFile(nombre, texto + '\n', 'utf8');
+            ponerArchivo(nombre);
+            cambiarModo('tabla');
+            ponerError('');
+        } catch (e) {
+            ponerError(e.message);
+        } finally {
+            ocupar(false);
+        }
+    }
+
     useInput((tecla, boton) => {
         if (ocupado) return;
         if (boton.escape) {
@@ -102,14 +117,15 @@ function App() {
         if (boton.return && tabla.filas.length) cambiarModo('editar');
         if (tecla === '<') ordenar(1);
         if (tecla === '>') ordenar(-1);
+        if (tecla.toLowerCase() === 'g' && tabla.columnas.length) cambiarModo('guardar');
     });
     return <Box flexDirection="column" borderStyle="round" paddingX={1}>
         <Text bold>{archivo ? basename(archivo) : 'Editor CSV'} · {tabla.filas.length} filas · {tabla.columnas.length} columnas</Text>
         <Tabla tabla={tabla} fila={fila} columna={columna} ancho={stdout.columns || 80} alto={Math.max(1, (stdout.rows || 24) - 9)}/>
         {tabla.filas[fila] && <Text>Fila {fila + 1} · Columna {columna + 1} · Valor: {tabla.filas[fila][columna]}</Text>}
         {error && <Text color="red">{error}</Text>}
-        {modo === 'tabla' ? <Text>Flechas mover · Enter editar · &lt; asc · &gt; desc · A abrir · Esc salir</Text> :
-            <Box><Text>{modo === 'abrir' ? 'Abrir:' : 'Valor:'} </Text><TextInput key={modo} defaultValue={modo === 'editar' ? tabla.filas[fila][columna] : ''} onSubmit={modo === 'editar' ? editar : abrir}/></Box>}
+        {modo === 'tabla' ? <Text>Flechas mover · Enter editar · &lt; asc · &gt; desc · A abrir · G guardar · Esc salir</Text> :
+            <Box><Text>{modo === 'abrir' ? 'Abrir:' : modo === 'guardar' ? 'Guardar:' : 'Valor:'} </Text><TextInput key={modo} defaultValue={modo === 'editar' ? tabla.filas[fila][columna] : modo === 'guardar' ? archivo : ''} onSubmit={modo === 'editar' ? editar : modo === 'guardar' ? guardar : abrir}/></Box>}
     </Box>;
 }
 render(<App/>);
