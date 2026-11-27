@@ -69,6 +69,23 @@ function App() {
         else cambiarModo('abrir');
     }, []);
 
+    function editar(valor) {
+        if (/[,\r\n"]/.test(valor)) { ponerError('Ingresá un valor sin comas, comillas ni saltos de línea.'); return; }
+        const filas = tabla.filas.map((datos, i) =>
+            i === fila ? datos.map((dato, j) => j === columna ? valor : dato) : datos);
+        ponerTabla({...tabla, filas});
+        cambiarModo('tabla');
+        ponerError('');
+    }
+
+    function ordenar(sentido) {
+        const numeros = tabla.filas.every(datos => datos[columna].trim() !== '' && Number.isFinite(Number(datos[columna])));
+        const filas = [...tabla.filas].sort((a, b) => sentido * (numeros
+            ? Number(a[columna]) - Number(b[columna])
+            : a[columna].localeCompare(b[columna], 'es', {sensitivity:'base'})));
+        ponerTabla({...tabla, filas});
+    }
+
     useInput((tecla, boton) => {
         if (ocupado) return;
         if (boton.escape) {
@@ -82,14 +99,17 @@ function App() {
         if (boton.downArrow && fila + 1 < tabla.filas.length) elegirFila(fila + 1);
         if (boton.leftArrow) elegirColumna(Math.max(0, columna - 1));
         if (boton.rightArrow && columna + 1 < tabla.columnas.length) elegirColumna(columna + 1);
+        if (boton.return && tabla.filas.length) cambiarModo('editar');
+        if (tecla === '<') ordenar(1);
+        if (tecla === '>') ordenar(-1);
     });
     return <Box flexDirection="column" borderStyle="round" paddingX={1}>
         <Text bold>{archivo ? basename(archivo) : 'Editor CSV'} · {tabla.filas.length} filas · {tabla.columnas.length} columnas</Text>
         <Tabla tabla={tabla} fila={fila} columna={columna} ancho={stdout.columns || 80} alto={Math.max(1, (stdout.rows || 24) - 9)}/>
         {tabla.filas[fila] && <Text>Fila {fila + 1} · Columna {columna + 1} · Valor: {tabla.filas[fila][columna]}</Text>}
         {error && <Text color="red">{error}</Text>}
-        {modo === 'tabla' ? <Text>Flechas mover · A abrir · Esc salir</Text> :
-            <Box><Text>{'Abrir:'} </Text><TextInput key={modo}  onSubmit={abrir}/></Box>}
+        {modo === 'tabla' ? <Text>Flechas mover · Enter editar · &lt; asc · &gt; desc · A abrir · Esc salir</Text> :
+            <Box><Text>{modo === 'abrir' ? 'Abrir:' : 'Valor:'} </Text><TextInput key={modo} defaultValue={modo === 'editar' ? tabla.filas[fila][columna] : ''} onSubmit={modo === 'editar' ? editar : abrir}/></Box>}
     </Box>;
 }
 render(<App/>);
