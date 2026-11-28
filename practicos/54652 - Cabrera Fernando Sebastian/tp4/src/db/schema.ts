@@ -1,9 +1,4 @@
-
-import {
-  sqliteTable,
-  integer,
-  text,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
 export const clientes = sqliteTable("clientes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -21,8 +16,13 @@ export const actividades = sqliteTable("actividades", {
     .notNull()
     .references(() => clientes.id, { onDelete: "cascade" }),
   descripcion: text("descripcion").notNull(),
+  // Fecha comprometida (AAAA-MM-DD). Es opcional.
   fecha: text("fecha"),
-  completada: integer("completada", {
-    mode: "boolean",
-  }).notNull().default(false),
+  completada: integer("completada", { mode: "boolean" }).notNull().default(false),
+  // Se completa al marcar la actividad como hecha.
+  completadaEn: text("completada_en"),
 });
+
+export type Cliente = typeof clientes.$inferSelect;
+export type NuevoCliente = typeof clientes.$inferInsert;
+export type Actividad = typeof actividades.$inferSelect;

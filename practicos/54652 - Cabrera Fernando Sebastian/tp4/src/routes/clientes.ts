@@ -1,13 +1,13 @@
-import { Router } from 'express'
-import { ClienteController } from '../controllers/clientes'
+import { Router } from "express";
+import { ClientesController } from "../controllers/clientes";
 
-const router = Router()
+const router = Router();
 
-router.get('/buscar', ClienteController.buscar)
-router.get('/', ClienteController.obtenerTodos)
-router.get('/:id', ClienteController.obtenerPorId)
-router.post('/', ClienteController.crear)
-router.put('/:id', ClienteController.actualizar)
-router.delete('/:id', ClienteController.eliminar)
+router.get("/", ClientesController.listar); // ?q=texto busca por cualquier campo
+router.get("/:id", ClientesController.obtener);
+router.post("/", ClientesController.crear);
+router.put("/:id", ClientesController.actualizar);
+router.delete("/:id", ClientesController.eliminar);
+router.post("/:id/actividades", ClientesController.agregarActividad);
 
-export default router
+export default router;
