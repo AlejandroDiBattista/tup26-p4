@@ -5,29 +5,585 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agenda</title>
   <style>
-    body { margin: 0; padding: 32px 20px; font: 16px sans-serif; background: #f5f6f4; }
-    main { width: 1104px; max-width: 100%; margin: auto; }
-    h1 { margin: 0 0 24px; }
-    ul { display: grid; grid-template-columns: repeat(3, 360px); justify-content: center; gap: 12px; padding: 0; list-style: none; }
-    li { min-width: 0; padding: 20px; border: 1px solid #d9ded9; border-radius: 16px; background: white; text-align: center; }
-    @media (max-width: 1120px) { ul { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { ul { grid-template-columns: 1fr; } }
+    :root {
+      --fondo: #f4f6f4;
+      --blanco: #ffffff;
+      --texto: #1d2a36;
+      --muted: #65717b;
+      --borde: #dde2df;
+      --primario: #263746;
+      --peligro: #bd4d52;
+      --sombra: 0 7px 18px rgba(29, 42, 54, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--fondo);
+      color: var(--texto);
+      font: 16px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input { font: inherit; }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 34px auto 48px;
+    }
+
+    .agenda-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 26px;
+
+      & h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 38px);
+        letter-spacing: -0.03em;
+      }
+
+      & .acciones {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+
+    .buscar {
+      width: 255px;
+      height: 48px;
+      padding: 0 16px;
+      border: 1px solid var(--borde);
+      border-radius: 999px;
+      background: var(--blanco);
+      color: var(--texto);
+      outline: none;
+
+      &:focus {
+        border-color: #697a86;
+        box-shadow: 0 0 0 3px rgba(105, 122, 134, 0.12);
+      }
+    }
+
+    .boton {
+      min-height: 42px;
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 9px 16px;
+      background: var(--blanco);
+      color: var(--texto);
+      cursor: pointer;
+
+      &:hover { background: #f8faf8; }
+      &:focus-visible {
+        outline: 3px solid #8797a3;
+        outline-offset: 2px;
+      }
+    }
+
+    .boton-primario {
+      border-color: var(--primario);
+      background: var(--primario);
+      color: var(--blanco);
+      border-radius: 999px;
+      padding-inline: 18px;
+
+      &:hover { background: #1d3040; }
+    }
+
+    .agenda-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .agenda-card {
+      position: relative;
+      min-height: 188px;
+      padding: 20px;
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      background: var(--blanco);
+      box-shadow: 0 1px 1px rgba(29, 42, 54, 0.02);
+      cursor: pointer;
+
+      &:hover { box-shadow: var(--sombra); }
+
+      &:focus-visible {
+        outline: 3px solid #8797a3;
+        outline-offset: 3px;
+      }
+
+      & header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding-right: 34px;
+      }
+
+      & h2 {
+        margin: 0 0 5px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 25px;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+
+        & span {
+          margin-left: 7px;
+          font-family: system-ui, sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          color: var(--muted);
+        }
+      }
+    }
+
+    .favorito {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 38px;
+      height: 38px;
+      border: 0;
+      background: transparent;
+      color: #a0a99e;
+      cursor: pointer;
+      font-size: 27px;
+      line-height: 1;
+
+      &.activo { color: #9a8254; }
+
+      &:focus-visible {
+        outline: 2px solid #8797a3;
+        border-radius: 8px;
+      }
+    }
+
+    .agenda-card address {
+      margin-top: 38px;
+      font-style: normal;
+
+      & strong {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 15px;
+      }
+
+      & a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+      }
+    }
+
+    .datos-secundarios {
+      margin-top: 22px;
+      padding-top: 12px;
+      border-top: 1px solid var(--borde);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .sin-resultados {
+      grid-column: 1 / -1;
+      margin: 40px 0;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    dialog {
+      width: min(520px, calc(100% - 30px));
+      border: 1px solid var(--borde);
+      border-radius: 24px;
+      padding: 0;
+      background: var(--blanco);
+      color: var(--texto);
+      box-shadow: 0 22px 60px rgba(29, 42, 54, 0.22);
+
+      &::backdrop {
+        background: rgba(41, 53, 62, 0.42);
+        backdrop-filter: blur(2px);
+      }
+
+      & form { margin: 0; }
+    }
+
+    .dialogo-header {
+      padding: 22px 24px 16px;
+      border-bottom: 1px solid var(--borde);
+
+      & h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+      }
+
+      & p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+    }
+
+    .formulario-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 20px 24px 18px;
+
+      & label {
+        display: grid;
+        gap: 7px;
+        color: #55636f;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      & input {
+        width: 100%;
+        height: 46px;
+        border: 1px solid var(--borde);
+        border-radius: 10px;
+        padding: 0 12px;
+        color: var(--texto);
+        outline: none;
+
+        &:focus {
+          border-color: #697a86;
+          box-shadow: 0 0 0 3px rgba(105, 122, 134, 0.12);
+        }
+      }
+    }
+
+    .mensaje-error {
+      grid-column: 1 / -1;
+      min-height: 18px;
+      margin: 0;
+      color: var(--peligro);
+      font-size: 13px;
+    }
+
+    .dialogo-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 24px;
+      border-top: 1px solid var(--borde);
+
+      & .eliminar {
+        margin-right: auto;
+        border-color: #ead1d1;
+        color: var(--peligro);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .agenda-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      main { width: min(100% - 24px, 1120px); margin-top: 22px; }
+      .agenda-header { align-items: stretch; flex-direction: column; }
+      .agenda-header .acciones { width: 100%; }
+      .buscar { width: 100%; flex: 1; }
+      .agenda-grid { grid-template-columns: 1fr; }
+      .formulario-grid { grid-template-columns: 1fr; }
+      .mensaje-error { grid-column: 1; }
+      dialog { border-radius: 18px; }
+    }
   </style>
 </head>
 <body>
   <main id="app"></main>
 
   <script type="module">
-    import { html, reactive, watch } from 'https://esm.sh/@arrow-js/core'
-    import alumnos from './alumnos.json' with { type: 'json' }
+    import { html, reactive } from 'https://esm.sh/@arrow-js/core';
 
-    const app = document.getElementById('app')
+    const CLAVE = 'tp3-agenda-alumnos';
+    const app = document.getElementById('app');
+
+    const estado = reactive({
+      alumnos: [],
+      busqueda: '',
+      cargando: true,
+      editandoId: null,
+      formulario: {
+        apellido: '',
+        nombre: '',
+        legajo: '',
+        comision: '',
+        telefono: '',
+        github: ''
+      },
+      error: ''
+    });
+
+    function compararTexto(a, b) {
+      return a.localeCompare(b, 'es', { sensitivity: 'base' });
+    }
+
+    function alumnosVisibles() {
+      const texto = estado.busqueda.trim().toLocaleLowerCase('es');
+
+      return estado.alumnos
+        .filter(alumno => {
+          if (!texto) return true;
+          return [
+            alumno.apellido,
+            alumno.nombre,
+            alumno.legajo,
+            alumno.comision,
+            alumno.telefono,
+            alumno.github
+          ].some(valor => String(valor).toLocaleLowerCase('es').includes(texto));
+        })
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+          const porApellido = compararTexto(a.apellido, b.apellido);
+          return porApellido || compararTexto(a.nombre, b.nombre);
+        });
+    }
+
+    function guardarAlumnos() {
+      localStorage.setItem(CLAVE, JSON.stringify(estado.alumnos));
+    }
+
+    function alternarFavorito(id) {
+      const alumno = estado.alumnos.find(item => item.id === id);
+      if (!alumno) return;
+      alumno.favorito = !alumno.favorito;
+      estado.alumnos = [...estado.alumnos];
+      guardarAlumnos();
+    }
+
+    function limpiarFormulario() {
+      estado.formulario.apellido = '';
+      estado.formulario.nombre = '';
+      estado.formulario.legajo = '';
+      estado.formulario.comision = '';
+      estado.formulario.telefono = '';
+      estado.formulario.github = '';
+      estado.error = '';
+    }
+
+    function abrirAgregar() {
+      estado.editandoId = null;
+      limpiarFormulario();
+      const dialogo = document.querySelector('dialog');
+      dialogo.showModal();
+      requestAnimationFrame(() => document.querySelector('#apellido')?.focus());
+    }
+
+    function abrirEditar(id) {
+      const alumno = estado.alumnos.find(item => item.id === id);
+      if (!alumno) return;
+      estado.editandoId = id;
+      estado.formulario.apellido = alumno.apellido;
+      estado.formulario.nombre = alumno.nombre;
+      estado.formulario.legajo = alumno.legajo;
+      estado.formulario.comision = alumno.comision;
+      estado.formulario.telefono = alumno.telefono;
+      estado.formulario.github = alumno.github;
+      estado.error = '';
+      const dialogo = document.querySelector('dialog');
+      dialogo.showModal();
+      requestAnimationFrame(() => document.querySelector('#apellido')?.focus());
+    }
+
+    function cancelarEdicion() {
+      document.querySelector('dialog')?.close();
+      estado.editandoId = null;
+      limpiarFormulario();
+    }
+
+    function eliminarAlumno() {
+      if (estado.editandoId === null) return;
+      estado.alumnos = estado.alumnos.filter(item => item.id !== estado.editandoId);
+      guardarAlumnos();
+      cancelarEdicion();
+    }
+
+    function siguienteId() {
+      return estado.alumnos.reduce((maximo, alumno) => Math.max(maximo, Number(alumno.id) || 0), 0) + 1;
+    }
+
+    function guardarAlumno(evento) {
+      evento.preventDefault();
+      const datos = Object.fromEntries(
+        Object.entries(estado.formulario).map(([campo, valor]) => [campo, String(valor).trim()])
+      );
+
+      if (Object.values(datos).some(valor => !valor)) {
+        estado.error = 'Completá todos los campos.';
+        return;
+      }
+
+      if (estado.editandoId === null) {
+        estado.alumnos = [
+          ...estado.alumnos,
+          { id: siguienteId(), ...datos, favorito: false }
+        ];
+      } else {
+        const indice = estado.alumnos.findIndex(item => item.id === estado.editandoId);
+        if (indice >= 0) {
+          estado.alumnos[indice] = {
+            ...estado.alumnos[indice],
+            ...datos
+          };
+        }
+      }
+
+      guardarAlumnos();
+      cancelarEdicion();
+    }
+
+    function tecladoTarjeta(evento, id) {
+      if (evento.target !== evento.currentTarget) return;
+      if (evento.key === 'Enter') {
+        evento.preventDefault();
+        abrirEditar(id);
+      }
+      if (evento.key === ' ') {
+        evento.preventDefault();
+        alternarFavorito(id);
+      }
+    }
+
+    function vistaAlumno(alumno) {
+      return html`
+        <li>
+          <article
+            class="agenda-card"
+            tabindex="0"
+            @click="${() => abrirEditar(alumno.id)}"
+            @keydown="${evento => tecladoTarjeta(evento, alumno.id)}"
+          >
+            <button type="button" class="${alumno.favorito ? 'favorito activo' : 'favorito'}"
+              aria-label="${alumno.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}"
+              aria-pressed="${String(alumno.favorito)}"
+              @click="${evento => { evento.stopPropagation(); alternarFavorito(alumno.id); }}"
+            >${alumno.favorito ? '★' : '☆'}</button>
+            <h2>${alumno.apellido} ${alumno.nombre}</h2>
+            <address>
+              ${alumno.telefono}<br>@${alumno.github}
+            </address>
+            <div class="datos-secundarios">${alumno.comision} · ${alumno.legajo}</div>
+          </article>
+        </li>
+      `;
+    }
+
+    async function cargarAlumnos() {
+      const guardados = localStorage.getItem(CLAVE);
+      if (guardados) {
+        try {
+          estado.alumnos = JSON.parse(guardados);
+          estado.cargando = false;
+          return;
+        } catch {
+          localStorage.removeItem(CLAVE);
+        }
+      }
+
+      try {
+        const respuesta = await fetch('./alumnos.json');
+        if (!respuesta.ok) throw new Error('No se pudo cargar alumnos.json');
+        estado.alumnos = await respuesta.json();
+        guardarAlumnos();
+      } catch (error) {
+        estado.error = 'No se pudieron cargar los datos iniciales.';
+        estado.alumnos = [];
+      } finally {
+        estado.cargando = false;
+      }
+    }
+
     html`
-      <h1>Alumnos</h1>
-      <ul>
-        ${alumnos.map(a => html`<li>${a.nombre} <b>${a.apellido}</b></li>`)}
-      </ul>
-    `(app)
+      <header class="agenda-header">
+        <h1>Agenda</h1>
+        <div class="acciones">
+          <input
+            class="buscar"
+            type="search"
+            placeholder="Buscar alumno..."
+            aria-label="Buscar alumno"
+            .value="${() => estado.busqueda}"
+            @input="${evento => estado.busqueda = evento.target.value}"
+          >
+          <button class="boton boton-primario" type="button" @click="${abrirAgregar}">
+            + Agregar
+          </button>
+        </div>
+      </header>
+
+      <section aria-label="Listado de alumnos">
+        <p class="sin-resultados" hidden="${() => estado.cargando || alumnosVisibles().length > 0}">
+          ${() => estado.cargando ? 'Cargando alumnos...' : 'No hay alumnos para mostrar'}
+        </p>
+        <ul class="agenda-grid">${() => alumnosVisibles().map(vistaAlumno)}</ul>
+      </section>
+
+      <dialog aria-labelledby="titulo-dialogo">
+        <form @submit="${guardarAlumno}">
+          <header class="dialogo-header">
+            <h2 id="titulo-dialogo">${() => estado.editandoId === null ? 'Agregar alumno' : 'Editar alumno'}</h2>
+            <p>${() => estado.editandoId === null ? 'Ingresá los datos del alumno.' : 'Actualizá los datos del alumno.'}</p>
+          </header>
+
+          <div class="formulario-grid">
+            <label for="apellido">Apellido
+              <input id="apellido" name="apellido" required autocomplete="off"
+                .value="${() => estado.formulario.apellido}"
+                @input="${evento => estado.formulario.apellido = evento.target.value}">
+            </label>
+            <label for="nombre">Nombre
+              <input id="nombre" name="nombre" required autocomplete="off"
+                .value="${() => estado.formulario.nombre}"
+                @input="${evento => estado.formulario.nombre = evento.target.value}">
+            </label>
+            <label for="legajo">Legajo
+              <input id="legajo" name="legajo" required autocomplete="off"
+                .value="${() => estado.formulario.legajo}"
+                @input="${evento => estado.formulario.legajo = evento.target.value}">
+            </label>
+            <label for="comision">Comisión
+              <input id="comision" name="comision" required autocomplete="off"
+                .value="${() => estado.formulario.comision}"
+                @input="${evento => estado.formulario.comision = evento.target.value}">
+            </label>
+            <label for="telefono">Teléfono
+              <input id="telefono" name="telefono" required autocomplete="off"
+                .value="${() => estado.formulario.telefono}"
+                @input="${evento => estado.formulario.telefono = evento.target.value}">
+            </label>
+            <label for="github">GitHub
+              <input id="github" name="github" required autocomplete="off"
+                .value="${() => estado.formulario.github}"
+                @input="${evento => estado.formulario.github = evento.target.value}">
+            </label>
+            <p class="mensaje-error">${() => estado.error}</p>
+          </div>
+
+          <footer class="dialogo-footer">
+            ${() => estado.editandoId === null
+              ? ''
+              : html`<button class="boton eliminar" type="button" @click="${eliminarAlumno}">Eliminar</button>`}
+            <button class="boton boton-primario" type="submit">Guardar</button>
+            <button class="boton" type="button" @click="${cancelarEdicion}">Cancelar</button>
+          </footer>
+        </form>
+      </dialog>
+    `(app);
+
+    cargarAlumnos();
   </script>
 </body>
 </html>
